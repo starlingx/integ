@@ -4161,37 +4161,6 @@
                 </param>
     '>
 
-    <!-- TPM configuration Common Parameters -->
-
-    <!ENTITY tpmconfigCommonParameters '
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="cert_path" style="plain" type="xsd:string" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This parameter specifies the path to the certificate (private)
-                        to upload to TPM.
-                        </para>
-                    </wadl:doc>
-                </param>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="tpm_path" style="plain" type="xsd:string" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This parameter specifies the path to store the TPM
-                        object context.
-                        </para>
-                    </wadl:doc>
-                </param>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="public_path" style="plain" type="xsd:string" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This parameter specifies the path to store the public certificate
-                        </para>
-                    </wadl:doc>
-                </param>
-            '>
-
      <!-- License List Parameters -->
 
      <!ENTITY licenseListParameters '

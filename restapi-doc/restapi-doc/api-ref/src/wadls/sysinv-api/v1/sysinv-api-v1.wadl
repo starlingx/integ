@@ -1022,24 +1022,6 @@ SPDX-License-Identifier: Apache-2.0
                     <method href="#showCert"/>
                 </resource>
 
-        <!-- /v1/tpmconfig                          -->
-            <resource id="tpmconfig" path="tpmconfig">
-                <method href="#showTpmConfig"/>
-                <method href="#addTpmConfig"/>
-            </resource>
-
-        <!-- /v1/tpmconfig/{tpmconfig_id}           -->
-                <resource id="tpmconfig_id" path="{tpmconfig_id}" >
-                    <param name="tpmconfig_id" style="template" required="true"
-                    type="csapi:UUID">
-                        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                            <para>The unique identifier of the TPM configuration.</para>
-                        </wadl:doc>
-                    </param>
-                    <method href="#deleteTpmConfig"/>
-                    <method href="#modifyTpmConfig"/>
-                </resource>
-
         <!-- /v1/firewallrules/import_firewall_rules  -->
             <resource id="firewallrules" path="firewallrules/import_firewall_rules">
                 <method href="#importFirewallRules"/>
@@ -7344,7 +7326,9 @@ OAM Controller-1 IP Address.</para>
     <method name="GET" id="showCert">
         <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
             title="Show Certificate configuration">
-            <para role="shortdesc">Shows attributes of the Certificate configuration.</para>
+            <para role="shortdesc">Shows attributes of the Certificate configuration, including
+            additional details if available for that certificate mode
+            </para>
         </wadl:doc>
         <response status="200">
             <representation mediaType="application/xml">
@@ -7378,112 +7362,6 @@ OAM Controller-1 IP Address.</para>
             </representation>
         </response>
         &commonFaults; &getFaults;
-    </method>
-
-
-    <!-- ..................................................... -->
-    <!-- ..  TPM Configuration                              .. -->
-    <!-- ..................................................... -->
-
-    <method name="GET" id="showTpmConfig">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Show TPM configuration">
-            <para role="shortdesc">Shows attributes of the TPM configuration.</para>
-        </wadl:doc>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-        &commonListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/tpmconfig_show-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &commonFaults; &getFaults;
-    </method>
-
-    <method name="POST" id="addTpmConfig">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Create a TPM configuration">
-            <para role="shortdesc">Adds a TPM configuration.</para>
-            <para></para>
-        </wadl:doc>
-        <request>
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-		&tpmconfigCommonParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/tpmconfig_add-request.json"/>
-                </wadl:doc>
-            </representation>
-        </request>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-		&tpmconfigCommonParameters;
-                &commonListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/tpmconfig_add-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &postPutFaults;
-    </method>
-
-    <method name="PATCH" id="modifyTpmConfig">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Modify a TPM configuration">
-            <para role="shortdesc">Modifies a TPM configuration.</para>
-        </wadl:doc>
-        <request>
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-		&tpmconfigCommonParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/tpmconfig_modify-request.json"/>
-                </wadl:doc>
-            </representation>
-        </request>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-		&tpmconfigCommonParameters;
-                &commonListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/tpmconfig_modify-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &postPutFaults;
-    </method>
-
-    <method name="DELETE" id="deleteTpmConfig">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Delete a TPM configuration">
-            <para role="shortdesc">Deletes a TPM configuration.</para>
-            <para></para>
-        </wadl:doc>
-        <response status="204">
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-            </representation>
-        </response>
     </method>
 
     <!-- ..................................................... -->

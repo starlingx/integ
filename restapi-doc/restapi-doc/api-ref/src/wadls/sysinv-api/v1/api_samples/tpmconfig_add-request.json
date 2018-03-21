@@ -1,5 +1,0 @@
-{
-	"cert_path" : "/etc/ssl/private/key.pem",
-	"public_path" : "/etc/ssl/private/cert.pem",
-	"tpm_path" : "/etc/ssl/private/object.tpm"
-}

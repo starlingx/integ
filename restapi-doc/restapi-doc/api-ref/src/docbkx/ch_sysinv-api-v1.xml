@@ -1369,35 +1369,6 @@ configuration entity for the system.
     </section>
 
     <!--*******************************************************-->
-    <!--               TPM CONFIGURATION                       -->
-    <!--*******************************************************-->
-
-    <section xml:id="tpmconfig-v1">
-        <title>Trusted Platform Module (TPM) Configuration</title>
-        <para>These APIs allow for the display and configuration of
-	Trusted Platform Module (TPM).
-	</para>
-        <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#tpmconfig">
-                <wadl:method href="#showTpmConfig"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#tpmconfig">
-                <wadl:method href="#addTpmConfig"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#tpmconfig_id">
-                <wadl:method href="#modifyTpmConfig"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#tpmconfig_id">
-                <wadl:method href="#deleteTpmConfig"/>
-            </wadl:resource>
-        </wadl:resources>
-    </section>
-
-    <!--*******************************************************-->
     <!--               CUSTOM FIREWALL RULES                   -->
     <!--*******************************************************-->
 
