@@ -1,0 +1,43 @@
+From 84a36052449cae1607d2a18eae2ec2d520992e62 Mon Sep 17 00:00:00 2001
+From: Alex Kozyrev <alex.kozyrev@windriver.com>
+Date: Fri, 16 Mar 2018 15:50:57 -0400
+Subject: [PATCH 1/1] affine iSCSI kthreads as per kthread_cpus parameter
+ Resrict iSCSI kthreads CPU mask according to kthread_cpus kernel option.
+ Do not allow them to run on other CPUs to prevent interference with VMs.
+
+Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
+---
+ drivers/target/iscsi/iscsi_target.c | 4 ++--
+ include/linux/cpumask.h             | 1 +
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/target/iscsi/iscsi_target.c b/drivers/target/iscsi/iscsi_target.c
+index 35209f0..1c99dc4 100644
+--- a/drivers/target/iscsi/iscsi_target.c
++++ b/drivers/target/iscsi/iscsi_target.c
+@@ -3585,8 +3585,8 @@ void iscsit_thread_get_cpumask(struct iscsi_conn *conn)
+ 	 * iSCSI connection's RX/TX threads will be scheduled to
+ 	 * execute upon.
+ 	 */
+-	ord = conn->bitmap_id % cpumask_weight(cpu_online_mask);
+-	for_each_online_cpu(cpu) {
++	ord = conn->bitmap_id % cpumask_weight(cpu_kthread_mask);
++	for_each_kthread_cpu(cpu) {
+ 		if (ord-- == 0) {
+ 			cpumask_set_cpu(cpu, conn->conn_cpumask);
+ 			return;
+diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
+index bc4fea4..233bbb1 100644
+--- a/include/linux/cpumask.h
++++ b/include/linux/cpumask.h
+@@ -737,6 +737,7 @@ extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
+ #define for_each_possible_cpu(cpu) for_each_cpu((cpu), cpu_possible_mask)
+ #define for_each_online_cpu(cpu)   for_each_cpu((cpu), cpu_online_mask)
+ #define for_each_present_cpu(cpu)  for_each_cpu((cpu), cpu_present_mask)
++#define for_each_kthread_cpu(cpu)  for_each_cpu((cpu), cpu_kthread_mask)
+ 
+ /* Wrappers for arch boot code to manipulate normally-constant masks */
+ void set_cpu_possible(unsigned int cpu, bool possible);
+-- 
+1.8.3.1
+

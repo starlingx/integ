@@ -1,0 +1,36 @@
+From 6f3bc474c914f5b4f59d0213be92d8d0df858a69 Mon Sep 17 00:00:00 2001
+From: Alex Kozyrev <alex.kozyrev@windriver.com>
+Date: Fri, 16 Mar 2018 15:58:37 -0400
+Subject: [PATCH 1/1] affine iSCSI kthreads as per kthread_cpus parameter
+ Resrict iSCSI kthreads CPU mask according to kthread_cpus kernel option.
+ Do not allow them to run on other CPUs to prevent interference with VMs.
+
+Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
+
+---
+ SPECS/kernel-rt.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
+index bd5d93f..91656be 100644
+--- a/SPECS/kernel-rt.spec
++++ b/SPECS/kernel-rt.spec
+@@ -427,6 +427,7 @@ Patch1031: KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+ Patch1032: mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
+ # DRBD was choking on write same
+ Patch1033: turn-off-write-same-in-smartqpi-driver.patch
++Patch1034: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
+ 
+ BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
+ 
+@@ -823,6 +824,7 @@ ApplyPatch dpt_i2o-fix-build-warning.patch
+ ApplyPatch KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+ ApplyPatch mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
+ ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
++ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
+ 
+ # move off upstream version mechanism
+ if [ -e localversion-rt ]; then
+-- 
+1.8.3.1
+

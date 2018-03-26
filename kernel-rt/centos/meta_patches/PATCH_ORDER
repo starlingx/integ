@@ -35,3 +35,4 @@ Resolve-hard-lockup-in-get_kvmclock_ns.patch
 export-module-signing-key-in-kernel-devel.patch
 CVE-mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
 fix-drbd-by-turning-off-write-same-in-smartpqi.patch
+restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
