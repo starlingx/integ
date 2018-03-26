@@ -8,16 +8,17 @@ virtual channel interface.
 
 Signed-off-by: Allain Legacy <allain.legacy@windriver.com>
 Signed-off-by: eric zhang <eric.zhang@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  src/i40e_virtchnl_pf.c | 78 ++++++++++++++++++++++++++++++++++++++++++++++++++
  src/virtchnl.h         |  1 +
  2 files changed, 79 insertions(+)
 
 diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
-index 8270b67..0eeaaca 100644
+index aba23f2..7081123 100644
 --- a/src/i40e_virtchnl_pf.c
 +++ b/src/i40e_virtchnl_pf.c
-@@ -1859,6 +1859,81 @@ error_param:
+@@ -1857,6 +1857,81 @@ error_param:
  				       aq_ret);
  }
  
@@ -99,7 +100,7 @@ index 8270b67..0eeaaca 100644
  /**
   * i40e_vc_config_queues_msg
   * @vf: pointer to the VF info
-@@ -2835,6 +2910,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
+@@ -2839,6 +2914,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
  	case VIRTCHNL_OP_REQUEST_QUEUES:
  		ret = i40e_vc_request_queues_msg(vf, msg, msglen);
  		break;
@@ -110,7 +111,7 @@ index 8270b67..0eeaaca 100644
  	case VIRTCHNL_OP_UNKNOWN:
  	default:
 diff --git a/src/virtchnl.h b/src/virtchnl.h
-index 8cf91d4..ba64641 100644
+index c550261..950d24e 100644
 --- a/src/virtchnl.h
 +++ b/src/virtchnl.h
 @@ -133,6 +133,7 @@ enum virtchnl_ops {

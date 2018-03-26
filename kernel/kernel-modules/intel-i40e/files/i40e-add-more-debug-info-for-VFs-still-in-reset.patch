@@ -1,0 +1,75 @@
+From bbe1571bb970759e8e2049512a52461da4c095b2 Mon Sep 17 00:00:00 2001
+Message-Id: <bbe1571bb970759e8e2049512a52461da4c095b2.1522076866.git.Jim.Somerville@windriver.com>
+In-Reply-To: <bc463ee30c5bc2ccc2d9541b20279e933d5fc462.1522076866.git.Jim.Somerville@windriver.com>
+References: <bc463ee30c5bc2ccc2d9541b20279e933d5fc462.1522076866.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Mon, 26 Mar 2018 11:03:47 -0400
+Subject: [PATCH 2/2] i40e add more debug info for VFs still in reset
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ src/i40e_virtchnl_pf.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
+index 7081123..83f6f88 100644
+--- a/src/i40e_virtchnl_pf.c
++++ b/src/i40e_virtchnl_pf.c
+@@ -3004,8 +3004,8 @@ int i40e_ndo_set_vf_mac(struct net_device *netdev, int vf_id, u8 *mac)
+ 	vf = &(pf->vf[vf_id]);
+ 	vsi = pf->vsi[vf->lan_vsi_idx];
+ 	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
+-		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
+-			vf_id);
++		dev_err(&pf->pdev->dev, "%s: VF %d still in reset. Try again.\n",
++			__func__, vf_id);
+ 		ret = -EAGAIN;
+ 		goto error_param;
+ 	}
+@@ -3145,8 +3145,8 @@ int i40e_ndo_set_vf_port_vlan(struct net_device *netdev,
+ 	vf = &(pf->vf[vf_id]);
+ 	vsi = pf->vsi[vf->lan_vsi_idx];
+ 	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
+-		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
+-			vf_id);
++		dev_err(&pf->pdev->dev, "%s: VF %d still in reset. Try again.\n",
++			__func__, vf_id);
+ 		ret = -EAGAIN;
+ 		goto error_pvid;
+ 	}
+@@ -3277,8 +3277,8 @@ int i40e_ndo_set_vf_bw(struct net_device *netdev, int vf_id, int max_tx_rate)
+ 	vf = &(pf->vf[vf_id]);
+ 	vsi = pf->vsi[vf->lan_vsi_idx];
+ 	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
+-		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
+-			vf_id);
++		dev_err(&pf->pdev->dev, "%s: VF %d still in reset. Try again.\n",
++			__func__, vf_id);
+ 		ret = -EAGAIN;
+ 		goto error;
+ 	}
+@@ -3370,8 +3370,8 @@ int i40e_ndo_get_vf_config(struct net_device *netdev,
+ 	/* first vsi is always the LAN vsi */
+ 	vsi = pf->vsi[vf->lan_vsi_idx];
+ 	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
+-		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
+-			vf_id);
++		dev_err(&pf->pdev->dev, "%s: VF %d still in reset. Try again.\n",
++			__func__, vf_id);
+ 		ret = -EAGAIN;
+ 		goto error_param;
+ 	}
+@@ -3503,8 +3503,8 @@ int i40e_ndo_set_vf_spoofchk(struct net_device *netdev, int vf_id, bool enable)
+ 
+ 	vf = &(pf->vf[vf_id]);
+ 	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
+-		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
+-			vf_id);
++		dev_err(&pf->pdev->dev, "%s: VF %d still in reset. Try again.\n",
++			__func__, vf_id);
+ 		ret = -EAGAIN;
+ 		goto out;
+ 	}
+-- 
+1.8.3.1
+
