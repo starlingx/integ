@@ -1,7 +1,7 @@
 From 65c3c74fd119db0309d68430ed89652666c884d5 Mon Sep 17 00:00:00 2001
 From: systemd team <systemd-maint@redhat.com>
 Date: Tue, 10 Oct 2017 17:06:10 -0400
-Subject: [PATCH] CGTS-7466 fix ACL warnings from systemd tmpfiles set
+Subject: fix ACL warnings from systemd tmpfiles set
 
 ---
  tmpfiles.d/systemd.conf.m4 | 8 ++++----

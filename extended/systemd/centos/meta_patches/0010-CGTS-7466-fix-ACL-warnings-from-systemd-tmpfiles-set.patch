@@ -1,8 +1,7 @@
 From e188f1148982166624ae72f8fac70775a2bc8d73 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: [PATCH 09/10] WRS:
- 0010-CGTS-7466-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
+Subject: 0010-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
 
 ---
  SPECS/systemd.spec | 1 +
@@ -16,7 +15,7 @@ index 33f3128..a8e1846 100644
  Patch0503: 0503-Configure-journald-to-forward-to-syslog.patch
  Patch0504: 0504-Configure-journald-rate-limit.patch
  Patch0505: 0505-remove-id-sas-path-symlink.patch
-+Patch0506: 0506-CGTS-7466-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
++Patch0506: 0506-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
  
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
  
