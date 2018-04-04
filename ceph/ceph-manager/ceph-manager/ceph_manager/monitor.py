@@ -13,8 +13,6 @@ from fm_api import constants as fm_constants
 # noinspection PyUnresolvedReferences
 from oslo_log import log as logging
 
-from sysinv.conductor.cache_tiering_service_config import ServiceConfig
-
 # noinspection PyProtectedMember
 from i18n import _, _LI, _LW, _LE
 
@@ -155,7 +153,6 @@ class Monitor(HandleUpgradesMixin):
     def __init__(self, service):
         self.service = service
         self.current_ceph_health = ""
-        self.cache_enabled = False
         self.tiers_size = {}
         self.known_object_pool_name = None
         self.primary_tier_name = constants.SB_TIER_DEFAULT_NAMES[
@@ -164,19 +161,7 @@ class Monitor(HandleUpgradesMixin):
         super(Monitor, self).__init__(service)
 
     def setup(self, config):
-        self.set_caching_tier_config(config)
         super(Monitor, self).setup(config)
-
-    def set_caching_tier_config(self, config):
-        conf = ServiceConfig().from_dict(
-            config.get(constants.CACHE_TIERING_APPLIED))
-        if conf:
-            self.cache_enabled = conf.cache_enabled
-
-    def monitor_check_cache_tier(self, enable_flag):
-        LOG.info(_LI("monitor_check_cache_tier: "
-                     "enable_flag={}".format(enable_flag)))
-        self.cache_enabled = enable_flag
 
     def run(self):
         # Wait until Ceph cluster is up and we can get the fsid
@@ -262,11 +247,6 @@ class Monitor(HandleUpgradesMixin):
 
         # Check the quotas on each tier
         for tier in self.tiers_size:
-            # TODO(rchurch): For R6 remove the tier from the default crushmap
-            # and remove this check. No longer supporting this tier in R5
-            if tier == 'cache-tier':
-                continue
-
             # Extract the tier name from the crush equivalent
             tier_name = tier[:-len(constants.CEPH_CRUSH_TIER_SUFFIX)]
 
@@ -601,9 +581,6 @@ class Monitor(HandleUpgradesMixin):
 
         self._check_storage_tier(osd_tree, "storage-tier",
                                  lambda *args: alarms.append(args))
-        if self.cache_enabled:
-            self._check_storage_tier(osd_tree, "cache-tier",
-                                     lambda *args: alarms.append(args))
 
         old_alarms = {}
         for alarm_id in [

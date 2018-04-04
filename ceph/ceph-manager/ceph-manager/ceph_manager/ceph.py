@@ -73,15 +73,10 @@ def osd_pool_exists(ceph_api, pool_name):
 
 
 def osd_pool_create(ceph_api, pool_name, pg_num, pgp_num):
-    if pool_name.endswith("-cache"):
-        # ruleset 1: is the ruleset for the cache tier
-        # Name: cache_tier_ruleset
-        ruleset = 1
-    else:
-        # ruleset 0: is the default ruleset if no crushmap is loaded or
-        # the ruleset for the backing tier if loaded:
-        # Name: storage_tier_ruleset
-        ruleset = 0
+    # ruleset 0: is the default ruleset if no crushmap is loaded or
+    # the ruleset for the backing tier if loaded:
+    # Name: storage_tier_ruleset
+    ruleset = 0
     response, body = ceph_api.osd_pool_create(
         pool_name, pg_num, pgp_num, pool_type="replicated",
         ruleset=ruleset, body='json')

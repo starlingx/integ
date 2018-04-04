@@ -27,13 +27,10 @@ from oslo_service.periodic_task import PeriodicTasks
 # noinspection PyUnresolvedReferences
 from oslo_service import loopingcall
 
-from sysinv.conductor.cache_tiering_service_config import ServiceConfig
-
 # noinspection PyUnresolvedReferences
 from cephclient import wrapper
 
 from monitor import Monitor
-from cache_tiering import CacheTiering
 import exception
 import constants
 
@@ -60,34 +57,6 @@ class RpcEndpoint(PeriodicTasks):
 
     def __init__(self, service=None):
         self.service = service
-
-    def cache_tiering_enable_cache(self, _, new_config, applied_config):
-        LOG.info(_LI("Enabling cache"))
-        try:
-            self.service.cache_tiering.enable_cache(
-                new_config, applied_config)
-        except exception.CephManagerException as e:
-            self.service.sysinv_conductor.call(
-                {}, 'cache_tiering_enable_cache_complete',
-                success=False, exception=str(e.message),
-                new_config=new_config, applied_config=applied_config)
-
-    def cache_tiering_disable_cache(self, _, new_config, applied_config):
-        LOG.info(_LI("Disabling cache"))
-        try:
-            self.service.cache_tiering.disable_cache(
-                new_config, applied_config)
-        except exception.CephManagerException as e:
-            self.service.sysinv_conductor.call(
-                {}, 'cache_tiering_disable_cache_complete',
-                success=False, exception=str(e.message),
-                new_config=new_config, applied_config=applied_config)
-
-    def cache_tiering_operation_in_progress(self, _):
-        is_locked = self.service.cache_tiering.is_locked()
-        LOG.info(_LI("Cache tiering operation "
-                     "is in progress: %s") % str(is_locked).lower())
-        return is_locked
 
     def get_primary_tier_size(self, _):
         """Get the ceph size for the primary tier.
@@ -163,7 +132,6 @@ class Service(SysinvConductorUpgradeApi, service.Service):
         self.entity_instance_id = ''
         self.fm_api = fm_api.FaultAPIs()
         self.monitor = Monitor(self)
-        self.cache_tiering = CacheTiering(self)
         self.config = None
         self.config_desired = None
         self.config_applied = None
@@ -181,8 +149,6 @@ class Service(SysinvConductorUpgradeApi, service.Service):
 
         # Get initial config from sysinv and send it to
         # services that need it before starting them
-        config = self.get_caching_tier_config()
-        self.monitor.setup(config)
         self.rpc_server = messaging.get_rpc_server(
             transport,
             messaging.Target(topic=constants.CEPH_MANAGER_TOPIC,
@@ -190,37 +156,7 @@ class Service(SysinvConductorUpgradeApi, service.Service):
             [RpcEndpoint(self)],
             executor='eventlet')
         self.rpc_server.start()
-        self.cache_tiering.set_initial_config(config)
         eventlet.spawn_n(self.monitor.run)
-        periodic = loopingcall.FixedIntervalLoopingCall(
-            self.update_ceph_target_max_bytes)
-        periodic.start(interval=300)
-
-    def get_caching_tier_config(self):
-        LOG.info("Getting cache tiering configuration from sysinv")
-        while True:
-            # Get initial configuration from sysinv,
-            # retry until sysinv starts
-            try:
-                cctxt = self.sysinv_conductor.prepare(timeout=2)
-                config = cctxt.call({}, 'cache_tiering_get_config')
-                for section in config:
-                    if section == constants.CACHE_TIERING:
-                        self.config = ServiceConfig().from_dict(
-                            config[section])
-                    elif section == constants.CACHE_TIERING_DESIRED:
-                        self.config_desired = ServiceConfig().from_dict(
-                            config[section])
-                    elif section == constants.CACHE_TIERING_APPLIED:
-                        self.config_applied = ServiceConfig().from_dict(
-                            config[section])
-                LOG.info("Cache tiering configs: {}".format(config))
-                return config
-            except Exception as ex:
-                # In production we should retry on every error until connection
-                # is reestablished.
-                LOG.warn("Getting cache tiering configuration failed "
-                         "with: {}. Retrying... ".format(str(ex)))
 
     def stop(self):
         try:
@@ -229,13 +165,6 @@ class Service(SysinvConductorUpgradeApi, service.Service):
         except Exception:
             pass
         super(Service, self).stop()
-
-    def update_ceph_target_max_bytes(self):
-        try:
-            self.cache_tiering.update_cache_target_max_bytes()
-        except Exception as ex:
-            LOG.exception("Updating Ceph target max bytes failed "
-                          "with: {} retrying on next cycle.".format(str(ex)))
 
 
 def run_service():
