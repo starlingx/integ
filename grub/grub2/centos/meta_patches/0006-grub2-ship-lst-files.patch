@@ -1,0 +1,25 @@
+From c5f65a1bf71e37f73bb102472b2f067f50da1079 Mon Sep 17 00:00:00 2001
+From: root <root@yow-cgts4-lx.wrs.com>
+Date: Tue, 23 Jan 2018 09:24:16 -0500
+Subject: [PATCH] ship .lst files
+
+---
+ SPECS/grub2.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
+index dcb0e64..85ee94d 100755
+--- a/SPECS/grub2.spec
++++ b/SPECS/grub2.spec
+@@ -275,6 +275,8 @@ fi
+ 
+ %files common -f grub.lang
+ %dir %{_libdir}/grub/
++%dir %{_libdir}/grub/%{grubefiarch}/
++%{_libdir}/grub/%{grubefiarch}/*.lst
+ %dir %{_datarootdir}/grub/
+ %dir %{_datarootdir}/grub/themes/
+ %exclude %{_datarootdir}/grub/themes/*
+-- 
+1.8.3.1
+

@@ -1,28 +1,13 @@
-From 7cb38901901be87761aee423b1c2f96b9907d785 Mon Sep 17 00:00:00 2001
-From: Scott Little <scott.little@windriver.com>
-Date: Tue, 3 Jan 2017 13:45:49 -0500
-Subject: [PATCH 1/2] WRS:
- 0001-grub2-Update-package-versioning-for-TIS-format.patch
-
-Conflicts:
-	SPECS/grub2.spec
----
- SPECS/grub2.spec | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index 9259c13..5baf5c4 100644
+index a56d930..a4e87f5 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -45,7 +45,7 @@
+@@ -8,7 +8,7 @@
  Name:           grub2
  Epoch:          1
  Version:        2.02
--Release:        0.44%{?dist}
-+Release:        0.44.el7.centos%{?_tis_dist}.%{tis_patch_ver}
+-Release:        0.64%{?dist}%{?buildid}
++Release:        0.64.el7.centos%{?_tis_dist}.%{tis_patch_ver}
  Summary:        Bootloader with support for Linux, Multiboot and more
- 
  Group:          System Environment/Base
--- 
-1.8.3.1
-
+ License:        GPLv3+

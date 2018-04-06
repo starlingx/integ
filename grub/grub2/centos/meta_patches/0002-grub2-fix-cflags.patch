@@ -1,0 +1,22 @@
+diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
+index 168b89b..c9e5177 100644
+--- a/SOURCES/grub.macros
++++ b/SOURCES/grub.macros
+@@ -12,16 +12,7 @@
+ %global cc_equals %{nil}
+ %endif
+ 
+-%global efi_cflags %(echo %{optflags} | 			\\\
+-	sed							\\\
+-		-e 's/-O./-g3/g'				\\\
+-		-e 's/-fstack-protector[[:alpha:]-]\\+//g'	\\\
+-		-e 's/-Wp,-D_FORTIFY_SOURCE=[[:digit:]]\\+//g'	\\\
+-		-e 's/--param=ssp-buffer-size=4//g'		\\\
+-		-e 's/-mregparm=3/-mregparm=4/g'		\\\
+-		-e 's/-fexceptions//g'				\\\
+-		-e 's/-fasynchronous-unwind-tables//g'		\\\
+-		-e 's/^/ -fno-strict-aliasing /' ) %{nil}
++%global efi_cflags ''
+ %global legacy_cflags %(echo %{efi_cflags} |			\\\
+ 	sed							\\\
+ 		-e 's/-m64//g'					\\\

@@ -1,0 +1,40 @@
+From 3a2d3bf327d82d3d916fa1a14b3dbbe84023a29c Mon Sep 17 00:00:00 2001
+From: root <root@yow-cgts4-lx.wrs.com>
+Date: Mon, 22 Jan 2018 16:05:57 -0500
+Subject: [PATCH] macros
+
+---
+ SOURCES/grub.macros | 14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
+
+diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
+index c9e5177..f03bc1a 100755
+--- a/SOURCES/grub.macros
++++ b/SOURCES/grub.macros
+@@ -78,15 +78,6 @@
+ %global legacy_package_arch pc
+ %global platform pc
+ 
+-%global alt_efi_arch ia32
+-%global alt_target_cpu_name i386
+-%global alt_grub_target_name i386-efi
+-%global alt_platform efi
+-%global alt_package_arch efi-ia32
+-%global alt_efi_cflags %(echo %{efi_cflags} |			\\\
+-	sed							\\\
+-		-e 's/-m64//g'				\\\
+-	) %{nil}
+ %endif
+ 
+ %ifarch aarch64
+@@ -378,6 +369,7 @@ cd grub-%{1}-%{tarversion}					\
+ install -m 755 -d $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/	\
+ install -m 755 -d $RPM_BUILD_ROOT/boot/grub2/			\
+ make DESTDIR=$RPM_BUILD_ROOT install				\
++find $RPM_BUILD_ROOT -name "grub2-bios-setup*" | xargs rm -f \
+ if [ -f $RPM_BUILD_ROOT%{_infodir}/grub.info ]; then		\
+ 	rm -f $RPM_BUILD_ROOT%{_infodir}/grub.info		\
+ fi								\
+-- 
+1.8.3.1
+

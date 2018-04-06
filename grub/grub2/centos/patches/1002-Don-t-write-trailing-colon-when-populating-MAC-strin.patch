@@ -1,0 +1,37 @@
+From f521055ce4f334a942d23ccab6ad6b0366c0a204 Mon Sep 17 00:00:00 2001
+From: root <root@yow-cgts1-lx.wrs.com>
+Date: Wed, 28 Mar 2018 11:23:17 -0400
+Subject: [PATCH] Don't write trailing colon when populating MAC string
+
+---
+ grub-core/net/net.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/grub-core/net/net.c b/grub-core/net/net.c
+index 6b4b10b..a637da5 100644
+--- a/grub-core/net/net.c
++++ b/grub-core/net/net.c
+@@ -792,11 +792,19 @@ grub_net_hwaddr_to_str (const grub_net_link_level_address_t *addr, char *str)
+ 		    addr->type, addr->len);
+        return;
+     }
+-  for (ptr = str, i = 0; i < addr->len; i++)
++
++  if (addr->len == 0)
++    {
++      return;
++    }
++
++  for (ptr = str, i = 0; i < (addr->len - 1); i++)
+     {
+       ptr += grub_snprintf (ptr, GRUB_NET_MAX_STR_HWADDR_LEN - (ptr - str),
+ 		     "%02x:", addr->mac[i] & 0xff);
+     }
++  ptr += grub_snprintf (ptr, GRUB_NET_MAX_STR_HWADDR_LEN - (ptr - str),
++	         "%02x", addr->mac[i] & 0xff);
+ }
+ 
+ int
+-- 
+1.8.3.1
+
