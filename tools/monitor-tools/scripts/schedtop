@@ -603,50 +603,50 @@ sub read_sched
 
     $pid = $::tids{$tid};
 
+    # NOTE: Format change over time: OLD: se.statistics.X, NEW: se.statistics->X
     #cat /proc/1/sched
-    #init (1, #threads: 1)
-    #---------------------------------------------------------
-    #se.exec_start                      :     465303823.781710
-    #se.vruntime                        :       8593378.836250
-    #se.sum_exec_runtime                :          5858.837187
-    #se.statistics.wait_start           :             0.000000
-    #se.statistics.sleep_start          :     465303823.781710
-    #se.statistics.block_start          :             0.000000
-    #se.statistics.sleep_max            :          5124.647630
-    #se.statistics.block_max            :             0.009897
-    #se.statistics.exec_max             :             2.198575
-    #se.statistics.slice_max            :             0.136734
-    #se.statistics.wait_max             :            19.968956
-    #se.statistics.wait_sum             :           256.424005
-    #se.statistics.wait_count           :                52480
-    #se.statistics.iowait_sum           :             0.000000
-    #se.statistics.iowait_count         :                    0
-    #se.nr_migrations                   :                    0
-    #se.statistics.nr_migrations_cold   :                    0
-    #se.statistics.nr_failed_migrations_affine:                    0
-    #se.statistics.nr_failed_migrations_running:                    0
-    #se.statistics.nr_failed_migrations_hot:                    0
-    #se.statistics.nr_forced_migrations :                    0
-    #se.statistics.nr_wakeups           :                51887
-    #se.statistics.nr_wakeups_sync      :                    0
-    #se.statistics.nr_wakeups_migrate   :                    0
-    #se.statistics.nr_wakeups_local     :                51886
-    #se.statistics.nr_wakeups_remote    :                    1
-    #se.statistics.nr_wakeups_affine    :                    0
-    #se.statistics.nr_wakeups_affine_attempts:                    0
-    #se.statistics.nr_wakeups_passive   :                    0
-    #se.statistics.nr_wakeups_idle      :                    0
-    #avg_atom                           :             0.058721
-    #avg_per_cpu                        :             0.000001
-    #nr_switches                        :                99774
-    #nr_voluntary_switches              :                94546
-    #nr_involuntary_switches            :                 5228
-    #se.load.weight                     :                 1024
-    #policy                             :                    0
-    #prio                               :                  120
-    #migrate_disable                    :                    0
-    #rt.nr_cpus_allowed                 :                   45
-    #clock-delta                        :                   68
+    #systemd (1, #threads: 1)
+    #-------------------------------------------------------------------
+    #se.exec_start                                :      33792676.285222
+    #se.vruntime                                  :      28019997.693224
+    #se.sum_exec_runtime                          :         21918.207287
+    #se.nr_migrations                             :                 5413
+    #se.statistics->sum_sleep_runtime             :       1166561.198533
+    #se.statistics->wait_start                    :             0.000000
+    #se.statistics->sleep_start                   :      33792676.285222
+    #se.statistics->block_start                   :             0.000000
+    #se.statistics->sleep_max                     :         18951.679990
+    #se.statistics->block_max                     :             0.000000
+    #se.statistics->exec_max                      :             0.909747
+    #se.statistics->slice_max                     :             1.790123
+    #se.statistics->wait_max                      :             4.026544
+    #se.statistics->wait_sum                      :           507.245963
+    #se.statistics->wait_count                    :                 2540
+    #se.statistics->iowait_sum                    :             0.000000
+    #se.statistics->iowait_count                  :                    0
+    #se.statistics->nr_migrations_cold            :                    0
+    #se.statistics->nr_failed_migrations_affine   :                   67
+    #se.statistics->nr_failed_migrations_running  :                    1
+    #se.statistics->nr_failed_migrations_hot      :                    1
+    #se.statistics->nr_forced_migrations          :                    0
+    #se.statistics->nr_wakeups                    :                 2472
+    #se.statistics->nr_wakeups_sync               :                   34
+    #se.statistics->nr_wakeups_migrate            :                  176
+    #se.statistics->nr_wakeups_local              :                 1442
+    #se.statistics->nr_wakeups_remote             :                 1030
+    #se.statistics->nr_wakeups_affine             :                  155
+    #se.statistics->nr_wakeups_affine_attempts    :                  969
+    #se.statistics->nr_wakeups_passive            :                    0
+    #se.statistics->nr_wakeups_idle               :                    0
+    #avg_atom                                     :             0.286970
+    #avg_per_cpu                                  :             4.049179
+    #nr_switches                                  :                76378
+    #nr_voluntary_switches                        :                72308
+    #nr_involuntary_switches                      :                 4070
+    #se.load.weight                               :                 1024
+    #policy                                       :                    0
+    #prio                                         :                  120
+    #clock-delta                                  :                   28
 
     # parse /proc/<pid>/task/<tid>/sched
     $file = '/proc/' . $pid . '/task/' . $tid . '/sched';
@@ -657,17 +657,17 @@ sub read_sched
     }
     my ($k, $v, $c0);
     LOOP_SCHED: while (<$fh>) {
-      if (/^se\.statistics\.wait_max\s+:\s+(\S+)/) {
+      if (/^se\.statistics.{1,2}wait_max\s+:\s+(\S+)/) {
         $wait_max = $1;
-      } elsif (/^se\.statistics\.wait_sum\s+:\s+(\S+)/) {
+      } elsif (/^se\.statistics.{1,2}wait_sum\s+:\s+(\S+)/) {
         $wait_sum = $1;
-      } elsif (/^se\.statistics\.wait_count\s+:\s+(\S+)/) {
+      } elsif (/^se\.statistics.{1,2}wait_count\s+:\s+(\S+)/) {
         $wait_count = $1;
-      } elsif (/^se\.statistics\.exec_max\s+:\s+(\S+)/) {
+      } elsif (/^se\.statistics.{1,2}exec_max\s+:\s+(\S+)/) {
         $exec_max = $1;
-      } elsif (/^se\.statistics\.iowait_sum\s+:\s+(\S+)/) {
+      } elsif (/^se\.statistics.{1,2}iowait_sum\s+:\s+(\S+)/) {
         $iowait_sum = $1;
-      } elsif (/^se\.statistics\.iowait_count\s+:\s+(\S+)/) {
+      } elsif (/^se\.statistics.{1,2}iowait_count\s+:\s+(\S+)/) {
         $iowait_count = $1;
       } elsif (/^se\.sum_exec_runtime\s+:\s+(\S+)/) {
         $exec_runtime = $1;

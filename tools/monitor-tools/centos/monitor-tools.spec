@@ -32,3 +32,10 @@ install %{_buildsubdir}/occtop %{buildroot}/usr/bin
 %defattr(-,root,root,-)
 /usr/bin/*
 
+%post
+grep schedstats /etc/sysctl.conf
+if [ $? -ne 0 ]; then
+  echo -e "\nkernel.sched_schedstats=1" >> /etc/sysctl.conf
+  sysctl -p &>/dev/null
+fi
+exit 0
