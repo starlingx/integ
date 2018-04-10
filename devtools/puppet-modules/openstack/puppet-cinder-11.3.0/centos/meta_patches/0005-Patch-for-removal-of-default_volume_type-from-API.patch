@@ -1,0 +1,32 @@
+From 7fcdc8a940ce9b074f2c47e0ba683b457f2f93df Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Mon, 9 Apr 2018 11:14:52 -0500
+Subject: [PATCH] Patch for removal of default_volume_type from API
+
+---
+ SPECS/puppet-cinder.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-cinder.spec b/SPECS/puppet-cinder.spec
+index 7c428d3..8cd53c4 100644
+--- a/SPECS/puppet-cinder.spec
++++ b/SPECS/puppet-cinder.spec
+@@ -13,6 +13,7 @@ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_versio
+ Patch0001:      0001-Roll-up-TIS-patches.patch
+ Patch0002:      0002-CGTS-8837-cinder-volume-cannot-be-deleted-after-swact.patch
+ Patch0003:      0003-CGTS-9191-Add-nova-interface-config-option.patch
++Patch0004:      0004-CGTS-9219-Remove-default_volume_type-from-api-class.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -32,6 +33,7 @@ Puppet module for OpenStack Cinder
+ %patch0001 -p1
+ %patch0002 -p1
+ %patch0003 -p1
++%patch0004 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

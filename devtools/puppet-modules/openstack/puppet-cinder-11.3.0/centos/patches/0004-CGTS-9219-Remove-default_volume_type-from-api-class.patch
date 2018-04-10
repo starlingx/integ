@@ -1,0 +1,49 @@
+From b9aee291c5e6219423f53ec7d1a1b97213d7641d Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Mon, 9 Apr 2018 10:01:28 -0500
+Subject: [PATCH] CGTS-9219: Remove default_volume_type from api class
+
+Allow setting the default_volume type independent of the API as we have
+scenarios where we simply want to add/remove the value and restart the API. This
+optimizes runtime dependencies.
+---
+ BUILD/openstack-cinder-11.3.0/manifests/api.pp | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/manifests/api.pp b/manifests/api.pp
+index 7a35c8a..ffc498b 100644
+--- a/manifests/api.pp
++++ b/manifests/api.pp
+@@ -75,13 +75,6 @@
+ #   (optional) Factory to use for ratelimiting
+ #   Defaults to 'cinder.api.v1.limits:RateLimitingMiddleware.factory'
+ #
+-# [*default_volume_type*]
+-#   (optional) default volume type to use.
+-#   This should contain the name of the default volume type to use.
+-#   If not configured, it produces an error when creating a volume
+-#   without specifying a type.
+-#   Defaults to $::os_service_default.
+-#
+ # [*validate*]
+ #   (optional) Whether to validate the service is working after any service refreshes
+ #   Defaults to false
+@@ -191,7 +184,6 @@ class cinder::api (
+   $enabled                        = true,
+   $manage_service                 = true,
+   $ratelimits                     = $::os_service_default,
+-  $default_volume_type            = $::os_service_default,
+   $ratelimits_factory =
+     'cinder.api.v1.limits:RateLimitingMiddleware.factory',
+   $validate                       = false,
+@@ -287,7 +279,6 @@ running as a standalone service, or httpd for being run by a httpd server")
+     'DEFAULT/osapi_volume_listen':      value => $bind_host;
+     'DEFAULT/osapi_volume_workers':     value => $service_workers;
+     'DEFAULT/os_region_name':           value => $os_region_name;
+-    'DEFAULT/default_volume_type':      value => $default_volume_type;
+     'DEFAULT/public_endpoint':          value => $public_endpoint;
+     'DEFAULT/osapi_volume_base_URL':    value => $osapi_volume_base_url;
+     'DEFAULT/osapi_max_limit':          value => $osapi_max_limit;
+-- 
+1.8.3.1
+
