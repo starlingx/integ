@@ -129,8 +129,11 @@ class LogMgmtDaemon():
                     self.monitored_files.extend(glob.glob(fields[2]))
                     self.monitored_files.extend(glob.glob(fields[2] + '.[0-9].gz'))
                     self.monitored_files.extend(glob.glob(fields[2] + '.[0-9][0-9].gz'))
+                    self.monitored_files.extend(glob.glob(fields[2] + '.[0-9]'))
+                    self.monitored_files.extend(glob.glob(fields[2] + '.[0-9][0-9]'))
         except:
             logging.error('Failed to determine monitored files')
+            raise
 
     def get_unmonitored_files(self):
         self.unmonitored_files = []
@@ -214,17 +217,20 @@ class LogMgmtDaemon():
         logging.warning("Reached critical disk usage for /var/log: %d%% free" % pf)
 
         # We're running out of disk space, so we need to start deleting files
-        for index in range(20, 11, -1):
-            logging.info("/var/log is %d%% free. Purging rotated .%d.gz files to free space" % (pf, index))
-            self.get_monitored_files()
-            self.purge_files(index)
-            pf = self.get_percent_free()
+        try:
+            for index in range(20, 11, -1):
+                logging.info("/var/log is %d%% free. Purging rotated .%d.gz files to free space" % (pf, index))
+                self.get_monitored_files()
+                self.purge_files(index)
+                pf = self.get_percent_free()
 
-            if pf >= PERCENT_FREE_MAJOR:
-                # We've freed up enough space. Do a logrotate and leave
-                logging.info("/var/log is %d%% free. Running logrotate" % pf)
-                self.run_logrotate()
-                return
+                if pf >= PERCENT_FREE_MAJOR:
+                    # We've freed up enough space. Do a logrotate and leave
+                    logging.info("/var/log is %d%% free. Running logrotate" % pf)
+                    self.run_logrotate()
+                    return
+        except Exception as e:
+            logging.exception('Failed purging rotated files', e)
 
         # We still haven't freed up enough space, so try a logrotate
         logging.info("/var/log is %d%% free. Running logrotate" % pf)
@@ -243,19 +249,22 @@ class LogMgmtDaemon():
             return
 
         # Start deleting unmonitored files
-        self.get_monitored_files()
-        self.get_unmonitored_files()
-        logging.info("/var/log is %d%% free. Deleting unmonitored files to free space" % pf)
-        for fname in sorted(self.unmonitored_files, key=os.path.getsize, reverse=True):
-            logging.info("Deleting unmonitored file: %s" % fname)
-            try:
-                os.remove(fname)
-            except OSError as e:
-                logging.error('Failed to remove file: %s', e)
-            pf = self.get_percent_free()
-            if pf >= PERCENT_FREE_MAJOR:
-                logging.info("/var/log is %d%% free." % pf)
-                return
+        try:
+            self.get_monitored_files()
+            self.get_unmonitored_files()
+            logging.info("/var/log is %d%% free. Deleting unmonitored files to free space" % pf)
+            for fname in sorted(self.unmonitored_files, key=os.path.getsize, reverse=True):
+                logging.info("Deleting unmonitored file: %s" % fname)
+                try:
+                    os.remove(fname)
+                except OSError as e:
+                    logging.error('Failed to remove file: %s', e)
+                pf = self.get_percent_free()
+                if pf >= PERCENT_FREE_MAJOR:
+                    logging.info("/var/log is %d%% free." % pf)
+                    return
+        except Exception as e:
+            logging.exception('Failed checking unmonitored files', e)
 
         # Nothing else to be done
         logging.info("/var/log is %d%% free." % pf)
