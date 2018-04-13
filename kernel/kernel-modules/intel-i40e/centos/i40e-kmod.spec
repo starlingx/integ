@@ -25,6 +25,7 @@ Source11: modules-load.conf
 
 Patch01: i40e-Enable-getting-link-status-from-VF.patch
 Patch02: i40e-add-more-debug-info-for-VFs-still-in-reset.patch
+Patch03: ndo_get_vf_config-poll-for-out-of-vf-reset.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
