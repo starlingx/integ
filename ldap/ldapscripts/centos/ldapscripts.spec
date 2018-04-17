@@ -21,6 +21,7 @@ Patch2: log_timestamp.patch
 Patch3: ldap-user-setup-support.patch
 Patch4: ldap-user-setup-support-input-validation.patch
 Patch5: ldap-user-setup-noninteractive-mode-fix.patch
+Patch6: allow-anonymous-bind-for-ldap-search.patch
 
 %define debug_package %{nil}
 
@@ -39,6 +40,7 @@ Shell scripts that allow to manage POSIX accounts (users, groups, machines) in a
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
 
 
 %build
