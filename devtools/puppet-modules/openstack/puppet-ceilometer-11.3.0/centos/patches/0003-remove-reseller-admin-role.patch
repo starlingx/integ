@@ -1,0 +1,37 @@
+From f257ef739b3d2593ed4613f9661f97d0228188bd Mon Sep 17 00:00:00 2001
+From: Angie Wang <Angie.Wang@windriver.com>
+Date: Tue, 17 Apr 2018 11:54:19 -0400
+Subject: [PATCH 1/1] remove reseller admin role
+
+---
+ manifests/keystone/auth.pp | 10 ----------
+ 1 file changed, 10 deletions(-)
+
+diff --git a/manifests/keystone/auth.pp b/manifests/keystone/auth.pp
+index a9abe8c..1aa91ad 100644
+--- a/manifests/keystone/auth.pp
++++ b/manifests/keystone/auth.pp
+@@ -103,20 +103,10 @@ class ceilometer::keystone::auth (
+     password            => $password,
+     email               => $email,
+     tenant              => $tenant,
+-    roles               => ['admin', 'ResellerAdmin'],
+     public_url          => $public_url,
+     admin_url           => $admin_url,
+     internal_url        => $internal_url,
+   }
+ 
+-  if $configure_user_role {
+-    if !defined(Keystone_role['ResellerAdmin']) {
+-      keystone_role { 'ResellerAdmin':
+-        ensure => present,
+-      }
+-    }
+-    Keystone_role['ResellerAdmin'] -> Keystone_user_role["${auth_name}@${tenant}"]
+-  }
+-
+ }
+ 
+-- 
+1.8.3.1
+
