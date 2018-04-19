@@ -1,10 +1,10 @@
-From a62adecc1c6ac05d65d2a93db961b0f28a40d373 Mon Sep 17 00:00:00 2001
-Message-Id: <a62adecc1c6ac05d65d2a93db961b0f28a40d373.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From cf4baf23afaa5c6b23d88d59404c5e45483a1afb Mon Sep 17 00:00:00 2001
+Message-Id: <cf4baf23afaa5c6b23d88d59404c5e45483a1afb.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Mon, 9 Jan 2017 15:03:00 -0500
-Subject: [PATCH 12/24] Enable building mpt2sas and mpt3sas as builtin for
+Subject: [PATCH 12/27] Enable building mpt2sas and mpt3sas as builtin for
  CentOS 7.3
 
 In CentOS 7.3 the upstream mpt2sas/mpt3sas drivers are built from

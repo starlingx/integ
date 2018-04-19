@@ -1,8 +1,10 @@
-From 0bd66eb88c950d172a7dcefc61cb2e89b89cacce Mon Sep 17 00:00:00 2001
-Message-Id: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
+From 4bbc4e75ee08251f9ba71634b39fab8bbc7f47a5 Mon Sep 17 00:00:00 2001
+Message-Id: <4bbc4e75ee08251f9ba71634b39fab8bbc7f47a5.1522795097.git.Jim.Somerville@windriver.com>
+In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH 01/26] affine compute kernel threads
+Subject: [PATCH 04/33] affine compute kernel threads
 
 This is a kernel enhancement to configure the cpu affinity of kernel
 threads via kernel boot option kthread_cpus=<cpulist>. The compute
@@ -37,12 +39,12 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  6 files changed, 32 insertions(+), 6 deletions(-)
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 92b5ff7..e6109df 100644
+index 9daf365..6328332 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -1482,6 +1482,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
- 	kstack=N	[X86] Print N words from the kernel stack
- 			in oops dumps.
+@@ -1481,6 +1481,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 
+ 	kpti		[X86-64] Enable kernel page table isolation.
  
 +	kthread_cpus=	[KNL, SMP] Only run kernel threads on the specified
 +			list of processors. The kernel will start threads
@@ -78,10 +80,10 @@ index 123f0a3..bc4fea4 100644
  #if NR_CPUS > 1
  #define num_online_cpus()	cpumask_weight(cpu_online_mask)
 diff --git a/init/main.c b/init/main.c
-index c39460d..49ec0cd 100644
+index 13f5343..d22eadb 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -945,10 +945,6 @@ static noinline void __init kernel_init_freeable(void)
+@@ -948,10 +948,6 @@ static noinline void __init kernel_init_freeable(void)
  	 * init can allocate pages on any node
  	 */
  	set_mems_allowed(node_states[N_MEMORY]);
@@ -92,7 +94,7 @@ index c39460d..49ec0cd 100644
  
  	cad_pid = task_pid(current);
  
-@@ -964,6 +960,8 @@ static noinline void __init kernel_init_freeable(void)
+@@ -967,6 +963,8 @@ static noinline void __init kernel_init_freeable(void)
  
  	do_basic_setup();
  

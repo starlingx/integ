@@ -1,10 +1,10 @@
-From dce89d8204b21fa1a93cb0a476750cd292617e79 Mon Sep 17 00:00:00 2001
-Message-Id: <dce89d8204b21fa1a93cb0a476750cd292617e79.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 011cad0bf33dc86ce40fe18557b19a42fbc4e657 Mon Sep 17 00:00:00 2001
+Message-Id: <011cad0bf33dc86ce40fe18557b19a42fbc4e657.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Thu, 15 Dec 2016 15:37:47 -0800
-Subject: [PATCH 16/24] rcu: Don't wake rcuc/X kthreads on NOCB CPUs
+Subject: [PATCH 16/27] rcu: Don't wake rcuc/X kthreads on NOCB CPUs
 
 [ upstream 630c7ed9ca0608912fa7c8591d05dfc8742dc9e6 in tip repo ]
 

@@ -1,10 +1,10 @@
-From 623e04e1f1fb18b817e73cdb116b1eea5d145dc4 Mon Sep 17 00:00:00 2001
-Message-Id: <623e04e1f1fb18b817e73cdb116b1eea5d145dc4.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From ddb0858246cc7c710dfcbb08217f0e6aac33fcba Mon Sep 17 00:00:00 2001
+Message-Id: <ddb0858246cc7c710dfcbb08217f0e6aac33fcba.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Wed, 4 Jun 2014 16:06:50 -0700
-Subject: [PATCH 11/24] x86: enable DMA CMA with swiotlb
+Subject: [PATCH 11/27] x86: enable DMA CMA with swiotlb
 
 commit 9c5a3621427da68afe6a078cadf807d2c8cc1d12 upstream.
 Ported-by: Nam Ninh <nam.ninh@windriver.com>
@@ -58,7 +58,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  7 files changed, 20 insertions(+), 10 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index c83b7a9..f943f01 100644
+index bae17d8..22462f8 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -43,7 +43,7 @@ config X86

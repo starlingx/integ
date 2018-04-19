@@ -1,8 +1,10 @@
-From ea71426ebe355c44a44d3c3039a9577aa75fa411 Mon Sep 17 00:00:00 2001
-Message-Id: <ea71426ebe355c44a44d3c3039a9577aa75fa411.1520359101.git.Jim.Somerville@windriver.com>
+From 12abdd52f85c120ace88513aec1b106d9fb28bee Mon Sep 17 00:00:00 2001
+Message-Id: <12abdd52f85c120ace88513aec1b106d9fb28bee.1522099420.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 6 Mar 2018 12:58:10 -0500
-Subject: [PATCH 1/1] fix drbd by turning off write same in smartpqi
+Subject: [PATCH 31/32] fix drbd by turning off write same in smartpqi
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -10,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 3 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index db2e319..5054518 100644
+index 139607f..b50d791 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -452,6 +452,8 @@ Patch40028: KVM-x86-remove-irq-disablement-around-KVM_SET_CLOCK-.patch

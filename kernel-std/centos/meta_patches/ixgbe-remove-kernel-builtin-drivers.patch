@@ -1,10 +1,10 @@
-From cea119181a969a24a45783bd0ae372ed8b42a3d0 Mon Sep 17 00:00:00 2001
-Message-Id: <cea119181a969a24a45783bd0ae372ed8b42a3d0.1507220785.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 7c8bcd92cacf72071a12637e1934843f0f8f2f5d Mon Sep 17 00:00:00 2001
+Message-Id: <7c8bcd92cacf72071a12637e1934843f0f8f2f5d.1522099416.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:24 -0400
-Subject: [PATCH 08/25] ixgbe remove kernel builtin drivers
+Subject: [PATCH 08/32] ixgbe remove kernel builtin drivers
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index df2f9e4..bff543a 100644
+index 849372a..99df727 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -4,7 +4,7 @@

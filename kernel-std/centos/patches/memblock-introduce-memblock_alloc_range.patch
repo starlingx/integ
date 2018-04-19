@@ -1,10 +1,10 @@
-From 25e30e7113f141cf3b9573604806fcbd1233fc4c Mon Sep 17 00:00:00 2001
-Message-Id: <25e30e7113f141cf3b9573604806fcbd1233fc4c.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 489c4a1481d7c67669124387123d47d24ce68aa1 Mon Sep 17 00:00:00 2001
+Message-Id: <489c4a1481d7c67669124387123d47d24ce68aa1.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Tue, 31 May 2016 16:07:55 -0400
-Subject: [PATCH 09/24] memblock: introduce memblock_alloc_range()
+Subject: [PATCH 09/27] memblock: introduce memblock_alloc_range()
 
 Commit 2bfc2862c4fe38379a2fb2cfba33fad32ccb4ff4 upstream
 Backported-by: Nam Ninh <nam.ninh@windriver.com>

@@ -1,10 +1,10 @@
-From c36c0ea4b420cd5ef1429b39a56da47e333ce588 Mon Sep 17 00:00:00 2001
-Message-Id: <c36c0ea4b420cd5ef1429b39a56da47e333ce588.1507220786.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 01ff6b59bcb1682a4fa9c690f4bf1d7a71816ecf Mon Sep 17 00:00:00 2001
+Message-Id: <01ff6b59bcb1682a4fa9c690f4bf1d7a71816ecf.1522099418.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:27 -0400
-Subject: [PATCH 17/25] rcu Don't wake rcuc-X-kthreads on NOCB CPUs
+Subject: [PATCH 17/32] rcu Don't wake rcuc-X-kthreads on NOCB CPUs
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 6112a8f..3289bba 100644
+index 65f030e..e1661d7 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -434,6 +434,7 @@ Patch40012: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch

@@ -1,10 +1,10 @@
-From 1260d1d47badcb7ad62a999e4a9ef901fe68c30a Mon Sep 17 00:00:00 2001
-Message-Id: <1260d1d47badcb7ad62a999e4a9ef901fe68c30a.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 9ba2cfab30ddbca5dc74455459c903ba93fb8a3b Mon Sep 17 00:00:00 2001
+Message-Id: <9ba2cfab30ddbca5dc74455459c903ba93fb8a3b.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Mon, 25 Sep 2017 17:30:33 -0400
-Subject: [PATCH 29/29] meta patch for Kernel IMA keyring changes
+Subject: [PATCH 29/39] meta patch for Kernel IMA keyring changes
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index f4987fb..636a68e 100644
+index 69ba548..0f021b5 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
 @@ -360,6 +360,7 @@ Source27: sanity_check.py
@@ -23,7 +23,7 @@ index f4987fb..636a68e 100644
  %if %{?released_kernel}
  %define pesign_name redhatsecureboot301
  %else
-@@ -432,6 +433,7 @@ Patch1034: nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
+@@ -429,6 +430,7 @@ Patch1034: nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
  Patch1035: US101216-IMA-support-in-Titanium-kernel.patch
  Patch1036: timer-reduce-timer-migration-overhead-if-disabled.patch
  Patch1037: timer-minimize-nohz-off-overhead.patch
@@ -31,7 +31,7 @@ index f4987fb..636a68e 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -789,6 +791,9 @@ cd linux-%{kversion}.%{_target_cpu}
+@@ -786,6 +788,9 @@ cd linux-%{kversion}.%{_target_cpu}
  # Copy any TiS-specific config changes
  cp $RPM_SOURCE_DIR/kernel-%{version}-*.config.tis_extra .
  
@@ -39,9 +39,9 @@ index f4987fb..636a68e 100644
 +cp %{SOURCE38} .
 +
  ## Apply Patches here
+ ApplyPatch linux-kernel-test.patch
  ApplyPatch debrand-single-cpu.patch
- ApplyPatch debrand-rh_taint.patch
-@@ -832,6 +837,7 @@ ApplyPatch nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
+@@ -826,6 +831,7 @@ ApplyPatch nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
  ApplyPatch US101216-IMA-support-in-Titanium-kernel.patch
  ApplyPatch timer-reduce-timer-migration-overhead-if-disabled.patch
  ApplyPatch timer-minimize-nohz-off-overhead.patch

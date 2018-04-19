@@ -1,10 +1,10 @@
-From ab67f811ca20a8ac98307472382876f6c247b00c Mon Sep 17 00:00:00 2001
-Message-Id: <ab67f811ca20a8ac98307472382876f6c247b00c.1507220784.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From c8c1453e69025ac3d2afc3064d42b74098bab3aa Mon Sep 17 00:00:00 2001
+Message-Id: <c8c1453e69025ac3d2afc3064d42b74098bab3aa.1522099415.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:22 -0400
-Subject: [PATCH 02/25] Tweak install script for patching add patch release
+Subject: [PATCH 02/32] Tweak install script for patching add patch release
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 9 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index a6884c2..0fc23c5 100644
+index 55901b6..04b9816 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -3,7 +3,9 @@
@@ -30,8 +30,8 @@ index a6884c2..0fc23c5 100644
  %global distro_build 693
  
  %define rpmversion 3.10.0
--%define pkgrelease 693.2.2.el7
-+%define _pkgrelease 693.2.2
+-%define pkgrelease 693.21.1.el7
++%define _pkgrelease 693.21.1
 +%define pkgrelease %{_pkgrelease}.el7
  
  %define pkg_release %{pkgrelease}%{?buildid}

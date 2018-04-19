@@ -1,10 +1,10 @@
-From 06ec75f66757a2cb7a16ce72a634e750d3d9ec4e Mon Sep 17 00:00:00 2001
-Message-Id: <06ec75f66757a2cb7a16ce72a634e750d3d9ec4e.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 06415789393f352f779cf03c79bd814a54203c5f Mon Sep 17 00:00:00 2001
+Message-Id: <06415789393f352f779cf03c79bd814a54203c5f.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 07/29] tis remove signing
+Subject: [PATCH 07/39] tis remove signing
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 31 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index c35efae..726669d 100644
+index 29d78fd..eb5767e 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -25,6 +25,10 @@ Summary: The Linux Realtime kernel
+@@ -23,6 +23,10 @@ Summary: The Linux Realtime kernel
  # For internal testing builds during development, it should be 0.
  %global released_kernel 0
  
@@ -26,7 +26,7 @@ index c35efae..726669d 100644
  # conditional with/without variables
  # Note that the logic here is inverted; a  bcond_without implies
  # that the variable is on by default (since you use --without to turn it off)
-@@ -58,7 +62,11 @@ Summary: The Linux Realtime kernel
+@@ -56,7 +60,11 @@ Summary: The Linux Realtime kernel
  # Verbose output?
  # %%global verbose V=1
  
@@ -38,10 +38,10 @@ index c35efae..726669d 100644
  
  # if patch fuzzy patch applying will be forbidden
  %global with_fuzzy_patches 0
-@@ -292,9 +300,11 @@ BuildRequires: openssl
+@@ -291,9 +299,11 @@ BuildRequires: xmlto, asciidoc
+ BuildRequires: openssl
  BuildRequires: hmaccalc
  BuildRequires: elfutils-libelf-devel
- BuildRequires: python-devel, newt-devel, perl(ExtUtils::Embed)
 +%if %{do_sign}
  %ifarch x86_64
  BuildRequires: pesign >= 0.109-4
@@ -50,7 +50,7 @@ index c35efae..726669d 100644
  %if %{with_sparse}
  BuildRequires: sparse >= 0.4.1
  %endif
-@@ -838,10 +848,12 @@ BuildKernel() {
+@@ -832,10 +842,12 @@ BuildKernel() {
        cp arch/$Arch/boot/zImage.stub $RPM_BUILD_ROOT/%{image_install_path}/zImage.stub-$KernelVer || :
      fi
  # EFI SecureBoot signing, x86_64-only
@@ -63,7 +63,7 @@ index c35efae..726669d 100644
      $CopyKernel $KernelImage $RPM_BUILD_ROOT/%{image_install_path}/$InstallName-$KernelVer
      chmod 755 $RPM_BUILD_ROOT/%{image_install_path}/$InstallName-$KernelVer
  
-@@ -1078,6 +1090,7 @@ popd
+@@ -1072,6 +1084,7 @@ popd
  # if it isn't.
  
  %ifnarch noarch
@@ -71,7 +71,7 @@ index c35efae..726669d 100644
  %define __modsign_install_post \
     if [ "%{with_rt}" -ne "0" ]; then \
        Arch=`head -1 configs/kernel-%{version}-%{_target_cpu}-rt.config | cut -b 3-` \
-@@ -1096,6 +1109,24 @@ popd
+@@ -1090,6 +1103,24 @@ popd
        %{modsign_cmd} $RPM_BUILD_ROOT/lib/modules/%{KVERREL}.${AAA} || exit 1 \
     done \
  %{nil}

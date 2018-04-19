@@ -1,10 +1,10 @@
-From eb1aeb0fce42608f4c76c50daba8705c680b960b Mon Sep 17 00:00:00 2001
-Message-Id: <eb1aeb0fce42608f4c76c50daba8705c680b960b.1507220787.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 1f465340692f95fd46e4670d5cf4d228d1b1fbc3 Mon Sep 17 00:00:00 2001
+Message-Id: <1f465340692f95fd46e4670d5cf4d228d1b1fbc3.1522099419.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 22 Aug 2017 17:26:15 -0400
-Subject: [PATCH 22/25] Check for oversized nfs arguments
+Subject: [PATCH 22/32] Check for oversized nfs arguments
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 466bcdc..ed85a41 100644
+index d5e7aaf..6985dbc 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -443,6 +443,7 @@ Patch40026: stop-seeking-deeper-idle-if-current-state-is-deep-enough.patch

@@ -1,10 +1,10 @@
-From 0db14f243797d5c24524c453fedce25d9662fa41 Mon Sep 17 00:00:00 2001
-Message-Id: <0db14f243797d5c24524c453fedce25d9662fa41.1507220786.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From afbf8e51ced50173b233bfbd6e7120111adcf5a3 Mon Sep 17 00:00:00 2001
+Message-Id: <afbf8e51ced50173b233bfbd6e7120111adcf5a3.1522099417.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:25 -0400
-Subject: [PATCH 12/25] Enable the rebased source patches
+Subject: [PATCH 12/32] Enable the rebased source patches
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 20 insertions(+), 30 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index bc52f1d..de04976 100644
+index 6d87c33..b212f90 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -420,21 +420,16 @@ Source30000: kernel-3.10.0-x86_64.config.tis_extra

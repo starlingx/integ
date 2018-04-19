@@ -1,10 +1,10 @@
-From 63c705c3ed850ff5e620b3851a43d83ed8495fbb Mon Sep 17 00:00:00 2001
-Message-Id: <63c705c3ed850ff5e620b3851a43d83ed8495fbb.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 6b776fab264499662c594fbd7d0f41524ee3981a Mon Sep 17 00:00:00 2001
+Message-Id: <6b776fab264499662c594fbd7d0f41524ee3981a.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Alex Shi <alex.shi@linaro.org>
 Date: Thu, 12 Jan 2017 21:27:02 +0800
-Subject: [PATCH 19/24] cpuidle/menu: stop seeking deeper idle if current state
+Subject: [PATCH 19/27] cpuidle/menu: stop seeking deeper idle if current state
  is deep enough
 
 [ commit 8e37e1a2a3295f5d99e6dbe99eca24eca7a034ef from linux-stable ]

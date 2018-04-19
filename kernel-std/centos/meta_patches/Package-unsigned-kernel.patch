@@ -1,10 +1,10 @@
-From 381a06a934075707e637ef7a9f818dc4e731e09c Mon Sep 17 00:00:00 2001
-Message-Id: <381a06a934075707e637ef7a9f818dc4e731e09c.1507220786.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 5f18b98136646ee1d7eaa65e729bd1dbc06261fc Mon Sep 17 00:00:00 2001
+Message-Id: <5f18b98136646ee1d7eaa65e729bd1dbc06261fc.1522099417.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:25 -0400
-Subject: [PATCH 13/25] Package unsigned kernel
+Subject: [PATCH 13/32] Package unsigned kernel
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 14 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index de04976..aa4f957 100644
+index b212f90..48d55c0 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -582,6 +582,13 @@ This package provides debug information for package kernel-tools.
@@ -48,7 +48,7 @@ index de04976..aa4f957 100644
 +%endif
 +
  %changelog
- * Tue Sep 12 2017 CentOS Sources <bugs@centos.org> - 3.10.0-693.2.2.el7
+ * Tue Mar 06 2018 CentOS Sources <bugs@centos.org> - 3.10.0-693.21.1.el7
  - Apply debranding changes
 -- 
 1.8.3.1

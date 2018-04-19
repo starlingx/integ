@@ -1,10 +1,10 @@
-From e6db3094a1f71bec80302884257be833f37c75e3 Mon Sep 17 00:00:00 2001
-Message-Id: <e6db3094a1f71bec80302884257be833f37c75e3.1507220787.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 944948cf301916d5bccab042853feaadb3e2d7d6 Mon Sep 17 00:00:00 2001
+Message-Id: <944948cf301916d5bccab042853feaadb3e2d7d6.1522099418.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Thu, 17 Aug 2017 12:37:41 -0400
-Subject: [PATCH 21/25] PM: introduce per-cpu power management
+Subject: [PATCH 21/32] PM: introduce per-cpu power management
 
 Cherry-picking 4 commits from the 4.11 branch of the linux-stable tree.
 All of the patches require small amount of work to apply to TiC kernel.
@@ -17,7 +17,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 8 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 2886708..466bcdc 100644
+index 18da325..d5e7aaf 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -439,6 +439,10 @@ Patch40022: cacheinfo-porting-original-4.10.17-version.patch

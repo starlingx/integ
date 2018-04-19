@@ -1,10 +1,10 @@
-From 475beba36f3ec495a70c8823c44b376c249257c0 Mon Sep 17 00:00:00 2001
-Message-Id: <475beba36f3ec495a70c8823c44b376c249257c0.1507220787.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From fcf0c30bf7958340360829d0b8395141a834a298 Mon Sep 17 00:00:00 2001
+Message-Id: <fcf0c30bf7958340360829d0b8395141a834a298.1522099419.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 22 Aug 2017 17:30:01 -0400
-Subject: [PATCH 23/25] Stricter decoding of NFS ops
+Subject: [PATCH 23/32] Stricter decoding of NFS ops
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index ed85a41..32e5a52 100644
+index 6985dbc..e6c1dad 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -444,6 +444,8 @@ Patch40027: add-per-cpu-pm-qos-resume-latency-consideration.patch

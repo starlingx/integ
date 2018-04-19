@@ -1,10 +1,10 @@
-From a998c3291fe980792bffe65add5ab579fbfe5af3 Mon Sep 17 00:00:00 2001
-Message-Id: <a998c3291fe980792bffe65add5ab579fbfe5af3.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 00f41d3840e6576048660bcfe1d660b935615644 Mon Sep 17 00:00:00 2001
+Message-Id: <00f41d3840e6576048660bcfe1d660b935615644.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:13 -0400
-Subject: [PATCH 19/29] rcu Don't wake rcuc-X-kthreads on NOCB CPUs
+Subject: [PATCH 19/39] rcu Don't wake rcuc-X-kthreads on NOCB CPUs
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 3554ef3..93dee4e 100644
+index 417ea07..0bfaf4e 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -412,6 +412,7 @@ Patch1014: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
+@@ -409,6 +409,7 @@ Patch1014: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
  Patch1015: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
  Patch1016: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
  Patch1017: arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch
@@ -23,7 +23,7 @@ index 3554ef3..93dee4e 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -792,6 +793,7 @@ ApplyPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
+@@ -786,6 +787,7 @@ ApplyPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
  ApplyPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
  ApplyPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
  ApplyPatch arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch

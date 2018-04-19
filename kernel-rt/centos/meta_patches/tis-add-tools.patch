@@ -1,10 +1,10 @@
-From c6c5f512db8d2e06758333f17dec7960ab7e34d9 Mon Sep 17 00:00:00 2001
-Message-Id: <c6c5f512db8d2e06758333f17dec7960ab7e34d9.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From d94fc51e2769257bb9d8653961b011ccca6d3732 Mon Sep 17 00:00:00 2001
+Message-Id: <d94fc51e2769257bb9d8653961b011ccca6d3732.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 10/29] tis add tools
+Subject: [PATCH 10/39] tis add tools
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 157 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index aff01a7..7ab7c45 100644
+index c21ca59..2ee8fb3 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -42,6 +42,11 @@ Summary: The Linux Realtime kernel
+@@ -40,6 +40,11 @@ Summary: The Linux Realtime kernel
  %bcond_with    perf
  %bcond_with    firmware
  %bcond_with    debuginfo
@@ -27,7 +27,7 @@ index aff01a7..7ab7c45 100644
  
  # What parts do we want to build?  We must build at least one kernel.
  # These are the kernels that are built IF the architecture allows it.
-@@ -305,6 +310,9 @@ BuildRequires: python-devel, newt-devel, perl(ExtUtils::Embed)
+@@ -304,6 +309,9 @@ BuildRequires: elfutils-libelf-devel
  BuildRequires: pesign >= 0.109-4
  %endif
  %endif
@@ -49,7 +49,7 @@ index aff01a7..7ab7c45 100644
  Source30000: kernel-3.10.0-x86_64-rt.config.tis_extra
  Source30001: kernel-3.10.0-x86_64-rt-debug.config.tis_extra
  Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
-@@ -641,6 +654,47 @@ It should only be installed when trying to gather additional information
+@@ -638,6 +651,47 @@ It should only be installed when trying to gather additional information
  on kernel bugs.
  %endif
  
@@ -97,7 +97,7 @@ index aff01a7..7ab7c45 100644
  %prep
  ## ApplyPatch routine
  patch_command='patch -p1 -F1 -s'
-@@ -1097,6 +1151,31 @@ BuildKernel %make_target %kernel_image vanilla
+@@ -1091,6 +1145,31 @@ BuildKernel %make_target %kernel_image vanilla
  BuildKernel %make_target %kernel_image
  %endif
  
@@ -129,7 +129,7 @@ index aff01a7..7ab7c45 100644
  %if %{builddoc}
  # Make the HTML and man pages.
  make -j1 htmldocs mandocs || %{doc_build_fail}
-@@ -1229,7 +1308,6 @@ find Documentation/DocBook/man -name '*.9.gz' -print0 |
+@@ -1223,7 +1302,6 @@ find Documentation/DocBook/man -name '*.9.gz' -print0 |
  xargs -0 --no-run-if-empty %{__install} -m 444 -t $man9dir $m
  ls $man9dir | grep -q '' || > $man9dir/BROKEN
  %endif # builddoc
@@ -137,7 +137,7 @@ index aff01a7..7ab7c45 100644
  # perf docs
  %if %{buildrt}
  %if %{buildperf}
-@@ -1255,6 +1333,39 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/doc/perf
+@@ -1249,6 +1327,39 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/doc/perf
  %endif # buildperf
  %endif
  
@@ -177,7 +177,7 @@ index aff01a7..7ab7c45 100644
  %if %{buildheaders}
  # Install kernel headers
  make ARCH=%{hdrarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr headers_install
-@@ -1303,6 +1414,14 @@ rm -rf $RPM_BUILD_ROOT
+@@ -1297,6 +1408,14 @@ rm -rf $RPM_BUILD_ROOT
  ### scripts
  ###
  
@@ -192,7 +192,7 @@ index aff01a7..7ab7c45 100644
  #
  # This macro defines a %%post script for a kernel*-devel package.
  #	%%kernel_devel_post [<subpackage>]
-@@ -1460,6 +1579,43 @@ fi
+@@ -1457,6 +1576,43 @@ fi
  %endif
  %endif
  

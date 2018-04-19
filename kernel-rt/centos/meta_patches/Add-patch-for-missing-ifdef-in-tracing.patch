@@ -1,10 +1,10 @@
-From 6f763c9f49dbb0089159939911fb6e396b14e6eb Mon Sep 17 00:00:00 2001
-Message-Id: <6f763c9f49dbb0089159939911fb6e396b14e6eb.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 150f8b1411b5eea482dab47550bca5729366252d Mon Sep 17 00:00:00 2001
+Message-Id: <150f8b1411b5eea482dab47550bca5729366252d.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 14/29] Add patch for missing ifdef in tracing
+Subject: [PATCH 14/39] Add patch for missing ifdef in tracing
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index d11d8fe..fd9ed82 100644
+index e6b1d13..8ee6191 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -407,6 +407,7 @@ Patch1009: memblock-introduce-memblock_alloc_range.patch
+@@ -404,6 +404,7 @@ Patch1009: memblock-introduce-memblock_alloc_range.patch
  Patch1010: Notification-of-death-of-arbitrary-processes.patch
  Patch1011: PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
  Patch1012: x86-enable-DMA-CMA-with-swiotlb.patch
@@ -23,7 +23,7 @@ index d11d8fe..fd9ed82 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -775,6 +776,7 @@ ApplyPatch memblock-introduce-memblock_alloc_range.patch
+@@ -769,6 +770,7 @@ ApplyPatch memblock-introduce-memblock_alloc_range.patch
  ApplyPatch PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
  ApplyPatch Notification-of-death-of-arbitrary-processes.patch
  ApplyPatch x86-enable-DMA-CMA-with-swiotlb.patch

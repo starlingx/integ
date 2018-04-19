@@ -1,10 +1,10 @@
-From 228d8848a4af532af1d4c92c20389851db1497f0 Mon Sep 17 00:00:00 2001
-Message-Id: <228d8848a4af532af1d4c92c20389851db1497f0.1507220785.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From bfa174ce429d56f4832584469edfeb09d4c56c95 Mon Sep 17 00:00:00 2001
+Message-Id: <bfa174ce429d56f4832584469edfeb09d4c56c95.1522099417.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:25 -0400
-Subject: [PATCH 11/25] Fix compile issue with transparent hugepages
+Subject: [PATCH 11/32] Fix compile issue with transparent hugepages
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 9fa6c7b..bc52f1d 100644
+index 401e98f..6d87c33 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -419,6 +419,7 @@ Patch1002: debrand-rh-i686-cpu.patch

@@ -1,6 +1,21 @@
---- a/arch/x86/boot/main.c	2014-06-04 10:05:04.000000000 -0700
-+++ b/arch/x86/boot/main.c	2014-07-09 12:54:40.000000000 -0700
-@@ -146,7 +146,7 @@ void main(void)
+From a258113edc7bffd2bc66cbdfda05c980f7a86b7e Mon Sep 17 00:00:00 2001
+Message-Id: <a258113edc7bffd2bc66cbdfda05c980f7a86b7e.1522795097.git.Jim.Somerville@windriver.com>
+In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Tue, 3 Apr 2018 18:07:37 -0400
+Subject: [PATCH 03/33] debrand rh i686 cpu
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ arch/x86/boot/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/x86/boot/main.c b/arch/x86/boot/main.c
+index 0d12b19..99dcb04 100644
+--- a/arch/x86/boot/main.c
++++ b/arch/x86/boot/main.c
+@@ -147,7 +147,7 @@ void main(void)
  
  	/* Make sure we have all the proper CPU support */
  	if (validate_cpu()) {
@@ -9,3 +24,6 @@
  		die();
  	}
  
+-- 
+1.8.3.1
+

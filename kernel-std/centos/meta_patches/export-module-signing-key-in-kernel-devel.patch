@@ -1,14 +1,18 @@
-From ebc3ffc011206683e0351078fbc5bf1fd2c57047 Mon Sep 17 00:00:00 2001
+From 4063a7c63935e29528514386350182bc8446fedc Mon Sep 17 00:00:00 2001
+Message-Id: <4063a7c63935e29528514386350182bc8446fedc.1522099420.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 10 Jan 2018 17:34:42 -0500
-Subject: [PATCH] export module signing key in kernel devel
+Subject: [PATCH 29/32] export module signing key in kernel devel
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/kernel.spec | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index decef93..708b04c 100644
+index 7735ebf..03863a6 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -1155,6 +1155,12 @@ BuildKernel() {

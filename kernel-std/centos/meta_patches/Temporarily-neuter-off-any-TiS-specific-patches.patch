@@ -1,10 +1,10 @@
-From 5425a28666187bdad67d5cdb673b4d33df5b6a9d Mon Sep 17 00:00:00 2001
-Message-Id: <5425a28666187bdad67d5cdb673b4d33df5b6a9d.1507220785.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From ccc5c76ae1a0f60637d37f61e8f098d5ad21d37a Mon Sep 17 00:00:00 2001
+Message-Id: <ccc5c76ae1a0f60637d37f61e8f098d5ad21d37a.1522099416.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:25 -0400
-Subject: [PATCH 10/25] Temporarily neuter off any TiS specific patches
+Subject: [PATCH 10/32] Temporarily neuter off any TiS specific patches
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 30 insertions(+), 30 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 3a2d10d..9fa6c7b 100644
+index 6097b90..401e98f 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -419,21 +419,21 @@ Patch1002: debrand-rh-i686-cpu.patch

@@ -1,10 +1,10 @@
-From 337cc13e27df929f2f6cd9dac68057ac08649534 Mon Sep 17 00:00:00 2001
-Message-Id: <337cc13e27df929f2f6cd9dac68057ac08649534.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 3aa8e6b13a4417351c29df52562d227e0430ff9c Mon Sep 17 00:00:00 2001
+Message-Id: <3aa8e6b13a4417351c29df52562d227e0430ff9c.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 11/29] Correct the source tarball name
+Subject: [PATCH 11/39] Correct the source tarball name
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 7ab7c45..5d1308b 100644
+index 2ee8fb3..4d5d58d 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
 @@ -334,7 +334,7 @@ BuildRequires: rpm-build >= 4.9.0-1, elfutils >= 0.153-1

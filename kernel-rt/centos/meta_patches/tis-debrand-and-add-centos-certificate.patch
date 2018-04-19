@@ -1,8 +1,8 @@
-From 9c07167bbe02febf5402665f4a907a0edd21c1fd Mon Sep 17 00:00:00 2001
-Message-Id: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 8d084dcc717666af0283e4ddeefaba7e331d879a Mon Sep 17 00:00:00 2001
+Message-Id: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 01/29] tis debrand and add centos certificate
+Subject: [PATCH 01/39] tis debrand and add centos certificate
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -10,7 +10,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index b433031..f7f4ead 100644
+index b855a01..5f4a216 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
 @@ -340,6 +340,12 @@ Source25: merge.pl
@@ -26,7 +26,7 @@ index b433031..f7f4ead 100644
  
  ### Configuration files
  Source50: kernel-%{version}-x86_64-rt.config
-@@ -362,6 +368,9 @@ Patch1002: debrand-rh-i686-cpu.patch
+@@ -359,6 +365,9 @@ Patch001: avoid-debuginfo-hash-collision-scripts.patch
  
  # Empty final patch file to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
@@ -36,11 +36,11 @@ index b433031..f7f4ead 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -805,7 +814,7 @@ BuildKernel() {
+@@ -799,7 +808,7 @@ BuildKernel() {
      fi
  # EFI SecureBoot signing, x86_64-only
  %ifarch x86_64
--    %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE13} -c %{SOURCE13}
+-    %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE13} -c %{SOURCE14} -n %{pesign_name}
 +    %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE37} -c %{SOURCE37} -n %{pesign_name}
      mv $KernelImage.signed $KernelImage
  %endif

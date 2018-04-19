@@ -1,10 +1,10 @@
-From 6b34cc7b511afc2fa8f01985a6d74490bcc12e77 Mon Sep 17 00:00:00 2001
-Message-Id: <6b34cc7b511afc2fa8f01985a6d74490bcc12e77.1507220787.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 0a2f84b9437cf6b444cbf946ef7faa54e8bdbe39 Mon Sep 17 00:00:00 2001
+Message-Id: <0a2f84b9437cf6b444cbf946ef7faa54e8bdbe39.1522099418.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:27 -0400
-Subject: [PATCH 18/25] Further parallelize kernel build
+Subject: [PATCH 18/32] Further parallelize kernel build
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 3289bba..6f82e53 100644
+index e1661d7..f436d93 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -896,7 +896,7 @@ BuildKernel() {

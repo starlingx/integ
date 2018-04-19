@@ -1,10 +1,10 @@
-From 8abe9a4e18257222f84a2d3e275a5b5db775a297 Mon Sep 17 00:00:00 2001
-Message-Id: <8abe9a4e18257222f84a2d3e275a5b5db775a297.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 4fb8df1ee9468d9cc67c41d14a5d8ab6bb45ac8a Mon Sep 17 00:00:00 2001
+Message-Id: <4fb8df1ee9468d9cc67c41d14a5d8ab6bb45ac8a.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Matt Peters <matt.peters@windriver.com>
 Date: Mon, 30 May 2016 10:51:02 -0400
-Subject: [PATCH 08/24] intel-iommu: allow ignoring Ethernet device RMRR with
+Subject: [PATCH 08/27] intel-iommu: allow ignoring Ethernet device RMRR with
  IOMMU passthrough
 
 Some BIOS's are reporting DMAR RMRR entries for Ethernet devices
@@ -56,7 +56,7 @@ index cf9431d..1dcc349 100644
  ---------------------
  
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 9c29169..e22bb2c 100644
+index deaafbf..b06a8fb 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
 @@ -1264,6 +1264,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.

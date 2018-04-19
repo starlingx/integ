@@ -1,27 +1,21 @@
-From f4d36cf99a55bae14d6a3590a9d8bdd5f29ee4f9 Mon Sep 17 00:00:00 2001
+From 9ad55ac56fdddee38bca95c5ab57cbf0b6c1c336 Mon Sep 17 00:00:00 2001
+Message-Id: <9ad55ac56fdddee38bca95c5ab57cbf0b6c1c336.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 24 Oct 2017 22:15:44 -0400
-Subject: [PATCH] foo
+Subject: [PATCH 32/39] Update package versioning for TIS format revised
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ SPECS/kernel-rt.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index b4a9826..cb56b2d 100644
+index 4f78990..9c95078 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -4,9 +4,7 @@
- Summary: The Linux Realtime kernel
- 
- # catch building on Fedora
--%if "%{?dist}" == "" || "0%{?fedora}" != "0"
- %global dist .el7
--%endif
- 
- # realtimeN
- %global rtbuild 623
-@@ -102,7 +100,7 @@ Summary: The Linux Realtime kernel
+@@ -100,7 +100,7 @@ Summary: The Linux Realtime kernel
  %global with_sparse	%{?_with_sparse:      1} %{?!_with_sparse:      0}
  
  %global pkg_release_simple %{rhel_build}.%{rttag}.%{rtbuild}
@@ -31,5 +25,5 @@ index b4a9826..cb56b2d 100644
  %global KVERREL %{rpmversion}-%{pkg_release}.%{_target_cpu}
  
 -- 
-1.9.1
+1.8.3.1
 

@@ -1,10 +1,10 @@
-From 99d7fa8c3e61f8fe36b2fd4b09e94a871e3a55fe Mon Sep 17 00:00:00 2001
-Message-Id: <99d7fa8c3e61f8fe36b2fd4b09e94a871e3a55fe.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From bf32bda4208ea71c05ac057c77fb124552ac907a Mon Sep 17 00:00:00 2001
+Message-Id: <bf32bda4208ea71c05ac057c77fb124552ac907a.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Wed, 4 Jun 2014 16:06:56 -0700
-Subject: [PATCH 15/24] arch/x86/kernel/pci-dma.c: fix
+Subject: [PATCH 15/27] arch/x86/kernel/pci-dma.c: fix
  dma_generic_alloc_coherent() when CONFIG_DMA_CMA is enabled
 
 dma_generic_alloc_coherent() firstly attempts to allocate by

@@ -1,10 +1,10 @@
-From 82398d8f076c50099cf9ab99342d70930e390e39 Mon Sep 17 00:00:00 2001
-Message-Id: <82398d8f076c50099cf9ab99342d70930e390e39.1507220786.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 1c2b754ec0fa86647e27a4f3acfe8a9aa530ae65 Mon Sep 17 00:00:00 2001
+Message-Id: <1c2b754ec0fa86647e27a4f3acfe8a9aa530ae65.1522099417.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:26 -0400
-Subject: [PATCH 14/25] enable building mpt2sas mpt3sas as builtin
+Subject: [PATCH 14/32] enable building mpt2sas mpt3sas as builtin
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index aa4f957..73a7f99 100644
+index 48d55c0..ebff6f1 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -430,6 +430,7 @@ Patch40008: intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch

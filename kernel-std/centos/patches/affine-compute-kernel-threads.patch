@@ -1,10 +1,10 @@
-From ca2ccd52a7fd1e95801ee3a8e3cf6cd5a437473a Mon Sep 17 00:00:00 2001
-Message-Id: <ca2ccd52a7fd1e95801ee3a8e3cf6cd5a437473a.1507237258.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 1b156610293f936e9e7e68de06e98b14addac646 Mon Sep 17 00:00:00 2001
+Message-Id: <1b156610293f936e9e7e68de06e98b14addac646.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH 05/24] affine compute kernel threads
+Subject: [PATCH 05/27] affine compute kernel threads
 
 This is a kernel enhancement to configure the cpu affinity of kernel
 threads via kernel boot option kthread_cpus=<cpulist>. The compute
@@ -39,12 +39,12 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  6 files changed, 32 insertions(+), 6 deletions(-)
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index cbd5f28..9c29169 100644
+index a221c1b..deaafbf 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -1482,6 +1482,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
- 	kstack=N	[X86] Print N words from the kernel stack
- 			in oops dumps.
+@@ -1481,6 +1481,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 
+ 	kpti		[X86-64] Enable kernel page table isolation.
  
 +	kthread_cpus=	[KNL, SMP] Only run kernel threads on the specified
 +			list of processors. The kernel will start threads
@@ -80,10 +80,10 @@ index ca6c077..1f1420d 100644
  #if NR_CPUS > 1
  #define num_online_cpus()	cpumask_weight(cpu_online_mask)
 diff --git a/init/main.c b/init/main.c
-index d7bc443..3efc7dd 100644
+index 98a6bd7..07ae8c2 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -943,10 +943,6 @@ static noinline void __init kernel_init_freeable(void)
+@@ -946,10 +946,6 @@ static noinline void __init kernel_init_freeable(void)
  	 * init can allocate pages on any node
  	 */
  	set_mems_allowed(node_states[N_MEMORY]);
@@ -94,7 +94,7 @@ index d7bc443..3efc7dd 100644
  
  	cad_pid = task_pid(current);
  
-@@ -962,6 +958,8 @@ static noinline void __init kernel_init_freeable(void)
+@@ -965,6 +961,8 @@ static noinline void __init kernel_init_freeable(void)
  
  	do_basic_setup();
  

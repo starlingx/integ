@@ -1,10 +1,10 @@
-From be88bcf5edaddf40eb482b07ef81b00aa68bef07 Mon Sep 17 00:00:00 2001
-Message-Id: <be88bcf5edaddf40eb482b07ef81b00aa68bef07.1507237258.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 2d9b73267a30c2a2c589211aaad6888fdc8d1bd4 Mon Sep 17 00:00:00 2001
+Message-Id: <2d9b73267a30c2a2c589211aaad6888fdc8d1bd4.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 12 May 2016 18:00:00 -0400
-Subject: [PATCH 07/24] Make kernel start eth devices at offset
+Subject: [PATCH 07/27] Make kernel start eth devices at offset
 
 In order to avoid naming collisions, we want to make the kernel
 start naming its "ethX" devices at eth1000 instead of eth0.  This

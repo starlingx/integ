@@ -1,10 +1,10 @@
-From e976aca15e3136d7e42e98ac65deed8fa5eea336 Mon Sep 17 00:00:00 2001
-Message-Id: <e976aca15e3136d7e42e98ac65deed8fa5eea336.1507220787.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 7e1b079cbff3b5b668fce530e238eb2af2cf931a Mon Sep 17 00:00:00 2001
+Message-Id: <7e1b079cbff3b5b668fce530e238eb2af2cf931a.1522099418.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Mon, 24 Jul 2017 11:46:36 -0500
-Subject: [PATCH 20/25] Porting Resource Director Technology from Kernel
+Subject: [PATCH 20/32] Porting Resource Director Technology from Kernel
  4.10.17
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
@@ -13,7 +13,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 103fd01..2886708 100644
+index 46e77bf..18da325 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -437,6 +437,8 @@ Patch40015: arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch

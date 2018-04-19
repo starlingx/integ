@@ -1,10 +1,10 @@
-From 7e257fd0c2bb38653e4c2a7e5a01af28c90bba76 Mon Sep 17 00:00:00 2001
-Message-Id: <7e257fd0c2bb38653e4c2a7e5a01af28c90bba76.1507220785.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 328fdfb32b03a0434189f9ce1a459df2f51fe406 Mon Sep 17 00:00:00 2001
+Message-Id: <328fdfb32b03a0434189f9ce1a459df2f51fe406.1522099416.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:24 -0400
-Subject: [PATCH 07/25] kernel build_requires
+Subject: [PATCH 07/32] kernel build_requires
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 54fc219..df2f9e4 100644
+index 0447fe8..849372a 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -352,6 +352,7 @@ BuildRequires: rpm-build >= 4.9.0-1, elfutils >= 0.153-1

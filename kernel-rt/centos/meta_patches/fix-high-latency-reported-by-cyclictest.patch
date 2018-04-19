@@ -1,10 +1,10 @@
-From 78376ed0fad7d6ea82975693642445b69d4c2011 Mon Sep 17 00:00:00 2001
-Message-Id: <78376ed0fad7d6ea82975693642445b69d4c2011.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 3c7673320dbc70197230e3ebc977be69d1c35870 Mon Sep 17 00:00:00 2001
+Message-Id: <3c7673320dbc70197230e3ebc977be69d1c35870.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Mon, 11 Sep 2017 17:05:22 -0400
-Subject: [PATCH 28/29] fix high latency reported by cyclictest
+Subject: [PATCH 28/39] fix high latency reported by cyclictest
 
 CGTS-7179 reported cyclictest latency spikes on low-latency compute profile.
 The issue was injected into TC during kernel rebase to 3.10.0-514.16.1.el7.
@@ -23,10 +23,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 2eb90d7..f4987fb 100644
+index ca8fb19..69ba548 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -430,6 +430,8 @@ Patch1032: nfsd-check-for-oversized-NFSv2-v3-arguments.patch
+@@ -427,6 +427,8 @@ Patch1032: nfsd-check-for-oversized-NFSv2-v3-arguments.patch
  Patch1033: nfsd4-minor-NFSv2-v3-write-decoding-cleanup.patch
  Patch1034: nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
  Patch1035: US101216-IMA-support-in-Titanium-kernel.patch
@@ -35,7 +35,7 @@ index 2eb90d7..f4987fb 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -828,6 +830,8 @@ ApplyPatch nfsd-check-for-oversized-NFSv2-v3-arguments.patch
+@@ -822,6 +824,8 @@ ApplyPatch nfsd-check-for-oversized-NFSv2-v3-arguments.patch
  ApplyPatch nfsd4-minor-NFSv2-v3-write-decoding-cleanup.patch
  ApplyPatch nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
  ApplyPatch US101216-IMA-support-in-Titanium-kernel.patch

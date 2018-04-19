@@ -1,10 +1,10 @@
-From 7e79e79077bb451c8b28479d807b8b1d7e9e38da Mon Sep 17 00:00:00 2001
-Message-Id: <7e79e79077bb451c8b28479d807b8b1d7e9e38da.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From b1952c2f4a8a740789c89d62f178cdeebec4f644 Mon Sep 17 00:00:00 2001
+Message-Id: <b1952c2f4a8a740789c89d62f178cdeebec4f644.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Thu, 17 Aug 2017 12:37:41 -0400
-Subject: [PATCH 24/29] PM: introduce per-cpu power management
+Subject: [PATCH 24/39] PM: introduce per-cpu power management
 
 Cherry-picking 4 commits from the 4.11 branch of the linux-stable tree.
 All of the patches require small amount of work to apply to TiC kernel.
@@ -17,10 +17,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 8 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 7e3d65e..dc30da0 100644
+index 6bf0a56..a0f04ae 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -422,6 +422,10 @@ Patch1024: cacheinfo-porting-original-4.10.17-version.patch
+@@ -419,6 +419,10 @@ Patch1024: cacheinfo-porting-original-4.10.17-version.patch
  Patch1025: cacheinfo-fixing-compilation-issues-on-3.10.patch
  Patch1026: intel-rdt-porting-original-4.10.17-version.patch
  Patch1027: intel-rdt-fixing-compilation-issues-on-3.10.patch
@@ -31,7 +31,7 @@ index 7e3d65e..dc30da0 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -812,6 +816,10 @@ ApplyPatch cacheinfo-porting-original-4.10.17-version.patch
+@@ -806,6 +810,10 @@ ApplyPatch cacheinfo-porting-original-4.10.17-version.patch
  ApplyPatch cacheinfo-fixing-compilation-issues-on-3.10.patch
  ApplyPatch intel-rdt-porting-original-4.10.17-version.patch
  ApplyPatch intel-rdt-fixing-compilation-issues-on-3.10.patch

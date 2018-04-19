@@ -1,10 +1,10 @@
-From 44285722649a364928853647fad5ad2d9be3b488 Mon Sep 17 00:00:00 2001
-Message-Id: <44285722649a364928853647fad5ad2d9be3b488.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From f98b8c6fc0f395a2139d964200ae4eb059cea8c9 Mon Sep 17 00:00:00 2001
+Message-Id: <f98b8c6fc0f395a2139d964200ae4eb059cea8c9.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>
 Date: Fri, 24 Feb 2017 13:25:14 +0100
-Subject: [PATCH 22/24] cpuidle: menu: Avoid taking spinlock for accessing QoS
+Subject: [PATCH 22/27] cpuidle: menu: Avoid taking spinlock for accessing QoS
  values
 
 [commit	6dbf5cea05a7098a69f294c96b6d76f08562cae5 from linux-stable ]

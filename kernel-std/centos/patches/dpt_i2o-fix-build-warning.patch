@@ -1,8 +1,10 @@
-From f50abb9b63b1d8773e1ce32115701c06416e6f91 Mon Sep 17 00:00:00 2001
-Message-Id: <f50abb9b63b1d8773e1ce32115701c06416e6f91.1510262508.git.Jim.Somerville@windriver.com>
+From d465a4f13d2ec44892bda25826daa6df77227382 Mon Sep 17 00:00:00 2001
+Message-Id: <d465a4f13d2ec44892bda25826daa6df77227382.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
 Date: Thu, 18 Feb 2016 13:59:13 +0530
-Subject: [PATCH 1/1] dpt_i2o: fix build warning
+Subject: [PATCH 26/27] dpt_i2o: fix build warning
 
 We were getting build warning about:
 drivers/scsi/dpt_i2o.c:183:29: warning: 'dptids' defined but not used
@@ -19,7 +21,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 3 insertions(+)
 
 diff --git a/drivers/scsi/dpt_i2o.c b/drivers/scsi/dpt_i2o.c
-index d4cda5e..21c8d21 100644
+index 2bce881..cb62223 100644
 --- a/drivers/scsi/dpt_i2o.c
 +++ b/drivers/scsi/dpt_i2o.c
 @@ -180,11 +180,14 @@ static u8 adpt_read_blink_led(adpt_hba* host)
@@ -38,5 +40,5 @@ index d4cda5e..21c8d21 100644
  
  static int adpt_detect(struct scsi_host_template* sht)
 -- 
-1.9.1
+1.8.3.1
 

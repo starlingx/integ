@@ -1,8 +1,8 @@
-From 2a9fb6a58e40e8604d97223603111e869bb774b1 Mon Sep 17 00:00:00 2001
-Message-Id: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From f4706beaf86081b0890ea616082913f8f51823ff Mon Sep 17 00:00:00 2001
+Message-Id: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Thu, 15 Dec 2016 14:27:48 -0500
-Subject: [PATCH 01/24] Fix compile issue when transparent hugepages are off
+Subject: [PATCH 01/27] Fix compile issue when transparent hugepages are off
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---

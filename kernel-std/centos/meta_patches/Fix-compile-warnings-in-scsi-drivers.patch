@@ -1,8 +1,10 @@
-From a56528b5e47a925d169ce3b7e8b5e4bde43c2a1b Mon Sep 17 00:00:00 2001
-Message-Id: <a56528b5e47a925d169ce3b7e8b5e4bde43c2a1b.1510262785.git.Jim.Somerville@windriver.com>
+From 784a33ecc2a8732ef773c68b1990d165398b6d71 Mon Sep 17 00:00:00 2001
+Message-Id: <784a33ecc2a8732ef773c68b1990d165398b6d71.1522099420.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Thu, 9 Nov 2017 15:53:41 -0500
-Subject: [PATCH 1/1] Fix compile warnings in scsi drivers
+Subject: [PATCH 27/32] Fix compile warnings in scsi drivers
 
 They get turned into errors and thus break the build.
 
@@ -12,7 +14,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 5 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 263bc01..8e1a50d 100644
+index d1dc5bf..735f8a0 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -445,6 +445,9 @@ Patch40022: cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch

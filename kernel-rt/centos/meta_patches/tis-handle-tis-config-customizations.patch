@@ -1,10 +1,10 @@
-From 18d55409c48176c1af22c21033755a7aa4eaac8f Mon Sep 17 00:00:00 2001
-Message-Id: <18d55409c48176c1af22c21033755a7aa4eaac8f.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From b80187698d0228e3a6b678b7bce3d9ed5d4ef6eb Mon Sep 17 00:00:00 2001
+Message-Id: <b80187698d0228e3a6b678b7bce3d9ed5d4ef6eb.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 09/29] tis handle tis config customizations
+Subject: [PATCH 09/39] tis handle tis config customizations
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index ae0d7e3..aff01a7 100644
+index 0ae5e5c..c21ca59 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
 @@ -362,7 +362,9 @@ Source37: centos.cer
@@ -26,7 +26,7 @@ index ae0d7e3..aff01a7 100644
  ### Started using a unified SRPM
  
  # Bugzilla: 1209952
-@@ -699,6 +701,9 @@ cp -rl vanilla-%{kversion} linux-%{kversion}.%{_target_cpu}
+@@ -696,6 +698,9 @@ cp -rl vanilla-%{kversion} linux-%{kversion}.%{_target_cpu}
  
  cd linux-%{kversion}.%{_target_cpu}
  
@@ -34,9 +34,9 @@ index ae0d7e3..aff01a7 100644
 +cp $RPM_SOURCE_DIR/kernel-%{version}-*.config.tis_extra .
 +
  ## Apply Patches here
+ ApplyPatch linux-kernel-test.patch
  ApplyPatch debrand-single-cpu.patch
- ApplyPatch debrand-rh_taint.patch
-@@ -739,6 +744,15 @@ for i in *.config
+@@ -733,6 +738,15 @@ for i in *.config
  do
    mv $i .config
    Arch=`head -1 .config | cut -b 3-`

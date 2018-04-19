@@ -1,8 +1,10 @@
-From 88dc5da8815c32f80f1791c00fa4a435897b45f1 Mon Sep 17 00:00:00 2001
-Message-Id: <88dc5da8815c32f80f1791c00fa4a435897b45f1.1520358900.git.Jim.Somerville@windriver.com>
+From 713d1abce3f43e4f2057ed5670343f1654c1f86f Mon Sep 17 00:00:00 2001
+Message-Id: <713d1abce3f43e4f2057ed5670343f1654c1f86f.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 6 Mar 2018 12:54:40 -0500
-Subject: [PATCH 1/1] turn off write same in smartqpi driver
+Subject: [PATCH 27/27] turn off write same in smartqpi driver
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---

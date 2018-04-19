@@ -1,10 +1,10 @@
-From dffbc3e34d7080dc2fce05b9c16565e6374572bf Mon Sep 17 00:00:00 2001
-Message-Id: <dffbc3e34d7080dc2fce05b9c16565e6374572bf.1507911923.git.Jim.Somerville@windriver.com>
-In-Reply-To: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
-References: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
+From 259937f2c70e43a1aea46c3a80c88b86f3e4a37d Mon Sep 17 00:00:00 2001
+Message-Id: <259937f2c70e43a1aea46c3a80c88b86f3e4a37d.1522795098.git.Jim.Somerville@windriver.com>
+In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Wed, 11 Jan 2017 13:38:37 -0500
-Subject: [PATCH 13/26] Enable building kernel with CONFIG_BLK_DEV_NBD
+Subject: [PATCH 16/33] Enable building kernel with CONFIG_BLK_DEV_NBD
 
 By default, the CentOS 7.3 kernel will fail to build if
 CONFIG_BLK_DEV_NBD is enabled, either as module or builtin.

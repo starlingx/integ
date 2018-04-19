@@ -1,8 +1,10 @@
-From 0b645d407391f0791df1d77596f09f9a41795775 Mon Sep 17 00:00:00 2001
-Message-Id: <0b645d407391f0791df1d77596f09f9a41795775.1510335500.git.Jim.Somerville@windriver.com>
+From 05471f8cacd4b1b82b5015ddfabd4000c8111aa4 Mon Sep 17 00:00:00 2001
+Message-Id: <05471f8cacd4b1b82b5015ddfabd4000c8111aa4.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Thu, 9 Nov 2017 15:53:41 -0500
-Subject: [PATCH 1/1] Fix compile warnings in scsi drivers
+Subject: [PATCH 33/39] Fix compile warnings in scsi drivers
 
 They get turned into errors and thus break the build.
 
@@ -12,10 +14,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 5 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 779f3ce..c8c7f22 100644
+index 9c95078..4706989 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -419,6 +419,9 @@ Patch1025: US101216-IMA-support-in-Titanium-kernel.patch
+@@ -421,6 +421,9 @@ Patch1025: US101216-IMA-support-in-Titanium-kernel.patch
  Patch1026: US103091-IMA-System-Configuration.patch
  Patch1027: timer-Reduce-timer-migration-overhead-if-disabled.patch
  Patch1028: timer-Minimize-nohz-off-overhead.patch
@@ -25,7 +27,7 @@ index 779f3ce..c8c7f22 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -810,6 +813,8 @@ ApplyPatch US101216-IMA-support-in-Titanium-kernel.patch
+@@ -812,6 +815,8 @@ ApplyPatch US101216-IMA-support-in-Titanium-kernel.patch
  ApplyPatch US103091-IMA-System-Configuration.patch
  ApplyPatch timer-Reduce-timer-migration-overhead-if-disabled.patch
  ApplyPatch timer-Minimize-nohz-off-overhead.patch

@@ -1,10 +1,10 @@
-From 1cedf3c592d1c6400e8f0c6899c116e97bd2cecf Mon Sep 17 00:00:00 2001
-Message-Id: <1cedf3c592d1c6400e8f0c6899c116e97bd2cecf.1507220784.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 28382f6196cfc7793c8ca5533f0322e04a70f81e Mon Sep 17 00:00:00 2001
+Message-Id: <28382f6196cfc7793c8ca5533f0322e04a70f81e.1522099416.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:23 -0400
-Subject: [PATCH 05/25] Centos fix calltrace in megaraid sas driver
+Subject: [PATCH 05/32] Centos fix calltrace in megaraid sas driver
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index c7c4df4..004ebcb 100644
+index 729b9f0..4f7b7b4 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -4,7 +4,7 @@

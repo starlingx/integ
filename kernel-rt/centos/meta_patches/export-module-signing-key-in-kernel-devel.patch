@@ -1,17 +1,21 @@
-From bea6513a83c05acdd4d5947b43f34e499923130e Mon Sep 17 00:00:00 2001
+From b848f46e5ea62d745cd38467b498e3e98a13ebdc Mon Sep 17 00:00:00 2001
+Message-Id: <b848f46e5ea62d745cd38467b498e3e98a13ebdc.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Fri, 12 Jan 2018 11:44:29 -0500
-Subject: [PATCH] export module signing key in kernel devel
+Subject: [PATCH 35/39] export module signing key in kernel devel
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/kernel-rt.spec | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 298ce17..4935d51 100644
+index 34774c1..f45d2a9 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -1131,6 +1131,12 @@ BuildKernel() {
+@@ -1133,6 +1133,12 @@ BuildKernel() {
      cp signing_key.priv signing_key.priv.sign${Flavour:+.${Flavour}}
      cp signing_key.x509 signing_key.x509.sign${Flavour:+.${Flavour}}
  

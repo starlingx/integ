@@ -1,8 +1,8 @@
-From 08db0b379c2009e0d5bc0c20427267fa07d75e5a Mon Sep 17 00:00:00 2001
-Message-Id: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 37dfb62264baec527d56aaf20db887840bec1ea1 Mon Sep 17 00:00:00 2001
+Message-Id: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:22 -0400
-Subject: [PATCH 01/25] Initial kernel build for TiS
+Subject: [PATCH 01/32] Initial kernel build for TiS
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -10,7 +10,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 42 insertions(+), 3 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index f3cd16f..a6884c2 100644
+index 5ba126c..55901b6 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -3,7 +3,7 @@

@@ -1,10 +1,10 @@
-From 2e1c32f4c2d4d7e6afa769886a220c471fa73b98 Mon Sep 17 00:00:00 2001
-Message-Id: <2e1c32f4c2d4d7e6afa769886a220c471fa73b98.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 8a0e9859f2ccd820d9945be774c5d8c4a44ef46d Mon Sep 17 00:00:00 2001
+Message-Id: <8a0e9859f2ccd820d9945be774c5d8c4a44ef46d.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 05/29] Exclude package defs for unbuilt firmware and doc pkg
+Subject: [PATCH 05/39] Exclude package defs for unbuilt firmware and doc pkg
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 0964ca4..0b91d79 100644
+index b3126ce..8bf2efa 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -392,6 +392,7 @@ This kernel has been compiled with the RT patch applied and is intended
+@@ -389,6 +389,7 @@ This kernel has been compiled with the RT patch applied and is intended
  for use in deterministic response-time situations
  
  
@@ -23,7 +23,7 @@ index 0964ca4..0b91d79 100644
  %package doc
  Summary: Various documentation bits found in the kernel source
  Group: Documentation
-@@ -403,7 +404,7 @@ device drivers shipped with it are documented in these files.
+@@ -400,7 +401,7 @@ device drivers shipped with it are documented in these files.
  
  You will want to install this package if you need a reference to the
  options that can be passed to Linux kernel modules at load time.
@@ -32,7 +32,7 @@ index 0964ca4..0b91d79 100644
  
  %package headers
  Summary: Header files for the Linux kernel for use by glibc
-@@ -418,6 +419,7 @@ header files define structures and constants that are needed for
+@@ -415,6 +416,7 @@ header files define structures and constants that are needed for
  building most standard programs and are also needed for rebuilding the
  glibc package.
  
@@ -40,7 +40,7 @@ index 0964ca4..0b91d79 100644
  %package firmware
  Summary: Firmware files used by the Linux kernel
  Group: Development/System
-@@ -429,6 +431,7 @@ Provides: kernel-rt-firmware = %{rpmversion}-%{pkg_release}
+@@ -426,6 +428,7 @@ Provides: kernel-rt-firmware = %{rpmversion}-%{pkg_release}
  %description firmware
  Kernel-firmware includes firmware files required for some devices to
  operate.

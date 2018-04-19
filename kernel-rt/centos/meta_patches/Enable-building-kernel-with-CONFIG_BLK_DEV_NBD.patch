@@ -1,10 +1,10 @@
-From 229ce04fde143e5b0e22d89dba36e2ab5f7a0274 Mon Sep 17 00:00:00 2001
-Message-Id: <229ce04fde143e5b0e22d89dba36e2ab5f7a0274.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 3906760786578347a8f66f885f77b974daaae759 Mon Sep 17 00:00:00 2001
+Message-Id: <3906760786578347a8f66f885f77b974daaae759.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:13 -0400
-Subject: [PATCH 17/29] Enable building kernel with CONFIG_BLK_DEV_NBD
+Subject: [PATCH 17/39] Enable building kernel with CONFIG_BLK_DEV_NBD
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index a613703..d5216f4 100644
+index b6141b0..d9ee5c6 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -409,6 +409,7 @@ Patch1011: PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
+@@ -406,6 +406,7 @@ Patch1011: PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
  Patch1012: x86-enable-DMA-CMA-with-swiotlb.patch
  Patch1013: Add-missing-ifdef-around-max-latency-variable.patch
  Patch1014: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
@@ -23,7 +23,7 @@ index a613703..d5216f4 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -786,6 +787,7 @@ ApplyPatch Notification-of-death-of-arbitrary-processes.patch
+@@ -780,6 +781,7 @@ ApplyPatch Notification-of-death-of-arbitrary-processes.patch
  ApplyPatch x86-enable-DMA-CMA-with-swiotlb.patch
  ApplyPatch Add-missing-ifdef-around-max-latency-variable.patch
  ApplyPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch

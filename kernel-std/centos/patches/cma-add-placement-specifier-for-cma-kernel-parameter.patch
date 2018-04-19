@@ -1,10 +1,10 @@
-From a4a5171b7b664bb387aa05bcaaea3894534f15fe Mon Sep 17 00:00:00 2001
-Message-Id: <a4a5171b7b664bb387aa05bcaaea3894534f15fe.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From f51db02e07e1bad6c6ddf2cfd8b9091bc40950f0 Mon Sep 17 00:00:00 2001
+Message-Id: <f51db02e07e1bad6c6ddf2cfd8b9091bc40950f0.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Tue, 31 May 2016 16:09:04 -0400
-Subject: [PATCH 10/24] cma: add placement specifier for "cma=" kernel
+Subject: [PATCH 10/27] cma: add placement specifier for "cma=" kernel
  parameter
 
 Commit 5ea3b1b2f8ad9162684431ce6188102ca4c64b7a upstream
@@ -49,7 +49,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  4 files changed, 44 insertions(+), 16 deletions(-)
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index e22bb2c..15ef1c8 100644
+index b06a8fb..c116178 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
 @@ -560,8 +560,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.

@@ -1,10 +1,10 @@
-From 165b8ea199b36e04d35f515a6b1482ea5ce51ae5 Mon Sep 17 00:00:00 2001
-Message-Id: <165b8ea199b36e04d35f515a6b1482ea5ce51ae5.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From b64c549a4a1986ce6ee5b4d0063df5cc3ec6de1f Mon Sep 17 00:00:00 2001
+Message-Id: <b64c549a4a1986ce6ee5b4d0063df5cc3ec6de1f.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 12/29] Rework pkg release naming
+Subject: [PATCH 12/39] Rework pkg release naming
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 5d1308b..afd1ca3 100644
+index 4d5d58d..91c2661 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -102,7 +102,7 @@ Summary: The Linux Realtime kernel
+@@ -100,7 +100,7 @@ Summary: The Linux Realtime kernel
  %global with_sparse	%{?_with_sparse:      1} %{?!_with_sparse:      0}
  
  %global pkg_release_simple %{rhel_build}.%{rttag}.%{rtbuild}

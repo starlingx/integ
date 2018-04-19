@@ -1,10 +1,10 @@
-From b485ba56b70bc19f5cf223c31402d7b723b7e9a6 Mon Sep 17 00:00:00 2001
-Message-Id: <b485ba56b70bc19f5cf223c31402d7b723b7e9a6.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 4d2b4630b5e6b1f081a07f3b530b6afa9208d741 Mon Sep 17 00:00:00 2001
+Message-Id: <4d2b4630b5e6b1f081a07f3b530b6afa9208d741.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 03/29] Update package versioning for TIS format
+Subject: [PATCH 03/39] Update package versioning for TIS format
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index ffbdbff..dd642c1 100644
+index d1f8eab..9a8fb8c 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -19,6 +19,7 @@ Summary: The Linux Realtime kernel
+@@ -17,6 +17,7 @@ Summary: The Linux Realtime kernel
  
  # The Build ID
  # %%define buildid .local

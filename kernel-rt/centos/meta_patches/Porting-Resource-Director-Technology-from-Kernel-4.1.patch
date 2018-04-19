@@ -1,10 +1,10 @@
-From c11c340ff04dd65eefb834770f910cd63d727a4d Mon Sep 17 00:00:00 2001
-Message-Id: <c11c340ff04dd65eefb834770f910cd63d727a4d.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 672ea712bd12f8426a7e8c764ece7f8d31fe696a Mon Sep 17 00:00:00 2001
+Message-Id: <672ea712bd12f8426a7e8c764ece7f8d31fe696a.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Mon, 24 Jul 2017 15:49:37 -0500
-Subject: [PATCH 23/29] Porting Resource Director Technology from Kernel
+Subject: [PATCH 23/39] Porting Resource Director Technology from Kernel
  4.10.17
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
@@ -13,10 +13,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index b6a53d5..7e3d65e 100644
+index f1dda7e..6bf0a56 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -420,6 +420,8 @@ Patch1022: kernfs-porting-original-3.15-version.patch
+@@ -417,6 +417,8 @@ Patch1022: kernfs-porting-original-3.15-version.patch
  Patch1023: kernfs-fixing-compilation-issues-on-3.10.patch
  Patch1024: cacheinfo-porting-original-4.10.17-version.patch
  Patch1025: cacheinfo-fixing-compilation-issues-on-3.10.patch
@@ -25,7 +25,7 @@ index b6a53d5..7e3d65e 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -808,6 +810,8 @@ ApplyPatch kernfs-porting-original-3.15-version.patch
+@@ -802,6 +804,8 @@ ApplyPatch kernfs-porting-original-3.15-version.patch
  ApplyPatch kernfs-fixing-compilation-issues-on-3.10.patch
  ApplyPatch cacheinfo-porting-original-4.10.17-version.patch
  ApplyPatch cacheinfo-fixing-compilation-issues-on-3.10.patch

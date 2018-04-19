@@ -1,8 +1,10 @@
-From cb94dd408a78d64dd38e73c06e9866671ee7d6f4 Mon Sep 17 00:00:00 2001
-Message-Id: <cb94dd408a78d64dd38e73c06e9866671ee7d6f4.1507323824.git.Jim.Somerville@windriver.com>
+From 7e1e094a026ef055505fefb7aad0b9f44b593041 Mon Sep 17 00:00:00 2001
+Message-Id: <7e1e094a026ef055505fefb7aad0b9f44b593041.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 7 Apr 2016 11:16:19 -0600
-Subject: [PATCH 1/1] Notification of death of arbitrary processes
+Subject: [PATCH 02/27] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -63,7 +65,7 @@ index a05294b..cfb7197 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */		\
  	.pids = {							\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 17d2f0b..78ff960 100644
+index 3959488..c50cfc4 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1627,6 +1627,12 @@ struct task_struct {
@@ -455,10 +457,10 @@ index 1afa799..a2ea26b 100644
  	__exit_signal(p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index d1ed92e..df06609 100644
+index 33bf8c4..9d62799 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1428,6 +1428,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -1429,6 +1429,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
  	p->sequential_io	= 0;
  	p->sequential_io_avg	= 0;
  #endif

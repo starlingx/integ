@@ -1,10 +1,10 @@
-From 3423b1e7966868a7de8baa2ceedfa8b93f5420d5 Mon Sep 17 00:00:00 2001
-Message-Id: <3423b1e7966868a7de8baa2ceedfa8b93f5420d5.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 0fdfc6bf9d3b66ddf17eec0d893a3b80d68b14cb Mon Sep 17 00:00:00 2001
+Message-Id: <0fdfc6bf9d3b66ddf17eec0d893a3b80d68b14cb.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 06/29] Enable symvers
+Subject: [PATCH 06/39] Enable symvers
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 10 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 0b91d79..c35efae 100644
+index 8bf2efa..29d78fd 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -997,6 +997,15 @@ BuildKernel() {
+@@ -991,6 +991,15 @@ BuildKernel() {
      # copy Module.symvers
      cp Module.symvers $RPM_BUILD_ROOT/$DevelDir
  
@@ -31,7 +31,7 @@ index 0b91d79..c35efae 100644
      # prune junk from kernel-devel
      find $RPM_BUILD_ROOT/usr/src/kernels -name ".*.cmd" -exec rm -f {} \;
  }
-@@ -1397,6 +1406,7 @@ fi
+@@ -1394,6 +1403,7 @@ fi
  /%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVERREL}%{?2:.%{2}}\
  /%{image_install_path}/.vmlinuz-%{KVERREL}%{?2:.%{2}}.hmac\
  /boot/System.map-%{KVERREL}%{?2:.%{2}}\

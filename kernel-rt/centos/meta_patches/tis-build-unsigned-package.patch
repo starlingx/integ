@@ -1,10 +1,10 @@
-From fed04855a35224e248e541b754b015df832503ba Mon Sep 17 00:00:00 2001
-Message-Id: <fed04855a35224e248e541b754b015df832503ba.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 2dd2b214e0c646cbb24bdd0ca7fba95d5d93514f Mon Sep 17 00:00:00 2001
+Message-Id: <2dd2b214e0c646cbb24bdd0ca7fba95d5d93514f.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:13 -0400
-Subject: [PATCH 15/29] tis build unsigned package
+Subject: [PATCH 15/39] tis build unsigned package
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index fd9ed82..cd127ac 100644
+index 8ee6191..c8faf30 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -27,7 +27,7 @@ Summary: The Linux Realtime kernel
+@@ -25,7 +25,7 @@ Summary: The Linux Realtime kernel
  
  # If we want to sign the kernel and modules, do_sign should be 1.
  # To speed up builds (don't sign) use 0.
@@ -24,7 +24,7 @@ index fd9ed82..cd127ac 100644
  
  # conditional with/without variables
  # Note that the logic here is inverted; a  bcond_without implies
-@@ -695,6 +695,13 @@ the kernel source.
+@@ -692,6 +692,13 @@ the kernel source.
  
  %endif # with_tools
  
@@ -38,7 +38,7 @@ index fd9ed82..cd127ac 100644
  %prep
  ## ApplyPatch routine
  patch_command='patch -p1 -F1 -s'
-@@ -942,6 +949,8 @@ BuildKernel() {
+@@ -936,6 +943,8 @@ BuildKernel() {
      fi
  # EFI SecureBoot signing, x86_64-only
  %if %{do_sign}
@@ -47,7 +47,7 @@ index fd9ed82..cd127ac 100644
  %ifarch x86_64
      %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE37} -c %{SOURCE37} -n %{pesign_name}
      mv $KernelImage.signed $KernelImage
-@@ -1708,6 +1717,11 @@ fi
+@@ -1707,6 +1716,11 @@ fi
  %kernel_variant_files %{buildvanilla} vanilla
  %endif
  
@@ -57,8 +57,8 @@ index fd9ed82..cd127ac 100644
 +%endif # do_sign
 +
  %changelog
- * Wed Sep 13 2017 Johnny Hughes <johnny@centos.org> [3.10.0-693.2.2.rt56.623.el7]
- - Manual CentOS Debranding
+ * Fri Feb 23 2018 Clark Williams <williams@redhat.com> [3.10.0-693.21.1.rt56.639.el7]
+ - [rt] Update source tree to match RHEL 7.4 tree [1537671 1462329]
 -- 
 1.8.3.1
 

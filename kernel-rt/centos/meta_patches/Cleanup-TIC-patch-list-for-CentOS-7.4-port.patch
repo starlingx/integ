@@ -1,29 +1,21 @@
-From 6b5a0a906aa6e78b38d019847020a419987218e8 Mon Sep 17 00:00:00 2001
-Message-Id: <6b5a0a906aa6e78b38d019847020a419987218e8.1507923089.git.Jim.Somerville@windriver.com>
+From 75280ab1e25ea5503a78c8222ffd95b46a74220f Mon Sep 17 00:00:00 2001
+Message-Id: <75280ab1e25ea5503a78c8222ffd95b46a74220f.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 13 Oct 2017 12:48:00 -0400
-Subject: [PATCH 1/1] Cleanup TIC patch list for CentOS 7.4 port
+Subject: [PATCH 30/39] Cleanup TIC patch list for CentOS 7.4 port
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 62 +++++++++++++++-------------------------------------
- 1 file changed, 18 insertions(+), 44 deletions(-)
+ SPECS/kernel-rt.spec | 56 +++++++++++++++++-----------------------------------
+ 1 file changed, 18 insertions(+), 38 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 636a68e..ad92b9b 100644
+index 0f021b5..14120ce 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -389,9 +389,6 @@ Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
- # Commit 32b3809 was reverted and the new solution will be applying
- # those changes at the %build section of the specfile.
- Patch001: avoid-debuginfo-hash-collision-scripts.patch
--Patch1000: debrand-single-cpu.patch
--Patch1001: debrand-rh_taint.patch
--Patch1002: debrand-rh-i686-cpu.patch
- 
- # Empty final patch file to facilitate testing of kernel patches
- Patch999999: linux-kernel-test.patch
-@@ -414,26 +411,16 @@ Patch1015: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
+@@ -411,26 +411,16 @@ Patch1015: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
  Patch1016: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
  Patch1017: arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch
  Patch1018: rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
@@ -60,17 +52,7 @@ index 636a68e..ad92b9b 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -795,9 +782,6 @@ cp $RPM_SOURCE_DIR/kernel-%{version}-*.config.tis_extra .
- cp %{SOURCE38} .
- 
- ## Apply Patches here
--ApplyPatch debrand-single-cpu.patch
--ApplyPatch debrand-rh_taint.patch
--ApplyPatch debrand-rh-i686-cpu.patch
- ApplyPatch linux-kernel-test.patch
- ApplyPatch debrand-single-cpu.patch
- ApplyPatch debrand-rh_taint.patch
-@@ -818,26 +802,16 @@ ApplyPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
+@@ -812,26 +802,16 @@ ApplyPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
  ApplyPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
  ApplyPatch arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch
  ApplyPatch rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch

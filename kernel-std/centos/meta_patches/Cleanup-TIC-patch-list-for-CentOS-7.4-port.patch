@@ -1,8 +1,10 @@
-From 7bdeda20d3df0a642c1242253cb5b8fc58a31702 Mon Sep 17 00:00:00 2001
-Message-Id: <7bdeda20d3df0a642c1242253cb5b8fc58a31702.1507326521.git.Jim.Somerville@windriver.com>
+From 93d50ee36287ea51a6e10bf2689058e5d7b5ed64 Mon Sep 17 00:00:00 2001
+Message-Id: <93d50ee36287ea51a6e10bf2689058e5d7b5ed64.1522099419.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Thu, 5 Oct 2017 17:27:15 -0400
-Subject: [PATCH 1/1] Cleanup TIC patch list for CentOS 7.4 port
+Subject: [PATCH 26/32] Cleanup TIC patch list for CentOS 7.4 port
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -10,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 16 insertions(+), 24 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 62103ae..84a95eb 100644
+index e72feaa..d1dc5bf 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -436,19 +436,15 @@ Patch40013: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch

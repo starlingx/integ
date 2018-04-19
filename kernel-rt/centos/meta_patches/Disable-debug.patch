@@ -1,21 +1,21 @@
-From 8ef6f25a8c785433a91cf4abd53a1e7f013598fc Mon Sep 17 00:00:00 2001
-Message-Id: <8ef6f25a8c785433a91cf4abd53a1e7f013598fc.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 917c7805691bf980a3930fe503b891e5adab62fc Mon Sep 17 00:00:00 2001
+Message-Id: <917c7805691bf980a3930fe503b891e5adab62fc.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 04/29] Disable debug
+Subject: [PATCH 04/39] Disable debug
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 29 ++++++++++++++++++++++++++---
- 1 file changed, 26 insertions(+), 3 deletions(-)
+ SPECS/kernel-rt.spec | 27 ++++++++++++++++++++++++---
+ 1 file changed, 24 insertions(+), 3 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index dd642c1..0964ca4 100644
+index 9a8fb8c..b3126ce 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -31,13 +31,13 @@ Summary: The Linux Realtime kernel
+@@ -29,13 +29,13 @@ Summary: The Linux Realtime kernel
  # Likewise a bcond_with implies the variable is off by default (turned on by --with)
  %bcond_without rt
  %bcond_without doc
@@ -32,7 +32,7 @@ index dd642c1..0964ca4 100644
  
  # What parts do we want to build?  We must build at least one kernel.
  # These are the kernels that are built IF the architecture allows it.
-@@ -410,6 +410,7 @@ Summary: Header files for the Linux kernel for use by glibc
+@@ -407,6 +407,7 @@ Summary: Header files for the Linux kernel for use by glibc
  Group: Development/System
  Obsoletes: glibc-kernheaders < 3.0-46
  Provides: glibc-kernheaders = 3.0-46
@@ -40,7 +40,7 @@ index dd642c1..0964ca4 100644
  %description headers
  Kernel-headers includes the C header files that specify the interface
  between the Linux kernel and userspace libraries and programs.  The
-@@ -469,6 +470,7 @@ AutoReq: no\
+@@ -466,6 +467,7 @@ AutoReq: no\
  This package provides KVM modules for package %{name}%{?1:-%{1}}.\
  %{nil}
  
@@ -48,7 +48,7 @@ index dd642c1..0964ca4 100644
  #
  # This macro creates a kernel-rt-<subpackage>-kvm-debuginfo package.
  #	%%kernel_kvm_debuginfo_package <subpackage>
-@@ -484,7 +486,9 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
+@@ -481,7 +483,9 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
  This is required to use SystemTap with %{name}%{?1:%{1}}-%{KVERREL}.\
  %{expand:%%global debuginfo_args %{?debuginfo_args} -p '/.*/%%{KVERREL}%{?1:\.%{1}}/.*|/.*%%{KVERREL}%{?1:\.%{1}}(\.debug)?' -o debuginfo%{?1}-kvm.list}\
  %{nil}
@@ -58,7 +58,7 @@ index dd642c1..0964ca4 100644
  #
  # This macro creates a kernel-<subpackage>-debuginfo package.
  #	%%kernel_debuginfo_package <subpackage>
-@@ -501,6 +505,7 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
+@@ -498,6 +502,7 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
  This is required to use SystemTap with %{name}%{?1:%{1}}-%{KVERREL}.\
  %{expand:%%global debuginfo_args %{?debuginfo_args} -p '/.*/%%{KVERREL}%{?1:\.%{1}}/.*|/.*%%{KVERREL}%{?1:\.%{1}}(\.debug)?' -o debuginfo%{?1}.list}\
  %{nil}
@@ -66,7 +66,7 @@ index dd642c1..0964ca4 100644
  
  #
  # This macro creates a kernel-<subpackage>-devel package.
-@@ -514,6 +519,7 @@ Provides: installonlypkg(kernel-rt-devel) = %{version}-%{release}%{?1:.%{1}}\
+@@ -511,6 +516,7 @@ Provides: installonlypkg(kernel-rt-devel) = %{version}-%{release}%{?1:.%{1}}\
  Provides: kernel-rt%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
  Provides: kernel-rt-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
  Provides: kernel-rt-devel-uname-r = %{KVERREL}%{?1:.%{1}}\
@@ -74,7 +74,7 @@ index dd642c1..0964ca4 100644
  AutoReqProv: no\
  Requires(pre): /usr/bin/find\
  %description -n kernel-rt%{?variant}%{?1:-%{1}}-devel\
-@@ -526,6 +532,7 @@ against the %{?2:%{2} }kernel package.\
+@@ -523,6 +529,7 @@ against the %{?2:%{2} }kernel package.\
  #	%%define variant_summary The Linux kernel compiled for <configuration>
  #	%%kernel_variant_package [-n <pretty-name>] <subpackage>
  #
@@ -82,7 +82,7 @@ index dd642c1..0964ca4 100644
  %define kernel_variant_package(n:) \
  %package %1\
  Summary: %{variant_summary}\
-@@ -536,15 +543,29 @@ Group: System Environment/Kernel\
+@@ -533,15 +540,29 @@ Group: System Environment/Kernel\
  %{expand:%%kernel_kvm_package %1}\
  %{expand:%%kernel_kvm_debuginfo_package %1}\
  %{nil}
@@ -112,20 +112,6 @@ index dd642c1..0964ca4 100644
  
  # Now, each variant package.
  
-@@ -1425,11 +1446,13 @@ fi
- /lib/modules/%{KVERREL}%{?2:.%{2}}/modules.kvm\
- /lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/arch/x86/kvm\
- /lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/drivers/gpu/drm/i915/gvt\
-+%if %{builddebuginfo}\
- %{expand:%%files %{?2:%{2}-}kvm-debuginfo}\
- %dir %{debuginfodir}/lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/arch/x86/kvm\
- %{debuginfodir}/lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/arch/x86/kvm\
- %{debuginfodir}/lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/drivers/gpu/drm/i915/gvt\
- %endif\
-+%endif\
- %{nil}
- 
- %kernel_variant_files %{buildrt}
 -- 
 1.8.3.1
 

@@ -1,10 +1,10 @@
-From 21e3d3468eea25c6eb7f05969fdb2b56c2d104af Mon Sep 17 00:00:00 2001
-Message-Id: <21e3d3468eea25c6eb7f05969fdb2b56c2d104af.1507220784.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 06b8a11218f462652588a333cca0154f1bbf815a Mon Sep 17 00:00:00 2001
+Message-Id: <06b8a11218f462652588a333cca0154f1bbf815a.1522099415.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:23 -0400
-Subject: [PATCH 04/25] Allow ignoring Ethernet device RMRR with IOMMU passt
+Subject: [PATCH 04/32] Allow ignoring Ethernet device RMRR with IOMMU passt
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 13dc572..c7c4df4 100644
+index a82ec4c..729b9f0 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -4,7 +4,7 @@

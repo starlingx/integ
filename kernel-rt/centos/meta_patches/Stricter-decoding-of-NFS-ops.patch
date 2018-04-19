@@ -1,10 +1,10 @@
-From acd5a71f8758b872a8741f08be4ca0e99fefa268 Mon Sep 17 00:00:00 2001
-Message-Id: <acd5a71f8758b872a8741f08be4ca0e99fefa268.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From b9b55768ff8c02a7e8632dc5189491f3bd32525a Mon Sep 17 00:00:00 2001
+Message-Id: <b9b55768ff8c02a7e8632dc5189491f3bd32525a.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 22 Aug 2017 17:30:01 -0400
-Subject: [PATCH 26/29] Stricter decoding of NFS ops
+Subject: [PATCH 26/39] Stricter decoding of NFS ops
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index e53f906..f831609 100644
+index 91899ab..5903e83 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -427,6 +427,8 @@ Patch1029: add-per-cpu-pm-qos-resume-latency-consideration.patch
+@@ -424,6 +424,8 @@ Patch1029: add-per-cpu-pm-qos-resume-latency-consideration.patch
  Patch1030: expose-pm_qos_resume_latency-for-cpus.patch
  Patch1031: avoid-taking-spinlock-for-accessing-qos-values.patch
  Patch1032: nfsd-check-for-oversized-NFSv2-v3-arguments.patch
@@ -24,7 +24,7 @@ index e53f906..f831609 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -822,6 +824,8 @@ ApplyPatch add-per-cpu-pm-qos-resume-latency-consideration.patch
+@@ -816,6 +818,8 @@ ApplyPatch add-per-cpu-pm-qos-resume-latency-consideration.patch
  ApplyPatch expose-pm_qos_resume_latency-for-cpus.patch
  ApplyPatch avoid-taking-spinlock-for-accessing-qos-values.patch
  ApplyPatch nfsd-check-for-oversized-NFSv2-v3-arguments.patch

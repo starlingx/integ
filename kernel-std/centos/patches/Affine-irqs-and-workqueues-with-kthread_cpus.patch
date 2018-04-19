@@ -1,10 +1,10 @@
-From 26472a7be73409ba33dc9ca001e7a5cc056b24fc Mon Sep 17 00:00:00 2001
-Message-Id: <26472a7be73409ba33dc9ca001e7a5cc056b24fc.1507237258.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 7a14276ac11053f1b5cc8329fa7e09f324b5e5b8 Mon Sep 17 00:00:00 2001
+Message-Id: <7a14276ac11053f1b5cc8329fa7e09f324b5e5b8.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:29 -0500
-Subject: [PATCH 06/24] Affine irqs and workqueues with kthread_cpus
+Subject: [PATCH 06/27] Affine irqs and workqueues with kthread_cpus
 
 If the kthread_cpus boot arg is set it means we want to affine
 kernel threads to the specified CPU mask as much as possible

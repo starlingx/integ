@@ -1,10 +1,10 @@
-From 3e12b4680cf198b652a4f0d0a7edeeb948b00091 Mon Sep 17 00:00:00 2001
-Message-Id: <3e12b4680cf198b652a4f0d0a7edeeb948b00091.1507220788.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From f52203a514f61c1421deecf68b0ac8ecad96ece7 Mon Sep 17 00:00:00 2001
+Message-Id: <f52203a514f61c1421deecf68b0ac8ecad96ece7.1522099419.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Fri, 1 Sep 2017 13:45:40 -0400
-Subject: [PATCH 24/25] meta patch for Kernel IMA changes
+Subject: [PATCH 24/32] meta patch for Kernel IMA changes
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 32e5a52..bb5a106 100644
+index e6c1dad..f8a45ea 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -446,6 +446,7 @@ Patch40029: avoid-taking-spinlock-for-accessing-qos-values.patch

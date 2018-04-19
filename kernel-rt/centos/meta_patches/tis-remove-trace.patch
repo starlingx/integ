@@ -1,10 +1,10 @@
-From 134b18065f3e083407ddb9ad8f574a22c3bc194e Mon Sep 17 00:00:00 2001
-Message-Id: <134b18065f3e083407ddb9ad8f574a22c3bc194e.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 28652a2978a06c248b4b9c01d8832f9287c44da7 Mon Sep 17 00:00:00 2001
+Message-Id: <28652a2978a06c248b4b9c01d8832f9287c44da7.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 02/29] tis remove trace
+Subject: [PATCH 02/39] tis remove trace
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index f7f4ead..ffbdbff 100644
+index 5f4a216..d1f8eab 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -33,7 +33,7 @@ Summary: The Linux Realtime kernel
+@@ -31,7 +31,7 @@ Summary: The Linux Realtime kernel
  %bcond_without debug
  %bcond_with    headers
  %bcond_with    vanilla

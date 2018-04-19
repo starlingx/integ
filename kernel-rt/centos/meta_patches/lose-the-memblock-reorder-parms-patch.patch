@@ -1,10 +1,10 @@
-From b1d0bf9cd7913823157a680e39161c8f02b252c2 Mon Sep 17 00:00:00 2001
-Message-Id: <b1d0bf9cd7913823157a680e39161c8f02b252c2.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From f08a2a889590274dd7d878fbec670029a63049ca Mon Sep 17 00:00:00 2001
+Message-Id: <f08a2a889590274dd7d878fbec670029a63049ca.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 13/29] lose the memblock reorder parms patch
+Subject: [PATCH 13/39] lose the memblock reorder parms patch
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 3 insertions(+), 5 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index afd1ca3..d11d8fe 100644
+index 91c2661..e6b1d13 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -404,10 +404,9 @@ Patch1006: cma-add-placement-specifier-for-cma-kernel-parameter.patch
+@@ -401,10 +401,9 @@ Patch1006: cma-add-placement-specifier-for-cma-kernel-parameter.patch
  Patch1007: intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
  Patch1008: Make-kernel-start-eth-devices-at-offset.patch
  Patch1009: memblock-introduce-memblock_alloc_range.patch
@@ -29,7 +29,7 @@ index afd1ca3..d11d8fe 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -772,7 +771,6 @@ ApplyPatch CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
+@@ -766,7 +765,6 @@ ApplyPatch CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
  ApplyPatch cma-add-placement-specifier-for-cma-kernel-parameter.patch
  ApplyPatch intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
  ApplyPatch Make-kernel-start-eth-devices-at-offset.patch

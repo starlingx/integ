@@ -1,10 +1,10 @@
-From b0e305322f0d22cbd2505c9cdc133ff9f526ed5e Mon Sep 17 00:00:00 2001
-Message-Id: <b0e305322f0d22cbd2505c9cdc133ff9f526ed5e.1507220787.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From d82a3a47aabf392521caffc51a5f7fc380584229 Mon Sep 17 00:00:00 2001
+Message-Id: <d82a3a47aabf392521caffc51a5f7fc380584229.1522099418.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Fri, 21 Jul 2017 09:47:48 -0500
-Subject: [PATCH 19/25] Porting Cacheinfo from Kernel 4.10.17
+Subject: [PATCH 19/32] Porting Cacheinfo from Kernel 4.10.17
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 6f82e53..103fd01 100644
+index f436d93..46e77bf 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -435,6 +435,8 @@ Patch40013: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch

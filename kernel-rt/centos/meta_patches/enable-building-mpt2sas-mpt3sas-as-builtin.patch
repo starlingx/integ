@@ -1,10 +1,10 @@
-From 072f3b48d291c020d6d7ce4cb6396316932a08e5 Mon Sep 17 00:00:00 2001
-Message-Id: <072f3b48d291c020d6d7ce4cb6396316932a08e5.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From bc20d3c5d3bf939aeec52ad0add9e693e423ac7d Mon Sep 17 00:00:00 2001
+Message-Id: <bc20d3c5d3bf939aeec52ad0add9e693e423ac7d.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:13 -0400
-Subject: [PATCH 16/29] enable building mpt2sas mpt3sas as builtin
+Subject: [PATCH 16/39] enable building mpt2sas mpt3sas as builtin
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index cd127ac..a613703 100644
+index c8faf30..b6141b0 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -408,6 +408,7 @@ Patch1010: Notification-of-death-of-arbitrary-processes.patch
+@@ -405,6 +405,7 @@ Patch1010: Notification-of-death-of-arbitrary-processes.patch
  Patch1011: PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
  Patch1012: x86-enable-DMA-CMA-with-swiotlb.patch
  Patch1013: Add-missing-ifdef-around-max-latency-variable.patch
@@ -23,7 +23,7 @@ index cd127ac..a613703 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -784,6 +785,7 @@ ApplyPatch PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
+@@ -778,6 +779,7 @@ ApplyPatch PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
  ApplyPatch Notification-of-death-of-arbitrary-processes.patch
  ApplyPatch x86-enable-DMA-CMA-with-swiotlb.patch
  ApplyPatch Add-missing-ifdef-around-max-latency-variable.patch

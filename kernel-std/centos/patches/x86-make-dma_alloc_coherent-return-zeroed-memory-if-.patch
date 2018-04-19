@@ -1,10 +1,10 @@
-From f29d73f4ff3ecc40356f39304da448e3495a10d8 Mon Sep 17 00:00:00 2001
-Message-Id: <f29d73f4ff3ecc40356f39304da448e3495a10d8.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From db15cbdc776f3a923a8301a0a68def5481c67f4f Mon Sep 17 00:00:00 2001
+Message-Id: <db15cbdc776f3a923a8301a0a68def5481c67f4f.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Wed, 4 Jun 2014 16:06:48 -0700
-Subject: [PATCH 14/24] x86: make dma_alloc_coherent() return zeroed memory if
+Subject: [PATCH 14/27] x86: make dma_alloc_coherent() return zeroed memory if
  CMA is enabled
 
 This patchset enhances the DMA Contiguous Memory Allocator on x86.

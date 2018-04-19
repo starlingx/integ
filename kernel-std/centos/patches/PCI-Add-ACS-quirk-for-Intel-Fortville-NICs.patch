@@ -1,10 +1,10 @@
-From 7f56a1c1ad4f6b1437165a73493a69eeea68fd95 Mon Sep 17 00:00:00 2001
-Message-Id: <7f56a1c1ad4f6b1437165a73493a69eeea68fd95.1507237258.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From e4a7778bf5b6bd50bfe2a2ee80e4be0ba56438b2 Mon Sep 17 00:00:00 2001
+Message-Id: <e4a7778bf5b6bd50bfe2a2ee80e4be0ba56438b2.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Dahir Osman <dahir.osman@windriver.com>
 Date: Wed, 13 Jan 2016 10:01:11 -0500
-Subject: [PATCH 04/24] PCI: Add ACS quirk for Intel Fortville NICs
+Subject: [PATCH 04/27] PCI: Add ACS quirk for Intel Fortville NICs
 
 Use quirks to determine isolation for now until a later kernel can
 properly read the Fortville ACS capabilities.

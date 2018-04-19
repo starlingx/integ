@@ -1,10 +1,10 @@
-From 9e609250e651cd45d637588106c7c9b907daa1ce Mon Sep 17 00:00:00 2001
-Message-Id: <9e609250e651cd45d637588106c7c9b907daa1ce.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From f8fe0e8692aa42d4f632caa621ced1145668a8e4 Mon Sep 17 00:00:00 2001
+Message-Id: <f8fe0e8692aa42d4f632caa621ced1145668a8e4.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Fri, 21 Jul 2017 11:00:10 -0500
-Subject: [PATCH 22/29] Porting Cacheinfo from Kernel 4.10.17
+Subject: [PATCH 22/39] Porting Cacheinfo from Kernel 4.10.17
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index c86ac43..b6a53d5 100644
+index f536cc4..f1dda7e 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -418,6 +418,8 @@ Patch1020: mm-fix-new-crash-in-unmapped_area_topdown.patch
+@@ -415,6 +415,8 @@ Patch1020: mm-fix-new-crash-in-unmapped_area_topdown.patch
  Patch1021: Allow-stack-to-grow-up-to-address-space-limit.patch
  Patch1022: kernfs-porting-original-3.15-version.patch
  Patch1023: kernfs-fixing-compilation-issues-on-3.10.patch
@@ -24,7 +24,7 @@ index c86ac43..b6a53d5 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -804,6 +806,8 @@ ApplyPatch mm-fix-new-crash-in-unmapped_area_topdown.patch
+@@ -798,6 +800,8 @@ ApplyPatch mm-fix-new-crash-in-unmapped_area_topdown.patch
  ApplyPatch Allow-stack-to-grow-up-to-address-space-limit.patch
  ApplyPatch kernfs-porting-original-3.15-version.patch
  ApplyPatch kernfs-fixing-compilation-issues-on-3.10.patch

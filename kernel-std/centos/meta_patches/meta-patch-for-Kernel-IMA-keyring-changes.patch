@@ -1,10 +1,10 @@
-From 49857784e8efe0aeedc17206240064273ce458a6 Mon Sep 17 00:00:00 2001
-Message-Id: <49857784e8efe0aeedc17206240064273ce458a6.1507220788.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 2e6ec030be15349b2f1491fb65009338c1a8775c Mon Sep 17 00:00:00 2001
+Message-Id: <2e6ec030be15349b2f1491fb65009338c1a8775c.1522099419.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Mon, 25 Sep 2017 17:20:15 -0400
-Subject: [PATCH 25/25] meta patch for Kernel IMA keyring changes
+Subject: [PATCH 25/32] meta patch for Kernel IMA keyring changes
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index bb5a106..62103ae 100644
+index f8a45ea..e72feaa 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -417,6 +417,7 @@ Patch1002: debrand-rh-i686-cpu.patch

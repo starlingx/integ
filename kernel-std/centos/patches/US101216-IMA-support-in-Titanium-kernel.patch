@@ -1,10 +1,10 @@
-From 1243451d9dbc92ae5c67bfcc0c6c1d5eb02a8663 Mon Sep 17 00:00:00 2001
-Message-Id: <1243451d9dbc92ae5c67bfcc0c6c1d5eb02a8663.1507237259.git.Jim.Somerville@windriver.com>
-In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
-References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From 8d5c0ffaf60f649fca4f323d879a272bf54c030c Mon Sep 17 00:00:00 2001
+Message-Id: <8d5c0ffaf60f649fca4f323d879a272bf54c030c.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 23 Aug 2017 17:58:12 -0400
-Subject: [PATCH 23/24] US101216: IMA support in Titanium kernel
+Subject: [PATCH 23/27] US101216: IMA support in Titanium kernel
 
 facilitate building the IMA subsytem out-of-the-kernel tree as a Kernel
 module (for which CONFIG_IMA and CONFIG_INTEGRITY will be undefined) by:

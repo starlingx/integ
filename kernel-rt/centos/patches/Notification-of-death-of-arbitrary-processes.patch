@@ -1,10 +1,10 @@
-From e7474cc4bfff10e58d239a773423074d0f71ff38 Mon Sep 17 00:00:00 2001
-Message-Id: <e7474cc4bfff10e58d239a773423074d0f71ff38.1507911923.git.Jim.Somerville@windriver.com>
-In-Reply-To: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
-References: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
+From 8265cd2e5d675d5ea9ecbd8798df7f58d5b2db71 Mon Sep 17 00:00:00 2001
+Message-Id: <8265cd2e5d675d5ea9ecbd8798df7f58d5b2db71.1522795097.git.Jim.Somerville@windriver.com>
+In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 7 Apr 2016 11:16:19 -0600
-Subject: [PATCH 08/26] Notification of death of arbitrary processes
+Subject: [PATCH 11/33] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -65,7 +65,7 @@ index d8c82e0..ba0c12e 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */		\
  	INIT_TIMER_LIST							\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4e8bf6a..175461f 100644
+index f805b0c..841032d 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1660,6 +1660,12 @@ struct task_struct {
@@ -457,10 +457,10 @@ index 8a908ea..448a3c3 100644
  	__exit_signal(p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 81a8d77..0644030 100644
+index 79cab0e..31455e6 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1469,6 +1469,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -1470,6 +1470,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
  	p->sequential_io	= 0;
  	p->sequential_io_avg	= 0;
  #endif

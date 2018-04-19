@@ -1,10 +1,10 @@
-From 03cf09d820042573781332e8257124cced9c8dcc Mon Sep 17 00:00:00 2001
-Message-Id: <03cf09d820042573781332e8257124cced9c8dcc.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 5a522be25447cdd21809089bb238e58c1e025e5d Mon Sep 17 00:00:00 2001
+Message-Id: <5a522be25447cdd21809089bb238e58c1e025e5d.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:00:12 -0400
-Subject: [PATCH 08/29] tis apply patches
+Subject: [PATCH 08/39] tis apply patches
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 25 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 726669d..ae0d7e3 100644
+index eb5767e..0ae5e5c 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -382,6 +382,17 @@ Patch999999: linux-kernel-test.patch
+@@ -379,6 +379,17 @@ Patch999999: linux-kernel-test.patch
  Patch1000: debrand-single-cpu.patch
  Patch1001: debrand-rh_taint.patch
  Patch1002: debrand-rh-i686-cpu.patch
@@ -33,9 +33,9 @@ index 726669d..ae0d7e3 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -693,6 +704,20 @@ ApplyPatch debrand-single-cpu.patch
- ApplyPatch debrand-rh_taint.patch
- ApplyPatch debrand-rh-i686-cpu.patch
+@@ -687,6 +698,20 @@ cd linux-%{kversion}.%{_target_cpu}
+ 
+ ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
 +ApplyPatch debrand-single-cpu.patch
 +ApplyPatch debrand-rh_taint.patch

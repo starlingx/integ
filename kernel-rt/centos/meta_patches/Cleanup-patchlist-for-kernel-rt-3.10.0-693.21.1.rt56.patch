@@ -1,0 +1,45 @@
+From 9aaaf78f46f8922429f17c19ef031b72c32afc25 Mon Sep 17 00:00:00 2001
+Message-Id: <9aaaf78f46f8922429f17c19ef031b72c32afc25.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Wed, 4 Apr 2018 13:08:49 -0400
+Subject: [PATCH 39/39] Cleanup patchlist for
+ kernel-rt-3.10.0-693.21.1.rt56.639.el7
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel-rt.spec | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
+index 9dae160..9b0ee1d 100644
+--- a/SPECS/kernel-rt.spec
++++ b/SPECS/kernel-rt.spec
+@@ -424,12 +424,9 @@ Patch1028: timer-Minimize-nohz-off-overhead.patch
+ # Fix compile warnings that break the build
+ Patch1029: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
+ Patch1030: dpt_i2o-fix-build-warning.patch
+-Patch1031: KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+-# CVE-2017-11176: kernel: Use-after-free in sys_mq_notify()
+-Patch1032: mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
+ # DRBD was choking on write same
+-Patch1033: turn-off-write-same-in-smartqpi-driver.patch
+-Patch1034: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
++Patch1031: turn-off-write-same-in-smartqpi-driver.patch
++Patch1032: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
+ 
+ BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
+ 
+@@ -823,8 +820,6 @@ ApplyPatch timer-Reduce-timer-migration-overhead-if-disabled.patch
+ ApplyPatch timer-Minimize-nohz-off-overhead.patch
+ ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
+ ApplyPatch dpt_i2o-fix-build-warning.patch
+-ApplyPatch KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+-ApplyPatch mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
+ ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
+ ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
+ 
+-- 
+1.8.3.1
+

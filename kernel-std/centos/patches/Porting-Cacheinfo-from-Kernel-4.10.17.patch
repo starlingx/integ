@@ -1,8 +1,10 @@
-From 9ba8854c1a69af4ac3751b0340d0f1fc26c4b6b9 Mon Sep 17 00:00:00 2001
-Message-Id: <9ba8854c1a69af4ac3751b0340d0f1fc26c4b6b9.1507321503.git.Jim.Somerville@windriver.com>
+From ff64a8743ceb40c65be5f0755abcfe4e4445280a Mon Sep 17 00:00:00 2001
+Message-Id: <ff64a8743ceb40c65be5f0755abcfe4e4445280a.1522097754.git.Jim.Somerville@windriver.com>
+In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Wed, 19 Jul 2017 02:21:59 -0500
-Subject: [PATCH 1/1] Porting Cacheinfo from Kernel 4.10.17
+Subject: [PATCH 17/27] Porting Cacheinfo from Kernel 4.10.17
 
 Original source code from tag v4.10.17 in Linux stable tree for:
 intel_cacheinfo.c, cacheinfo.c and cacheinfo.h.
@@ -59,7 +61,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  create mode 100644 include/linux/cacheinfo.h
 
 diff --git a/Documentation/ABI/testing/sysfs-devices-system-cpu b/Documentation/ABI/testing/sysfs-devices-system-cpu
-index 4a639ed..9e877e1 100644
+index 7b467f3..145ae37 100644
 --- a/Documentation/ABI/testing/sysfs-devices-system-cpu
 +++ b/Documentation/ABI/testing/sysfs-devices-system-cpu
 @@ -201,6 +201,71 @@ Description:	address and size of the percpu note.
@@ -135,7 +137,7 @@ index 4a639ed..9e877e1 100644
  		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/turbo_stat
  		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/sub_turbo_stat
 diff --git a/arch/x86/kernel/cpu/intel_cacheinfo.c b/arch/x86/kernel/cpu/intel_cacheinfo.c
-index 3182124..d8bb5bd 100644
+index a77da35..bf23bd2 100644
 --- a/arch/x86/kernel/cpu/intel_cacheinfo.c
 +++ b/arch/x86/kernel/cpu/intel_cacheinfo.c
 @@ -1,5 +1,5 @@
@@ -589,7 +591,7 @@ index 3182124..d8bb5bd 100644
  			}
  		}
  	}
-@@ -721,72 +774,81 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
+@@ -721,34 +774,40 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
  
  	if (new_l2) {
  		l2 = new_l2;
@@ -641,8 +643,27 @@ index 3182124..d8bb5bd 100644
 +	struct cacheinfo *this_leaf;
  	int i, sibling;
  
--	if (cpu_has_topoext) {
-+	if (boot_cpu_has(X86_FEATURE_TOPOEXT)) {
+ 	/*
+@@ -757,40 +816,43 @@ static int cache_shared_amd_cpu_map_setup(unsigned int cpu, int index)
+ 	 */
+ 	if (index == 3) {
+ 		for_each_cpu(i, cpu_llc_shared_mask(cpu)) {
+-			if (!per_cpu(ici_cpuid4_info, i))
++			this_cpu_ci = get_cpu_cacheinfo(i);
++			if (!this_cpu_ci->info_list)
+ 				continue;
+-			this_leaf = CPUID4_INFO_IDX(i, index);
++			this_leaf = this_cpu_ci->info_list + index;
+ 			for_each_cpu(sibling, cpu_llc_shared_mask(cpu)) {
+ 				if (!cpu_online(sibling))
+ 					continue;
+-				set_bit(sibling, this_leaf->shared_cpu_map);
++				cpumask_set_cpu(sibling,
++						&this_leaf->shared_cpu_map);
+ 			}
+ 		}
+-	} else if (cpu_has_topoext) {
++	} else if (boot_cpu_has(X86_FEATURE_TOPOEXT)) {
  		unsigned int apicid, nshared, first, last;
  
 -		if (!per_cpu(ici_cpuid4_info, cpu))
@@ -679,24 +700,8 @@ index 3182124..d8bb5bd 100644
 +						&this_leaf->shared_cpu_map);
  			}
  		}
- 	} else if (index == 3) {
- 		for_each_cpu(i, cpu_llc_shared_mask(cpu)) {
--			if (!per_cpu(ici_cpuid4_info, i))
-+			this_cpu_ci = get_cpu_cacheinfo(i);
-+			if (!this_cpu_ci->info_list)
- 				continue;
--			this_leaf = CPUID4_INFO_IDX(i, index);
-+			this_leaf = this_cpu_ci->info_list + index;
- 			for_each_cpu(sibling, cpu_llc_shared_mask(cpu)) {
- 				if (!cpu_online(sibling))
- 					continue;
--				set_bit(sibling, this_leaf->shared_cpu_map);
-+				cpumask_set_cpu(sibling,
-+						&this_leaf->shared_cpu_map);
- 			}
- 		}
  	} else
-@@ -795,72 +857,70 @@ static int cache_shared_amd_cpu_map_setup(unsigned int cpu, int index)
+@@ -799,72 +861,70 @@ static int cache_shared_amd_cpu_map_setup(unsigned int cpu, int index)
  	return 1;
  }
  
@@ -813,7 +818,7 @@ index 3182124..d8bb5bd 100644
  }
  
  /*
-@@ -882,411 +942,37 @@ static void get_cache_id(int cpu, struct _cpuid4_info_regs *id4_regs)
+@@ -886,411 +946,37 @@ static void get_cache_id(int cpu, struct _cpuid4_info_regs *id4_regs)
  int get_cpu_cache_id(int cpu, int level)
  {
  	int i;
@@ -1927,7 +1932,7 @@ index 0000000..eb3af27
 +}
 +device_initcall(cacheinfo_sysfs_init);
 diff --git a/drivers/base/cpu.c b/drivers/base/cpu.c
-index dfc7870..0ff0eff 100644
+index 4263273..9cc92a2 100644
 --- a/drivers/base/cpu.c
 +++ b/drivers/base/cpu.c
 @@ -338,6 +338,60 @@ struct device *get_cpu_device(unsigned cpu)
@@ -2102,12 +2107,12 @@ index 0000000..6a524bf
 +
 +#endif /* _LINUX_CACHEINFO_H */
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index e2bdd99..85e13e8 100644
+index 32aee21..935f4cf 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
-@@ -36,6 +36,9 @@ extern void cpu_remove_dev_attr(struct device_attribute *attr);
- extern int cpu_add_dev_attr_group(struct attribute_group *attrs);
- extern void cpu_remove_dev_attr_group(struct attribute_group *attrs);
+@@ -43,6 +43,9 @@ extern ssize_t cpu_show_spectre_v1(struct device *dev,
+ extern ssize_t cpu_show_spectre_v2(struct device *dev,
+ 				   struct device_attribute *attr, char *buf);
  
 +extern struct device *cpu_device_create(struct device *parent, void *drvdata,
 +					const struct attribute_group **groups,

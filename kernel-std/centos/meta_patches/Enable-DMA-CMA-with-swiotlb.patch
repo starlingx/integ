@@ -1,10 +1,10 @@
-From 05211712f0b2ca66fde4997d2d2d325b17b4f21c Mon Sep 17 00:00:00 2001
-Message-Id: <05211712f0b2ca66fde4997d2d2d325b17b4f21c.1507220785.git.Jim.Somerville@windriver.com>
-In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
-References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From 751ffa1e603af3affda807ca36c8c2f370739ba6 Mon Sep 17 00:00:00 2001
+Message-Id: <751ffa1e603af3affda807ca36c8c2f370739ba6.1522099416.git.Jim.Somerville@windriver.com>
+In-Reply-To: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
+References: <37dfb62264baec527d56aaf20db887840bec1ea1.1522099415.git.Jim.Somerville@windriver.com>
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 9 May 2017 13:10:23 -0400
-Subject: [PATCH 06/25] Enable DMA CMA with swiotlb
+Subject: [PATCH 06/32] Enable DMA CMA with swiotlb
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 004ebcb..54fc219 100644
+index 4f7b7b4..0447fe8 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -4,7 +4,7 @@

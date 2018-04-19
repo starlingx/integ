@@ -1,10 +1,10 @@
-From ac548283b0da3e13fe8dcdb1359aa3b8cfc92303 Mon Sep 17 00:00:00 2001
-Message-Id: <ac548283b0da3e13fe8dcdb1359aa3b8cfc92303.1507842722.git.Jim.Somerville@windriver.com>
-In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
-References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From 58b1b0b36167977d68a991d9b1a709dabaccc7ed Mon Sep 17 00:00:00 2001
+Message-Id: <58b1b0b36167977d68a991d9b1a709dabaccc7ed.1524081065.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
+References: <8d084dcc717666af0283e4ddeefaba7e331d879a.1524081065.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Fri, 1 Sep 2017 14:24:02 -0400
-Subject: [PATCH 27/29] meta patch for Kernel IMA changes
+Subject: [PATCH 27/39] meta patch for Kernel IMA changes
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +12,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index f831609..2eb90d7 100644
+index 5903e83..ca8fb19 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -429,6 +429,7 @@ Patch1031: avoid-taking-spinlock-for-accessing-qos-values.patch
+@@ -426,6 +426,7 @@ Patch1031: avoid-taking-spinlock-for-accessing-qos-values.patch
  Patch1032: nfsd-check-for-oversized-NFSv2-v3-arguments.patch
  Patch1033: nfsd4-minor-NFSv2-v3-write-decoding-cleanup.patch
  Patch1034: nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
@@ -23,7 +23,7 @@ index f831609..2eb90d7 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -826,6 +827,7 @@ ApplyPatch avoid-taking-spinlock-for-accessing-qos-values.patch
+@@ -820,6 +821,7 @@ ApplyPatch avoid-taking-spinlock-for-accessing-qos-values.patch
  ApplyPatch nfsd-check-for-oversized-NFSv2-v3-arguments.patch
  ApplyPatch nfsd4-minor-NFSv2-v3-write-decoding-cleanup.patch
  ApplyPatch nfsd-stricter-decoding-of-write-like-NFSv2-v3-ops.patch
