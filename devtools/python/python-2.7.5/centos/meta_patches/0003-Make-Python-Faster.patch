@@ -1,0 +1,42 @@
+From ff1efc0b077c78bedead5fdc6792240806f5a97c Mon Sep 17 00:00:00 2001
+From: Al Bailey <Al.Bailey@windriver.com>
+Date: Wed, 28 Mar 2018 08:26:56 -0500
+Subject: [PATCH] Make Python Faster
+
+---
+ SPECS/python.spec | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/python.spec b/SPECS/python.spec
+index adc6815..fadf838 100644
+--- a/SPECS/python.spec
++++ b/SPECS/python.spec
+@@ -1195,6 +1195,8 @@ Patch268: 00268-set-stream-name-to-None.patch
+ # above:
+ Patch5000: 05000-autotool-intermediates.patch
+ 
++Patch9000: Rollup-optimization-commits.patch
++
+ # ======================================================
+ # Additional metadata, and subpackages
+ # ======================================================
+@@ -1591,6 +1593,7 @@ find -name "*~" |xargs rm -f
+ %patch5000 -p0 -b .autotool-intermediates
+ %endif
+ 
++%patch9000 -p1
+ 
+ # ======================================================
+ # Configuring and building the code:
+@@ -1721,7 +1724,7 @@ BuildPython debug \
+ BuildPython optimized \
+   python \
+   python%{pybasever} \
+-  "" \
++   "--enable-optimizations --with-computed-gotos" \
+   true
+ 
+ 
+-- 
+1.8.3.1
+
