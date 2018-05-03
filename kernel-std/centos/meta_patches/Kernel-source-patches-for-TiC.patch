@@ -1,0 +1,94 @@
+From 67260aef458fa5dcf4de1663156a966d972a3d04 Mon Sep 17 00:00:00 2001
+Message-Id: <67260aef458fa5dcf4de1663156a966d972a3d04.1524255484.git.Jim.Somerville@windriver.com>
+In-Reply-To: <50ee0ad2b80404b7736ca489dc9f18f6b84094da.1524255483.git.Jim.Somerville@windriver.com>
+References: <50ee0ad2b80404b7736ca489dc9f18f6b84094da.1524255483.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 20 Apr 2018 16:13:47 -0400
+Subject: [PATCH 2/2] Kernel source patches for TiC
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index 1a8c742..65820b9 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -419,6 +419,37 @@ Patch1002: debrand-rh-i686-cpu.patch
+ Source30000: kernel-3.10.0-x86_64.config.tis_extra
+ Source30001: ima_signing_key.pub
+ 
++# Titanium Cloud patches here.
++Patch40001: Fix-compile-issue-when-transparent-hugepages-are-off.patch
++Patch40002: Notification-of-death-of-arbitrary-processes.patch
++Patch40003: CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
++Patch40004: PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
++Patch40005: affine-compute-kernel-threads.patch
++Patch40006: Affine-irqs-and-workqueues-with-kthread_cpus.patch
++Patch40007: Make-kernel-start-eth-devices-at-offset.patch
++Patch40008: intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
++Patch40009: memblock-introduce-memblock_alloc_range.patch
++Patch40010: cma-add-placement-specifier-for-cma-kernel-parameter.patch
++Patch40011: x86-enable-DMA-CMA-with-swiotlb.patch
++Patch40012: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
++Patch40013: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
++Patch40014: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
++Patch40015: arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch
++Patch40016: rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
++Patch40017: Porting-Cacheinfo-from-Kernel-4.10.17.patch
++Patch40018: Fix-cacheinfo-compilation-issues-for-3.10.patch
++Patch40019: cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch
++Patch40020: cpuidle-menu-add-per-CPU-PM-QoS-resume-latency-consi.patch
++Patch40021: CPU-PM-expose-pm_qos_resume_latency-for-CPUs.patch
++Patch40022: cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
++Patch40023: US101216-IMA-support-in-Titanium-kernel.patch
++Patch40024: US103091-IMA-System-Configuration.patch
++# Fix compile warnings that break the build
++Patch40025: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
++Patch40026: dpt_i2o-fix-build-warning.patch
++# DRBD was choking on write same
++Patch40027: turn-off-write-same-in-smartqpi-driver.patch
++
+ BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+ 
+ %description
+@@ -740,6 +771,35 @@ ApplyOptionalPatch debrand-single-cpu.patch
+ ApplyOptionalPatch debrand-rh_taint.patch
+ ApplyOptionalPatch debrand-rh-i686-cpu.patch
+ 
++# Titanium Cloud patches here.
++ApplyOptionalPatch Fix-compile-issue-when-transparent-hugepages-are-off.patch
++ApplyOptionalPatch Notification-of-death-of-arbitrary-processes.patch
++ApplyOptionalPatch CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
++ApplyOptionalPatch PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
++ApplyOptionalPatch affine-compute-kernel-threads.patch
++ApplyOptionalPatch Affine-irqs-and-workqueues-with-kthread_cpus.patch
++ApplyOptionalPatch Make-kernel-start-eth-devices-at-offset.patch
++ApplyOptionalPatch intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
++ApplyOptionalPatch memblock-introduce-memblock_alloc_range.patch
++ApplyOptionalPatch cma-add-placement-specifier-for-cma-kernel-parameter.patch
++ApplyOptionalPatch x86-enable-DMA-CMA-with-swiotlb.patch
++ApplyOptionalPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
++ApplyOptionalPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
++ApplyOptionalPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
++ApplyOptionalPatch arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch
++ApplyOptionalPatch rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
++ApplyOptionalPatch Porting-Cacheinfo-from-Kernel-4.10.17.patch
++ApplyOptionalPatch Fix-cacheinfo-compilation-issues-for-3.10.patch
++ApplyOptionalPatch cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch
++ApplyOptionalPatch cpuidle-menu-add-per-CPU-PM-QoS-resume-latency-consi.patch
++ApplyOptionalPatch CPU-PM-expose-pm_qos_resume_latency-for-CPUs.patch
++ApplyOptionalPatch cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
++ApplyOptionalPatch US101216-IMA-support-in-Titanium-kernel.patch
++ApplyOptionalPatch US103091-IMA-System-Configuration.patch
++ApplyOptionalPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
++ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
++ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
++
+ # Any further pre-build tree manipulations happen here.
+ 
+ chmod +x scripts/checkpatch.pl
+-- 
+1.8.3.1
+

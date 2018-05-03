@@ -1,0 +1,228 @@
+From 50ee0ad2b80404b7736ca489dc9f18f6b84094da Mon Sep 17 00:00:00 2001
+Message-Id: <50ee0ad2b80404b7736ca489dc9f18f6b84094da.1524255483.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 20 Apr 2018 14:51:56 -0400
+Subject: [PATCH 1/2] Build logic and sources for TiC
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 72 +++++++++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 59 insertions(+), 13 deletions(-)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index 5ba126c..1a8c742 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -3,7 +3,8 @@
+ 
+ Summary: The Linux kernel
+ 
+-# % define buildid .local
++# This is the WRS patch release
++%define buildid .%{tis_patch_ver}.tis
+ 
+ # For a kernel released for public testing, released_kernel should be 1.
+ # For internal testing builds during development, it should be 0.
+@@ -12,9 +13,10 @@ Summary: The Linux kernel
+ %global distro_build 693
+ 
+ %define rpmversion 3.10.0
+-%define pkgrelease 693.21.1.el7
++%define _pkgrelease 693.21.1
++%define pkgrelease %{_pkgrelease}.el7
+ 
+-%define pkg_release %{pkgrelease}%{?buildid}
++%define pkg_release %{pkgrelease}%{buildid}
+ 
+ # The kernel tarball/base version
+ %define rheltarball %{rpmversion}-%{pkgrelease}
+@@ -61,7 +63,7 @@ Summary: The Linux kernel
+ %define with_dbgonly   %{?_with_dbgonly:      1} %{?!_with_dbgonly:      0}
+ 
+ # Control whether we perform a compat. check against published ABI.
+-%define with_kabichk   %{?_without_kabichk:   0} %{?!_without_kabichk:   1}
++%define with_kabichk  0
+ 
+ # Control whether we perform a compat. check against DUP ABI.
+ %define with_kabidupchk 1
+@@ -78,7 +80,7 @@ Summary: The Linux kernel
+ # Set debugbuildsenabled to 1 for production (build separate debug kernels)
+ #  and 0 for rawhide (all kernels are debug kernels).
+ # See also 'make debug' and 'make release'. RHEL only ever does 1.
+-%define debugbuildsenabled 1
++%define debugbuildsenabled 0
+ 
+ %define with_gcov %{?_with_gcov: 1} %{?!_with_gcov: 0}
+ 
+@@ -349,6 +351,7 @@ BuildRequires: rpm-build >= 4.9.0-1, elfutils >= 0.153-1
+ # required for zfcpdump
+ BuildRequires: glibc-static
+ %endif
++BuildRequires: util-linux
+ 
+ Source0: linux-%{rpmversion}-%{pkgrelease}.tar.xz
+ 
+@@ -410,6 +413,12 @@ Patch1000: debrand-single-cpu.patch
+ Patch1001: debrand-rh_taint.patch
+ Patch1002: debrand-rh-i686-cpu.patch
+ 
++# Titanium Cloud sources here.
++# Not sure if we need to worry about numerical collisions between
++# SourceX and PatchX, so let's not risk it
++Source30000: kernel-3.10.0-x86_64.config.tis_extra
++Source30001: ima_signing_key.pub
++
+ BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+ 
+ %description
+@@ -561,6 +570,13 @@ This package provides debug information for package kernel-tools.
+ 
+ %endif # with_tools
+ 
++%ifarch x86_64
++%package unsigned
++Summary: Unsigned build of the Linux kernel
++%description unsigned
++Contains an unsigned version of the Linux kernel
++%endif # x86_64
++
+ %if %{with_gcov}
+ %package gcov
+ Summary: gcov graph and source files for coverage data collection.
+@@ -716,6 +732,9 @@ cd linux-%{KVRA}
+ # Drop some necessary files from the source dir into the buildroot
+ cp $RPM_SOURCE_DIR/kernel-%{version}-*.config .
+ 
++# Copy any TiS-specific config changes
++cp $RPM_SOURCE_DIR/kernel-%{version}-*.config.tis_extra .
++
+ ApplyOptionalPatch linux-kernel-test.patch
+ ApplyOptionalPatch debrand-single-cpu.patch
+ ApplyOptionalPatch debrand-rh_taint.patch
+@@ -760,6 +779,15 @@ for i in *.config
+ do
+   mv $i .config
+   Arch=`head -1 .config | cut -b 3-`
++
++  # Handle Titanium Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
++  # the make line below so that the one below removes any dependencies of ones that we
++  # turn off here.  We also want it before "make listnewconfig" so that we can set the
++  # config option for new configs introduced in the Titanium Cloud patches.
++  if [ -f ${i}.tis_extra ]; then
++    scripts/kconfig/merge_config.sh -m -n .config ${i}.tis_extra
++  fi
++
+   make %{?cross_opts} ARCH=$Arch listnewconfig | grep -E '^CONFIG_' >.newoptions || true
+ %if %{listnewconfig_fail}
+   if [ -s .newoptions ]; then
+@@ -833,12 +861,13 @@ BuildKernel() {
+ 
+     # and now to start the build process
+ 
+-    make %{?cross_opts} -s mrproper
++    make -j"%(nproc)" %{?cross_opts} -s mrproper
+ 
+     cp %{SOURCE11} .	# x509.genkey
+     cp %{SOURCE12} .	# extra_certificates
+     cp %{SOURCE15} .	# rheldup3.x509
+     cp %{SOURCE16} .	# rhelkpatch1.x509
++    cp %{SOURCE30001} . # ima_signing_key.pub
+ 
+     cp configs/$Config .config
+ 
+@@ -853,8 +882,8 @@ BuildKernel() {
+     fi
+ %endif
+ 
+-    make -s %{?cross_opts} ARCH=$Arch oldnoconfig >/dev/null
+-    make -s %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" $MakeTarget %{?sparse_mflags}
++    make -s -j"%(nproc)"  %{?cross_opts} ARCH=$Arch oldnoconfig >/dev/null
++    make -s -j"%(nproc)" %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" $MakeTarget %{?sparse_mflags}
+ 
+     if [ "$Flavour" != "kdump" ]; then
+         make -s %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" modules %{?sparse_mflags} || exit 1
+@@ -878,6 +907,8 @@ BuildKernel() {
+     fi
+ # EFI SecureBoot signing, x86_64-only
+ %ifarch x86_64
++    cp $KernelImage vmlinuz.unsigned
++    $CopyKernel vmlinuz.unsigned $RPM_BUILD_ROOT/%{image_install_path}/vmlinuz.unsigned
+     %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE13} -c %{SOURCE13}
+     mv $KernelImage.signed $KernelImage
+ %endif
+@@ -894,7 +925,7 @@ BuildKernel() {
+     if [ "$Flavour" != "kdump" ]; then
+         # Override $(mod-fw) because we don't want it to install any firmware
+         # we'll get it from the linux-firmware package and we don't want conflicts
+-        make -s %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
++        make -s  -j"%(nproc)" %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
+ %if %{with_gcov}
+ 	# install gcov-needed files to $BUILDROOT/$BUILD/...:
+ 	#   gcov_info->filename is absolute path
+@@ -904,7 +935,7 @@ BuildKernel() {
+ %endif
+     fi
+ %ifarch %{vdso_arches}
+-    make -s %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=$KernelVer
++    make -s -j"%(nproc)"  %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=$KernelVer
+     if [ ! -s ldconfig-kernel.conf ]; then
+       echo > ldconfig-kernel.conf "\
+ # Placeholder file, no vDSO hwcap entries used in this kernel."
+@@ -1061,6 +1092,12 @@ BuildKernel() {
+     cp signing_key.priv signing_key.priv.sign${Flavour:+.${Flavour}}
+     cp signing_key.x509 signing_key.x509.sign${Flavour:+.${Flavour}}
+ 
++    # WRS: Copy these keys as part of the devel package
++    # The Module signing keys are to ensure that only Out-of-tree
++    # built against the Titanium Kernel get signed and loaded sans warnings
++    cp signing_key.priv ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
++    cp signing_key.x509 ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
++
+     # remove files that will be auto generated by depmod at rpm -i time
+     for i in alias alias.bin builtin.bin ccwmap dep dep.bin ieee1394map inputmap isapnpmap ofmap pcimap seriomap symbols symbols.bin usbmap softdep devname
+     do
+@@ -1119,15 +1156,15 @@ make %{?cross_opts} %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
+ %endif
+ %ifarch x86_64
+    pushd tools/power/x86/x86_energy_perf_policy/
+-   make
++   make -j"%(nproc)"
+    popd
+    pushd tools/power/x86/turbostat
+-   make
++   make -j"%(nproc)"
+    popd
+ %endif #turbostat/x86_energy_perf_policy
+ %endif
+ pushd tools
+-make tmon
++make -j"%(nproc)" tmon
+ popd
+ %endif
+ 
+@@ -1386,6 +1423,10 @@ fi}\
+ %{expand:\
+ %{_sbindir}/new-kernel-pkg --package kernel%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
+ }\
++# If this is a pkg upgrade (ie installed as a patch), set the reboot flag\
++if [ $1 -gt 1 ] ; then\
++    touch /var/run/node_is_patched_rr\
++fi\
+ %{nil}
+ 
+ #
+@@ -1587,6 +1628,11 @@ fi
+ %kernel_variant_files %{with_debug} debug
+ %kernel_variant_files %{with_kdump} kdump
+ 
++%ifarch x86_64
++%files unsigned
++/boot/vmlinuz.unsigned
++%endif
++
+ %changelog
+ * Tue Mar 06 2018 CentOS Sources <bugs@centos.org> - 3.10.0-693.21.1.el7
+ - Apply debranding changes
+-- 
+1.8.3.1
+
