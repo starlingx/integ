@@ -45,6 +45,7 @@ WARN_HOSTNAME=201
 
 # Failure Strings
 FAIL_OUT_OF_SPACE_STR="No space left on device"
+FAIL_TAR_OUT_OF_SPACE_STR="tar: Error is not recoverable"
 FAIL_INSUFFICIENT_SPACE_STR="Not enough space on device"
 
 # The minimum amount of % free space on /scratch to allow collect to proceed
@@ -195,29 +196,41 @@ function log_slabinfo()
 #
 ###########################################################################
 
+listOfOutOfSpaceErrors=(
+"${FAIL_OUT_OF_SPACE_STR}"
+"${FAIL_TAR_OUT_OF_SPACE_STR}"
+"${FAIL_INSUFFICIENT_SPACE_STR}"
+)
+
 function collect_errors()
 {
     local host=${1}
     local RC=0
 
-    # Look for "No space left on device" error
-    grep -q "${FAIL_OUT_OF_SPACE_STR}" ${COLLECT_ERROR_LOG}
+    if [ -e "${COLLECT_ERROR_LOG}" ] ; then
 
-    if [ "$?" == "0" ] ; then
+        ## now loop through known space related error strings
+        index=0
+        while [ "x${listOfOutOfSpaceErrors[index]}" != "x" ]
+        do
+            grep -q "${listOfOutOfSpaceErrors[index]}" ${COLLECT_ERROR_LOG}
+            if [ "$?" == "0" ] ; then
 
-        string="failed to collect from ${host} (reason:${FAIL_OUT_OF_SPACE}:${FAIL_OUT_OF_SPACE_STR})"
+                string="failed to collect from ${host} (reason:${FAIL_OUT_OF_SPACE}:${FAIL_OUT_OF_SPACE_STR})"
 
-        # /var/log/user.log it
-        logger -t ${COLLECT_TAG} "${string}"
+                # /var/log/user.log it
+                logger -t ${COLLECT_TAG} "${string}"
 
-        # logs that show up in the foreground
-        echo "${string}"
-        echo "Increase available space in ${host}:${COLLECT_BASE_DIR} and retry operation."
+                # logs that show up in the foreground
+                echo "${string}"
+                echo "Increase available space in ${host}:${COLLECT_BASE_DIR} and retry operation."
 
-        # return error code
-        RC=1
-
+                # return error code
+                RC=1
+                break
+            fi
+            index=$(($index+1))
+        done
     fi
-
     return ${RC}
 }
