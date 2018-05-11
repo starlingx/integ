@@ -1,0 +1,2 @@
+COPY_LIST="$CGCS_BASE/downloads/spectre-meltdown-checker-0.37+-5cc77741.tar.bz2"
+TIS_PATCH_VER=0

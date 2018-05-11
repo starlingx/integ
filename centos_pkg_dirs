@@ -54,6 +54,7 @@ security/tpm2-openssl-engine
 security/libtpms
 security/swtpm
 security/audit
+security/spectre-meltdown-checker
 kernel-std
 devtools/puppet-4.8.2
 devtools/puppet-modules/puppet-boolean-1.0.2
