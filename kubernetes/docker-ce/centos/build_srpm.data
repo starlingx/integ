@@ -1,0 +1,3 @@
+VERSION=18.03.1
+MODULE=docker-ce
+TIS_PATCH_VER=1
