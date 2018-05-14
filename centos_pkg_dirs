@@ -101,4 +101,6 @@ extended/memcached
 devtools/puppet-modules/openstack/puppet-memcached-3.0.2
 devtools/puppet-modules/openstack/puppet-horizon-9.5.0
 devtools/puppet-modules/openstack/puppet-swift-11.3.0
+monitoring/collectd-extensions
+monitoring/influxdb-extensions
 kubernetes/kubernetes

@@ -1,0 +1,10 @@
+Metadata-Version: 1.1
+Name: collectd-extensions
+Version: 1.0
+Summary: collectd-extensions
+Home-page:
+Author: Windriver
+Author-email: info@windriver.com
+License: windriver
+Description: Titanium Cloud collectd extensions
+Platform: UNKNOWN

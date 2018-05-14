@@ -1,0 +1,10 @@
+Metadata-Version: 1.1
+Name: influxdb-extensions
+Version: 1.0
+Summary: influxdb-extensions
+Home-page:
+Author: Windriver
+Author-email: info@windriver.com
+License: windriver
+Description: Titanium Cloud influxdb extensions.
+Platform: UNKNOWN

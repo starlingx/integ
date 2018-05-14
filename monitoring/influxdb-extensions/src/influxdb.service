@@ -1,0 +1,20 @@
+[Unit]
+Description=InfluxDB open-source, distributed, time series database
+Documentation=https://influxdb.com/docs/
+After=local-fs.target network.target
+Before=collectd.service
+
+[Service]
+User=influxdb
+Group=influxdb
+LimitNOFILE=65536
+Environment='STDOUT=/dev/null'
+Environment='STDERR=/var/log/influxdb/influxd.log'
+EnvironmentFile=-/etc/default/influxdb
+ExecStart=/bin/sh -c "/usr/bin/influxd -config /etc/influxdb/influxdb.conf -pidfile /var/run/influxdb/influxdb.pid ${INFLUXD_OPTS} >> ${STDOUT} 2>> ${STDERR}"
+ExecStopPost=/bin/bash -c 'rm /var/run/influxdb/influxdb.pid'
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target
+Alias=influxd.service

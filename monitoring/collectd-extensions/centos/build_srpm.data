@@ -1,0 +1,19 @@
+SRC_DIR="$PKG_BASE"
+
+COPY_LIST="$PKG_BASE/src/LICENSE \
+  $PKG_BASE/src/collectd.conf.pmon \
+  $PKG_BASE/src/collectd.service \
+  $PKG_BASE/src/fm_notifier.py \
+  $PKG_BASE/src/mtce_notifier.py \
+  $PKG_BASE/src/python_plugins.conf \
+  $PKG_BASE/src/cpu.py \
+  $PKG_BASE/src/cpu.conf \
+  $PKG_BASE/src/memory.py \
+  $PKG_BASE/src/memory.conf \
+  $PKG_BASE/src/df.conf \
+  $PKG_BASE/src/ntpq.py \
+  $PKG_BASE/src/ntpq.conf \
+  $PKG_BASE/src/example.py \
+  $PKG_BASE/src/example.conf"
+
+TIS_PATCH_VER=1

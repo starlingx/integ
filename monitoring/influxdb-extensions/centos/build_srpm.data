@@ -1,0 +1,7 @@
+SRC_DIR="$PKG_BASE"
+
+COPY_LIST="$PKG_BASE/src/LICENSE \
+  $PKG_BASE/src/influxdb.conf.pmon \
+  $PKG_BASE/src/influxdb.service"
+
+TIS_PATCH_VER=1
