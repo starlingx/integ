@@ -291,7 +291,7 @@ do
          ;;
       "nova-compute")
          process_list=(${process_list[@]} "pmon:nova-compute:nova-compute:compute:/var/run/nova/nova-compute.pid:0" "sm:nova-compute:nova-compute:controller:/var/run/resource-agents/nova-compute.pid:0")
-         ;; 
+         ;;
       "nova-serialproxy")
          process_list=(${process_list[@]} "sm:nova-serialproxy:nova-serialproxy:controller:/var/run/resource-agents/nova-serialproxy.pid:0")
          ;;
@@ -323,6 +323,12 @@ do
          ;;
       "dcorch-patch-api-proxy")
          process_list=(${process_list[@]} "sm:dcorch-patch-api-proxy:dcorch-patch-api-proxy:controller:/var/run/resource-agents/dcorch-patch-api-proxy.pid:0")
+         ;;
+      "collectd")
+         process_list=(${process_list[@]} "pmon:collectd:collectd:all:/var/run/collectd.pid:0")
+         ;;
+      "influxdb")
+         process_list=(${process_list[@]} "pmon:influxdb:influxdb:all:/var/run/influxdb/influxdb.pid:0")
          ;;
 
       *)
