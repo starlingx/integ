@@ -1,0 +1,35 @@
+From 1ec30fd56a82094710ebc46f43d905d5fbe1542e Mon Sep 17 00:00:00 2001
+From: Jack Ding <jack.ding@windriver.com>
+Date: Sat, 12 May 2018 09:01:03 -0400
+Subject: [PATCH 2/3] update memcached dependency
+
+---
+ SPECS/puppet-swift.spec | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/SPECS/puppet-swift.spec b/SPECS/puppet-swift.spec
+index c684a93..31223f3 100644
+--- a/SPECS/puppet-swift.spec
++++ b/SPECS/puppet-swift.spec
+@@ -9,6 +9,9 @@ URL:            https://launchpad.net/puppet-swift
+ 
+ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_version}.tar.gz
+ 
++# WRS Patches
++Patch0001:      0001-update-memcached-dependency.patch
++
+ BuildArch:      noarch
+ 
+ Requires:       puppet-inifile
+@@ -25,6 +28,8 @@ Puppet module for OpenStack Swift
+ 
+ %prep
+ %setup -q -n openstack-swift-%{upstream_version}
++# WRS Patches
++%patch0001 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+
