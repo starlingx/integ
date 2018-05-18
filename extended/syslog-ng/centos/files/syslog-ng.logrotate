@@ -21,7 +21,6 @@
 /var/log/sysinv-api.log
 /var/log/nfv-vim-api.log
 /var/log/nfv-vim-webserver.log
-/var/log/neutron/*.log
 /var/log/keystone/*.log
 /var/log/aodh/*.log
 /var/log/murano/*.log
@@ -107,6 +106,7 @@
         endscript
 }
 
+/var/log/neutron/*.log
 /var/log/nova/*.log
 {
         nodateext
@@ -140,9 +140,9 @@
 /var/log/ima.log
 {
         nodateext
-        size 100M
+        size 50M
         start 1
-        rotate 20
+        rotate 10
         missingok
         notifempty
         compress
