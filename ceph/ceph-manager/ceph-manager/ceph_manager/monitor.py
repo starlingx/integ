@@ -22,20 +22,18 @@ import exception
 LOG = logging.getLogger(__name__)
 
 
-# When upgrading from 16.10 to 17.x Ceph goes from Hammer release
-# to Jewel release. After all storage nodes are upgraded to 17.x
-# the cluster is in HEALTH_WARN until administrator explicitly
-# enables require_jewel_osds flag - which signals Ceph that it
-# can safely transition from Hammer to Jewel
+# In 18.03 R5, ceph cache tiering was disabled and prevented from being
+# re-enabled. When upgrading from 18.03 (R5) to R6 we need to remove the
+# cache-tier from the crushmap ceph-cache-tiering
 #
-# This class is needed only when upgrading from 16.10 to 17.x
-# TODO: remove it after 1st 17.x release
+# This class is needed only when upgrading from R5 to R6
+# TODO: remove it after 1st R6 release
 #
 class HandleUpgradesMixin(object):
 
     def __init__(self, service):
         self.service = service
-        self.surpress_require_jewel_osds_warning = False
+        self.wait_for_upgrade_complete = False
 
     def setup(self, config):
         self._set_upgrade(self.service.retry_get_software_upgrade_status())
@@ -45,9 +43,10 @@ class HandleUpgradesMixin(object):
         from_version = upgrade.get('from_version')
         if (state
                 and state != constants.UPGRADE_COMPLETED
-                and from_version == constants.TITANIUM_SERVER_VERSION_16_10):
-            LOG.info(_LI("Surpress require_jewel_osds health warning"))
-            self.surpress_require_jewel_osds_warning = True
+                and from_version == constants.TITANIUM_SERVER_VERSION_18_03):
+
+            LOG.info(_LI("Wait for caph upgrade to complete before monitoring cluster."))
+            self.wait_for_upgrade_complete = True
 
     def set_flag_require_jewel_osds(self):
         try:
@@ -73,7 +72,7 @@ class HandleUpgradesMixin(object):
         health = self.auto_heal(health)
         # filter out require_jewel_osds warning
         #
-        if not self.surpress_require_jewel_osds_warning:
+        if not self.wait_for_upgrade_complete:
             return health
         if health['health'] != constants.CEPH_HEALTH_WARN:
             return health
@@ -114,17 +113,16 @@ class HandleUpgradesMixin(object):
             state = upgrade.get('state')
             # surpress require_jewel_osds in case upgrade is
             # in progress but not completed or aborting
-            if (not self.surpress_require_jewel_osds_warning
+            if (not self.wait_for_upgrade_complete
                     and (upgrade.get('from_version')
-                         == constants.TITANIUM_SERVER_VERSION_16_10)
+                         == constants.TITANIUM_SERVER_VERSION_18_03)
                     and state not in [
                         None,
                         constants.UPGRADE_COMPLETED,
                         constants.UPGRADE_ABORTING,
                         constants.UPGRADE_ABORT_COMPLETING,
                         constants.UPGRADE_ABORTING_ROLLBACK]):
-                LOG.info(_LI("Surpress require_jewel_osds health warning"))
-                self.surpress_require_jewel_osds_warning = True
+                self.wait_for_upgrade_complete = True
             # set require_jewel_osds in case upgrade is
             # not in progress or completed
             if (state in [None, constants.UPGRADE_COMPLETED]):
@@ -135,16 +133,14 @@ class HandleUpgradesMixin(object):
                 self.set_flag_require_jewel_osds()
                 health = self._remove_require_jewel_osds_warning(health)
                 LOG.info(_LI("Unsurpress require_jewel_osds health warning"))
-                self.surpress_require_jewel_osds_warning = False
+                self.wait_for_upgrade_complete = False
             # unsurpress require_jewel_osds in case upgrade
             # is aborting
-            if (self.surpress_require_jewel_osds_warning
-                    and state in [
-                        constants.UPGRADE_ABORTING,
-                        constants.UPGRADE_ABORT_COMPLETING,
-                        constants.UPGRADE_ABORTING_ROLLBACK]):
-                LOG.info(_LI("Unsurpress require_jewel_osds health warning"))
-                self.surpress_require_jewel_osds_warning = False
+            if (state in [
+                       constants.UPGRADE_ABORTING,
+                       constants.UPGRADE_ABORT_COMPLETING,
+                       constants.UPGRADE_ABORTING_ROLLBACK]):
+                self.wait_for_upgrade_complete = False
         return health
 
 
