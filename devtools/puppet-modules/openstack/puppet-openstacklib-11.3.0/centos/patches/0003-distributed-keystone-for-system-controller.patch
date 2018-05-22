@@ -1,0 +1,18 @@
+From: Kam Nasim <kam.nasim@windriver.com>
+Date: Fri, 11 May 2018 11:35:59 -0600
+Subject: [PATCH 1/1] Add Distributed Keystone region name option for system controller
+
+---
+ lib/puppet/provider/openstack.rb |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/lib/puppet/provider/openstack.rb
++++ b/lib/puppet/provider/openstack.rb
+@@ -55,6 +55,7 @@ class Puppet::Provider::Openstack < Pupp
+       Timeout.timeout(command_timeout(action)) do
+         args.unshift('--os-interface', 'internal')
+         if systemcontroller?
++          args.unshift('--os-keystone-region-name', 'RegionOne')
+           args.unshift('--os-region-name', 'SystemController')
+         end
+         openstack_command *args

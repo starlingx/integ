@@ -1,0 +1,32 @@
+From fc863dbafa9014e6ea48b94cc9dcfa4e939245d8 Mon Sep 17 00:00:00 2001
+From: Kam Nasim <kam.nasim@windriver.com>
+Date: Fri, 11 May 2018 11:02:49 -0400
+Subject: [PATCH] Add region name for distributed keystone in system controller
+
+---
+ SPECS/puppet-openstacklib.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-openstacklib.spec b/SPECS/puppet-openstacklib.spec
+index 1a42722..399712f 100644
+--- a/SPECS/puppet-openstacklib.spec
++++ b/SPECS/puppet-openstacklib.spec
+@@ -10,6 +10,7 @@ URL:            https://launchpad.net/puppet-openstacklib
+ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_version}.tar.gz
+ Patch0001:      0001-Roll-up-TIS-patches.patch
+ Patch0002:      0002-Add-os-region-name-option-for-system-controller.patch
++Patch0003:      0003-distributed-keystone-for-system-controller.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -28,6 +29,7 @@ Puppet OpenStack Libraries
+ %setup -q -n openstack-openstacklib-%{upstream_version}
+ %patch0001 -p1
+ %patch0002 -p1
++%patch0003 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

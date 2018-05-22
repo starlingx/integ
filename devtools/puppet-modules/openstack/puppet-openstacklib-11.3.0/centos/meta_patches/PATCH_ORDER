@@ -1,3 +1,4 @@
 0001-Update-package-versioning-for-TIS-format.patch
 0002-Add-TIS-patch.patch
 0003-Add-os-region-name-option-for-system-controller.patch
+0004-distributed-keystone-in-system-controller.patch
