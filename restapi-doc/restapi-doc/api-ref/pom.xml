@@ -66,6 +66,17 @@ SPDX-License-Identifier: Apache-2.0
             </configuration>
           </execution>
           <execution>
+            <id>os-api-ref-dcmanager-api-v1</id>
+            <goals>
+              <goal>generate-html</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <includes>api-ref-dcmanager-v1.xml</includes>
+              <pdfFilename>bk-dcmanager-api-v1</pdfFilename>
+            </configuration>
+          </execution>
+          <execution>
             <id>os-api-ref-compute-v2-cgcs-ext</id>
             <goals>
               <goal>generate-html</goal>

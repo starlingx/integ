@@ -1,6 +1,6 @@
 Summary: RestAPI-Doc
 Name: restapi-doc
-Version: 1.8.0
+Version: 1.8.1
 Release: %{tis_patch_ver}%{?_tis_dist}
 License: Apache-2.0
 Group: devel
