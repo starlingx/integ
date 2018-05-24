@@ -1,0 +1,29 @@
+From 14d20a344d2918d1225b04397a374eb6795faebe Mon Sep 17 00:00:00 2001
+From: Tao Liu <tao.liu@windriver.com>
+Date: Sat, 12 May 2018 16:42:15 -0500
+Subject: [PATCH 1/1] US112325 Compute-huge replacement
+
+---
+ manifests/compute.pp | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/manifests/compute.pp b/manifests/compute.pp
+index 36d2e7a..719729a 100644
+--- a/manifests/compute.pp
++++ b/manifests/compute.pp
+@@ -266,12 +266,6 @@ class nova::compute (
+     }
+   }
+ 
+-  Compute_reserved_config<||> ~>
+-  exec { 'compute-huge reload':
+-    path    => [ '/usr/bin', '/usr/sbin', '/bin', '/sbin' ],
+-    command => '/etc/init.d/compute-huge.sh reload',
+-  }
+-
+   ensure_resource('nova_config', 'DEFAULT/allow_resize_to_same_host', { value => $allow_resize_to_same_host })
+ 
+   if ($vnc_enabled) {
+-- 
+1.8.3.1
+

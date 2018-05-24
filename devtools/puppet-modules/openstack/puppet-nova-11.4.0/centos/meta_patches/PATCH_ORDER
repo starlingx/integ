@@ -7,3 +7,4 @@
 0007-remove-joshuabaird-ipaclient-requirement.patch
 0008-Add-pci_weight_multiple-to-scheduler-filter.patch
 0009-Remove-SerialConsole-from-NovaConf.patch
+0010-Remove-compute-huge.patch

@@ -1,0 +1,32 @@
+From 1028b39c2fd611b5ba8fea78b03763e4836c4a2c Mon Sep 17 00:00:00 2001
+From: Tao Liu <tao.liu@windriver.com>
+Date: Sat, 12 May 2018 16:48:31 -0500
+Subject: [PATCH 1/1] US112325 Compute-huge replacement
+
+---
+ SPECS/puppet-nova.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-nova.spec b/SPECS/puppet-nova.spec
+index dea8857..c40ec94 100644
+--- a/SPECS/puppet-nova.spec
++++ b/SPECS/puppet-nova.spec
+@@ -18,6 +18,7 @@ Patch0006:      0006-Create-Nova-ironic-conf.patch
+ Patch0007:      0007-Remove-joshuabaird-ipaclient-from-puppet-nova-requir.patch
+ Patch0008:      0008-Adding-pci_weight_multiple-to-nova-scheduler-filter.patch
+ Patch0009:      0009-Remove-SerialConsole-from-NovaConf.patch
++Patch0010:      0010-Remove-compute-huge.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -47,6 +48,7 @@ Puppet module for OpenStack Nova
+ %patch0007 -p1
+ %patch0008 -p1
+ %patch0009 -p1
++%patch0010 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+
