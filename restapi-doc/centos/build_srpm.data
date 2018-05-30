@@ -3,5 +3,5 @@ COPY_LIST="$SRC_DIR/* \
            $CGCS_BASE/downloads/mvn.repo.tgz \
            "
 
-TIS_PATCH_VER=24
+TIS_PATCH_VER=25
 BUILD_IS_SLOW=3
