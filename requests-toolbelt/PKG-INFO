@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: requests-toolbelt
+Version: 0.5.1
+Summary: A utility belt for advanced users of python-requests
+Home-page: https://toolbelt.readthedocs.org/
+Author: Ian Cordasco, Cory Benfield
+License: Apache-2.0
+
+Description: A utility belt for advanced users of python-requests
+
+        
+Platform: UNKNOWN

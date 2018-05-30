@@ -1,0 +1,7 @@
+VERSION=0.5.1
+TAR_NAME=requests-toolbelt
+TAR="$TAR_NAME-$VERSION.tar.gz"
+# SRC_DIR="$TAR_NAME-$VERSION"
+COPY_LIST="${CGCS_BASE}/downloads/$TAR"
+
+TIS_PATCH_VER=1
