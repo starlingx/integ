@@ -1,0 +1,24 @@
+commit 51c505c59a1512c011fcda01d0583a2ddc6f3337
+Author: Shoaib Nasir <shoaib.nasir@windriver.com>
+Date:   Mon Sep 25 11:39:29 2017 -0400
+
+    add ironic group and passwd
+
+diff --git a/group b/group
+index 7d0244f..9979b99 100644
+--- a/group
++++ b/group
+@@ -27,3 +27,4 @@ nfv:x:172:nfv
+ fm:x:195:fm
+ libvirt:x:991:nova
+ magnum:x:1870:magnum
++ironic:x:1874:ironic
+diff --git a/passwd b/passwd
+index fce82e7..fb49ea3 100644
+--- a/passwd
++++ b/passwd
+@@ -17,3 +17,4 @@ postgres:x:120:120:PostgreSQL Server:/var/lib/pgsql:/bin/sh
+ snmpd:x:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
+ fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
+ magnum:x:1870:1870:OpenStack Magnum Daemons:/var/lib/magnum:/sbin/nologin
++ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin

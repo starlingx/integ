@@ -1,0 +1,206 @@
+---
+ src/client/client.h  |    2 +
+ src/client/display.c |   59 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ src/client/show.c    |   44 ++++++++++++++++++++++++++++++++++++++
+ src/lib/atoms/port.c |    7 ++++++
+ src/lib/lldpctl.h    |    1 
+ 5 files changed, 112 insertions(+), 1 deletion(-)
+
+--- a/src/client/client.h
++++ b/src/client/client.h
+@@ -115,6 +115,8 @@ char*  totag(const char *);
+ #define DISPLAY_DETAILS 3
+ void display_interfaces(lldpctl_conn_t *, struct writer *,
+     struct cmd_env *, int, int);
++void display_local_interfaces(lldpctl_conn_t *, struct writer *,
++    struct cmd_env *, int, int);
+ void display_interface(lldpctl_conn_t *, struct writer *, int,
+     lldpctl_atom_t *, lldpctl_atom_t *, int, int);
+ void display_local_chassis(lldpctl_conn_t *, struct writer *,
+--- a/src/client/display.c
++++ b/src/client/display.c
+@@ -344,12 +344,23 @@ display_port(struct writer *w, lldpctl_a
+ 	tag_datatag(w, "descr", "PortDescr",
+ 	    lldpctl_atom_get_str(port, lldpctl_k_port_descr));
+ 
++	tag_datatag(w, "ttl", "Ttl",
++	    lldpctl_atom_get_str(port, lldpctl_k_port_ttl));
++
+ 	/* Dot3 */
+ 	if (details == DISPLAY_DETAILS) {
+ 		tag_datatag(w, "mfs", "MFS",
+ 		    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_mfs));
+-		tag_datatag(w, "aggregation", "Port is aggregated. PortAggregID",
++
++		long int lag_id = lldpctl_atom_get_int(port,
++		    lldpctl_k_port_dot3_aggregid);
++		tag_start(w, "link-aggregation", "LinkAgg");
++		tag_attr(w, "supported", "supported", "yes");
++		tag_attr(w, "enabled", "enabled",
++			(lag_id > 0)?"yes":"no");
++		tag_datatag(w, "aggregation", "PortAggregID",
+ 		    lldpctl_atom_get_str(port, lldpctl_k_port_dot3_aggregid));
++		tag_end(w);
+ 
+ 		long int autoneg_support, autoneg_enabled, autoneg_advertised;
+ 		autoneg_support = lldpctl_atom_get_int(port,
+@@ -663,6 +674,52 @@ display_interfaces(lldpctl_conn_t *conn,
+ 		lldpctl_atom_dec_ref(port);
+ 	}
+ 	tag_end(w);
++}
++
++/**
++ * Display information about local interfaces.
++ *
++ * @param conn       Connection to lldpd.
++ * @param w          Writer.
++ * @param hidden     Whatever to show hidden ports.
++ * @param env        Environment from which we may find the list of ports.
++ * @param details    Level of details we need (DISPLAY_*).
++ */
++void
++display_local_interfaces(lldpctl_conn_t *conn, struct writer *w,
++    struct cmd_env *env,
++    int hidden, int details)
++{
++	lldpctl_atom_t *iface;
++	int protocol = LLDPD_MODE_MAX;
++	const char *proto_str;
++
++	/* user might have specified protocol to filter display results */
++	proto_str = cmdenv_get(env, "protocol");
++
++	if (proto_str) {
++		log_debug("display", "filter protocol: %s ", proto_str);
++
++		protocol = 0;
++		for (lldpctl_map_t *protocol_map =
++			 lldpctl_key_get_map(lldpctl_k_port_protocol);
++		     protocol_map->string;
++		     protocol_map++) {
++			if (!strcasecmp(proto_str, protocol_map->string)) {
++				protocol = protocol_map->value;
++				break;
++			}
++		}
++	}
++
++	tag_start(w, "lldp", "LLDP interfaces");
++	while ((iface = cmd_iterate_on_interfaces(conn, env))) {
++		lldpctl_atom_t *port;
++		port      = lldpctl_get_port(iface);
++		display_interface(conn, w, hidden, iface, port, details, protocol);
++		lldpctl_atom_dec_ref(port);
++	}
++	tag_end(w);
+ }
+ 
+ void
+--- a/src/client/show.c
++++ b/src/client/show.c
+@@ -48,6 +48,35 @@ cmd_show_neighbors(struct lldpctl_conn_t
+ }
+ 
+ /**
++ * Show interfaces.
++ *
++ * The environment will contain the following keys:
++ *  - C{ports} list of ports we want to restrict showing.
++ *  - C{hidden} if we should show hidden ports.
++ *  - C{summary} if we want to show only a summary
++ *  - C{detailed} for a detailed overview
++ */
++static int
++cmd_show_interfaces(struct lldpctl_conn_t *conn, struct writer *w,
++    struct cmd_env *env, void *arg)
++{
++	log_debug("lldpctl", "show interfaces data (%s) %s hidden interfaces",
++	    cmdenv_get(env, "summary")?"summary":
++	    cmdenv_get(env, "detailed")?"detailed":
++	    "normal", cmdenv_get(env, "hidden")?"with":"without");
++	if (cmdenv_get(env, "ports"))
++		log_debug("lldpctl", "restrict to the following ports: %s",
++		    cmdenv_get(env, "ports"));
++
++	display_local_interfaces(conn, w, env, !!cmdenv_get(env, "hidden"),
++	    cmdenv_get(env, "summary")?DISPLAY_BRIEF:
++	    cmdenv_get(env, "detailed")?DISPLAY_DETAILS:
++	    DISPLAY_NORMAL);
++
++	return 1;
++}
++
++/**
+  * Show chassis.
+  *
+  * The environment will contain the following keys:
+@@ -269,6 +298,12 @@ register_commands_show(struct cmd_node *
+ 		"Show neighbors data",
+ 		NULL, NULL, NULL);
+ 
++	struct cmd_node *interfaces = commands_new(
++		show,
++		"interfaces",
++		"Show interfaces data",
++		NULL, NULL, NULL);
++
+ 	struct cmd_node *chassis = commands_new(
+ 		show,
+ 		"chassis",
+@@ -289,6 +324,15 @@ register_commands_show(struct cmd_node *
+ 
+ 	register_common_commands(neighbors, 1);
+ 
++	/* Interfaces data */
++	commands_new(interfaces,
++	    NEWLINE,
++	    "Show interfaces data",
++	    NULL, cmd_show_interfaces, NULL);
++
++	cmd_restrict_ports(interfaces);
++	register_common_commands(interfaces, 0);
++
+ 	/* Chassis data */
+ 	commands_new(chassis,
+ 	    NEWLINE,
+--- a/src/lib/atoms/port.c
++++ b/src/lib/atoms/port.c
+@@ -19,6 +19,7 @@
+ #include <stdarg.h>
+ #include <string.h>
+ #include <arpa/inet.h>
++#include <time.h>
+ 
+ #include "lldpctl.h"
+ #include "../log.h"
+@@ -544,6 +545,7 @@ _lldpctl_atom_get_int_port(lldpctl_atom_
+ 	    (struct _lldpctl_atom_port_t *)atom;
+ 	struct lldpd_port     *port     = p->port;
+ 	struct lldpd_hardware *hardware = p->hardware;
++	time_t now = time(NULL);
+ 
+ 	/* Local port only */
+ 	if (hardware != NULL) {
+@@ -585,6 +587,11 @@ _lldpctl_atom_get_int_port(lldpctl_atom_
+ 		return port->p_id_subtype;
+ 	case lldpctl_k_port_hidden:
+ 		return port->p_hidden_in;
++	case lldpctl_k_port_ttl:
++		if (port->p_lastupdate > 0)
++			return (port->p_chassis->c_ttl - (now - port->p_lastupdate));
++		else
++			return port->p_chassis->c_ttl;
+ #ifdef ENABLE_DOT3
+ 	case lldpctl_k_port_dot3_mfs:
+ 		if (port->p_mfs > 0)
+--- a/src/lib/lldpctl.h
++++ b/src/lib/lldpctl.h
+@@ -674,6 +674,7 @@ typedef enum {
+ 	lldpctl_k_port_hidden,	   /**< `(I)` Is this port hidden (or should it be displayed?)? */
+ 	lldpctl_k_port_status,	   /**< `(IS,WO)` Operational status of this (local) port */
+ 	lldpctl_k_port_chassis,	   /**< `(A)` Chassis associated to the port */
++	lldpctl_k_port_ttl,	   /**< `(I)` The port ttl. */
+ 
+ 	lldpctl_k_port_dot3_mfs = 1300,	   /**< `(I)` MFS */
+ 	lldpctl_k_port_dot3_aggregid,   /**< `(I)` Port aggregation ID */

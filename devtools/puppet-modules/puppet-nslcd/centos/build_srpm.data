@@ -1,0 +1,16 @@
+PREFIX=puppet
+MODULE=nslcd
+VERSION=0.0.1
+
+GIT_SHA=b8c19b1ada89865f2e50758e054583798ad8011a
+
+# Generic Copy routine
+# Un-patched
+COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz"
+
+#Patched
+#COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz $FILES_BASE/*"
+
+
+
+TIS_PATCH_VER=2

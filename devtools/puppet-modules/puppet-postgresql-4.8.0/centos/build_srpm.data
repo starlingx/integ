@@ -1,0 +1,12 @@
+PREFIX=puppetlabs
+MODULE=postgresql
+VERSION=4.8.0
+
+GIT_SHA=d022a56b28b2174456fc0f6adc51a4b54493afad
+
+#Patched
+COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz $FILES_BASE/*"
+
+
+
+TIS_PATCH_VER=2

@@ -1,0 +1,25 @@
+From 3fc59f7efbbc18c26261e7fc8b5a4383d874b76c Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 15:25:05 -0400
+Subject: [PATCH 6/7] WRS: mark-dhclient.conf-as-config.patch
+
+---
+ SPECS/dhcp.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
+index 29dfbcf..7301e63 100644
+--- a/SPECS/dhcp.spec
++++ b/SPECS/dhcp.spec
+@@ -692,7 +692,7 @@ done
+ %attr(0644,root,root) %{_mandir}/man8/dhclient-script.8.gz
+ 
+ # WRS
+-%{dhcpconfdir}/dhclient.conf
++%config(noreplace) %{dhcpconfdir}/dhclient.conf
+ %{dhcpconfdir}/dhclient-enter-hooks
+ 
+ %files common
+-- 
+1.9.1
+

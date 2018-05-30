@@ -1,0 +1,8 @@
+MODULE=puppi
+VERSION=2.2.3
+
+GIT_SHA=c1c47f4edfd761d1bbde32a75da0c3fa7cc93a81
+
+COPY_LIST="$CGCS_BASE/downloads/puppet/$MODULE-$GIT_SHA.tar.gz"
+
+TIS_PATCH_VER=0

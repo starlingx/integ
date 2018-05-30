@@ -1,0 +1,4 @@
+# Configuration file for the Net-SNMP applications  
+
+# Specifies the source address to be used by snmptrap application when sending SNMP traps
+clientaddr oamcontroller

@@ -1,0 +1,34 @@
+From 7f56a1c1ad4f6b1437165a73493a69eeea68fd95 Mon Sep 17 00:00:00 2001
+Message-Id: <7f56a1c1ad4f6b1437165a73493a69eeea68fd95.1507237258.git.Jim.Somerville@windriver.com>
+In-Reply-To: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+References: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From: Dahir Osman <dahir.osman@windriver.com>
+Date: Wed, 13 Jan 2016 10:01:11 -0500
+Subject: [PATCH 04/24] PCI: Add ACS quirk for Intel Fortville NICs
+
+Use quirks to determine isolation for now until a later kernel can
+properly read the Fortville ACS capabilities.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ drivers/pci/quirks.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
+index f6f2658..b5349eb 100644
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -4108,6 +4108,10 @@ static const struct pci_dev_acs_enabled {
+ 	/* I219 */
+ 	{ PCI_VENDOR_ID_INTEL, 0x15b7, pci_quirk_mf_endpoint_acs },
+ 	{ PCI_VENDOR_ID_INTEL, 0x15b8, pci_quirk_mf_endpoint_acs },
++	/* I40 */
++	{ PCI_VENDOR_ID_INTEL, 0x1572, pci_quirk_mf_endpoint_acs },
++	{ PCI_VENDOR_ID_INTEL, 0x1586, pci_quirk_mf_endpoint_acs },
++	{ PCI_VENDOR_ID_INTEL, 0x1583, pci_quirk_mf_endpoint_acs },
+ 	/* Intel PCH root ports */
+ 	{ PCI_VENDOR_ID_INTEL, PCI_ANY_ID, pci_quirk_intel_pch_acs },
+ 	{ PCI_VENDOR_ID_INTEL, PCI_ANY_ID, pci_quirk_intel_spt_pch_acs },
+-- 
+1.8.3.1
+

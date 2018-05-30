@@ -1,0 +1,22 @@
+---
+ SPECS/setup.spec |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/SPECS/setup.spec
++++ b/SPECS/setup.spec
+@@ -26,6 +26,7 @@ Patch6: updating-gids-and-uids-to-suppor
+ Patch8: passwd-remove-unused-default-users-and-groups.patch
+ Patch9: snmpd-fm-user-group.patch
+ Patch10: remove-unused-default-groups.patch
++Patch11: add-fm-user-to-snmpd-group.patch
+ 
+ %description
+ The setup package contains a set of important system configuration and
+@@ -44,6 +45,7 @@ setup files, such as passwd, group, and
+ %patch8 -p1
+ %patch9 -p1
+ %patch10 -p1
++%patch11 -p1
+ 
+ ./shadowconvert.sh
+ 

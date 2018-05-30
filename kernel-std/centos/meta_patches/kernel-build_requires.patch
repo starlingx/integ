@@ -1,0 +1,28 @@
+From 7e257fd0c2bb38653e4c2a7e5a01af28c90bba76 Mon Sep 17 00:00:00 2001
+Message-Id: <7e257fd0c2bb38653e4c2a7e5a01af28c90bba76.1507220785.git.Jim.Somerville@windriver.com>
+In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From: Scott Little <scott.little@windriver.com>
+Date: Tue, 9 May 2017 13:10:24 -0400
+Subject: [PATCH 07/25] kernel build_requires
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index 54fc219..df2f9e4 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -352,6 +352,7 @@ BuildRequires: rpm-build >= 4.9.0-1, elfutils >= 0.153-1
+ # required for zfcpdump
+ BuildRequires: glibc-static
+ %endif
++BuildRequires: util-linux
+ 
+ Source0: linux-%{rpmversion}-%{pkgrelease}.tar.xz
+ 
+-- 
+1.8.3.1
+

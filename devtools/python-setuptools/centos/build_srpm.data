@@ -1,0 +1,5 @@
+#python-setuptools-v38.5.1.tar.gz
+
+COPY_LIST="$CGCS_BASE/downloads/python-setuptools-v38.5.1.tar.gz $PKG_BASE/files/*"
+
+TIS_PATCH_VER=0

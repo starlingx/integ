@@ -1,0 +1,39 @@
+From a56528b5e47a925d169ce3b7e8b5e4bde43c2a1b Mon Sep 17 00:00:00 2001
+Message-Id: <a56528b5e47a925d169ce3b7e8b5e4bde43c2a1b.1510262785.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Thu, 9 Nov 2017 15:53:41 -0500
+Subject: [PATCH 1/1] Fix compile warnings in scsi drivers
+
+They get turned into errors and thus break the build.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index 263bc01..8e1a50d 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -445,6 +445,9 @@ Patch40022: cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
+ Patch40023: US101216-IMA-support-in-Titanium-kernel.patch
+ Patch40024: US103091-IMA-System-Configuration.patch
+ Patch40025: Fix-CentOS-mistake-thinking-that-Xen-is-always-enabl.patch
++# Fix compile warnings that break the build
++Patch40026: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
++Patch40027: dpt_i2o-fix-build-warning.patch
+ 
+ BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+ 
+@@ -793,6 +796,8 @@ ApplyOptionalPatch cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
+ ApplyOptionalPatch US101216-IMA-support-in-Titanium-kernel.patch
+ ApplyOptionalPatch US103091-IMA-System-Configuration.patch
+ ApplyOptionalPatch Fix-CentOS-mistake-thinking-that-Xen-is-always-enabl.patch
++ApplyOptionalPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
++ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
+ 
+ # Any further pre-build tree manipulations happen here.
+ 
+-- 
+1.8.3.1
+

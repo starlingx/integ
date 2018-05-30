@@ -1,0 +1,61 @@
+From 9caa7a0860a8adcf38047fb39b6e1577099104d6 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 14:49:27 -0400
+Subject: [PATCH 01/13] WRS: spec-include-TiS-changes.patch
+
+Conflicts:
+	SPECS/initscripts.spec
+---
+ SPECS/initscripts.spec | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
+index 6b81095..7f93a30 100644
+--- a/SPECS/initscripts.spec
++++ b/SPECS/initscripts.spec
+@@ -7,6 +7,10 @@ Group: System Environment/Base
+ Release: 1%{?dist}
+ URL: https://github.com/fedora-sysv/initscripts
+ Source: https://github.com/fedora-sysv/initscripts/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
++
++# WRS
++Source1: sysctl.conf
++
+ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+ Obsoletes: initscripts-legacy <= 9.39
+ Requires: /bin/awk, sed, coreutils
+@@ -35,6 +39,10 @@ Requires(preun): /sbin/chkconfig
+ BuildRequires: glib2-devel popt-devel gettext pkgconfig
+ Provides: /sbin/service
+ 
++Patch4: support-interface-scriptlets.patch
++Patch5: relocate-dhclient-leases-to-var-run.patch
++Patch6: dhclient-restrict-interfaces-to-those-on-c.patch
++
+ %description
+ The initscripts package contains basic system scripts used
+ during a boot of the system. It also contains scripts which
+@@ -54,6 +62,10 @@ Currently, this consists of various memory checking code.
+ %prep
+ %setup -q
+ 
++%patch4 -p1
++%patch5 -p1
++%patch6 -p1
++
+ %build
+ make
+ 
+@@ -74,6 +86,9 @@ rm -f \
+ touch $RPM_BUILD_ROOT/etc/crypttab
+ chmod 600 $RPM_BUILD_ROOT/etc/crypttab
+ 
++# WRS: Overwrite with our config
++install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/etc/sysctl.conf
++
+ %pre
+ /usr/sbin/groupadd -g 22 -r -f utmp
+ 
+-- 
+1.9.1
+

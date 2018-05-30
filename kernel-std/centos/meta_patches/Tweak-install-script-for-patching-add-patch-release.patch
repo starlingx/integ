@@ -1,0 +1,52 @@
+From ab67f811ca20a8ac98307472382876f6c247b00c Mon Sep 17 00:00:00 2001
+Message-Id: <ab67f811ca20a8ac98307472382876f6c247b00c.1507220784.git.Jim.Somerville@windriver.com>
+In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From: Scott Little <scott.little@windriver.com>
+Date: Tue, 9 May 2017 13:10:22 -0400
+Subject: [PATCH 02/25] Tweak install script for patching add patch release
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index a6884c2..0fc23c5 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -3,7 +3,9 @@
+ 
+ Summary: The Linux kernel
+ 
+-%define buildid .tis
++# This is the WRS patch release
++%define patch_rel 2
++%define buildid .%{patch_rel}.tis
+ 
+ # For a kernel released for public testing, released_kernel should be 1.
+ # For internal testing builds during development, it should be 0.
+@@ -12,7 +14,8 @@ Summary: The Linux kernel
+ %global distro_build 693
+ 
+ %define rpmversion 3.10.0
+-%define pkgrelease 693.2.2.el7
++%define _pkgrelease 693.2.2
++%define pkgrelease %{_pkgrelease}.el7
+ 
+ %define pkg_release %{pkgrelease}%{?buildid}
+ 
+@@ -1425,6 +1428,10 @@ fi}\
+ %{expand:\
+ %{_sbindir}/new-kernel-pkg --package kernel%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
+ }\
++# If this is a pkg upgrade (ie installed as a patch), set the reboot flag\
++if [ $1 -gt 1 ] ; then\
++    touch /var/run/node_is_patched_rr\
++fi\
+ %{nil}
+ 
+ #
+-- 
+1.8.3.1
+

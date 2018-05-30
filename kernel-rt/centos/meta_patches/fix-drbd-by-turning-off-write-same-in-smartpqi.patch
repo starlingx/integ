@@ -1,0 +1,35 @@
+From 69fe6756d51b21e909f228042ca301e88f0ef184 Mon Sep 17 00:00:00 2001
+Message-Id: <69fe6756d51b21e909f228042ca301e88f0ef184.1520371020.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Tue, 6 Mar 2018 16:16:54 -0500
+Subject: [PATCH 1/1] fix drbd by turning off write same in smartpqi
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel-rt.spec | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
+index a56e051..bd5d93f 100644
+--- a/SPECS/kernel-rt.spec
++++ b/SPECS/kernel-rt.spec
+@@ -425,6 +425,8 @@ Patch1030: dpt_i2o-fix-build-warning.patch
+ Patch1031: KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+ # CVE-2017-11176: kernel: Use-after-free in sys_mq_notify()
+ Patch1032: mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
++# DRBD was choking on write same
++Patch1033: turn-off-write-same-in-smartqpi-driver.patch
+ 
+ BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
+ 
+@@ -820,6 +822,7 @@ ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
+ ApplyPatch dpt_i2o-fix-build-warning.patch
+ ApplyPatch KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+ ApplyPatch mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
++ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
+ 
+ # move off upstream version mechanism
+ if [ -e localversion-rt ]; then
+-- 
+1.8.3.1
+

@@ -1,0 +1,116 @@
+From cf6357eb12c87dd70fc675b9d0420234eb0317db Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 17:11:21 -0400
+Subject: [PATCH 1/5] WRS: openldap-spec-file.patch
+
+Conflicts:
+	SPECS/openldap.spec
+---
+ SPECS/openldap.spec | 33 ++++++++++++++++++++++++++++-----
+ 1 file changed, 28 insertions(+), 5 deletions(-)
+
+diff --git a/SPECS/openldap.spec b/SPECS/openldap.spec
+index d8dbcbf..5121f8a 100644
+--- a/SPECS/openldap.spec
++++ b/SPECS/openldap.spec
+@@ -24,6 +24,12 @@ Source53: libexec-upgrade-db.sh
+ Source54: libexec-create-certdb.sh
+ Source55: libexec-generate-server-cert.sh
+ 
++# WRS:
++Source56: ldap.conf.cgcs
++Source57: slapd.conf.cgcs
++Source58: initial_config.ldif
++Source60: initscript
++
+ # patches for 2.4
+ Patch0: openldap-manpages.patch
+ Patch1: openldap-ppolicy-loglevels.patch
+@@ -276,9 +282,11 @@ pushd openldap-%{version}
+ 	--enable-backends=mod \
+ 	--enable-bdb=yes \
+ 	--enable-hdb=yes \
+-	--enable-mdb=yes \
++	--enable-mdb=mod \
+ 	--enable-monitor=yes \
+ 	--disable-ndb \
++    --enable-syncprov=mod \
++    --enable-ppolicy=mod \
+ 	\
+ 	--enable-overlays=mod \
+ 	\
+@@ -326,7 +334,7 @@ mv check_password.so check_password.so.%{check_password_version}
+ ln -s check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/check_password.so
+ install -m 755 check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/
+ # install -m 644 README %{buildroot}%{_libdir}/openldap
+-install -d -m 755 %{buildroot}%{_sysconfdir}/openldap
++install -d -m 740 %{buildroot}%{_sysconfdir}/openldap
+ cat > %{buildroot}%{_sysconfdir}/openldap/check_password.conf <<EOF
+ # OpenLDAP pwdChecker library configuration
+ 
+@@ -375,6 +383,10 @@ mv %{buildroot}/usr/local/share/man/man1/mdb_{copy,dump,load,stat}.1 %{buildroot
+ rm -f %{buildroot}/usr/local/include/lmdb.h
+ rm -f %{buildroot}/usr/local/lib/liblmdb.{a,so}
+ 
++# WRS
++mkdir -p %{buildroot}%{_sysconfdir}/rc.d/init.d
++install -m 0755 %SOURCE60 %{buildroot}%{_sysconfdir}/rc.d/init.d/openldap
++
+ # remove build root from config files and manual pages
+ perl -pi -e "s|%{buildroot}||g" %{buildroot}%{_sysconfdir}/openldap/*.conf
+ perl -pi -e "s|%{buildroot}||g" %{buildroot}%{_mandir}/*/*.*
+@@ -427,6 +439,11 @@ mv %{buildroot}%{_libdir}/openldap/check_password.so{.tmp,}
+ rm -f %{buildroot}%{_localstatedir}/openldap-data/DB_CONFIG.example
+ rmdir %{buildroot}%{_localstatedir}/openldap-data
+ 
++# WRS: slapd-config is backward compatible with slapd.conf
++install -m 600 %{SOURCE56} %{buildroot}%{_sysconfdir}/openldap/ldap.conf
++install -m 600 %{SOURCE57} %{buildroot}%{_sysconfdir}/openldap/slapd.conf
++install -m 600 %{SOURCE58} %{buildroot}%{_sysconfdir}/openldap/initial_config.ldif
++
+ %post
+ # create certificate database
+ %{_libexecdir}/openldap/create-certdb.sh >&/dev/null || :
+@@ -461,6 +478,7 @@ exit 0
+ %post servers
+ 
+ /sbin/ldconfig -n %{_libdir}/openldap
++mkdir -p /var/lib/openldap-data
+ 
+ %systemd_post slapd.service
+ 
+@@ -471,7 +489,6 @@ exit 0
+ if [ ! -f %{_sysconfdir}/openldap/slapd.d/cn=config.ldif ]; then
+ 	if [ -f %{_sysconfdir}/openldap/slapd.conf ]; then
+ 		%{_libexecdir}/openldap/convert-config.sh &>/dev/null
+-		mv %{_sysconfdir}/openldap/slapd.conf %{_sysconfdir}/openldap/slapd.conf.bak
+ 	else
+ 		%{_libexecdir}/openldap/convert-config.sh -f %{_datadir}/openldap-servers/slapd.ldif &>/dev/null
+ 	fi
+@@ -615,6 +632,7 @@ exit 0
+ %dir %attr(0700,ldap,ldap) %{_sharedstatedir}/ldap
+ %dir %attr(-,ldap,ldap) %{_localstatedir}/run/openldap
+ %{_unitdir}/slapd.service
++%{_sysconfdir}/rc.d/init.d/openldap
+ %{_datadir}/openldap-servers/
+ %{_libdir}/openldap/accesslog*
+ %{_libdir}/openldap/auditlog*
+@@ -661,8 +679,13 @@ exit 0
+ %{_mandir}/man5/slapd*.5*
+ %{_mandir}/man5/slapo-*.5*
+ # obsolete configuration
+-%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/openldap/slapd.conf
+-%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/openldap/slapd.conf.bak
++# %ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/openldap/slapd.conf
++# %ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/openldap/slapd.conf.bak
++
++# WRS
++%{_libdir}/openldap/back_mdb*
++%{_sysconfdir}/openldap/slapd.conf
++%{_sysconfdir}/openldap/initial_config.ldif
+ 
+ %files servers-sql
+ %doc openldap-%{version}/servers/slapd/back-sql/docs/*
+-- 
+1.9.1
+

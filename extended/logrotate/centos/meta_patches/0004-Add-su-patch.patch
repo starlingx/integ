@@ -1,0 +1,32 @@
+From e07398bb49873b2a273cb1c7b3dc5b781e3f634b Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Fri, 19 Jan 2018 23:38:21 -0500
+Subject: [PATCH] Add su patch
+
+---
+ SPECS/logrotate.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/logrotate.spec b/SPECS/logrotate.spec
+index d67e4bb..84977f6 100644
+--- a/SPECS/logrotate.spec
++++ b/SPECS/logrotate.spec
+@@ -39,6 +39,7 @@ Patch14: logrotate-3.8.6-su-username.patch
+ 
+ Patch10001: 0001-createOutputFile-rename-already-existing-file.patch
+ Patch10002: 0002-createOutputFile-eliminate-stat-open-TOCTOU-race.patch
++Patch10003: 0003-Add-su-root-to-logrotate.conf.patch
+ 
+ Requires: coreutils >= 5.92 popt
+ BuildRequires: libselinux-devel popt-devel libacl-devel acl
+@@ -75,6 +76,7 @@ log files on your system.
+ 
+ %patch10001 -p1
+ %patch10002 -p1
++%patch10003 -p1
+ 
+ %build
+ make %{?_smp_mflags} RPM_OPT_FLAGS="$RPM_OPT_FLAGS" WITH_SELINUX=yes WITH_ACL=yes
+-- 
+1.8.3.1
+

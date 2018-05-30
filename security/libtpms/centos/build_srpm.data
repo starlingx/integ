@@ -1,0 +1,2 @@
+COPY_LIST="$CGCS_BASE/downloads/libtpms-0.6.0-4f0d59d.tar.gz"
+TIS_PATCH_VER=0

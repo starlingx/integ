@@ -1,0 +1,15 @@
+---
+ group |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/group
++++ b/group
+@@ -21,7 +21,7 @@ neutron:x:164:neutron
+ cinder:x:165:cinder
+ ceilometer:x:166:ceilometer
+ sysinv:x:168:sysinv
+-snmpd:x:169:snmpd
++snmpd:x:169:snmpd,fm
+ heat:x:187:heat
+ nfv:x:172:nfv
+ fm:x:195:fm

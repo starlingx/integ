@@ -1,0 +1,195 @@
+From 17d30a1fc606fce8d5636f6b418ef498944fdf9d Mon Sep 17 00:00:00 2001
+From: eric zhang <eric.zhang@windriver.com>
+Date: Wed, 14 Mar 2018 15:52:15 -0400
+Subject: [PATCH 1/1] Support TiS system
+
+This patch added the following to support TiS system:
+1. Support package versioning for TiS format
+2. Add rt support
+3. Compile fix in dcbnl.h
+4. Fix compile for some ks stuff
+5. Fix compile neuter some stats output
+6. Load all kernel modules
+7. Sign kernel module
+
+Signed-off-by: Allain Legacy <allain.legacy@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Kam Nasim <kam.nasim@windriver.com>
+Signed-off-by: eric zhang <eric.zhang@windriver.com>
+---
+ SPECS/mlnx-ofa_kernel.spec | 49 +++++++++++++++++++++++++++++++---------------
+ 1 file changed, 33 insertions(+), 16 deletions(-)
+
+diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
+index 111cf4b..d094158 100644
+--- a/SPECS/mlnx-ofa_kernel.spec
++++ b/SPECS/mlnx-ofa_kernel.spec
+@@ -27,8 +27,14 @@
+ #
+ 
+ # KMP is disabled by default
+-%{!?KMP: %global KMP 0}
++%if "%{_tis_build_type}" == "rt"
++%define bt_ext -rt
++%else
++%undefine bt_ext
++%endif
+ 
++%{!?KMP: %global KMP 0}
++BuildRequires: kernel%{?bt_ext}-devel, openssl
+ %global WITH_SYSTEMD %(if ( test -d "%{_unitdir}" > /dev/null); then echo -n '1'; else echo -n '0'; fi)
+ 
+ %{!?configure_options: %global configure_options --with-core-mod --with-user_mad-mod --with-user_access-mod --with-addr_trans-mod --with-mlx4-mod --with-mlx4_en-mod --with-mlx5-mod --with-mlxfw-mod --with-ipoib-mod}
+@@ -41,12 +47,11 @@
+ %global BLUENIX %(if (grep -qiE "Bluenix" /etc/issue /etc/*release* 2>/dev/null); then echo -n '1'; else echo -n '0'; fi)
+ %global XENSERVER65 %(if (grep -qiE "XenServer.*6\.5" /etc/issue /etc/*release* 2>/dev/null); then echo -n '1'; else echo -n '0'; fi)
+ 
+-%{!?KVERSION: %global KVERSION %(uname -r)}
++%{!?KVERSION: %global KVERSION %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')}
+ %global kernel_version %{KVERSION}
+ %global krelver %(echo -n %{KVERSION} | sed -e 's/-/_/g')
+ # take path to kernel sources if provided, otherwise look in default location (for non KMP rpms).
+-%{!?K_SRC: %global K_SRC /lib/modules/%{KVERSION}/build}
+-
++%{!?K_SRC: %global K_SRC /usr/src/kernels/%{KVERSION}}
+ # Select packages to build
+ 
+ # Kernel module packages to be included into kernel-ib
+@@ -62,7 +67,9 @@
+ 
+ %{!?KERNEL_SOURCES: %global KERNEL_SOURCES /lib/modules/%{KVERSION}/source}
+ 
+-%{!?_name: %global _name mlnx-ofa_kernel}
++
++%define _basename mlnx-ofa_kernel
++%define _name %{_basename}%{?bt_ext}
+ %{!?_version: %global _version 4.3}
+ %{!?_release: %global _release OFED.4.3.1.0.1.1.g8509e41}
+ %global _kmp_rel %{_release}%{?_kmp_build_num}%{?_dist}
+@@ -74,11 +81,16 @@
+ Summary: Infiniband HCA Driver
+ Name: %{_name}
+ Version: %{_version}
+-Release: %{_release}%{?_dist}
++Release: %{_release}%{?_tis_dist}.%{tis_patch_ver}
+ License: GPLv2
+ Url: http://www.mellanox.com/
+ Group: System Environment/Base
+-Source: %{_name}-%{_version}.tgz
++Source: %{_basename}-%{_version}.tgz
++Source100: modules-load.conf
++Patch01: 0001-neuter-HAVE_IEEE_GETQCN.patch
++Patch02: 0001-neuter-a-bunch-of-ks-stuff.patch
++Patch03: 0001-neuter-some-stats-output.patch
++
+ BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
+ Vendor: Mellanox Technologies
+ Obsoletes: kernel-ib
+@@ -133,7 +145,6 @@ EOF)
+ %global kernel_release() %{KVERSION}
+ %global flavors_to_build default
+ %package -n %{non_kmp_pname}
+-Requires: %{utils_pname}
+ Requires: coreutils
+ Requires: pciutils
+ Requires: grep
+@@ -160,7 +171,7 @@ Obsoletes: mlnx-en-doc
+ Obsoletes: mlnx-en-debuginfo
+ Obsoletes: mlnx-en-sources
+ Version: %{_version}
+-Release: %{_release}.kver.%{krelver}
++Release: %{_release}%{?_tis_dist}.%{tis_patch_ver}
+ Summary: Infiniband Driver and ULPs kernel modules
+ Group: System Environment/Libraries
+ %description -n %{non_kmp_pname}
+@@ -172,7 +183,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+ %package -n %{devel_pname}
+ Version: %{_version}
+ # build KMP rpms?
+-Release: %{_release}%{?_dist}
++Release: %{_release}%{?_dist}%{?_tis_dist}.%{tis_patch_ver}
+ Obsoletes: kernel-ib-devel
+ Obsoletes: compat-rdma-devel
+ Obsoletes: kernel-ib
+@@ -209,13 +220,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+ 	else \
+ 		echo -n '0'; fi)
+ 
+-%if "%{WITH_MOD_SIGN}" == "1"
+ # call module sign script
+ %global __modsign_install_post \
+     %{_builddir}/$NAME-$VERSION/source/ofed_scripts/tools/sign-modules %{buildroot}/lib/modules/ %{kernel_source default} || exit 1 \
+ %{nil}
+ 
+-%global __debug_package 1
++%define debug_package %{nil}
+ %global buildsubdir %{_name}-%{version}
+ # Disgusting hack alert! We need to ensure we sign modules *after* all
+ # invocations of strip occur, which is in __debug_install_post if
+@@ -228,7 +238,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+   %{__modsign_install_post} \
+ %{nil}
+ 
+-%endif # end of setup module sign scripts
+ #
+ %if "%{_vendor}" == "suse"
+ %debug_package
+@@ -259,12 +268,16 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+ %{!?install_mod_dir: %global install_mod_dir updates}
+ 
+ %prep
+-%setup -n %{_name}-%{_version}
++%setup -n %{_basename}-%{_version}
+ set -- *
+ mkdir source
+ mv "$@" source/
+ mkdir obj
+ 
++%patch01 -p1
++%patch02 -p1
++%patch03 -p1
++
+ %build
+ export EXTRA_CFLAGS='-DVERSION=\"%version\"'
+ export INSTALL_MOD_DIR=%{install_mod_dir}
+@@ -279,7 +292,6 @@ for flavor in %flavors_to_build; do
+ 	find compat -type f -exec touch -t 200012201010 '{}' \; || true
+ 	./configure --build-dummy-mods --prefix=%{_prefix} --kernel-version $KVERSION --kernel-sources $KSRC --modules-dir $LIB_MOD_DIR $CONF_OPTIONS %{?_smp_mflags}
+ 	make %{?_smp_mflags} kernel
+-	make build_py_scripts
+ 	cd -
+ done
+ 
+@@ -288,9 +300,11 @@ touch ofed-files
+ export RECORD_PY_FILES=1
+ export INSTALL_MOD_PATH=%{buildroot}
+ export INSTALL_MOD_DIR=%{install_mod_dir}
+-export NAME=%{name}
++export NAME=%{_basename}
+ export VERSION=%{version}
+ export PREFIX=%{_prefix}
++export MODULE_SIGN_PRIV_KEY=/usr/src/kernels/%{KVERSION}/signing_key.priv
++export MODULE_SIGN_PUB_KEY=/usr/src/kernels/%{KVERSION}/signing_key.x509
+ for flavor in %flavors_to_build; do 
+ 	export KSRC=%{kernel_source $flavor}
+ 	export KVERSION=%{kernel_release $KSRC}
+@@ -340,6 +354,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
+ echo "override ${mod_name} * extra/%{_name}${mod_path}" >> %{buildroot}%{_sysconfdir}/depmod.d/zz01-%{_name}-${mod_name}.conf
+ done
+ %endif
++%{__install} -d %{buildroot}%{_sysconfdir}/modules-load.d
++%{__install} -m 644 %{SOURCE100} %{buildroot}%{_sysconfdir}/modules-load.d/mlnx.conf
+ %endif
+ 
+ # copy sources
+@@ -677,6 +693,7 @@ fi
+ %config(noreplace) %{_sysconfdir}/depmod.d/zz01-%{_name}-*.conf
+ %endif
+ %endif
++%{_sysconfdir}/modules-load.d/mlnx.conf
+ %endif
+ 
+ %files -n %{devel_pname}
+-- 
+1.8.3.1
+

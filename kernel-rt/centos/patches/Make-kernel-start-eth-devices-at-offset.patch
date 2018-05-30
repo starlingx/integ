@@ -1,0 +1,37 @@
+From 0f49e3a41bc1edcea227deed767bf24af144b691 Mon Sep 17 00:00:00 2001
+Message-Id: <0f49e3a41bc1edcea227deed767bf24af144b691.1507911923.git.Jim.Somerville@windriver.com>
+In-Reply-To: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
+References: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
+From: Chris Friesen <chris.friesen@windriver.com>
+Date: Thu, 12 May 2016 18:00:00 -0400
+Subject: [PATCH 06/26] Make kernel start eth devices at offset
+
+In order to avoid naming collisions, we want to make the kernel
+start naming its "ethX" devices at eth1000 instead of eth0.  This
+will let us rename to a range starting at eth0.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ net/core/dev.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 6e016cf..ca3ef1a 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -1057,6 +1057,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
+ 				set_bit(i, inuse);
+ 		}
+ 
++		/* WRS extension, want kernel to start at eth1000 */
++		if (strcmp(name, "eth%d") == 0) {
++			for (i=0; i < 1000; i++)
++				set_bit(i, inuse);
++		}
++
+ 		i = find_first_zero_bit(inuse, max_netdevices);
+ 		free_page((unsigned long) inuse);
+ 	}
+-- 
+1.8.3.1
+

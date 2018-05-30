@@ -1,0 +1,30 @@
+---
+ lib/facter/ps.rb     |    2 +-
+ spec/unit/ps_spec.rb |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/lib/facter/ps.rb
++++ b/lib/facter/ps.rb
+@@ -11,7 +11,7 @@
+ #
+ 
+ Facter.add(:ps) do
+-  setcode do 'ps -ef' end
++  setcode do 'ps -efww' end
+ end
+ 
+ Facter.add(:ps) do
+--- a/spec/unit/ps_spec.rb
++++ b/spec/unit/ps_spec.rb
+@@ -27,9 +27,9 @@ describe "ps facts" do
+     'RedHat',
+     'Debian',
+   ].each do |os|
+-    it "should return gnu/linux style ps -ef on operatingsystem #{os}" do
++    it "should return gnu/linux style ps -efww on operatingsystem #{os}" do
+       Facter.fact(:operatingsystem).stubs(:value).returns os
+-      Facter.fact(:ps).value.should == 'ps -ef'
++      Facter.fact(:ps).value.should == 'ps -efww'
+     end
+   end
+ 

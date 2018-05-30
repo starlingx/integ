@@ -1,0 +1,36 @@
+From dffbc3e34d7080dc2fce05b9c16565e6374572bf Mon Sep 17 00:00:00 2001
+Message-Id: <dffbc3e34d7080dc2fce05b9c16565e6374572bf.1507911923.git.Jim.Somerville@windriver.com>
+In-Reply-To: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
+References: <0bd66eb88c950d172a7dcefc61cb2e89b89cacce.1507911922.git.Jim.Somerville@windriver.com>
+From: Chris Friesen <chris.friesen@windriver.com>
+Date: Wed, 11 Jan 2017 13:38:37 -0500
+Subject: [PATCH 13/26] Enable building kernel with CONFIG_BLK_DEV_NBD
+
+By default, the CentOS 7.3 kernel will fail to build if
+CONFIG_BLK_DEV_NBD is enabled, either as module or builtin.
+
+The issue seems to be due to the use of REQ_TYPE_SPECIAL in the
+NBD code.  Switching it to use REQ_TYPE_DRV_PRIV instead makes the
+problem go away.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ drivers/block/nbd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/block/nbd.c b/drivers/block/nbd.c
+index a40a4f0..e0c6b62 100644
+--- a/drivers/block/nbd.c
++++ b/drivers/block/nbd.c
+@@ -616,7 +616,7 @@ static int __nbd_ioctl(struct block_device *bdev, struct nbd_device *nbd,
+ 		fsync_bdev(bdev);
+ 		mutex_lock(&nbd->tx_lock);
+ 		blk_rq_init(NULL, &sreq);
+-		sreq.cmd_type = REQ_TYPE_SPECIAL;
++		sreq.cmd_type = REQ_TYPE_DRV_PRIV;
+ 		nbd_cmd(&sreq) = NBD_CMD_DISC;
+ 
+ 		/* Check again after getting mutex back.  */
+-- 
+1.8.3.1
+

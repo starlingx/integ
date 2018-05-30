@@ -1,0 +1,13 @@
+[Unit]
+Description=Titanium Cloud Filesystem Common
+After=network.target rpcbind.service
+Before=nfsserver.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/etc/init.d/nfscommon start
+ExecStop=/etc/init.d/nfscommon stop
+
+[Install]
+WantedBy=multi-user.target

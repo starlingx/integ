@@ -1,0 +1,121 @@
+From 4012a8fe42371386d864d2aa3277f43169909d6e Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 20 Mar 2017 10:21:28 -0400
+Subject: [PATCH 1/4] WRS: spec-include-TiS-changes.patch
+
+---
+ SPECS/lighttpd.spec | 53 ++++++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 40 insertions(+), 13 deletions(-)
+
+diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
+index 20668f7..a313a1b 100644
+--- a/SPECS/lighttpd.spec
++++ b/SPECS/lighttpd.spec
+@@ -61,6 +61,14 @@ Source13: http://www.lighttpd.net/light_logo.png
+ Source14: lighttpd-empty.png
+ #Source100: lighttpd-mod_geoip.c
+ #Source101: lighttpd-mod_geoip.txt
++
++# WRS
++Source102: index.html.lighttpd
++Source103: lighttpd.conf
++Source104: lighttpd-inc.conf
++Source105: lighttpd.logrotate
++Source106: lighttpd-csr.conf
++
+ Patch0: lighttpd-1.4.39-defaultconf.patch
+ #Patch1: lighttpd-1.4.40-mod_geoip.patch
+ Patch2: lighttpd-1.4.35-system-crypto-policy.patch
+@@ -180,17 +188,19 @@ autoreconf -if
+ %configure \
+     --libdir='%{_libdir}/lighttpd' \
+     %{confswitch mysql} \
+-    %{confswitch ldap} \
++    --without-ldap \
+     %{confswitch attr} \
+-    %{confswitch openssl} \
++    --with-openssl \
+     %{confswitch kerberos5} \
+-    %{confswitch pcre} \
++    --with-pcre \
+     %{confswitch fam} \
+-    %{?with_webdavprops:--with-webdav-props} \
+-    %{?with_webdavlocks:--with-webdav-locks} \
++    --without-webdav-props \
++    --without-webdav-locks \
+     %{confswitch gdbm} \
+-    %{confswitch memcache} \
+-    %{confswitch lua} \
++    --without-memcache \
++    --without-lua \
++    --without-bzip2 \
++    --disable-static \
+     %{confswitch geoip} \
+     %{confswitch krb5}
+ make %{?_smp_mflags}
+@@ -209,13 +219,14 @@ install -D -p -m 0644 %{SOURCE2} \
+     %{buildroot}%{_sysconfdir}/php.d/lighttpd.ini
+ 
+ # Install our own init script (included one is old style) or systemd service
+-%if %{with systemd}
++#%if %{with systemd}
+ install -D -p -m 0644 %{SOURCE4} \
+     %{buildroot}%{_unitdir}/lighttpd.service
+-%else
++#%else
++mkdir -p /etc/rc.d/init.d
+ install -D -p -m 0755 %{SOURCE3} \
+     %{buildroot}%{_sysconfdir}/rc.d/init.d/lighttpd
+-%endif
++#%endif
+ 
+ # Install our own default web page and images
+ mkdir -p %{buildroot}%{webroot}
+@@ -253,6 +264,20 @@ echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
+     %{buildroot}%{_sysconfdir}/tmpfiles.d/lighttpd.conf
+ %endif
+ 
++# WRS
++CONFDIR=%{buildroot}%{_sysconfdir}/lighttpd
++ROOTDIR=%{buildroot}/www
++
++install -d ${CONFDIR}/ssl
++install -d ${ROOTDIR}/pages/dav
++install -m 0640 %{SOURCE103} ${CONFDIR}/lighttpd.conf
++install -m 0644 %{SOURCE104} ${CONFDIR}/lighttpd-inc.conf
++install -m 0644 %{SOURCE102} ${ROOTDIR}/pages/index.html
++
++install -d %{buildroot}%{_sysconfdir}/logrotate.d
++install -m 644 %{SOURCE105} %{buildroot}%{_sysconfdir}/logrotate.d/lighttpd
++
++chmod 02770 %{buildroot}%{_sysconfdir}/lighttpd
+ 
+ %clean
+ rm -rf %{buildroot}
+@@ -301,11 +326,8 @@ fi
+ %config %{_sysconfdir}/lighttpd/conf.d/mod.template
+ %config %{_sysconfdir}/lighttpd/vhosts.d/vhosts.template
+ %config(noreplace) %{_sysconfdir}/logrotate.d/lighttpd
+-%if %{with systemd}
+ %{_unitdir}/lighttpd.service
+-%else
+ %{_sysconfdir}/rc.d/init.d/lighttpd
+-%endif
+ %if %{with tmpfiles}
+ %config(noreplace) %{_sysconfdir}/tmpfiles.d/lighttpd.conf
+ %endif
+@@ -331,6 +353,11 @@ fi
+ # This is not really configuration, but prevent loss of local changes
+ %config %{webroot}/index.html
+ 
++# WRS
++%dir /www/pages/
++/www/pages/*
++
++
+ %files fastcgi
+ %defattr(-,root,root,-)
+ %doc doc/outdated/fastcgi*.txt doc/scripts/spawn-php.sh
+-- 
+1.8.3.1
+

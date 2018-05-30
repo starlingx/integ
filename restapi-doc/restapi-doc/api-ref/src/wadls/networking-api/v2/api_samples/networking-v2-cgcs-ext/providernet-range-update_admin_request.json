@@ -1,0 +1,7 @@
+{
+    "providernet_range": {
+        "maximum": "1099", 
+        "minimum": "1000",
+        "description": "VLAN identifiers reserved for tenant1"
+    }
+}

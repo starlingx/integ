@@ -1,0 +1,12 @@
+PREFIX=puppet
+MODULE=dnsmasq
+VERSION=1.1.0
+
+GIT_SHA=cff07e90890662972c97684a2baee964f68ff3ed
+
+#Patched
+COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz $FILES_BASE/*"
+
+
+
+TIS_PATCH_VER=3

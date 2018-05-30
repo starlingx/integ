@@ -1,0 +1,36 @@
+From 228d8848a4af532af1d4c92c20389851db1497f0 Mon Sep 17 00:00:00 2001
+Message-Id: <228d8848a4af532af1d4c92c20389851db1497f0.1507220785.git.Jim.Somerville@windriver.com>
+In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From: Scott Little <scott.little@windriver.com>
+Date: Tue, 9 May 2017 13:10:25 -0400
+Subject: [PATCH 11/25] Fix compile issue with transparent hugepages
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index 9fa6c7b..bc52f1d 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -419,6 +419,7 @@ Patch1002: debrand-rh-i686-cpu.patch
+ Source30000: kernel-3.10.0-x86_64.config.tis_extra
+ 
+ # Titanium Cloud patches here.
++Patch40001: Fix-compile-issue-when-transparent-hugepages-are-off.patch
+ #Patch40001: Notification-of-death-of-arbitrary-processes.patch
+ #Patch40002: CGTS-3456-emit-CPU-logging-on-hard-soft-lockup.patch
+ #Patch40003: CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
+@@ -750,6 +751,7 @@ ApplyOptionalPatch debrand-rh_taint.patch
+ ApplyOptionalPatch debrand-rh-i686-cpu.patch
+ 
+ # Titanium Cloud patches here.
++ApplyOptionalPatch Fix-compile-issue-when-transparent-hugepages-are-off.patch
+ #ApplyOptionalPatch Notification-of-death-of-arbitrary-processes.patch
+ #ApplyOptionalPatch CGTS-3456-emit-CPU-logging-on-hard-soft-lockup.patch
+ #ApplyOptionalPatch CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
+-- 
+1.8.3.1
+

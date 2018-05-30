@@ -1,0 +1,10 @@
+{
+  "name": "nfv-vim",
+  "links": [
+    {
+      "href": "http://192.168.204.2:4545/api/",
+      "rel": "api"
+    }
+  ],
+  "description": "NFV - Virtual Infrastructure Manager"
+}

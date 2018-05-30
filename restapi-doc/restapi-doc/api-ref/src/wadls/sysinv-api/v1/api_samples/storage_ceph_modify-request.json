@@ -1,0 +1,5 @@
+{
+    "path": "/capabilities",
+    "value": "{\\"min_replication\\": \\"2\\"}",
+    "op": "replace"
+}

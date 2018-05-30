@@ -1,0 +1,10 @@
+{
+    "qos": {
+        "description": "Another sample QoS profile", 
+        "policies": {
+            "scheduler": {
+                "weight": "16"
+            }
+        }
+    }
+}

@@ -1,0 +1,21 @@
+.DS_Store
+*.xpr
+*.tgz
+
+# Build results
+publish-docs/
+target/
+/build-*.log.gz
+/generated
+
+# Packages
+*.egg
+*.egg-info
+
+# Testenvironment
+.tox
+
+# Editors
+*~
+.*.swp
+.bak

@@ -1,0 +1,12 @@
+PREFIX=puppetlabs
+MODULE=drbd
+VERSION=0.3.1
+
+GIT_SHA=496b3ba9cd74a2d12636f9e90a718739a5451169
+
+#DRBD has quilt patches (stored as git patches)
+COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz $FILES_BASE/*"
+
+
+
+TIS_PATCH_VER=9

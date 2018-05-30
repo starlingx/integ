@@ -1,0 +1,2 @@
+COPY_LIST="$PKG_BASE/nova-utils/*"
+TIS_PATCH_VER=1

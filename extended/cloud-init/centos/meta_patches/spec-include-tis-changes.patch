@@ -1,0 +1,26 @@
+From cd41e4fb7bee4272f1074b4bc4e9c79c7fce3530 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Wed, 8 Nov 2017 11:13:02 -0500
+Subject: [PATCH] spec-include-tis-changes
+
+---
+ SPECS/cloud-init.spec | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/SPECS/cloud-init.spec b/SPECS/cloud-init.spec
+index 935c970..a611192 100644
+@@ -44,7 +45,10 @@ Patch0019: 0019-Add-missing-sysconfig-unit-test-data.patch
+ Patch0020: 0020-Fix-ipv6-subnet-detection.patch
+ Patch0021: 0021-azure-ensure-that-networkmanager-hook-script-runs.patch
+ Patch0022: 0022-RHEL-CentOS-Fix-default-routes-for-IPv4-IPv6-configu.patch
+-Patch9999: cloud-init-add-centos-os.patch
++Patch0999: cloud-init-add-centos-os.patch
++
++# WRS patches
++Patch2000: cloud-init-interactive-parted.patch
+ 
+ # Deal with noarch -> arch
+ # https://bugzilla.redhat.com/show_bug.cgi?id=1067089
+-- 
+1.8.3.1
+

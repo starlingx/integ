@@ -1,0 +1,28 @@
+From 2f6906e33b91dc28c7b48ce5604501ce09cfaed6 Mon Sep 17 00:00:00 2001
+Message-Id: <2f6906e33b91dc28c7b48ce5604501ce09cfaed6.1468352966.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Tue, 12 Jul 2016 15:43:47 -0400
+Subject: [PATCH 1/1] security make exports and fstab only root accessible
+
+Apply a chmod of 600 to the two files.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/setup.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/setup.spec b/SPECS/setup.spec
+index d40113f..6c18614 100644
+--- a/SPECS/setup.spec
++++ b/SPECS/setup.spec
+@@ -65,6 +65,7 @@ chmod 0644 %{buildroot}/var/log/lastlog
+ touch %{buildroot}/etc/fstab
+ touch %{buildroot}/etc/subuid
+ touch %{buildroot}/etc/subgid
++chmod 0600 %{buildroot}/etc/{exports,fstab}
+ install -m 644 %{SOURCE1} %{buildroot}/etc/
+ install -m 644 %{SOURCE2} %{buildroot}/etc/profile.d/prompt.sh
+ 
+-- 
+1.8.3.1
+

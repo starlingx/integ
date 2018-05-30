@@ -1,0 +1,9 @@
+{
+   "section":"ldap",
+   "parameters":{
+      "url":"ldap://localhost",
+      "allow_subtree_delete":"False"
+   },
+   "service":"identity"
+}
+

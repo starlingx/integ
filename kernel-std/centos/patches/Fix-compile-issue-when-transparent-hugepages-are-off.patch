@@ -1,0 +1,29 @@
+From 2a9fb6a58e40e8604d97223603111e869bb774b1 Mon Sep 17 00:00:00 2001
+Message-Id: <2a9fb6a58e40e8604d97223603111e869bb774b1.1507237258.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Thu, 15 Dec 2016 14:27:48 -0500
+Subject: [PATCH 01/24] Fix compile issue when transparent hugepages are off
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ mm/swap.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/mm/swap.c b/mm/swap.c
+index 83e2d7d..04a4453 100644
+--- a/mm/swap.c
++++ b/mm/swap.c
+@@ -980,8 +980,10 @@ void release_pages(struct page **pages, int nr, bool cold)
+ 		if (!put_page_testzero(page))
+ 			continue;
+ 
++#ifdef CONFIG_TRANSPARENT_HUGEPAGE
+ 		VM_BUG_ON_PAGE(check_mmu_gather &&
+ 			       trans_huge_mmu_gather_count(page), page);
++#endif
+ 
+ 		if (PageLRU(page)) {
+ 			if (!was_thp)
+-- 
+1.8.3.1
+

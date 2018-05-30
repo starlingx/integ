@@ -1,0 +1,68 @@
+From 6a0a1ea93362b7f9f2f5242e847ae1e0ef15de04 Mon Sep 17 00:00:00 2001
+From: jmckenna <jason.mckenna@windriver.com>
+Date: Thu, 5 Jan 2017 08:54:32 -0500
+Subject: [PATCH] Use Titanium Cloud certificate
+
+
+diff --git a/Makefile b/Makefile
+index 1181b8a..e8b291e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -34,6 +34,12 @@ CFLAGS		= -ggdb -O0 -fno-stack-protector -fno-strict-aliasing -fpic \
+ 		  "-DDEFAULT_LOADER_CHAR=\"$(DEFAULT_LOADER)\"" \
+ 		  $(EFI_INCLUDES)
+ 
++# We compile a certificate into shim.  Usually this is a one-time generated
++# certificate (make-certs script) however we want to include a custom
++# certificate for which we have the key.  We use the key to sign the kernel and
++# grub down the road
++INTERNAL_CERT = tis-shim
++
+ ifneq ($(origin OVERRIDE_SECURITY_POLICY), undefined)
+ 	CFLAGS	+= -DOVERRIDE_SECURITY_POLICY
+ endif
+@@ -67,7 +73,7 @@ LDFLAGS		= --hash-style=sysv -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsym
+ 
+ TARGET	= shim.efi MokManager.efi.signed fallback.efi.signed
+ OBJS	= shim.o netboot.o cert.o replacements.o version.o
+-KEYS	= shim_cert.h ocsp.* ca.* shim.crt shim.csr shim.p12 shim.pem shim.key shim.cer
++KEYS	= shim_cert.h ocsp.* ca.* $(INTERNAL_CERT).crt $(INTERNAL_CERT).csr $(INTERNAL_CERT).p12 $(INTERNAL_CERT).pem $(INTERNAL_CERT).key $(INTERNAL_CERT).cer
+ SOURCES	= shim.c shim.h netboot.c include/PeImage.h include/wincert.h include/console.h replacements.c replacements.h version.c version.h
+ MOK_OBJS = MokManager.o PasswordCrypt.o crypt_blowfish.o
+ MOK_SOURCES = MokManager.c shim.h include/console.h PasswordCrypt.c PasswordCrypt.h crypt_blowfish.c crypt_blowfish.h
+@@ -76,13 +82,17 @@ FALLBACK_SRCS = fallback.c
+ 
+ all: $(TARGET)
+ 
+-shim.crt:
+-	./make-certs shim shim@xn--u4h.net all codesign 1.3.6.1.4.1.311.10.3.1 </dev/null
++# certificate is now provided in source.  To generate a random certificate,
++# uncomment this rule
++#$(INTERNAL_CERT).crt:
++#	./make-certs $(INTERNAL_CERT) shim@xn--u4h.net all codesign 1.3.6.1.4.1.311.10.3.1 </dev/null
+ 
+-shim.cer: shim.crt
++$(INTERNAL_CERT).cer: $(INTERNAL_CERT).crt
+ 	openssl x509 -outform der -in $< -out $@
+ 
+-shim_cert.h: shim.cer
++# name "shim_cert.h" rather than "$(INTERNAL_CERT).h" used so C files can just
++# use a fixed name for #include
++shim_cert.h: $(INTERNAL_CERT).cer
+ 	echo "static UINT8 shim_cert[] = {" > $@
+ 	hexdump -v -e '1/1 "0x%02x, "' $< >> $@
+ 	echo "};" >> $@
+@@ -93,10 +103,10 @@ version.c : version.c.in
+ 		-e "s,@@COMMIT@@,$(shell if [ -d .git ] ; then git log -1 --pretty=format:%H ; elif [ -f commit ]; then cat commit ; else echo commit id not available; fi)," \
+ 		< version.c.in > version.c
+ 
+-certdb/secmod.db: shim.crt
++certdb/secmod.db: $(INTERNAL_CERT).crt
+ 	-mkdir certdb
+-	pk12util -d certdb/ -i shim.p12 -W "" -K ""
+-	certutil -d certdb/ -A -i shim.crt -n shim -t u
++	pk12util -d certdb/ -i $(INTERNAL_CERT).p12 -W "" -K ""
++	certutil -d certdb/ -A -i $(INTERNAL_CERT).crt -n shim -t u
+ 
+ shim.o: $(SOURCES) shim_cert.h
+ 

@@ -1,0 +1,12 @@
+[  
+   {  
+      "path":"/oam_c1_ip",
+      "value":"10.10.10.4",
+      "op":"replace"
+   },
+   {  
+      "path":"/action",
+      "value":"apply",
+      "op":"replace"
+   }
+]

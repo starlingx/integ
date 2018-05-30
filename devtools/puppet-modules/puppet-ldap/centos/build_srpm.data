@@ -1,0 +1,9 @@
+PREFIX=puppet
+MODULE=ldap
+VERSION=0.2.4
+
+GIT_SHA=480f13af6d17d1d3fcf0dc7b4bd04b49fa4099e1
+
+COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz"
+
+TIS_PATCH_VER=3

@@ -1,0 +1,27 @@
+From a2f64266f7423905b1fd718c405ad25890f6efb5 Mon Sep 17 00:00:00 2001
+From: Tao Liu <tao.liu@windriver.com>
+Date: Thu, 4 Jan 2018 11:43:15 -0500
+Subject: snmp spec change config file permission
+
+---
+ SPECS/net-snmp.spec | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
+index 182265b..8600da9 100644
+--- a/SPECS/net-snmp.spec
++++ b/SPECS/net-snmp.spec
+@@ -545,8 +545,8 @@ rm -rf ${RPM_BUILD_ROOT}
+ %doc local/passtest local/ipf-mod.pl
+ %doc README.thread AGENT.txt PORTING local/README.mib2c
+ %dir %{_sysconfdir}/snmp
+-%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/snmp/snmpd.conf
+-%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/snmp/snmptrapd.conf
++%config(noreplace) %attr(0640,root,root) %{_sysconfdir}/snmp/snmpd.conf
++%config(noreplace) %attr(0640,root,root) %{_sysconfdir}/snmp/snmptrapd.conf
+ %{_bindir}/snmpconf
+ %{_bindir}/agentxtrap
+ %{_bindir}/net-snmp-create-v3-user
+-- 
+1.8.3.1
+

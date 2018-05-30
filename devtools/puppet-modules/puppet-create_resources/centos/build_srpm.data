@@ -1,0 +1,16 @@
+PREFIX=puppetlabs
+MODULE=create_resources
+VERSION=0.0.1
+
+GIT_SHA=4639819a7f3a4fa9310d2ba583c63e467df7e2c3
+
+# Generic Copy routine
+# Un-patched
+COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz"
+
+#Patched
+#COPY_LIST="$CGCS_BASE/downloads/puppet/$PREFIX-$MODULE-$GIT_SHA.tar.gz $FILES_BASE/*"
+
+
+
+TIS_PATCH_VER=2

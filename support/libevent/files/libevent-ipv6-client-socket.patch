@@ -1,0 +1,55 @@
+---
+ http.c |   25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
+
+--- a/http.c
++++ b/http.c
+@@ -1325,6 +1325,9 @@ evhttp_error_cb(struct bufferevent *bufe
+ 	struct evhttp_connection *evcon = arg;
+ 	struct evhttp_request *req = TAILQ_FIRST(&evcon->requests);
+ 
++	if (evcon->fd == -1)
++		evcon->fd = bufferevent_getfd(bufev);
++
+ 	switch (evcon->state) {
+ 	case EVCON_CONNECTING:
+ 		if (what & BEV_EVENT_TIMEOUT) {
+@@ -1390,6 +1393,9 @@ evhttp_connection_cb(struct bufferevent
+ 	int error;
+ 	ev_socklen_t errsz = sizeof(error);
+ 
++	if (evcon->fd == -1)
++		evcon->fd = bufferevent_getfd(bufev);
++	
+ 	if (!(what & BEV_EVENT_CONNECTED)) {
+ 		/* some operating systems return ECONNREFUSED immediately
+ 		 * when connecting to a local address.  the cleanup is going
+@@ -2189,16 +2195,21 @@ evhttp_connection_connect(struct evhttp_
+ 	EVUTIL_ASSERT(!(evcon->flags & EVHTTP_CON_INCOMING));
+ 	evcon->flags |= EVHTTP_CON_OUTGOING;
+ 
+-	evcon->fd = bind_socket(
+-		evcon->bind_address, evcon->bind_port, 0 /*reuse*/);
+-	if (evcon->fd == -1) {
+-		event_debug(("%s: failed to bind to \"%s\"",
+-			__func__, evcon->bind_address));
+-		return (-1);
++	if (evcon->bind_address || evcon->bind_port) {
++		evcon->fd = bind_socket(
++			evcon->bind_address, evcon->bind_port, 0 /*reuse*/);
++		if (evcon->fd == -1) {
++			event_debug(("%s: failed to bind to \"%s\"",
++				__func__, evcon->bind_address));
++			return (-1);
++		}
++
++		bufferevent_setfd(evcon->bufev, evcon->fd);
++	} else {
++		bufferevent_setfd(evcon->bufev, -1);
+ 	}
+ 
+ 	/* Set up a callback for successful connection setup */
+-	bufferevent_setfd(evcon->bufev, evcon->fd);
+ 	bufferevent_setcb(evcon->bufev,
+ 	    NULL /* evhttp_read_cb */,
+ 	    NULL /* evhttp_write_cb */,

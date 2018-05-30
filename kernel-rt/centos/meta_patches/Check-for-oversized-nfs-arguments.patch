@@ -1,0 +1,36 @@
+From 2771619e5d72c19e52d27ba949a81e4dff451e1a Mon Sep 17 00:00:00 2001
+Message-Id: <2771619e5d72c19e52d27ba949a81e4dff451e1a.1507842722.git.Jim.Somerville@windriver.com>
+In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Tue, 22 Aug 2017 17:26:15 -0400
+Subject: [PATCH 25/29] Check for oversized nfs arguments
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel-rt.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
+index dc30da0..e53f906 100644
+--- a/SPECS/kernel-rt.spec
++++ b/SPECS/kernel-rt.spec
+@@ -426,6 +426,7 @@ Patch1028: stop-seeking-deeper-idle-if-current-state-is-deep-enough.patch
+ Patch1029: add-per-cpu-pm-qos-resume-latency-consideration.patch
+ Patch1030: expose-pm_qos_resume_latency-for-cpus.patch
+ Patch1031: avoid-taking-spinlock-for-accessing-qos-values.patch
++Patch1032: nfsd-check-for-oversized-NFSv2-v3-arguments.patch
+ 
+ BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
+ 
+@@ -820,6 +821,7 @@ ApplyPatch stop-seeking-deeper-idle-if-current-state-is-deep-enough.patch
+ ApplyPatch add-per-cpu-pm-qos-resume-latency-consideration.patch
+ ApplyPatch expose-pm_qos_resume_latency-for-cpus.patch
+ ApplyPatch avoid-taking-spinlock-for-accessing-qos-values.patch
++ApplyPatch nfsd-check-for-oversized-NFSv2-v3-arguments.patch
+ 
+ # move off upstream version mechanism
+ if [ -e localversion-rt ]; then
+-- 
+1.8.3.1
+

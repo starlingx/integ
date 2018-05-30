@@ -1,0 +1,5 @@
+{
+    "name": "new-file-store",
+    "services": "glance",
+    "confirmed": true
+}

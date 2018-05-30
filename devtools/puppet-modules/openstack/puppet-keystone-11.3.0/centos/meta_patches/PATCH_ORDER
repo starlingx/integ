@@ -1,0 +1,4 @@
+0001-Update-package-versioning-for-Titanium-format.patch
+0002-squash-titanium-patches.patch
+0003-remove-the-keystone-admin-app.patch
+0004-remove-eventlet_and_bindhost-from-keystoneconf.patch

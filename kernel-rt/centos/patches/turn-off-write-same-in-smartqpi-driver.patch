@@ -1,0 +1,26 @@
+From 88dc5da8815c32f80f1791c00fa4a435897b45f1 Mon Sep 17 00:00:00 2001
+Message-Id: <88dc5da8815c32f80f1791c00fa4a435897b45f1.1520358900.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Tue, 6 Mar 2018 12:54:40 -0500
+Subject: [PATCH 1/1] turn off write same in smartqpi driver
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ drivers/scsi/smartpqi/smartpqi_init.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/scsi/smartpqi/smartpqi_init.c b/drivers/scsi/smartpqi/smartpqi_init.c
+index 638af91..a891516 100644
+--- a/drivers/scsi/smartpqi/smartpqi_init.c
++++ b/drivers/scsi/smartpqi/smartpqi_init.c
+@@ -5155,6 +5155,7 @@ static struct scsi_host_template pqi_driver_template = {
+ 	.slave_configure = pqi_slave_configure,
+ 	.sdev_attrs = pqi_sdev_attrs,
+ 	.shost_attrs = pqi_shost_attrs,
++	.no_write_same = 1,
+ };
+ 
+ static int pqi_register_scsi(struct pqi_ctrl_info *ctrl_info)
+-- 
+1.8.3.1
+

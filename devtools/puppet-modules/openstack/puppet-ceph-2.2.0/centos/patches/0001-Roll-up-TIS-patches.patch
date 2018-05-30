@@ -1,0 +1,151 @@
+From d8e6107a98649475b5151289d6440b41f0397746 Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Tue, 10 Jan 2017 13:31:17 -0500
+Subject: [PATCH] Roll up TIS patches
+
+---
+ manifests/mon.pp | 15 ++++++++++++---
+ manifests/osd.pp | 33 +++++++++++++++++----------------
+ manifests/rgw.pp |  7 +++++++
+ 3 files changed, 36 insertions(+), 19 deletions(-)
+
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index a6b5712..54f9909 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -65,6 +65,8 @@ define ceph::mon (
+   $authentication_type = 'cephx',
+   $key = undef,
+   $keyring  = undef,
++  $fsid = undef,
++  $service_ensure = 'running',
+   $exec_timeout = $::ceph::params::exec_timeout,
+   ) {
+ 
+@@ -78,6 +80,7 @@ define ceph::mon (
+       $cluster_option = "--cluster ${cluster_name}"
+     } else {
+       $cluster_name = 'ceph'
++      $cluster_option = undef
+     }
+ 
+     # NOTE(aschultz): this is the service title for the mon service. It may be
+@@ -154,6 +157,10 @@ test -e \$mon_data/done
+         }
+       }
+ 
++      if $fsid {
++        $fsid_option = "--fsid ${fsid}"
++      }
++
+       Ceph_config<||> ->
+       # prevent automatic creation of the client.admin key by ceph-create-keys
+       exec { "ceph-mon-${cluster_name}.client.admin.keyring-${id}":
+@@ -177,7 +184,8 @@ if [ ! -d \$mon_data ] ; then
+               --setuser ceph --setgroup ceph \
+               --mkfs \
+               --id ${id} \
+-              --keyring ${keyring_path} ; then
++              --keyring ${keyring_path} \
++              ${fsid_option} ; then
+             touch \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+             chown -h ceph:ceph \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+         else
+@@ -187,7 +195,8 @@ if [ ! -d \$mon_data ] ; then
+         if ceph-mon ${cluster_option} \
+               --mkfs \
+               --id ${id} \
+-              --keyring ${keyring_path} ; then
++              --keyring ${keyring_path} \
++              ${fsid_option} ; then
+             touch \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+         else
+             rm -fr \$mon_data
+@@ -204,7 +213,7 @@ test -d  \$mon_data
+         timeout   => $exec_timeout,
+       }->
+       service { $mon_service:
+-        ensure => running,
++        ensure => $service_ensure,
+       }
+ 
+       # if the service is running before we setup the configs, notify service
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index 6c39806..5d3628d 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -52,6 +52,8 @@ define ceph::osd (
+   $ensure = present,
+   $journal = undef,
+   $cluster = undef,
++  $cluster_uuid = undef,
++  $uuid = undef,
+   $exec_timeout = $::ceph::params::exec_timeout,
+   $selinux_file_context = 'ceph_var_lib_t',
+   $fsid = $::ceph::profile::params::fsid,
+@@ -66,6 +68,14 @@ define ceph::osd (
+       $cluster_name = 'ceph'
+     }
+ 
++    if $cluster_uuid {
++      $cluster_uuid_option = "--cluster-uuid ${cluster_uuid}"
++    }
++
++    if $uuid {
++      $uuid_option = "--osd-uuid ${uuid}"
++    }
++
+     if $ensure == present {
+ 
+       $ceph_check_udev = "ceph-osd-check-udev-${name}"
+@@ -115,22 +125,13 @@ test -z \$(ceph-disk list ${data} | egrep -o '[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a
+       Exec[$ceph_check_udev] -> Exec[$ceph_prepare]
+       # ceph-disk: prepare should be idempotent http://tracker.ceph.com/issues/7475
+       exec { $ceph_prepare:
+-        command   => "/bin/true # comment to satisfy puppet syntax requirements
+-set -ex
+-if ! test -b ${data} ; then
+-    mkdir -p ${data}
+-    if getent passwd ceph >/dev/null 2>&1; then
+-        chown -h ceph:ceph ${data}
+-    fi
+-fi
+-ceph-disk prepare ${cluster_option} ${fsid_option} ${data} ${journal}
+-udevadm settle
+-",
+-        unless    => "/bin/true # comment to satisfy puppet syntax requirements
+-set -ex
+-ceph-disk list | grep -E ' *${data}1? .*ceph data, (prepared|active)' ||
+-{ test -f ${data}/fsid && test -f ${data}/ceph_fsid && test -f ${data}/magic ;}
+-",
++        command   => "/usr/sbin/ceph-disk prepare ${cluster_option} ${cluster_uuid_option} ${uuid_option} --fs-type xfs --zap-disk ${data} ${journal}",
++        # We don't want to erase the disk if:
++        # 1. There is already ceph data on the disk for our cluster AND
++        # 2. The uuid for the OSD we are configuring matches the uuid for the
++        #    OSD on the disk. We don't want to attempt to re-use an OSD that
++        #    had previously been deleted.
++        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep ' *${data}.*ceph data' | grep 'osd uuid ${uuid}'",
+         logoutput => true,
+         timeout   => $exec_timeout,
+       }
+diff --git a/manifests/rgw.pp b/manifests/rgw.pp
+index da5557e..2a79c07 100644
+--- a/manifests/rgw.pp
++++ b/manifests/rgw.pp
+@@ -177,6 +177,13 @@ define ceph::rgw (
+       provider => $::ceph::params::service_provider,
+     }
+   # Everything else that is supported by puppet-ceph should run systemd.
++  } elsif $::service_provider == 'systemd' {
++    Service {
++      name     => "radosgw-${name}",
++      start    => "systemctl start ceph-radosgw",
++      stop     => "systemctl stop ceph-radosgw",
++      status   => "systemctl status ceph-radosgw",
++    }
+   } else {
+     Service {
+       name   => "ceph-radosgw@${name}",
+-- 
+1.8.3.1
+

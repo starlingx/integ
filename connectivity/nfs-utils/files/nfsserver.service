@@ -1,0 +1,13 @@
+[Unit]
+Description=Titanium Cloud Filesystem Server
+After=network.target nfscommon.service hwclock.service
+Before=ntpd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/etc/init.d/nfsserver start
+ExecStop=/etc/init.d/nfsserver stop
+
+[Install]
+WantedBy=multi-user.target

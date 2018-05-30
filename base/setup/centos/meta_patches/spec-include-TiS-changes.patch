@@ -1,0 +1,35 @@
+setup.spec: to include Titanium Cloud specific changes
+
+To include files under cgcs/recipes-base/setup/files/*
+
+diff --git a/SPECS/setup.spec b/SPECS/setup.spec
+index 9174b5a..efc52ca 100644
+--- a/SPECS/setup.spec
++++ b/SPECS/setup.spec
+@@ -6,6 +6,7 @@ License: Public Domain
+ Group: System Environment/Base
+ URL: https://fedorahosted.org/setup/
+ Source0: https://fedorahosted.org/releases/s/e/%{name}/%{name}-%{version}.tar.bz2
++Source1: motd
+ BuildArch: noarch
+ BuildRequires: bash tcsh perl
+ #require system release for saner dependency order
+@@ -55,6 +56,7 @@ chmod 0644 %{buildroot}/var/log/lastlog
+ touch %{buildroot}/etc/fstab
+ touch %{buildroot}/etc/subuid
+ touch %{buildroot}/etc/subgid
++install -m 644 %{SOURCE1} %{buildroot}/etc/
+ 
+ # remove unpackaged files from the buildroot
+ rm -f %{buildroot}/etc/Makefile
+@@ -107,6 +109,7 @@ end
+ %attr(0600,root,root) %config(noreplace,missingok) /etc/securetty
+ %config(noreplace) /etc/csh.login
+ %config(noreplace) /etc/csh.cshrc
++%config(noreplace) /etc/motd
+ %dir /etc/profile.d
+ %config(noreplace) %verify(not md5 size mtime) /etc/shells
+ %ghost %attr(0644,root,root) %verify(not md5 size mtime) /var/log/lastlog
+-- 
+1.8.3.1
+

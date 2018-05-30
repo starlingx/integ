@@ -1,0 +1,35 @@
+From ea71426ebe355c44a44d3c3039a9577aa75fa411 Mon Sep 17 00:00:00 2001
+Message-Id: <ea71426ebe355c44a44d3c3039a9577aa75fa411.1520359101.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Tue, 6 Mar 2018 12:58:10 -0500
+Subject: [PATCH 1/1] fix drbd by turning off write same in smartpqi
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index db2e319..5054518 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -452,6 +452,8 @@ Patch40028: KVM-x86-remove-irq-disablement-around-KVM_SET_CLOCK-.patch
+ Patch40029: KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+ # CVE-2017-11176: kernel: Use-after-free in sys_mq_notify()
+ Patch40030: mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
++# DRBD was choking on write same
++Patch40031: turn-off-write-same-in-smartqpi-driver.patch
+ 
+ BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+ 
+@@ -805,6 +807,7 @@ ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
+ ApplyOptionalPatch KVM-x86-remove-irq-disablement-around-KVM_SET_CLOCK-.patch
+ ApplyOptionalPatch KVM-x86-Fix-potential-preemption-when-get-the-curren.patch
+ ApplyOptionalPatch mqueue-fix-a-use-after-free-in-sys_mq_notify.patch
++ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
+ 
+ # Any further pre-build tree manipulations happen here.
+ 
+-- 
+1.8.3.1
+

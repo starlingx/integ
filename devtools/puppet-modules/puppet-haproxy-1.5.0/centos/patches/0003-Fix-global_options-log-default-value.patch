@@ -1,0 +1,25 @@
+From 872a041122b1e443e23a16e5816c3d8aa18714f8 Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Sun, 24 Sep 2017 00:14:25 -0400
+Subject: [PATCH] Fix global_options log default value
+
+---
+ manifests/params.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 21e6bb0..b29e427 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -15,7 +15,7 @@ class haproxy::params {
+     'Archlinux', 'Debian', 'Redhat', 'Gentoo', 'Suse' : {
+       $package_name      = 'haproxy'
+       $global_options    = {
+-        'log'     => "${::ipaddress} local0",
++        'log'     => 'global',
+         'chroot'  => '/var/lib/haproxy',
+         'pidfile' => '/var/run/haproxy.pid',
+         'maxconn' => '4000',
+-- 
+1.8.3.1
+

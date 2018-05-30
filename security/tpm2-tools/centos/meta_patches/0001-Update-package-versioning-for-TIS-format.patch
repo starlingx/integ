@@ -1,0 +1,35 @@
+From cf30b93accbda4284677507a88ca3727a97fb83c Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 17:30:57 -0400
+Subject: [PATCH 2/2] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+
+Conflicts:
+	SPECS/tpm2-tools.spec
+---
+ SPECS/tpm2-tools.spec | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SPECS/tpm2-tools.spec b/SPECS/tpm2-tools.spec
+index c858d6f..464c814 100644
+--- a/SPECS/tpm2-tools.spec
++++ b/SPECS/tpm2-tools.spec
+@@ -1,6 +1,6 @@
+ Name: tpm2-tools
+ Version: 1.1.0 
+-Release: 7%{?dist}
++Release: 7.el7%{?_tis_dist}.%{tis_patch_ver}
+ Summary: A TPM2.0 testing tool build upon TPM2.0-TSS
+ 
+ %global pkg_prefix tpm2.0-tools
+@@ -44,7 +44,7 @@ BuildRequires: pkgconfig(tcti-socket)
+ ExclusiveArch: %{ix86} x86_64
+ 
+ # tpm2-tools is heavily depending on TPM2.0-TSS project, matched tss is required
+-Requires: tpm2-tss%{?_isa} >= 1.0-2%{?dist} 
++Requires: tpm2-tss%{?_isa} = 1.0-2.el7
+ 
+ %description
+ tpm2-tools is a batch of testing tools for tpm2.0. It is based on tpm2-tss.
+-- 
+1.9.1
+

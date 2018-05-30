@@ -1,0 +1,50 @@
+From d984ab4a020a20082190e8029f45f06031f320da Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 17:05:59 -0400
+Subject: [PATCH 6/9] WRS: run-snmpd-as-non-root-user.patch
+
+Conflicts:
+	SPECS/net-snmp.spec
+---
+ SOURCES/snmpd.service | 2 +-
+ SPECS/net-snmp.spec   | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/SOURCES/snmpd.service b/SOURCES/snmpd.service
+index 84b6ca3..ad689c8 100644
+--- a/SOURCES/snmpd.service
++++ b/SOURCES/snmpd.service
+@@ -4,7 +4,7 @@ After=syslog.target network.target
+ 
+ [Service]
+ Type=notify
+-Environment=OPTIONS="oamcontroller -Lsd -Lf /dev/null -p /var/run/snmpd.pid"
++Environment=OPTIONS="oamcontroller -u snmpd -Lsd -Lf /dev/null -p /var/run/snmpd.pid"
+ EnvironmentFile=-/etc/sysconfig/snmpd
+ ExecStart=/etc/init.d/snmpd start
+ ExecStop=/etc/init.d/snmpd stop
+diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
+index a433f40..0ac1eef 100644
+--- a/SPECS/net-snmp.spec
++++ b/SPECS/net-snmp.spec
+@@ -14,7 +14,7 @@
+ Summary: A collection of SNMP protocol tools and libraries
+ Name: net-snmp
+ Version: 5.7.2
+-Release: 28%{?dist}
++Release: 28%{?dist}.1
+ Epoch: 1
+ 
+ License: BSD
+@@ -413,7 +413,7 @@ install -m 644 %SOURCE6 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/snmptrapd.conf
+ 
+ # WRS
+ install -m 644 %SOURCE12 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/snmpd.conf
+-chmod 600 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/snmptrapd.conf
++chmod 660 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/*
+ 
+ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d
+ install -m 755 %SOURCE13 ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d/snmpd
+-- 
+1.9.1
+

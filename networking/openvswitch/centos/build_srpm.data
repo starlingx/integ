@@ -1,0 +1,4 @@
+COPY_LIST="$CGCS_BASE/downloads/openvswitch-2.8.1.tar.gz \
+           $CGCS_BASE/downloads/dpdk-17.05.2.tar.gz \
+           patches/*"
+TIS_PATCH_VER=1

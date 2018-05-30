@@ -1,0 +1,18 @@
+[
+  [{
+     "path": "/name", 
+     "value": "extension", 
+     "op": "replace"}, 
+   {
+     "path": "/size", 
+     "value": "2", 
+     "op": "replace"}], 
+  [{
+     "path": "/name", 
+     "value": "backup", 
+     "op": "replace"}, 
+   {
+     "path": "/size", 
+     "value": "6", 
+     "op": "replace"}]
+]

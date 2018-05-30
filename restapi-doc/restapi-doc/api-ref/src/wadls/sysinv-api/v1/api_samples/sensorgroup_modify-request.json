@@ -1,0 +1,17 @@
+[  
+   {  
+      "path":"/actions_critical_group",
+      "value":"alarm",
+      "op":"replace"
+   },
+   {  
+      "path":"/actions_major_group",
+      "value":"alarm",
+      "op":"replace"
+   },
+   {  
+      "path":"/actions_minor_group",
+      "value":"ignore",
+      "op":"replace"
+   }
+]

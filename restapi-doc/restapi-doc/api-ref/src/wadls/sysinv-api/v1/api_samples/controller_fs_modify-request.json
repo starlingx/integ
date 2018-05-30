@@ -1,0 +1,11 @@
+[
+    {
+        "path": "/name",
+        "value": "backup",
+        "op": "replace"},
+    {
+        "path": "/size",
+        "value": "94",
+        "op": "replace"
+    }
+]

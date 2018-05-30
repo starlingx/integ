@@ -1,0 +1,2 @@
+COPY_LIST="files/* $CGCS_BASE/mwa-sparta/extended/procps/files/sysctl.conf"
+TIS_PATCH_VER=16

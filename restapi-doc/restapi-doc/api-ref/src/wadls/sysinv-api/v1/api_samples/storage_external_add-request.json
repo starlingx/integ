@@ -1,0 +1,5 @@
+{
+    "name": "new-shared-services",
+    "services": "cinder",
+    "confirmed": true
+}

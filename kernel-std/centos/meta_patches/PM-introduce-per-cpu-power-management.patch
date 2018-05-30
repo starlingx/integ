@@ -1,0 +1,47 @@
+From e6db3094a1f71bec80302884257be833f37c75e3 Mon Sep 17 00:00:00 2001
+Message-Id: <e6db3094a1f71bec80302884257be833f37c75e3.1507220787.git.Jim.Somerville@windriver.com>
+In-Reply-To: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+References: <08db0b379c2009e0d5bc0c20427267fa07d75e5a.1507220784.git.Jim.Somerville@windriver.com>
+From: Alex Kozyrev <alex.kozyrev@windriver.com>
+Date: Thu, 17 Aug 2017 12:37:41 -0400
+Subject: [PATCH 21/25] PM: introduce per-cpu power management
+
+Cherry-picking 4 commits from the 4.11 branch of the linux-stable tree.
+All of the patches require small amount of work to apply to TiC kernel.
+Fixes are temporary until we switch to CentOS kernel that includes them.
+
+Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel.spec | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index 2886708..466bcdc 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -439,6 +439,10 @@ Patch40022: cacheinfo-porting-original-4.10.17-version.patch
+ Patch40023: cacheinfo-fixing-compilation-issues-on-3.10.patch
+ Patch40024: intel-rdt-porting-original-4.10.17-version.patch
+ Patch40025: intel-rdt-fixing-compilation-issues-on-3.10.patch
++Patch40026: stop-seeking-deeper-idle-if-current-state-is-deep-enough.patch
++Patch40027: add-per-cpu-pm-qos-resume-latency-consideration.patch
++Patch40028: expose-pm_qos_resume_latency-for-cpus.patch
++Patch40029: avoid-taking-spinlock-for-accessing-qos-values.patch
+ 
+ BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+ 
+@@ -782,6 +786,10 @@ ApplyOptionalPatch cacheinfo-porting-original-4.10.17-version.patch
+ ApplyOptionalPatch cacheinfo-fixing-compilation-issues-on-3.10.patch
+ ApplyOptionalPatch intel-rdt-porting-original-4.10.17-version.patch
+ ApplyOptionalPatch intel-rdt-fixing-compilation-issues-on-3.10.patch
++ApplyOptionalPatch stop-seeking-deeper-idle-if-current-state-is-deep-enough.patch
++ApplyOptionalPatch add-per-cpu-pm-qos-resume-latency-consideration.patch
++ApplyOptionalPatch expose-pm_qos_resume_latency-for-cpus.patch
++ApplyOptionalPatch avoid-taking-spinlock-for-accessing-qos-values.patch
+ 
+ # Any further pre-build tree manipulations happen here.
+ 
+-- 
+1.8.3.1
+

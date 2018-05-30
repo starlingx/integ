@@ -1,0 +1,28 @@
+From f77c05868c164eebe1c84eb3fdd920ef3305cebc Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 14:49:27 -0400
+Subject: [PATCH 09/13] WRS:
+ 0001-Update-package-versioning-for-TIS-format.patch
+
+Conflicts:
+	SPECS/initscripts.spec
+---
+ SPECS/initscripts.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
+index df59412..fd84a75 100644
+--- a/SPECS/initscripts.spec
++++ b/SPECS/initscripts.spec
+@@ -4,7 +4,7 @@ Version: 9.49.39
+ # ppp-watch is GPLv2+, everything else is GPLv2
+ License: GPLv2 and GPLv2+
+ Group: System Environment/Base
+-Release: 1%{?dist}.8
++Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
+ URL: https://github.com/fedora-sysv/initscripts
+ Source: https://github.com/fedora-sysv/initscripts/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
+ 
+-- 
+1.9.1
+

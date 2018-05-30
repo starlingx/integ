@@ -1,0 +1,86 @@
+From b9410d967faf627d72fc5496a4c2e7aab879b7aa Mon Sep 17 00:00:00 2001
+From: Giao Le <giao.le@windriver.com>
+Date: Wed, 19 Oct 2016 15:06:17 -0400
+Subject: [PATCH 1/1] check
+
+---
+ src/request.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
+
+diff --git a/src/request.c b/src/request.c
+index a2de944..857076c 100644
+--- a/src/request.c
++++ b/src/request.c
+@@ -12,6 +12,39 @@
+ #include <stdio.h>
+ #include <ctype.h>
+ 
++#include <sys/statvfs.h>
++#include <string.h>
++#include <errno.h>
++#include <limits.h>
++
++static size_t get_tempdirs_free_space(server *srv)
++{
++	int i;
++	int valid = 0;
++	size_t total = 0;
++	array *dirs = srv->srvconf.upload_tempdirs;
++
++	for (i = 0; i < (int)dirs->used; ++i) {
++		struct statvfs stat;
++		const char *name = ((data_string *)dirs->data[i])->value->ptr;
++		int ret = statvfs(name, &stat);
++
++		if (ret >= 0) {
++			size_t df = (size_t)(stat.f_bsize * stat.f_bfree);
++			total += df;
++			valid = 1;
++		}
++		else {
++			log_error_write(srv, __FILE__, __LINE__, "ssss",
++					"dir:", name,
++					"error:", strerror(errno));
++		}
++	}
++
++	return (valid) ? total : SSIZE_MAX;
++}
++
++
+ static int request_check_hostname(buffer *host) {
+ 	enum { DOMAINLABEL, TOPLABEL } stage = TOPLABEL;
+ 	size_t i;
+@@ -409,6 +442,7 @@ static int request_uri_is_valid_char(unsigned char c) {
+ 	return 1;
+ }
+ 
++
+ int http_request_parse(server *srv, connection *con) {
+ 	char *uri = NULL, *proto = NULL, *method = NULL, con_length_set;
+ 	int is_key = 1, key_len = 0, is_ws_after_key = 0, in_folding;
+@@ -1294,6 +1328,21 @@ int http_request_parse(server *srv, connection *con) {
+ 			return 0;
+ 
+ 		}
++		/* content-length is larger than 64k */
++		if (con->request.content_length > 64*1024) {
++			size_t disk_free = get_tempdirs_free_space(srv);
++			if (con->request.content_length > disk_free) {
++				con->http_status = 413;
++				con->keep_alive = 0;
++
++				log_error_write(srv, __FILE__, __LINE__, "ssosos",
++					"not enough free space in tempdirs:",
++					"length =", (off_t) con->request.content_length,
++					"free =", (off_t) disk_free,
++					"-> 413");
++				return 0;
++			}
++		}
+ 		break;
+ 	default:
+ 		break;
+-- 
+1.8.3.1
+

@@ -1,0 +1,47 @@
+From 89e1781309a8415d65c50c13c18742a92c970362 Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Tue, 7 Feb 2017 15:49:02 -0500
+Subject: [PATCH] Newton rebase fixes
+
+---
+ manifests/mon.pp | 9 ++++++---
+ manifests/osd.pp | 2 +-
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index 54f9909..41fd8df 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -100,10 +100,13 @@ define ceph::mon (
+       }
+     # Everything else that is supported by puppet-ceph should run systemd.
+     } else {
+-      $init = 'systemd'
++      $init = 'sysvinit'
+       Service {
+-        name   => "ceph-mon@${id}",
+-        enable => $mon_enable,
++        name     => "ceph-mon-${id}",
++        provider => $::ceph::params::service_provider,
++        start    => "service ceph start mon.${id}",
++        stop     => "service ceph stop mon.${id}",
++        status   => "service ceph status mon.${id}",
+       }
+     }
+ 
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index 5d3628d..ef171eb 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -56,7 +56,7 @@ define ceph::osd (
+   $uuid = undef,
+   $exec_timeout = $::ceph::params::exec_timeout,
+   $selinux_file_context = 'ceph_var_lib_t',
+-  $fsid = $::ceph::profile::params::fsid,
++  $fsid = undef,
+   ) {
+ 
+     $data = $name
+-- 
+1.8.3.1
+

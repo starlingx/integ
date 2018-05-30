@@ -1,0 +1,57 @@
+From 18d55409c48176c1af22c21033755a7aa4eaac8f Mon Sep 17 00:00:00 2001
+Message-Id: <18d55409c48176c1af22c21033755a7aa4eaac8f.1507842722.git.Jim.Somerville@windriver.com>
+In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From: Scott Little <scott.little@windriver.com>
+Date: Tue, 9 May 2017 13:00:12 -0400
+Subject: [PATCH 09/29] tis handle tis config customizations
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel-rt.spec | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
+index ae0d7e3..aff01a7 100644
+--- a/SPECS/kernel-rt.spec
++++ b/SPECS/kernel-rt.spec
+@@ -362,7 +362,9 @@ Source37: centos.cer
+ Source50: kernel-%{version}-x86_64-rt.config
+ Source51: kernel-%{version}-x86_64-rt-trace.config
+ Source52: kernel-%{version}-x86_64-rt-debug.config
+-
++Source30000: kernel-3.10.0-x86_64-rt.config.tis_extra
++Source30001: kernel-3.10.0-x86_64-rt-debug.config.tis_extra
++Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
+ ### Started using a unified SRPM
+ 
+ # Bugzilla: 1209952
+@@ -699,6 +701,9 @@ cp -rl vanilla-%{kversion} linux-%{kversion}.%{_target_cpu}
+ 
+ cd linux-%{kversion}.%{_target_cpu}
+ 
++# Copy any TiS-specific config changes
++cp $RPM_SOURCE_DIR/kernel-%{version}-*.config.tis_extra .
++
+ ## Apply Patches here
+ ApplyPatch debrand-single-cpu.patch
+ ApplyPatch debrand-rh_taint.patch
+@@ -739,6 +744,15 @@ for i in *.config
+ do
+   mv $i .config
+   Arch=`head -1 .config | cut -b 3-`
++
++  # Handle Titanium Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
++  # the make line below so that the one below removes any dependencies of ones that we
++  # turn off here.  We also want it before "make listnewconfig" so that we can set the
++  # config option for new configs introduced in the Titanium Cloud patches.
++  if [ -f ${i}.tis_extra ]; then
++    scripts/kconfig/merge_config.sh -m -n .config ${i}.tis_extra
++  fi
++
+   make %{?cross_opts} ARCH=$Arch listnewconfig | grep -E '^CONFIG_' >.newoptions || true
+ %if %{listnewconfig_fail}
+   if [ -s .newoptions ]; then
+-- 
+1.8.3.1
+

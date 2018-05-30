@@ -1,0 +1,28 @@
+From b485ba56b70bc19f5cf223c31402d7b723b7e9a6 Mon Sep 17 00:00:00 2001
+Message-Id: <b485ba56b70bc19f5cf223c31402d7b723b7e9a6.1507842722.git.Jim.Somerville@windriver.com>
+In-Reply-To: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+References: <9c07167bbe02febf5402665f4a907a0edd21c1fd.1507842722.git.Jim.Somerville@windriver.com>
+From: Scott Little <scott.little@windriver.com>
+Date: Tue, 9 May 2017 13:00:12 -0400
+Subject: [PATCH 03/29] Update package versioning for TIS format
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel-rt.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
+index ffbdbff..dd642c1 100644
+--- a/SPECS/kernel-rt.spec
++++ b/SPECS/kernel-rt.spec
+@@ -19,6 +19,7 @@ Summary: The Linux Realtime kernel
+ 
+ # The Build ID
+ # %%define buildid .local
++%define buildid .tis.%{tis_patch_ver}
+ 
+ # For a kernel released for public testing, released_kernel should be 1.
+ # For internal testing builds during development, it should be 0.
+-- 
+1.8.3.1
+

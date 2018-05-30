@@ -1,0 +1,93 @@
+#!/bin/bash
+#
+# Copyright (c) 2017 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# This script logs to user.log
+#
+# This script will either set up a vTPM or clear a vTPM's data folder if it exists. For
+# more information see the vTPM HLD in /folk/cgts/docs/security/
+#
+# The vTPM data path will be in the following format
+#     /etc/nova/instances/<guest uuid>/<tpm device name>
+#     e.g /etc/nova/instances/137d8de2-1079-46f8-9d96-8b6fd1599238/vtpm-instance-00000036
+#
+# This script parameters are
+#     OPERATION: "clear" or "setup"
+#     TPM_DEVICE: The vTPM full device name e.g /dev/vtpm-instance-00000036
+#     INSTANCE_UUID: The UUID of the Guest e.g. 137d8de2-1079-46f8-9d96-8b6fd1599238
+#
+#  e.g. setup_vtpm clear /dev/vtpm-instance-00000036 137d8de2-1079-46f8-9d96-8b6fd1599238
+#
+
+OPERATION=$1
+TPM_DEVICE=$2
+INSTANCE_UUID=$3
+
+TPM_DEVICENAME=`basename $TPM_DEVICE`
+DATA_PATH=/etc/nova/instances/$INSTANCE_UUID/$TPM_DEVICENAME
+
+logger -p info -t $0 "$OPERATION the vTPM device $TPM_DEVICE with data path $DATA_PATH for guest $INSTANCE_UUID"
+
+modprobe cuse
+lsmod | grep cuse
+rc=$?
+if [[ $rc != 0 ]]; then
+    logger -p err -t $0 "Failed modprobe cuse"
+    exit $rc;
+fi
+
+if [ "$OPERATION" == "clear" ]; then
+    # This will clear the vTPM NVData if there was any
+    rm -rf $DATA_PATH
+    exit 0
+fi
+
+if [ "$OPERATION" != "setup" ]; then
+    logger -p err -t $0 "Invalid operation $OPERATION for vTPM device $TPM_DEVICE"
+    exit 1
+fi
+
+if [ -n "$DATA_PATH" ]; then
+    logger -p info -t $0 "Creating the data path $DATA_PATH"
+    mkdir -p $DATA_PATH
+    chown -R tss:root $DATA_PATH
+    mkdir -p $DATA_PATH/state
+    chown -R tss:root $DATA_PATH/state
+fi
+
+if [ -e $TPM_DEVICE ]; then
+    logger -p info -t $0 "The vTPM device $TPM_DEVICE already exists, exiting"
+    exit 0
+fi
+
+if [ "$(ls -A $DATA_PATH/state)" ]; then
+    logger -p info -t $0 "The state file exists under $DATA_PATH/state. Skip swtpm_setup"
+else
+    logger -p info -t $0 "Calling swtpm_setup TPM device $TPM_DEVICE"
+    swtpm_setup --tpm-state $DATA_PATH/state --tpm2 --logfile $DATA_PATH/swtpm_setup.log
+    rc=$?
+    if [[ $rc != 0 ]]; then
+        logger -p err -t $0 "Failed to set vTPM device $TPM_DEVICE. swtpm_setup returned $rc"
+        exit $rc;
+    fi
+fi
+
+# Need to wait for the setup completion
+sleep 1
+
+logger -p info -t $0 "Calling swtpm cuse on TPM device $TPM_DEVICE"
+swtpm cuse --tpm2 -n $TPM_DEVICENAME --tpmstate dir=$DATA_PATH/state --log file=$DATA_PATH/swtpm.log,level=5
+rc=$?
+if [[ $rc != 0 ]]; then
+    logger -p err -t $0 "Failed swtpm cuse for vTPM device $TPM_DEVICE. swtpm returned $rc"
+    exit $rc;
+fi
+
+# Need to wait for the device creation completion
+sleep 1
+
+logger -p info -t $0 "The vTPM device $TPM_DEVICE was successfully setup"
+
+exit 0

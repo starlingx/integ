@@ -1,0 +1,2 @@
+COPY_LIST="$PKG_BASE/centos/files/*"
+TIS_PATCH_VER=20

@@ -1,0 +1,5 @@
+# Enable kvm-setup by default.  This can have odd side effects on
+# PowerNV systems that aren't intended as KVM hosts, but at present we
+# only support RHEL on PowerNV for the purpose of being a RHEV host.
+
+enable kvm-setup.service
