@@ -11,6 +11,9 @@ LimitNOFILE=65536
 Environment='STDOUT=/dev/null'
 Environment='STDERR=/var/log/influxdb/influxd.log'
 EnvironmentFile=-/etc/default/influxdb
+PermissionsStartOnly=true
+ExecStartPre=-/usr/bin/mkdir -p /var/run/influxdb
+ExecStartPre=-/usr/bin/chown influxdb:influxdb /var/run/influxdb
 ExecStart=/bin/sh -c "/usr/bin/influxd -config /etc/influxdb/influxdb.conf -pidfile /var/run/influxdb/influxdb.pid ${INFLUXD_OPTS} >> ${STDOUT} 2>> ${STDERR}"
 ExecStopPost=/bin/bash -c 'rm /var/run/influxdb/influxdb.pid'
 KillMode=control-group
