@@ -105,3 +105,4 @@ devtools/puppet-modules/openstack/puppet-swift-11.3.0
 monitoring/collectd-extensions
 monitoring/influxdb-extensions
 kubernetes/kubernetes
+kubernetes/docker-distribution

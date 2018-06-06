@@ -1,0 +1,6 @@
+TAR_NAME="docker-distribution"
+SRC_DIR="$CGCS_BASE/git/docker-distribution"
+COPY_LIST="$FILES_BASE/*"
+
+TIS_BASE_SRCREV=48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89
+TIS_PATCH_VER=GITREVCOUNT
