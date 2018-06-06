@@ -121,7 +121,6 @@ Group: Development/Libraries
 License: GPLv2+ and LGPLv2+ with exceptions
 Requires: rpm = %{version}-%{release}
 Provides: librpm.so.3()(64bit) librpmio.so.3()(64bit)
-Provides: librpm.so.7()(64bit) librpmio.so.7()(64bit)
 # librpm uses cap_compare, introduced sometimes between libcap 2.10 and 2.16.
 # A manual require is needed, see #505596
 Requires: libcap%{_isa} >= 2.16
@@ -267,8 +266,8 @@ rm -rf $RPM_BUILD_ROOT
 
 make DESTDIR="$RPM_BUILD_ROOT" install
 
-ln -s ./librpmio.so.7 ${RPM_BUILD_ROOT}%{_libdir}/librpmio.so.3
-ln -s ./librpm.so.7 ${RPM_BUILD_ROOT}%{_libdir}/librpm.so.3
+ln -s ./librpmio.so.8 ${RPM_BUILD_ROOT}%{_libdir}/librpmio.so.3
+ln -s ./librpm.so.8 ${RPM_BUILD_ROOT}%{_libdir}/librpm.so.3
 ls -l ${RPM_BUILD_ROOT}%{_libdir}
 
 # remove all plugins except systemd_inhibit
