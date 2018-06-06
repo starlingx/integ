@@ -1,9 +1,0 @@
-#! /bin/sh
-
-IP=`ifconfig | grep "192.168" | sed -e "s/.*inet //" -e "s/ netmask.*//"`
-
-if [ "x$IP" = "x" ]; then
-    IP="127.0.0.1"
-fi
-
-sed -i "s/local_ip.*/local_ip =$IP/" /etc/neutron/openvswitch_agent.ini

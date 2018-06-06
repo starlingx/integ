@@ -1,7 +1,0 @@
-#! /bin/bash
-
-ovs-vsctl --no-wait --may-exist add-br br-ex -- set bridge br-ex datapath_type=netdev
-modprobe  uio_pci_generic
-/usr/share/openvswitch/dpdk-usertools/dpdk-devbind.py  --bind=uio_pci_generic 0000:00:08.0
-
-ovs-vsctl --no-wait --may-exist add-port br-ex dpdk0 -- set Interface dpdk0 type=dpdk options:dpdk-devargs=0000:00:08.0
