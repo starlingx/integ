@@ -41,7 +41,7 @@ install -m 755 collect_ceph.sh %{buildroot}%{_sysconfdir}/collect.d/collect_ceph
 install -m 755 collect_sm.sh %{buildroot}%{_sysconfdir}/collect.d/collect_sm
 install -m 755 collect_tc.sh %{buildroot}%{_sysconfdir}/collect.d/collect_tc
 install -m 755 collect_nfv_vim.sh %{buildroot}%{_sysconfdir}/collect.d/collect_nfv_vim
-install -m 755 collect_vswitch.sh %{buildroot}%{_sysconfdir}/collect.d/collect_vswitch
+install -m 755 collect_ovs.sh %{buildroot}%{_sysconfdir}/collect.d/collect_ovs
 install -m 755 collect_patching.sh %{buildroot}%{_sysconfdir}/collect.d/collect_patching
 install -m 755 collect_coredump.sh %{buildroot}%{_sysconfdir}/collect.d/collect_coredump
 install -m 755 collect_crash.sh %{buildroot}%{_sysconfdir}/collect.d/collect_crash
