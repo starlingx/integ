@@ -1,0 +1,32 @@
+From c4b5fbe5505de3e673eb2e0b04ce65f9efc9b146 Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Sat, 26 May 2018 09:05:10 -0500
+Subject: [PATCH] unset tunnel_types when tunnelling disabled
+
+---
+ SPECS/puppet-neutron.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-neutron.spec b/SPECS/puppet-neutron.spec
+index 831d61b..0db2869 100644
+--- a/SPECS/puppet-neutron.spec
++++ b/SPECS/puppet-neutron.spec
+@@ -18,6 +18,7 @@ Patch0007:      0007-update-neutron-bgp-to-use-class-variables.patch
+ Patch0008:      0008-dvr-allow-base-mac-address-to-be-configured.patch
+ Patch0009:      0009-add-support-for-networking-sfc.patch
+ Patch0010:      0010-restore-ovs-service-parameters.patch
++Patch0011:      0011-unset-tunnel_types-when-tunneling-disabled.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -46,6 +47,7 @@ Puppet module for OpenStack Neutron
+ %patch0008 -p1
+ %patch0009 -p1
+ %patch0010 -p1
++%patch0011 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

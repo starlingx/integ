@@ -1,0 +1,38 @@
+From 76ba5dcc92ad317d2b19cac916d710465e43e3a8 Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Tue, 29 May 2018 12:20:27 -0500
+Subject: [PATCH] run services as root user
+
+---
+ rhel/etc_openvswitch_default.conf                   | 2 +-
+ rhel/usr_lib_systemd_system_ovs-vswitchd.service.in | 4 ----
+ 2 files changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/rhel/etc_openvswitch_default.conf b/rhel/etc_openvswitch_default.conf
+index c74417d..56d79eb 100644
+--- a/rhel/etc_openvswitch_default.conf
++++ b/rhel/etc_openvswitch_default.conf
+@@ -2,4 +2,4 @@
+ 
+ # The following is the *default* configuration for the openvswitch user ID.
+ # This is for backward compatibility.
+-OVS_USER_ID="root:root"
++OVS_USER_ID=""
+diff --git a/rhel/usr_lib_systemd_system_ovs-vswitchd.service.in b/rhel/usr_lib_systemd_system_ovs-vswitchd.service.in
+index c6d9aa1..63eb68e 100644
+--- a/rhel/usr_lib_systemd_system_ovs-vswitchd.service.in
++++ b/rhel/usr_lib_systemd_system_ovs-vswitchd.service.in
+@@ -13,10 +13,6 @@ Restart=on-failure
+ Environment=HOME=/var/run/openvswitch
+ EnvironmentFile=/etc/openvswitch/default.conf
+ EnvironmentFile=-/etc/sysconfig/openvswitch
+-@begin_dpdk@
+-ExecStartPre=-/usr/bin/chown :hugetlbfs /dev/hugepages
+-ExecStartPre=-/usr/bin/chmod 0775 /dev/hugepages
+-@end_dpdk@
+ ExecStart=/usr/share/openvswitch/scripts/ovs-ctl \
+           --no-ovsdb-server --no-monitor --system-id=random \
+           --ovs-user=${OVS_USER_ID} \
+-- 
+1.8.3.1
+

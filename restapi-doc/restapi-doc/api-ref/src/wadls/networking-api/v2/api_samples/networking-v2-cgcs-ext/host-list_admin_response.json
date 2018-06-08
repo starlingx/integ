@@ -4,7 +4,7 @@
             "agents": [
                 {
                     "id": "894d7327-ef14-468d-9037-82f7209a4165", 
-                    "type": "AVS agent"
+                    "type": "Open vSwitch agent"
                 }, 
                 {
                     "id": "b3aa7556-0f13-4822-9707-d42b5bca114d", 
@@ -32,7 +32,7 @@
                 }, 
                 {
                     "id": "53b84157-5761-4480-8b14-10abc22e3c65", 
-                    "type": "AVS agent"
+                    "type": "Open vSwitch agent"
                 }, 
                 {
                     "id": "3c28bc57-ae08-428f-8387-1e4b74376220", 

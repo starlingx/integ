@@ -1,0 +1,49 @@
+From 45378c59ffd64d2cf17aa2944489075e6940ab39 Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Tue, 29 May 2018 11:58:36 -0500
+Subject: [PATCH] 0003-run-services-as-root-user.patch
+
+---
+ SPECS/openvswitch.spec | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
+
+diff --git a/SPECS/openvswitch.spec b/SPECS/openvswitch.spec
+index 6950479..6fc2b67 100644
+--- a/SPECS/openvswitch.spec
++++ b/SPECS/openvswitch.spec
+@@ -103,6 +103,7 @@ ExclusiveArch: x86_64 aarch64 ppc64le s390x
+ %define dpdktarget %{dpdk_mach_arch}-%{dpdk_mach_tmpl}-linuxapp-gcc
+ 
+ # ovs-patches
++Patch01: run-services-as-root-user.patch
+ 
+ # OVS (including OVN) backports (0 - 300)
+ 
+@@ -507,24 +508,6 @@ rm -rf $RPM_BUILD_ROOT
+     fi
+ %endif
+ 
+-%post
+-if [ $1 -eq 1 ]; then
+-    getent passwd openvswitch >/dev/null || \
+-        useradd -r -d / -s /sbin/nologin -c "Open vSwitch Daemons" openvswitch
+-
+-    sed -i 's:^#OVS_USER_ID=:OVS_USER_ID=:' /etc/sysconfig/openvswitch
+-
+-    getent group hugetlbfs >/dev/null || \
+-        groupadd hugetlbfs
+-    usermod -a -G hugetlbfs openvswitch
+-    sed -i \
+-        's@OVS_USER_ID="openvswitch:openvswitch"@OVS_USER_ID="openvswitch:hugetlbfs"@'\
+-        /etc/sysconfig/openvswitch
+-
+-    # In the case of upgrade, this is not needed.
+-    chown -R openvswitch:openvswitch /etc/openvswitch
+-fi
+-
+ %if 0%{?systemd_post:1}
+     %systemd_post %{name}.service
+ %else
+-- 
+1.8.3.1
+

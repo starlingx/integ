@@ -1,3 +1,5 @@
 0001-Update-package-versioning-for-TIS-format.patch
 0002-Add-TiS-patches.patch
 0003-add-support-for-networking-sfc.patch
+0004-restore-ovs-service-parameters.patch
+0005-unset-tunnel_types-when-tunnelling-disabled.patch

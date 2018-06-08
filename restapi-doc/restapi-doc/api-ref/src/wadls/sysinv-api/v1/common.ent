@@ -915,7 +915,7 @@
                             Platform, Vswitch, Shared or VMs .</para>
                         <para><code>Platform</code> indicates the core is used for the host
                             kernel, Titanium Cloud and OpenStack Services,</para>
-                        <para><code>Vswitch</code> indicates the core is used by AVS, the
+                        <para><code>Vswitch</code> indicates the core is used by the
                             virtual switch,</para>
                         <para><code>Shared</code> indicates that the core is reserved for
                             sharing by VMs using the hw:wrs:shared_vcpu flavor extra spec,</para>
@@ -1009,6 +1009,29 @@
                         xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
                         <para>Boolean indicating whether huge page memory is configured
                             or not.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="vswitch_hugepages_size_mib" style="plain" type="xsd:integer" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The size of a Virtual Switch (vSwitch) huge page,
+                            in MiBs.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="vswitch_hugepages_nr" style="plain" type="xsd:integer" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The total number of Virtual Switch (vSwitch) huge
+                            pages.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="vswitch_hugepages_avail" style="plain" type="xsd:integer" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The free / available Virtual Switch (vSwitch) huge pages.</para>
                     </wadl:doc>
                 </param>
                 <param xmlns="http://wadl.dev.java.net/2009/02"

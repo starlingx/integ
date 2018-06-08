@@ -1,0 +1,25 @@
+From cfa7930a4bf0b0e798f1492cd75e37f66c1f5319 Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Mon, 28 May 2018 08:14:24 -0500
+Subject: [PATCH] update package versioning for TIS format
+
+---
+ SPECS/openvswitch.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/openvswitch.spec b/SPECS/openvswitch.spec
+index e007992..71b4634 100644
+--- a/SPECS/openvswitch.spec
++++ b/SPECS/openvswitch.spec
+@@ -46,7 +46,7 @@ URL: http://www.openvswitch.org/
+ # Carried over from 2.6.1 CBS builds, introduced to win over 2.6.90
+ Epoch:   1
+ Version: 2.9.0
+-Release: 3%{?commit0:.%{date}git%{shortcommit0}}%{?dist}
++Release: 3.el7%{?_tis_dist}.%{tis_patch_ver}
+ 
+ # Nearly all of openvswitch is ASL 2.0.  The bugtool is LGPLv2+, and the
+ # lib/sflow*.[ch] files are SISSL
+-- 
+1.8.3.1
+

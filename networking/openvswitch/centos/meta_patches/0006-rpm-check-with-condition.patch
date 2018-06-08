@@ -1,0 +1,25 @@
+From 39471b1f12131cfa74e272e73c38eb830d89f1bd Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Tue, 12 Jun 2018 14:41:25 -0500
+Subject: [PATCH] rpm check with condition
+
+---
+ SPECS/openvswitch.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/openvswitch.spec b/SPECS/openvswitch.spec
+index c51d53f..432c9ed 100644
+--- a/SPECS/openvswitch.spec
++++ b/SPECS/openvswitch.spec
+@@ -25,7 +25,7 @@
+ # https://bugzilla.redhat.com/show_bug.cgi?id=1105458#c10
+ # "ofproto-dpif - select group with dp_hash selection method" test is broken on armv7lh
+ %ifarch x86_64 aarch64 ppc64le
+-%bcond_without check
++%bcond_with check
+ %else
+ %bcond_with check
+ %endif
+-- 
+1.8.3.1
+

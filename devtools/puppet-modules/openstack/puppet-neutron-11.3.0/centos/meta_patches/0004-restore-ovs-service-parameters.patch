@@ -1,0 +1,32 @@
+From edf5db0a419f65350f6628cc74f144f8fd26e45d Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Fri, 18 May 2018 13:35:03 -0500
+Subject: [PATCH] restore ovs service parameters
+
+---
+ SPECS/puppet-neutron.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-neutron.spec b/SPECS/puppet-neutron.spec
+index 58bbd24..831d61b 100644
+--- a/SPECS/puppet-neutron.spec
++++ b/SPECS/puppet-neutron.spec
+@@ -17,6 +17,7 @@ Patch0006:      0006-Add-parameters-to-classes.patch
+ Patch0007:      0007-update-neutron-bgp-to-use-class-variables.patch
+ Patch0008:      0008-dvr-allow-base-mac-address-to-be-configured.patch
+ Patch0009:      0009-add-support-for-networking-sfc.patch
++Patch0010:      0010-restore-ovs-service-parameters.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -44,6 +45,7 @@ Puppet module for OpenStack Neutron
+ %patch0007 -p1
+ %patch0008 -p1
+ %patch0009 -p1
++%patch0010 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

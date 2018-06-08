@@ -1,10 +1,12 @@
 {
+   "vswitch_hugepages_nr" : 1,
    "hugepages_configured" : "True",
    "vm_hugepages_nr_1G_pending" : null,
    "memavail_mib" : 24082,
    "uuid" : "85df5109-77d9-4335-9181-0efa82c98dcc",
    "ihost_uuid" : "afecdcfb-2954-498d-88bf-d1385b00f34d",
    "created_at" : "2015-04-06T20:27:50.182764+00:00",
+   "vswitch_hugepages_size_mib" : 1024,
    "vm_hugepages_avail_1G" : 0,
    "capabilities" : {},
    "links" : [
@@ -18,7 +20,9 @@
       }
    ],
    "vm_hugepages_nr_2M_pending" : null,
+   "vswitch_hugepages_reqd" : null,
    "vm_hugepages_avail_2M" : 12041,
+   "vswitch_hugepages_avail" : 0,
    "numa_node" : 1,
    "vm_hugepages_nr_1G" : 0,
    "updated_at" : "2015-04-08T11:33:25.280674+00:00",

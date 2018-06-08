@@ -1,0 +1,46 @@
+From dc4b592359fd30045797c26f3d9a99e191a932cc Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Fri, 1 Jun 2018 20:26:20 -0500
+Subject: [PATCH] 0010-restore-ovs-service-parameters.patch
+
+---
+ manifests/params.pp | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 858e3fa..22320e5 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -7,7 +7,7 @@ class neutron::params {
+ 
+   $client_package              = 'python-neutronclient'
+   $server_service              = 'neutron-server'
+-  #$ovs_agent_service           = 'neutron-openvswitch-agent'
++  $ovs_agent_service           = 'neutron-openvswitch-agent'
+   #$linuxbridge_agent_service   = 'neutron-linuxbridge-agent'
+   #$cisco_config_file           = '/etc/neutron/plugins/cisco/cisco_plugins.ini'
+   $opencontrail_plugin_package = 'neutron-plugin-contrail'
+@@ -37,7 +37,6 @@ class neutron::params {
+   $l2gw_agent_service          = 'neutron-l2gw-agent'
+   $nsx_plugin_package          = 'vmware-nsx'
+   $nsx_config_file             = '/etc/neutron/plugins/vmware/nsx.ini'
+-  $vswitch_agent_service       = ''
+   $router_scheduler_driver  = 'neutron.scheduler.l3_agent_scheduler.HostBasedScheduler'
+   $network_scheduler_driver = 'neutron.scheduler.dhcp_agent_scheduler.HostBasedScheduler'
+   $router_status_managed = true
+@@ -50,9 +49,9 @@ class neutron::params {
+     $server_package             = false
+     #$ml2_server_package         = 'openstack-neutron-ml2'
+     $ml2_server_package = false
+-    #$ovs_agent_package          = false
+-    #$ovs_server_package         = 'openstack-neutron-openvswitch'
+-    #$ovs_cleanup_service        = 'neutron-ovs-cleanup'
++    $ovs_agent_package          = false
++    $ovs_server_package         = 'openstack-neutron-openvswitch'
++    $ovs_cleanup_service        = 'neutron-ovs-cleanup'
+     #$libnl_package              = 'libnl'
+     #$package_provider           = 'rpm'
+     #$linuxbridge_agent_package  = false
+-- 
+1.8.3.1
+

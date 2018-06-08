@@ -11,7 +11,7 @@
             }, 
             {
                 "id": "894d7327-ef14-468d-9037-82f7209a4165", 
-                "type": "AVS agent"
+                "type": "Open vSwitch agent"
             }
         ], 
         "availability": "up", 
