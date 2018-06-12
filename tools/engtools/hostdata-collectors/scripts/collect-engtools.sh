@@ -270,14 +270,10 @@ OPT_USE_INTERVALS=0
 BINDIR=/usr/bin
 LBINDIR=/usr/local/bin
 
-while IFS='' read -r line || [[ -n "$line" ]]; do
-  if [[ $line =~ 'ENABLE_STATIC_COLLECTION'* ]]; then
-    static_collection=${line:25:1}
-  fi
-done < /etc/engtools/engtools.conf
+. /etc/engtools/engtools.conf
 
 declare -a tlist
-if [[ $static_collection == "Y" ]] || [[ $static_collection == "y" ]]; then
+if [[ ${ENABLE_STATIC_COLLECTION} == "Y" ]] || [[ ${ENABLE_STATIC_COLLECTION} == "y" ]]; then
   tlist+=( "tool=${LBINDIR}/top.sh name=top period=${PERIOD_MIN} interval=${DUR_1MIN_IN_SEC}" )
   tlist+=( "tool=${LBINDIR}/iostat.sh name=iostat period=${PERIOD_MIN} interval=${DUR_1MIN_IN_SEC}" )
   tlist+=( "tool=${LBINDIR}/netstats.sh name=netstats period=${PERIOD_MIN} interval=${netstats_interval}" )
@@ -290,45 +286,55 @@ if [[ $static_collection == "Y" ]] || [[ $static_collection == "y" ]]; then
   if [[ "${HOSTNAME}" =~ "controller-" ]]; then
     tlist+=( "tool=${LBINDIR}/ceph.sh name=ceph period=${PERIOD_MIN} interval=${ceph_interval}" )
     tlist+=( "tool=${LBINDIR}/postgres.sh name=postgres period=${PERIOD_MIN} interval=${postgres_interval}" )
-    # tlist+=( "tool=${LBINDIR}/rabbitmq.sh name=rabbitmq period=${PERIOD_MIN} interval=${rabbitmq_interval}" )
+    tlist+=( "tool=${LBINDIR}/rabbitmq.sh name=rabbitmq period=${PERIOD_MIN} interval=${rabbitmq_interval}" )
   elif [[ "${HOSTNAME}" =~ "compute-" ]]; then
     tlist+=( "tool=${LBINDIR}/vswitch.sh name=vswitch period=${PERIOD_MIN} interval=${DUR_1MIN_IN_SEC}" )
   fi
+
+  # ticker - shows progress on the screen
+  tlist+=( "tool=${LBINDIR}/ticker.sh name= period=${PERIOD_MIN} interval=${DUR_1MIN_IN_SEC}" )
 fi
 
-# ticker - shows progress on the screen
-tlist+=( "tool=${LBINDIR}/ticker.sh name= period=${PERIOD_MIN} interval=${DUR_1MIN_IN_SEC}" )
-
+if [[ ${ENABLE_LIVE_STREAM} == "Y" ]] || [[ ${ENABLE_LIVE_STREAM} == "y" ]]; then
+  ${TOOLBIN}/live_stream.py &
+fi
 
 #-------------------------------------------------------------------------------
 # Main loop
 #-------------------------------------------------------------------------------
 OPT_DEBUG=0
 REP=0
-while [[ ${TOOL_USR1_SIGNAL} -eq 0 ]] &&
-      [[ ${OPT_FOREVER} -eq 1 || ${REP} -lt ${REPEATS} ]]
-do
-  # increment loop counter
-  ((REP++))
 
-  # purge oldest files
-  purge_oldest_files
+if [ ${#tlist[@]} -ne 0 ]; then
+  # Static stats collection is turned on 
+  while [[ ${TOOL_USR1_SIGNAL} -eq 0 ]] &&
+        [[ ${OPT_FOREVER} -eq 1 || ${REP} -lt ${REPEATS} ]]
+  do
+    # increment loop counter
+    ((REP++))
 
-  # define filename timestamp
-  timestamp=$( date +"%Y-%0m-%0e_%H%M" )
+    # purge oldest files
+    purge_oldest_files
 
-  # collect tools in parallel to separate output files
-  LOG "collecting ${TOOLNAME} at ${timestamp} for ${PERIOD_MIN} mins, repeat=${REP}"
-  do_parallel_commands
+    # define filename timestamp
+    timestamp=$( date +"%Y-%0m-%0e_%H%M" )
+
+    # collect tools in parallel to separate output files
+    LOG "collecting ${TOOLNAME} at ${timestamp} for ${PERIOD_MIN} mins, repeat=${REP}"
+    do_parallel_commands
+    wait
+
+    # Compress latest increment
+    LOG "compressing: ${parallel_outfiles[@]}"
+    ${CMD_IDLE} bzip2 -q -f ${parallel_outfiles[@]} 2>/dev/null &
+  done
+  
+  # Wait for the compression to complete
   wait
+  tools_cleanup 0
+fi
 
-  # Compress latest increment
-  LOG "compressing: ${parallel_outfiles[@]}"
-  ${CMD_IDLE} bzip2 -q -f ${parallel_outfiles[@]} 2>/dev/null &
-done
-
-# wait for compression to complete
+# Should wait here in case live stats streaming is turned on.
 wait
 
-tools_cleanup 0
 exit 0

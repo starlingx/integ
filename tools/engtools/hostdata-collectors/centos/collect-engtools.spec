@@ -10,7 +10,7 @@ BuildArch: noarch
 Source: %{name}-%{version}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-
+BuildRequires: systemd
 Requires: iperf3
 
 %description

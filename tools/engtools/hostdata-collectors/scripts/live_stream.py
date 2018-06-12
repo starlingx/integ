@@ -167,6 +167,10 @@ def collectMemstats(influx_info, node, ci, services, syseng_services, openstack_
                                 fields[gsvc]["vsz"] += vsz
 
                         elif svc == "postgres":
+                            if (len(line) <= i+2):
+                                # Command line could be "sudo su postgres", skip it
+                                break
+
                             if line[i + 1].startswith("-") is False and line[i + 1].startswith("_") is False and line[i + 1] != "psql":
                                 psvc = ""
                                 if line[i + 2] in openstack_services:
@@ -284,6 +288,10 @@ def collectSchedtop(influx_info, node, ci, services, syseng_services, openstack_
                                     fields[gsvc] += occ
 
                             elif svc == "postgres":
+                                if (len(line) <= i+2):
+                                    # Command line could be "sudo su postgres", skip it
+                                    break
+
                                 if line[i + 1].startswith("-") is False and line[i + 1].startswith("_") is False and line[i + 1] != "psql":
                                     psvc = ""
                                     if line[i + 2] in openstack_services:
@@ -589,20 +597,22 @@ def collectPostgres(influx_info, node, ci):
     postgres_output = postgres_output1 = None
     influx_string = influx_string1 = ""
     good_string = False
+    dbcount = 0
+    BATCH_SIZE = 10
+
     while True:
         try:
             # make sure this is active controller, otherwise postgres queries wont work
             if isActiveController():
                 while True:
-                    # get list of databases and their sizes
                     postgres_output = Popen("sudo -u postgres psql --pset pager=off -q -t -c'SELECT datname, pg_database_size(datname) FROM pg_database WHERE datistemplate = false;'", shell=True, stdout=PIPE)
-                    lines = postgres_output.stdout.read().replace(" ", "").strip().split("\n")
-                    if lines == "" or lines is None:
+                    db_lines = postgres_output.stdout.read().replace(" ", "").strip().split("\n")
+                    if db_lines == "" or db_lines is None:
                         postgres_output.kill()
                         break
                     else:
                         # for each database from the previous output
-                        for line in lines:
+                        for line in db_lines:
                             if not line:
                                 break
                             line = line.replace(" ", "").split("|")
@@ -613,8 +623,8 @@ def collectPostgres(influx_info, node, ci):
                             # get tables for each database
                             sql = "SELECT table_schema,table_name,pg_size_pretty(table_size) AS table_size,pg_size_pretty(indexes_size) AS indexes_size,pg_size_pretty(total_size) AS total_size,live_tuples,dead_tuples FROM (SELECT table_schema,table_name,pg_table_size(table_name) AS table_size,pg_indexes_size(table_name) AS indexes_size,pg_total_relation_size(table_name) AS total_size,pg_stat_get_live_tuples(table_name::regclass) AS live_tuples,pg_stat_get_dead_tuples(table_name::regclass) AS dead_tuples FROM (SELECT table_schema,table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE') AS all_tables ORDER BY total_size DESC) AS pretty_sizes;"
                             postgres_output1 = Popen('sudo -u postgres psql --pset pager=off -q -t -d{} -c"{}"'.format(line[0], sql), shell=True, stdout=PIPE)
-                            lines = postgres_output1.stdout.read().replace(" ", "").strip().split("\n")
-                            for line in lines:
+                            tbl_lines = postgres_output1.stdout.read().replace(" ", "").strip().split("\n")
+                            for line in tbl_lines:
                                 if line == "":
                                     continue
                                 else:
@@ -648,6 +658,13 @@ def collectPostgres(influx_info, node, ci):
                                         fields1["dead_tuples"] = int(elements[6])
                                         influx_string1 += "{},'{}'='{}','{}'='{}','{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement1, "node", tags["node"], "service", tags["service"], "table_schema", tags["table_schema"], "table", tags["table"], "table_size", fields1["table_size"], "index_size", fields1["index_size"], "total_size", fields1["total_size"], "live_tuples", fields1["live_tuples"], "dead_tuples", fields1["dead_tuples"]) + "\n"
                                         good_string = True
+			    dbcount += 1
+			    if dbcount == BATCH_SIZE and good_string:
+				# Curl will barf if the batch is too large
+				p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string1), shell=True)
+				p.communicate()
+			       	influx_string1 = ""
+				dbcount = 0
                         if good_string:
                             # send table data to InfluxDB
                             p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string), shell=True)
@@ -655,6 +672,7 @@ def collectPostgres(influx_info, node, ci):
                             p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string1), shell=True)
                             p.communicate()
                             influx_string = influx_string1 = ""
+                            dbcount = 0
                             time.sleep(ci["postgres"])
                         postgres_output1.kill()
                         postgres_output.kill()
@@ -1331,7 +1349,7 @@ if __name__ == "__main__":
     live_svc = ("live_stream.py",)
     static_svcs = ("occtop", "memtop", "schedtop", "top.sh", "iostat.sh", "netstats.sh", "diskstats.sh", "memstats.sh", "filestats.sh", "ceph.sh", "postgres.sh", "rabbitmq.sh", "vswitch.sh")
     collection_intervals = {"memtop": None, "memstats": None, "occtop": None, "schedtop": None, "load_avg": None, "cpu_count": None, "diskstats": None, "iostat": None, "filestats": None, "netstats": None, "postgres": None, "rabbitmq": None, "vswitch": None}
-    openstack_services = ("nova", "cinder", "aodh", "ceilometer", "heat", "glance", "ceph", "horizon", "keystone", "puppet", "sysinv", "neutron", "nova_api", "postgres")
+    openstack_services = ("nova", "cinder", "aodh", "ceilometer", "heat", "glance", "ceph", "horizon", "keystone", "puppet", "sysinv", "neutron", "nova_api", "postgres", "panko", "nova_cell0", "magnum", "ironic", "murano", "gnocchi")
     # memstats, schedtop, and filestats must skip/exclude certain fields when collect_all is enabled. No need to collect this stuff
     exclude_list = ("python", "python2", "bash", "perl", "sudo", "init")
     skip_list = ("ps", "top", "sh", "<defunct>", "curl", "awk", "wc", "sleep", "lsof", "cut", "grep", "ip", "tail", "su")

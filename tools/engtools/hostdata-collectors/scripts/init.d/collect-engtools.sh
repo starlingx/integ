@@ -60,7 +60,6 @@ case $1 in
     log_daemon_msg "Starting ${NAME}"
     if start-stop-daemon --start --background --quiet --oknodo --pidfile ${PIDFILE} \
                          --exec ${DAEMON} -- ${DAEMON_ARGS} ; then
-      ./usr/local/bin/live_stream.py &
       log_end_msg 0
     else
       log_end_msg 1

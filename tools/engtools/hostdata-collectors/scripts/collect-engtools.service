@@ -1,6 +1,7 @@
 [Unit]
 Description=Engineering data collection tools to monitor host performance
-After=network.service
+Requires=network.service
+After=network.service getty.target
 
 [Service]
 Type=forking
