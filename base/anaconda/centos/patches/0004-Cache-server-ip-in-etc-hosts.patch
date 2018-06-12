@@ -50,7 +50,7 @@ index 0000000..e3f79a4
 +cat /proc/cmdline | grep -q 'inst\.ks=http://'
 +if [ $? -eq 0 ]
 +then
-+    server=$(cat /proc/cmdline | sed -r 's#.*inst\.ks=http://([^/]*)/.*#\1#')
++    server=$(cat /proc/cmdline | sed -r 's#.*inst\.ks=http://([^/:]*)(:[^/]*)?/.*#\1#')
 +    if [ -n "$server" ]
 +    then
 +        echo "Testing connectivity to server: $server"
