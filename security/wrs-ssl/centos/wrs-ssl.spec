@@ -21,12 +21,12 @@ rm -rf $RPM_BUILD_ROOT
 RPM_BUILD_DIR_PKG="%{name}-%{version}"
 mkdir -p $RPM_BUILD_DIR_PKG
 CSRCONF="$RPM_BUILD_DIR_PKG/server-csr.conf"
-PEMFILE="$RPM_BUILD_DIR_PKG/server-cert.pem"
+PEMFILE="$RPM_BUILD_DIR_PKG/self-signed-server-cert.pem"
 cp %{SOURCE1} $CSRCONF
 # generate a self signed default certificate
 /usr/bin/openssl req -new -x509 -sha256 -keyout $PEMFILE -out $PEMFILE -days 365 -nodes -config $CSRCONF
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/ssl/private
-install -m 400 $PEMFILE $RPM_BUILD_ROOT/%{_sysconfdir}/ssl/private/server-cert.pem
+install -m 400 $PEMFILE $RPM_BUILD_ROOT/%{_sysconfdir}/ssl/private/self-signed-server-cert.pem
 
 mkdir -p $RPM_BUILD_ROOT/%{_sbindir}
 install -m 700 %{SOURCE2} $RPM_BUILD_ROOT/%{_sbindir}/tpmdevice-setup
