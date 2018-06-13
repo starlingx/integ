@@ -1,0 +1,25 @@
+From 26ea115cb4af960dce65b9580178d69a99129448 Mon Sep 17 00:00:00 2001
+From: Angie Wang <angie.Wang@windriver.com>
+Date: Mon, 4 Jun 2018 10:45:48 -0400
+Subject: [PATCH 1/1] remove the oslo cache configuration
+
+---
+ manifests/init.pp | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 9c48627..3598b73 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -453,8 +453,4 @@ please use memcache_servers instead.")
+     rpc_response_timeout => $rpc_response_timeout,
+     control_exchange     => $control_exchange,
+   }
+-
+-  oslo::cache { 'ceilometer_config':
+-    memcache_servers => $memcache_servers_real,
+-  }
+ }
+-- 
+1.8.3.1
+

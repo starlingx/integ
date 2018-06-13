@@ -1,0 +1,32 @@
+From 0a5156ce7ebf44b0013dfb3f9ef3c27c000e91f1 Mon Sep 17 00:00:00 2001
+From: Angie Wang <angie.Wang@windriver.com>
+Date: Mon, 4 Jun 2018 10:48:56 -0400
+Subject: [PATCH 1/1] meta remove the oslo cache configuration
+
+---
+ SPECS/puppet-ceilometer.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-ceilometer.spec b/SPECS/puppet-ceilometer.spec
+index 9f291f9..df9d728 100644
+--- a/SPECS/puppet-ceilometer.spec
++++ b/SPECS/puppet-ceilometer.spec
+@@ -12,6 +12,7 @@ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_versio
+ Patch0001:      0001-Roll-up-TIS-patches.patch
+ Patch0002:      0002-Fix-ceilometer-puppet-warnings.patch
+ Patch0003:      0003-remove-reseller-admin-role.patch
++Patch0004:      0004-remove-the-oslo-cache-configuration.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -31,6 +32,7 @@ Puppet module for OpenStack Ceilometer
+ %patch0001 -p1
+ %patch0002 -p1
+ %patch0003 -p1
++%patch0004 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

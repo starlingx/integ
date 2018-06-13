@@ -24,6 +24,7 @@ extended/lighttpd
 extended/python-cephclient
 extended/python-ryu
 extended/python-smartpm
+extended/python-voluptuous
 extended/lldpd
 extended/logrotate
 extended/nova-utils
@@ -76,6 +77,7 @@ devtools/puppet-modules/openstack/puppet-ceilometer-11.3.0
 devtools/puppet-modules/openstack/puppet-ceph-2.2.0
 devtools/puppet-modules/openstack/puppet-cinder-11.3.0
 devtools/puppet-modules/openstack/puppet-glance-11.3.0
+devtools/puppet-modules/openstack/puppet-gnocchi-11.3.0
 devtools/puppet-modules/openstack/puppet-heat-11.3.0
 devtools/puppet-modules/openstack/puppet-ironic-11.3.0
 devtools/puppet-modules/openstack/puppet-keystone-11.3.0

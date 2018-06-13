@@ -1,0 +1,32 @@
+From 8c24c1c8bc9b703714c52b9b45cd3ea90f4a6604 Mon Sep 17 00:00:00 2001
+From: Angie Wang <angie.Wang@windriver.com>
+Date: Thu, 7 Jun 2018 16:39:08 -0400
+Subject: [PATCH] spec add uid gid for telemetry services
+
+---
+ SPECS/setup.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/setup.spec b/SPECS/setup.spec
+index b652b3c..76d4feb 100644
+--- a/SPECS/setup.spec
++++ b/SPECS/setup.spec
+@@ -30,6 +30,7 @@ Patch11: add-fm-user-to-snmpd-group.patch
+ Patch12: add-magnum-uid-gid.patch
+ Patch13: add-ironic-uid-gid.patch
+ Patch14: add-murano-uid-gid.patch
++Patch15: add-uid-gid-for-telemetry-services.patch
+ 
+ %description
+ The setup package contains a set of important system configuration and
+@@ -52,6 +53,7 @@ setup files, such as passwd, group, and profile.
+ %patch12 -p1
+ %patch13 -p1
+ %patch14 -p1
++%patch15 -p1
+ 
+ ./shadowconvert.sh
+ 
+-- 
+1.8.3.1
+

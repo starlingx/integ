@@ -12,3 +12,4 @@ spec-include-add-fm-user-to-snmpd-group.patch
 spec-add-magnum-uid-gid.patch
 spec-add-ironic-uid-gid.patch
 spec-add-murano-uid-gid.patch
+spec-add-uid-gid-for-telemetry-services.patch

@@ -1,0 +1,35 @@
+From 5d0869348945228a40c60fc5316d53b1e93e8bce Mon Sep 17 00:00:00 2001
+From: Angie Wang <angie.Wang@windriver.com>
+Date: Thu, 7 Jun 2018 16:35:19 -0400
+Subject: [PATCH] add uid gid for telemetry services
+
+---
+ group  | 3 +++
+ passwd | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/group b/group
+index 22fa91d..551b1e4 100644
+--- a/group
++++ b/group
+@@ -29,3 +29,6 @@ libvirt:x:991:nova
+ magnum:x:1870:magnum
+ ironic:x:1874:ironic
+ murano:x:105:murano
++aodh:x:992:aodh
++gnocchi:x:990:gnocchi
++panko:x:989:panko,ceilometer
+diff --git a/passwd b/passwd
+index dfb96b7..bfd8ee0 100644
+--- a/passwd
++++ b/passwd
+@@ -19,3 +19,6 @@ fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
+ magnum:x:1870:1870:OpenStack Magnum Daemons:/var/lib/magnum:/sbin/nologin
+ ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
+ murano:x:105:105:OpenStack Murano Daemons:/home/murano:/sbin/nologin
++aodh:x:997:992:OpenStack aodh Daemons:/var/lib/aodh:/sbin/nologin
++gnocchi:x:996:990:gnocchi Daemons:/var/lib/gnocchi:/sbin/nologin
++panko:x:995:989:OpenStack panko Daemons:/var/lib/panko:/sbin/nologin
+-- 
+1.8.3.1
+

@@ -1,0 +1,45 @@
+From 9a2fa13f3afc543ec0dcf1d309df094cf9b429b9 Mon Sep 17 00:00:00 2001
+From: Angie Wang <Angie.Wang@windriver.com>
+Date: Tue, 29 May 2018 12:53:58 -0400
+Subject: [PATCH 1/1] fix puppet gnocchi warning
+
+---
+ manifests/logging.pp | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/manifests/logging.pp b/manifests/logging.pp
+index c192c9c..e0163c7 100644
+--- a/manifests/logging.pp
++++ b/manifests/logging.pp
+@@ -95,17 +95,17 @@ class gnocchi::logging(
+   $log_dir                       = '/var/log/gnocchi',
+   $debug                         = $::os_service_default,
+   # DEPRECATED
+-  $logging_context_format_string = $::os_service_default,
+-  $logging_default_format_string = $::os_service_default,
+-  $logging_debug_format_suffix   = $::os_service_default,
+-  $logging_exception_prefix      = $::os_service_default,
+-  $log_config_append             = $::os_service_default,
+-  $default_log_levels            = $::os_service_default,
+-  $publish_errors                = $::os_service_default,
+-  $fatal_deprecations            = $::os_service_default,
+-  $instance_format               = $::os_service_default,
+-  $instance_uuid_format          = $::os_service_default,
+-  $log_date_format               = $::os_service_default,
++  $logging_context_format_string = undef,
++  $logging_default_format_string = undef,
++  $logging_debug_format_suffix   = undef,
++  $logging_exception_prefix      = undef,
++  $log_config_append             = undef,
++  $default_log_levels            = undef,
++  $publish_errors                = undef,
++  $fatal_deprecations            = undef,
++  $instance_format               = undef,
++  $instance_uuid_format          = undef,
++  $log_date_format               = undef,
+ ) {
+ 
+   include ::gnocchi::deps
+-- 
+1.8.3.1
+

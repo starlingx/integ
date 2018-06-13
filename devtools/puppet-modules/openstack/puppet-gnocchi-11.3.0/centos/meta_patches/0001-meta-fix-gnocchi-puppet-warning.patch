@@ -1,0 +1,43 @@
+From 98e5c184bb31839bf32fe5b3b90efa6ec38e4df4 Mon Sep 17 00:00:00 2001
+From: Angie Wang <Angie.Wang@windriver.com>
+Date: Mon, 28 May 2018 17:37:43 -0400
+Subject: [PATCH 1/1] meta fix gnocchi puppet warning
+
+---
+ SPECS/puppet-gnocchi.spec | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/puppet-gnocchi.spec b/SPECS/puppet-gnocchi.spec
+index 4645ede..fb54ef3 100644
+--- a/SPECS/puppet-gnocchi.spec
++++ b/SPECS/puppet-gnocchi.spec
+@@ -1,7 +1,7 @@
+ %{!?upstream_version: %global upstream_version %{version}%{?milestone}}
+ Name:           puppet-gnocchi
+ Version:        11.3.0
+-Release:        1%{?dist}
++Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
+ Summary:        Puppet module for OpenStack Gnocchi
+ License:        ASL 2.0
+ 
+@@ -9,6 +9,9 @@ URL:            https://launchpad.net/puppet-gnocchi
+ 
+ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_version}.tar.gz
+ 
++# WRS
++Patch0001:      0001-fix-puppet-gnocchi-warning.patch
++
+ BuildArch:      noarch
+ 
+ Requires:       puppet-inifile
+@@ -22,6 +25,7 @@ Puppet module for OpenStack Gnocchi
+ 
+ %prep
+ %setup -q -n openstack-gnocchi-%{upstream_version}
++%patch0001 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

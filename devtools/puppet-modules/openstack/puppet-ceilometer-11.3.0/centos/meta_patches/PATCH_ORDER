@@ -2,3 +2,4 @@
 0002-Add-Rebase-Patches.patch
 0003-meta-fix-ceilometer-puppet-warnings.patch
 0004-meta-remove-reseller-admin-role.patch
+0005-meta-remove-the-oslo-cache-configuration.patch

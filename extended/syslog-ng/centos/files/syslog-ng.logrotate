@@ -28,6 +28,7 @@
 /var/log/horizon.log
 /var/log/ceilometer/*.log
 /var/log/panko/*.log
+/var/log/gnocchi/*.log
 /var/log/ironic/*.log
 /var/log/snmp-api.log
 /var/log/dcmanager/*.log
