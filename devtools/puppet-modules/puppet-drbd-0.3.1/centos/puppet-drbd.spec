@@ -20,6 +20,7 @@ Patch0005:      0005-Add-PausedSync-states-to-acceptable-cstate.patch
 Patch0006:      0006-CGTS-7164-Add-resource-options-cpu-mask-to-affine-drbd-kernel-threads.patch
 Patch0007:      0007-Add-disk-by-path-test.patch
 Patch0008:      0008-CGTS-7953-support-for-new-drbd-resources.patch
+Patch0009:      0009-drbd-slow-before-swact.patch
 
 BuildArch:      noarch
 
@@ -51,6 +52,7 @@ find . \( -name spec -o -name ext \) | xargs rm -rf
 %patch0006 -p1
 %patch0007 -p1
 %patch0008 -p1
+%patch0009 -p1
 
 %install
 rm -rf %{buildroot}
