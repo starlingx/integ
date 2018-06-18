@@ -1,0 +1,32 @@
+From 7938c48a4819e91810711759a2d56f51c0ddd43d Mon Sep 17 00:00:00 2001
+From: Kristine Bujold <kristine.bujold@windriver.com>
+Date: Wed, 6 Jun 2018 07:18:48 -0400
+Subject: [PATCH 1/1] Adding patch file
+
+---
+ SPECS/python-django.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/python-django.spec b/SPECS/python-django.spec
+index 827d08f..d642496 100644
+--- a/SPECS/python-django.spec
++++ b/SPECS/python-django.spec
+@@ -43,6 +43,7 @@ Patch0:         python-django-1.8.3-shell-completion.patch
+ Patch1:         session-filebase-backend-fix.patch
+ Patch2:         size-number-format.patch
+ Patch3:         remove-SmartyPantsHTMLTranslator.patch
++Patch4:         fix_for_session_timeout.patch
+ 
+ BuildArch:      noarch
+ BuildRequires:  python2-devel
+@@ -158,6 +159,7 @@ rm -rf Django.egg-info
+ %patch1 -p1
+ %patch2 -p1
+ %patch3 -p1
++%patch4 -p1
+ 
+ # empty files
+ for f in \
+-- 
+1.8.3.1
+
