@@ -1,5 +1,5 @@
 # increment this every release
-API_VERSION := "1.8.0"
+API_VERSION := "1.8.1"
 
 build:
 	@git status > /dev/null ; \
