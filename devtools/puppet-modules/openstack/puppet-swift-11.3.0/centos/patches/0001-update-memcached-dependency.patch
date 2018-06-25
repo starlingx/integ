@@ -1,0 +1,25 @@
+From 43aea38c12d6257a7ffae113723435b2bf3903c2 Mon Sep 17 00:00:00 2001
+From: Jack Ding <jack.ding@windriver.com>
+Date: Sat, 12 May 2018 09:03:19 -0400
+Subject: [PATCH 3/3] update memcached dependency
+
+---
+ metadata.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/metadata.json b/metadata.json
+index 535941e..44a7356 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -14,7 +14,7 @@
+     {"name":"puppetlabs/stdlib","version_requirement":">=4.0.0 <5.0.0"},
+     {"name":"puppetlabs/xinetd","version_requirement":">=1.0.1 <2.0.1"},
+     {"name":"puppetlabs/concat","version_requirement":">=1.0.0 <3.0.0"},
+-    {"name":"saz/memcached","version_requirement":">=2.0.2 <3.0.0"}
++    {"name":"saz/memcached","version_requirement":">=2.0.2 <=3.0.2"}
+   ],
+   "data_provider": null,
+   "description": "Installs and configures OpenStack Swift (Object Storage).",
+-- 
+1.8.3.1
+
