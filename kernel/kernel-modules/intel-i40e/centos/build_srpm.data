@@ -1,5 +1,4 @@
 COPY_LIST=" \
-  $FILES_BASE/* \
-  $CGCS_BASE/mwa-gplv2/intel-i40e/files/* \
-  $CGCS_BASE/downloads/i40e-2.4.3.tar.gz"
+  $PKG_BASE/files/* \
+  $STX_BASE/downloads/i40e-2.4.3.tar.gz"
 TIS_PATCH_VER=6
