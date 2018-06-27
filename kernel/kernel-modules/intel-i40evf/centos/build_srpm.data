@@ -1,5 +1,4 @@
 COPY_LIST=" \
-  $FILES_BASE/* \
-  $CGCS_BASE/mwa-gplv2/intel-i40evf/files/* \
-  $CGCS_BASE/downloads/i40evf-3.4.2.tar.gz"
+  $PKG_BASE/files/* \
+  $STX_BASE/downloads/i40evf-3.4.2.tar.gz"
 TIS_PATCH_VER=4
