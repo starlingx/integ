@@ -1,5 +1,5 @@
 COPY_LIST=" \
   $FILES_BASE/* \
-  $CGCS_BASE/mwa-gplv2/integrity/patches/* \
-  $CGCS_BASE/downloads/integrity-kmod-668a8270.tar.gz"
+  $PATCHES_BASE/* \
+  $STX_BASE/downloads/integrity-kmod-668a8270.tar.gz"
 TIS_PATCH_VER=5
