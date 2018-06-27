@@ -1,5 +1,5 @@
 COPY_LIST=" \
-  $FILES_BASE/* \
-  $CGCS_BASE/mwa-gplv2/tpmdd/patches/* \
-  $CGCS_BASE/downloads/tpm-kmod-668a8270.tar.gz"
+  $PKG_BASE/files/* \
+  $PKG_BASE/patches/* \
+  $STX_BASE/downloads/tpm-kmod-668a8270.tar.gz"
 TIS_PATCH_VER=5
