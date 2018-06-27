@@ -2,3 +2,4 @@
 0002-squash-titanium-patches.patch
 0003-remove-the-keystone-admin-app.patch
 0004-remove-eventlet_and_bindhost-from-keystoneconf.patch
+0005-escape-special-characters-in-bootstrap.patch
