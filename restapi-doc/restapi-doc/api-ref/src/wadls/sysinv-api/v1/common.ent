@@ -2200,7 +2200,7 @@
                         <para>Additional capabilities info about the storage function.</para>
                     </wadl:doc>
                 </param>
-     		<param xmlns="http://wadl.dev.java.net/2009/02"
+        		<param xmlns="http://wadl.dev.java.net/2009/02"
                     name="function" style="plain" type="xsd:string" >
                     <wadl:doc xmlns="http://docbook.org/ns/docbook"
                         xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
@@ -3764,6 +3764,18 @@
                     </wadl:doc>
                 </param>
             '>
+
+     <!-- Ceph External Storage Backend Show/Modify Extra Parameters -->
+
+     <!ENTITY storageCephExternalParameters '
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="ceph_conf" style="plain" type="xsd:integer" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The Ceph External configuration file.</para>
+                    </wadl:doc>
+                </param>
+           '>
 
      <!-- File Storage Backend Show/Modify Extra Parameters -->
 

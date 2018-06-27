@@ -876,6 +876,24 @@ SPDX-License-Identifier: Apache-2.0
                 </resource>
             </resource>
 
+        <!-- /v1/storage_ceph_external                        -->
+            <resource id="storage_ceph_external" path="storage_ceph_external" >
+                <method href="#listStorageCephExternals"/>
+                <method href="#addStorageCephExternal"/>
+
+        <!-- /v1/storage_ceph_external/{storage_ceph_external_id}        -->
+                <resource id="storage_ceph_external_id" path="{storage_ceph_external_id}" >
+                    <param name="storage_ceph_external_id" style="template" required="true" type="csapi:UUID">
+                        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                            <para>The unique identifier of the storage backend.</para>
+                        </wadl:doc>
+                    </param>
+                    <method href="#getStorageCephExternal"/>
+                    <method href="#modifyStorageCephExternal"/>
+                    <method href="#deleteStorageCephExternal"/>
+                </resource>
+            </resource>
+
         <!-- /v1/storage_file                                -->
             <resource id="storage_file" path="storage_file" >
                 <method href="#listStorageFiles"/>
@@ -6313,6 +6331,156 @@ OAM Controller-1 IP Address.</para>
             </representation>
         </response>
     </method>
+
+    <!-- ..................................................... -->
+    <!-- ..  Storage Backends - Ceph External               .. -->
+    <!-- ..................................................... -->
+
+    <method name="GET" id="listStorageCephExternals">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="List Ceph External storage backends">
+            <para role="shortdesc">List Ceph External storage backends.</para>
+        </wadl:doc>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                &storageBackendListParameters;
+                &storageCephExternalParameters;
+                &commonListShowParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/storage_ceph_external_list-response.json"/>
+                </wadl:doc>
+            </representation>
+        </response>
+        &commonFaults; &getFaults;
+    </method>
+
+    <method name="GET" id="getStorageCephExternal">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Show Ceph External storage backend">
+            <para role="shortdesc">Shows attributes of the Ceph External storage backend.</para>
+        </wadl:doc>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                &storageBackendListParameters;
+                &storageCephExternalParameters;
+                &commonListShowParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/storage_ceph_external_show-response.json"/>
+                </wadl:doc>
+            </representation>
+        </response>
+        &commonFaults; &getFaults;
+    </method>
+
+    <method name="POST" id="addStorageCephExternal">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Add a Ceph External storage backend">
+            <para role="shortdesc">Add a Ceph External storage backend.</para>
+            <para></para>
+        </wadl:doc>
+        <request>
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="backend" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>This parameter specifies the type of the backend.
+                            Valid values are (is):  <code>ceph-external</code>
+                        </para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="name" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>This parameter specifies the name of the backend.
+                        </para>
+                    </wadl:doc>
+                </param>
+                &storageBackendModifyParameters;
+                &storageCephExternalParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/storage_ceph_external_add-request.json"/>
+                </wadl:doc>
+            </representation>
+        </request>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                &storageBackendListParameters;
+                &storageCephExternalParameters;
+                &commonListShowParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/storage_ceph_external_add-response.json"/>
+                </wadl:doc>
+            </representation>
+        </response>
+        &postPutFaults;
+    </method>
+
+    <method name="PATCH" id="modifyStorageCephExternal">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Modify Ceph External storage backend">
+            <para role="shortdesc">Modifies the Ceph External storage backend.</para>
+        </wadl:doc>
+        <request>
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                &storageBackendModifyParameters;
+                &storageCephExternalParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/storage_ceph_external_modify-request.json"/>
+                </wadl:doc>
+            </representation>
+        </request>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                &storageBackendListParameters;
+                &storageCephExternalParameters;
+                &commonListShowParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/storage_ceph_external_modify-response.json"/>
+                </wadl:doc>
+            </representation>
+        </response>
+        &postPutFaults;
+    </method>
+
+    <method name="DELETE" id="deleteStorageCephExternal">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Delete ceph External storage backend">
+            <para role="shortdesc">Deletes a ceph External storage backend.</para>
+        </wadl:doc>
+        <response status="204">
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+            </representation>
+        </response>
+    </method>
+
 
     <!-- ..................................................... -->
     <!-- ..  Storage Backends - File                        .. -->

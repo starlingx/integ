@@ -1145,6 +1145,26 @@ configuration entity for the system.
                 <wadl:method href="#deleteStorageCeph"/>
             </wadl:resource>
             <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#storage_ceph_external">
+                <wadl:method href="#listStorageCephExternals"/>
+            </wadl:resource>
+            <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#storage_ceph_external">
+                <wadl:method href="#addStorageCephExternal"/>
+            </wadl:resource>
+            <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#storage_ceph_external_id">
+                <wadl:method href="#getStorageCephExternal"/>
+            </wadl:resource>
+            <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#storage_ceph_external_id">
+                <wadl:method href="#modifyStorageCephExternal"/>
+            </wadl:resource>
+            <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#storage_ceph_external_id">
+                <wadl:method href="#deleteStorageCephExternal"/>
+            </wadl:resource>
+            <wadl:resource
                 href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#storage_file">
                 <wadl:method href="#listStorageFiles"/>
             </wadl:resource>
