@@ -1,7 +1,7 @@
 From 508f3f3f6b114fe081cc2c0594912fd6451d1045 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Thu, 12 Oct 2017 18:22:33 -0400
-Subject: [PATCH] meta patch for restricting tmpfs size
+Subject: meta patch for restricting tmpfs size
 
 ---
  SPECS/systemd.spec | 1 +
@@ -13,7 +13,7 @@ index 9e5ac92..66df00b 100644
 +++ b/SPECS/systemd.spec
 @@ -462,6 +462,7 @@ Patch0504: 0504-Configure-journald-rate-limit.patch
  Patch0505: 0505-remove-id-sas-path-symlink.patch
- Patch0506: 0506-CGTS-7466-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
+ Patch0506: 0506-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
  Patch0507: 0507-move-vartmp-to-tmpfs.patch
 +Patch0508: 0508-set-a-1GB-size-restriction-on-tpmfs.patch
  

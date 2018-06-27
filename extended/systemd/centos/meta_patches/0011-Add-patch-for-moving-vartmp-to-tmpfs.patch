@@ -14,7 +14,7 @@ index a8e1846..e36e410 100644
 @@ -545,6 +545,7 @@ Patch0503: 0503-Configure-journald-to-forward-to-syslog.patch
  Patch0504: 0504-Configure-journald-rate-limit.patch
  Patch0505: 0505-remove-id-sas-path-symlink.patch
- Patch0506: 0506-CGTS-7466-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
+ Patch0506: 0506-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
 +Patch0507: 0507-move-vartmp-to-tmpfs.patch
  
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
