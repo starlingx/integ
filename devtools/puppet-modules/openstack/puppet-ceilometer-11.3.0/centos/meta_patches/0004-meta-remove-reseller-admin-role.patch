@@ -1,0 +1,32 @@
+From 5593efe4967eb528da3e7acbd6e693f6a5b0f7c5 Mon Sep 17 00:00:00 2001
+From: Angie Wang <Angie.Wang@windriver.com>
+Date: Tue, 17 Apr 2018 13:15:49 -0400
+Subject: [PATCH 1/1] meta remove reseller admin role
+
+---
+ SPECS/puppet-ceilometer.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-ceilometer.spec b/SPECS/puppet-ceilometer.spec
+index 5356f91..9f291f9 100644
+--- a/SPECS/puppet-ceilometer.spec
++++ b/SPECS/puppet-ceilometer.spec
+@@ -11,6 +11,7 @@ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_versio
+ 
+ Patch0001:      0001-Roll-up-TIS-patches.patch
+ Patch0002:      0002-Fix-ceilometer-puppet-warnings.patch
++Patch0003:      0003-remove-reseller-admin-role.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -29,6 +30,7 @@ Puppet module for OpenStack Ceilometer
+ %setup -q -n openstack-ceilometer-%{upstream_version}
+ %patch0001 -p1
+ %patch0002 -p1
++%patch0003 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+
