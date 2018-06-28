@@ -1,16 +1,19 @@
-From 6a0a1ea93362b7f9f2f5242e847ae1e0ef15de04 Mon Sep 17 00:00:00 2001
-From: jmckenna <jason.mckenna@windriver.com>
-Date: Thu, 5 Jan 2017 08:54:32 -0500
-Subject: [PATCH] Use Titanium Cloud certificate
+From 057532ac6c77d20ae8d6ce0354e7ef67b1870eb6 Mon Sep 17 00:00:00 2001
+From: root <root@yow-cgts4-lx.wrs.com>
+Date: Mon, 15 Jan 2018 13:25:04 -0500
+Subject: [PATCH] Use Titanium certificate
 
+---
+ Makefile | 26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index 1181b8a..e8b291e 100644
+index 6ece282..bb4f7f9 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -34,6 +34,12 @@ CFLAGS		= -ggdb -O0 -fno-stack-protector -fno-strict-aliasing -fpic \
- 		  "-DDEFAULT_LOADER_CHAR=\"$(DEFAULT_LOADER)\"" \
- 		  $(EFI_INCLUDES)
+@@ -36,6 +36,12 @@ FBNAME		= fallback
+ 
+ COMMITID ?= $(shell if [ -d .git ] ; then git log -1 --pretty=format:%H ; elif [ -f commit ]; then cat commit ; else echo commit id not available; fi)
  
 +# We compile a certificate into shim.  Usually this is a one-time generated
 +# certificate (make-certs script) however we want to include a custom
@@ -21,16 +24,16 @@ index 1181b8a..e8b291e 100644
  ifneq ($(origin OVERRIDE_SECURITY_POLICY), undefined)
  	CFLAGS	+= -DOVERRIDE_SECURITY_POLICY
  endif
-@@ -67,7 +73,7 @@ LDFLAGS		= --hash-style=sysv -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsym
+@@ -90,7 +96,7 @@ LDFLAGS		= --hash-style=sysv -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsym
  
- TARGET	= shim.efi MokManager.efi.signed fallback.efi.signed
- OBJS	= shim.o netboot.o cert.o replacements.o version.o
+ TARGET	= $(SHIMNAME).efi $(MMNAME).efi.signed $(FBNAME).efi.signed
+ OBJS	= shim.o netboot.o cert.o replacements.o tpm.o version.o
 -KEYS	= shim_cert.h ocsp.* ca.* shim.crt shim.csr shim.p12 shim.pem shim.key shim.cer
-+KEYS	= shim_cert.h ocsp.* ca.* $(INTERNAL_CERT).crt $(INTERNAL_CERT).csr $(INTERNAL_CERT).p12 $(INTERNAL_CERT).pem $(INTERNAL_CERT).key $(INTERNAL_CERT).cer
- SOURCES	= shim.c shim.h netboot.c include/PeImage.h include/wincert.h include/console.h replacements.c replacements.h version.c version.h
++KEYS    = shim_cert.h ocsp.* ca.* $(INTERNAL_CERT).crt $(INTERNAL_CERT).csr $(INTERNAL_CERT).p12 $(INTERNAL_CERT).pem $(INTERNAL_CERT).key $(INTERNAL_CERT).cer
+ SOURCES	= shim.c shim.h netboot.c include/PeImage.h include/wincert.h include/console.h replacements.c replacements.h tpm.c tpm.h version.c version.h
  MOK_OBJS = MokManager.o PasswordCrypt.o crypt_blowfish.o
  MOK_SOURCES = MokManager.c shim.h include/console.h PasswordCrypt.c PasswordCrypt.h crypt_blowfish.c crypt_blowfish.h
-@@ -76,13 +82,17 @@ FALLBACK_SRCS = fallback.c
+@@ -104,13 +110,17 @@ endif
  
  all: $(TARGET)
  
@@ -52,8 +55,8 @@ index 1181b8a..e8b291e 100644
  	echo "static UINT8 shim_cert[] = {" > $@
  	hexdump -v -e '1/1 "0x%02x, "' $< >> $@
  	echo "};" >> $@
-@@ -93,10 +103,10 @@ version.c : version.c.in
- 		-e "s,@@COMMIT@@,$(shell if [ -d .git ] ; then git log -1 --pretty=format:%H ; elif [ -f commit ]; then cat commit ; else echo commit id not available; fi)," \
+@@ -121,10 +131,10 @@ version.c : version.c.in
+ 		-e "s,@@COMMIT@@,$(COMMITID)," \
  		< version.c.in > version.c
  
 -certdb/secmod.db: shim.crt
@@ -65,4 +68,7 @@ index 1181b8a..e8b291e 100644
 +	certutil -d certdb/ -A -i $(INTERNAL_CERT).crt -n shim -t u
  
  shim.o: $(SOURCES) shim_cert.h
- 
+ shim.o: $(wildcard *.h)
+-- 
+1.8.3.1
+

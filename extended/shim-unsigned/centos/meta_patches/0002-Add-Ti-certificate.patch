@@ -1,0 +1,45 @@
+From fb4da7f4d7d8e8565371ed236150de2e4bb47b95 Mon Sep 17 00:00:00 2001
+From: root <root@yow-cgts4-lx.wrs.com>
+Date: Mon, 15 Jan 2018 13:22:09 -0500
+Subject: [PATCH 2/2] Add Ti certificate
+
+---
+ SPECS/shim.spec | 5 +++++
+ 1 file changed, 5 insertions(+)
+ mode change 100644 => 100755 SPECS/shim.spec
+
+diff --git a/SPECS/shim.spec b/SPECS/shim.spec
+old mode 100644
+new mode 100755
+index de216b6..83da6cd
+--- a/SPECS/shim.spec
++++ b/SPECS/shim.spec
+@@ -11,6 +11,9 @@ Source1:	centos.crt
+ #Source2:	dbx-x64.esl
+ #Source3:	dbx-aa64.esl
+ Source4:	shim-find-debuginfo.sh
++Source1000:     tis-shim.crt
++
++Patch1000:      0001-Use-Titanium-certificate.patch
+ 
+ BuildRequires: git openssl-devel openssl
+ BuildRequires: pesign >= 0.106-1
+@@ -101,6 +104,7 @@ git commit -a -q -m "%{version} baseline."
+ git am --ignore-whitespace %{patches} </dev/null
+ git config --unset user.email
+ git config --unset user.name
++cp %{SOURCE1000} .
+ 
+ %ifarch x86_64
+ cd ..
+@@ -115,6 +119,7 @@ git commit -a -q -m "%{version} baseline."
+ git am --ignore-whitespace %{patches} </dev/null
+ git config --unset user.email
+ git config --unset user.name
++cp %{SOURCE1000} .
+ %endif
+ 
+ %build
+-- 
+1.8.3.1
+

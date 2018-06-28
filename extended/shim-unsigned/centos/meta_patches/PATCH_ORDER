@@ -1,3 +1,2 @@
-0001-Embed-TiS-cert.patch
-0001-Objcopy-version.patch
-spec.arch.patch
+0001-Ti-version-string.patch
+0002-Add-Ti-certificate.patch
