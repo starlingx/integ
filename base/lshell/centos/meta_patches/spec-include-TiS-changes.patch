@@ -2,7 +2,7 @@ lshell.spec: to include Titanium Cloud changes
 
 To include the Titanium Cloud specific changes from:
 
-wr-cgcs/layers/cgcs/recipes-base/lshell/files
+stx/stx-integ/base/lshell
 
 diff -u b/SPECS/lshell.spec b/SPECS/lshell.spec
 --- b/SPECS/lshell.spec
