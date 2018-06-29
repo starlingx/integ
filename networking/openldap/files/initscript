@@ -48,8 +48,8 @@ case "$1" in
         exit $RETVAL
     fi
 
-    # we need to start nslcd and nscd services as part of this openldap
-    # init.d script since SM manages this as a service and all three
+    # we need to start nscd service as part of this openldap
+    # init.d script since SM manages this as a service and both
     # daemons should be running on a controller host
     systemctl status nscd.service
     if [ $? -ne 0 ]; then
@@ -62,26 +62,12 @@ case "$1" in
         fi
     fi
 
-    systemctl status nslcd.service
-    if [ $? -ne 0 ]; then
-        echo -n "Starting NSLCD: "
-        systemctl start nslcd.service
-        RETVAL=$?
-        if [ $RETVAL -ne 0 ]; then
-            echo "Failed to start NSLCD."
-        fi
-    fi
-
     echo "."
     ;;
   stop)
     echo -n "Stopping NSCD: "
     systemctl stop nscd.service
     rm -f /var/run/nscd/nscd.pid
-
-    echo -n "Stopping NSLCD: "
-    systemctl stop nslcd.service
-    rm -f /var/run/nslcd/nslcd.pid
 
     echo -n "Stopping SLAPD: "
     start-stop-daemon --retry 60 --stop --oknodo --quiet --pidfile /var/run/slapd.pid
@@ -101,8 +87,6 @@ case "$1" in
     [ $? -eq 0 ] || exit $?
     systemctl status nscd.service
     [ $? -eq 0 ] || exit $?
-    systemctl status nslcd.service
-    RETVAL=$?
     ;;
   restart)
     $0 stop
