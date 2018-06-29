@@ -1,9 +1,0 @@
-Index: 6.2p2-r5.5/ssh_config
-===================================================================
---- 6.2p2-r5.5.orig/ssh_config
-+++ 6.2p2-r5.5/ssh_config
-@@ -45,3 +45,4 @@ Host *
- #   PermitLocalCommand no
- #   VisualHostKey no
- KexAlgorithms ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1
-+UseRoaming no

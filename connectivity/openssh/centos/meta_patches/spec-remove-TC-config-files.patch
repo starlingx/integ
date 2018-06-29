@@ -1,0 +1,40 @@
+From a0a4b7c9e1cdc4d77c2e6aa61d74e3898aca86a5 Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Tue, 20 Mar 2018 10:14:56 -0400
+Subject: [PATCH 1/1] CGTS-9265: remove TC specific config files
+
+The hardcoded sshd_config and ssh_config files are replaced by
+patches to openssh.
+---
+ SPECS/openssh.spec | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
+index 72ec438..7ee5bd8 100644
+--- a/SPECS/openssh.spec
++++ b/SPECS/openssh.spec
+@@ -88,10 +88,6 @@ Source11: sshd.service
+ Source12: sshd-keygen.service
+ Source13: sshd-keygen
+ 
+-# WRS
+-Source14: sshd_config
+-Source15: ssh_config
+-
+ # Internal debug
+ Patch0: openssh-5.9p1-wIm.patch
+ 
+@@ -689,10 +685,6 @@ make install DESTDIR=$RPM_BUILD_ROOT
+ popd
+ %endif
+ 
+-# WRS: Overwrite with our config
+-install -m 0640 %{SOURCE14} $RPM_BUILD_ROOT/etc/ssh/sshd_config
+-install -m 0644 %{SOURCE15} $RPM_BUILD_ROOT/etc/ssh/ssh_config
+-
+ %clean
+ rm -rf $RPM_BUILD_ROOT
+ 
+-- 
+1.8.3.1
+

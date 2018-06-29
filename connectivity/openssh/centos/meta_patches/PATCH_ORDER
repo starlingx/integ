@@ -5,3 +5,5 @@ openssh-spec-file-add-init.patch
 0001-Update-package-versioning-for-TIS-format.patch
 openssh-init-script-kill-old-instances-on-start.patch
 0001-Further-parallelize-openssh-build.patch
+spec-remove-TC-config-files.patch
+spec-harden-server-and-client-config.patch
