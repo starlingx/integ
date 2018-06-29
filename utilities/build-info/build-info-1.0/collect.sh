@@ -77,9 +77,9 @@ else
         echo "WRS_GIT_BRANCH=\"$WRS_GIT_BRANCH\"" >> $destFile
     fi
 
-    echo "CGCS_SRC_DIR=\"$REPO/addons/wr-cgcs/layers/cgcs\"" >> $destFile
+    echo "CGCS_SRC_DIR=\"$REPO/stx\"" >> $destFile
     if [ "${CGCS_GIT_BRANCH}x" == "x" ]; then
-        echo "CGCS_GIT_BRANCH=\""`cd $REPO/addons/wr-cgcs/layers/cgcs/; git status -s -b | grep '##' | awk ' { printf $2 } '`"\"" >> $destFile
+        echo "CGCS_GIT_BRANCH=\""`cd $REPO/stx/; git status -s -b | grep '##' | awk ' { printf $2 } '`"\"" >> $destFile
     else
         echo "CGCS_GIT_BRANCH=\"$CGCS_GIT_BRANCH\"" >> $destFile
     fi
