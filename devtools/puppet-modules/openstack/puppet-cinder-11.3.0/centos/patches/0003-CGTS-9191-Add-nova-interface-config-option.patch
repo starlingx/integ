@@ -1,0 +1,86 @@
+From 60150282b2990ded72eb3c66481bddfeaaa67606 Mon Sep 17 00:00:00 2001
+From: Ovidiu Poncea <ovidiu.poncea@windriver.com>
+Date: Thu, 22 Mar 2018 05:06:57 -0400
+Subject: [PATCH] CGTS-9191: Add nova/interface config option
+
+Cinder stoped using two options, nova_catalog_info and nova_catalog_admin_info
+and replaced them with nova/interface.
+---
+ manifests/api.pp | 30 +++++++++++++++++++-----------
+ 1 file changed, 19 insertions(+), 11 deletions(-)
+
+diff --git a/manifests/api.pp b/manifests/api.pp
+index b7106a8..7a35c8a 100644
+--- a/manifests/api.pp
++++ b/manifests/api.pp
+@@ -47,15 +47,6 @@
+ #   requests. For example, boot-from-volume.
+ #   Defaults to $::os_service_default
+ #
+-# [*nova_catalog_info*]
+-#   (optional) Match this value when searching for nova in the service
+-#   catalog.
+-#   Defaults to 'compute:Compute Service:publicURL'
+-#
+-# [*nova_catalog_admin_info*]
+-#   (optional) Same as nova_catalog_info, but for admin endpoint.
+-#   Defaults to 'compute:Compute Service:adminURL'
+-#
+ # [*service_workers*]
+ #   (optional) Number of cinder-api workers
+ #   Defaults to $::os_workers
+@@ -151,6 +142,11 @@
+ #   If this value is modified the catalog URLs in the keystone::auth class
+ #   will also need to be changed to match.
+ #
++# [*nova_interface*]
++#   (optional)  Type of the nova endpoint to use.  This endpoint will be
++#   looked up in the keystone catalog. Allowed values: public, admin, internal
++#   Defaults to 'public'.
++#
+ # DEPRECATED PARAMETERS
+ #
+ # [*validation_options*]
+@@ -169,9 +165,17 @@
+ #       try_sleep: 10
+ #   Defaults to {}
+ #
++# [*nova_catalog_info*]
++#   (optional) Match this value when searching for nova in the service
++#   catalog.
++#   Defaults to 'compute:Compute Service:publicURL'
++#
++# [*nova_catalog_admin_info*]
++#   (optional) Same as nova_catalog_info, but for admin endpoint.
++#   Defaults to 'compute:Compute Service:adminURL'
++#
++
+ class cinder::api (
+-  $nova_catalog_info              = 'compute:Compute Service:publicURL',
+-  $nova_catalog_admin_info        = 'compute:Compute Service:adminURL',
+   $os_region_name                 = $::os_service_default,
+   $privileged_user                = false,
+   $os_privileged_user_name        = $::os_service_default,
+@@ -203,8 +207,11 @@ class cinder::api (
+   $ca_file                        = $::os_service_default,
+   $auth_strategy                  = 'keystone',
+   $osapi_volume_listen_port       = $::os_service_default,
++  $nova_interface                 = 'public',
+   # DEPRECATED PARAMETERS
+   $validation_options             = {},
++  $nova_catalog_info              = 'compute:Compute Service:publicURL',
++  $nova_catalog_admin_info        = 'compute:Compute Service:adminURL',
+ ) inherits cinder::params {
+ 
+   include ::cinder::deps
+@@ -289,6 +296,7 @@ running as a standalone service, or httpd for being run by a httpd server")
+   }
+ 
+   cinder_config {
++    'nova/interface':                  value => $nova_interface;
+     'DEFAULT/nova_catalog_info':       value => $nova_catalog_info;
+     'DEFAULT/nova_catalog_admin_info': value => $nova_catalog_admin_info;
+   }
+-- 
+1.8.3.1
+

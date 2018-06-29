@@ -1,0 +1,33 @@
+From 743a3c2650c541543b5741c0315bce6ef3b59491 Mon Sep 17 00:00:00 2001
+From: Ovidiu Poncea <ovidiu.poncea@windriver.com>
+Date: Thu, 22 Mar 2018 05:18:06 -0400
+Subject: [PATCH] CGTS-9191: Fix cinder calling nova over public ip
+
+Using public ip leads to SSL certificate failures on HTTPS enabled deployments.
+---
+ SPECS/puppet-cinder.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-cinder.spec b/SPECS/puppet-cinder.spec
+index bf848da..9d03ef3 100644
+--- a/SPECS/puppet-cinder.spec
++++ b/SPECS/puppet-cinder.spec
+@@ -10,6 +10,7 @@ URL:            https://launchpad.net/puppet-cinder
+ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_version}.tar.gz
+ Patch0001:      0001-Roll-up-TIS-patches.patch
+ Patch0002:      0002-CGTS-8837-cinder-volume-cannot-be-deleted-after-swact.patch
++Patch0003:      0003-CGTS-9191-Add-nova-interface-config-option.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -28,6 +29,7 @@ Puppet module for OpenStack Cinder
+ %setup -q -n openstack-cinder-%{upstream_version}
+ %patch0001 -p1
+ %patch0002 -p1
++%patch0003 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+
