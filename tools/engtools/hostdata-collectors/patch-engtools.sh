@@ -14,7 +14,7 @@ if [ $? -ne 0 ]; then
    exit 1
 fi
 
-source ${MY_REPO}/addons/wr-cgcs/layers/cgcs/middleware/recipes-common/build-info/release-info.inc
+source ${MY_REPO}/stx/middleware/recipes-common/build-info/release-info.inc
 #TiS_REL="16.10"
 #PATCH_ID="ENGTOOLS-${TiS_REL}"
 PATCH_ID="ENGTOOLS-${PLATFORM_RELEASE}"
@@ -23,7 +23,7 @@ PWD=$(pwd)
 
 # Create CGCS Patch
 cd ${MY_WORKSPACE}
-PATCH_BUILD=${MY_REPO}/addons/wr-cgcs/layers/cgcs/extras.ND/scripts/patch_build.sh
+PATCH_BUILD=${MY_REPO}/stx/extras/scripts/patch_build.sh
 ${PATCH_BUILD} --id ${PATCH_ID} --reboot-required=N \
     --summary "System engineering data collection and analysis tools." \
     --desc    "System engineering data collection and analysis tools." \

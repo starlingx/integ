@@ -2,7 +2,7 @@ The Engineering tools is meant to be installed as a patch. Therefore, the RPM is
 of the build but is not included in the image. Assuming your development environment is fully set up,
 simply run patch-engtools.sh to generate the patch:
 
-In this directory ($MY_REPO/addons/wr-cgcs/layers/cgcs/middleware/util/recipes-common/engtools/hostdata-collectors),
+In this directory ($MY_REPO/stx/middleware/util/recipes-common/engtools/hostdata-collectors),
 enter the command:
 >./patch-engtools.sh
 
