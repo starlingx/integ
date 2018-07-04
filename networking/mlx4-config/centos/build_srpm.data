@@ -1,4 +1,4 @@
 COPY_LIST=" \
-  $CGCS_BASE/mwa-sparta/networking/mlx4-config/files/* \
+  $PKG_BASE/files/* \
 "
 TIS_PATCH_VER=2
