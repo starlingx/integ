@@ -6,7 +6,7 @@ Summary: Checker script for spectre/meltdown
 Group: base
 License: GPLv3
 URL: https://github.com/speed47/spectre-meltdown-checker.git
-Source0: spectre-meltdown-checker-0.37+-5cc77741.tar.bz2
+Source0: spectre-meltdown-checker-0.37+-5cc77741.tar.gz
 
 BuildArch: noarch
 Requires: bash
@@ -16,7 +16,7 @@ Script to check whether kernel is susceptible to spectre/meltdown vulnerabilitie
 
 
 %prep
-tar xjf %{SOURCE0}
+tar xf %{SOURCE0}
 
 %build
 
