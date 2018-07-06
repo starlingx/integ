@@ -1,10 +1,10 @@
-From d465a4f13d2ec44892bda25826daa6df77227382 Mon Sep 17 00:00:00 2001
-Message-Id: <d465a4f13d2ec44892bda25826daa6df77227382.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From 47b0bf6b68f473392fe04755721f57990a4b111d Mon Sep 17 00:00:00 2001
+Message-Id: <47b0bf6b68f473392fe04755721f57990a4b111d.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
 Date: Thu, 18 Feb 2016 13:59:13 +0530
-Subject: [PATCH 26/27] dpt_i2o: fix build warning
+Subject: [PATCH 25/26] dpt_i2o: fix build warning
 
 We were getting build warning about:
 drivers/scsi/dpt_i2o.c:183:29: warning: 'dptids' defined but not used

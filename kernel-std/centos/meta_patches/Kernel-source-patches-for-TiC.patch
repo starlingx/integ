@@ -1,21 +1,21 @@
-From 67260aef458fa5dcf4de1663156a966d972a3d04 Mon Sep 17 00:00:00 2001
-Message-Id: <67260aef458fa5dcf4de1663156a966d972a3d04.1524255484.git.Jim.Somerville@windriver.com>
-In-Reply-To: <50ee0ad2b80404b7736ca489dc9f18f6b84094da.1524255483.git.Jim.Somerville@windriver.com>
-References: <50ee0ad2b80404b7736ca489dc9f18f6b84094da.1524255483.git.Jim.Somerville@windriver.com>
+From 25b9dae2044cbf7f8e0274b68b6f4eef4e20560c Mon Sep 17 00:00:00 2001
+Message-Id: <25b9dae2044cbf7f8e0274b68b6f4eef4e20560c.1527697578.git.Jim.Somerville@windriver.com>
+In-Reply-To: <c816cd8703a35098673bf1198d54a5c48bf39994.1527697578.git.Jim.Somerville@windriver.com>
+References: <c816cd8703a35098673bf1198d54a5c48bf39994.1527697578.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 20 Apr 2018 16:13:47 -0400
-Subject: [PATCH 2/2] Kernel source patches for TiC
+Subject: [PATCH 2/3] Kernel source patches for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel.spec | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+ SPECS/kernel.spec | 58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 1a8c742..65820b9 100644
+index 998487f..ce9e9f8 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -419,6 +419,37 @@ Patch1002: debrand-rh-i686-cpu.patch
+@@ -444,6 +444,36 @@ Patch1002: debrand-rh-i686-cpu.patch
  Source30000: kernel-3.10.0-x86_64.config.tis_extra
  Source30001: ima_signing_key.pub
  
@@ -34,26 +34,25 @@ index 1a8c742..65820b9 100644
 +Patch40012: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +Patch40013: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +Patch40014: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
-+Patch40015: arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch
-+Patch40016: rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
-+Patch40017: Porting-Cacheinfo-from-Kernel-4.10.17.patch
-+Patch40018: Fix-cacheinfo-compilation-issues-for-3.10.patch
-+Patch40019: cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch
-+Patch40020: cpuidle-menu-add-per-CPU-PM-QoS-resume-latency-consi.patch
-+Patch40021: CPU-PM-expose-pm_qos_resume_latency-for-CPUs.patch
-+Patch40022: cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
-+Patch40023: US101216-IMA-support-in-Titanium-kernel.patch
-+Patch40024: US103091-IMA-System-Configuration.patch
++Patch40015: rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
++Patch40016: Porting-Cacheinfo-from-Kernel-4.10.17.patch
++Patch40017: Fix-cacheinfo-compilation-issues-for-3.10.patch
++Patch40018: cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch
++Patch40019: cpuidle-menu-add-per-CPU-PM-QoS-resume-latency-consi.patch
++Patch40020: CPU-PM-expose-pm_qos_resume_latency-for-CPUs.patch
++Patch40021: cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
++Patch40022: US101216-IMA-support-in-Titanium-kernel.patch
++Patch40023: US103091-IMA-System-Configuration.patch
 +# Fix compile warnings that break the build
-+Patch40025: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
-+Patch40026: dpt_i2o-fix-build-warning.patch
++Patch40024: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
++Patch40025: dpt_i2o-fix-build-warning.patch
 +# DRBD was choking on write same
-+Patch40027: turn-off-write-same-in-smartqpi-driver.patch
++Patch40026: turn-off-write-same-in-smartqpi-driver.patch
 +
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -740,6 +771,35 @@ ApplyOptionalPatch debrand-single-cpu.patch
+@@ -775,6 +805,34 @@ ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
  ApplyOptionalPatch debrand-rh-i686-cpu.patch
  
@@ -72,7 +71,6 @@ index 1a8c742..65820b9 100644
 +ApplyOptionalPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +ApplyOptionalPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +ApplyOptionalPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
-+ApplyOptionalPatch arch-x86-kernel-pci-dma.c-fix-dma_generic_alloc_cohe.patch
 +ApplyOptionalPatch rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
 +ApplyOptionalPatch Porting-Cacheinfo-from-Kernel-4.10.17.patch
 +ApplyOptionalPatch Fix-cacheinfo-compilation-issues-for-3.10.patch

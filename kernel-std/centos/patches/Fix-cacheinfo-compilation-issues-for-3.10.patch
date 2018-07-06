@@ -1,10 +1,10 @@
-From 265367764432161b5d72d0024167e7eb7302bfd8 Mon Sep 17 00:00:00 2001
-Message-Id: <265367764432161b5d72d0024167e7eb7302bfd8.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From f49689ec7d42e30014e2aebd57bff050b187ef22 Mon Sep 17 00:00:00 2001
+Message-Id: <f49689ec7d42e30014e2aebd57bff050b187ef22.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Wed, 19 Jul 2017 02:25:15 -0500
-Subject: [PATCH 18/27] Fix cacheinfo compilation issues for 3.10
+Subject: [PATCH 17/26] Fix cacheinfo compilation issues for 3.10
 
 Had to revert commit 7cc277b489b4fe91f42eb596b282879c2d13152e:
 "Install the callbacks via the state machine and let the core invoke

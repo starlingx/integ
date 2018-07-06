@@ -1,10 +1,10 @@
-From 537d90bb4398f6b9b9832f750ec131d02be884af Mon Sep 17 00:00:00 2001
-Message-Id: <537d90bb4398f6b9b9832f750ec131d02be884af.1522795097.git.Jim.Somerville@windriver.com>
-In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
-References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+From 37680a25caeba0ee4e5f26cb524ff8b4faa5c0f5 Mon Sep 17 00:00:00 2001
+Message-Id: <37680a25caeba0ee4e5f26cb524ff8b4faa5c0f5.1528226387.git.Jim.Somerville@windriver.com>
+In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Wed, 4 Jun 2014 16:06:50 -0700
-Subject: [PATCH 13/33] x86: enable DMA CMA with swiotlb
+Subject: [PATCH 13/32] x86: enable DMA CMA with swiotlb
 
 commit 9c5a3621427da68afe6a078cadf807d2c8cc1d12 upstream.
 Ported-by: Nam Ninh <nam.ninh@windriver.com>
@@ -58,13 +58,13 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  7 files changed, 20 insertions(+), 10 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1577003..100a6e2 100644
+index bdcca71..f67aa39 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -43,7 +43,7 @@ config X86
+@@ -44,7 +44,7 @@ config X86
+ 	select ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH if SMP
  	select ARCH_WANT_OPTIONAL_GPIOLIB
  	select ARCH_WANT_FRAME_POINTERS
- 	select HAVE_DMA_ATTRS
 -	select HAVE_DMA_CONTIGUOUS if !SWIOTLB
 +	select HAVE_DMA_CONTIGUOUS
  	select HAVE_KRETPROBES
@@ -100,11 +100,11 @@ index b574b29..8e3842f 100644
  
  static int gart_mapping_error(struct device *dev, dma_addr_t dma_addr)
 diff --git a/arch/x86/kernel/pci-swiotlb.c b/arch/x86/kernel/pci-swiotlb.c
-index 48f9755..23a71b6 100644
+index 4853440..284d506 100644
 --- a/arch/x86/kernel/pci-swiotlb.c
 +++ b/arch/x86/kernel/pci-swiotlb.c
-@@ -14,7 +14,7 @@
- #include <asm/iommu_table.h>
+@@ -16,7 +16,7 @@
+ 
  int swiotlb __read_mostly;
  
 -static void *x86_swiotlb_alloc_coherent(struct device *hwdev, size_t size,
@@ -112,7 +112,7 @@ index 48f9755..23a71b6 100644
  					dma_addr_t *dma_handle, gfp_t flags,
  					struct dma_attrs *attrs)
  {
-@@ -28,11 +28,14 @@ static void *x86_swiotlb_alloc_coherent(struct device *hwdev, size_t size,
+@@ -30,11 +30,14 @@ static void *x86_swiotlb_alloc_coherent(struct device *hwdev, size_t size,
  	return swiotlb_alloc_coherent(hwdev, size, dma_handle, flags);
  }
  
@@ -154,10 +154,10 @@ index 9d8a509..5ceda85 100644
  	.unmap_page = swiotlb_unmap_page,
  	.map_sg = swiotlb_map_sg_attrs,
 diff --git a/include/linux/swiotlb.h b/include/linux/swiotlb.h
-index a5ffd32..e7a018e 100644
+index 16c296a..65c4a7a 100644
 --- a/include/linux/swiotlb.h
 +++ b/include/linux/swiotlb.h
-@@ -116,4 +116,6 @@ static inline void swiotlb_free(void) { }
+@@ -117,4 +117,6 @@ static inline void swiotlb_free(void) { }
  #endif
  
  extern void swiotlb_print_info(void);
@@ -165,10 +165,10 @@ index a5ffd32..e7a018e 100644
 +
  #endif /* __LINUX_SWIOTLB_H */
 diff --git a/lib/swiotlb.c b/lib/swiotlb.c
-index d23762e..eba74ec 100644
+index ffcaff5..d89c82a 100644
 --- a/lib/swiotlb.c
 +++ b/lib/swiotlb.c
-@@ -366,7 +366,7 @@ void __init swiotlb_free(void)
+@@ -404,7 +404,7 @@ void __init swiotlb_free(void)
  	io_tlb_nslabs = 0;
  }
  

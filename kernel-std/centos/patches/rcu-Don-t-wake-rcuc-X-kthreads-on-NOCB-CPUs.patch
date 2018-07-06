@@ -1,10 +1,10 @@
-From 011cad0bf33dc86ce40fe18557b19a42fbc4e657 Mon Sep 17 00:00:00 2001
-Message-Id: <011cad0bf33dc86ce40fe18557b19a42fbc4e657.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From fe5869e78860a9150e24ea32c1a131da6af057c8 Mon Sep 17 00:00:00 2001
+Message-Id: <fe5869e78860a9150e24ea32c1a131da6af057c8.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Thu, 15 Dec 2016 15:37:47 -0800
-Subject: [PATCH 16/27] rcu: Don't wake rcuc/X kthreads on NOCB CPUs
+Subject: [PATCH 15/26] rcu: Don't wake rcuc/X kthreads on NOCB CPUs
 
 [ upstream 630c7ed9ca0608912fa7c8591d05dfc8742dc9e6 in tip repo ]
 
@@ -30,7 +30,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/rcutree.c b/kernel/rcutree.c
-index f46e3e4..ac3dfb7 100644
+index cd68fe3..3276ac1 100644
 --- a/kernel/rcutree.c
 +++ b/kernel/rcutree.c
 @@ -300,7 +300,7 @@ static int

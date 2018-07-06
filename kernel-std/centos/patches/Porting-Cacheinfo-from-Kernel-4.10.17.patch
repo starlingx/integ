@@ -1,10 +1,10 @@
-From ff64a8743ceb40c65be5f0755abcfe4e4445280a Mon Sep 17 00:00:00 2001
-Message-Id: <ff64a8743ceb40c65be5f0755abcfe4e4445280a.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From 68c649b9bc60dd2b526e0d181edde358196d2e78 Mon Sep 17 00:00:00 2001
+Message-Id: <68c649b9bc60dd2b526e0d181edde358196d2e78.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Wed, 19 Jul 2017 02:21:59 -0500
-Subject: [PATCH 17/27] Porting Cacheinfo from Kernel 4.10.17
+Subject: [PATCH 16/26] Porting Cacheinfo from Kernel 4.10.17
 
 Original source code from tag v4.10.17 in Linux stable tree for:
 intel_cacheinfo.c, cacheinfo.c and cacheinfo.h.
@@ -50,18 +50,18 @@ This helps in:
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  Documentation/ABI/testing/sysfs-devices-system-cpu |  65 ++
- arch/x86/kernel/cpu/intel_cacheinfo.c              | 832 +++++++--------------
+ arch/x86/kernel/cpu/intel_cacheinfo.c              | 830 +++++++--------------
  drivers/base/Makefile                              |   2 +-
  drivers/base/cacheinfo.c                           | 662 ++++++++++++++++
  drivers/base/cpu.c                                 |  54 ++
  include/linux/cacheinfo.h                          | 104 +++
  include/linux/cpu.h                                |   3 +
- 7 files changed, 1148 insertions(+), 574 deletions(-)
+ 7 files changed, 1147 insertions(+), 573 deletions(-)
  create mode 100644 drivers/base/cacheinfo.c
  create mode 100644 include/linux/cacheinfo.h
 
 diff --git a/Documentation/ABI/testing/sysfs-devices-system-cpu b/Documentation/ABI/testing/sysfs-devices-system-cpu
-index 7b467f3..145ae37 100644
+index 55338e6..eaf8da1 100644
 --- a/Documentation/ABI/testing/sysfs-devices-system-cpu
 +++ b/Documentation/ABI/testing/sysfs-devices-system-cpu
 @@ -201,6 +201,71 @@ Description:	address and size of the percpu note.
@@ -137,7 +137,7 @@ index 7b467f3..145ae37 100644
  		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/turbo_stat
  		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/sub_turbo_stat
 diff --git a/arch/x86/kernel/cpu/intel_cacheinfo.c b/arch/x86/kernel/cpu/intel_cacheinfo.c
-index a77da35..bf23bd2 100644
+index d529019..bf23bd2 100644
 --- a/arch/x86/kernel/cpu/intel_cacheinfo.c
 +++ b/arch/x86/kernel/cpu/intel_cacheinfo.c
 @@ -1,5 +1,5 @@
@@ -161,9 +161,8 @@ index a77da35..bf23bd2 100644
 +#include <linux/sysfs.h>
  #include <linux/pci.h>
  
--#include <asm/processor.h>
+ #include <asm/cpufeature.h>
 -#include <linux/smp.h>
-+#include <asm/cpufeature.h>
  #include <asm/amd_nb.h>
  #include <asm/smp.h>
  
@@ -1932,7 +1931,7 @@ index 0000000..eb3af27
 +}
 +device_initcall(cacheinfo_sysfs_init);
 diff --git a/drivers/base/cpu.c b/drivers/base/cpu.c
-index 4263273..9cc92a2 100644
+index bd82212..803d2a0 100644
 --- a/drivers/base/cpu.c
 +++ b/drivers/base/cpu.c
 @@ -338,6 +338,60 @@ struct device *get_cpu_device(unsigned cpu)
@@ -2107,7 +2106,7 @@ index 0000000..6a524bf
 +
 +#endif /* _LINUX_CACHEINFO_H */
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index 32aee21..935f4cf 100644
+index 1cc4c78..8354cc0 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
 @@ -43,6 +43,9 @@ extern ssize_t cpu_show_spectre_v1(struct device *dev,

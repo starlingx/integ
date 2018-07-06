@@ -1,19 +1,19 @@
-From bad8bf002117c4df5c2d4b3131567300a4bb3861 Mon Sep 17 00:00:00 2001
-Message-Id: <bad8bf002117c4df5c2d4b3131567300a4bb3861.1524511431.git.Jim.Somerville@windriver.com>
+From dc53b79fa7cf0faa28e58d72ef4b34d405b469c0 Mon Sep 17 00:00:00 2001
+Message-Id: <dc53b79fa7cf0faa28e58d72ef4b34d405b469c0.1528227674.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Mon, 23 Apr 2018 15:18:45 -0400
-Subject: [PATCH 1/2] Build logic and sources for TiC
+Subject: [PATCH 1/3] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 281 +++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 274 insertions(+), 7 deletions(-)
+ SPECS/kernel-rt.spec | 279 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 272 insertions(+), 7 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index b855a01..0c3f318 100644
+index 3de5c86..905ae52 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -17,24 +17,34 @@ Summary: The Linux Realtime kernel
+@@ -17,23 +17,33 @@ Summary: The Linux Realtime kernel
  
  # The Build ID
  # %%define buildid .local
@@ -21,7 +21,7 @@ index b855a01..0c3f318 100644
  
  # For a kernel released for public testing, released_kernel should be 1.
  # For internal testing builds during development, it should be 0.
- %global released_kernel 0
+ %global released_kernel 1
  
 +# If we want to sign the kernel and modules, do_sign should be 1.
 +# To speed up builds (don't sign) use 0.
@@ -41,7 +41,6 @@ index b855a01..0c3f318 100644
 -%bcond_without trace
 +%bcond_with    trace
  %bcond_with    perf
- %bcond_with    firmware
 -%bcond_without debuginfo
 +%bcond_with    debuginfo
 +%bcond_without tools
@@ -52,7 +51,7 @@ index b855a01..0c3f318 100644
  
  # What parts do we want to build?  We must build at least one kernel.
  # These are the kernels that are built IF the architecture allows it.
-@@ -55,7 +65,11 @@ Summary: The Linux Realtime kernel
+@@ -53,7 +63,11 @@ Summary: The Linux Realtime kernel
  # Verbose output?
  # %%global verbose V=1
  
@@ -64,7 +63,7 @@ index b855a01..0c3f318 100644
  
  # if patch fuzzy patch applying will be forbidden
  %global with_fuzzy_patches 0
-@@ -86,7 +100,7 @@ Summary: The Linux Realtime kernel
+@@ -84,7 +98,7 @@ Summary: The Linux Realtime kernel
  %global with_sparse	%{?_with_sparse:      1} %{?!_with_sparse:      0}
  
  %global pkg_release_simple %{rhel_build}.%{rttag}.%{rtbuild}
@@ -114,8 +113,8 @@ index b855a01..0c3f318 100644
 +Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
  ### Started using a unified SRPM
  
- # Bugzilla: 1209952
-@@ -379,6 +412,7 @@ This kernel has been compiled with the RT patch applied and is intended
+ # Sources for kernel modprobe config files
+@@ -373,6 +406,7 @@ This kernel has been compiled with the RT patch applied and is intended
  for use in deterministic response-time situations
  
  
@@ -123,7 +122,7 @@ index b855a01..0c3f318 100644
  %package doc
  Summary: Various documentation bits found in the kernel source
  Group: Documentation
-@@ -390,13 +424,14 @@ device drivers shipped with it are documented in these files.
+@@ -384,13 +418,14 @@ device drivers shipped with it are documented in these files.
  
  You will want to install this package if you need a reference to the
  options that can be passed to Linux kernel modules at load time.
@@ -139,23 +138,7 @@ index b855a01..0c3f318 100644
  %description headers
  Kernel-headers includes the C header files that specify the interface
  between the Linux kernel and userspace libraries and programs.  The
-@@ -404,6 +439,7 @@ header files define structures and constants that are needed for
- building most standard programs and are also needed for rebuilding the
- glibc package.
- 
-+%if %{buildfirmware}
- %package firmware
- Summary: Firmware files used by the Linux kernel
- Group: Development/System
-@@ -415,6 +451,7 @@ Provides: kernel-rt-firmware = %{rpmversion}-%{pkg_release}
- %description firmware
- Kernel-firmware includes firmware files required for some devices to
- operate.
-+%endif
- 
- %if %{builddebuginfo}
- %package debuginfo-common-%{_target_cpu}
-@@ -456,6 +493,7 @@ AutoReq: no\
+@@ -438,6 +473,7 @@ AutoReq: no\
  This package provides KVM modules for package %{name}%{?1:-%{1}}.\
  %{nil}
  
@@ -163,8 +146,8 @@ index b855a01..0c3f318 100644
  #
  # This macro creates a kernel-rt-<subpackage>-kvm-debuginfo package.
  #	%%kernel_kvm_debuginfo_package <subpackage>
-@@ -471,7 +509,9 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
- This is required to use SystemTap with %{name}%{?1:%{1}}-%{KVERREL}.\
+@@ -453,7 +489,9 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
+ This is required to use SystemTap with %{name}%{?1:-%{1}}-%{KVERREL}.\
  %{expand:%%global debuginfo_args %{?debuginfo_args} -p '/.*/%%{KVERREL}%{?1:\.%{1}}/.*|/.*%%{KVERREL}%{?1:\.%{1}}(\.debug)?' -o debuginfo%{?1}-kvm.list}\
  %{nil}
 +%endif
@@ -173,15 +156,15 @@ index b855a01..0c3f318 100644
  #
  # This macro creates a kernel-<subpackage>-debuginfo package.
  #	%%kernel_debuginfo_package <subpackage>
-@@ -488,6 +528,7 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
- This is required to use SystemTap with %{name}%{?1:%{1}}-%{KVERREL}.\
+@@ -470,6 +508,7 @@ This package provides debug information for package %{name}%{?1:-%{1}}.\
+ This is required to use SystemTap with %{name}%{?1:-%{1}}-%{KVERREL}.\
  %{expand:%%global debuginfo_args %{?debuginfo_args} -p '/.*/%%{KVERREL}%{?1:\.%{1}}/.*|/.*%%{KVERREL}%{?1:\.%{1}}(\.debug)?' -o debuginfo%{?1}.list}\
  %{nil}
 +%endif
  
  #
  # This macro creates a kernel-<subpackage>-devel package.
-@@ -501,6 +542,7 @@ Provides: installonlypkg(kernel-rt-devel) = %{version}-%{release}%{?1:.%{1}}\
+@@ -483,6 +522,7 @@ Provides: installonlypkg(kernel-rt-devel) = %{version}-%{release}%{?1:.%{1}}\
  Provides: kernel-rt%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
  Provides: kernel-rt-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
  Provides: kernel-rt-devel-uname-r = %{KVERREL}%{?1:.%{1}}\
@@ -189,7 +172,7 @@ index b855a01..0c3f318 100644
  AutoReqProv: no\
  Requires(pre): /usr/bin/find\
  %description -n kernel-rt%{?variant}%{?1:-%{1}}-devel\
-@@ -513,6 +555,7 @@ against the %{?2:%{2} }kernel package.\
+@@ -495,6 +535,7 @@ against the %{?2:%{2} }kernel package.\
  #	%%define variant_summary The Linux kernel compiled for <configuration>
  #	%%kernel_variant_package [-n <pretty-name>] <subpackage>
  #
@@ -197,7 +180,7 @@ index b855a01..0c3f318 100644
  %define kernel_variant_package(n:) \
  %package %1\
  Summary: %{variant_summary}\
-@@ -523,15 +566,29 @@ Group: System Environment/Kernel\
+@@ -505,15 +546,29 @@ Group: System Environment/Kernel\
  %{expand:%%kernel_kvm_package %1}\
  %{expand:%%kernel_kvm_debuginfo_package %1}\
  %{nil}
@@ -227,7 +210,7 @@ index b855a01..0c3f318 100644
  
  # Now, each variant package.
  
-@@ -581,6 +638,54 @@ It should only be installed when trying to gather additional information
+@@ -563,6 +618,54 @@ It should only be installed when trying to gather additional information
  on kernel bugs.
  %endif
  
@@ -282,7 +265,7 @@ index b855a01..0c3f318 100644
  %prep
  ## ApplyPatch routine
  patch_command='patch -p1 -F1 -s'
-@@ -641,6 +746,12 @@ cp -rl vanilla-%{kversion} linux-%{kversion}.%{_target_cpu}
+@@ -607,6 +710,12 @@ cp -rl vanilla-%{kversion} linux-%{kversion}.%{_target_cpu}
  
  cd linux-%{kversion}.%{_target_cpu}
  
@@ -295,7 +278,7 @@ index b855a01..0c3f318 100644
  ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
  
-@@ -664,6 +775,15 @@ for i in *.config
+@@ -630,6 +739,15 @@ for i in *.config
  do
    mv $i .config
    Arch=`head -1 .config | cut -b 3-`
@@ -311,7 +294,7 @@ index b855a01..0c3f318 100644
    make %{?cross_opts} ARCH=$Arch listnewconfig | grep -E '^CONFIG_' >.newoptions || true
  %if %{listnewconfig_fail}
    if [ -s .newoptions ]; then
-@@ -798,10 +918,14 @@ BuildKernel() {
+@@ -764,10 +882,14 @@ BuildKernel() {
        cp arch/$Arch/boot/zImage.stub $RPM_BUILD_ROOT/%{image_install_path}/zImage.stub-$KernelVer || :
      fi
  # EFI SecureBoot signing, x86_64-only
@@ -327,7 +310,7 @@ index b855a01..0c3f318 100644
      $CopyKernel $KernelImage $RPM_BUILD_ROOT/%{image_install_path}/$InstallName-$KernelVer
      chmod 755 $RPM_BUILD_ROOT/%{image_install_path}/$InstallName-$KernelVer
  
-@@ -944,6 +1068,12 @@ BuildKernel() {
+@@ -910,6 +1032,12 @@ BuildKernel() {
      cp signing_key.priv signing_key.priv.sign${Flavour:+.${Flavour}}
      cp signing_key.x509 signing_key.x509.sign${Flavour:+.${Flavour}}
  
@@ -340,9 +323,9 @@ index b855a01..0c3f318 100644
      # remove files that will be auto generated by depmod at rpm -i time
      for i in alias alias.bin builtin.bin ccwmap dep dep.bin ieee1394map inputmap isapnpmap ofmap pcimap seriomap symbols symbols.bin usbmap softdep devname
      do
-@@ -957,6 +1087,15 @@ BuildKernel() {
-     # copy Module.symvers
-     cp Module.symvers $RPM_BUILD_ROOT/$DevelDir
+@@ -925,6 +1053,15 @@ BuildKernel() {
+ 
+     install -Dm644 %{SOURCE1000} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/dccp-blacklist.conf
  
 +    # create the kABI metadata for use in packaging
 +    # NOTENOTE: the name symvers is used by the rpm backend
@@ -356,7 +339,7 @@ index b855a01..0c3f318 100644
      # prune junk from kernel-devel
      find $RPM_BUILD_ROOT/usr/src/kernels -name ".*.cmd" -exec rm -f {} \;
  }
-@@ -997,6 +1136,31 @@ BuildKernel %make_target %kernel_image vanilla
+@@ -972,6 +1109,31 @@ BuildKernel %make_target %kernel_image vanilla
  BuildKernel %make_target %kernel_image
  %endif
  
@@ -388,7 +371,7 @@ index b855a01..0c3f318 100644
  %if %{builddoc}
  # Make the HTML and man pages.
  make -j1 htmldocs mandocs || %{doc_build_fail}
-@@ -1029,6 +1193,7 @@ popd
+@@ -1004,6 +1166,7 @@ popd
  # if it isn't.
  
  %ifnarch noarch
@@ -396,7 +379,7 @@ index b855a01..0c3f318 100644
  %define __modsign_install_post \
     if [ "%{with_rt}" -ne "0" ]; then \
        Arch=`head -1 configs/kernel-%{version}-%{_target_cpu}-rt.config | cut -b 3-` \
-@@ -1047,6 +1212,24 @@ popd
+@@ -1022,6 +1185,24 @@ popd
        %{modsign_cmd} $RPM_BUILD_ROOT/lib/modules/%{KVERREL}.${AAA} || exit 1 \
     done \
  %{nil}
@@ -421,7 +404,7 @@ index b855a01..0c3f318 100644
  %endif
  
  ###
-@@ -1136,6 +1319,39 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/doc/perf
+@@ -1111,6 +1292,39 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/doc/perf
  %endif # buildperf
  %endif
  
@@ -461,7 +444,7 @@ index b855a01..0c3f318 100644
  %if %{buildheaders}
  # Install kernel headers
  make ARCH=%{hdrarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr headers_install
-@@ -1184,6 +1400,14 @@ rm -rf $RPM_BUILD_ROOT
+@@ -1153,6 +1367,14 @@ rm -rf $RPM_BUILD_ROOT
  ### scripts
  ###
  
@@ -476,7 +459,7 @@ index b855a01..0c3f318 100644
  #
  # This macro defines a %%post script for a kernel*-devel package.
  #	%%kernel_devel_post [<subpackage>]
-@@ -1344,6 +1568,43 @@ fi
+@@ -1316,6 +1538,43 @@ fi
  %endif
  %endif
  
@@ -520,7 +503,7 @@ index b855a01..0c3f318 100644
  # This is %{image_install_path} on an arch where that includes ELF files,
  # or empty otherwise.
  %global elf_image_install_path %{?kernel_image_elf:%{image_install_path}}
-@@ -1360,6 +1621,7 @@ fi
+@@ -1332,6 +1591,7 @@ fi
  /%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVERREL}%{?2:.%{2}}\
  /%{image_install_path}/.vmlinuz-%{KVERREL}%{?2:.%{2}}.hmac\
  /boot/System.map-%{KVERREL}%{?2:.%{2}}\
@@ -528,7 +511,7 @@ index b855a01..0c3f318 100644
  /boot/config-%{KVERREL}%{?2:.%{2}}\
  %exclude /lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/arch/x86/kvm\
  %exclude /lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/drivers/gpu/drm/i915/gvt\
-@@ -1437,6 +1699,11 @@ fi
+@@ -1410,6 +1670,11 @@ fi
  %kernel_variant_files %{buildvanilla} vanilla
  %endif
  
@@ -538,8 +521,8 @@ index b855a01..0c3f318 100644
 +%endif # do_sign
 +
  %changelog
- * Fri Feb 23 2018 Clark Williams <williams@redhat.com> [3.10.0-693.21.1.rt56.639.el7]
- - [rt] Update source tree to match RHEL 7.4 tree [1537671 1462329]
+ * Thu May 17 2018 Luis Claudio R. Goncalves <lgoncalv@redhat.com> [3.10.0-862.3.2.rt56.808.el7]
+ - [rt] Update source tree to match RHEL 7.5 tree [1549768 1462329]
 -- 
 1.8.3.1
 

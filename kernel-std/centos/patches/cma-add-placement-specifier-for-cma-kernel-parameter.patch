@@ -1,10 +1,10 @@
-From f51db02e07e1bad6c6ddf2cfd8b9091bc40950f0 Mon Sep 17 00:00:00 2001
-Message-Id: <f51db02e07e1bad6c6ddf2cfd8b9091bc40950f0.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From b6eb39977df83c5ceca5b35c041bb2923e5a47d8 Mon Sep 17 00:00:00 2001
+Message-Id: <b6eb39977df83c5ceca5b35c041bb2923e5a47d8.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Tue, 31 May 2016 16:09:04 -0400
-Subject: [PATCH 10/27] cma: add placement specifier for "cma=" kernel
+Subject: [PATCH 10/26] cma: add placement specifier for "cma=" kernel
  parameter
 
 Commit 5ea3b1b2f8ad9162684431ce6188102ca4c64b7a upstream
@@ -49,10 +49,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  4 files changed, 44 insertions(+), 16 deletions(-)
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index b06a8fb..c116178 100644
+index 590c8c2..c8f8f82 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -560,8 +560,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+@@ -579,8 +579,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
  			Also note the kernel might malfunction if you disable
  			some critical bits.
  
@@ -67,10 +67,10 @@ index b06a8fb..c116178 100644
  			include/linux/dma-contiguous.h
  
 diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index dcb7e8a..ab7c0c3 100644
+index 9eca4ac..4e39287 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
-@@ -1252,7 +1252,7 @@ void __init setup_arch(char **cmdline_p)
+@@ -1283,7 +1283,7 @@ void __init setup_arch(char **cmdline_p)
  	setup_real_mode();
  
  	memblock_set_current_limit(get_max_mapped());
@@ -80,7 +80,7 @@ index dcb7e8a..ab7c0c3 100644
  	/*
  	 * NOTE: On x86-32, only from this point on, fixmaps are ready for use.
 diff --git a/drivers/base/dma-contiguous.c b/drivers/base/dma-contiguous.c
-index 99802d6..8f50513 100644
+index a0f89fc..a7d5bda 100644
 --- a/drivers/base/dma-contiguous.c
 +++ b/drivers/base/dma-contiguous.c
 @@ -59,11 +59,22 @@ struct cma *dma_contiguous_default_area;
@@ -186,7 +186,7 @@ index 99802d6..8f50513 100644
  			ret = -ENOMEM;
  			goto err;
 diff --git a/include/linux/dma-contiguous.h b/include/linux/dma-contiguous.h
-index 3b28f93..772eab5 100644
+index 1421a95..5e3f586 100644
 --- a/include/linux/dma-contiguous.h
 +++ b/include/linux/dma-contiguous.h
 @@ -88,7 +88,8 @@ static inline void dma_contiguous_set_default(struct cma *cma)

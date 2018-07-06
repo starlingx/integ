@@ -1,10 +1,10 @@
-From f90228ac0d638d9e7bec4372411a3fbfbd1844d1 Mon Sep 17 00:00:00 2001
-Message-Id: <f90228ac0d638d9e7bec4372411a3fbfbd1844d1.1522795098.git.Jim.Somerville@windriver.com>
-In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
-References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+From f5020c58583d04f0c6f8df1cbbd7d2e747fcb537 Mon Sep 17 00:00:00 2001
+Message-Id: <f5020c58583d04f0c6f8df1cbbd7d2e747fcb537.1528226387.git.Jim.Somerville@windriver.com>
+In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
 From: Alex Shi <alex.shi@linaro.org>
 Date: Thu, 12 Jan 2017 21:27:04 +0800
-Subject: [PATCH 23/33] cpuidle/menu: add per CPU PM QoS resume latency
+Subject: [PATCH 22/32] cpuidle/menu: add per CPU PM QoS resume latency
  consideration
 
 [ commit 9908859acaa95640d4a07991a93f7cd5bfc18e02 from linux-stable ]

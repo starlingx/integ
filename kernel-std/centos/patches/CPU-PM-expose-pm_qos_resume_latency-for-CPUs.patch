@@ -1,10 +1,10 @@
-From 3e832cbba972fb2d68d0750b300cd9ee3919ebd6 Mon Sep 17 00:00:00 2001
-Message-Id: <3e832cbba972fb2d68d0750b300cd9ee3919ebd6.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From 7a41b9bb6ebe53e024ad5fc56c12089467d7b133 Mon Sep 17 00:00:00 2001
+Message-Id: <7a41b9bb6ebe53e024ad5fc56c12089467d7b133.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Alex Shi <alex.shi@linaro.org>
 Date: Thu, 12 Jan 2017 21:27:03 +0800
-Subject: [PATCH 21/27] CPU / PM: expose pm_qos_resume_latency for CPUs
+Subject: [PATCH 20/26] CPU / PM: expose pm_qos_resume_latency for CPUs
 
 [ commit 37efa4b41ffb31dcdfc3beb97d47992bb2a083e5 from linux-stable ]
 
@@ -39,7 +39,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/drivers/base/cpu.c b/drivers/base/cpu.c
-index 9cc92a2..daae169 100644
+index 803d2a0..1d9bba3 100644
 --- a/drivers/base/cpu.c
 +++ b/drivers/base/cpu.c
 @@ -15,6 +15,7 @@

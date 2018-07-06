@@ -1,10 +1,10 @@
-From 314d5a3dbe0fe5c0758d70246fb47db7dce26e75 Mon Sep 17 00:00:00 2001
-Message-Id: <314d5a3dbe0fe5c0758d70246fb47db7dce26e75.1522795098.git.Jim.Somerville@windriver.com>
-In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
-References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+From d84a5bd81b7ef68f35c3bbd845e71aee10e4e9b7 Mon Sep 17 00:00:00 2001
+Message-Id: <d84a5bd81b7ef68f35c3bbd845e71aee10e4e9b7.1528226387.git.Jim.Somerville@windriver.com>
+In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 4 Oct 2017 14:02:10 -0400
-Subject: [PATCH 27/33] US103091: IMA: System Configuration
+Subject: [PATCH 26/32] US103091: IMA: System Configuration
 
 Normally (if trusted integrity keyring is disabled), the _ima keyring
 needs to be created by user space (specifically systemd), but that has
@@ -38,10 +38,10 @@ index 0e49b3c..6b2da90 100644
 +
  #endif /* _KEYS_SYSTEM_KEYRING_H */
 diff --git a/kernel/Makefile b/kernel/Makefile
-index 26e10e1..52d4d6a 100644
+index d357e7d..f333b29 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -61,7 +61,7 @@ obj-$(CONFIG_QUEUED_SPINLOCKS) += qspinlock.o
+@@ -62,7 +62,7 @@ obj-$(CONFIG_QUEUED_SPINLOCKS) += qspinlock.o
  obj-$(CONFIG_QUEUED_RWLOCKS) += qrwlock.o
  obj-$(CONFIG_LOCK_SPIN_ON_OWNER) += osq_lock.o
  obj-$(CONFIG_UID16) += uid16.o
@@ -50,7 +50,7 @@ index 26e10e1..52d4d6a 100644
  obj-$(CONFIG_MODULES) += module.o
  obj-$(CONFIG_MODULE_SIG) += module_signing.o
  obj-$(CONFIG_MODULE_SIG_UEFI) += modsign_uefi.o
-@@ -201,7 +201,45 @@ targets += $(obj)/.x509.list
+@@ -202,7 +202,45 @@ targets += $(obj)/.x509.list
  $(obj)/.x509.list:
  	@echo $(X509_CERTIFICATES) >$@
  

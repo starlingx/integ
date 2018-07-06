@@ -1,10 +1,10 @@
-From 4fb8df1ee9468d9cc67c41d14a5d8ab6bb45ac8a Mon Sep 17 00:00:00 2001
-Message-Id: <4fb8df1ee9468d9cc67c41d14a5d8ab6bb45ac8a.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From c449e4c490ac85ccf04e8aab67c8120aa48f8ad0 Mon Sep 17 00:00:00 2001
+Message-Id: <c449e4c490ac85ccf04e8aab67c8120aa48f8ad0.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Matt Peters <matt.peters@windriver.com>
 Date: Mon, 30 May 2016 10:51:02 -0400
-Subject: [PATCH 08/27] intel-iommu: allow ignoring Ethernet device RMRR with
+Subject: [PATCH 08/26] intel-iommu: allow ignoring Ethernet device RMRR with
  IOMMU passthrough
 
 Some BIOS's are reporting DMAR RMRR entries for Ethernet devices
@@ -56,10 +56,10 @@ index cf9431d..1dcc349 100644
  ---------------------
  
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index deaafbf..b06a8fb 100644
+index 2f7feb0..590c8c2 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -1264,6 +1264,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+@@ -1303,6 +1303,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
  			than 32-bit addressing. The default is to look
  			for translation below 32-bit and if not available
  			then look in the higher range.
@@ -72,10 +72,10 @@ index deaafbf..b06a8fb 100644
  			With this option on every unmap_single operation will
  			result in a hardware IOTLB flush operation as opposed
 diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index 171a8b2..e763e78 100644
+index 260597e..6c16b68 100644
 --- a/drivers/iommu/intel-iommu.c
 +++ b/drivers/iommu/intel-iommu.c
-@@ -496,6 +496,7 @@ static int dmar_forcedac;
+@@ -504,6 +504,7 @@ static int dmar_forcedac;
  static int intel_iommu_strict;
  static int intel_iommu_superpage = 1;
  static int intel_iommu_ecs = 1;
@@ -83,7 +83,7 @@ index 171a8b2..e763e78 100644
  
  /* We only actually use ECS when PASID support (on the new bit 40)
   * is also advertised. Some early implementations — the ones with
-@@ -555,6 +556,15 @@ static int __init intel_iommu_setup(char *str)
+@@ -563,6 +564,15 @@ static int __init intel_iommu_setup(char *str)
  		} else if (!strncmp(str, "forcedac", 8)) {
  			pr_info("Forcing DAC for PCI devices\n");
  			dmar_forcedac = 1;
@@ -99,7 +99,7 @@ index 171a8b2..e763e78 100644
  		} else if (!strncmp(str, "strict", 6)) {
  			pr_info("Disable batched IOTLB flush\n");
  			intel_iommu_strict = 1;
-@@ -2674,6 +2684,15 @@ static bool device_is_rmrr_locked(struct device *dev)
+@@ -2733,6 +2743,15 @@ static bool device_is_rmrr_locked(struct device *dev)
  
  		if (IS_USB_DEVICE(pdev) || IS_GFX_DEVICE(pdev))
  			return false;

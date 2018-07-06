@@ -1,2 +1,5 @@
 Build-logic-and-sources-for-TiC.patch
 Kernel-source-patches-for-TiC.patch
+Lower-the-compiler-version-requirement.patch
+Compile-issues.patch
+Lower-the-linux-firmware-version-requirement.patch

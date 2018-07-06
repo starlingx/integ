@@ -1,10 +1,10 @@
-From bd8ffe3c3045b4570c4b39b70c3924a33da3206e Mon Sep 17 00:00:00 2001
-Message-Id: <bd8ffe3c3045b4570c4b39b70c3924a33da3206e.1522795098.git.Jim.Somerville@windriver.com>
-In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
-References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+From 100eaa897b32405365ce13248c20fcbfd6e4a85d Mon Sep 17 00:00:00 2001
+Message-Id: <100eaa897b32405365ce13248c20fcbfd6e4a85d.1528226387.git.Jim.Somerville@windriver.com>
+In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 26 May 2015 22:50:33 +0000
-Subject: [PATCH 28/33] timer: Reduce timer migration overhead if disabled
+Subject: [PATCH 27/32] timer: Reduce timer migration overhead if disabled
 
 Eric reported that the timer_migration sysctl is not really nice
 performance wise as it needs to check at every timer insertion whether
@@ -131,10 +131,10 @@ index 4895484..02ab10e 100644
  /*
   *  control realtime throttling:
 diff --git a/include/linux/timer.h b/include/linux/timer.h
-index 05ed589..694e389 100644
+index c37d9b9..8eb4558 100644
 --- a/include/linux/timer.h
 +++ b/include/linux/timer.h
-@@ -247,6 +247,14 @@ extern void run_local_timers(void);
+@@ -249,6 +249,14 @@ extern void run_local_timers(void);
  struct hrtimer;
  extern enum hrtimer_restart it_real_fn(struct hrtimer *);
  
@@ -241,10 +241,10 @@ index 40655c8..55444ab 100644
  		}
  	}
 diff --git a/kernel/rcutree_plugin.h b/kernel/rcutree_plugin.h
-index 6213316..0a70c49 100644
+index 8f410cc..7232ecb 100644
 --- a/kernel/rcutree_plugin.h
 +++ b/kernel/rcutree_plugin.h
-@@ -1503,8 +1503,6 @@ module_param(rcu_idle_gp_delay, int, 0644);
+@@ -1502,8 +1502,6 @@ module_param(rcu_idle_gp_delay, int, 0644);
  static int rcu_idle_lazy_gp_delay = RCU_IDLE_LAZY_GP_DELAY;
  module_param(rcu_idle_lazy_gp_delay, int, 0644);
  
@@ -254,10 +254,10 @@ index 6213316..0a70c49 100644
   * Try to advance callbacks for all flavors of RCU on the current CPU.
   * Afterwards, if there are any callbacks ready for immediate invocation,
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5685111..f388158 100644
+index b2333b7..d82e745 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -8570,8 +8570,6 @@ void __init sched_init_smp(void)
+@@ -8824,8 +8824,6 @@ void __init sched_init_smp(void)
  }
  #endif /* CONFIG_SMP */
  
@@ -267,10 +267,10 @@ index 5685111..f388158 100644
  {
  	return in_lock_functions(addr) ||
 diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 7ef2e6a..b5a0644 100644
+index 8516049..b435155 100644
 --- a/kernel/sysctl.c
 +++ b/kernel/sysctl.c
-@@ -347,15 +347,6 @@ static struct ctl_table kern_table[] = {
+@@ -376,15 +376,6 @@ static struct ctl_table kern_table[] = {
  		.mode		= 0644,
  		.proc_handler	= proc_dointvec,
  	},
@@ -286,7 +286,7 @@ index 7ef2e6a..b5a0644 100644
  #ifdef CONFIG_SCHEDSTATS
  	{
  		.procname	= "sched_schedstats",
-@@ -1162,6 +1153,15 @@ static struct ctl_table kern_table[] = {
+@@ -1200,6 +1191,15 @@ static struct ctl_table kern_table[] = {
  		.extra1		= &zero,
  		.extra2		= &one,
  	},

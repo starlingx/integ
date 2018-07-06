@@ -1,0 +1,27 @@
+From ab1bce8c119b1f99f5b22eba8f419854262744f6 Mon Sep 17 00:00:00 2001
+Message-Id: <ab1bce8c119b1f99f5b22eba8f419854262744f6.1528321296.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 1 Jun 2018 16:17:43 -0400
+Subject: [PATCH 1/1] Lower the linux firmware version requirement
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/kernel-rt.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
+index 3c0e4b4..e614b70 100644
+--- a/SPECS/kernel-rt.spec
++++ b/SPECS/kernel-rt.spec
+@@ -259,7 +259,7 @@ Provides: kernel-modeset = 1\
+ Provides: kernel-uname-r = %{KVERREL}%{?1:.%{1}}\
+ Requires(pre): %{kernel_prereq}\
+ Requires(pre): %{initrd_prereq}\
+-Requires(pre): linux-firmware >= 20180113-61\
++Requires(pre): linux-firmware >= 20170606-56\
+ Requires(post): %{_sbindir}/new-kernel-pkg\
+ Requires(post): system-release\
+ Requires(preun): %{_sbindir}/new-kernel-pkg\
+-- 
+1.8.3.1
+

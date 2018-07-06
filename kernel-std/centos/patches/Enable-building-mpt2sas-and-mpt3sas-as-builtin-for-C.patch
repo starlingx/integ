@@ -1,10 +1,10 @@
-From cf4baf23afaa5c6b23d88d59404c5e45483a1afb Mon Sep 17 00:00:00 2001
-Message-Id: <cf4baf23afaa5c6b23d88d59404c5e45483a1afb.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From 90a9ed3030882fdaf1bf8c7b9f17e47821f20700 Mon Sep 17 00:00:00 2001
+Message-Id: <90a9ed3030882fdaf1bf8c7b9f17e47821f20700.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Mon, 9 Jan 2017 15:03:00 -0500
-Subject: [PATCH 12/27] Enable building mpt2sas and mpt3sas as builtin for
+Subject: [PATCH 12/26] Enable building mpt2sas and mpt3sas as builtin for
  CentOS 7.3
 
 In CentOS 7.3 the upstream mpt2sas/mpt3sas drivers are built from
@@ -94,7 +94,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  create mode 100644 drivers/scsi/mpt2sas/wrapper_mpt3sas_scsih.c
 
 diff --git a/drivers/scsi/Kconfig b/drivers/scsi/Kconfig
-index d1293c0..1c9fc44 100644
+index 4cb0e23..4d79408 100644
 --- a/drivers/scsi/Kconfig
 +++ b/drivers/scsi/Kconfig
 @@ -599,6 +599,7 @@ config SCSI_ARCMSR

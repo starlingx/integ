@@ -1,0 +1,96 @@
+From d4187124ed859c36b9055cc240cc0c8181e54725 Mon Sep 17 00:00:00 2001
+Message-Id: <d4187124ed859c36b9055cc240cc0c8181e54725.1528311567.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Thu, 31 May 2018 17:47:26 -0400
+Subject: [PATCH 1/1] fix compilation issues
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ arch/x86/mm/kaiser.c          |  2 +-
+ drivers/base/dma-contiguous.c |  2 +-
+ include/asm-generic/pgtable.h | 20 --------------------
+ include/linux/huge_mm.h       |  2 +-
+ 4 files changed, 3 insertions(+), 23 deletions(-)
+
+diff --git a/arch/x86/mm/kaiser.c b/arch/x86/mm/kaiser.c
+index e233c88..5564c8d 100644
+--- a/arch/x86/mm/kaiser.c
++++ b/arch/x86/mm/kaiser.c
+@@ -620,7 +620,7 @@ static const struct file_operations fops_kaiser_enabled = {
+ 
+ static int __init create_kpti_enabled(void)
+ {
+-	if (!xen_pv_domain())
++	if (!is_xen_pv_domain())
+ 		debugfs_create_file("pti_enabled", S_IRUSR | S_IWUSR,
+ 				    arch_debugfs_dir, NULL, &fops_kaiser_enabled);
+ 	return 0;
+diff --git a/drivers/base/dma-contiguous.c b/drivers/base/dma-contiguous.c
+index a7d5bda..403101d 100644
+--- a/drivers/base/dma-contiguous.c
++++ b/drivers/base/dma-contiguous.c
+@@ -309,7 +309,7 @@ struct page *dma_alloc_from_contiguous(struct device *dev, size_t count,
+ 	if (align > CONFIG_CMA_ALIGNMENT)
+ 		align = CONFIG_CMA_ALIGNMENT;
+ 
+-	pr_debug("%s(cma %p, count %d, align %d)\n", __func__, (void *)cma,
++	pr_debug("%s(cma %p, count %zu, align %d)\n", __func__, (void *)cma,
+ 		 count, align);
+ 
+ 	if (!count)
+diff --git a/include/asm-generic/pgtable.h b/include/asm-generic/pgtable.h
+index 8aa445d..57e6b74 100644
+--- a/include/asm-generic/pgtable.h
++++ b/include/asm-generic/pgtable.h
+@@ -629,10 +629,6 @@ static inline int pmd_trans_splitting(pmd_t pmd)
+ {
+ 	return 0;
+ }
+-static inline int pud_trans_huge(pud_t pud)
+-{
+-	return 0;
+-}
+ static inline int pud_trans_splitting(pud_t pud)
+ {
+ 	return 0;
+@@ -644,24 +640,8 @@ static inline int pmd_write(pmd_t pmd)
+ 	return 0;
+ }
+ #endif /* __HAVE_ARCH_PMD_WRITE */
+-#ifndef __HAVE_ARCH_PUD_WRITE
+-static inline int pud_write(pud_t pud)
+-{
+-	BUG();
+-	return 0;
+-}
+-#endif /* __HAVE_ARCH_PUD_WRITE */
+ #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
+ 
+-#if !defined(CONFIG_TRANSPARENT_HUGEPAGE) || \
+-	(defined(CONFIG_TRANSPARENT_HUGEPAGE) && \
+-	 !defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD))
+-static inline int pud_trans_huge(pud_t pud)
+-{
+-	return 0;
+-}
+-#endif
+-
+ #ifndef pmd_read_atomic
+ static inline pmd_t pmd_read_atomic(pmd_t *pmdp)
+ {
+diff --git a/include/linux/huge_mm.h b/include/linux/huge_mm.h
+index 26ec982..45af11b 100644
+--- a/include/linux/huge_mm.h
++++ b/include/linux/huge_mm.h
+@@ -362,7 +362,7 @@ static inline int pud_trans_huge_lock(pud_t *pud, struct vm_area_struct *vma,
+ 	return 0;
+ }
+ 
+-static inline int do_huge_pmd_numa_page(struct vm_fault *vmf, pmd_t orig_pmd);
++static inline int do_huge_pmd_numa_page(struct vm_fault *vmf, pmd_t orig_pmd)
+ {
+ 	return 0;
+ }
+-- 
+1.8.3.1
+

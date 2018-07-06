@@ -1,10 +1,10 @@
-From 740c7ef9d851b9e9536fd32b07247811247f98a5 Mon Sep 17 00:00:00 2001
-Message-Id: <740c7ef9d851b9e9536fd32b07247811247f98a5.1522795097.git.Jim.Somerville@windriver.com>
-In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
-References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+From 1584ae45f750efec21265fb0b8ac6a02975dfb76 Mon Sep 17 00:00:00 2001
+Message-Id: <1584ae45f750efec21265fb0b8ac6a02975dfb76.1528226387.git.Jim.Somerville@windriver.com>
+In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:29 -0500
-Subject: [PATCH 05/33] Affine irqs and workqueues with kthread_cpus
+Subject: [PATCH 05/32] Affine irqs and workqueues with kthread_cpus
 
 If the kthread_cpus boot arg is set it means we want to affine
 kernel threads to the specified CPU mask as much as possible
@@ -29,10 +29,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  2 files changed, 11 insertions(+)
 
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 768093b..c704ea6 100644
+index bd59426..bad147c 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -386,6 +386,13 @@ setup_affinity(unsigned int irq, struct irq_desc *desc, struct cpumask *mask)
+@@ -404,6 +404,13 @@ setup_affinity(unsigned int irq, struct irq_desc *desc, struct cpumask *mask)
  		if (cpumask_intersects(mask, nodemask))
  			cpumask_and(mask, mask, nodemask);
  	}
@@ -47,10 +47,10 @@ index 768093b..c704ea6 100644
  	return 0;
  }
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index fabea26..07f66aa 100644
+index 986e283..7160e71 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
-@@ -5459,6 +5459,8 @@ static int __init init_workqueues(void)
+@@ -5466,6 +5466,8 @@ static int __init init_workqueues(void)
  
  		BUG_ON(!(attrs = alloc_workqueue_attrs(GFP_KERNEL)));
  		attrs->nice = std_nice[i];
@@ -59,7 +59,7 @@ index fabea26..07f66aa 100644
  		unbound_std_wq_attrs[i] = attrs;
  
  		/*
-@@ -5469,6 +5471,8 @@ static int __init init_workqueues(void)
+@@ -5476,6 +5478,8 @@ static int __init init_workqueues(void)
  		BUG_ON(!(attrs = alloc_workqueue_attrs(GFP_KERNEL)));
  		attrs->nice = std_nice[i];
  		attrs->no_numa = true;

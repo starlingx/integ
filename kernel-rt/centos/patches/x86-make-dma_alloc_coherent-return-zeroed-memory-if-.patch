@@ -1,10 +1,10 @@
-From 00135c26c13feaa5b906049483742a2249276416 Mon Sep 17 00:00:00 2001
-Message-Id: <00135c26c13feaa5b906049483742a2249276416.1522795098.git.Jim.Somerville@windriver.com>
-In-Reply-To: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
-References: <21c11de06542297206c798b405b54a3ec9052aa4.1522795097.git.Jim.Somerville@windriver.com>
+From 78743472402604dc4fc3304aed9634ae9fe845dd Mon Sep 17 00:00:00 2001
+Message-Id: <78743472402604dc4fc3304aed9634ae9fe845dd.1528226387.git.Jim.Somerville@windriver.com>
+In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Wed, 4 Jun 2014 16:06:48 -0700
-Subject: [PATCH 17/33] x86: make dma_alloc_coherent() return zeroed memory if
+Subject: [PATCH 17/32] x86: make dma_alloc_coherent() return zeroed memory if
  CMA is enabled
 
 This patchset enhances the DMA Contiguous Memory Allocator on x86.
@@ -61,10 +61,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/kernel/pci-dma.c b/arch/x86/kernel/pci-dma.c
-index 872079a..9d92ea8 100644
+index 77a4e62..c84ffe7 100644
 --- a/arch/x86/kernel/pci-dma.c
 +++ b/arch/x86/kernel/pci-dma.c
-@@ -97,7 +97,7 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
+@@ -99,7 +99,7 @@ void *dma_generic_alloc_coherent(struct device *dev, size_t size,
  
  	dma_mask = dma_alloc_coherent_mask(dev, flag);
  
@@ -72,8 +72,8 @@ index 872079a..9d92ea8 100644
 +	flag &= ~__GFP_ZERO;
  again:
  	page = NULL;
- 	if (!(flag & GFP_ATOMIC))
-@@ -118,7 +118,7 @@ again:
+ 	/* CMA can be used only in the context which permits sleeping */
+@@ -130,7 +130,7 @@ again:
  
  		return NULL;
  	}

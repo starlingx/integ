@@ -1,4 +1,5 @@
-From 17d30a1fc606fce8d5636f6b418ef498944fdf9d Mon Sep 17 00:00:00 2001
+From 88ea759637bfe3359375e86dd698a1efbf274784 Mon Sep 17 00:00:00 2001
+Message-Id: <88ea759637bfe3359375e86dd698a1efbf274784.1527782348.git.Jim.Somerville@windriver.com>
 From: eric zhang <eric.zhang@windriver.com>
 Date: Wed, 14 Mar 2018 15:52:15 -0400
 Subject: [PATCH 1/1] Support TiS system
@@ -21,7 +22,7 @@ Signed-off-by: eric zhang <eric.zhang@windriver.com>
  1 file changed, 33 insertions(+), 16 deletions(-)
 
 diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
-index 111cf4b..d094158 100644
+index 33fe911..7a9253d 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
 @@ -27,8 +27,14 @@
@@ -64,7 +65,7 @@ index 111cf4b..d094158 100644
 +%define _basename mlnx-ofa_kernel
 +%define _name %{_basename}%{?bt_ext}
  %{!?_version: %global _version 4.3}
- %{!?_release: %global _release OFED.4.3.1.0.1.1.g8509e41}
+ %{!?_release: %global _release OFED.4.3.3.0.2.1.gcf60532}
  %global _kmp_rel %{_release}%{?_kmp_build_num}%{?_dist}
 @@ -74,11 +81,16 @@
  Summary: Infiniband HCA Driver
@@ -182,7 +183,7 @@ index 111cf4b..d094158 100644
  %endif
  
  # copy sources
-@@ -677,6 +693,7 @@ fi
+@@ -680,6 +696,7 @@ fi
  %config(noreplace) %{_sysconfdir}/depmod.d/zz01-%{_name}-*.conf
  %endif
  %endif

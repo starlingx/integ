@@ -1,10 +1,10 @@
-From 8d5c0ffaf60f649fca4f323d879a272bf54c030c Mon Sep 17 00:00:00 2001
-Message-Id: <8d5c0ffaf60f649fca4f323d879a272bf54c030c.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From 1d197374f04642f9a5e71cc013d65d5438c35dc3 Mon Sep 17 00:00:00 2001
+Message-Id: <1d197374f04642f9a5e71cc013d65d5438c35dc3.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 23 Aug 2017 17:58:12 -0400
-Subject: [PATCH 23/27] US101216: IMA support in Titanium kernel
+Subject: [PATCH 22/26] US101216: IMA support in Titanium kernel
 
 facilitate building the IMA subsytem out-of-the-kernel tree as a Kernel
 module (for which CONFIG_IMA and CONFIG_INTEGRITY will be undefined) by:
@@ -28,10 +28,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  7 files changed, 140 insertions(+), 90 deletions(-)
 
 diff --git a/fs/namei.c b/fs/namei.c
-index 0a37e5a..db7455e 100644
+index 9f90b63..bf91ea0 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -3198,7 +3198,7 @@ opened:
+@@ -3236,7 +3236,7 @@ opened:
  	error = open_check_o_direct(file);
  	if (error)
  		goto exit_fput;
@@ -41,7 +41,7 @@ index 0a37e5a..db7455e 100644
  		goto exit_fput;
  
 diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
-index c439a9b..2f169fe 100644
+index 00e98c3..cb9250e 100644
 --- a/fs/nfsd/vfs.c
 +++ b/fs/nfsd/vfs.c
 @@ -883,7 +883,7 @@ nfsd_open(struct svc_rqst *rqstp, struct svc_fh *fhp, umode_t type,
@@ -54,7 +54,7 @@ index c439a9b..2f169fe 100644
  		fput(file);
  		goto out_nfserr;
 diff --git a/fs/xattr.c b/fs/xattr.c
-index 3377dff..59ee1c7 100644
+index e540aca..cc307ec 100644
 --- a/fs/xattr.c
 +++ b/fs/xattr.c
 @@ -207,6 +207,7 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
@@ -66,11 +66,11 @@ index 3377dff..59ee1c7 100644
  /* Compare an extended attribute value with the given value */
  int vfs_xattr_cmp(struct dentry *dentry, const char *xattr_name,
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 5853208..0e8d7d5 100644
+index eb6f994..2dbaf80 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -666,9 +666,8 @@ struct inode {
- 	struct hlist_head	i_fsnotify_marks;
+@@ -677,9 +677,8 @@ struct inode {
+ 			struct fsnotify_mark_connector __rcu *i_fsnotify_marks)
  #endif
  
 -#ifdef CONFIG_IMA
@@ -80,7 +80,7 @@ index 5853208..0e8d7d5 100644
  	void			*i_private; /* fs or device private pointer */
  };
  
-@@ -2765,7 +2764,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
+@@ -2827,7 +2826,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
  	return atomic_read(&inode->i_writecount) > 0;
  }
  
@@ -88,7 +88,7 @@ index 5853208..0e8d7d5 100644
  static inline void i_readcount_dec(struct inode *inode)
  {
  	BUG_ON(!atomic_read(&inode->i_readcount));
-@@ -2775,16 +2773,7 @@ static inline void i_readcount_inc(struct inode *inode)
+@@ -2837,16 +2835,7 @@ static inline void i_readcount_inc(struct inode *inode)
  {
  	atomic_inc(&inode->i_readcount);
  }
@@ -226,10 +226,10 @@ index 83222ce..a5040b6 100644
 -#endif /* CONFIG_INTEGRITY */
  #endif /* _LINUX_INTEGRITY_H */
 diff --git a/security/security.c b/security/security.c
-index 576b882..e7d33c9 100644
+index f069482..646a0e3 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -135,6 +135,110 @@ int __init register_security(struct security_operations *ops)
+@@ -156,6 +156,110 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
  
  /* Security operations */
  
@@ -340,7 +340,7 @@ index 576b882..e7d33c9 100644
  int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
  {
  #ifdef CONFIG_SECURITY_YAMA_STACKED
-@@ -694,8 +798,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
+@@ -715,8 +819,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
  
  void security_inode_getsecid(struct inode *inode, u32 *secid)
  {
@@ -353,7 +353,7 @@ index 576b882..e7d33c9 100644
  
  int security_inode_copy_up(struct dentry *src, struct cred **new)
  {
-@@ -1478,6 +1585,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
+@@ -1525,6 +1632,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
  {
  	return security_ops->audit_rule_init(field, op, rulestr, lsmrule);
  }
@@ -361,7 +361,7 @@ index 576b882..e7d33c9 100644
  
  int security_audit_rule_known(struct audit_krule *krule)
  {
-@@ -1494,5 +1602,6 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
+@@ -1541,5 +1649,6 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
  {
  	return security_ops->audit_rule_match(secid, field, op, lsmrule, actx);
  }

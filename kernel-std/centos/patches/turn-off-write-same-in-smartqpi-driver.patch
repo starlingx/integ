@@ -1,10 +1,10 @@
-From 713d1abce3f43e4f2057ed5670343f1654c1f86f Mon Sep 17 00:00:00 2001
-Message-Id: <713d1abce3f43e4f2057ed5670343f1654c1f86f.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From 533c1cd1909a81bd027435dd934a194983c9e9b8 Mon Sep 17 00:00:00 2001
+Message-Id: <533c1cd1909a81bd027435dd934a194983c9e9b8.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 6 Mar 2018 12:54:40 -0500
-Subject: [PATCH 27/27] turn off write same in smartqpi driver
+Subject: [PATCH 26/26] turn off write same in smartqpi driver
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,11 +12,11 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/drivers/scsi/smartpqi/smartpqi_init.c b/drivers/scsi/smartpqi/smartpqi_init.c
-index 638af91..a891516 100644
+index 2c6b546..6968c48 100644
 --- a/drivers/scsi/smartpqi/smartpqi_init.c
 +++ b/drivers/scsi/smartpqi/smartpqi_init.c
-@@ -5155,6 +5155,7 @@ static struct scsi_host_template pqi_driver_template = {
- 	.slave_configure = pqi_slave_configure,
+@@ -5843,6 +5843,7 @@ static struct scsi_host_template pqi_driver_template = {
+ 	.slave_alloc = pqi_slave_alloc,
  	.sdev_attrs = pqi_sdev_attrs,
  	.shost_attrs = pqi_shost_attrs,
 +	.no_write_same = 1,

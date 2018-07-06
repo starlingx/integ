@@ -1,10 +1,10 @@
-From 7e1e094a026ef055505fefb7aad0b9f44b593041 Mon Sep 17 00:00:00 2001
-Message-Id: <7e1e094a026ef055505fefb7aad0b9f44b593041.1522097754.git.Jim.Somerville@windriver.com>
-In-Reply-To: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
-References: <f4706beaf86081b0890ea616082913f8f51823ff.1522097754.git.Jim.Somerville@windriver.com>
+From f18a1429e701642388614b47073f4425020deee6 Mon Sep 17 00:00:00 2001
+Message-Id: <f18a1429e701642388614b47073f4425020deee6.1527544850.git.Jim.Somerville@windriver.com>
+In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 7 Apr 2016 11:16:19 -0600
-Subject: [PATCH 02/27] Notification of death of arbitrary processes
+Subject: [PATCH 02/26] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -65,10 +65,10 @@ index a05294b..cfb7197 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */		\
  	.pids = {							\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 3959488..c50cfc4 100644
+index 0646138..3933e24 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1627,6 +1627,12 @@ struct task_struct {
+@@ -1631,6 +1631,12 @@ struct task_struct {
  	short il_next;
  	short pref_node_fork;
  #endif
@@ -82,7 +82,7 @@ index 3959488..c50cfc4 100644
  	int numa_scan_seq;
  	unsigned int numa_scan_period;
 diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-index f818d08..3e0d502 100644
+index 8ddaa82..53d6392 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
 @@ -55,6 +55,24 @@
@@ -111,10 +111,10 @@ index f818d08..3e0d502 100644
  #define PR_GET_ENDIAN	19
  #define PR_SET_ENDIAN	20
 diff --git a/init/Kconfig b/init/Kconfig
-index e5f56f1..ae33fe8 100644
+index 6ec689c..550cea4 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1537,6 +1537,21 @@ config VM_EVENT_COUNTERS
+@@ -1538,6 +1538,21 @@ config VM_EVENT_COUNTERS
  	  on EXPERT systems.  /proc/vmstat will only show page counts
  	  if VM event counters are disabled.
  
@@ -137,10 +137,10 @@ index e5f56f1..ae33fe8 100644
  	default y
  	bool "Enable SLUB debugging support" if EXPERT
 diff --git a/kernel/Makefile b/kernel/Makefile
-index b954c25..5701720 100644
+index 2fb90fa..44a82c1 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -111,6 +111,7 @@ obj-$(CONFIG_RING_BUFFER) += trace/
+@@ -112,6 +112,7 @@ obj-$(CONFIG_RING_BUFFER) += trace/
  obj-$(CONFIG_TRACEPOINTS) += trace/
  obj-$(CONFIG_IRQ_WORK) += irq_work.o
  obj-$(CONFIG_CPU_PM) += cpu_pm.o
@@ -457,10 +457,10 @@ index 1afa799..a2ea26b 100644
  	__exit_signal(p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 33bf8c4..9d62799 100644
+index 55e4ca4..e721eed 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1429,6 +1429,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -1471,6 +1471,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
  	p->sequential_io	= 0;
  	p->sequential_io_avg	= 0;
  #endif
@@ -472,10 +472,10 @@ index 33bf8c4..9d62799 100644
  	/* Perform scheduler related setup. Assign this task to a CPU. */
  	retval = sched_fork(clone_flags, p);
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 2dec6a0..fac06fe 100644
+index a5aa525..b9d138e 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -44,6 +44,9 @@
+@@ -46,6 +46,9 @@
  #include <asm/siginfo.h>
  #include <asm/cacheflush.h>
  #include "audit.h"	/* audit_signal_info() */
@@ -485,7 +485,7 @@ index 2dec6a0..fac06fe 100644
  
  /*
   * SLAB caches for signal bits.
-@@ -1721,6 +1724,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+@@ -1740,6 +1743,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
  	__wake_up_parent(tsk, tsk->parent);
  	spin_unlock_irqrestore(&psig->siglock, flags);
  
@@ -496,7 +496,7 @@ index 2dec6a0..fac06fe 100644
  	return autoreap;
  }
  
-@@ -1792,6 +1799,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+@@ -1811,6 +1818,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
  	 */
  	__wake_up_parent(tsk, parent);
  	spin_unlock_irqrestore(&sighand->siglock, flags);
@@ -508,10 +508,10 @@ index 2dec6a0..fac06fe 100644
  
  static inline int may_ptrace_stop(void)
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 20c59a4..b693e10 100644
+index cb90b1c..c68f98e 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -62,6 +62,10 @@
+@@ -64,6 +64,10 @@
  #include <asm/io.h>
  #include <asm/unistd.h>
  
@@ -522,7 +522,7 @@ index 20c59a4..b693e10 100644
  #ifndef SET_UNALIGN_CTL
  # define SET_UNALIGN_CTL(a,b)	(-EINVAL)
  #endif
-@@ -2462,6 +2466,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+@@ -2474,6 +2478,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
  		else
  			error = PR_MCE_KILL_DEFAULT;
  		break;
