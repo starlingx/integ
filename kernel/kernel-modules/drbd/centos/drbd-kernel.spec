@@ -25,6 +25,7 @@ Source0: http://oss.linbit.com/drbd/drbd-%{tarball_version}.tar.gz
 
 # WRS
 Patch0001: 0001-remove_bind_before_connect_error.patch
+Patch0002: compat-Statically-initialize-families.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -85,6 +86,7 @@ echo "Done."
 %prep
 %setup -q -n drbd-%{tarball_version}
 %patch0001 -p1
+%patch0002 -p1
 
 %build
 rm -rf obj
