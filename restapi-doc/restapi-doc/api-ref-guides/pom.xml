@@ -2,7 +2,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 <!--
-  Copyright (c) 2014 Wind River Systems, Inc.
+  Copyright (c) 2014-2018 Wind River Systems, Inc.
 
 SPDX-License-Identifier: Apache-2.0
 
@@ -154,7 +154,17 @@ SPDX-License-Identifier: Apache-2.0
               <pdfFilenameBase>api-ref-nfv-vim-v1</pdfFilenameBase>
             </configuration>
           </execution>
-
+          <execution>
+            <id>os-api-ref-smapi-v1</id>
+            <goals>
+              <goal>generate-pdf</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <includes>bk-api-ref-smapi-v1.xml</includes>
+              <pdfFilenameBase>api-ref-smapi-v1</pdfFilenameBase>
+            </configuration>
+          </execution>
         </executions>
         <configuration>
           <webhelpDirname>api-ref-guides</webhelpDirname>

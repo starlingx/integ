@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2014-2017 Wind River Systems, Inc.
+  Copyright (c) 2014-2018 Wind River Systems, Inc.
 
 SPDX-License-Identifier: Apache-2.0
 
@@ -49,4 +49,5 @@ SPDX-License-Identifier: Apache-2.0
     <xi:include href="../../api-ref/src/docbkx/ch_patching-api-v1.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_nfv-vim-api-v1.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_dcmanager-api-v1.xml"/>
+    <xi:include href="../../api-ref/src/docbkx/ch_smapi-v1.xml"/>
 </book>
