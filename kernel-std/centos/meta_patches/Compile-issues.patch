@@ -1,8 +1,7 @@
-From c7352436ea37647d140f76e818f211e764170d3d Mon Sep 17 00:00:00 2001
-Message-Id: <c7352436ea37647d140f76e818f211e764170d3d.1527700333.git.Jim.Somerville@windriver.com>
+From 0bdbfc48c66177522eae9bb7c0449f39f418e609 Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Wed, 30 May 2018 13:12:03 -0400
-Subject: [PATCH 1/1] Compile issues
+Subject: [PATCH 4/5] Compile issues
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -10,10 +9,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 3 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index ca03e10..4dd7ae4 100644
+index 01dd989..d45c419 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -473,6 +473,8 @@ Patch40024: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
+@@ -474,6 +474,8 @@ Patch40024: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
  Patch40025: dpt_i2o-fix-build-warning.patch
  # DRBD was choking on write same
  Patch40026: turn-off-write-same-in-smartqpi-driver.patch
@@ -22,7 +21,7 @@ index ca03e10..4dd7ae4 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
-@@ -832,6 +834,7 @@ ApplyOptionalPatch US103091-IMA-System-Configuration.patch
+@@ -833,6 +835,7 @@ ApplyOptionalPatch US103091-IMA-System-Configuration.patch
  ApplyOptionalPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
  ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
  ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
@@ -31,5 +30,5 @@ index ca03e10..4dd7ae4 100644
  # Any further pre-build tree manipulations happen here.
  
 -- 
-1.8.3.1
+2.7.4
 

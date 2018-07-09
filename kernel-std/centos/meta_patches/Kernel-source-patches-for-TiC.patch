@@ -1,10 +1,7 @@
-From 25b9dae2044cbf7f8e0274b68b6f4eef4e20560c Mon Sep 17 00:00:00 2001
-Message-Id: <25b9dae2044cbf7f8e0274b68b6f4eef4e20560c.1527697578.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c816cd8703a35098673bf1198d54a5c48bf39994.1527697578.git.Jim.Somerville@windriver.com>
-References: <c816cd8703a35098673bf1198d54a5c48bf39994.1527697578.git.Jim.Somerville@windriver.com>
+From d9d90b72c19c1d063272d2b84bd76c52514bf6ac Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 20 Apr 2018 16:13:47 -0400
-Subject: [PATCH 2/3] Kernel source patches for TiC
+Subject: [PATCH 2/5] Kernel source patches for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,10 +9,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 58 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 998487f..ce9e9f8 100644
+index eef356a..f1a0092 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -444,6 +444,36 @@ Patch1002: debrand-rh-i686-cpu.patch
+@@ -445,6 +445,36 @@ Patch1002: debrand-rh-i686-cpu.patch
  Source30000: kernel-3.10.0-x86_64.config.tis_extra
  Source30001: ima_signing_key.pub
  
@@ -52,7 +49,7 @@ index 998487f..ce9e9f8 100644
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -775,6 +805,34 @@ ApplyOptionalPatch debrand-single-cpu.patch
+@@ -776,6 +806,34 @@ ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
  ApplyOptionalPatch debrand-rh-i686-cpu.patch
  
@@ -88,5 +85,5 @@ index 998487f..ce9e9f8 100644
  
  chmod +x scripts/checkpatch.pl
 -- 
-1.8.3.1
+2.7.4
 

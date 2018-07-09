@@ -1,10 +1,7 @@
-From 4b85e25e8cdebe6e6643a4a17e85bf0582310c04 Mon Sep 17 00:00:00 2001
-Message-Id: <4b85e25e8cdebe6e6643a4a17e85bf0582310c04.1527697578.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c816cd8703a35098673bf1198d54a5c48bf39994.1527697578.git.Jim.Somerville@windriver.com>
-References: <c816cd8703a35098673bf1198d54a5c48bf39994.1527697578.git.Jim.Somerville@windriver.com>
+From 393eb8d3d3a15cda274f5d0c45763de9a8b3fcab Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 29 May 2018 13:06:24 -0400
-Subject: [PATCH 3/3] Lower the compiler version requirement
+Subject: [PATCH 3/5] Lower the compiler version requirement
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,18 +9,18 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index ce9e9f8..ca03e10 100644
+index f1a0092..01dd989 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -334,7 +334,7 @@ ExclusiveOS: Linux
+@@ -335,7 +335,7 @@ ExclusiveOS: Linux
  #
  BuildRequires: module-init-tools, patch >= 2.5.4, bash >= 2.03, sh-utils, tar
  BuildRequires: xz, findutils, gzip, m4, perl, make >= 3.78, diffutils, gawk
--BuildRequires: gcc >= 4.8.5-28, binutils >= 2.25, redhat-rpm-config >= 9.1.0-55
+-BuildRequires: gcc >= 4.8.5-28.el7_5.1, binutils >= 2.25, redhat-rpm-config >= 9.1.0-55
 +BuildRequires: gcc >= 4.8.5-16, binutils >= 2.25, redhat-rpm-config >= 9.1.0-55
  BuildRequires: hostname, net-tools, bc
  BuildRequires: xmlto, asciidoc
  BuildRequires: openssl
 -- 
-1.8.3.1
+2.7.4
 
