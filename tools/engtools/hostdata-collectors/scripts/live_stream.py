@@ -1116,14 +1116,7 @@ def collectCpuCount(influx_info, node, ci):
         except Exception:
             logging.error("cpu_count collection stopped unexpectedly with error: {}. Restarting process...".format(sys.exc_info()))
 
-def countApiStatsServices(lsof_lines, service_port, service_name):
-    service_count = 0
-    for line in lsof_lines:
-        if service_port is not None and service_name is not None and service_port in line and service_name in line:
-            service_count += 1
-    return service_count
-
-def collectApiStats(influx_info, node, ci, services):
+def collectApiStats(influx_info, node, ci, services, db_port, rabbit_port):
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("api_request data starting collection with a collection interval of {}s".format(ci["cpu_count"]))
     measurement = "api_requests"
@@ -1132,19 +1125,39 @@ def collectApiStats(influx_info, node, ci, services):
     lsof_args = ['lsof', '-Pn', '-i', 'tcp']
     while True:
         try:
-           fields = {}
-           lsof_result = Popen(lsof_args, shell=False, stdout=PIPE)
-           lsof_lines = list()
-           while True:
-               line = lsof_result.stdout.readline().strip("\n")
-               if not line:
-                   break
-               lsof_lines.append(line)
-           lsof_result.kill()
-           for name, service in services.iteritems():
-                api_count = countApiStatsServices(lsof_lines, service['api-port'], service['name'])
-                db_count = countApiStatsServices(lsof_lines, service['db-port'], service['name'])
-                rabbit_count = countApiStatsServices(lsof_lines, service['rabbit-port'], service['name'])
+            fields = {}
+            lsof_result = Popen(lsof_args, shell=False, stdout=PIPE)
+            lsof_lines = list()
+            while True:
+                line = lsof_result.stdout.readline().strip("\n")
+                if not line:
+                    break
+                lsof_lines.append(line)
+            lsof_result.kill()
+            for name, service in services.iteritems():
+                pid_list = list()
+                check_pid = False
+                if name == "keystone-public":
+                    check_pid = True
+                    ps_result = Popen("pgrep -f --delimiter=' ' keystone-public", shell=True, stdout=PIPE)
+                    pid_list = ps_result.stdout.readline().strip().split(' ')
+                    ps_result.kill()
+                elif name == "gnocchi-api":
+                    check_pid = True
+                    ps_result = Popen("pgrep -f --delimiter=' ' gnocchi-api", shell=True, stdout=PIPE)
+                    pid_list = ps_result.stdout.readline().strip().split(' ')
+                    ps_result.kill()
+                api_count = 0
+                db_count = 0
+                rabbit_count = 0
+                for line in lsof_lines:
+                    if service['name'] is not None and service['name'] in line and (not check_pid or any(pid in line for pid in pid_list)):
+                        if service['api-port'] is not None and service['api-port'] in line:
+                            api_count += 1
+                        elif db_port is not None and db_port in line:
+                            db_count += 1
+                        elif rabbit_port is not None and rabbit_port in line:
+                            rabbit_count += 1
                 fields[name] = {"api": api_count, "db": db_count, "rabbit": rabbit_count}
                 influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}'".format(measurement, "node", tags["node"], "service", name, "api", fields[name]["api"], "db", fields[name]["db"], "rabbit", fields[name]["rabbit"]) + "\n"
             p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string), shell=True)
@@ -1414,9 +1427,9 @@ if __name__ == "__main__":
         for service_string in SERVICES_INFO:
             service_tuple = tuple(service_string.split(';'))
             if service_tuple[2] != "" and service_tuple[2] != None:
-                SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'db-port': DB_PORT_NUMBER, 'rabbit-port': RABBIT_PORT_NUMBER, 'api-port': service_tuple[2]}
+                SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'api-port': service_tuple[2]}
             else:
-                SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'db-port': DB_PORT_NUMBER, 'rabbit-port': RABBIT_PORT_NUMBER, 'api-port': None}
+                SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'api-port': None}
     except Exception:
         print "An error has occurred when parsing the engtools.conf configuration file: {}".format(sys.exc_info())
         sys.exit(0)
@@ -1539,7 +1552,7 @@ if __name__ == "__main__":
             tasks.append(p)
             p.start()
         if collect_api_requests is True and node_type == "controller":
-            p = Process(target=collectApiStats, args=(influx_info, node, collection_intervals, SERVICES), name="api_requests")
+            p = Process(target=collectApiStats, args=(influx_info, node, collection_intervals, SERVICES, DB_PORT_NUMBER, RABBIT_PORT_NUMBER), name="api_requests")
             tasks.append(p)
             p.start()
 
