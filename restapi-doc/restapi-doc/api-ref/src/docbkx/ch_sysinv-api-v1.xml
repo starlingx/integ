@@ -1358,4 +1358,26 @@ configuration entity for the system.
         </wadl:resources>
     </section>
 
+    <!--*******************************************************-->
+    <!--               LABELS                                  -->
+    <!--*******************************************************-->
+
+    <section xml:id="labels-v1">
+        <title>Labels</title>
+        <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
+            <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#labels">
+                <wadl:method href="#listLabel"/>
+            </wadl:resource>
+            <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#assign_label">
+                <wadl:method href="#assignLabel"/>
+            </wadl:resource>
+            <wadl:resource
+                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#label_id">
+                <wadl:method href="#removeLabel"/>
+            </wadl:resource>
+        </wadl:resources>
+    </section>
+
 </chapter>
