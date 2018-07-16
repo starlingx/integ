@@ -24,19 +24,18 @@ diff --git a/ima/ima_appraise.c b/ima/ima_appraise.c
 index 88b5091..cff2ad2 100644
 --- a/ima/ima_appraise.c
 +++ b/ima/ima_appraise.c
-@@ -250,8 +250,11 @@ int ima_appraise_measurement(enum ima_hooks func,
- 	if (rc <= 0) {
+@@ -205,7 +208,11 @@ int ima_appraise_measurement(enum ima_hooks func,
  		if (rc && rc != -ENODATA)
  			goto out;
--
+ 
 -		cause = "missing-hash";
-+		
 +		if (iint->flags & IMA_DIGSIG_REQUIRED)
-+		   cause = "missing-signature";
++			cause = "missing-signature";
 +		else
 +			cause = "missing-hash";
++
  		status = INTEGRITY_NOLABEL;
- 		if (opened & FILE_CREATED) {
+ 		if (opened & FILE_CREATED)
  			iint->flags |= IMA_NEW_FILE;
 @@ -352,7 +355,8 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
  	int rc = 0;

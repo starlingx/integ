@@ -1,5 +1,5 @@
 COPY_LIST=" \
   $FILES_BASE/* \
   $PATCHES_BASE/* \
-  $STX_BASE/downloads/integrity-kmod-668a8270.tar.gz"
+  $STX_BASE/downloads/integrity-kmod-e6aef069.tar.gz"
 TIS_PATCH_VER=5

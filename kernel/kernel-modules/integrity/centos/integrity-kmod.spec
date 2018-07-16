@@ -22,7 +22,7 @@ ExclusiveArch: x86_64
 # Sources.
 # the integrity is available as a tarball, with
 # the git commit Id referenced in the name
-Source0:  %{kmod_name}-kmod-668a8270.tar.gz
+Source0:  %{kmod_name}-kmod-e6aef069.tar.gz
 Source1:  modules-load.conf
 Source2:  COPYING
 Source3:  README
