@@ -191,6 +191,7 @@ Patch40:          %{pkgnamepatch}-galera.cnf.patch
 # Patch41:          %{pkgnamepatch}-galera-new-cluster-help.patch
 
 BuildRequires:    cmake
+BuildRequires:    bison
 BuildRequires:    gcc-c++
 BuildRequires:    libaio-devel
 BuildRequires:    libedit-devel
