@@ -45,7 +45,7 @@ class HandleUpgradesMixin(object):
                 and state != constants.UPGRADE_COMPLETED
                 and from_version == constants.TITANIUM_SERVER_VERSION_18_03):
 
-            LOG.info(_LI("Wait for caph upgrade to complete before monitoring cluster."))
+            LOG.info(_LI("Wait for ceph upgrade to complete before monitoring cluster."))
             self.wait_for_upgrade_complete = True
 
     def set_flag_require_jewel_osds(self):
