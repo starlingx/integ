@@ -2,3 +2,4 @@ kernel/kernel-rt
 networking/mellanox/libibverbs
 kernel/kernel-modules/mlnx-ofa_kernel
 networking/mellanox/rdma-core
+kernel/kernel-modules/intel-e1000e

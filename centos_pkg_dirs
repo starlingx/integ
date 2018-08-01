@@ -116,3 +116,4 @@ grub/grubby
 utilities/platform-util
 tools/monitor-tools
 tools/engtools/hostdata-collectors
+kernel/kernel-modules/intel-e1000e

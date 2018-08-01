@@ -1,0 +1,5 @@
+COPY_LIST=" \
+  $FILES_BASE/* \
+  $CGCS_BASE/mwa-gplv2/intel-e1000e/files/* \
+  $CGCS_BASE/downloads/e1000e-3.3.6.tar.gz"
+TIS_PATCH_VER=1
