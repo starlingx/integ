@@ -1,0 +1,5 @@
+COPY_LIST=" \
+  $FILES_BASE/* \
+  $CGCS_BASE/mwa-gplv2/intel-ixgbe/files/* \
+  $CGCS_BASE/downloads/ixgbe-5.2.3.tar.gz"
+TIS_PATCH_VER=2
