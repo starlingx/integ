@@ -1,0 +1,1267 @@
+#! /bin/bash
+########################################################################
+#
+# Copyright (c) 2014-2017 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+########################################################################
+#
+# Description: This script creates a tarball of logs and runtime
+#              configuration information for any of the following
+#
+#              - current host     ... collect
+#              - specified host   ... collect hostname
+#              - group of hosts   ... collect --list ...
+#              - all hosts        ... collect --all
+#
+# Behavior   : See print_help below.
+#
+# Inclusions : What is collected.
+#
+#    - /var/log
+#    - /var/run (exclusions listed in /etc/collect/exclude.list)
+#    - area specific configuration and data -> ./var/extra
+#    - all databases in plain text ; except for ceilometer and keystone
+#
+# Additional collected info is expressed by the following runtime output.
+# Generally, individual commands that display output have that output
+# redirected to the appropriate info file in /scratch/var/extra
+#
+# wrsroot@controller-0:/scratch# sudo collect
+# nodetype : controller
+# Collector: /scratch
+# Extra Dir: /scratch/var/extra
+# Database : /scratch/database
+# Tarball  : /scratch/controller-0.20140318.232925.tgz
+# ------------------------------------------------------------------------
+# controller-0: Process Info ......: /scratch/var/extra/process.info
+# controller-0: Host Info .........: /scratch/var/extra/host.info
+# controller-0: Memory Info .......: /scratch/var/extra/memory.info
+# controller-0: Filesystem Info ...: /scratch/var/extra/filesystem.info
+# controller-0: Bash History ......: /scratch/var/extra/history.info
+# controller-0: Interrupt Info ....: /scratch/var/extra/interrupt.info
+# controller-0: HA Info ...........: /scratch/var/extra/crm.info
+# controller-0: CIB Admin Info ....: /scratch/var/extra/crm.xml
+# controller-0: Mtce Info .........: /scratch/var/extra/mtce.info
+# controller-0: Networking Info ...: /scratch/var/extra/networking.info
+# controller-0: RabbitMQ Info .....: /scratch/var/extra/rabbitmq.info
+# controller-0: Database Info .....: /scratch/var/extra/database.info
+# controller-0: Dumping Database ..: /scratch/database/postgres.db.sql.txt
+# controller-0: Dumping Database ..: /scratch/database/glance.db.sql.txt
+# controller-0: Dumping Database ..: /scratch/database/nova.db.sql.txt
+# controller-0: Dumping Database ..: /scratch/database/cinder.db.sql.txt
+# controller-0: Dumping Database ..: /scratch/database/heat.db.sql.txt
+# controller-0: Dumping Database ..: /scratch/database/neutron.db.sql.txt
+# controller-0: Dumping Database ..: /scratch/database/sysinv.db.sql.txt
+# controller-0: Creating Tarball ..: /scratch/controller-0.20140318.232925.tgz
+#
+# Tarball: /scratch/<hostname>.<date>.tgz
+#
+# The script first collects the process, host, memory,
+# filesystem, interrupt and HA information.
+# It then proceeds to calls run-parts against the
+# /etc/collect.d direcory which contains service level
+# collectors. Additional collected can be added to that
+# collect.d directory and will be called automatically.
+#
+# Warning: Script currently must be run as root.
+# The collector scripts consider nodetype when deciding
+# which commands to execute where.
+#
+##################################################################
+
+
+TOOL_NAME=collect
+TOOL_VER=2
+TOOL_REV=0
+
+# collect must be run as wrsroot
+if [ ${UID} -eq 0 ]; then
+  echo "Error: Cannot run collect as 'root' user"
+  exit 1
+fi
+
+# pull in common utils and environment
+source /usr/local/sbin/collect_utils
+
+# get the host type
+nodetype=""
+subfunction=""
+PLATFORM_CONF=/etc/platform/platform.conf
+if [ -e ${PLATFORM_CONF} ] ; then
+    source ${PLATFORM_CONF}
+fi
+
+ACTIVE=false
+if [ "${nodetype}" == "controller" ] ; then
+    KEYRING_PATH="/opt/platform/.keyring"
+    if [ -e ${KEYRING_PATH} ] ; then
+        CRED=`find /opt/platform/.keyring -name .CREDENTIAL`
+        if [ ! -z "${CRED}" ] ; then
+            NOVAOPENRC="/etc/nova/openrc"
+            if [ -e ${NOVAOPENRC} ] ; then
+                ACTIVE=true
+                source  ${NOVAOPENRC} 2>/dev/null 1>/dev/null
+            fi
+        fi
+    fi
+fi
+
+function clean_up()
+{
+    `reset`
+    echo ""
+}
+
+function control_c()
+{
+    echo ""
+    echo "... received exit signal ..."
+    clean_up
+    exit 0
+}
+
+# Handle exit signals
+trap control_c SIGINT
+trap control_c SIGTERM
+
+
+
+# static expect log level control ;
+# 0 = hide expect output
+# 1 = show expect outout
+USER_LOG_MODE=0
+
+# static execution status 'return value'
+RETVAL=0
+
+# limit scp bandwidth to 1MB/s
+# increase limit of scp bandwidth from 1MB/s to 10MB/s
+SCP_CMD="scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -l $((10*8*1000))"
+SCP_TIMEOUT="600"
+SSH_CMD="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no"
+NOWDATE=`date +"%Y%m%d.%H%M%S"`
+COLLECT_BASE_DIR="/scratch"
+collect_host="/usr/local/sbin/collect_host"
+CURR_DIR=`pwd`
+
+
+# common permission error strings
+pw_error="orry, try again"
+ac_error="ermission denied"
+
+function print_help()
+{
+    echo ""
+    echo "Titanium Cloud Log Collection Tool, version ${TOOL_VER}.${TOOL_REV}"
+    echo ""
+    echo "Usage: ${TOOL_NAME} [COMMANDS ...] {options}"
+    echo ""
+    echo "Titanium Cloud 'collect' is used by the customer support organization"
+    echo " to collect logs and data for off system analysis."
+    echo ""
+    echo "Running collect will collect logs to /scratch/<prefix_date_time.tar>"
+    echo "on the host collect is run from. Use host names to specify which hosts to collect from."
+    echo ""
+    echo "Host data collection scope can be the current host, any single specified hostname,"
+    echo "a --list of hostnames or --all hosts in the system using a single command."
+    echo ""
+    echo "Optionally specify --start-date and/or --end-date options to limit"
+    echo "  the date range and therefore size of the collect."
+    echo ""
+    echo "Optionally specify a --name prefix of the collected tar file."
+    echo ""
+    echo "With the command set specified, simply run collect as wrsroot and when"
+    echo "prompted provide the wrsroot sudo password and let collect handle the rest."
+    echo ""
+    echo "Scope Options:"
+    echo ""
+    echo " collect                                        ... collect logs for current host"
+    echo " collect host1                                  ... collect logs for single named host"
+    echo " collect host1 host2 host3                      ... collect logs for stacked host list"
+    echo " collect [--list | -l] host1 host2 host3        ... collect logs for list of named hosts"
+    echo " collect [--all  | -a]                          ... collect data for all hosts"
+    echo ""
+    echo "Dated Collect:"
+    echo ""
+    echo "collect [--start-date | -s] YYYYMMDD            ... collection of logs on and  after this date"
+    echo "collect [--end-date   | -e] YYYYMMDD            ... collection of logs on and before this date"
+    echo ""
+    echo "Tarball Prefix:"
+    echo ""
+    echo "collect [--name | -n] {scope and date options}  ... specify the name prefix of the collect tarball"
+    echo ""
+    echo "Detailed Display:"
+    echo ""
+    echo "collect [--verbose | -v]                        ... print details during collect"
+    echo ""
+    echo "Avoid password and security masking:"
+    echo ""
+    echo "collect [--skip-mask]                           ... skip masking of collect data"
+    echo ""
+    echo "Examples:"
+    echo ""
+    echo "collect                                                      ... all logs for current host"
+    echo "collect --all                                                ... all logs from all hosts in the system"
+    echo "collect --all --start-date 20150101                          ... logs dated on and after Jan 1 2015 from all hosts"
+    echo "collect --all --start-date 20151101 --end-date 20160201      ... logs dated between Nov 1, 2015 and Feb 1 2016 from all hosts"
+    echo "collect --start-date 20151101 --end-date 20160201            ... only logs dated between Nov 1, 2015 and Feb 1 2016 for current host"
+    echo "collect --list controller-0 compute-0 storage-0              ... all logs from specified host list"
+    echo "collect --list controller-0 compute-1 --end-date 20160201    ... only logs before Nov 1, 2015 for host list"
+    echo "collect --list controller-1 storage-0 --start-date 20160101  ... only logs after Jan 1 2016 for controller-1 and storage-0"
+    echo ""
+    exit 0
+}
+
+# command line arguement variables ; defaulted
+DEBUG=false
+CLEAN=false
+VERBOSE=false
+SKIP_MASK=false
+
+# date variables
+STARTDATE="any"
+STARTTIME="any"
+ENDDATE="any"
+ENDTIME="any"
+GETSTARTDATE=false
+GETENDDATE=false
+
+# host selection variables
+LISTING=false
+ALLHOSTS=false
+HOSTS=1
+HOSTLIST=(${HOSTNAME})
+THISHOST=false
+
+COLLECT_TARNAME=""
+
+# clear multi option modes
+function clear_variable_args()
+{
+    LISTING=false
+    GETSTARTDATE=false
+    GETENDDATE=false
+}
+
+#
+# Utility function to print a status message and record the last error code
+#
+# Assumptions: Handles specific cases of invalid password and permission errors
+#              by exiting so as to avoid repeated errors during multi-host
+#              collection.
+#
+# $1 - status string
+# $2 - status code number
+#
+function print_status()
+{
+    local string=${1}
+    local code=${2}
+
+    logger -t ${COLLECT_TAG} "${string} (reason:${code})"
+
+    # if the status code is in the FAIL range ( less than WARNING ) then update RETVAL
+    if [ ${code} -lt ${WARN_WARNING} ] ; then
+        RETVAL=${code}
+    fi
+
+    if [ ${RETVAL} -eq ${FAIL_PASSWORD} ] ; then
+
+        echo "Invalid password ; exiting (${string})"
+        exit ${RETVAL}
+
+    elif [ ${RETVAL} -eq ${FAIL_PERMISSION} ] ; then
+
+        echo "Permission error ; exiting (${string})"
+        exit ${RETVAL}
+
+    elif [ ${RETVAL} -eq ${FAIL_UNREACHABLE} ] ; then
+
+        echo "${string} (reason:${code}:host unreachable)"
+
+    elif [ ${RETVAL} -eq ${FAIL_PERMISSION_SKIP} -o ${RETVAL} -eq ${FAIL_PERMISSION} ] ; then
+
+        echo "${string} (reason:${code}:permission error)"
+
+    elif [ ${RETVAL} -eq ${FAIL_OUT_OF_SPACE} ] ; then
+
+        echo "${string} (reason:${code}) ; need to increase available space in host ${COLLECT_BASE_DIR}"
+
+    elif [ ${RETVAL} -eq ${FAIL_OUT_OF_SPACE_LOCAL} ] ; then
+
+        echo "${string} (reason:${code}) ; need to increase available space in ${HOSTNAME}:${COLLECT_BASE_DIR}"
+
+    elif [ ${RETVAL} -eq ${FAIL_INSUFFICIENT_SPACE} ] ; then
+
+        echo "${string} (reason:${code}) ; ${HOSTNAME}:${COLLECT_BASE_DIR} usage must be below ${MIN_PERCENT_SPACE_REQUIRED}%"
+
+    elif [ ${RETVAL} -ge ${FAIL_TIMEOUT} -a ${RETVAL} -le ${FAIL_TIMEOUT9} ] ; then
+
+        echo "${string} (reason:${code}:operation timeout)"
+
+    else
+        echo "${string} (reason:${code})"
+    fi
+}
+
+#
+# checks to see if the specified hostname is known
+# to inventory as a valid provisioned host
+
+# $1 - this_hostname
+
+function is_valid_host()
+{
+    local this_hostname=${1}
+
+    if [ "${this_hostname}" == "None" ] ; then
+        return ${FAIL_HOSTNAME}
+    elif [ "${this_hostname}" == "${HOSTNAME}" ] ; then
+        return $PASS
+    elif [ "${ACTIVE}" = true ] ; then
+        system host-show "${this_hostname}" 2>/dev/null 1>/dev/null
+        if [ ${?} -ne 0 ] ; then
+            return ${FAIL_HOSTNAME}
+        fi
+    else
+        print_status "Error: can only run collect for remote hosts on active controller" ${FAIL_INACTIVE}
+        exit ${FAIL_INACTIVE}
+    fi
+    return $PASS
+}
+
+
+# Parse the command line
+while [[ ${#} -gt 0 ]] ; do
+
+    key="${1}"
+
+    case $key in
+
+        -h|--help)
+        print_help
+        exit 0
+        ;;
+
+        -n|--name)
+        COLLECT_TARNAME=${2}_${NOWDATE}
+        clear_variable_args
+        shift
+        ;;
+
+        -v|--verbose)
+        VERBOSE=true
+        ;;
+
+        -c|--clean)
+        CLEAN=true
+        ;;
+
+        -l|--list)
+        if [[ ${#} -lt  2 ]] ; then
+            print_status "Error: empty host --list" ${FAIL}
+            exit ${FAIL}
+        fi
+        is_valid_host "${2}"
+        if [ ${?} -ne 0 ] ; then
+            print_status "Error: empty host --list or invalid first hostname" ${FAIL}
+            exit ${FAIL}
+        fi
+
+        HOSTLIST=(${2})
+        HOSTS=1
+        if [ "${2}" == "${HOSTNAME}" ] ; then
+            THISHOST=true
+        elif [ "${ACTIVE}" = false ] ; then
+            print_status "Error: can only run collect for remote hosts on active controller" ${FAIL_INACTIVE}
+            exit ${FAIL_INACTIVE}
+        fi
+        LISTING=true
+        GETSTARTDATE=false
+        GETENDDATE=false
+        shift
+        ;;
+
+        -a|--all|all)
+        if [ "${ACTIVE}" = false ] ; then
+            print_status "Error: can only run collect for remote hosts on active controller" ${FAIL_INACTIVE}
+            exit ${FAIL_INACTIVE}
+        fi
+        ALLHOSTS=true
+        HOSTLIST=(${HOSTNAME})
+        HOSTS=1
+        THISHOST=true
+        clear_variable_args
+        ;;
+
+        -s|--start-date)
+        STARTDATE="${2}"
+        LISTING=false
+        GETSTARTDATE=true
+        GETENDDATE=false
+        shift
+        ;;
+
+        -e|--end-date)
+        ENDDATE="${2}"
+        LISTING=false
+        GETSTARTDATE=false
+        GETENDDATE=true
+        shift
+        ;;
+
+        -d|--debug)
+        DEBUG=true
+        USER_LOG_MODE=1
+        clear_variable_args
+        ;;
+
+        --skip-mask)
+        SKIP_MASK=true
+        shift
+        ;;
+
+        *)
+        if [ "${LISTING}" = true ] ; then
+            is_valid_host ${key}
+            if [ ${?} -eq 0 ] ; then
+                HOSTS=$((${HOSTS} + 1))
+                HOSTLIST=( "${HOSTLIST[@]}" ${key} )
+                if [ "${key}" == "${HOSTNAME}" ] ; then
+                    THISHOST=true
+                fi
+            else
+                # make the invalid hostname a warning only.
+                # if we got here then at least the first hostname was valid
+                print_status "Warning: cannot collect data from unknown host '${key}'" ${WARN_HOSTNAME}
+            fi
+        elif [ "${GETSTARTDATE}" = true ] ; then
+            dlog "accepting but ignoring legacy starttime specification"
+        elif [ "${GETENDDATE}" = true ] ; then
+            dlog "accepting but ignoring legacy endtime specification"
+        else
+            is_valid_host ${key}
+            RETVAL=${?}
+            if [ ${RETVAL} -eq 0 ] ; then
+                HOSTLIST=${key}
+                HOSTS=1
+                LISTING=true
+                if [ "${key}" == "${HOSTNAME}" ] ; then
+                    THISHOST=true
+                fi
+            else
+                print_status "Error: cannot collect data from unknown host '${key}'" ${RETVAL}
+                exit ${RETVAL}
+            fi
+        fi
+        GETSTARTDATE=false
+        GETENDDATE=false
+        ;;
+    esac
+    shift # past argument or value
+done
+
+if [ ${RETVAL} -ne 0 ]; then
+    echo "command line parse error (${RETVAL})"
+    print_help
+    exit ${RETVAL}
+fi
+
+
+#
+# request root password and use it for
+# all the expect driven requests below
+#
+read -s -p "[sudo] password for ${USER}:" pw
+echo ""
+
+# Although bash 'read' will handle sanitizing the password
+# input for the purposes of storing it in ${pw}, expect
+# will need certain special characters to be backslash
+# delimited
+pw=${pw/\\/\\\\} # replace '\' with '\\'
+pw=${pw/\]/\\\]} # replace ']' with '\]'
+pw=${pw/\[/\\\[} # replace '[' with '\['
+pw=${pw/$/\\$}   # replace '$' with '\$'
+pw=${pw/\"/\\\"} # replace '"' with '\"'
+
+#
+# if the user specified the '--all' option then override
+# the current list and add them all from inventory.
+#
+if [ "${ALLHOSTS}" = true ] ; then
+
+    for foreign_host in $(system host-list | grep '[0-9]' | cut -d '|' -f 3 | tr -d ' ' | grep -v ${HOSTNAME}); do
+        if [ "${foreign_host}" != "None" ] ; then
+            HOSTS=$((${HOSTS} + 1))
+            HOSTLIST=( "${HOSTLIST[@]}" ${foreign_host})
+            dlog "Host:${HOSTS}: ${foreign_host}"
+        fi
+    done
+
+elif [ ${HOSTS} == 0 ] ; then
+
+    HOSTLIST=${HOSTNAME}
+    THISHOST=true
+    COLLECT_TARNAME="${HOSTNAME}_${NOWDATE}"
+
+fi
+
+# Print Summary
+if [ "${DEBUG}" == true ] ; then
+
+    echo "HOSTLIST = <${HOSTLIST[@]}>"
+    echo "HOSTS    = ${HOSTS}"
+    echo "ALLHOSTS = ${ALLHOSTS}"
+    echo "STARTDATE= ${STARTDATE}"
+    echo "ENDDATE  = ${ENDDATE}"
+
+    for hosts in "${HOSTLIST[@]}" ; do
+        echo "Host:${hosts}"
+    done
+
+elif [ ${HOSTS} -eq 0 ] ; then
+
+     print_status "Error: no hosts specified" "${FAIL}"
+     exit ${FAIL}
+
+elif [ "${CLEAN}" == false ] ; then
+
+    ilog "collecting data from ${HOSTS} host(s): ${HOSTLIST[@]}"
+
+else
+
+    ilog "cleaning scratch space on ${HOSTLIST[@]}"
+
+fi
+
+#
+# removes contents of the local /scratch directory
+#
+# $1 - host
+# $2 - specified directory (always $COLLECT_BASE_DIR)
+#
+function clean_scratch_dir_local ()
+{
+    local this_hostname=${1}
+    local directory=${2}
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    set timeout 60
+    expect -re $
+    send -- "sudo rm -rf ${directory}/*_????????.??????* ; cat ${cmd_done_file}\n"
+    expect {
+        "assword:"        { send "${pw}\r" ; exp_continue }
+        "${cmd_done_sig}" { exit ${PASS} }
+        "annot remove"    { exit ${FAIL_CLEANUP}    }
+        "${pw_error}"     { exit ${FAIL_PASSWORD}   }
+        "${ac_error}"     { exit ${FAIL_PERMISSION} }
+        timeout           { exit ${FAIL_TIMEOUT}    }
+    }
+EOF
+   local rc=${?}
+   if [ ${rc} -ne ${PASS} ] ; then
+       print_status "Error: clean_scratch_dir_local ${this_hostname} failed" ${rc}
+   fi
+   return ${rc}
+}
+
+#
+# cleans the contents of the specified hosts's scratch dir
+#
+# $1 - this hostname
+# $2 - specified directory (always $COLLECT_BASE_DIR)
+#
+function clean_scratch_dir_remote()
+{
+    local this_hostname=${1}
+    local directory=${2}
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    expect -re $
+    set timeout 60
+    send "${SSH_CMD} wrsroot@${this_hostname}\n"
+    expect {
+        "assword:" {
+            send "${pw}\r"
+            expect {
+                "${this_hostname}" {
+                    set timeout 30
+                    expect -re $
+                    send "sudo rm -rf ${directory}/*_????????.??????* ; cat ${cmd_done_file}\n"
+                    expect {
+                        "assword:" { send -- "${pw}\r" ; exp_continue }
+                        "${cmd_done_sig}" { exit ${PASS} }
+                        "${cmd_done_file}: No such file or directory" { exit ${PASS} }
+                        "annot remove"    { exit ${FAIL_CLEANUP}   }
+                        "${pw_error}"     { exit ${FAIL_PASSWORD}  }
+                        "${ac_error}"     { exit ${FAIL_PERMISSION}}
+                        timeout           { exit ${FAIL_TIMEOUT3}  }
+                    }
+                }
+                timeout { exit ${FAIL_TIMEOUT1} }
+            }
+        }
+        "(yes/no)?" {
+            send "yes\r"
+            exp_continue
+        }
+        "No route to host" {
+            exit ${FAIL_UNREACHABLE}
+        }
+        "Could not resolve hostname" {
+            exit ${FAIL_UNREACHABLE}
+        }
+        timeout { exit ${FAIL_TIMEOUT} }
+    }
+EOF
+   local rc=${?}
+   if [ ${rc} -ne ${PASS} ] ; then
+       print_status "Error: clean_scratch_dir_remote ${this_hostname} failed" ${rc}
+   fi
+   return ${rc}
+}
+
+#
+# deletes a remote directory or file
+#
+# $1 - this hostname
+# $2 - dir or file with full path
+#
+function delete_remote_dir_or_file()
+{
+    local this_hostname=${1}
+    local dir_or_file=${2}
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    expect -re $
+    set timeout 60
+    send "${SSH_CMD} wrsroot@${this_hostname}\n"
+    expect {
+        "assword:" {
+            send "${pw}\r"
+            expect {
+                "${this_hostname}:" {
+                    set timeout 10
+                    expect -re $
+                    send "sudo rm -rf ${dir_or_file} ; cat ${cmd_done_file}\n"
+                    expect {
+                        "assword:" { send -- "${pw}\r" ; exp_continue }
+                        "${cmd_done_sig}" { exit ${PASS} }
+                        "${cmd_done_file}: No such file or directory" { exit ${PASS} }
+                        "annot remove"    { exit ${FAIL_CLEANUP}   }
+                        "${pw_error}"     { exit ${FAIL_PASSWORD}  }
+                        "${ac_error}"     { exit ${FAIL_PERMISSION}}
+                        timeout           { exit ${FAIL_TIMEOUT3}  }
+                    }
+                }
+                timeout { exit ${FAIL_TIMEOUT1} }
+            }
+        }
+        "(yes/no)?" {
+            send "yes\r"
+            exp_continue
+        }
+        "No route to host" {
+            exit ${FAIL_UNREACHABLE}
+        }
+        "Could not resolve hostname" {
+            exit ${FAIL_UNREACHABLE}
+        }
+        timeout { exit ${FAIL_TIMEOUT} }
+    }
+EOF
+   local rc=${?}
+   if [ ${rc} -ne ${PASS} ] ; then
+       print_status "Error: delete_remote_dir_or_file ${this_hostname} failed" ${rc}
+   fi
+   return ${rc}
+}
+
+HOST_COLLECT_ERROR_LOG="/tmp/host_collect_error.log"
+#
+# Fetch a file from a remote host using the global pw
+# $1 - this hostname
+# $2 - remote source path/filename
+# $3 - local path destination
+#
+function get_file_from_host()
+{
+    local this_hostname=${1}
+    local remote_src=${2}
+    local local_dest=${3}
+
+    remove_file_local ${HOST_COLLECT_ERROR_LOG}
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    set timeout ${SCP_TIMEOUT}
+    expect -re $
+    send "${SCP_CMD} wrsroot@${this_hostname}:${remote_src} ${local_dest} 2>>${HOST_COLLECT_ERROR_LOG}\n"
+    expect {
+        "assword:" {
+            send "${pw}\r"
+            expect {
+                "100%"        { exit ${PASS} }
+                "${pw_error}" { exit ${FAIL_PASSWORD}  }
+                "${ac_error}" { exit ${FAIL_PERMISSION}}
+                timeout       { exit ${FAIL_TIMEOUT1}  }
+            }
+        }
+        "No route to host" {
+            exit ${FAIL_UNREACHABLE}
+        }
+        "Could not resolve hostname" {
+            exit ${FAIL_UNREACHABLE}
+        }
+        timeout { exit ${FAIL_TIMEOUT} }
+    }
+EOF
+   local rc=${?}
+   if [ ${rc} -ne ${PASS} ] ; then
+       print_status "failed to get_file_from ${this_hostname}" ${rc}
+   else
+       # Look for "No space left on device" error
+       grep -q "${FAIL_OUT_OF_SPACE_STR}" ${HOST_COLLECT_ERROR_LOG}
+       if [ "$?" == "0" ] ; then
+           rc=${FAIL_OUT_OF_SPACE}
+       fi
+   fi
+
+   remove_file_local ${HOST_COLLECT_ERROR_LOG}
+
+   return ${rc}
+}
+
+#
+# Create the local dated collect dir where all
+#  the tarballs for this collect will get put.
+#
+# Permissions are set to make it easy to copy
+#  tarballs from remote host into
+#
+# $1 - the fill dir
+#
+function create_collect_dir_local()
+{
+    local dir=${1}
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    set timeout 10
+    expect -re $
+    send "sudo mkdir -m 775 -p ${dir} ; cat ${cmd_done_file}\n"
+    expect {
+        "assword:" {
+            send "${pw}\r"
+            expect {
+                "${cmd_done_sig}" { exit ${PASS}           }
+                "${pw_error}"     { exit ${FAIL_PASSWORD}  }
+                "${ac_error}"     { exit ${FAIL_PERMISSION}}
+                timeout           { exit ${FAIL_TIMEOUT1}  }
+            }
+        }
+        "${cmd_done_sig}" { exit ${PASS} }
+        "${ac_error}"     { exit ${FAIL_PERMISSION}}
+        timeout           { exit ${FAIL_TIMEOUT} }
+    }
+EOF
+   local rc=${?}
+   if [ ${rc} -ne ${PASS} ] ; then
+       print_status "failed to create_collect_dir_local for ${dir}" ${rc}
+   fi
+   return ${rc}
+}
+
+#
+# Delete the specified file using sudo
+#
+# $1 - the file to be delete with full path specified
+#
+function remove_file_local()
+{
+    local local_file=${1}
+    local rc=${PASS}
+
+    if [ -e ${local_file} ] ; then
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    set timeout 10
+    expect -re $
+    send -- "sudo rm -f ${local_file} ; cat ${cmd_done_file}\n"
+    expect {
+        "assword:"        { send -- "${pw}\r" ; exp_continue }
+        "${cmd_done_sig}" { exit ${PASS} }
+        "annot remove"    { exit ${FAIL_CLEANUP}    }
+        "${pw_error}"     { exit ${FAIL_PASSWORD}   }
+        "${ac_error}"     { exit ${FAIL_PERMISSION} }
+        timeout           { exit ${FAIL_TIMEOUT}    }
+    }
+EOF
+       local rc=${?}
+       if [ ${rc} -ne ${PASS} ] ; then
+           print_status "failed to remove_file_local ${local_file}" ${rc}
+       fi
+   fi
+   return ${rc}
+}
+
+#
+# Delete the specified file using sudo
+#
+# $1 - the directory to be removed with full path specified
+#
+function remove_dir_local()
+{
+    local dir=${1}
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    set timeout 10
+    expect -re $
+    send -- "sudo rm -rf ${dir} ; cat ${cmd_done_file}\n"
+    expect {
+        "assword:"        { send -- "${pw}\r" ; exp_continue }
+        "${cmd_done_sig}" { exit ${PASS} }
+        "annot remove"    { exit ${FAIL_CLEANUP}    }
+        "${pw_error}"     { exit ${FAIL_PASSWORD}   }
+        "${ac_error}"     { exit ${FAIL_PERMISSION} }
+        timeout           { exit ${FAIL_TIMEOUT}    }
+    }
+EOF
+   local rc=${?}
+   if [ ${rc} -ne ${PASS} ] ; then
+       print_status "failed to remove_dir_local ${dir}" ${rc}
+   fi
+   return ${rc}
+}
+
+#
+# Move a file and change permissions using sudo
+#
+# $1 - src  path/file
+# $2 - dest path/file
+#
+function move_file_local()
+{
+    local src=${1}
+    local dst=${2}
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    set timeout 10
+    expect -re $
+    send -- "sudo mv ${src} ${dst} ; cat ${cmd_done_file}\n"
+    expect {
+        "assword:"        { send -- "${pw}\r" ; exp_continue }
+        "${cmd_done_sig}" { exit ${PASS} }
+        "annot remove"    { exit ${FAIL_CLEANUP}    }
+        "${pw_error}"     { exit ${FAIL_PASSWORD}   }
+        "${ac_error}"     { exit ${FAIL_PERMISSION} }
+        timeout           { exit ${FAIL_TIMEOUT}    }
+    }
+EOF
+   local rc=${?}
+   if [ ${rc} -ne ${PASS} ] ; then
+       print_status "failed to move_file_local ${src} to ${dst}" ${rc}
+   fi
+   return ${rc}
+}
+
+# Append the echoed collect done with collect duration and file size
+# ... done (HH:MM:SS xxM)
+function echo_stats()
+{
+    local secs=${1}
+    local file=${2}
+
+    echo -n " ($(date -d@${secs} -u +%H:%M:%S)"
+    if [ -e ${file} ] ; then
+        size=$(du -h ${file} | cut -f 1 2>/dev/null)
+        if [ $? -eq 0 ] ; then
+            printf " %5s)\n" "${size}"
+            return
+        fi
+    fi
+    echo ")"
+}
+
+
+# Handle clean command
+if [ "${CLEAN}" == true ] ; then
+    for host in "${HOSTLIST[@]}" ; do
+        if [ "${host}" != " " ] ; then
+
+            if [ "${host}" == "None" ] ; then
+                continue
+            elif [ "${host}" == "" ] ; then
+                continue
+            fi
+
+            echo -n "cleaning ${host}:${COLLECT_BASE_DIR} ... "
+            if [ "${host}" == "${HOSTNAME}" ] ; then
+                clean_scratch_dir_local ${host} ${COLLECT_BASE_DIR}
+                if [ ${?} -eq ${PASS} ] ; then
+                    echo "done"
+                fi
+            else
+                clean_scratch_dir_remote ${host} ${COLLECT_BASE_DIR}
+                if [ ${?} -eq ${PASS} ] ; then
+                    echo "done"
+                fi
+            fi
+            logger -t ${COLLECT_TAG} "user cleaned ${host}:${COLLECT_BASE_DIR} content"
+        fi
+    done
+    exit 0
+fi
+
+
+if [ ! -z ${COLLECT_TARNAME} ] ; then
+
+    # User specified tarname
+    COLLECT_NAME=${COLLECT_TARNAME}
+    COLLECT_DIR="${COLLECT_BASE_DIR}/${COLLECT_NAME}"
+    TARBALL_NAME="${COLLECT_DIR}.tar"
+	named="user-named"
+
+elif [ "${ALLHOSTS}" = true ] ; then
+
+    # All hosts bundle
+    COLLECT_NAME="ALL_NODES_${NOWDATE}"
+    COLLECT_DIR="${COLLECT_BASE_DIR}/${COLLECT_NAME}"
+    TARBALL_NAME="${COLLECT_DIR}.tar"
+	named="all-nodes"
+
+
+elif [ ${HOSTS} -eq 1 ] ; then
+
+    # Single host bundle
+    COLLECT_NAME="${HOSTLIST[0]}_${NOWDATE}"
+    COLLECT_DIR="${COLLECT_BASE_DIR}/${COLLECT_NAME}"
+    TARBALL_NAME="${COLLECT_DIR}.tar"
+	named="single-node"
+
+else
+
+    # Otherwise its a multi host bundle
+    COLLECT_NAME="SELECT_NODES_${NOWDATE}"
+    COLLECT_DIR="${COLLECT_BASE_DIR}/${COLLECT_NAME}"
+    TARBALL_NAME="${COLLECT_DIR}.tar"
+	named="selected-node"
+
+fi
+
+#
+# Create the local collect directory where
+#   the tarball(s) will temporarily stored
+#
+create_collect_dir_local "${COLLECT_DIR}"
+
+declare COLLECT_START_TIME=${SECONDS}
+
+declare -i longest_hostname=0
+for host in "${HOSTLIST[@]}" ; do
+    len=${#host}
+    if [ $len -gt ${longest_hostname} ] ; then
+        longest_hostname=$len
+    fi
+done
+
+#
+# Loop over all the targetted hosts and
+# 1. run collect
+# 2. copy the tarball to $COLLECT_DIR
+#
+for host in "${HOSTLIST[@]}" ; do
+   if [ "${host}" != " " ] ; then
+
+        if [ "${host}" == "None" ] ; then
+            continue
+        elif [ "${host}" == "" ] ; then
+            continue
+        fi
+
+        HOST_START_TIME=${SECONDS}
+
+        TARNAME="${host}_${NOWDATE}"
+
+        # line up the hostr namaes
+        echo -n "collecting"
+        len=${#host}
+        for ((i=len;i<longest_hostname;i++))
+        do
+            echo -n " "
+        done
+        echo -n " ${TARNAME} ... "
+
+        if [ "${host}" == "${HOSTNAME}" ] ;  then
+
+            save=${USER_LOG_MODE}
+            if [ "${VERBOSE}" = true ] ; then
+                USER_LOG_MODE=1
+            fi
+
+/usr/bin/expect << EOF
+            trap exit {SIGINT SIGTERM}
+            log_user ${USER_LOG_MODE}
+            spawn bash -i
+
+            set timeout 900
+            send "sudo SKIP_MASK=${SKIP_MASK} ${collect_host} ${TARNAME} ${STARTDATE_OPTION} ${STARTDATE} ${STARTTIME} ${ENDDATE_OPTION} ${ENDDATE} ${ENDTIME} ${DEBUG}\n"
+            expect {
+                "assword:" {
+                    send "${pw}\r"
+                    expect {
+                        "${FAIL_INSUFFICIENT_SPACE_STR}" { exit ${FAIL_INSUFFICIENT_SPACE}}
+                        "${FAIL_OUT_OF_SPACE_STR}" { exit ${FAIL_OUT_OF_SPACE}}
+                        "${collect_done}"          { exit ${PASS}             }
+                        "${pw_error}" { exit ${FAIL_PASSWORD}  }
+                        "${ac_error}" { exit ${FAIL_PERMISSION}}
+                        timeout       { exit ${FAIL_TIMEOUT}   }
+                    }
+                }
+                timeout { exit ${FAIL_TIMEOUT} }
+            }
+            exit { ${FAIL} }
+EOF
+            RETVAL=${?}
+            USER_LOG_MODE=${save}
+            if [ ${RETVAL} -eq ${PASS} ] ; then
+
+                # create the dir again just to handle the case where we are
+                # collecting on ourself and have removed the collect_dir
+                # directory in collect_host above.
+                create_collect_dir_local "${COLLECT_DIR}"
+
+                # move the tarball into the collect dir
+                # only applies to the local collect since the remote
+                # collect scp's it directly into the collect dir.
+                move_file_local "${COLLECT_BASE_DIR}/${TARNAME}.tgz" "${COLLECT_DIR}"
+                RETVAL=${?}
+
+            fi
+            if [ ${RETVAL} -eq ${PASS} ] ; then
+                secs=$((SECONDS-HOST_START_TIME))
+                echo -n "done"
+                echo_stats $secs "${COLLECT_DIR}/${TARNAME}.tgz"
+                logger -t ${COLLECT_TAG} "collect ${COLLECT_BASE_DIR}/${TARNAME}.tgz succeeded"
+            else
+                if [ ${RETVAL} -eq ${FAIL_INSUFFICIENT_SPACE} ] ; then
+
+                    print_status "Error: ${FAIL_INSUFFICIENT_SPACE_STR}" ${RETVAL}
+                    echo ""
+                    echo "Increase available space in ${host}:${COLLECT_BASE_DIR} and retry operation."
+                    echo ""
+
+                    remove_dir_local ${COLLECT_DIR}
+
+                    exit 1
+
+                elif [ ${RETVAL} -eq ${FAIL_OUT_OF_SPACE} ] ; then
+
+                    print_status "Error: ${FAIL_OUT_OF_SPACE_STR}" ${RETVAL}
+
+                    echo ""
+                    wlog "Increase available space in ${host}:${COLLECT_BASE_DIR} and retry operation."
+                    echo ""
+
+                    # Remove the corrupt file and exit
+                    remove_file_local ${COLLECT_ERROR_LOG}
+                    remove_file_local ${COLLECT_BASE_DIR}/${TARNAME}.tgz
+                    remove_dir_local ${COLLECT_BASE_DIR}/${TARNAME}
+                    remove_dir_local ${COLLECT_BASE_DIR}/${COLLECT_NAME}
+
+                    exit 1
+
+                else
+                    echo "failed"
+                    print_status "Error: failed to collect from ${HOSTNAME}" ${RETVAL}
+                fi
+            fi
+        else
+
+            save=${USER_LOG_MODE}
+            if [ "${VERBOSE}" = true ] ; then
+                USER_LOG_MODE=1
+            fi
+
+/usr/bin/expect << EOF
+            trap exit {SIGINT SIGTERM}
+            log_user ${USER_LOG_MODE}
+            spawn bash -i
+            set timeout 30
+            expect -re $
+            send "${SSH_CMD} wrsroot@${host}\n"
+            expect {
+                "assword:" {
+                    send "${pw}\r"
+                    expect {
+                        "${host}:" {
+                            set timeout 500
+                            send "sudo SKIP_MASK=${SKIP_MASK} ${collect_host} ${TARNAME} ${STARTDATE_OPTION} ${STARTDATE} ${STARTTIME} ${ENDDATE_OPTION} ${ENDDATE} ${ENDTIME} ${DEBUG}\n"
+                            expect {
+                                "assword:" {
+                                    send "${pw}\r"
+                                    expect {
+                                        "${FAIL_INSUFFICIENT_SPACE_STR}" {
+                                           send "exit\r"
+                                           exit ${FAIL_INSUFFICIENT_SPACE}
+                                        }
+                                        "${FAIL_OUT_OF_SPACE_STR}" {
+                                           send "exit\r"
+                                           exit ${FAIL_OUT_OF_SPACE}
+                                        }
+                                        "${collect_done}" {
+                                            send "exit\r"
+                                            exit ${PASS}
+                                        }
+                                        "${pw_error}"   { exit ${FAIL_PASSWORD} }
+                                        "${ac_error}"   { exit ${FAIL_PERMISSION_SKIP}}
+                                        timeout         { exit ${FAIL_TIMEOUT5} }
+                                    }
+                                }
+                                timeout { exit ${FAIL_TIMEOUT4} }
+                            }
+                        }
+                        "${pw_error}" { exit ${FAIL_PASSWORD} }
+                        "${ac_error}" { exit ${FAIL_PERMISSION_SKIP}}
+                        timeout       { exit ${FAIL_TIMEOUT3} }
+                    }
+                }
+                "(yes/no)?" {
+                    send "yes\r"
+                    exp_continue
+                }
+                "No route to host" {
+                    exit ${FAIL_UNREACHABLE}
+                }
+                "Could not resolve hostname" {
+                    exit ${FAIL_UNREACHABLE}
+                }
+                "Host key verification failed" {
+                    send "rm -f /home/wrsroot/.ssh/known_hosts\n"
+                    exit ${FAIL}
+                }
+                timeout { exit ${FAIL_TIMEOUT} }
+            }
+            exit { $FAIL }
+EOF
+            RC=${?}
+            USER_LOG_MODE=${save}
+            if [ ${RC} -eq ${PASS} ] ; then
+                get_file_from_host "${host}" "${COLLECT_BASE_DIR}/${TARNAME}.tgz" "${COLLECT_DIR}"
+                RC=${?}
+                if [ ${RC} -eq ${PASS} ] ; then
+                    delete_remote_dir_or_file "${host}" "${COLLECT_BASE_DIR}/${TARNAME}.tgz"
+                    RC=$?
+                    if [ ${RC} -eq ${PASS} ] ; then
+                        secs=$((SECONDS-HOST_START_TIME))
+                        echo -n "done"
+                        echo_stats $secs "${COLLECT_DIR}/${TARNAME}.tgz"
+                        logger -t ${COLLECT_TAG} "collect ${COLLECT_BASE_DIR}/${TARNAME}.tgz succeeded"
+                    else
+                        logger -t ${COLLECT_TAG} "collect ${COLLECT_BASE_DIR}/${TARNAME}.tgz succeeded but failed to cleanup"
+                        RC=${PASS}
+                    fi
+                else
+                    if [ ${RC} -eq ${FAIL_OUT_OF_SPACE} ] ; then
+
+                        print_status "Error: ${FAIL_OUT_OF_SPACE_STR}" ${FAIL_OUT_OF_SPACE_LOCAL}
+
+                        # don't re-report the error below
+                        RC=${PASS}
+                    fi
+                fi
+            fi
+
+            # report on the collect and get file error cases
+            if [ ${RC} -ne ${PASS} ] ; then
+
+                # call out the more common out of space error
+                if [ ${RC} -eq ${FAIL_OUT_OF_SPACE} ] ; then
+
+                    print_status "Error: ${FAIL_OUT_OF_SPACE_STR}" ${RC}
+
+                elif [ ${RC} -eq ${FAIL_INSUFFICIENT_SPACE} ] ; then
+
+                    print_status "Error: ${FAIL_INSUFFICIENT_SPACE_STR}" ${RC}
+
+                else
+
+                    print_status "failed to collect from ${host}" ${RC}
+
+                fi
+            fi
+        fi
+    fi
+done
+
+# Don't create a tarball if there was an error for single host collection
+if [ ${RETVAL} -ne 0 -a ${HOSTS} -lt 2 ] ; then
+
+    # return to callers dir
+    cd ${CURR_DIR}
+
+    exit ${RETVAL}
+fi
+
+echo -n "creating ${named} tarball ${TARBALL_NAME} ... "
+
+/usr/bin/expect << EOF
+    log_user ${USER_LOG_MODE}
+    spawn bash -i
+    expect -re $
+    set timeout 200
+    send "(cd ${COLLECT_BASE_DIR} ; sudo ${IONICE_CMD} ${NICE_CMD} ${TAR_CMD} ${TARBALL_NAME} ${COLLECT_NAME}/* 2>>${COLLECT_ERROR_LOG} ; cat ${cmd_done_file})\n"
+    expect {
+        "assword:" {
+            send "${pw}\r"
+            expect {
+                "${cmd_done_sig}" { exit ${PASS}            }
+                "${pw_error}"     { exit ${FAIL_PASSWORD}   }
+                "${ac_error}"     { exit ${FAIL_PERMISSION} }
+                timeout           { exit ${FAIL_TIMEOUT1}   }
+            }
+        }
+        timeout { exit ${FAIL_TIMEOUT} }
+    }
+EOF
+   RETVAL=${?}
+   if [ ${RETVAL} -ne ${PASS} ] ; then
+       collect_errors ${HOSTNAME}
+       print_status "failed to create ${TARBALL_NAME}" ${RETVAL}
+   else
+       collect_errors ${HOSTNAME}
+       RETVAL=$?
+       if [ ${RETVAL} -eq ${PASS} ] ; then
+           secs=$((SECONDS-COLLECT_START_TIME))
+           echo -n "done"
+           echo_stats $secs "${TARBALL_NAME}"
+           logger -t ${COLLECT_TAG} "created ${named} tarball ${TARBALL_NAME}"
+       else
+           echo "removing incomplete collect: ${TARBALL_NAME}"
+           remove_file_local "${TARBALL_NAME}"
+       fi
+   fi
+   remove_file_local ${COLLECT_ERROR_LOG}
+   remove_dir_local "${COLLECT_DIR}"
+
+# return to callers dir
+cd ${CURR_DIR}
+
+exit ${RETVAL}

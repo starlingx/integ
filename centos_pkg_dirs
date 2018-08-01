@@ -111,3 +111,4 @@ logging/logmgmt
 filesystem/filesystem-scripts
 utilities/branding
 config-files/io-scheduler
+tools/collector

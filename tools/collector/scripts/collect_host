@@ -1,0 +1,482 @@
+#! /bin/bash
+########################################################################
+#
+# Copyright (c) 2016 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+########################################################################
+
+#
+# Import commands, variables and convenience functions available to
+# all collectors ; common and user defined.
+#
+source /usr/local/sbin/collect_utils
+
+KEYRING_PATH="/opt/platform/.keyring"
+if [ -e ${KEYRING_PATH} ] ; then
+    CRED=`find /opt/platform/.keyring -name .CREDENTIAL`
+    if [ ! -z "${CRED}" ] ; then
+        NOVAOPENRC="/etc/nova/openrc"
+        if [ -e ${NOVAOPENRC} ] ; then
+            source  ${NOVAOPENRC} 2>/dev/null 1>/dev/null
+        fi
+    fi
+fi
+
+#
+# parse input parameters
+#
+COLLECT_NAME="${1}"
+DEBUG=${8}
+set_debug_mode ${DEBUG}
+
+# Calling parms
+#
+# 1 = collect name
+# 2 = start date option
+# 3 = start date
+# 4 = "any"          (ignored - no longer used ; kept to support upgrades/downgrades)
+# 5 = end date option
+# 6 = end date
+# 7 = "any"          (ignored - no longer used ; kept to support upgrades/downgrades)
+# 8 = debug mode
+logger -t ${COLLECT_TAG} "${0} ${1} ${2} ${3} ${4} ${5} ${6} ${7} ${8}"
+
+# parse out the start data/time data if it is present
+STARTDATE_RANGE=false
+STARTDATE="any"
+if [ "${2}" == "${STARTDATE_OPTION}" ] ; then
+    if [ "${3}" != "any" -a ${#3} -gt 7 ] ; then
+        STARTDATE_RANGE=true
+        STARTDATE="${3}"
+    fi
+fi
+
+# parse out the end date/time if it is present
+ENDDATE_RANGE=false
+ENDDATE="any"
+if [ "${5}" == "${ENDDATE_OPTION}" ] ; then
+    if [ "${6}" != "any" -a ${#6} -gt 7 ] ; then
+        ENDDATE_RANGE=true
+        ENDDATE="${6}"
+    fi
+fi
+
+COLLECT_BASE_DIR="/scratch"
+EXTRA="var/extra"
+hostname="${HOSTNAME}"
+COLLECT_NAME_DIR="${COLLECT_BASE_DIR}/${COLLECT_NAME}"
+EXTRA_DIR="${COLLECT_NAME_DIR}/${EXTRA}"
+TARBALL="${COLLECT_NAME_DIR}.tgz"
+COLLECT_PATH="/etc/collect.d"
+RUN_EXCLUDE="/etc/collect/run.exclude"
+ETC_EXCLUDE="/etc/collect/etc.exclude"
+COLLECT_INCLUDE="/var/run /etc /root"
+FLIGHT_RECORDER_PATH="var/lib/sm/"
+FLIGHT_RECORDER_FILE="sm.eru.v1"
+VAR_LOG_INCLUDE_LIST="/tmp/${COLLECT_NAME}.lst"
+COLLECT_DIR_PCENT_CMD="df --output=pcent ${COLLECT_BASE_DIR}"
+COLLECT_DIR_USAGE_CMD="df -h ${COLLECT_BASE_DIR}"
+COLLECT_DATE="/usr/local/sbin/collect_date"
+
+function log_space()
+{
+    local msg=${1}
+
+    space="`${COLLECT_DIR_USAGE_CMD}`"
+    space1=`echo "${space}" | grep -v Filesystem`
+    ilog "${COLLECT_BASE_DIR} ${msg} ${space1}"
+}
+
+function space_precheck()
+{
+    space="`${COLLECT_DIR_PCENT_CMD}`"
+    space1=`echo "${space}" | grep -v Use`
+    size=`echo ${space1} | cut -f 1 -d '%'`
+    if [ ${size} -ge 0 -a ${size} -le 100 ] ; then
+        ilog "${COLLECT_BASE_DIR} is $size% full"
+        if [ ${size} -ge ${MIN_PERCENT_SPACE_REQUIRED} ] ; then
+            wlog "${HOSTNAME}:${COLLECT_BASE_DIR} does not have enough available space in to perform collect"
+            wlog "${HOSTNAME}:${COLLECT_BASE_DIR} must be below ${MIN_PERCENT_SPACE_REQUIRED}% to perform collect"
+            wlog "Increase available space in ${HOSTNAME}:${COLLECT_BASE_DIR} and retry operation."
+            echo "${FAIL_INSUFFICIENT_SPACE_STR}"
+            exit ${FAIL_INSUFFICIENT_SPACE}
+        fi
+    else
+        wlog "unable to parse available space from '${COLLECT_DIR_PCENT_CMD}' output"
+    fi
+}
+
+space_precheck
+
+CURR_DIR=`pwd`
+mkdir -p ${COLLECT_NAME_DIR}
+cd ${COLLECT_NAME_DIR}
+
+# create dump target extra-stuff directory
+mkdir -p ${EXTRA_DIR}
+
+RETVAL=0
+
+# Remove any previous collect error log.
+# Start this collect with an empty file.
+#
+# stderr is directed to this log during the collect process.
+# By searching this log after collect_host is run we can find
+# errors that occured during collect.
+# The only real error that we care about right now is the
+#
+#    "No space left on device" error
+#
+rm -f ${COLLECT_ERROR_LOG}
+touch ${COLLECT_ERROR_LOG}
+chmod 644 ${COLLECT_ERROR_LOG}
+echo "`date '+%F %T'` :${COLLECT_NAME_DIR}" > ${COLLECT_ERROR_LOG}
+
+ilog "creating local collect tarball  ${COLLECT_NAME_DIR}.tgz"
+
+################################################################################
+# Run collect scripts to check system status
+################################################################################
+function collect_parts()
+{
+    if [ -d ${COLLECT_PATH} ]; then
+        for i in ${COLLECT_PATH}/*; do
+            if [ -f $i ]; then
+                $i ${COLLECT_NAME_DIR} ${EXTRA_DIR} ${hostname}
+            fi
+        done
+    fi
+}
+
+
+function collect_extra()
+{
+    # dump process lists
+    LOGFILE="${EXTRA_DIR}/process.info"
+    echo    "${hostname}: Process Info ......: ${LOGFILE}"
+
+    delimiter ${LOGFILE} "ps -e -H -o ..."
+    ${PROCESS_DETAIL_CMD} >> ${LOGFILE}
+
+    # Collect process and thread info (tree view)
+    delimiter ${LOGFILE} "pstree --arguments --ascii --long --show-pids"
+    pstree --arguments --ascii --long --show-pids >> ${LOGFILE}
+
+    # Collect process, thread and scheduling info (compute subfunction only)
+    # (also gets process 'affinity' which is useful on computes;  
+    which ps-sched.sh >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        delimiter ${LOGFILE} "ps-sched.sh"
+        ps-sched.sh >> ${LOGFILE}
+    fi
+
+    # Collect process, thread and scheduling, and elapsed time
+    # This has everything that ps-sched.sh does, except for cpu affinity mask,
+    # adds:  stime,etime,time,wchan,tty).  
+    delimiter ${LOGFILE} "ps -eL -o pid,lwp,ppid,state,class,nice,rtprio,priority,psr,stime,etime,time,wchan:16,tty,comm,command"
+    ps -eL -o pid,lwp,ppid,state,class,nice,rtprio,priority,psr,stime,etime,time,wchan:16,tty,comm,command >> ${LOGFILE}
+
+    # Various host attributes
+    LOGFILE="${EXTRA_DIR}/host.info"
+    echo    "${hostname}: Host Info .........: ${LOGFILE}"
+
+    # CGCS build info
+    delimiter ${LOGFILE} "${BUILD_INFO_CMD}"
+    ${BUILD_INFO_CMD} >> ${LOGFILE}
+
+    delimiter ${LOGFILE} "uptime"
+    uptime >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "cat /proc/cmdline"
+    cat /proc/cmdline >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "cat /proc/version"
+    cat /proc/version >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "cat /proc/cpuinfo"
+    cat /proc/cpuinfo >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "ip addr show"
+    ip addr show >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "lspci -nn"
+    lspci -nn >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "find /sys/kernel/iommu_groups/ -type l"
+    find /sys/kernel/iommu_groups/ -type l >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # networking totals
+    delimiter ${LOGFILE} "cat /proc/net/dev"
+    cat /proc/net/dev >> ${LOGFILE}
+
+    delimiter ${LOGFILE} "dmidecode"
+    dmidecode >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # summary of scheduler tunable settings
+    delimiter ${LOGFILE} "cat /proc/sched_debug | head -15"
+    cat /proc/sched_debug | head -15 >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    if [ "${SKIP_MASK}" = "true" ]; then
+        delimiter ${LOGFILE} "facter (excluding ssh info)"
+        facter | grep -iv '^ssh' >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+    else
+        delimiter ${LOGFILE} "facter"
+        facter >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+    fi
+
+    if [[ "$nodetype" == "compute" || "$subfunction" == *"compute"* ]] ; then
+        delimiter ${LOGFILE} "topology"
+        topology >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+    fi
+
+    LOGFILE="${EXTRA_DIR}/memory.info"
+    echo    "${hostname}: Memory Info .......: ${LOGFILE}"
+
+    delimiter ${LOGFILE} "cat /proc/meminfo"
+    cat /proc/meminfo >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "cat /sys/devices/system/node/node?/meminfo"
+    cat /sys/devices/system/node/node?/meminfo >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "cat /proc/slabinfo"
+    log_slabinfo ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "ps -e -o ppid,pid,nlwp,rss:10,vsz:10,cmd --sort=-rss"
+    ps -e -o ppid,pid,nlwp,rss:10,vsz:10,cmd --sort=-rss >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # mounted hugepages
+    delimiter ${LOGFILE} "lsof | grep /mnt/huge"
+    lsof | awk '($3 !~ /^[0-9]+$/ && /\/mnt\/huge/) || NR==1 {print $0;}' >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # hugepages numa mapping
+    delimiter ${LOGFILE} "grep huge /proc/*/numa_maps"
+    grep -e " huge " /proc/*/numa_maps >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # rootfs and tmpfs usage
+    delimiter ${LOGFILE} "df -h -H -T --local -t rootfs -t tmpfs"
+    df -h -H -T --local -t rootfs -t tmpfs >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    LOGFILE="${EXTRA_DIR}/filesystem.info"
+    echo    "${hostname}: Filesystem Info ...: ${LOGFILE}"
+
+    # disk inodes usage
+    delimiter ${LOGFILE} "df -h -H -T --local -t rootfs -t tmpfs"
+    df -h -H -T --local -t rootfs -t tmpfs >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # disk space usage
+    delimiter ${LOGFILE} "df -h -H -T --local -t ext2 -t ext3 -t ext4 -t xfs --total"
+    df -h -H -T --local -t ext2 -t ext3 -t ext4 -t xfs --total >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # disk inodes usage
+    delimiter ${LOGFILE} "df -h -H -T --local -i -t ext2 -t ext3 -t ext4 -t xfs --total"
+    df -h -H -T --local -i -t ext2 -t ext3 -t ext4 -t xfs --total >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # disks by-path values
+    delimiter ${LOGFILE} "ls -lR /dev/disk"
+    ls -lR /dev/disk >> ${LOGFILE}
+
+    # disk summary (requires sudo/root)
+    delimiter ${LOGFILE} "fdisk -l"
+    fdisk -l >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "cat /proc/scsi/scsi"
+    cat /proc/scsi/scsi >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # Controller specific stuff
+    if [ "$nodetype" = "controller" ] ; then
+
+        delimiter ${LOGFILE} "cat /proc/drbd"
+        cat /proc/drbd >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+        delimiter ${LOGFILE} "/sbin/drbdadm dump"
+        /sbin/drbdadm dump >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    fi
+
+    # LVM summary
+    delimiter ${LOGFILE} "/usr/sbin/vgs --version ; /usr/sbin/pvs --version ; /usr/sbin/lvs --version"
+    /usr/sbin/vgs --version >> ${LOGFILE}
+    /usr/sbin/pvs --version >> ${LOGFILE}
+    /usr/sbin/lvs --version >> ${LOGFILE}
+
+    delimiter ${LOGFILE} "/usr/sbin/vgs --all --options all"
+    /usr/sbin/vgs --all --options all >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "/usr/sbin/pvs --all --options all"
+    /usr/sbin/pvs --all --options all >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "/usr/sbin/lvs --all --options all"
+    /usr/sbin/lvs --all --options all >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # iSCSI Information
+    LOGFILE="${EXTRA_DIR}/iscsi.info"
+    echo    "${hostname}: iSCSI Information ......: ${LOGFILE}"
+
+    if [ "$nodetype" = "controller" ] ; then
+        # Controller- LIO exported initiators summary
+        delimiter ${LOGFILE} "targetcli ls"
+        targetcli ls >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+        # Controller - LIO sessions
+        delimiter ${LOGFILE} "targetcli sessions detail"
+        targetcli sessions detail >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    elif [[ "$nodetype" == "compute" || "$subfunction" == *"compute"* ]] ; then
+        # Compute - iSCSI initiator information
+        collect_dir=${EXTRA_DIR}/iscsi_initiator_info
+        mkdir -p ${collect_dir}
+        cp -rf /run/iscsi-cache/nodes/* ${collect_dir}
+        find ${collect_dir} -type d -exec chmod 750 {} \;
+
+        # Compute - iSCSI initiator active sessions
+        delimiter ${LOGFILE} "iscsiadm -m session"
+        iscsiadm -m session >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+        # Compute - iSCSI udev created nodes
+        delimiter  ${LOGFILE} "ls -la /dev/disk/by-path | grep \"iqn\""
+        ls -la /dev/disk/by-path | grep "iqn" >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+    fi
+
+    LOGFILE="${EXTRA_DIR}/history.info"
+    echo    "${hostname}: Bash History ......: ${LOGFILE}"
+
+    # history
+    delimiter ${LOGFILE} "cat /home/wrsroot/.bash_history"
+    cat /home/wrsroot/.bash_history >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    LOGFILE="${EXTRA_DIR}/interrupt.info"
+    echo    "${hostname}: Interrupt Info ....: ${LOGFILE}"
+
+    # interrupts
+    delimiter ${LOGFILE} "cat /proc/interrupts"
+    cat /proc/interrupts >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    delimiter ${LOGFILE} "cat /proc/softirqs"
+    cat /proc/softirqs >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # Controller specific stuff
+    if [ "$nodetype" = "controller" ] ; then
+        netstat -pan > ${EXTRA_DIR}/netstat.info
+    fi
+
+    LOGFILE="${EXTRA_DIR}/blockdev.info"
+    echo    "${hostname}: Block Devices Info : ${LOGFILE}"
+
+    # Collect block devices - show all sda and cinder devices, and size
+    delimiter ${LOGFILE} "lsblk"
+    lsblk >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # Collect block device topology - show devices and which io-scheduler
+    delimiter ${LOGFILE} "lsblk --topology"
+    lsblk --topology >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+
+    # Collect SCSI devices - show devices and cinder attaches, etc
+    delimiter ${LOGFILE} "lsblk --scsi"
+    lsblk --scsi >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+}
+
+log_space "before collect ......:"
+
+collect_extra
+collect_parts
+
+#
+# handle collect collect-after and collect-range and then
+# in elif clause collect-before
+#
+VAR_LOG="/var/log"
+if [ -e /www/var/log ]; then
+	VAR_LOG="$VAR_LOG /www/var/log"
+fi
+
+rm -f ${VAR_LOG_INCLUDE_LIST}
+
+if [ "${STARTDATE_RANGE}" == true ] ; then
+    if [ "${ENDDATE_RANGE}" == false ] ; then
+        ilog "collecting $VAR_LOG files containing logs after ${STARTDATE}"
+        ${COLLECT_DATE} ${STARTDATE} ${ENDDATE} ${VAR_LOG_INCLUDE_LIST} ${DEBUG} ""
+    else
+        ilog "collecting $VAR_LOG files containing logs between ${STARTDATE} and ${ENDDATE}"
+        ${COLLECT_DATE} ${STARTDATE} ${ENDDATE} ${VAR_LOG_INCLUDE_LIST} ${DEBUG} ""
+    fi
+elif [ "${ENDDATE_RANGE}" == true ] ; then
+    STARTDATE="20130101"
+    ilog "collecting $VAR_LOG files containing logs before ${ENDDATE}"
+    ${COLLECT_DATE} ${STARTDATE} ${ENDDATE} ${VAR_LOG_INCLUDE_LIST} ${DEBUG} ""
+else
+    ilog "collecting all of $VAR_LOG"
+    find $VAR_LOG ! -empty > ${VAR_LOG_INCLUDE_LIST}
+fi
+
+# Add VM console.log
+for i in /etc/nova/instances/*/console.log; do
+    if [ -e "$i" ]; then
+        tmp=`dirname $i`
+        mkdir -p ${COLLECT_NAME_DIR}/$tmp
+        cp $i ${COLLECT_NAME_DIR}/$tmp
+    fi
+done
+
+log_space "before first tar ....:"
+
+(cd ${COLLECT_NAME_DIR} ; ${IONICE_CMD} ${NICE_CMD}   ${TAR_CMD} ${COLLECT_NAME_DIR}/${COLLECT_NAME}.tar -T ${VAR_LOG_INCLUDE_LIST} -X ${RUN_EXCLUDE} -X ${ETC_EXCLUDE} ${COLLECT_INCLUDE} 2>>${COLLECT_ERROR_LOG} 1>>${COLLECT_ERROR_LOG} )
+
+log_space "after first tar .....:"
+
+(cd ${COLLECT_NAME_DIR} ; ${IONICE_CMD} ${NICE_CMD} ${UNTAR_CMD} ${COLLECT_NAME_DIR}/${COLLECT_NAME}.tar 2>>${COLLECT_ERROR_LOG} 1>>${COLLECT_ERROR_LOG} )
+
+log_space "after first untar ...:"
+
+rm -f ${COLLECT_NAME_DIR}/${COLLECT_NAME}.tar
+
+log_space "after delete tar ....:"
+
+if [ "${SKIP_MASK}" != "true" ]; then
+    # Run password masking before final tar
+    dlog "running /usr/local/sbin/collect_mask_passwords ${COLLECT_NAME_DIR} ${EXTRA_DIR}"
+    /usr/local/sbin/collect_mask_passwords ${COLLECT_NAME_DIR} ${EXTRA_DIR}
+    log_space "after passwd masking :"
+fi
+
+(cd ${COLLECT_BASE_DIR} ; ${IONICE_CMD} ${NICE_CMD} ${TAR_ZIP_CMD} ${COLLECT_NAME_DIR}.tgz ${COLLECT_NAME} 2>/dev/null 1>/dev/null )
+
+log_space "after first tarball .:"
+
+mkdir -p ${COLLECT_NAME_DIR}/${FLIGHT_RECORDER_PATH}
+
+(cd /${FLIGHT_RECORDER_PATH} ; ${TAR_ZIP_CMD} ${COLLECT_NAME_DIR}/${FLIGHT_RECORDER_PATH}/${FLIGHT_RECORDER_FILE}.tgz ./${FLIGHT_RECORDER_FILE} 2>>${COLLECT_ERROR_LOG} 1>>${COLLECT_ERROR_LOG})
+
+# Pull in an updated user.log which contains the most recent collect logs
+# ... be sure to exclude any out of space logs
+tail -30 /var/log/user.log | grep "COLLECT:" | grep -v "${FAIL_OUT_OF_SPACE_STR}" >> ${COLLECT_ERROR_LOG}
+cp -a ${COLLECT_LOG} ${COLLECT_LOG}.last
+cp -a ${COLLECT_ERROR_LOG} ${COLLECT_LOG}
+cp -a ${COLLECT_LOG}  ${COLLECT_NAME_DIR}/var/log
+
+log_space "with flight data ....:"
+
+(cd ${COLLECT_BASE_DIR} ; ${IONICE_CMD} ${NICE_CMD} ${TAR_ZIP_CMD} ${COLLECT_NAME_DIR}.tgz ${COLLECT_NAME} 2>>${COLLECT_ERROR_LOG} 1>>${COLLECT_ERROR_LOG} )
+
+log_space "after collect .......:"
+
+rm -rf ${COLLECT_NAME_DIR}
+rm -f ${VAR_LOG_INCLUDE_LIST}
+
+log_space "after cleanup .......:"
+
+# Check for collect errors
+# Only out of space error is enough to fail this hosts's collect
+collect_errors ${HOSTNAME}
+RC=${?}
+
+rm -f ${COLLECT_ERROR_LOG}
+
+if [ ${RC} -ne 0 ] ; then
+    rm -f ${COLLECT_NAME_DIR}.tgz
+    ilog "${FAIL_OUT_OF_SPACE_STR} ${COLLECT_BASE_DIR}"
+else
+    ilog "collect of ${COLLECT_NAME_DIR}.tgz succeeded"
+    echo "${collect_done}"
+fi
