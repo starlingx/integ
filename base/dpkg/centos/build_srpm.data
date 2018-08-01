@@ -1,0 +1,2 @@
+COPY_LIST="$CGCS_BASE/downloads/dpkg_1.18.24.tar.xz"
+TIS_PATCH_VER=1

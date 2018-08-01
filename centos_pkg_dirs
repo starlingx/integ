@@ -126,3 +126,4 @@ kernel/kernel-modules/tpmdd
 kernel/kernel-modules/integrity
 kernel/kernel-modules/drbd
 base/rpm
+base/dpkg

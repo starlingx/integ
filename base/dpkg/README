@@ -1,0 +1,4 @@
+Many Titanium Cloud init services are using start-stop-daemon.  It's not available under
+centos.  Just pull it from dpkg but don't install everything.
+
+Source: http://ftp.de.debian.org/debian/pool/main/d/dpkg/
