@@ -1,0 +1,26 @@
+Index: drbd-8.3.11/scripts/drbd.ocf
+===================================================================
+--- drbd-8.3.11.orig/scripts/drbd.ocf
++++ drbd-8.3.11/scripts/drbd.ocf
+@@ -202,13 +202,17 @@ do_drbdadm() {
+ }
+
+ set_master_score() {
+-	# Use quiet mode (-Q) to quench logging. Actual score updates
+-	# will get logged by attrd anyway
+-	do_cmd ${HA_SBIN_DIR}/crm_master -Q -l reboot -v $1
++	if [ -x ${HA_SBIN_DIR}/crm_master ]; then
++		# Use quiet mode (-Q) to quench logging. Actual score updates
++		# will get logged by attrd anyway
++		do_cmd ${HA_SBIN_DIR}/crm_master -Q -l reboot -v $1
++	fi
+ }
+
+ remove_master_score() {
+-	do_cmd ${HA_SBIN_DIR}/crm_master -l reboot -D
++	if [ -x ${HA_SBIN_DIR}/crm_master ]; then
++		do_cmd ${HA_SBIN_DIR}/crm_master -l reboot -D
++	fi
+ }
+
+ _sh_status_process() {

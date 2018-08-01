@@ -136,3 +136,4 @@ base/netpbm
 filesystem/iscsi-initiator-utils
 ldap/ldapscripts
 networking/net-tools
+filesystem/drbd/drbd-tools
