@@ -132,3 +132,4 @@ base/cluster-resource-agents
 base/libfdt
 base/bash
 base/haproxy
+base/netpbm

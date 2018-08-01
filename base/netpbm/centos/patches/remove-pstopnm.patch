@@ -1,0 +1,25 @@
+diff --git a/netpbm-10.61.02/converter/other/Makefile b/netpbm-10.61.02/converter/other/Makefile
+index 746db87..02c66b4 100644
+--- a/netpbm-10.61.02/converter/other/Makefile
++++ b/netpbm-10.61.02/converter/other/Makefile
+@@ -7,6 +7,7 @@ VPATH=.:$(SRCDIR)/$(SUBDIR)
+ 
+ include $(BUILDDIR)/config.mk
+ 
++USE_GHOSTSCRIPT=N
+ TEST_PKGCONFIG_LIBXML2 = if pkg-config libxml-2.0; then echo exists; fi
+ 
+ ifneq ($(shell $(TEST_PKGCONFIG_LIBXML2)),)
+@@ -134,10 +135,12 @@ BINARIES = \
+   rasttopnm \
+   srftopam \
+ 
++ifneq ($(USE_GHOSTSCRIPT),N)
+ ifneq ($(DONT_HAVE_PROCESS_MGMT),Y)
+   PORTBINARIES += pstopnm
+   BINARIES += pnmtops
+ endif
++endif
+ 
+ ifeq ($(HAVE_PNGLIB),Y)
+   BINARIES += pnmtopng pngtopam pamrgbatopng

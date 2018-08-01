@@ -1,0 +1,29 @@
+diff --git a/SPECS/netpbm.spec b/SPECS/netpbm.spec
+index c0a2d27..c10c448 100644
+--- a/SPECS/netpbm.spec
++++ b/SPECS/netpbm.spec
+@@ -40,6 +40,7 @@ Patch28: netpbm-compare-same-images.patch
+ Patch29: netpbm-manual-pages.patch
+ Patch30: netpbm-pnmtops-hangs.patch
+ Patch31: netpbm-pgmtexture-fault.patch
++Patch32: remove-pstopnm.patch
+ BuildRequires: libjpeg-devel, libpng-devel, libtiff-devel, flex
+ BuildRequires: libX11-devel, python, jasper-devel, libxml2-devel
+ 
+@@ -66,7 +67,6 @@ to have the netpbm package installed.
+ %package progs
+ Summary: Tools for manipulating graphics files in netpbm supported formats
+ Group: Applications/Multimedia
+-Requires: ghostscript
+ Requires: netpbm = %{version}-%{release}
+ 
+ %description progs
+
+@@ -120,6 +120,7 @@ netpbm-doc.  You'll also need to install the netpbm-progs package.
+ %patch29 -p1 -b .manual-pages
+ %patch30 -p1 -b .pnmtops-hangs
+ %patch31 -p1 -b .pgmtexture-fault
++%patch32 -p1
+
+ sed -i 's/STRIPFLAG = -s/STRIPFLAG =/g' config.mk.in
+ rm -rf converter/other/jpeg2000/libjasper/
