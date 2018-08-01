@@ -141,3 +141,4 @@ database/mariadb
 networking/iptables
 database/python-psycopg2
 base/crontabs
+base/dnsmasq
