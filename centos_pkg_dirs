@@ -107,3 +107,4 @@ monitoring/influxdb-extensions
 kubernetes/kubernetes
 kubernetes/docker-distribution
 kubernetes/helm
+logging/logmgmt
