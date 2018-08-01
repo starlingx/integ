@@ -1,0 +1,33 @@
+From 057decd3b529f9bea96cf4071ae206c4dddc871c Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 15:11:59 -0400
+Subject: [PATCH 04/10] WRS:
+ spec-notify-rmon-of-shutdown-before-shutting-down.patch
+
+---
+ SPECS/resource-agents.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
+index ba7af5b..28b6e50 100644
+--- a/SPECS/resource-agents.spec
++++ b/SPECS/resource-agents.spec
+@@ -246,6 +246,7 @@ Patch1110: lvm_vg_activation.patch
+ Patch1111: pgsql.patch
+ 
+ Patch1113: create-var-run-resource-agents.patch
++Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
+ 
+ Obsoletes:	heartbeat-resources <= %{version}
+ Provides:	heartbeat-resources = %{version}
+@@ -549,6 +550,7 @@ exit 1
+ %patch1111 -p1
+ 
+ %patch1113 -p1
++%patch1114 -p1
+ 
+ %build
+ if [ ! -f configure ]; then
+-- 
+1.9.1
+

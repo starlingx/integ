@@ -1,0 +1,32 @@
+From 80e779cf7c6f667ccca0d91c13229520649e2920 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 15:11:59 -0400
+Subject: [PATCH 06/10] WRS: spec-include-tis-logtag-patch.patch
+
+---
+ SPECS/resource-agents.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
+index 832d588..e3a7ce1 100644
+--- a/SPECS/resource-agents.spec
++++ b/SPECS/resource-agents.spec
+@@ -248,6 +248,7 @@ Patch1111: pgsql.patch
+ Patch1113: create-var-run-resource-agents.patch
+ Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
+ Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
++Patch1116: ocf-shellfuncs_change_logtag.patch
+ 
+ Obsoletes:	heartbeat-resources <= %{version}
+ Provides:	heartbeat-resources = %{version}
+@@ -553,6 +554,7 @@ exit 1
+ %patch1113 -p1
+ %patch1114 -p1
+ %patch1115 -p1
++%patch1116 -p1
+ 
+ %build
+ if [ ! -f configure ]; then
+-- 
+1.9.1
+

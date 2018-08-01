@@ -1,0 +1,12 @@
+spec-include-TiS-patches.patch
+spec-avoid-dir-collisions.patch
+spec-add-create-var-run-resource-agents.patch
+spec-notify-rmon-of-shutdown-before-shutting-down.patch
+Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
+spec-include-tis-logtag-patch.patch
+spec-lvm-cleanup-refs-on-stop.patch
+0001-Update-package-versioning-for-TIS-format.patch
+ipaddr2-if-down.patch
+spec-add-ipaddr2-ignore-lo-state.patch
+Modify-error-code-of-bz1454699-fix-to-prevent-inactive-controller-reboot-loop.patch
+Disable-creation-of-the-debug-package.patch

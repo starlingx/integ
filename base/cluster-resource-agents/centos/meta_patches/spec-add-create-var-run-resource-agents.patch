@@ -1,0 +1,32 @@
+From bc7c08fdf1a415af73757a4fc86e5c35fe9ab3f8 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 15:11:59 -0400
+Subject: [PATCH 03/10] WRS: spec-add-create-var-run-resource-agents.patch
+
+---
+ SPECS/resource-agents.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
+index 52c3c93..ba7af5b 100644
+--- a/SPECS/resource-agents.spec
++++ b/SPECS/resource-agents.spec
+@@ -245,6 +245,7 @@ Patch1109:  umount-in-namespace.patch
+ Patch1110: lvm_vg_activation.patch
+ Patch1111: pgsql.patch
+ 
++Patch1113: create-var-run-resource-agents.patch
+ 
+ Obsoletes:	heartbeat-resources <= %{version}
+ Provides:	heartbeat-resources = %{version}
+@@ -547,6 +548,7 @@ exit 1
+ %patch1110 -p1
+ %patch1111 -p1
+ 
++%patch1113 -p1
+ 
+ %build
+ if [ ! -f configure ]; then
+-- 
+1.9.1
+

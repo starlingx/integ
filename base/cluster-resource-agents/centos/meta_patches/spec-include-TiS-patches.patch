@@ -1,0 +1,50 @@
+From 8d7740777cbbcdfa00f3e12b7e292aca2b696137 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 15:11:58 -0400
+Subject: [PATCH 01/10] WRS: spec-include-TiS-patches.patch
+
+---
+ SPECS/resource-agents.spec | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
+index db6b69c..453398a 100644
+--- a/SPECS/resource-agents.spec
++++ b/SPECS/resource-agents.spec
+@@ -236,6 +236,16 @@ Patch175:	bz1449681-2-saphana-saphanatopology-update-0.152.21.patch
+ Patch176:	bz1342376-2-rabbitmq-cluster-backup-and-restore-users-policies.patch
+ Patch177:	bz1342376-3-rabbitmq-cluster-backup-and-restore-users-policies.patch
+ 
++# WRS
++Patch1105:  filesystem_rmon.patch
++Patch1106:  new_ocf_return_codes.patch
++Patch1107:  ipaddr2_check_if_state.patch
++Patch1108:  copyright.patch
++Patch1109:  umount-in-namespace.patch
++Patch1110: lvm_vg_activation.patch
++Patch1111: pgsql.patch
++
++
+ Obsoletes:	heartbeat-resources <= %{version}
+ Provides:	heartbeat-resources = %{version}
+ 
+@@ -528,6 +538,16 @@ exit 1
+ %patch176 -p1
+ %patch177 -p1
+ 
++# WRS
++%patch1105 -p1
++%patch1106 -p1
++%patch1107 -p1
++%patch1108 -p1
++%patch1109 -p1
++%patch1110 -p1
++%patch1111 -p1
++
++
+ %build
+ if [ ! -f configure ]; then
+ 	./autogen.sh
+-- 
+1.9.1
+

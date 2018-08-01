@@ -1,0 +1,28 @@
+From 3b5735f43d0ca1a3ca29b9fec50959340c21c995 Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Thu, 25 Aug 2016 13:07:16 -0400
+Subject: [PATCH 1/1] Set OCF_ prefix in logs for syslog destination sorting
+
+---
+ heartbeat/ocf-shellfuncs.in | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/heartbeat/ocf-shellfuncs.in b/heartbeat/ocf-shellfuncs.in
+index 56f01e6..cfe5b21 100644
+--- a/heartbeat/ocf-shellfuncs.in
++++ b/heartbeat/ocf-shellfuncs.in
+@@ -179,9 +179,9 @@ hadate() {
+ set_logtag() {
+ 	if [ -z "$HA_LOGTAG" ]; then
+ 		if [ -n "$OCF_RESOURCE_INSTANCE" ]; then
+-			HA_LOGTAG="$__SCRIPT_NAME($OCF_RESOURCE_INSTANCE)[$$]"
++			HA_LOGTAG="OCF_$__SCRIPT_NAME($OCF_RESOURCE_INSTANCE)[$$]"
+ 		else
+-			HA_LOGTAG="$__SCRIPT_NAME[$$]"
++			HA_LOGTAG="OCF_$__SCRIPT_NAME[$$]"
+ 		fi
+ 	fi
+ }
+-- 
+1.9.1
+

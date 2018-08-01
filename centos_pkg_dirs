@@ -128,3 +128,4 @@ kernel/kernel-modules/drbd
 base/rpm
 base/dpkg
 base/cgcs-users
+base/cluster-resource-agents
