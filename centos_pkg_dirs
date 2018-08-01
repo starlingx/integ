@@ -115,3 +115,4 @@ tools/collector
 grub/grubby
 utilities/platform-util
 tools/monitor-tools
+tools/engtools/hostdata-collectors

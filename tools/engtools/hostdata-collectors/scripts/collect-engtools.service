@@ -1,0 +1,14 @@
+[Unit]
+Description=Engineering data collection tools to monitor host performance
+After=network.service
+
+[Service]
+Type=forking
+ExecStart=/etc/init.d/collect-engtools.sh start
+ExecStop=/etc/init.d/collect-engtools.sh stop
+ExecReload=/etc/init.d/collect-engtools.sh reload
+PIDFile=/var/run/collect-engtools.sh.pid
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
