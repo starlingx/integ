@@ -10,3 +10,4 @@ kernel/kernel-modules/intel-ixgbe
 kernel/kernel-modules/qat17
 kernel/kernel-modules/tpmdd
 kernel/kernel-modules/integrity
+kernel/kernel-modules/drbd
