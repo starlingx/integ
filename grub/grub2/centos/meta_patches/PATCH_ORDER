@@ -1,0 +1,5 @@
+0001-grub2-Update-package-versioning-for-TIS-format.patch
+0002-1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
+0003-grub2-Build-unsigned-package.patch
+0004-grub2-Build-pxeboot-package.patch
+0005-add-tboot.patch

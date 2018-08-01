@@ -145,3 +145,4 @@ base/dnsmasq
 base/rsync
 filesystem/parted
 security/python-keyring
+grub/grub2
