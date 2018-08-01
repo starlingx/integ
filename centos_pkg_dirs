@@ -139,3 +139,4 @@ networking/net-tools
 filesystem/drbd/drbd-tools
 database/mariadb
 networking/iptables
+database/python-psycopg2
