@@ -1,0 +1,25 @@
+From dbe4403d95cb18d9857bc53420d293e5be1f3fd6 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 16:05:36 -0400
+Subject: [PATCH 3/3] WRS: 0001-Further-parallelize-bash-build.patch
+
+---
+ SPECS/bash.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/bash.spec b/SPECS/bash.spec
+index 115d540..5e688c1 100644
+--- a/SPECS/bash.spec
++++ b/SPECS/bash.spec
+@@ -341,7 +341,7 @@ autoconf
+ # Recycles pids is neccessary. When bash's last fork's pid was X
+ # and new fork's pid is also X, bash has to wait for this same pid.
+ # Without Recycles pids bash will not wait.
+-make "CPPFLAGS=-D_GNU_SOURCE -DRECYCLES_PIDS -DDEFAULT_PATH_VALUE='\"/usr/local/bin:/usr/bin\"' `getconf LFS_CFLAGS`"
++make -j"%(nprocs)" "CPPFLAGS=-D_GNU_SOURCE -DRECYCLES_PIDS -DDEFAULT_PATH_VALUE='\"/usr/local/bin:/usr/bin\"' `getconf LFS_CFLAGS`"
+ 
+ %install
+ rm -rf $RPM_BUILD_ROOT
+-- 
+1.9.1
+
