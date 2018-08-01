@@ -1,0 +1,39 @@
+From 24d92c7a7730e71bac4182df53d5fd6f4d7d6957 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 16:42:22 -0400
+Subject: [PATCH 1/2] WRS: spec-to-include-TiS-patches.patch
+
+Conflicts:
+	SPECS/net-tools.spec
+---
+ SPECS/net-tools.spec | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/SPECS/net-tools.spec b/SPECS/net-tools.spec
+index 2ee770e..2f09372 100644
+--- a/SPECS/net-tools.spec
++++ b/SPECS/net-tools.spec
+@@ -65,6 +65,10 @@ Patch23: net-tools-ifconfig-EiB.patch
+ # sctp was not documented in help and manpage
+ Patch24: net-tools-netstat-sctp-man.patch
+ 
++# WindRiver patches
++Patch100: net-tools-hostname-ipv6-shortname.patch
++Patch101: net-tools-ifconfig-no-ifstate-on-flush.patch
++
+ BuildRequires: gettext, libselinux
+ BuildRequires: libselinux-devel
+ BuildRequires: systemd-units
+@@ -103,6 +107,9 @@ cp %SOURCE8 ./man/en_US
+ %patch23 -p1 -b .round-EiB
+ %patch24 -p1 -b .sctp-man
+ 
++%patch100 -p1 -b .hostname-ipv6
++%patch101 -p1 -b .ifconfig-no-ifstate-on-flush
++
+ touch ./config.h
+ 
+ %build
+-- 
+1.9.1
+

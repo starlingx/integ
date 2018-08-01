@@ -1,0 +1,29 @@
+From c8c0e58c037b4183672666be22782d96d0fc3267 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 16:42:25 -0400
+Subject: [PATCH 2/2] WRS: Patch23:
+ net-tools-ifconfig-no-ifstate-on-flush.patch
+
+---
+ ifconfig.c                              |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/ifconfig.c b/ifconfig.c
+index df9793a..ebdc1a1 100644
+--- a/ifconfig.c
++++ b/ifconfig.c
+@@ -982,6 +982,11 @@ int main(int argc, char **argv)
+ 		    exit(1);
+ 		}
+ 		r = ioctl(fd, SIOCSIFADDR, &ifr);
++		if (((struct sockaddr_in*)&sa)->sin_addr.s_addr == INADDR_ANY) {
++		   /* do not continue to change interface state if only flushing addresses */
++		   spp++;
++		   continue;
++		}
+ 		break;
+ #endif
+ #if HAVE_AFECONET
+-- 
+1.9.1
+
