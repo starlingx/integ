@@ -1,0 +1,4 @@
+COPY_LIST="$CGCS_BASE/downloads/mariadb-10.1.28.tar.gz $PKG_BASE/centos/files/*"
+TIS_PATCH_VER=15
+BUILD_IS_BIG=7
+BUILD_IS_SLOW=19
