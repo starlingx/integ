@@ -1,0 +1,42 @@
+From 996bdb87cbaab4d8f498ec7897c38bc9d19e29e7 Mon Sep 17 00:00:00 2001
+Message-Id: <996bdb87cbaab4d8f498ec7897c38bc9d19e29e7.1511969785.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Wed, 29 Nov 2017 10:36:12 -0500
+Subject: [PATCH 1/1] Get and report the return code on firmware load failure
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ .../qat/drivers/crypto/qat/qat_common/adf_accel_engine.c       | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c
+index 6d96fd6..522cbf0 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c
+@@ -57,6 +57,7 @@ int adf_ae_fw_load(struct adf_accel_dev *accel_dev)
+ 	struct adf_hw_device_data *hw_device = accel_dev->hw_device;
+ 	void *uof_addr, *mmp_addr;
+ 	u32 uof_size, mmp_size;
++	int rc;
+ #ifdef QAT_UIO
+ 	struct adf_accel_pci *pci_info = &accel_dev->accel_pci_dev;
+ 	unsigned long storage_enabled = 0;
+@@ -72,10 +73,11 @@ int adf_ae_fw_load(struct adf_accel_dev *accel_dev)
+ 	if (!hw_device->fw_name)
+ 		return 0;
+ 
+-	if (request_firmware(&loader_data->mmp_fw, hw_device->fw_mmp_name,
+-			     &accel_dev->accel_pci_dev.pci_dev->dev)) {
+-		dev_err(&GET_DEV(accel_dev), "Failed to load MMP firmware %s\n",
+-			hw_device->fw_mmp_name);
++	rc = request_firmware(&loader_data->mmp_fw, hw_device->fw_mmp_name,
++			     &accel_dev->accel_pci_dev.pci_dev->dev);
++	if (rc) {
++		dev_err(&GET_DEV(accel_dev), "Failed to load MMP firmware %s rc=%d\n",
++			hw_device->fw_mmp_name, rc);
+ 		return -EFAULT;
+ 	}
+ 	if (request_firmware(&loader_data->uof_fw, hw_device->fw_name,
+-- 
+1.8.3.1
+

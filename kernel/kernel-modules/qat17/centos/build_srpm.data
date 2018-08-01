@@ -1,0 +1,6 @@
+COPY_LIST=" \
+  $CGCS_BASE/mwa-gplv2/qat17/files/* \
+  $CGCS_BASE/downloads/qat1.7.upstream.l.1.0.3-42.tar.gz \
+"
+TIS_PATCH_VER=4
+BUILD_IS_SLOW=3

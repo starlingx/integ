@@ -1,0 +1,320 @@
+#!/bin/bash
+#################################################################
+#
+#   BSD LICENSE
+# 
+#   Copyright(c) 2007-2016 Intel Corporation. All rights reserved.
+#   All rights reserved.
+# 
+#   Redistribution and use in source and binary forms, with or without 
+#   modification, are permitted provided that the following conditions 
+#   are met:
+# 
+#     * Redistributions of source code must retain the above copyright 
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright 
+#       notice, this list of conditions and the following disclaimer in 
+#       the documentation and/or other materials provided with the 
+#       distribution.
+#     * Neither the name of Intel Corporation nor the names of its 
+#       contributors may be used to endorse or promote products derived 
+#       from this software without specific prior written permission.
+# 
+#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+#   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+#   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
+#   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+#   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+#   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+#   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+#   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
+#   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+#   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+#   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+#  version: QAT1.7.Upstream.L.1.0.3-42
+#
+#################################################################
+#
+### BEGIN INIT INFO
+# Provides: QAT
+# Required-Start: $ALL
+# Required-Stop:
+# Default-Start: 2 3 5
+# Default-Stop: 0 1 4 6
+# Description:  Intel QAT service
+### END INIT INFO
+#
+# qat_service          Start/Stop the Intel QAT.
+#
+# chkconfig: 345 99 99
+# description: modprobe the QAT modules, which loads dependant \
+#       modules, before calling the user space \
+#       utility to pass configuration parameters
+
+usage() {
+echo
+echo --------------------------------------------------------
+echo USAGE:
+echo --------------------------------------------------------
+echo "#  $0 start||stop||status||restart||shutdown"
+echo --------------------------------------------------------
+echo " Note: If there is more devices in the system"
+echo " you can start, stop or restart separate device by "
+echo " passing the dev to be restarted or stopped as a"
+echo " parameter for instance: "
+echo " $0 stop qat_dev<N>"
+echo " where N is device number."
+echo " To see all devices in the system use:"
+echo " $0 status"
+echo --------------------------------------------------------
+exit 1
+}
+
+inventory_the_devices() {
+    # dynamically inventory the devices by looking at the pci bus
+    # store the total number of each type of device seen
+    numDh895xDevicesPF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${DH895_DEVICE_PCI_ID}")
+    numDh895xDevicesVF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${DH895_DEVICE_PCI_ID_VM}")
+    numC62xDevicesPF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${C62X_DEVICE_PCI_ID}")
+    numC62xDevicesVF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${C62X_DEVICE_PCI_ID_VM}")
+    numC3xxDevicesPF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${C3XX_DEVICE_PCI_ID}")
+    numC3xxDevicesVF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${C3XX_DEVICE_PCI_ID_VM}")
+    numD15xxDevicesPF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${D15XX_DEVICE_PCI_ID}")
+    numD15xxDevicesVF=$(lspci -n | egrep -c "${INTEL_VENDORID}:${D15XX_DEVICE_PCI_ID_VM}")
+}
+
+enable_sriov() {
+    PF_LIST=`${ADF_CTL} $1 status | grep -e "^ *qat_dev" | grep -v "vf," | awk '{print $1}'`
+
+    for PF_DEV in ${PF_LIST}
+    do
+        # Extract the BSF to build the path to /sys/bus/.../sriov)_numvfs
+        BSF=`${ADF_CTL} ${PF_DEV} status | tail -1 | awk '{print $8}' | awk 'BEGIN{FS=","}{print $1}'`
+        B=`echo ${BSF} | awk 'BEGIN{FS=":"}{print $1}'`
+        SF=`echo ${BSF} | awk 'BEGIN{FS=":"}{print $2}'`
+        S=`echo ${SF} | awk 'BEGIN{FS="."}{print $1}'`
+        F=`echo ${SF} | awk 'BEGIN{FS="."}{print $2}'`
+        SYSFS_DIR=/sys/bus/pci/devices/0000:${B}:${S}.${F}
+
+        if [ ! -e ${SYSFS_DIR}/sriov_numvfs ]; then
+            echo "Cannot enable SRIOV for ${PF_DEV}. No sriov_numvs file"
+            exit 1
+        fi
+
+        NUMVFS=`cat ${SYSFS_DIR}/sriov_numvfs`
+        if [ ${NUMVFS} != 0 ]; then
+            echo "SRIOV is already enabled for ${PF_DEV}"
+            exit 1
+        fi
+
+        cat ${SYSFS_DIR}/sriov_totalvfs > ${SYSFS_DIR}/sriov_numvfs
+        if [ $? != 0 ]; then
+            echo "Could not enable SRIOV for ${PF_DEV}"
+            exit 1;
+        fi
+
+        # Get a list of all the VFs for this PF and bring then down
+        VF_LIST=`${ADF_CTL} status | grep "bsf: ${B}" | grep "vf," | awk '{print $1}'`
+        for VF_DEV in ${VF_LIST}
+        do
+            ${ADF_CTL} ${VF_DEV} down
+        done
+    done
+
+    ${ADF_CTL} up
+}
+
+load_the_required_modules() {
+    # Using the collected inventory, install the modules.  No harm done if already installed.
+    if [ ${numDh895xDevicesPF} != 0 ]; then
+        modprobe qat_dh895xcc
+    fi
+    if [ ${numC62xDevicesPF} != 0 ]; then
+        modprobe qat_c62x
+    fi
+    if [ ${numC3xxDevicesPF} != 0 ]; then
+        modprobe qat_c3xxx
+    fi
+    if [ ${numD15xxDevicesPF} != 0 ]; then
+        modprobe qat_d15xx
+    fi
+    if [ `lsmod | grep "usdm_drv" | wc -l` == "0" ]; then
+        modprobe usdm_drv
+    fi
+    # Loading VF drivers as necessary
+    # The VF devices only appear after SRIOV is enabled on the PF,
+    #  therefore we can't use lspci to determine that the VF driver should be loaded.
+    #  Instead, if we want SRIOV, and we have a specific PF device, then load the driver.
+    if [ ${SRIOV_ENABLE} == 1 ]; then
+        if [ ${numDh895xDevicesPF} != 0 -o ${numDh895xDevicesVF} != 0 ]; then
+            modprobe qat_dh895xccvf
+        fi
+        if [ ${numC62xDevicesPF} != 0 -o ${numC62xDevicesVF} != 0 ]; then
+            modprobe qat_c62xvf
+        fi
+        if [ ${numC3xxDevicesPF} != 0 -o ${numC3xxDevicesVF} != 0 ]; then
+            modprobe qat_c3xxxvf
+        fi
+        if [ ${numD15xxDevicesPF} != 0 -o ${numD15xxDevicesVF} != 0 ]; then
+            modprobe qat_d15xxvf
+        fi
+    fi
+}
+
+copy_in_config_files() {
+    local num_devices=${1}
+    local device_file_prefix=${2}
+    local source_file_suffix="${3}"
+
+    if [ ${num_devices} != 0 ]; then
+        for (( dev=0; dev<${num_devices}; dev++ ))
+        do
+            if [ -e /etc/qat/conf_files/${device_file_prefix}_dev${dev}.conf${source_file_suffix} ]; then
+                cp /etc/qat/conf_files/${device_file_prefix}_dev${dev}.conf${source_file_suffix} /etc/${device_file_prefix}_dev${dev}.conf
+            else
+                echo "QAT: ${device_file_prefix}: using dev0 device config for device ${dev}, settings may be suboptimal"
+                cp /etc/qat/conf_files/${device_file_prefix}_dev0.conf${source_file_suffix} /etc/${device_file_prefix}_dev${dev}.conf
+            fi
+        done
+    fi
+}
+
+establish_the_device_PF_config_files() {
+    copy_in_config_files ${numDh895xDevicesPF} 'dh895xcc' ''
+    copy_in_config_files ${numC62xDevicesPF} 'c6xx' ''
+    copy_in_config_files ${numC3xxDevicesPF} 'c3xxx' ''
+    copy_in_config_files ${numD15xxDevicesPF} 'd15xx' ''
+}
+
+establish_the_device_VF_config_files() {
+    copy_in_config_files $(( ${numDh895xDevicesPF} * ${QAT_DH895XCC_NUM_VFS} )) 'dh895xccvf' '.vm'
+    copy_in_config_files $(( ${numC62xDevicesPF} * ${QAT_DHC62X_NUM_VFS} )) 'c6xxvf' '.vm'
+    copy_in_config_files $(( ${numC3xxDevicesPF} * ${QAT_DHC3XXX_NUM_VFS} )) 'c3xxxvf' '.vm'
+    copy_in_config_files $(( ${numD15xxDevicesPF} * ${QAT_DHD15XX_NUM_VFS} )) 'd15xxvf' '.vm'
+}
+
+establish_the_guest_VF_config_files() {
+    copy_in_config_files ${numDh895xDevicesVF} 'dh895xccvf' '.vm'
+    copy_in_config_files ${numC62xDevicesVF} 'c6xxvf' '.vm'
+    copy_in_config_files ${numC3xxDevicesVF} 'c3xxxvf' '.vm'
+    copy_in_config_files ${numD15xxDevicesVF} 'd15xxvf' '.vm'
+}
+
+###############  Mainline Begins ################
+
+# Set the SRIOV_ENABLE variable by sourcing the qat file
+test -f /etc/default/qat && . /etc/default/qat
+
+INTEL_VENDORID="8086"
+DH895_DEVICE_PCI_ID="0435"
+DH895_DEVICE_PCI_ID_VM="0443"
+C62X_DEVICE_PCI_ID="37c8"
+C62X_DEVICE_PCI_ID_VM="37c9"
+C3XX_DEVICE_PCI_ID="19e2"
+C3XX_DEVICE_PCI_ID_VM="19e3"
+D15XX_DEVICE_PCI_ID="6f54"
+D15XX_DEVICE_PCI_ID_VM="6f55"
+
+QAT_DH895XCC_NUM_VFS=32
+QAT_DHC62X_NUM_VFS=16
+QAT_DHD15XX_NUM_VFS=16
+QAT_DHC3XXX_NUM_VFS=16
+
+ADF_CTL=/usr/sbin/adf_ctl
+
+inventory_the_devices
+
+case $1 in
+  Start|start)
+
+    load_the_required_modules
+
+    # Make sure the devices are off
+    ${ADF_CTL} $2 down
+
+    establish_the_device_PF_config_files
+
+    ${ADF_CTL} $2 status | grep -e "^ *qat_dev" | grep -v vf > /dev/null
+    if [ $? == 0 ]; then
+        PHYS_FUNCTIONS=1
+    else
+        PHYS_FUNCTIONS=0
+    fi
+    ${ADF_CTL} $2 status | grep -e "^ *qat_dev" | grep vf > /dev/null
+    if [ $? == 0 ]; then
+        VIRT_FUNCTIONS=1
+    else
+        VIRT_FUNCTIONS=0
+    fi
+    # Check if sriov should be enabled.
+    if [ ${SRIOV_ENABLE} == 1 ]; then
+        if [ ${PHYS_FUNCTIONS} == 1 ]; then
+            # We have physical functions
+            DO_ENABLE_SRIOV=1
+        else
+            # No physical functions
+            DO_ENABLE_SRIOV=0
+        fi
+    else
+        DO_ENABLE_SRIOV=0
+    fi
+
+    if [ ${DO_ENABLE_SRIOV} == 1 ]; then
+        echo "enabling sriov"
+
+        establish_the_device_VF_config_files
+
+        enable_sriov $2
+    else
+        if [ ${PHYS_FUNCTIONS} == 0 ]; then
+            if [ ${VIRT_FUNCTIONS} == 1 ]; then
+                establish_the_guest_VF_config_files
+            fi
+        fi
+    fi
+
+    # Turn the devices on
+    ${ADF_CTL} $2 up
+
+    # Show device status
+    ${ADF_CTL} $2 status
+            ;;
+
+ Shutdown|shutdown)
+    ${ADF_CTL} down
+    modprobe -q -r usdm_drv
+    modprobe -q -r qat_dh895xccvf
+    modprobe -q -r qat_c62xvf
+    modprobe -q -r qat_c3xxxvf
+    modprobe -q -r qat_dh895xcc
+    modprobe -q -r qat_c62x
+    modprobe -q -r qat_c3xxx
+    modprobe -q -r qat_d15xx
+    modprobe -q -r qat_d15xxvf
+    modprobe -q -r intel_qat
+            ;;
+
+ Stop|stop)
+    ${ADF_CTL} $2 down
+            ;;
+
+ Restart|restart)
+    ${ADF_CTL} $2 down && ${ADF_CTL} $2 up
+            ;;
+
+ Status|status)
+    ${ADF_CTL} status
+    if [ "$?" -ne 0 ]
+    then
+        echo "No devices found. Please start the driver using:"
+        echo "$0 start"
+    fi
+            ;;
+
+ *)
+      usage
+            ;;
+
+esac
+exit 0
