@@ -1,0 +1,228 @@
+#!/usr/bin/perl
+
+#Copyright (c) 2016 Wind River Systems, Inc.
+#
+#SPDX-License-Identifier: Apache-2.0
+#
+
+# parse_iostat
+#
+# Purpose:
+#
+# Modification history:
+# - 2015-Dec-259 - Jim Gauld, prototype created.
+
+use 5.10.0;
+use warnings;
+use strict;
+use Time::Local 'timelocal_nocheck'; # inverse time functions
+use File::Basename;
+use File::Spec ();
+use Data::Dumper;
+
+my $SCRIPT = basename($0);
+
+# Timestamp variables
+my ($wday, $month, $day, $hh, $mm, $ss, $yy, $ns) = ();
+my @T0 = localtime();
+my $yy00 = 1900 + $T0[5];
+my $cc00 = 100*int($yy00/100);
+
+# Argument list parameters
+our ($arg_device, @arg_files) = ();
+
+# Determine location of gunzip binary
+our $GUNZIP = which('gunzip');
+if (!(defined $GUNZIP)) {
+   die "*error* cannot find 'gunzip' binary. Cannot continue.\n";
+}
+our $BUNZIP2 = which('bunzip2');
+if (!(defined $BUNZIP2)) {
+   die "*error* cannot find 'bunzip2' binary. Cannot continue.\n";
+}
+
+# Parse input arguments and print tool usage if necessary
+&get_parse_iostat_args(\$arg_device, \@arg_files);
+
+# Compile regular expressions
+my $re_dev = qr/\Q$::arg_device\E/;
+
+foreach my $file (@ARGV) {
+	print "processing file: $file\n";
+	if ($file =~ /\.gz$/) {
+		open(FILE, "$::GUNZIP -c $file |") || die "Cannot open file: $file ($!)\n";
+	} elsif ($file =~ /\.bz2$/) {
+		open(FILE, "$::BUNZIP2 -c $file |") || die "Cannot open file: $file ($!)\n";
+	} else {
+		open(FILE, $file) || die "Cannot open file: $file ($!)\n";
+	}
+
+	#my ($timestamp, $timestamp0, $time_fmt) = ("", "", "");
+
+	my ($field, $idx, $len);
+	my $found = 0;
+	my @dev_x;
+	my @dev_T;
+	my $dev_N;
+	my %dev_H;
+	my ($time_fmt) = ("");
+
+	# Wipe out data and statistics per file.
+	my (%data, %stats, %series) = ();
+	my $first = 1;
+
+	READ_LOOP: while($_ = <FILE>) {
+		s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+
+		# timestamp
+		# 12/23/15 18:56:50
+		if (/^(\d{2})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/) { # ignore timezone
+			$month = $1; $day = $2; $yy = $3 + $cc00; $hh = $4; $mm = $5; $ss = $6; $ns = 0;
+			#print "TIME: $_";
+			$found = 0;
+			next;
+		}
+
+		if (/^avg-cpu:/) {
+			$_ = <FILE>; $_ = <FILE>;
+			#print "AVG: $_";
+			next
+		}
+
+		if (/^Device:/) {
+			#print "DEV: $_\n";
+			@dev_T = split(/\s+/, $_); shift @dev_T if (/^\s+/);
+			$dev_N = scalar(@dev_T);
+
+			# determine lower and upper indices for numerical fields
+			for ($idx=0; $idx < $dev_N; $idx++) {
+				$field = $dev_T[$idx];
+				$dev_H{ $field } = $idx;
+			}
+
+			# Read in each device
+			DEV_LOOP: while($_ = <FILE>) {
+				s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+				last DEV_LOOP if (/^$/);
+
+				if (/\b$re_dev\b/) {
+					@dev_x = split(/\s+/, $_); shift @dev_x if (/^\s+/);
+					$len = scalar(@dev_x);
+					$found = 1;
+				}
+			}
+		}
+
+		# Print line of data if we have it
+		if ($found == 1) {
+			# Print header (per file)
+			if ($first == 1) {
+				printf "%4s-%2s-%2s %2s:%2s:%2s ",  'yyyy', 'mm', 'dd', 'hh', 'mm', 'ss';
+				printf "%-8s ", $dev_T[0];
+				for ($idx=1; $idx < $dev_N; $idx++) {
+					printf "%9s ", $dev_T[$idx];
+				}
+				printf "\n";
+				$first = 0;
+			}
+
+			printf "%04d-%02d-%02d %02d:%02d:%02d ",  $yy, $month, $day, $hh, $mm, $ss;
+			printf "%-8s ", $dev_x[0];
+			for ($idx=1; $idx < $dev_N; $idx++) {
+				printf "%9.2f ", $dev_x[$idx];
+			}
+			printf "\n";
+		}
+	}
+
+	# Print blank line between files
+	print "\n";
+}
+exit 0;
+
+#######################################################################################################################
+# Lightweight which(), derived from CPAN File::Which
+sub which {
+   my ($exec) = @_;
+   return undef unless $exec;
+   my $all = wantarray;
+   my @results = ();
+   my @path = File::Spec->path;
+   foreach my $file ( map { File::Spec->catfile($_, $exec) } @path ) {
+      next if -d $file;
+      if (-x _) { return $file unless $all; push @results, $file; }
+    }
+    $all ? return @results : return undef;
+}
+
+# Process "parse_memory" command line arguments and set defaults
+sub get_parse_iostat_args {
+	# Returned parameters
+	(local *::arg_device, local *::arg_files) = @_;
+
+	# Local variables
+	my ($fail, $arg_help) = ();
+	my @tmp = ();
+
+	# Use the Argument processing module
+	use Getopt::Long;
+
+	# Print usage if no arguments
+	if (!@ARGV) {
+		&Usage();
+		exit 0;
+	}
+
+	# Process input arguments
+	$fail = 0;
+	GetOptions(
+		"device=s", \$::arg_device,
+		"help|?",   \$arg_help
+	) || GetOptionsMessage();
+
+	# Print help documentation if user has selected -help
+	&ListHelp() if (defined $arg_help);
+
+	# Give warning messages and usage when parameters are specified incorrectly.
+	if (!( defined $::arg_device)) {
+		warn "$SCRIPT: Input error: must specify --device <dev>n.\n";
+		$fail = 1;
+	}
+	if ($fail == 1) {
+		# touch variables here to make silly warning go away
+		&Usage();
+		exit 1;
+	}
+
+	$::arg_device ||= 'sda';
+
+	# Assume remaining options are filenames
+	@::arg_files    = @ARGV;
+}
+
+sub GetOptionsMessage {
+	# Print out a warning message and then print program usage.
+	warn "$SCRIPT: Error processing input arguments.\n";
+	&Usage();
+	exit 1;
+}
+
+sub Usage {
+	# Print out program usage.
+	printf "Usage: $SCRIPT OPTIONS file1 file2 file3.gz ...\n";
+	printf "\t[--device <pattern>] ...\n";
+	printf "\t[--help | -?]\n";
+}
+
+sub ListHelp {
+	# Print out tool help
+	printf "$SCRIPT  -- parses 'iostat' data for matching device name\n";
+	&Usage();
+	printf "\nOptional input arguments:\n";
+	printf "  --device <pattern>  : match device name\n";
+	printf "  --help                   : this help information\n";
+	printf "\n";
+	exit 0;
+}
+
+1;

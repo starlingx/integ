@@ -1,0 +1,1301 @@
+#!/usr/bin/perl
+
+#Copyright (c) 2016 Wind River Systems, Inc.
+#
+#SPDX-License-Identifier: Apache-2.0
+#
+# Usage: parse_schedtop OPTIONS file1 file2 file3.gz ...
+# [--detail] [--threads] [--ignore=<fac>] [--help]
+# [--field=<field,...>] [--family=<family,...>]
+# [--sum=<tid,str,...>] [--sum-exact=<str,...>] [--tab=<str,...>] [--tab-exact=<str,...>]
+# [--excl=<tid,str,...>] [--all]
+#
+# Purpose:
+#  parse_schedtop is an engineering tool used to summarize 'schedtop' data.
+#  - tool has 2 main modes of operation, 1) AVERAGE mode; 2) Time-series.
+#  - handles uncompressed, of gzip compressed files
+#
+# Average mode:
+# - averages all data from multiple files and condenses on matching command name patterns
+#
+# Time-series mode:
+# - specify --detail to select time-series.
+# - specify --sum=<tid,str,...>,  --sum-exact=<str,...> to match multiple strings or TIDs
+#   that will be aggregated together into a single column
+# - specifiy --tab=<str,...>, --tab-exact=<str,...> to match multiple strings that will
+#   be displayed as separate table columns
+# - specify --all to match all processes and threads and aggregate together in single sum
+# - use --excl=<tid,str,...> to exclude specific strings or TIDs that would have
+#   matched with --sum=<str>, --tab=<str>, or --all
+# - specify --field=<field,...> and/or --family=<family,...> options to refine
+#   which outputs are displayed.
+# - see tool help for specification details.
+#
+# Modification History:
+#
+use 5.10.0;
+use warnings;
+use strict;
+use File::Spec ();
+use Data::Dumper;
+use Time::Local 'timelocal_nocheck'; # inverse time functions
+use Benchmark ':hireswallclock';
+
+our $scriptName = "parse_schedtop";
+our $scriptVersion = "v0.1";
+
+use constant SI_k => 1.0E3;
+use constant SI_M => 1.0E6;
+use constant SI_G => 1.0E9;
+use constant Ki => 1024.0;
+use constant Mi => 1024.0*1024.0;
+use constant Gi => 1024.0*1024.0*1024.0;
+
+my ($bd, $b0, $b1);
+my %SCALE_H = (none => 0, SI => 1, IEC => 2);
+my %AGG_H   = (none => 0, dtsum => 1, dtrate => 2, ctxt => 3, max => 4);
+
+# Methodology for aggregation of different measurements
+# - aggregate measurements are performed by summation of a given value multiplied by a weighting
+#   factor (such as time or context switches), and divided by a factor 'div' to convert output units
+#
+# Aggregation types:
+#  "none"   - a value or string that we cannot sum
+#  "dtsum"  - result = SUM [dt(i)*x(i)] / (SUM[dt(i)] * div),  for each 'i'
+#           - if 'dt(i) = constant' then this is equivalent to simple average
+#  "dtrate" - result = SUM [x(i)] / (SUM[dt(i)] * div),  for each 'i'
+#           - this is overall average rate "x/time" over a given time period
+#  "ctxt"   - result = SUM [ctxt(i)*x(i)] / (SUM[ctxt(i)] * div),  for each 'i'
+#           - if "x" is tlen, then (cputime = ctxt*tlen), result is overall average
+#             realtime divided by number of context switches which is average tlen
+#  "max"    - a value that we cannot sum, rather would like to determine maximum value
+#
+# Families and Fields definition
+our %families = (
+   ov => {
+      runq => {
+         ldavg => {scale => "none", agg => "dtsum", un => "(#)", fmtT => "%6s", fmt => "%6.2f", w => 1, div => 1, idx =>  1},
+         runq  => {scale => "none", agg => "dtsum", un => "(#)", fmtT => "%4s", fmt => "%4.0f", w => 1, div => 1, idx =>  2},
+         blk   => {scale => "none", agg => "dtsum", un => "(#)", fmtT => "%3s", fmt => "%3.0f", w => 1, div => 1, idx =>  3},
+      },
+      MiB => {
+         Tot    => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%7s", fmt => "%7.1f",  w => 1, div => 1, idx =>  1},
+         Ca     => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%7s", fmt => "%7.1f",  w => 1, div => 1, idx =>  2},
+         Buf    => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%6s", fmt => "%6.1f",  w => 1, div => 1, idx =>  3},
+         Free   => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%7s", fmt => "%7.1f",  w => 1, div => 1, idx =>  4},
+         Slab   => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%6s", fmt => "%6.1f",  w => 1, div => 1, idx =>  5},   
+         tmpfs  => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%6s", fmt => "%6.1f",  w => 1, div => 1, idx =>  6},
+         CAS    => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%7s", fmt => "%7.1f",  w => 1, div => 1, idx =>  7},
+         Avail  => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%7s", fmt => "%7.1f",  w => 1, div => 1, idx =>  8},
+         EAvail => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%7s", fmt => "%7.1f",  w => 1, div => 1, idx =>  9},
+      },
+   },
+   cmd => {
+      ps => {
+         TID    => {scale => "none", agg => "none", un => "(#)", fmtT => "%5s", fmt => "%5d",  w => 1, div => 1, idx =>  1},
+         PID    => {scale => "none", agg => "none", un => "(#)", fmtT => "%5s", fmt => "%5d",  w => 1, div => 1, idx =>  2},
+         PPID   => {scale => "none", agg => "none", un => "(#)", fmtT => "%5s", fmt => "%5d",  w => 1, div => 1, idx =>  3},
+         S      => {scale => "none", agg => "none", un => "(#)", fmtT => "%3s", fmt => "%-3s", w => 1, div => 1, idx =>  4},
+         P      => {scale => "none", agg => "none", un => "(#)", fmtT => "%3s", fmt => "%3d",  w => 1, div => 1, idx =>  5},
+         AFF    => {scale => "none", agg => "none", un => "(-)", fmtT => "%7s", fmt => "%-7s", w => 1, div => 1, idx =>  6},
+         PO     => {scale => "none", agg => "none", un => "(-)", fmtT => "%3s", fmt => "%-3s", w => 1, div => 1, idx =>  7},
+         RTPRIO => {scale => "none", agg => "none", un => "(#)", fmtT => "%5s", fmt => "%5d",  w => 1, div => 1, idx =>  8}, 
+         NI     => {scale => "none", agg => "none", un => "(#)", fmtT => "%5s", fmt => "%5d",  w => 1, div => 1, idx =>  9},
+         PR     => {scale => "none", agg => "none", un => "(#)", fmtT => "%5s", fmt => "%5d",  w => 1, div => 1, idx => 10},
+      },
+      cpu => {
+         occ  => {scale => "none", agg => "dtsum",  un => "(%)",    fmtT => "%7s", fmt => "%7.2f", w => 2, div => 1, idx => 1},
+         cpu  => {scale => "none", agg => "dtsum",  un => "(%)",    fmtT => "%7s", fmt => "%7.2f", w => 2, div => 1, idx => 2},
+         user => {scale => "none", agg => "dtsum",  un => "(%)",    fmtT => "%7s", fmt => "%7.2f", w => 2, div => 1, idx => 3},
+         sys  => {scale => "none", agg => "dtsum",  un => "(%)",    fmtT => "%7s", fmt => "%7.2f", w => 2, div => 1, idx => 4},
+         ctxt => {scale => "none", agg => "dtrate", un => "(#/s)",  fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1, idx => 5},
+         migr => {scale => "none", agg => "dtrate", un => "(#/s)",  fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1, idx => 6},
+      },
+      del => {
+         tlen  => {scale => "none", agg => "ctxt",   un => "(ms/S)", fmtT => "%7s", fmt => "%7.3f", w => 3, div => 1, idx => 1},
+         tmax  => {scale => "none", agg => "max",    un => "(ms/S)", fmtT => "%7s", fmt => "%7.3f", w => 3, div => 1, idx => 2},
+         delay => {scale => "none", agg => "ctxt",   un => "(ms)",   fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1, idx => 3},
+         dmax  => {scale => "none", agg => "max",    un => "(ms)",   fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1, idx => 4},
+      },
+      io => {
+         iowait => {scale => "none", agg => "dtsum", un => "(%)",    fmtT => "%7s",  fmt => "%7.2f",  w => 2, div => 1,      idx => 0},
+         iowt  => {scale => "none", agg => "dtsum",  un => "(%)",    fmtT => "%7s",  fmt => "%7.2f",  w => 2, div => 1,      idx => 1},
+         iocnt => {scale => "SI",   agg => "dtrate", un => "(#/s)",  fmtT => "%7s", fmt => "%7.1f",   w => 1, div => 1,      idx => 2},
+         read  => {scale => "SI",   agg => "dtrate", un => "(MB/s)", fmtT => "%10s", fmt => "%10.4f", w => 4, div => 1.0E6,  idx => 3},
+         write => {scale => "SI",   agg => "dtrate", un => "(MB/s)", fmtT => "%10s", fmt => "%10.4f", w => 4, div => 1.0E6,  idx => 4},
+         wcncl => {scale => "SI",   agg => "dtrate", un => "(MB/s)", fmtT => "%7s",  fmt => "%7.4f",  w => 4, div => 1.0E6,  idx => 5},
+         rchar => {scale => "SI",   agg => "dtrate", un => "(MB/s)", fmtT => "%7s",  fmt => "%7.1f",  w => 1, div => 1.0E6,  idx => 6},
+         wchar => {scale => "SI",   agg => "dtrate", un => "(MB/s)", fmtT => "%7s",  fmt => "%7.1f",  w => 1, div => 1.0E6,  idx => 7},
+         rsysc => {scale => "SI",   agg => "dtrate", un => "(r/s)",  fmtT => "%8s",  fmt => "%8.1f",  w => 1, div => 1,      idx => 8},
+         wsysc => {scale => "SI",   agg => "dtrate", un => "(w/s)",  fmtT => "%8s",  fmt => "%8.1f",  w => 1, div => 1,      idx => 9},
+      },
+      mem => {
+         VSZ    => {scale => "IEC", agg => "ctxt",   un => "(MiB)", fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1024.0*1024.0, idx => 1},
+         RSS    => {scale => "IEC", agg => "ctxt",   un => "(MiB)", fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1024.0*1024.0, idx => 2},
+         MajFlt => {scale => "SI",  agg => "dtrate", un => "(F/s)", fmtT => "%8s", fmt => "%8.1f", w => 1, div => 1,             idx => 3},
+         MinFlt => {scale => "SI",  agg => "dtrate", un => "(F/s)", fmtT => "%8s", fmt => "%8.1f", w => 1, div => 1,             idx => 4},
+      },
+      id => {
+         START_TIME => {scale => "none", agg => "none", un => "(time)",       fmtT => "%16s", fmt => "%16s", w => 1, div => 1, idx => 1},
+         REALTIME   => {scale => "none", agg => "none", un => "(d:hh:mm:ss)", fmtT => "%16s", fmt => "%16s", w => 1, div => 1, idx => 2},
+         TTY        => {scale => "none", agg => "none", un => "(str)",        fmtT => "%16s", fmt => "%16s", w => 1, div => 1, idx => 3},
+         WCHAN      => {scale => "none", agg => "none", un => "(str)",        fmtT => "%16s", fmt => "%16s", w => 1, div => 1, idx => 4},
+      },
+      cmd => {
+         wchan   => {scale => "none", agg => "none", un => "(str)",  fmtT => "%16s", fmt => "%16s", w => 1, div => 1, idx => 1},
+         comm    => {scale => "none", agg => "none", un => "(name)", fmtT => "%16",  fmt => "%16s", w => 1, div => 1, idx => 2},
+         cmdline => {scale => "none", agg => "none", un => "(name)", fmtT => "%s",   fmt => "%s",   w => 1, div => 1, idx => 3},
+         COMMAND => {scale => "none", agg => "none", un => "(name)", fmtT => "%s",   fmt => "%s",   w => 1, div => 1, idx => 4},
+      },
+      misc => {
+         cnt     => {scale => "none", agg => "none", un => "(#)",   fmtT => "%5s", fmt => "%5d", w => 1, div => 1, idx => 1},
+      },
+   }, 
+);
+my $MAX_CORES = 256;
+for (my $core=0; $core <= $MAX_CORES; $core++) {
+   my $fld;
+   if ($core == $MAX_CORES) {
+      $fld = 'cpuT';
+   } else {
+      $fld = 'cpu'. $core;
+   }
+   $families{'ov'}{'percpu'}{$fld}{'scale'} = "none";
+   $families{'ov'}{'percpu'}{$fld}{'agg'}   = "dtsum";
+   $families{'ov'}{'percpu'}{$fld}{'un'}    = "(%)";
+   $families{'ov'}{'percpu'}{$fld}{'fmtT'}  = "%6s";
+   $families{'ov'}{'percpu'}{$fld}{'fmt'}   = "%6.2f";
+   $families{'ov'}{'percpu'}{$fld}{'w'}     = 1;
+   $families{'ov'}{'percpu'}{$fld}{'div'}   = 1;
+   $families{'ov'}{'percpu'}{$fld}{'idx'}   = $core;
+}
+         
+# Selected field parameters
+our @select_families = ('cpu', 'del', 'io', 'mem'); # overall average mode
+our @select_fields   = ('cpu'); # time-series mode
+our %select_H = ();
+our %select_F = ();
+our @select_list_cmds = ();
+our @select_list_ov   = ();
+our %fields = ();
+our %groups = ();
+
+# Polulate formatting and cumulation methods for all fields
+our %fmt   = ();
+our %fmtT  = ();
+our %units = ();
+our %div   = ();
+our %dec   = ();
+our %valid_fields = ();
+our %valid_families = ();
+my ($vfam, $vcnt) = (0, 0);
+my ($group, $family, $field, $scale, $agg);
+foreach $group (sort keys %families) {
+   foreach $family (sort keys %{$families{$group}} ) {
+      foreach $field (sort {$families{$group}{$family}{$a}->{idx} <=> $families{$group}{$family}{$b}->{idx} }
+                      keys %{$families{$group}{$family}}) {
+         $scale = $families{$group}{$family}{$field}->{scale};
+         $agg   = $families{$group}{$family}{$field}->{agg};
+         $fmtT{$field} = $families{$group}{$family}{$field}->{fmtT};
+         $fmt{$field}  = $families{$group}{$family}{$field}->{fmt};
+         $div{$field}  = $families{$group}{$family}{$field}->{div};
+         $dec{$field}  = $families{$group}{$family}{$field}->{w}; 
+         $units{$field}  = $families{$group}{$family}{$field}->{un};
+         $fields{$field} = [($SCALE_H{$scale}, $AGG_H{$agg})];
+         $groups{$field} = $group;
+ 
+         # Create simple hashes containing a single key only so that
+         # any family or field can be used to determine validity for selection.
+         # Invalid entries arise because there are fields in schedtop that we must
+         # parse but cannot logically aggregated so we won't allow these to be specified
+         # for time-series. Using a single key prevents one from traversing entire %::families table.
+         # There is an assumption that there are no duplicate family or field names,
+         # although it is OK to have a family or field with the same name (eg. 'cpu').
+         if ($agg ne 'none') {
+            $valid_families{$family} = $vfam; $vfam++;
+            $valid_fields{$field}    = $vcnt; $vcnt++;
+         }
+      }
+   }
+}
+
+# Argument list paramters
+our ($arg_debug, @arg_field, @arg_family,
+   @arg_sum, @arg_sump, @arg_sume, @arg_tab, @arg_tabe,
+   @arg_excl, @arg_exclp, $arg_all, $arg_threads,
+   $arg_detail, $arg_ignore, $arg_from, $arg_to, @arg_files) = ();
+
+# Determine location of gunzip binary
+our $GUNZIP = which('gunzip');
+if (!(defined $GUNZIP)) {
+   die "*error* cannot find 'gunzip' binary. Cannot continue.\n";
+}
+our $BUNZIP2 = which('bunzip2');
+if (!(defined $BUNZIP2)) {
+   die "*error* cannot find 'bunzip2' binary. Cannot continue.\n";
+}
+
+# Parse input arguments and print tool usage if necessary
+&get_parse_schedtop_args(
+   \$arg_debug, \@arg_field, \@arg_family,
+   \@arg_sum, \@arg_sump, \@arg_sume, \@arg_tab, \@arg_tabe,
+   \@arg_excl, \@arg_exclp, \$arg_all, \$arg_threads,
+   \$arg_detail, \$arg_ignore, \$arg_from, \$arg_to, \@arg_files);
+
+# Print out some debugging information
+if (defined $arg_debug) {
+   $Data::Dumper::Indent = 1;
+   if ($arg_debug == 2) { 
+      print Data::Dumper->Dump([\%families], [qw(families)]);
+      print Data::Dumper->Dump([\%fields],   [qw(fields)]);
+   } elsif ($arg_debug == 3) {
+      print Data::Dumper->Dump([\%select_H],   [qw(select_H)]);
+      print Data::Dumper->Dump([\@arg_family], [qw(arg_family)]);
+      print Data::Dumper->Dump([\@arg_field],  [qw(arg_field)]);
+   }
+}
+
+# Capture timestamp
+$b0 = new Benchmark;
+
+# Aggregate data by common command name patterns
+&aggregate_time_series(
+   \$arg_debug, \@arg_field, \@arg_family,
+   \@arg_sum, \@arg_sump, \@arg_sume, \@arg_tab, \@arg_tabe,
+   \@arg_excl, \@arg_exclp, \$arg_all, \$arg_threads,
+   \$arg_detail, \@arg_files,
+   \@select_families, \@select_fields, \%select_H,
+   \@select_list_cmds, \@select_list_ov, \%fields,
+   \%fmt, \%fmtT, \%units, \%div, \%dec);
+printf "done.\n";
+
+# Capture timestamp and report delta
+$b1 = new Benchmark; $bd = Benchmark::timediff($b1, $b0);
+printf "processing time: %s\n", timestr($bd);
+
+exit 0;
+
+########################################################################################################
+# Lightweight which(), derived from CPAN File::Which
+sub which {
+   my ($exec) = @_;
+   return undef unless $exec;
+   my $all = wantarray;
+   my @results = ();
+   my @path = File::Spec->path;
+   foreach my $file ( map { File::Spec->catfile($_, $exec) } @path ) {
+      next if -d $file;
+      if (-x _) { return $file unless $all; push @results, $file; }
+    }
+    $all ? return @results : return undef;
+}
+
+# Aggregate time-series by common command name patterns 
+sub aggregate_time_series {
+   (local *::arg_debug, local *::arg_field, local *::arg_family,
+    local *::arg_sum,   local *::arg_sump,  local *::arg_sume, local *::arg_tab,     local *::arg_tabe,
+    local *::arg_excl,  local *::arg_exclp, local *::arg_all,  local *::arg_threads, local *::arg_detail, local *::arg_files,
+    local *::select_families, local *::select_fields, local *::select_H,
+    local *::select_list_cmds, local *::select_list_ov, local *::fields,
+    local *::fmt, local *::fmtT, local *::units, local *::div, local *::dec) = @_;
+
+   my %data = (); my %sample = (); my %totals = (); my %cond = (); my %avg = (); my %matched = ();
+   my ($old_per_core_N, $old_per_task_N) = (0,0);
+   my @old_per_core_T = ();
+   my @old_per_task_T = ();
+   my %per_core_H     = ();
+   my %per_task_H     = ();
+   my ($COMMAND, $ctxt, $dt, $tid);
+   my ($idx, $field, $value, $unit, $family, $scale, $agg, $i, $lab, $cnt);
+   my (@MATCHES, $MATCH, $match) = ();
+
+   # Initialize totals
+   $totals{'dt'} = 0.0; $totals{'cnt'} = 0;
+
+   # Compile regular expressions command string patterns
+   # - list of expressions to include, and list to exclude
+   my (@re_sum, @re_sume, @re_tab, @re_tabe, @re_excl) = ();
+   foreach my $arg (@::arg_sum)  { push @re_sum,  qr/\Q$arg\E/; }
+   foreach my $arg (@::arg_sume) { push @re_sume, qr/^\Q$arg\E$/; }
+   foreach my $arg (@::arg_tab)  { push @re_tab,  qr/\Q$arg\E/; }
+   foreach my $arg (@::arg_tabe) { push @re_tabe, qr/^\Q$arg\E$/; }
+   foreach my $arg (@::arg_excl) { push @re_excl, qr/\Q$arg\E/; }
+   my ($n_sum, $n_sume) = (scalar(@::arg_sum), scalar(@::arg_sume));
+   my ($n_tab, $n_tabe) = (scalar(@::arg_tab), scalar(@::arg_tabe));
+   my $n_excl = scalar(@::arg_excl);
+
+   # Determine series commands and labels
+   my @series_cmds = ();
+   push @series_cmds, @::arg_tab  if (@::arg_tab);
+   push @series_cmds, @::arg_tabe if (@::arg_tabe);
+   push @series_cmds, '_sum_' if ((@::arg_sum) || (@::arg_sume) || (@::arg_sump));
+   push @series_cmds, '_all_' if ($::arg_all);
+ 
+   my @series_ov = ();
+   push @series_ov, '_overall_' if (defined $::select_F{'ov'});
+  
+   my @series_label =();
+   $cnt = 0;
+   my $n_label_ov = scalar(@series_ov);
+   for ($i=0; $i < $n_label_ov; $i++)   { $series_label[$cnt] = sprintf("L%d", $cnt); $cnt++; }
+   my $n_label_cmds = scalar(@series_cmds);
+   for ($i=0; $i < $n_label_cmds; $i++) { $series_label[$cnt] = sprintf("L%d", $cnt); $cnt++; }
+
+   foreach my $file (@::arg_files) {
+      printf "processing file: %s\n", $file;
+      if ($file =~ /\.gz$/) {
+         open(FILE, "$::GUNZIP -c $file |") || die "Cannot open file: $file ($!)\n";
+      } elsif ($file =~ /\.bz2$/) {
+         open(FILE, "$::BUNZIP2 -c $file |") || die "Cannot open file: $file ($!)\n";
+      } else {
+         open(FILE, $file) || die "Cannot open file: $file ($!)\n";
+      }
+
+      # local scope
+      my ($len, $offset, $cmd_idx, $ctxt_idx, $tid_idx) = (0,0,0);
+      my $first = 1;
+      my @per_core_T = (); my $per_core_N = ();
+      my @per_core_x = (); my @per_core_tot = ();
+      my @per_task_T = (); my @per_task_x = (); my $per_task_N = ();
+      my ($tstamp, $ldavg, $runq, $blk, $del, $ignore) = ();
+      my ($yy, $month, $day, $hh, $mm, $ss, $frac);
+      my @overall = ();
+
+      # Parse file line at a time
+      READ_LOOP: while ($_ = <FILE>) {
+         s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+
+         if (/^schedtop\s+\S+\s+\-\-\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})\s+dt:\s*(\S+)\s+ms\s+ldavg:(\S+),\s+\S+,\s+\S+\s+runq:(\d+)\s+blk:(\d+)\s+/) { # header line
+            $tstamp = $1; $dt = $2/1000.0; $ldavg = $3; $runq = $4; $blk = $5;
+            $del = 0.0; $ignore = 0; @overall = ();
+
+            $_ = $tstamp;
+            ($yy, $month, $day, $hh, $mm, $ss, $frac) = /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+            my $this_time = timelocal_nocheck($ss, $mm, $hh, $day, $month-1, $yy-1900);
+
+            # Skip samples that are outsize of $::arg_from and $::arg_to time range.
+            if (defined $arg_from && ($this_time lt $arg_from)) {
+               $ignore = 1; 
+               printf "IGNORE: $tstamp < %s\n", scalar(localtime($arg_from));
+            }
+            if (defined $arg_to && ($this_time gt $arg_to)) {
+               $ignore = 1; 
+               printf "IGNORE: $tstamp > %s\n", scalar(localtime($arg_to));
+            }
+            # Skip sample
+            if ($ignore > 0) {
+               # skip to per-task headings
+               while ($_ = <FILE>)  {
+                  s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+                  last if (/^\s+TID\s+PID\s+PPID\s+/);
+               }
+               # skip to end of sample 
+               while ($_ = <FILE>) {
+                  s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+                  last if (/^$/ || /^done/); # stop when we reach blank line or 'done'
+               }
+
+               # do not include this sample in the accounting
+               next READ_LOOP;
+            }
+
+            # Store this sample's overall fields
+            %sample = (); %cond = ();
+            $group = 'ov'; $MATCH = '_overall_';
+            $sample{'tstamp'} = $tstamp;
+            $sample{'dt'}     = $dt;
+            $sample{'ldavg'}  = $ldavg;
+            $sample{'runq'}   = $runq;
+            $sample{'blk'}    = $blk;
+
+            $group = 'ov'; $family = 'MiB';
+            foreach $field (keys %{ $::families{$group}{$family} }) { $sample{$field} = 0.0; }
+
+            # Cumulate totals
+            $totals{'dt'} += $dt;
+            $totals{'cnt'}++;
+
+            # skip over architecture header info 
+            while ($_ = <FILE>) {
+               s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+               if (/MiB:\s+Tot:(\S+)\s+Ca:(\S+)\s+Buf:(\S+)\s+Free:(\S+)\s+Slab:(\S+)\s+tmpfs:(\S+)\s+CAS:(\S+)\s+Avail:(\S+)\s+EAvail:(\S+)/) {
+                  $sample{'Tot'}    = $1;
+                  $sample{'Ca'}     = $2; 
+                  $sample{'Buf'}    = $3;
+                  $sample{'Free'}   = $4;
+                  $sample{'Slab'}   = $5;
+                  $sample{'tmpfs'}  = $6; 
+                  $sample{'CAS'}    = $7;
+                  $sample{'Avail'}  = $8;
+                  $sample{'EAvail'} = $9;
+               }
+               last if /^$/; # stop when we reach blank line
+               #last if /^core:\s+/; # stop when we reach "core" titles line
+            }
+if ( 0 ) {
+            # Parse per-core titles
+            if ($first) {
+               # split per-core titles
+               @per_core_T = split(/\s+/, $_);
+               $per_core_N = scalar(@per_core_T);
+               for ($idx=0; $idx < $per_core_N; $idx++) { $per_core_H{ $per_core_T[$idx] } = $idx; }
+ 
+               # Compare title headings with last file -- stop processing if they not identical
+               if (($old_per_core_N > 0) && ($old_per_core_N != $per_core_N)) {
+                  die "Cannot proceed - per-core number of fields differ across multiple files.\n";
+               }
+               for ($idx=0; $idx < $old_per_core_N; $idx++) {
+                  if ($per_core_T[$idx] ne $old_per_core_T[$idx]) {
+                     die "Cannot proceed - per-core fields differ across multiple files.\n";
+                  }
+               }
+               $old_per_core_N = $per_core_N; @old_per_core_T = @per_core_T;
+
+            }
+            # Cumulate per-core values
+            for ($idx=0; $idx < @per_core_T; $idx++) { $per_core_tot[$idx] = 0.0; }
+            while ($_ = <FILE>)  {
+               s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+               last if /^$/; # stop when we reach blank line
+               @per_core_x = split(/\s+/, $_); shift @per_core_x;
+               for ($idx=0; $idx < @per_core_T; $idx++) { $per_core_tot[$idx] += $per_core_x[$idx]; }
+               $idx = $per_core_H{'cpu'}; $field = 'cpu' . $per_core_x[ $per_core_H{'core'} ];
+               $sample{$field} = $per_core_x[$idx];
+            }
+            $field = 'cpuT';
+            $sample{$field} = $per_core_tot[$idx];
+}
+            # Remove any field selections that don't exist
+            if ($first) {
+               foreach $field (keys %{ $::select_H{$group} }) {
+                  delete $::select_H{$group}{$field} if ( !(defined $sample{$field}) );
+               }
+               # Generate sorted field list
+               @::select_list_ov = sort {$::select_H{$group}{$a} <=> $::select_H{$group}{$b}} keys %{ $::select_H{$group} };
+            }
+
+            # Cumulate overall fields using 'dtsum' aggregation method
+            foreach $field (@::select_list_ov) {
+               $value = $dt * $sample{$field};
+               $cond{$MATCH}{$field} += $value;
+               $avg{$MATCH}{$field}  += $value;
+            }
+         } elsif (/^\s+TID\s+PID\s+PPID\s+/) {
+            $group = 'cmd';
+            # Parse per-task titles
+            if ($first) {
+               @per_task_T = split(/\s+/, $_); shift @per_task_T if (/^\s+/);
+               $per_task_N = scalar(@per_task_T);
+
+               # determine lower and upper indices for numerical fields  
+               for ($idx=0; $idx < $per_task_N; $idx++) {
+                  $field = $per_task_T[$idx];
+                  $per_task_H{ $field } = $idx;
+                  if (! (defined $::fields{$field}) ) {
+                     die "Cannot proceed - per-task field = '$field' is not defined.\n";
+                  }
+               }
+               ##$cmd_idx  = $per_task_H{'COMMAND'};
+               $cmd_idx  = $per_task_H{'cmdline'};
+               $ctxt_idx = $per_task_H{'ctxt'};
+               $tid_idx  = $per_task_H{'TID'}; 
+
+               # Remove any field selections that don't exist
+               foreach $field (keys %{ $::select_H{$group} }) {
+                  delete $::select_H{$group}{$field} if ( !(defined $per_task_H{$field}) );
+               }
+
+               # Generate sorted field list
+               @::select_list_cmds = sort {$::select_H{$group}{$a} <=> $::select_H{$group}{$b}} keys %{ $::select_H{$group} };
+
+               # Compare title headings with last file -- stop processing if they not identical
+               if (($old_per_task_N > 0) && ($old_per_task_N != $per_task_N)) {
+                  die "Cannot proceed - per-task number of fields differ across multiple files.\n";
+               }
+               for ($idx=0; $idx < $old_per_task_N; $idx++) {
+                  if ($per_task_T[$idx] ne $old_per_task_T[$idx]) {
+                     die "Cannot proceed - per-task fields differ across multiple files.\n";
+                  }
+               }
+               $old_per_task_N = $per_task_N; @old_per_task_T = @per_task_T;
+
+               $first = 0;
+            }
+ 
+            # Parse each task one line at a time
+            TASK_LOOP: while ($_ = <FILE>) {
+               s/[\0\e\f\r\a]//g; chomp; # strip control characters if any             
+               last if (/^$/ || /^done/); # stop when we reach blank line or 'done'
+               next if (/^- -/); # skip delimeter
+               @per_task_x = split(/\s+/, $_); shift @per_task_x if (/^\s+/);
+               $len = scalar(@per_task_x);
+               next if ($cmd_idx >= $len); # skip invalid lines
+
+               # join tail of list to form command - this also strips tailing whitespace
+               if ($::arg_threads) {
+                  $offset = 0;
+               } else {
+                  $offset = ($per_task_x[$cmd_idx] =~ /^\(/) ? 1 : 0; # offset if we need to drop threadname
+               }
+               $ctxt   = $per_task_x[ $ctxt_idx ];
+               $tid    = $per_task_x[ $tid_idx ];
+               $COMMAND = join(' ', splice(@per_task_x, -($len - $cmd_idx - $offset)));
+
+               # Match commands to aggregate data based on multiple regular expressions or pids
+               @MATCHES = ();
+               
+               # Match exlusions commands for SUMMATION, TABLE, ALL
+               for ($i=0; $i < $n_excl; $i++) { # match command patterns
+                  next TASK_LOOP if ($COMMAND =~ $re_excl[$i]);
+               }
+               foreach my $this_tid (@::arg_exclp) { # match tids
+                  next TASK_LOOP if ($tid == $this_tid);
+               }
+
+               # Match commands for TABLE
+               for ($i=0; $i < $n_tab; $i++) { # match command patterns
+                  if ($COMMAND =~ $re_tab[$i]) {
+                     $match = $::arg_tab[$i]; push @MATCHES, $match;
+                     $matched{$match}{$COMMAND}{$tid} = 1;
+                  }
+               }
+               for ($i=0; $i < $n_tabe; $i++) { # match command patterns
+                  if ($COMMAND =~ $re_tabe[$i]) {
+                     $match = $::arg_tabe[$i]; push @MATCHES, $match;
+                     $matched{$match}{$COMMAND}{$tid} = 1;
+                  }
+               }
+
+               # Match commands for SUMMATION
+               if (defined $::arg_all) { # match all commands
+                  $match = '_all_'; push @MATCHES, $match;
+                  $matched{$match}{$COMMAND}{$tid} = 1;
+                  goto FOUND_MATCH;
+               }
+               foreach my $this_tid (@::arg_sump) { # match tids
+                  if ($tid == $this_tid ) {
+                     $match = '_sum_'; push @MATCHES, $match;
+                     $matched{$match.':'.$tid}{$COMMAND}{$tid} = 1;
+                     goto FOUND_MATCH;
+                  }
+               }
+               for ($i=0; $i < $n_sum; $i++) { # match command patterns
+                  if ($COMMAND =~ $re_sum[$i]) {
+                     $match = '_sum_'; push @MATCHES, $match;
+                     $matched{$match.':'.$::arg_sum[$i]}{$COMMAND}{$tid} = 1;
+                     goto FOUND_MATCH;
+                  }
+               }
+               for ($i=0; $i < $n_sume; $i++) { # match command patterns
+                  if ($COMMAND =~ $re_sume[$i]) {
+                     $match = '_sum_'; push @MATCHES, $match;
+                     $matched{$match.':'.$::arg_sume[$i]}{$COMMAND}{$tid} = 1;
+                     goto FOUND_MATCH;
+                  }
+               }
+
+               FOUND_MATCH: if (@MATCHES) {
+                  ##$matched{$COMMAND}{$tid} = 1;
+               } else {
+                  next if ($::arg_detail == 1); ## do nothing for time-series, else aggregate
+               }
+
+               if ( !(defined $sample{$COMMAND}) ){
+                  $sample{$COMMAND} = 1;
+                  $data{$COMMAND}{'cnt'}++;
+               }
+               $data{$COMMAND}{'_ctxt_'} += $ctxt;
+               foreach $MATCH (@MATCHES) {
+                 $cond{$MATCH}{'_ctxt_'} += $ctxt;
+                 $avg{$MATCH}{'_ctxt_'}  += $ctxt;
+               }
+
+               # Process only selected fields
+               foreach $field (@::select_list_cmds) {
+                  $idx = $per_task_H{$field};
+                  ($scale, $agg) = @{ $::fields{$field} };
+                  next if ($agg == 0);
+                  $value = $per_task_x[$idx];
+                  next if ($value eq '-');
+
+                  # Convert units to nominal value
+                  if ($scale > 0) {
+                     $_ = $value;
+                     if (($scale == 1) && /(\S+)(G|M|k)$/) { # SI suffix
+                        $value = $1; $unit = $2;
+                        if ($unit eq 'G') {
+                           $value *= SI_G;
+                        } elsif ($unit eq 'M') {
+                           $value *= SI_M;
+                        } elsif ($unit eq 'k') {
+                           $value *= SI_k;
+                        }
+                     } elsif (($scale == 2) && /(\S+)(Gi|Mi|Ki)$/) { # IEC suffix
+                        $value = $1; $unit = $2;
+                        if ($unit eq 'Gi') {
+                           $value *= Gi;
+                        } elsif ($unit eq 'Mi') {
+                           $value *= Mi;
+                        } elsif ($unit eq 'Ki') {
+                           $value *= Ki;
+                        }
+                     }
+                  }
+ 
+                  # Aggregate stats based on field type
+                  if ($agg < 4) {
+                     # note, don't adjust $value for dtrate
+                     if ($agg == 1) {
+                        $value *= $dt; # dtsum
+                     } elsif ($agg == 3) {
+                        $value *= $ctxt; # ctxt
+                     }
+                     $data{$COMMAND}{$field} += $value;
+                     foreach $MATCH (@MATCHES) {
+                        $cond{$MATCH}{$field} += $value;
+                        $avg{$MATCH}{$field}  += $value;
+                     }
+                  } else { # agg = 4, max
+                     if ( !(defined $data{$COMMAND}{$field}) || ($data{$COMMAND}{$field} < $value) ) {
+                        $data{$COMMAND}{$field} = $value;
+                     }
+                     foreach $MATCH (@MATCHES) {
+                        if ( !(defined $cond{$MATCH}{$field}) || ($cond{$MATCH}{$field} < $value) ) {
+                           $cond{$MATCH}{$field} = $value;
+                        }
+                        if ( !(defined $avg{$MATCH}{$field}) || ($avg{$MATCH}{$field} < $value) ) {
+                           $avg{$MATCH}{$field} = $value;
+                        }
+                     }
+                  }
+               }
+            }
+ 
+            # Time series calculations
+            if ($::arg_detail == 1) {
+               $dt = $sample{'dt'}; if ($dt <= 0.0) { $dt = 1.0; }
+               foreach $MATCH (@series_ov) {
+                  if ( !(defined $cond{$MATCH}) ) {
+                     foreach $field (@::select_list_ov) { $cond{$MATCH}{$field} = 0.0; }
+                     next; 
+                  }
+                  foreach $field (@::select_list_ov) {
+                     ($scale, $agg) = @{ $::fields{$field} };
+                     next if (($agg == 0) || ($agg == 4));
+                     if ( !(defined $cond{$MATCH}{$field}) ) {
+                        $cond{$MATCH}{$field} = 0.0;
+                        next;
+                     }
+                     if (($agg <= 2)) {
+                        $cond{$MATCH}{$field} /= ($dt*$::div{$field});
+                     }
+                  }
+               }
+               foreach $MATCH (@series_cmds) {
+                  if ( !(defined $cond{$MATCH}) ) {
+                     foreach $field (@::select_list_cmds) { $cond{$MATCH}{$field} = 0.0; }
+                     next;
+                  }
+                  $ctxt = $cond{$MATCH}{'_ctxt_'};
+                  $ctxt = 1.0 if ($ctxt <= 0.0);
+                  foreach $field (@::select_list_cmds) {
+                     ($scale, $agg) = @{ $::fields{$field} };
+                     next if (($agg == 0) || ($agg == 4));
+                     if ( !(defined $cond{$MATCH}{$field}) ) {
+                        $cond{$MATCH}{$field} = 0.0;
+                        next;
+                     }
+                     if (($agg <= 2)) {
+                        $cond{$MATCH}{$field} /= ($dt*$::div{$field});
+                     } elsif ($agg == 3) {
+                        $cond{$MATCH}{$field} /= ($ctxt*$::div{$field});
+                     }
+                  }
+               }
+
+               # Print summary line
+               if ($totals{'cnt'} == 1) {
+                  # Print labels
+                  printf "Labels:\n";
+                  $cnt = 0;
+                  for ($i=0; $i < $n_label_ov; $i++) {
+                     printf " %3s: %s\n", $series_label[$cnt], $series_ov[$i];
+                     $cnt++;
+                  }
+                  for ($i=0; $i < $n_label_cmds; $i++) {
+                    if ($series_cmds[$i] eq '_all_') {
+                        printf " %3s: %s", $series_label[$cnt], $series_cmds[$i];
+                        printf " excl: (%s)", join(', ',@::arg_excl) if (@::arg_excl);
+                        printf "\n";
+                    } elsif ($series_cmds[$i] eq '_sum_') {
+                        printf " %3s: %s (%s)", $series_label[$cnt], $series_cmds[$i], join(', ',@::arg_sum, @::arg_sume, @::arg_sump);
+                        printf " excl: (%s)", join(', ',@::arg_excl,@::arg_exclp) if (@::arg_excl || @::arg_exclp);
+                        printf "\n";
+                     } else {
+                        printf " %3s: %s\n", $series_label[$cnt], $series_cmds[$i];
+                     }
+                     $cnt++; 
+                  }
+
+                  # Print headings
+                  printf "%-10s %-12s %6s ", "-", "-", "-";
+                  $cnt = 0; 
+                  for ($i=0; $i < $n_label_ov; $i++) {
+                     foreach $field (@::select_list_ov) { printf $::fmtT{$field}. ' ', $series_label[$cnt]; }
+                     $cnt++; 
+                  }
+                  for ($i=0; $i < $n_label_cmds; $i++) {
+                     foreach $field (@::select_list_cmds) { printf $::fmtT{$field}. ' ', $series_label[$cnt]; }
+                     $cnt++;
+                  }
+                  printf "\n";
+
+                  printf "%-10s %-12s %6s ", "date", "time", "dt";
+                  $cnt = 0;
+                  for ($i=0; $i < $n_label_ov; $i++) {
+                     foreach $field (@::select_list_ov) { printf $::fmtT{$field}. ' ', $field; }
+                     $cnt++;
+                  }
+                  for ($i=0; $i < $n_label_cmds; $i++) {
+                     foreach $field (@::select_list_cmds) { printf $::fmtT{$field}. ' ', $field; }
+                     $cnt++;
+                  }
+                  printf "\n";
+ 
+                  # Print units
+                  printf "%-10s %-12s %6s ", "yyyy/mm/dd", "hh:mm:ss.dec", "(s)";
+                  foreach $COMMAND (@series_ov) {
+                     foreach $field (@::select_list_ov) { printf $::fmtT{$field}. ' ', $::units{$field}; }
+                  }
+                  foreach $COMMAND (@series_cmds) {
+                     foreach $field (@::select_list_cmds) { printf $::fmtT{$field}. ' ', $::units{$field}; }
+                  }
+                  printf "\n";
+               }
+ 
+               # Print data
+               printf "%23s %6.3f ", $sample{'tstamp'}, $sample{'dt'};
+               foreach $COMMAND (@series_ov) {
+                  foreach $field (@::select_list_ov) { printf $::fmt{$field}. ' ', $cond{$COMMAND}{$field}; }
+               }
+               foreach $COMMAND (@series_cmds) {
+                  foreach $field (@::select_list_cmds) { printf $::fmt{$field}. ' ', $cond{$COMMAND}{$field}; }
+               }
+               printf "\n";
+            }
+         }
+      }
+      close(FILE);
+   }
+ 
+   # Overall average calculations
+   $dt = $totals{'dt'}; if ($dt <= 0.0) { $dt = 1.0; }
+   if ($::arg_detail == 0) {
+      foreach $COMMAND (keys %data) {
+         $ctxt = $data{$COMMAND}{'_ctxt_'};
+         $ctxt = 1.0 if ($ctxt <= 0.0);
+         foreach $field (@::select_list_cmds) {
+            ($scale, $agg) = @{ $::fields{$field} };
+            next if (($agg == 0) || ($agg == 4));
+            if ( !(defined $data{$COMMAND}{$field}) ) {
+               $data{$COMMAND}{$field} = 0.0;
+               next;
+            }
+            if ($agg <= 2) {
+               $data{$COMMAND}{$field} /= ($dt*$::div{$field});
+            } elsif ($agg == 3) {
+               $data{$COMMAND}{$field} /= ($ctxt*$::div{$field});
+            }
+         }
+      }
+   } else {
+      foreach $MATCH (@series_ov) {
+         if ( !(defined $avg{$MATCH}) ) {
+            foreach $field (@::select_list_ov) { $avg{$MATCH}{$field} = 0.0; }
+            next; 
+         }
+         foreach $field (@::select_list_ov) {
+            ($scale, $agg) = @{ $::fields{$field} };
+            next if (($agg == 0) || ($agg == 4));
+            if ( !(defined $avg{$MATCH}{$field}) ) {
+               $avg{$MATCH}{$field} = 0.0;
+               next;
+            }
+            if ($agg <= 2) {
+               $avg{$MATCH}{$field} /= ($dt*$::div{$field});
+            }
+         }
+      }
+      foreach $MATCH (@series_cmds) {
+        if ( !(defined $avg{$MATCH}) ) {
+           $avg{$MATCH}{'_ctxt_'}= 0.0;
+           foreach $field (@::select_list_cmds) { $avg{$MATCH}{$field} = 0.0; }
+           next; 
+         }
+         $ctxt = $avg{$MATCH}{'_ctxt_'};
+         $ctxt = 1.0 if ($ctxt <= 0.0);
+         foreach $field (@::select_list_cmds) {
+            ($scale, $agg) = @{ $::fields{$field} };
+            next if (($agg == 0) || ($agg == 4));
+            if ( !(defined $avg{$MATCH}{$field}) ) {
+               $avg{$MATCH}{$field} = 0.0;
+               next;
+            }
+            if ($agg <= 2) {
+               $avg{$MATCH}{$field} /= ($dt*$::div{$field});
+            } elsif ($agg == 3) {
+               $avg{$MATCH}{$field} /= ($ctxt*$::div{$field});
+            }
+         }
+      }
+   }
+ 
+   # Print overall averages
+   if ($::arg_detail == 1 && ($totals{'cnt'} > 0)) {
+      printf "%23s %6.3f ", 'Average:', $totals{'dt'}/$totals{'cnt'};
+      foreach $COMMAND (@series_ov) {
+         foreach $field (@::select_list_ov) { printf $::fmt{$field}. ' ', $avg{$COMMAND}{$field}; }
+      }
+      foreach $COMMAND (@series_cmds) {
+         foreach $field (@::select_list_cmds) { printf $::fmt{$field}. ' ', $avg{$COMMAND}{$field}; }
+      }
+      printf "\n";
+   } 
+
+   # Print overall summary
+   if ($totals{'cnt'} > 0) {
+      printf "Overall:  Elapsed:%.1f s  Samples:%d  dt:%.2f s\n",
+         $totals{'dt'}, $totals{'cnt'}, $totals{'dt'}/$totals{'cnt'};
+   } else { 
+      printf "Sample:  no data available\n\n";
+   }
+ 
+   # Print matching list of tasks
+   if ($::arg_detail == 1) {
+      foreach my $match (sort keys %matched) {
+         printf "\nMatch = '%s'\n", $match;
+         foreach my $cmd (sort keys %{ $matched{$match} }) {
+            printf "%s: %s\n", $match, $cmd;
+            printf " (%s)\n", join(',', sort {$a <=> $b} keys %{ $matched{$match}{$cmd} });
+         }
+      } 
+   }
+
+   # Print overall summary
+   if ($::arg_detail == 0) {
+      # Print headings
+      foreach $field (@::select_list_cmds) { printf $::fmtT{$field}. ' ', $field; }
+      printf $::fmtT{'cnt'}." ".$::fmtT{'COMMAND'}."\n", 'cnt', 'COMMAND';
+ 
+      # Print units
+      foreach $field (@::select_list_cmds) { printf $::fmtT{$field}. ' ', $::units{$field}; }
+      printf $::fmtT{'cnt'}." ".$::fmtT{'COMMAND'}."\n", $::units{'cnt'}, $::units{'COMMAND'};
+
+      # Print task data, sorting on numerically rounded keys
+      # (default keys to '_ctxt_' and 'cnt' since they always defined)
+      my ($s1, $s2, $s3) = ('_ctxt_', '_ctxt_', 'cnt');  my ($w1, $w2, $w3) = (100, 100, 100);
+      if (defined $::select_list_cmds[0]) { $s1 = $::select_list_cmds[0]; $w1 = 10**($::dec{$s1}+1); }
+      if (defined $::select_list_cmds[1]) { $s2 = $::select_list_cmds[1]; $w2 = 10**($::dec{$s2}+1); }
+      if (defined $::select_list_cmds[2]) { $s3 = $::select_list_cmds[2]; $w3 = 10**($::dec{$s3}+1); }
+      foreach $COMMAND (
+         sort { (int($w1*$data{$b}{$s1}+5) <=> int($w1*$data{$a}{$s1}+5)) ||
+                (int($w2*$data{$b}{$s2}+5) <=> int($w2*$data{$a}{$s2}+5)) ||
+                (int($w3*$data{$b}{$s3}+5) <=> int($w3*$data{$a}{$s3}+5)) || 
+                ($a cmp $b)
+         } keys %data) {
+            foreach $field (@::select_list_cmds) { printf $::fmt{$field}. ' ', $data{$COMMAND}{$field}; }
+            printf $::fmt{'cnt'}." ".$::fmt{'COMMAND'}."\n", $data{$COMMAND}{'cnt'}, $COMMAND;
+      }
+   } 
+}
+
+
+#############################################################################################################
+
+# Parse input option arguments
+sub get_parse_schedtop_args {
+   (local *::arg_debug,  local *::arg_field, local *::arg_family,
+    local *::arg_sum,    local *::arg_sump,  local *::arg_sume,  local *::arg_tab,   local *::arg_tabe,
+    local *::arg_excl,   local *::arg_exclp, local *::arg_all,   local *::arg_threads,
+    local *::arg_detail, local *::arg_ignore,
+    local *::arg_from,   local *::arg_to,
+    local *::arg_files) = @_;
+ 
+   # Local variables
+   my ($fail, $arg_help);
+   my ($fld, $group, $field, $family) = ();
+   my ($yy, $month, $day, $hh, $mm, $ss, $frac);
+   my @tmp = ();
+
+   # Use the Argument processing module
+   use Getopt::Long;
+
+   # Print usage if no arguments
+   if (!@::ARGV) {
+      &Usage();
+      exit 0;
+   }
+
+   # Process input arguments
+   $fail = 0;
+   GetOptions(
+      "debug:i",     \$::arg_debug,
+      "field=s",     \@::arg_field,
+      "family=s",    \@::arg_family,
+      "sum=s",       \@::arg_sum,
+      "sum-exact=s", \@::arg_sume,
+      "tab=s",       \@::arg_tab,
+      "tab-exact=s", \@::arg_tabe,
+      "excl=s",      \@::arg_excl,
+      "all",         \$::arg_all,
+      "threads",     \$::arg_threads,
+      "detail",      \$::arg_detail,
+      "ignore=s",    \$::arg_ignore,
+      "from=s",      \$::arg_from,
+      "to=s",        \$::arg_to,
+      "help|h",      \$arg_help
+   ) || GetOptionsMessage();
+
+   # Print help documentation if user has selected --help
+   &ListHelp() if (defined $arg_help);
+ 
+   # Listify @::arg_sum and split tids from commands
+   @tmp = ();
+   @::arg_sump = (); 
+   if (@::arg_sum) {
+      @tmp = @::arg_sum; @::arg_sum = ();
+      foreach my $cmd (@tmp) { push @::arg_sum, (split /,/, $cmd); }
+      @tmp = @::arg_sum; @::arg_sum = ();
+      foreach my $cmd (@tmp) {
+         if ($cmd =~ /^\d+$/) {
+            push @::arg_sump, $cmd;
+         } else {
+            push @::arg_sum, $cmd;
+         }
+      }
+   }
+   
+   # Listify @::arg_sume
+   @tmp = ();
+   if (@::arg_sume) {
+      @tmp = @::arg_sume; @::arg_sume = ();
+      foreach my $cmd (@tmp) { push @::arg_sume, (split /,/, $cmd); }
+      @tmp = @::arg_sume; @::arg_sume = ();
+      foreach my $cmd (@tmp) {
+         if ($cmd =~ /^\d+$/) {
+            push @::arg_sump, $cmd;
+         } else {
+            push @::arg_sume, $cmd;
+         }
+      }
+   }
+
+   # Listify @::arg_tab and split tids from commands
+   @tmp = ();
+   if (@::arg_tab) {
+      @tmp = @::arg_tab; @::arg_tab = ();
+      foreach my $cmd (@tmp) { push @::arg_tab, (split /,/, $cmd); }
+      @tmp = @::arg_tab; @::arg_tab = ();
+      foreach my $cmd (@tmp) {
+         if ($cmd =~ /^\d+$/) {
+            warn "$::scriptName: Input error: cannot specify --tab=$cmd, only strings supported.\n";
+            $fail = 1;
+         } else {
+            push @::arg_tab, $cmd;
+         }
+      }
+   }
+   
+   # Listify @::arg_tabe
+   @tmp = ();
+   if (@::arg_tabe) {
+      @tmp = @::arg_tabe; @::arg_tabe = ();
+      foreach my $cmd (@tmp) { push @::arg_tabe, (split /,/, $cmd); }
+      @tmp = @::arg_tabe; @::arg_tabe = ();
+      foreach my $cmd (@tmp) {
+         if ($cmd =~ /^\d+$/) {
+            warn "$::scriptName: Input error: cannot specify --tab-exact=$cmd, only strings supported.\n";
+            $fail = 1;
+         } else {
+            push @::arg_tabe, $cmd;
+         }
+      }
+   }
+
+   # Listify @::arg_excl
+   @tmp = ();
+   if (@::arg_excl) {
+      @tmp = @::arg_excl; @::arg_excl = ();
+      foreach my $cmd (@tmp) { push @::arg_excl, (split /,/, $cmd); }
+      @tmp = @::arg_excl; @::arg_excl = (); @::arg_exclp = ();
+      foreach my $cmd (@tmp) {
+         if ($cmd =~ /^\d+$/) {
+            push @::arg_exclp, $cmd;
+         } else {
+            push @::arg_excl, $cmd;
+         }
+      }
+   }
+   # Listify @::arg_field
+   @tmp = ();
+   if (@::arg_field) {
+      @tmp = @::arg_field; @::arg_field = ();
+      foreach my $field (@tmp) { push @::arg_field, (split /,/, $field); }
+   }
+   # Listify @::arg_family
+   @tmp = ();
+   if (@::arg_family) {
+      @tmp = @::arg_family; @::arg_family = ();
+      foreach my $family (@tmp) { push @::arg_family, (split /,/, $family); }
+   }
+
+   # Give warning messages and usage when parameters are specified incorrectly.
+   my $count = 0;
+   $count++ if ((@::arg_sum) || (@::arg_sump) || (@::arg_sume) ||
+                (@::arg_tab) || (@::arg_tabe));
+   $count++ if (defined $::arg_all);
+   if ($count > 1) {
+      warn "$::scriptName: Input error: cannot specify --sum=<str> or --tab=<str> with --all.\n";
+      $fail = 1;
+   }
+   if (!@ARGV) {
+      warn "$::scriptName: Input error: must specify schedtop data files.\n";
+      $fail = 1;
+   }
+ 
+   # Determine whether time-series is selected
+   $::arg_detail = (defined $::arg_detail) ? 1 : 0;
+
+   # Check that we have selected time-series option if selecting commands
+   if (($::arg_detail == 0) && ($count > 0)) {
+      warn "$::scriptName: Input error: cannot specify --sum=<str>, --tab=<str>, or --all without also specifying --detail option.\n";
+      $fail = 1; 
+   }
+
+   # Process selected families and fields
+   my $cnt = 0;
+   %::select_H = (); %::select_F = ();
+   foreach $field (@::arg_field) {
+      if ( !(defined $::valid_fields{$field}) ) {
+         my $list = join(',', sort {$::valid_fields{$a} <=> $::valid_fields{$b} } keys %::valid_fields);
+         warn "$::scriptName: Input error: cannot specify --field=$field, expect:<$list>\n";
+         $fail = 1;
+         next;  
+      }
+      $group = $groups{$field}; 
+      if ( !(defined $::select_H{$group}{$field}) ) {
+         $::select_H{$group}{$field} = $cnt; $cnt++;
+         foreach $family (keys %::valid_families) {
+            foreach $fld (keys %{ $::families{$group}{$family} }) {
+               if ($fld eq $field) {
+                  $::select_F{$group}{$family} = 1;
+                  next;
+               }
+            } 
+         } 
+      }
+   }
+   foreach $family (@::arg_family) {
+      if ( !(defined $::valid_families{$family}) ) {
+         my $list = join(',', sort {$::valid_families{$a} <=> $::valid_families{$b} } keys %::valid_families);
+         warn "$::scriptName: Input error: cannot specify --family=$family, expect:<$list>\n";
+         $fail = 1;
+         next;  
+      }
+      foreach $group (keys %::families) {
+         if (defined $::families{$group}{$family}) {
+            foreach $field (sort {$::families{$group}{$family}{$a}->{idx} <=> $::families{$group}{$family}{$b}->{idx} }
+                            keys %{ $::families{$group}{$family} }) {
+               if ( !(defined $::select_H{$group}{$field}) ) {
+                  $::select_H{$group}{$field} = $cnt; $cnt++;
+                  $::select_F{$group}{$family} = 1;
+               }
+            } 
+         }
+      } 
+   }
+
+   # Determine default fields if none provided
+   if ( !(@::arg_field) && !(@::arg_family) ) {
+      if ($::arg_detail == 1) {
+         foreach $field (@::select_fields) {
+            $group = $groups{$field}; 
+            if ( !(defined $::select_H{$group}{$field}) ) {
+               $::select_H{$group}{$field} = $cnt; $cnt++;
+               foreach $family (keys %::valid_families) {
+                  foreach $fld (keys %{ $::families{$group}{$family} }) {
+                     if ($fld eq $field) {
+                        $::select_F{$group}{$family} = 1;
+                        next;
+                     }
+                  }
+               }
+            }
+         }
+      } else {
+         $group = 'cmd';
+         foreach $family (@::select_families) {
+            foreach $field (sort {$::families{$group}{$family}{$a}->{idx} <=> $::families{$group}{$family}{$b}->{idx} }
+                            keys %{$::families{$group}{$family}}) {
+               if ( !(defined $::select_H{$group}{$field}) ) {
+                  $::select_H{$group}{$field} = $cnt; $cnt++;
+                  $::select_F{$group}{$family} = 1;
+               }
+            }
+         }
+      }
+   }
+ 
+   # if --tab or --sum or --all, then need at least one cmd group field.
+   if (($count > 0) && ( !(defined $::select_H{'cmd'}) || !(defined $::select_F{'cmd'}))) {
+      warn "$::scriptName: Input error: cannot specify --sum=<str>, --tab=<str>, or --all without specifying task fields/families.\n";
+      $fail = 1;
+   }
+   if ($::arg_detail == 0) { # average mode
+      # need at least one cmd group field
+      if ( !(defined $::select_H{'cmd'}) || !(defined $::select_F{'cmd'})) {
+         warn "$::scriptName: Input error: AVERAGE mode is missing specification of task fields/families.\n";
+         $fail = 1;
+      }
+      # need at least one overall group field
+      if ((defined $::select_H{'ov'}) || (defined $::select_F{'ov'})) {
+         warn "$::scriptName: Input error: AVERAGE mode cannot specify overall fields/families.\n";
+         $fail = 1;
+      }
+   }
+   if ($::arg_detail == 1) { # time-series 
+      # no commands or overall group fields selected
+      if (($count == 0) && ( !(defined $::select_H{'ov'}) || !(defined $::select_F{'ov'}))) {
+         warn "$::scriptName: Input error: --detail requires overall fields/families and/or --sum=<str>, --tab=<str>, or --all options.\n";
+         $fail = 1;
+      }
+   }
+ 
+   # Validate arg_ignore 
+   $::arg_ignore = 4.0 if (!defined $::arg_ignore);
+   if ($::arg_ignore < 2.0) {
+      warn "$::scriptName: Input error: cannot specify --ignore=$::arg_ignore, expect factor > 2.0\n";
+      $fail = 1; 
+   }
+
+   # Convert date/time string into timelocal
+   if ($::arg_from) {
+      $_ = $::arg_from;
+      if (/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})/) {
+         $yy = $1; $month = $2; $day = $3; $hh = $4; $mm = $5; $ss = $6; $frac = $7;
+         $::arg_from = timelocal_nocheck($ss, $mm, $hh, $day, $month-1, $yy-1900);
+      } else {
+         warn "$::scriptName: Input error: invalid time format: '$::arg_from', expect: yyyy-mm-ddThh:mm:ss.fff\n";
+         $fail = 1; 
+      }
+   }
+   if ($::arg_to) {
+      $_ = $::arg_to;
+      if (/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})/) {
+         $yy = $1; $month = $2; $day = $3; $hh = $4; $mm = $5; $ss = $6; $frac = $7;
+         $::arg_to = timelocal_nocheck($ss, $mm, $hh, $day, $month-1, $yy-1900);
+      } else {
+         warn "$::scriptName: Input error: invalid time format: '$::arg_to', expect: yyyy-mm-ddThh:mm:ss.fff\n";
+         $fail = 1; 
+      }
+   }
+
+   # Upon missing or invalid options, print usage
+   if ($fail == 1) {
+      &Usage();
+      exit 1;
+   }
+
+   # Assume remaining options are filenames
+   @::arg_files = @ARGV;
+}
+
+# Print out a warning message and usage
+sub GetOptionsMessage {  
+   warn "$::scriptName: Error processing input arguments.\n";
+   &Usage();
+   exit 1;
+}
+
+# Print out program usage
+sub Usage {
+   printf "Usage: $::scriptName OPTIONS file1 file2 file3.gz ...\n";
+   printf " [--detail] [--threads] [--ignore=<fac>] [--help]\n";
+   printf " [--field=<field,...>] [--family=<family,...>]\n";
+   printf " [--sum=<tid,str,...>] [--sum-exact=<str,...>] [--tab=<str,...>] [--tab-exact=<str,...>]\n";
+   printf " [--excl=<tid,str,...>] [--all]\n";
+   printf "\n"; 
+}
+
+# Print tool help
+sub ListHelp {
+   my ($group, $family) = ();
+   my @list = (); my @tmp = ();
+   printf "$::scriptName $::scriptVersion -- parses schedtop output from multiple files\n";
+   &Usage();
+   printf "Options: miscellaneous\n";
+   printf " --detail       : specify time-series mode (default mode is 'AVERAGE')\n";
+   printf " --threads      : specify that unique thread names will match instead of the main 'pid'\n";
+   printf " --ignore=<fac> : ignore samples where 'sample_dt' > 'fac' x 'dt': default: 4.0\n";
+   printf " --help         : this help\n";
+   printf "\n"; 
+   printf "Options: applicable to AVERAGE mode or time-series mode\n";
+   printf " --field=<field,...>   : specify fields   (default: 'cpu' in time-series mode)\n";
+   printf " --family=<family,...> : specify families (eg. %s) : default: none\n",
+      join(',', sort {$::valid_families{$a} <=> $::valid_families{$b}} keys %::valid_families);
+   printf "\n"; 
+   foreach $group (sort keys %::families) {
+      if ($group eq 'cmd') {
+         @list = (); @tmp = sort keys %{ $::families{$group} };
+         while ($family = shift @tmp) {
+            push @list, $family if ($::valid_families{$family});
+         }
+         printf "'task' familes (eg., %s) and their fields - applicable to AVERAGE and time-series\n", join(',', @list);
+      } elsif ($group eq 'ov') {
+         @list = (); @tmp = sort keys %{ $::families{$group} };
+         while ($family = shift @tmp) {
+            push @list, $family if ($::valid_families{$family});
+         }
+         printf "\n'overall' families (eg., %s) and their fields - applicable to time-series only\n", join(',', @list);
+      }
+      foreach $family (sort keys %{ $::families{$group} }) {
+         next if ( !defined $valid_families{$family} );
+         printf " %6s: %s\n", $family,
+            join(',', sort {$::families{$group}{$family}{$a}->{idx} <=> $::families{$group}{$family}{$b}->{idx} }
+                      keys %{ $::families{$group}{$family} }
+            );
+      }
+   }
+   printf "\n"; 
+   printf "Options: applicable to time-series in conjunction with 'task' families\n";
+   printf " --sum=<tid,str,...>   : specify TIDs or string patterns to include in aggregate sum\n";
+   printf " --sum-exact=<str,...> : specify exact string patterns to include in aggregate sum\n";
+   printf " --tab=<str,...>       : specify string patterns to display as separate table columns\n";
+   printf " --tab-exact=<str,...> : specify exact string patterns to display as separate table columns\n";
+   printf " --excl=<tid,str,...>  : specify TIDs or string patterns to be excluded from --sum,--tab,--all matches\n";
+   printf " --all                 : selects all command names to match in aggregate sum\n";
+   printf "\n";
+   printf "EXAMPLES: AVERAGE mode (condenses each matching command)\n";
+   printf "1) average mode, default displays all 'task' families\n";
+   printf " $::scriptName my_schedtop\n";
+   printf "\n";
+   printf "2) average mode, select specific 'task' fields\n";
+   printf " $::scriptName --field=occ,read,write my_schedtop\n";
+   printf "\n";
+   printf "EXAMPLES: time-series mode (shows each sample using selected criteria)\n";
+   printf "5) time-series, sum of 'irq/*' + 'postgres' string patterns\n";
+   printf " $::scriptName --detail --sum=irq/*,postgres my_schedtop\n";
+   printf "\n";
+   printf "6) time-series, sum of 'irq/*' + 'postgres', select specific fields\n";
+   printf " $::scriptName --detail --sum=irq/*,postgres --field=occ,ctxt --family=io my_schedtop\n";
+   printf "\n";
+   printf "7) time-series, sum of all processes excluding 'schedtop'\n";
+   printf " $::scriptName --detail --all --excl=schedtop my_schedtop\n";
+   printf "\n";
+   printf "8) time-series, select specific overall families 'runq', 'percpu', 'MiB'\n";
+   printf " $::scriptName --detail --family=runq,percpu,MiB my_schedtop\n";
+   printf "\n";
+   exit 0;
+}
+
+1;

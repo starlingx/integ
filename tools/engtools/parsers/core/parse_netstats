@@ -1,0 +1,229 @@
+#!/usr/bin/perl
+
+#Copyright (c) 2016 Wind River Systems, Inc.
+#
+#SPDX-License-Identifier: Apache-2.0
+#
+# parse_netstats
+#
+# Purpose: Summarize networking stats for each interface by parsing
+#   output from /proc/net/dev.  Summarize rx and tx packet rates (pkt/s),
+#   bandwidth (Mbit/s), and bytes per packet (B/pkt).
+#   Calculates sample average and sample standard deviation.
+#
+# Modification history:
+# - 2014-Feb-25 - Jim Gauld, prototype created.
+
+use 5.10.0;
+use warnings;
+use strict;
+use File::Spec ();
+use Time::Local 'timelocal_nocheck'; # inverse time functions
+
+# Timestamp variables
+my ($wday, $month, $day, $hh, $mm, $ss, $yy, $ns) = ();
+
+# Determine location of gunzip binary
+our $GUNZIP = which('gunzip');
+if (!(defined $GUNZIP)) {
+   die "*error* cannot find 'gunzip' binary. Cannot continue.\n";
+}
+our $BUNZIP2 = which('bunzip2');
+if (!(defined $BUNZIP2)) {
+   die "*error* cannot find 'bunzip2' binary. Cannot continue.\n";
+}
+
+foreach my $file (@ARGV) {
+	print "processing file: $file\n";
+	if ($file =~ /\.gz$/) {
+		open(FILE, "$::GUNZIP -c $file |") || die "Cannot open file: $file ($!)\n";
+	} elsif ($file =~ /\.bz2$/) {
+		open(FILE, "$::BUNZIP2 -c $file |") || die "Cannot open file: $file ($!)\n";
+	} else {
+		open(FILE, $file) || die "Cannot open file: $file ($!)\n";
+	}
+
+	my ($epoc, $epoc0, $dt, $uptime) = (0,0,0);
+	my ($iface,$timestamp,$timestamp0, $time_fmt) = ("", "", "", "");
+	my ($rx,$tx,$rx_B,$tx_B, $rx0,$tx0,$rx_B0,$tx_B0) = (0,0,0,0,  0,0,0,0);
+	my ($rx_pps, $tx_pps, $rx_Mbps, $tx_Mbps, $rx_Bpp, $tx_Bpp);
+	my $WARNING = "";
+	my $Mpb = 1.0E6/8;
+
+	# Wipe out data and statistics per file.
+	my (%data, %stats, %series) = ();
+
+	# Print header (per file)
+	printf "%18s %5s | %9s %12s %9s | %9s %12s %9s | %s\n",
+		"interface", "dt(s)",
+		"rx(pkt/s)", "rx(Mbps)", "rx(B/pkt)",
+		"tx(pkt/s)", "tx(Mbps)", "tx(B/pkt)",
+		"date/time";
+	my @var_list = ('dt', 'rx_pps', 'tx_pps', 'rx_Mbps', 'tx_Mbps', 'rx_Bpp', 'tx_Bpp');
+	READ_LOOP: while($_ = <FILE>) {
+		s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+
+		# Hi-resolution timestamp
+		# time:  Tue 2009-04-07 18:17:05.074387000 UTC +0000 uptime:  1153.09 897.13
+		if (/time:\s+(\w+)\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\.(\d{9})\s+\w+\s+\S+\s+uptime:\s+(\S+)\s+/) { # ignore timezone
+			$wday = $1; $yy = $2; $month = $3; $day = $4; $hh = $5; $mm = $6; $ss = $7; $ns = $8; $uptime = $9;
+			$timestamp0 = $timestamp; $epoc0 = $epoc; # store previous
+			$timestamp = [($wday,$month,$day,$hh,$mm,$ss,$yy,$ns)];
+			$epoc = $9;
+			$dt = $epoc - $epoc0;
+			next;
+		}
+
+		# Inter-|   Receive                                                |  Transmit
+		# face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+		if (/\s*(\S+):\s*(\d+)\s+(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+/) {
+			$iface = $1; $rx_B = $2; $rx = $3; $tx_B = $4; $tx = $5;
+			($rx0,$tx0,$rx_B0,$tx_B0) = ($rx,$tx,$rx_B,$tx_B);
+			if (!(defined $data{$iface}{'rx0'})) {
+				$data{$iface}{'rx0'}   = 0; $data{$iface}{'tx0'}   = 0;
+				$data{$iface}{'rx_B0'} = 0; $data{$iface}{'tx_B0'} = 0;
+				foreach my $item (@var_list) {
+					$stats{$iface}{$item}{'sumX'}  = 0.0;
+					$stats{$iface}{$item}{'sumX2'} = 0.0;
+					$stats{$iface}{$item}{'N'}     = 0;
+					$stats{$iface}{$item}{'avg'}   = 0;
+					$stats{$iface}{$item}{'stdev'} = 0;
+				}
+			} else {
+				$data{$iface}{'rx0'}   = $data{$iface}{'rx'};
+				$data{$iface}{'tx0'}   = $data{$iface}{'tx'};
+				$data{$iface}{'rx_B0'} = $data{$iface}{'rx_B'};
+				$data{$iface}{'tx_B0'} = $data{$iface}{'tx_B'};
+			}
+    
+			# Saver current measurement
+			$data{$iface}{'rx'}   = $rx;
+			$data{$iface}{'tx'}   = $tx;
+			$data{$iface}{'rx_B'} = $rx_B;
+			$data{$iface}{'tx_B'} = $tx_B;
+			$data{$iface}{'dt'}   = $dt;
+
+			if (($dt > 0) && (($data{$iface}{'rx0'} > 0) || ($data{$iface}{'tx0'} > 0))) {
+				$data{$iface}{'rx_pps'}  = ($data{$iface}{'rx'} - $data{$iface}{'rx0'})/$dt;
+				$data{$iface}{'tx_pps'}  = ($data{$iface}{'tx'} - $data{$iface}{'tx0'})/$dt;
+
+				$data{$iface}{'rx_Mbps'} = ($data{$iface}{'rx_B'} - $data{$iface}{'rx_B0'})/$dt/$Mpb;
+				$data{$iface}{'tx_Mbps'} = ($data{$iface}{'tx_B'} - $data{$iface}{'tx_B0'})/$dt/$Mpb;
+
+				$data{$iface}{'rx_pps'}  =  ($data{$iface}{'rx_pps'}  < 0.0) ? -1.0 : $data{$iface}{'rx_pps'};
+				$data{$iface}{'tx_pps'}  =  ($data{$iface}{'tx_pps'}  < 0.0) ? -1.0 : $data{$iface}{'tx_pps'};
+				$data{$iface}{'rx_Mbps'} =  ($data{$iface}{'rx_Mbps'} < 0.0) ? -1.0 : $data{$iface}{'rx_Mbps'};
+				$data{$iface}{'tx_Mbps'} =  ($data{$iface}{'tx_Mbps'} < 0.0) ? -1.0 : $data{$iface}{'tx_Mbps'};
+			} else {
+				$data{$iface}{'rx_pps'}  = -1;
+				$data{$iface}{'tx_pps'}  = -1;
+				$data{$iface}{'rx_Mbps'} = -1;
+				$data{$iface}{'tx_Mbps'} = -1;
+			}
+			if (($data{$iface}{'rx0'} > 0) && ($data{$iface}{'rx_pps'} > 0) && ($data{$iface}{'rx_Mbps'} > 0)) {
+				$data{$iface}{'rx_Bpp'} = ($data{$iface}{'rx_B'} - $data{$iface}{'rx_B0'}) / ($data{$iface}{'rx'} - $data{$iface}{'rx0'});
+			} elsif (($data{$iface}{'rx_Mbps'} != -1)  && (abs($data{$iface}{'rx_pps'}) < 1.0E6)) {
+				$data{$iface}{'rx_Bpp'} = 0.0;
+			} else {
+				$data{$iface}{'rx_Bpp'} = -1;
+			}
+			if (($data{$iface}{'tx0'} > 0) && ($data{$iface}{'tx_pps'} > 0) && ($data{$iface}{'tx_Mbps'} > 0)) {
+				$data{$iface}{'tx_Bpp'} = ($data{$iface}{'tx_B'} - $data{$iface}{'tx_B0'}) / ($data{$iface}{'tx'} - $data{$iface}{'tx0'});
+			} elsif (($data{$iface}{'tx_Mbps'} != -1)  && (abs($data{$iface}{'tx_pps'}) < 1.0E6)) {
+				$data{$iface}{'tx_Bpp'} = 0.0;
+			} else {
+				$data{$iface}{'tx_Bpp'} = -1;
+			}
+
+			if (($dt > 0) && (($data{$iface}{'rx0'} > 0) || ($data{$iface}{'tx0'} > 0))) {
+				foreach my $item (@var_list) {
+					if ($data{$iface}{$item} >= 0.0) {
+						$stats{$iface}{$item}{'sumX'}  += $data{$iface}{$item};
+						$stats{$iface}{$item}{'sumX2'} += ($data{$iface}{$item} * $data{$iface}{$item});
+						$stats{$iface}{$item}{'N'}     += 1;
+					}
+				}
+
+				push @{$series{$iface}}, [ ($dt,
+					$data{$iface}{'rx_pps'}, $data{$iface}{'rx_Mbps'}, $data{$iface}{'rx_Bpp'},
+					$data{$iface}{'tx_pps'}, $data{$iface}{'tx_Mbps'}, $data{$iface}{'tx_Bpp'},
+					$timestamp)];
+			}
+			next;
+		}
+	}
+
+	foreach $iface (keys %series) {
+		while (my $elem = shift @{$series{$iface}}) {
+			($dt,	$data{$iface}{'rx_pps'}, $data{$iface}{'rx_Mbps'}, $data{$iface}{'rx_Bpp'},
+			 $data{$iface}{'tx_pps'}, $data{$iface}{'tx_Mbps'}, $data{$iface}{'tx_Bpp'}, $timestamp) = @{$elem};
+			($wday,$month,$day,$hh,$mm,$ss,$yy,$ns) = @$timestamp;
+			$time_fmt = sprintf("%04d-%02d-%02d %02d:%02d:%02d.%03d", $yy, $month, $day, $hh, $mm, $ss, $ns/1.0E6);
+			printf "%18s %5.2f | %9.1f %12.5f %9.0f | %9.1f %12.5f %9.0f | %21s\n",
+				$iface, $dt,
+				$data{$iface}{'rx_pps'}, $data{$iface}{'rx_Mbps'}, $data{$iface}{'rx_Bpp'},
+				$data{$iface}{'tx_pps'}, $data{$iface}{'tx_Mbps'}, $data{$iface}{'tx_Bpp'},
+				$time_fmt;
+		}
+
+		# Calculate final stats
+		foreach my $item (@var_list) {
+			# Calculate sample mean
+			if ($stats{$iface}{$item}{'N'} > 0) {
+				$stats{$iface}{$item}{'avg'} = $stats{$iface}{$item}{'sumX'} / $stats{$iface}{$item}{'N'};
+			} else {
+				$stats{$iface}{$item}{'avg'} = 0.0;
+			}
+			# Calculate sample standard deviation
+			if ($stats{$iface}{$item}{'N'} > 2) {
+				$stats{$iface}{$item}{'stdev'} = ($stats{$iface}{$item}{'sumX2'}
+					- ($stats{$iface}{$item}{'sumX'}**2)/$stats{$iface}{$item}{'N'})
+					/ ($stats{$iface}{$item}{'N'} - 1);
+				if ($stats{$iface}{$item}{'stdev'} > 0.0) {
+					$stats{$iface}{$item}{'stdev'} = sqrt( $stats{$iface}{$item}{'stdev'} );
+				} else {
+					$stats{$iface}{$item}{'stdev'} = 0.0;
+				}
+			} else {
+				$stats{$iface}{$item}{'stdev'} = 0.0;
+			}
+		}
+
+		# Print summary (average and standard deviation)
+		printf "%18s %5s | %9s %12s %9s | %9s %12s %9s | %s\n",
+			'-'x18, '-'x5, '-'x9, '-'x12, '-'x9, '-'x9, '-'x12, '-'x9, '-'x31;
+		printf "%18s %5.2f | %9.1f %12.5f %9.0f | %9.1f %12.5f %9.0f | %21s %s\n",
+			$iface, $stats{$iface}{'dt'}{'avg'},
+			$stats{$iface}{'rx_pps'}{'avg'}, $stats{$iface}{'rx_Mbps'}{'avg'}, $stats{$iface}{'rx_Bpp'}{'avg'},
+			$stats{$iface}{'tx_pps'}{'avg'}, $stats{$iface}{'tx_Mbps'}{'avg'}, $stats{$iface}{'tx_Bpp'}{'avg'},
+			$time_fmt, 'Average';
+		printf "%18s %5.1f | %9.1f %12.5f %9.0f | %9.1f %12.5f %9.0f | %21s %s\n",
+			$iface, $stats{$iface}{'dt'}{'stdev'},
+			$stats{$iface}{'rx_pps'}{'stdev'}, $stats{$iface}{'rx_Mbps'}{'stdev'}, $stats{$iface}{'rx_Bpp'}{'stdev'},
+			$stats{$iface}{'tx_pps'}{'stdev'}, $stats{$iface}{'tx_Mbps'}{'stdev'}, $stats{$iface}{'tx_Bpp'}{'stdev'},
+			$time_fmt, 'StdDev';
+		print "\n";
+	}
+	
+	# Print blank line between files
+	if ($WARNING) {print $WARNING, "\n";};
+	print "\n";
+}
+exit 0;
+
+#######################################################################################################################
+# Lightweight which(), derived from CPAN File::Which
+sub which {
+   my ($exec) = @_;
+   return undef unless $exec;
+   my $all = wantarray;
+   my @results = ();
+   my @path = File::Spec->path;
+   foreach my $file ( map { File::Spec->catfile($_, $exec) } @path ) {
+      next if -d $file;
+      if (-x _) { return $file unless $all; push @results, $file; }
+    }
+    $all ? return @results : return undef;
+}
+
+1;

@@ -1,0 +1,202 @@
+#!/usr/bin/perl
+
+#Copyright (c) 2016 Wind River Systems, Inc.
+#
+#SPDX-License-Identifier: Apache-2.0
+#
+# parse_postgres
+#
+# Purpose: Summarize various postgres stats.
+#
+# Modification history:
+# - 2014-Mar-10 - Jim Gauld, prototype created.
+
+use 5.10.0;
+use warnings;
+use strict;
+use File::Spec ();
+use Time::Local 'timelocal_nocheck'; # inverse time functions
+
+use constant SI_k => 1.0E3;
+use constant SI_M => 1.0E6;
+use constant SI_G => 1.0E9;
+use constant Ki => 1024.0;
+use constant Mi => 1024.0*1024.0;
+use constant Gi => 1024.0*1024.0*1024.0;
+
+# Timestamp variables
+my ($wday, $month, $day, $hh, $mm, $ss, $yy, $ns) = ();
+
+# Determine location of gunzip binary
+our $GUNZIP = which('gunzip');
+if (!(defined $GUNZIP)) {
+   die "*error* cannot find 'gunzip' binary. Cannot continue.\n";
+}
+our $BUNZIP2 = which('bunzip2');
+if (!(defined $BUNZIP2)) {
+   die "*error* cannot find 'bunzip2' binary. Cannot continue.\n";
+}
+
+foreach my $file (@ARGV) {
+	print "processing file: $file\n";
+	if ($file =~ /\.gz$/) {
+		open(FILE, "$::GUNZIP -c $file |") || die "Cannot open file: $file ($!)\n";
+	} elsif ($file =~ /\.bz2$/) {
+		open(FILE, "$::BUNZIP2 -c $file |") || die "Cannot open file: $file ($!)\n";
+	} else {
+		open(FILE, $file) || die "Cannot open file: $file ($!)\n";
+	}
+
+	my ($epoc, $epoc0, $dt, $uptime) = (0,0,0);
+	my ($iface,$timestamp,$timestamp0, $time_fmt) = ("", "", "", "");
+	my ($db, $db_size);
+	my ($schema, $tbl, $unit) = ('-','-','-');
+	my ($tbl_size, $idx_size, $tot_size, $live_tuples, $dead_tuples) = (0,0,0,0,0);
+
+	# Wipe out data and statistics per file.
+	#my (%data, %stats, %series) = ();
+
+	#my @var_list = ('dt', 'rx_pps', 'tx_pps', 'rx_Mbps', 'tx_Mbps', 'rx_Bpp', 'tx_Bpp');
+	READ_LOOP: while($_ = <FILE>) {
+		s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+
+		# Hi-resolution timestamp
+		# time:  Tue 2009-04-07 18:17:05.074387000 UTC +0000 uptime:  1153.09 897.13
+		if (/time:\s+(\w+)\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\.(\d{9})\s+\w+\s+\S+\s+uptime:\s+(\S+)\s+/) { # ignore timezone
+			$wday = $1; $yy = $2; $month = $3; $day = $4; $hh = $5; $mm = $6; $ss = $7; $ns = $8; $uptime = $9;
+			$timestamp0 = $timestamp; $epoc0 = $epoc; # store previous
+			$timestamp = [($wday,$month,$day,$hh,$mm,$ss,$yy,$ns)];
+			$epoc = $9;
+			$dt = $epoc - $epoc0;
+			next;
+		}
+
+
+		if (/# postgres database sizes/) {
+			READ_SIZES: while($_ = <FILE>) {
+				s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+				last READ_SIZES if (/^$/);
+				# CGRIFFIN update
+				$time_fmt = sprintf("%04d-%02d-%02d %02d:%02d:%02d.%03d", $yy, $month, $day, $hh, $mm, $ss, $ns/1.0E6);
+				if (/^\s+(\S+)\s+\|\s+(\d+)\s+\|\s+\d+\s+(GB|MB|kB|bytes)/) {
+					$db = $1; $db_size = $2;
+					printf "uptime: $uptime, db: $db, db_size: $db_size\n";
+
+					my $csv = '/tmp/'.$db.'_size'.'.csv';
+					if ( !(-e $csv)) {
+						open(CSV, "> $csv") || die "Could not open file: $csv ($!)";
+						print CSV join(',', 'date/time', 'db_size'), "\n";
+					} else {
+						open(CSV, ">> $csv") || die "Could not open file: $csv ($!)";
+					}
+					print CSV join(',', $time_fmt,  $db_size), "\n";
+					close(CSV);
+				}
+			}
+		}
+
+		if (/# postgres database: (\S+)/) {
+			$db = $1;
+			print "FOUND: db = $db\n";
+			READ_TABLES: while($_ = <FILE>) {
+				s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+				last READ_TABLES if (/^$/);
+				if (/^\s+(\S+)\s+\|\s+(\S+)\s+\|\s+(\d+)\s+(GB|MB|kB|bytes)\s+\|\s+(\d+)\s+(GB|MB|kB|bytes)\s+\|\s+(\d+)\s+(GB|MB|kB|bytes)\s+\|\s+(\d+)\s+\|\s+(\d+)/) {
+					$schema = $1; $tbl = $2;
+
+					$tbl_size = $3; $unit = $4;
+					if ($unit eq 'GB') {
+						$tbl_size *= SI_G;
+					} elsif ($unit eq 'MB') {
+						$tbl_size *= SI_M;
+					} elsif ($unit eq 'kB') {
+						$tbl_size *= SI_k;
+					}
+
+					$idx_size = $5; $unit = $6;
+					if ($unit eq 'GB') {
+						$idx_size *= SI_G;
+					} elsif ($unit eq 'MB') {
+						$idx_size *= SI_M;
+					} elsif ($unit eq 'kB') {
+						$idx_size *= SI_k;
+					}
+
+					$tot_size = $7; $unit = $8;
+					if ($unit eq 'GB') {
+						$tot_size *= SI_G;
+					} elsif ($unit eq 'MB') {
+						$tot_size *= SI_M;
+					} elsif ($unit eq 'kB') {
+						$tot_size *= SI_k;
+					}
+
+					$live_tuples = $9; $dead_tuples = $10;
+
+					# CGRIFFIN update: only include tables of notable sizes Ceilometer, Heat and Nova
+					if (($db eq 'ceilometer') && ($tbl =~ /\bmeter|metadata_text|metadata_int|sample|resource|trait_text|trait_int|trait_datetime|event\b/)) {
+						$time_fmt = sprintf("%04d-%02d-%02d %02d:%02d:%02d.%03d", $yy, $month, $day, $hh, $mm, $ss, $ns/1.0E6);
+						#print "s=$schema, t=$tbl, sz=$tbl_size, isz=$idx_size, tsz=$tot_size, live=$live_tuples,dead=$dead_tuples\n";
+						my $csv = '/tmp/'.$db.'_'.$tbl.'.csv';
+						if ( !(-e $csv)) {
+							open(CSV, "> $csv") || die "Could not open file: $csv ($!)";
+							print CSV join(',', 'date/time', 'schema', 'table', 'table_size', 'index_size', 'total_size', 'live_tuples', 'dead_tuples'), "\n";
+						} else {
+							open(CSV, ">> $csv") || die "Could not open file: $csv ($!)";
+						}
+						print CSV join(',', $time_fmt,  $schema,  $tbl,  $tbl_size,  $idx_size,  $tot_size,  $live_tuples,  $dead_tuples), "\n";
+						close(CSV);
+					}
+
+					if (($db eq 'heat') && ($tbl =~ /\bservice|raw_template|event|stack\b/)) {
+						$time_fmt = sprintf("%04d-%02d-%02d %02d:%02d:%02d.%03d", $yy, $month, $day, $hh, $mm, $ss, $ns/1.0E6);
+						#print "s=$schema, t=$tbl, sz=$tbl_size, isz=$idx_size, tsz=$tot_size, live=$live_tuples,dead=$dead_tuples\n";
+						my $csv = '/tmp/'.$db.'_'.$tbl.'.csv';
+						if ( !(-e $csv)) {
+							open(CSV, "> $csv") || die "Could not open file: $csv ($!)";
+							print CSV join(',', 'date/time', 'schema', 'table', 'table_size', 'index_size', 'total_size', 'live_tuples', 'dead_tuples'), "\n";
+						} else {
+							open(CSV, ">> $csv") || die "Could not open file: $csv ($!)";
+						}
+						print CSV join(',', $time_fmt,  $schema,  $tbl,  $tbl_size,  $idx_size,  $tot_size,  $live_tuples,  $dead_tuples), "\n";
+						close(CSV);
+					}
+					if (($db eq 'nova') && ($tbl =~ /\binstance_actions_events|instance_faults|instance_actions|instance_extra|instances|reservations|instance_system_metadata|instance_info_caches|block_device_mapping|compute_nodes|pci_devices|instance_id_mappings|migrations|services|task_log|aggregate_hosts\b/)) {
+						$time_fmt = sprintf("%04d-%02d-%02d %02d:%02d:%02d.%03d", $yy, $month, $day, $hh, $mm, $ss, $ns/1.0E6);
+						#print "s=$schema, t=$tbl, sz=$tbl_size, isz=$idx_size, tsz=$tot_size, live=$live_tuples,dead=$dead_tuples\n";
+						my $csv = '/tmp/'.$db.'_'.$tbl.'.csv';
+						if ( !(-e $csv)) {
+							open(CSV, "> $csv") || die "Could not open file: $csv ($!)";
+							print CSV join(',', 'date/time', 'schema', 'table', 'table_size', 'index_size', 'total_size', 'live_tuples', 'dead_tuples'), "\n";
+						} else {
+							open(CSV, ">> $csv") || die "Could not open file: $csv ($!)";
+						}
+						print CSV join(',', $time_fmt,  $schema,  $tbl,  $tbl_size,  $idx_size,  $tot_size,  $live_tuples,  $dead_tuples), "\n";
+						close(CSV);
+					}
+				}
+			}
+		}
+	}
+
+	print "\n";
+}
+
+exit 0;
+
+#######################################################################################################################
+# Lightweight which(), derived from CPAN File::Which
+sub which {
+   my ($exec) = @_;
+   return undef unless $exec;
+   my $all = wantarray;
+   my @results = ();
+   my @path = File::Spec->path;
+   foreach my $file ( map { File::Spec->catfile($_, $exec) } @path ) {
+      next if -d $file;
+      if (-x _) { return $file unless $all; push @results, $file; }
+    }
+    $all ? return @results : return undef;
+}
+
+1;

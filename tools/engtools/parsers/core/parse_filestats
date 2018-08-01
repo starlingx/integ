@@ -1,0 +1,896 @@
+#!/usr/bin/perl
+
+#Copyright (c) 2016 Wind River Systems, Inc.
+#
+#SPDX-License-Identifier: Apache-2.0
+#
+
+# Usage:
+#  parse_filestats [--list | --all | --name <pattern>] file1 file2 file3.gz ...
+#               [--pid <pid1>] ...
+#               [--cmd <string>] ...
+#               [--exact <string> ...]
+#               [--excl <string>] ...
+#               [--detail]
+#               [--thresh <MiB/d>]
+#               [--transient]
+#               [--dir <path>]
+#               [--dur <days>]
+#               [--report]
+#               [--help]
+#
+# Purpose: Parse and summarize file descriptor usage per process by name/pid.
+# Display hirunners based on daily growth rate.
+#
+# Modification history:
+# - 2016-Oct-06 - Lachlan Plant, created based on parse_memstats.
+
+##############################################################################
+use 5.10.0;
+use warnings;
+use strict;
+use Time::Local 'timelocal_nocheck'; # inverse time functions
+use File::Basename;
+use File::Spec ();
+use Data::Dumper;
+my $SCRIPT = basename($0);
+my $DEFAULT_PATH = ".";
+my $iter = 0;
+
+# Hash storage data-structures
+my (%data, %overall, %timestamps, %days, %matched, %stats) = ();
+my (%files_current, %file_stats, %file_slope) = ();
+
+# Timestamp variables
+my ($wday, $month, $day, $hh, $mm, $ss, $yy, $ns) = ();
+
+# Uptime data
+my ($uptime, $idle);
+
+my ($ftotal, $files, $sockets, $pipes);
+# Process data
+my ($PID, $TOTAL, $FD ,$U, $W, $R, $CWD, $RTD, $TXT, $MEM, $DEL, $TCP, $COMMAND, ) = ();
+
+
+# Free memory
+my ($is_strict) = (0);
+my ($avail_free_mem_MB, $unlinked_files_MB) = ();
+my ($fs_root_MB, $fs_root_p_use, $fs_tmp_MB, $fs_tmp_p_use) = ();
+
+# Argument list parameters
+our ($arg_all, $arg_match, $arg_name,
+	@arg_pids, @arg_commands, @arg_exact, @arg_commands_excl,
+	$arg_list, $arg_detail, $arg_thresh, $arg_transient, $arg_path, $arg_dur,
+	$arg_report, @arg_files) = ();
+
+# Determine location of gunzip binary
+our $GUNZIP = which('gunzip');
+if (!(defined $GUNZIP)) {
+   die "*error* cannot find 'gunzip' binary. Cannot continue.\n";
+}
+our $BUNZIP2 = which('bunzip2');
+if (!(defined $BUNZIP2)) {
+   die "*error* cannot find 'bunzip2' binary. Cannot continue.\n";
+}
+
+# Parse input arguments and print tool usage if necessary
+# -- note: @arg_pids, and @arg_commands are only defined if they are set
+&get_parse_filestats_args(\$arg_all, \$arg_match, \$arg_name,
+	\@arg_pids, \@arg_commands, \@arg_exact, \@arg_commands_excl,
+	\$arg_list, \$arg_detail, \$arg_thresh, \$arg_transient,
+	\$arg_path, \$arg_dur, \$arg_report, \@arg_files);
+
+# Print list of file information
+if (defined $arg_list) {
+	my @list = (); my %chrono = (); my ($host, $time) = ();
+	opendir(DIR, $arg_path) || die "can't opendir $arg_path: ($!)";
+	@list = sort {$a cmp $b} 
+			grep { /_(\d{4}-\d{2}-\d{2}_\d{4})_filestats?.?g?z\b/ && -f "$arg_path/$_" }
+			readdir(DIR);
+	closedir DIR;
+	foreach my $file (@list) {
+		$_ = $file;
+		($host, $time) = /(.*)_(\d{4}-\d{2}-\d{2}_\d{4})_filestats/;
+		$chrono{$host}{$time} = 1;
+	}
+	# Print out summary of hosts with oldests and newest files
+	printf "%s: List of available 'filestat' data:\n\n", $SCRIPT;
+	printf "%-20s %15s %15s\n", "host", "oldest", "newest";
+	printf "%-20s %15s %15s\n", "-"x20, "-"x15, "-"x15;
+	foreach $host (sort keys %chrono) {
+		my @times = sort {$a cmp $b} keys %{$chrono{$host}};
+		printf "%-20s %15s %15s\n", $host, $times[0], $times[-1];
+	}
+	exit 1;
+}
+
+# Print selected options (except for file list)
+if ((@arg_pids) || (@arg_commands)) {
+	printf "selected pids/patterns: @arg_pids @arg_commands\n";
+}
+printf "this may take a while...\n";
+
+# Determine file list based on smart file GLOB
+if (!@arg_files) {
+	if (defined $arg_name) {
+		@arg_files = <$arg_path/*$arg_name*>;
+	} else {
+		@arg_files = <$arg_path/*file*>
+	}
+	if (!@arg_files) {
+		printf "no files selected.\n";
+	}
+}
+
+# Compile regular expressions command string patterns
+# -- store list of expressions to INCLUDE
+my @re_commands = ();
+foreach my $arg (@arg_commands) {
+	push @re_commands, qr/\Q$arg\E/;
+}
+my @re_exact_commands = ();
+foreach my $arg (@arg_exact) {
+	push @re_exact_commands, qr/\Q$arg\E/;
+}
+# -- store list of expressions to EXCLUDE
+my @nre_commands = ();
+push @arg_commands_excl, $SCRIPT;
+foreach my $arg (@arg_commands_excl) {
+	push @nre_commands, qr/\Q$arg\E/;
+}
+
+# Determine list of files per matching hostname
+my %filenames = ();
+foreach my $file (sort @arg_files) {
+
+	if ($file !~ /_\d{4}-\d{2}-\d{2}_\d{4}_file/) {
+			printf "ignoring: '$file', does not match '_<yyyy>-<mm>-<dd>-<hhmm>_file' format.\n";
+			next;
+	}
+
+	my $host = $file; $host =~ s/_\d{4}-\d{2}-\d{2}_\d{4}_.*$//; $host =~ s/^.*\///;
+	printf "host = $host, file = $file\n";
+	push @{$filenames{$host}}, $file; 
+}
+
+# Prune file list retain most recent number of --dur <days> per host
+my $max_files = int($arg_dur*24);
+foreach my $host (keys %filenames) {
+	if (scalar(@{$filenames{$host}}) > $max_files) { # prune to size of max_files, keeping end of list (most recent)
+		@{$filenames{$host}} = splice(@{$filenames{$host}},-$max_files);
+	}
+}
+
+my $seconds_in_day = 24*60*60;
+my $first_time = 0.0;
+my $last_time = 0.0;
+
+# PROCESS ALL MATCHING HOSTS
+# -- then process all files per host in chronological order
+foreach my $host (sort keys %filenames) {
+	my $pass = 1;
+	REPEAT_CALCULATION:
+	$iter = 0; $first_time = 0.0;
+	%matched = ();
+	%data = ();
+	%timestamps = ();
+	%overall = ();
+	%days = ();
+	%stats = ();
+	%file_stats = ();
+
+	
+	# Evalutate first and last filename's time and convert time to days relative to first_time
+	my $first_file = ${$filenames{$host}}[0];
+	my $last_file  = ${$filenames{$host}}[-1];
+	$_ = $first_file; ($yy, $month, $day, $hh) = /_(\d{4})-(\d{2})-(\d{2})_(\d{2})\d{2}_file/;
+	$first_time = timelocal_nocheck(00, 00, $hh, $day, $month-1, $yy-1900)/$seconds_in_day;
+	my $first_date = sprintf("%4d-%02d-%02d %02d:00", $yy, $month, $day, $hh);
+	$_ = $last_file; ($yy, $month, $day, $hh) = /_(\d{4})-(\d{2})-(\d{2})_(\d{2})\d{2}_file/;
+	$last_time  = timelocal_nocheck(59, 59, $hh, $day, $month-1, $yy-1900)/$seconds_in_day - $first_time;
+	my $last_date = sprintf("%4d-%02d-%02d %02d:00", $yy, $month, $day, $hh);
+
+	FILE_LIST: foreach my $file ( @{$filenames{$host}} ) {
+		my $FOUND = 0; # handle files being decompressed while parser is running
+		if ( -e $file ) {
+			if ($file =~ /\.gz$/) {
+				open(FILE, "$::GUNZIP -c $file |") || die "Cannot open file: $file ($!)\n";
+			} elsif ($file =~ /\.bz2$/) {
+				open(FILE, "$::BUNZIP2 -c $file |") || die "Cannot open file: $file ($!)\n";
+			} else {
+				open(FILE, $file) || die "Cannot open file: $file ($!)\n";
+			}
+			$FOUND = 1;
+		} else {
+			if ($file =~ /\.gz$/) {$file =~ s/\.gz//;} else {$file .= '.gz';}
+			if ($file =~ /\.bz2$/) {$file =~ s/\.bz2//;} else {$file .= '.bz2';}
+			if ( -e $file ) {
+				if ($file =~ /\.gz$/) {
+					open(FILE, "$::GUNZIP -c $file |") || die "Cannot open file: $file ($!)\n";
+				} elsif ($file =~ /\.bz2$/) {
+					open(FILE, "$::BUNZIP2 -c $file |") || die "Cannot open file: $file ($!)\n";
+				} else {
+					open(FILE, $file) || die "Cannot open file: $file ($!)\n";
+				}
+				$FOUND = 1;
+			}
+		}
+		next if ($FOUND == 0);
+
+		# Parse file line at a time
+		READ_LOOP: while($_ = <FILE>) {
+			s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+
+			# START OF SAMPLE Time: Parse hires timestamp, ignore timezone
+			if (/time:\s+(\w+)\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\.(\d{9})\s+\w+\s+\S+\s+uptime:\s+(\S+)\s+(\S+)/) {
+				$wday = $1; $yy = $2; $month = $3; $day = $4; $hh = $5; $mm = $6; $ss = $7; $ns = $8; $uptime = $9; $idle = $10;
+				$FOUND = -1 if (($FOUND == 1) || ($FOUND == -2));
+				$timestamps{$iter} = [($wday,$month,$day,$hh,$mm,$ss,$yy)];
+				$days{$iter} = timelocal_nocheck($ss, $mm, $hh, $day, $month-1, $yy-1900)/$seconds_in_day - $first_time;
+				($ftotal, $files, $sockets, $pipes) = (0, 0, 0, 0);
+				%files_current = ();
+				next READ_LOOP;
+			}
+			
+            ## ls -l /proc/*/fd
+			#TOTAL      FILES      SOCKETS    NULL PIPES
+			#4955       3385       1071       499
+
+			if (/^MEMINFO:/ || /^ls -l \/proc\/*\/fd/) {
+				# handle case where we detect the sample is incomplete, and delete
+				if ($FOUND != -1) {
+					close(FILE);
+					delete $days{$iter}       if (defined $days{$iter});
+					delete $timestamps{$iter} if (defined $timestamps{$iter});
+					delete $data{$iter}       if (defined $data{$iter});
+					delete $overall{$iter}    if (defined $overall{$iter});
+					next FILE_LIST;
+				}
+				my $hcnt = 0;
+				# find headings line
+				HEADER_LOOP: while($_ = <FILE>) {
+					s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+					$hcnt++;
+					last HEADER_LOOP if (/\bTOTAL\b/); # end titles-line
+					next READ_LOOP if (($hcnt == 1) && /^\s*$/); # end at blank-line (eg no 'ps' output)
+				}
+				next if ! $_; # sometimes $_ can be null (at EOF) and causes subsequent warnings
+				# Process all entries of MEMINFO
+				MEMINFO_LOOP: while($_ = <FILE>) {
+					s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+					last MEMINFO_LOOP if (/^\s*$/); # end at blank-line
+					($ftotal, $files, $sockets, $pipes) = /^(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*/
+
+				}
+
+			}
+			next if ! $_; # sometimes $_ can be null (at EOF) and causes subsequent warnings
+
+			# EXPECTED RAW FORMAT
+			## lsof
+			#PID     TOTAL   U      W      R      CWD    RTD    TXT    MEM    DEL    TCP   CMD
+			#20830   299     16     4      3      1      1      1      16     0      1     lcore-sla
+
+			if (/^PROCESS SUMMARY:/ || /^# lsof/) {
+				my $hcnt = 0;
+				# find headings line
+				HEADER_LOOP: while($_ = <FILE>) {
+					s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+					$hcnt++;
+					last HEADER_LOOP if (/\bPID\b/); # end titles-line
+					next READ_LOOP if (($hcnt == 1) && /^\s*$/); # end at blank-line (eg no 'ps' output)
+				}
+				next if ! $_; # sometimes $_ can be null (at EOF) and causes subsequent warnings
+
+				# Parse file line at a time
+				PROCESS_LOOP: while($_ = <FILE>) {
+					my $found_pid = 0;
+					s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
+					last PROCESS_LOOP if (/^\s*$/); # end at blank-line
+					if (($PID ,$TOTAL, $FD, $U, $W, $R, $CWD, $RTD, $TXT, $MEM, $DEL, $TCP, $COMMAND) = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(.*)/) {
+						$found_pid = 1;
+					}
+					if ($found_pid == 1) {
+						# Match on multiple regular expressions or multiple pids
+						my $match = (defined $arg_all ? 1: 0);
+						foreach my $pid (@arg_pids)          {if ($pid == $PID)        {$match = 1; goto FOUND_CMD;} } # inclusions
+						foreach my $nre (@nre_commands)      {if ($COMMAND =~ $nre)    {$match = 0; goto FOUND_CMD;} } # exclusions
+						foreach my $re  (@re_commands)       {if ($COMMAND =~ $re)     {$match = 1; goto FOUND_CMD;} } # inclusions
+						foreach my $re  (@re_exact_commands) {if ($COMMAND =~ /^$re$/) {$match = 1; goto FOUND_CMD;} } # inclusions
+						FOUND_CMD: if ($match == 1) {
+							if ($arg_match) {
+								
+								$matched{'MATCH'}{$PID} = 1;
+								$data{$iter}{'MATCH'}{$PID} = [($TOTAL, $FD, $U, $W, $R, $CWD, $RTD, $TXT, $MEM, $DEL, $TCP)];
+							} else {
+								$matched{$COMMAND}{$PID} = 1;
+								$data{$iter}{$COMMAND}{$PID} = [($TOTAL, $FD, $U, $W, $R, $CWD, $RTD, $TXT, $MEM, $DEL, $TCP)];
+							}
+							$files_current{$COMMAND} += $FD;
+						}
+					}
+				}
+			}
+			next if ! $_; # sometimes $_ can be null (at EOF) and causes subsequent warnings
+
+			if (/^END OF SAMPLE:/ || /^----/ || / done$/) {
+				next if !(defined $uptime);
+
+				$FOUND = -2; # flag that we parsed complete file descriptor sample
+
+				# Handle incomplete sample in case there was no END OF SAMPLE
+				if (!(defined $days{$iter}) || !(defined $timestamps{$iter})) {
+					delete $days{$iter}       if (defined $days{$iter});
+					delete $timestamps{$iter} if (defined $timestamps{$iter});
+					delete $data{$iter}       if (defined $data{$iter});
+					delete $overall{$iter}    if (defined $overall{$iter});
+					next;
+				}
+
+				$overall{$iter} = [($ftotal, $files, $sockets, $pipes, $uptime)];
+
+				# Store data for hirunner stats for current day only
+				my $day = $days{$iter};
+				if (!(defined $day)) {
+					printf "iter = %s\n", $iter;
+					printf "day=%s, last_time=%s\n", $day, $last_time;
+					$Data::Dumper::Indent = 1;
+					print Data::Dumper->Dump([\%overall], [qw(overall)]);
+					#printf "overall:%s = %s\n", $iter, "@{$overall{$iter}}";
+				}
+				if ($day >= ($last_time - 1.0)) {
+					foreach my $cmd (keys %files_current) {
+						my ($count, $cur_files, $max_files, $sum_X, $sum_Y, $sum_XX, $sum_XY) = (0,0,0,0,0,0,0);
+						if (defined $file_stats{$cmd}) {
+							($count, $cur_files, $max_files, $sum_X, $sum_Y, $sum_XX, $sum_XY) = @{$file_stats{$cmd}};
+						}
+						$count++;
+						$cur_files = $files_current{$cmd};
+						$max_files = ($cur_files > $max_files) ? $cur_files : $max_files;
+						$sum_X   += $day;
+						$sum_Y   += $cur_files;
+						$sum_XX  += ($day * $day);
+						$sum_XY  += ($cur_files * $day);
+						$file_stats{$cmd} = [($count, $cur_files, $max_files, $sum_X, $sum_Y, $sum_XX, $sum_XY)];	
+					}
+				}
+				$iter++;
+				$uptime = ();
+				next READ_LOOP;
+			}
+		}
+		close(FILE);
+
+		# Check that last sample was completed, else delete last hash key if defined
+		# -- no use in showing a message to user, will just confuse
+		if ($FOUND != -2 || !$overall{$iter}) {
+			delete $days{$iter}       if (defined $days{$iter});
+			delete $timestamps{$iter} if (defined $timestamps{$iter});
+			delete $data{$iter}       if (defined $data{$iter});
+			delete $overall{$iter}    if (defined $overall{$iter});
+		}
+	}
+
+	# PRINT SUMMARY FOR THIS HOSTNAME
+	my ($idx_nlwp, $idx_rss, $idx_vsz) = (0, 1, 2);
+	my ($idx_TOTAL, $idx_FD, $idx_U, $idx_W, $idx_R, $idx_CWD, $idx_RTD, $idx_TXT, $idx_MEM, $idx_DEL, $idx_TCP) = (0,1,2,3,4,5,6,7,8,9,10);
+	my ($idx_ftotal, $idx_files, $idx_sockets, $idx_pipes, $idx_uptime) = (0,1,2,3,4);
+	my ($idx_wday, $idx_month, $idx_day, $idx_hh, $idx_mm, $idx_ss, $idx_yy) = (0, 1, 2, 3, 4, 5, 6);
+	my @iters = sort {$a <=> $b} keys %timestamps;
+	if (scalar(@iters) == 0) {
+		# do not continue processing for this host if no valid data
+		print "\n", "="x80, "\n", "NO VALID DATA FOR: $host\n\n";
+		next;
+	}
+	$last_time = $days{ $iters[-1] };
+
+	# Calculate statistics (only on first pass)
+	my $idx_mem = $idx_FD;
+	if ((defined $arg_report) && ($pass == 1)) {
+		$pass++;
+		my %num = ();
+		foreach my $iter (@iters) {
+			my $avail    = ${ $overall{$iter} }[$idx_ftotal];
+			my $unlinked = ${ $overall{$iter} }[$idx_files];
+			my $fs_root  = ${ $overall{$iter} }[$idx_sockets];
+			my $uptime   = ${ $overall{$iter} }[$idx_uptime];
+			my $slab     = ${ $overall{$iter} }[$idx_pipes];
+			my $day      = $days{$iter};
+			my @keys     = ();
+			# Cumulate stats for regression
+			if ($days{$iter} >= ($last_time - 1.0)) { push @keys, '1day';}
+			foreach my $key (@keys) {
+				$stats{$key}{'DAY'}{'sum_X'}  += $day;
+				$stats{$key}{'DAY'}{'sum_XX'} += ($day * $day);
+				$stats{$key}{'DAY'}{'sum_XY'} += ($day * $day);
+				$num{$key}++;
+			}
+			foreach my $cmd (sort {$b cmp $a} keys %matched) {
+				# Sum up key values for commands that match
+				my $SUM_fd = 0.0;
+				foreach my $pid (keys %{ $matched{$cmd} }) {
+					if (defined $data{$iter}{$cmd}{$pid}) {
+						$SUM_fd += ${ $data{$iter}{$cmd}{$pid} }[$idx_FD];
+					}
+				}
+				# Cumulate stats for regression
+				foreach my $key (@keys) {
+					$stats{$key}{'fd_' .$cmd}{'sum_X'}  += $SUM_fd;
+					$stats{$key}{'fd_' .$cmd}{'sum_XX'} += ($SUM_fd  * $SUM_fd);
+					$stats{$key}{'fd_' .$cmd}{'sum_XY'} += ($SUM_fd  * $day);
+				}
+			}
+		}
+
+		# Perform simple linear regression on all variables
+		foreach my $key (keys %stats) {
+			foreach my $var (keys %{ $stats{$key} }) {
+				($stats{$key}{$var}{'int'}, $stats{$key}{$var}{'slope'}) = &linear_fit(
+					$stats{$key}{'DAY'}{'sum_X'}, # 'DAY' is 'x' variable
+					$stats{$key}{$var}{'sum_X'},
+					$stats{$key}{$var}{'sum_XY'},
+					$stats{$key}{'DAY'}{'sum_XX'},
+					$num{$key}
+				);
+			}
+		}
+		%file_slope = ();
+		my $max_iter = $iters[-1];
+
+		# Compile regular expressions command string patterns
+		# -- store list of expressions to INCLUDE
+		@re_exact_commands = ();
+		foreach my $arg (@arg_exact) {
+			push @re_exact_commands, qr/\Q$arg\E/;
+		}
+		foreach my $cmd (keys %{file_stats}) {
+			my ($count, $cur_files, $max_files, $sum_X, $sum_Y, $sum_XX, $sum_XY) = @{$file_stats{$cmd}};
+			my ($intercept, $slope) = &linear_fit($sum_X, $sum_Y, $sum_XY, $sum_XX, $count);
+			$file_slope{$cmd} = $slope; # slope (MiB/d)
+			# sneaky check for ignoring transient processes
+			# i.e. specific process exists less than half a day,
+			# or is in less than half the samples
+			if (($file_slope{$cmd} >= $arg_thresh) &&
+				((defined $arg_transient) ||
+				((($max_iter >= 142) && ($count > 70)) ||
+				(($max_iter < 142)  && ($max_iter/2 < $count))
+				))) {
+				push @re_exact_commands, qr/\Q$cmd\E/;
+			}
+		}
+		goto REPEAT_CALCULATION;
+	}
+
+	print "\n", "="x80, "\n", "SUMMARY: host:$host ($first_date to $last_date)\n\n";
+
+	if (keys %matched) {
+	
+		# PRINT HEADING OF MATCHED COMMAND PATTERNS AND PIDS
+		my %labels = ();
+		my $ele = 0;
+		foreach my $cmd (sort {$b cmp $a} keys %matched) {
+			my @pids = keys %{$matched{$cmd}};
+			# Create short command name
+			my $name = "";
+			$_ = $cmd;
+			if (/^\[(.*)\]/) {
+				$name = $1;
+			} else {
+				my @array = split(/\s+/, $cmd);
+				$name = shift @array; $name =~ s/^.*\///;
+			}
+			$labels{$cmd} = sprintf("%d:%s", $ele, $name);
+			printf "label: %s (%s)\n", $labels{$cmd}, $cmd;
+			printf " pids:(";
+			foreach my $pid (sort {$a <=> $b} keys %{ $matched{$cmd} }) {
+				printf "%d,", $pid;
+			}
+			printf ")\n";
+			$ele++;
+		}
+
+		# PRINT COLUMN HEADINGS FOR EACH PATTERN
+		printf "%10s %9s", "", "";
+		if (!(defined $arg_report)) {
+			my $width = 26;
+			foreach my $cmd (sort {$b cmp $a} keys %matched) {
+				my @pids = keys %{$matched{$cmd}};
+				printf " | %26s", substr $labels{$cmd}, 0, $width;
+			}
+		} else {
+			my $width = 15;
+			foreach my $cmd (sort {$b cmp $a} keys %matched) {
+				my @pids = keys %{$matched{$cmd}};
+				printf " %15s", substr $labels{$cmd}, 0, $width;
+			}
+		}
+		print "\n";
+	}
+	printf "%10s %9s", "DATE", "TIME";
+	if (!(defined $arg_report)) {
+		foreach my $cmd (sort {$b cmp $a} keys %matched) {
+			printf " | %8s %8s %8s", "U", "R", "W";
+		}
+	} else {
+		foreach my $cmd (sort {$b cmp $a} keys %matched) {
+			printf "         %8s", "FD";
+		}
+	}
+	
+	
+	
+	
+	
+	print "\n";
+	my %num = ();
+	my $uptime_last = 0.0;
+	my $num_reboots = 0;
+	foreach my $iter (@iters) {
+		my $ftotal    = ${ $overall{$iter} }[$idx_ftotal];
+		my $f_files = ${ $overall{$iter} }[$idx_files];
+		my $sockets  = ${ $overall{$iter} }[$idx_sockets];
+		my $uptime   = ${ $overall{$iter} }[$idx_uptime];
+		my $pipes     = ${ $overall{$iter} }[$idx_pipes];
+		my $day      = $days{$iter};
+		my @keys     = ('all');
+		if ($uptime < $uptime_last) {
+			$num_reboots++;
+			if (defined $arg_detail) {
+				printf "--reboot detected----%28s", '-'x28;
+				if (!(defined $arg_report)) {
+					foreach (keys %matched) {printf "%25s", '-'x25;}
+				} else {
+					foreach (keys %matched) {printf "%12s", '-'x12;}
+				}
+				print "\n";
+			}
+		}
+		if ((defined $arg_detail) || ($iter == $iters[-1])) {
+			printf "%04d-%02d-%02d  %02d:%02d:%02d",
+				${ $timestamps{$iter} }[$idx_yy],
+				${ $timestamps{$iter} }[$idx_month],
+				${ $timestamps{$iter} }[$idx_day],
+				${ $timestamps{$iter} }[$idx_hh],
+				${ $timestamps{$iter} }[$idx_mm],
+				${ $timestamps{$iter} }[$idx_ss];
+		}
+		# Cumulate stats for regression
+		if ($days{$iter} >= ($last_time - 1.0)) { push @keys, '1day';}
+		foreach my $key (@keys) {
+			$stats{$key}{'DAY'}{'sum_X'}       += $day;
+			$stats{$key}{'TOTAL'}{'sum_X'}     += $ftotal;
+			$stats{$key}{'PIPES'}{'sum_X'}      += $pipes;
+			$stats{$key}{'FILES'}{'sum_X'}  += $f_files;
+			$stats{$key}{'SOCKETS'}{'sum_X'}  += $sockets;
+			$stats{$key}{'DAY'}{'sum_XX'}      += ($day      * $day);
+			$stats{$key}{'TOTAL'}{'sum_XX'}    += ($ftotal    * $ftotal);
+			$stats{$key}{'PIPES'}{'sum_XX'}     += ($pipes     * $pipes);
+			$stats{$key}{'FILES'}{'sum_XX'} += ($f_files * $f_files);
+			$stats{$key}{'SOCKETS'}{'sum_XX'} += ($sockets  * $sockets);
+			$stats{$key}{'DAY'}{'sum_XY'}      += ($day      * $day);
+			$stats{$key}{'TOTAL'}{'sum_XY'}    += ($ftotal    * $day);
+			$stats{$key}{'PIPES'}{'sum_XY'}     += ($pipes     * $day);
+			$stats{$key}{'FILES'}{'sum_XY'} += ($f_files * $day);
+			$stats{$key}{'SOCKETS'}{'sum_XY'} += ($sockets  * $day);
+			$num{$key}++;
+		}
+		foreach my $cmd (sort {$b cmp $a} keys %matched) {
+			# Sum up key values for commands that match
+			my ($SUM_u, $SUM_r, $SUM_w, $SUM_FD) = (0.0, 0.0, 0.0, 0.0);
+			foreach my $pid (keys %{ $matched{$cmd} }) {
+				if (defined $data{$iter}{$cmd}{$pid}) {
+					$SUM_u += ${ $data{$iter}{$cmd}{$pid} }[$idx_U];
+					$SUM_r  += ${ $data{$iter}{$cmd}{$pid} }[$idx_R];
+					$SUM_w  += ${ $data{$iter}{$cmd}{$pid} }[$idx_W];
+					$SUM_FD  += ${ $data{$iter}{$cmd}{$pid} }[$idx_FD];
+				}
+			}
+			if ((defined $arg_detail) || ($iter == $iters[-1])) {
+				if (!(defined $arg_report)) {
+					printf " | %8d %8d %8d", $SUM_u, $SUM_r, $SUM_w;
+				} else {
+					printf "         %8d", $SUM_FD;
+				}
+			}
+			# Cumulate stats for regression
+			foreach my $key (@keys) {
+				$stats{$key}{'u_'.$cmd}{'sum_X'}  += $SUM_u;
+				$stats{$key}{'r_' .$cmd}{'sum_X'}  += $SUM_r;
+				$stats{$key}{'w_' .$cmd}{'sum_X'}  += $SUM_w;
+				$stats{$key}{'u_'.$cmd}{'sum_XX'} += ($SUM_u * $SUM_u);
+				$stats{$key}{'r_' .$cmd}{'sum_XX'} += ($SUM_r  * $SUM_r);
+				$stats{$key}{'w_' .$cmd}{'sum_XX'} += ($SUM_w  * $SUM_w);
+				$stats{$key}{'u_'.$cmd}{'sum_XY'} += ($SUM_u * $day);
+				$stats{$key}{'r_' .$cmd}{'sum_XY'} += ($SUM_r  * $day);
+				$stats{$key}{'w_' .$cmd}{'sum_XY'} += ($SUM_w  * $day);
+				$stats{$key}{'fd_' .$cmd}{'sum_X'}  += $SUM_FD;
+				$stats{$key}{'fd_' .$cmd}{'sum_XX'} += ($SUM_FD  * $SUM_FD);
+				$stats{$key}{'fd_' .$cmd}{'sum_XY'} += ($SUM_FD  * $day);
+			}
+		}
+		if ((defined $arg_detail) || ($iter == $iters[-1])) {
+			printf "\n";
+		}
+		# save uptime for comparison
+		$uptime_last = $uptime;
+	}
+	
+	
+	# Perform simple linear regression on all variables
+	foreach my $key (keys %stats) {
+		foreach my $var (keys %{ $stats{$key} }) {
+			($stats{$key}{$var}{'int'}, $stats{$key}{$var}{'slope'}) = &linear_fit(
+				$stats{$key}{'DAY'}{'sum_X'}, # 'DAY' is 'x' variable
+				$stats{$key}{$var}{'sum_X'},
+				$stats{$key}{$var}{'sum_XY'},
+				$stats{$key}{'DAY'}{'sum_XX'},
+				$num{$key}
+			);
+		}
+	}
+	
+	
+	
+	%file_slope = ();
+	foreach my $cmd (keys %{file_stats}) {
+		
+		my ($count, $cur_files, $max_files, $sum_X, $sum_Y, $sum_XX, $sum_XY) = @{$file_stats{$cmd}};
+		my ($intercept, $slope) = &linear_fit($sum_X, $sum_Y, $sum_XY, $sum_XX, $count);
+		$file_slope{$cmd} = $slope; 
+	}
+	
+	# Print out linear trends
+	# [ OBSOLETE ] printf "%20s %8s %7s %6s %5s", '-'x20, '-'x8, '-'x7, '-'x6, '-'x5;
+	printf "%20s", '-'x20;
+	if (!(defined $arg_report)) {
+		foreach my $cmd (sort {$b cmp $a} keys %matched) {
+			printf " | %8s %8s %8s", '-'x8, '-'x8, '-'x8;
+		}
+	} else {
+		foreach my $cmd (sort {$b cmp $a} keys %matched) {
+			printf " %15s", '-'x15;
+		}
+	}
+	print "\n";
+	foreach my $key (sort {$b cmp $a} keys %stats) {
+		printf "%20s", ($key eq 'all') ? "LONG TREND: (FD/d)" : "1 DAY TREND: (FD/d)";
+		if (!(defined $arg_report)) {
+			foreach my $cmd (sort {$b cmp $a} keys %matched) {
+				printf " | %8.3f %8.3f %8.3f",
+					$stats{$key}{'u_'.$cmd}{'slope'},
+					$stats{$key}{'w_' .$cmd}{'slope'},
+					$stats{$key}{'r_' .$cmd}{'slope'};
+			}
+		} else {
+			foreach my $cmd (sort {$b cmp $a} keys %matched) {
+				printf "    %8.3f", $stats{$key}{'fd_' .$cmd}{'slope'};
+			}
+		}
+		if (($key eq 'all') && ($num_reboots > 0)) {
+			printf " (%d reboots)", $num_reboots;
+		}
+		print "\n";
+	}
+	
+	
+	
+	my $n = 0;
+	# Print out hirunner process growth
+	printf "\nPROCESSES WITH HIGHEST GROWTH (1 DAY TREND: > %.1f FD's/day):\n", $arg_thresh;
+	printf "%9s %9s %9s %s\n", 'CurFDs', 'HiFDs', 'Rate', 'COMMAND';
+	printf "%9s %9s %9s %s\n", '-'x8, '-'x8, '-'x8, '-'x9;
+	foreach my $cmd (sort {$file_slope{$b} <=> $file_slope{$a} } keys %file_slope) {
+		last if ($file_slope{$cmd} < $arg_thresh);
+		my $max_iter = $iters[-1];
+		my ($count, $cur_files, $max_files, $sum_X, $sum_Y, $sum_XX, $sum_XY) = @{$file_stats{$cmd}};
+		if ((defined $arg_transient) || ((($max_iter >= 142) && ($count > 70)) ||
+		    (($max_iter < 142)  && ($max_iter/2 < $count)))) { # print only processes seen most of the time
+			printf "%9.3f %9.3f %9.3f %s\n", $cur_files, $max_files, $file_slope{$cmd}, $cmd;
+			$n++;
+		}
+	}
+	print "none\n" if ($n == 0);
+	print "\n";
+}
+
+exit 0;
+
+#######################################################################################################################
+# Lightweight which(), derived from CPAN File::Which
+sub which {
+   my ($exec) = @_;
+   return undef unless $exec;
+   my $all = wantarray;
+   my @results = ();
+   my @path = File::Spec->path;
+   foreach my $file ( map { File::Spec->catfile($_, $exec) } @path ) {
+      next if -d $file;
+      if (-x _) { return $file unless $all; push @results, $file; }
+    }
+    $all ? return @results : return undef;
+}
+
+# Process "parse_filestats" command line arguments and set defaults
+sub get_parse_filestats_args {
+	# Returned parameters
+	local (*::arg_all, *::arg_match, *::arg_name,
+		*::arg_pids, *::arg_commands, *::arg_exact, *::arg_commands_excl,
+		*::arg_list, *::arg_detail, *::arg_thresh, *::arg_transient,
+		*::arg_path, *::arg_dur, *::arg_report, *::arg_files) = @_;
+
+	# Local variables
+	my ($fail, $arg_help) = ();
+	my @tmp = ();
+
+	# Use the Argument processing module
+	use Getopt::Long;
+
+	# Print usage if no arguments
+	if (!@ARGV) {
+		&Usage();
+		exit 0;
+	}
+
+	# Process input arguments
+	$fail = 0;
+	GetOptions(
+		"all",       \$::arg_all, # CURRENTLY UNUSED
+		"match",     \$::arg_match,
+		"name=s",    \$::arg_name,
+		"pid=i",     \@::arg_pids,
+		"cmd=s",     \@::arg_commands,
+		"exact=s",   \@::arg_exact,
+		"excl=s",    \@::arg_commands_excl,
+		"list",      \$::arg_list,
+		"detail",    \$::arg_detail,
+		"thresh=f",  \$::arg_thresh,
+		"transient", \$::arg_transient,
+		"dir=s",     \$::arg_path,
+		"dur=f",     \$::arg_dur,
+		"report",    \$::arg_report,
+		"help|?",    \$arg_help
+	) || GetOptionsMessage();
+
+	# Print help documentation if user has selected -help
+	&ListHelp() if (defined $arg_help);
+
+	# Listify @::arg_pids
+	@tmp = ();
+	if (@::arg_pids) {
+		@tmp = @::arg_pids; @::arg_pids = ();
+		foreach my $pid (@tmp) { push @::arg_pids, (split /,/, $pid); }
+	}
+	# Listify @::arg_commands
+	@tmp = ();
+	if (@::arg_commands) {
+		@tmp = @::arg_commands; @::arg_commands = ();
+		foreach my $cmd (@tmp) { push @::arg_commands, (split /,/, $cmd); }
+	}
+	# Listify @::arg_exact
+	@tmp = ();
+	if (@::arg_exact) {
+		@tmp = @::arg_exact; @::arg_exact = ();
+		foreach my $cmd (@tmp) { push @::arg_exact, (split /,/, $cmd); }
+	}
+	# Listify @::arg_commands_excl
+	@tmp = ();
+	if (@::arg_commands_excl) {
+		@tmp = @::arg_commands_excl; @::arg_commands_excl = ();
+		foreach my $cmd (@tmp) { push @::arg_commands_excl, (split /,/, $cmd); }
+	}
+	
+	# Give warning messages and usage when parameters are specified incorrectly.
+	my $cnt = 0;
+	$cnt++ if (defined $::arg_name);
+	$cnt++ if (defined $::arg_list);
+	##$cnt++ if (defined $::arg_all);
+	# [ JGAULD - maybe add $::arg_match]
+	if ($cnt > 1) {
+		warn "$SCRIPT: Input error: cannot specify more than one of {--list} or {--name <pattern>} options.\n";
+		$fail = 1;
+	}
+	if ($fail == 1) {
+		# touch variables here to make silly warning go away
+		$::arg_all = ""; $::arg_match = "";
+		$::arg_name = ""; $::arg_list = ""; $::arg_detail = "";
+		$::arg_thresh = 0; $::arg_transient = "";
+		&Usage();
+		exit 1;
+	}
+
+	# Assume remaining options are filenames
+	@::arg_files    = @ARGV;
+
+	# Set defaults for options requiring values
+	if (!(defined $::arg_thresh)) {
+		$::arg_thresh = 1.0; # Default to 10 FD/d
+	}
+	if (!(defined $::arg_dur)) {
+		$::arg_dur = 7.0; # Default to 7.0 days worth of data
+	} else {
+		$::arg_dur = 1.0 if ($::arg_dur < 1.0); # minimum 1 day worth of data
+	}
+	$::arg_path   ||= $DEFAULT_PATH;
+	$::arg_detail = 1 if (defined $::arg_report); # print details if 'report' option chosen
+}
+
+sub GetOptionsMessage {
+	# Print out a warning message and then print program usage.
+	warn "$SCRIPT: Error processing input arguments.\n";
+	&Usage();
+	exit 1;
+}
+
+sub Usage {
+	# Print out program usage.
+	printf "Usage: $SCRIPT file1 file2 file3.gz ...\n";
+	printf "\t[--list | --all | --name <glob_pattern>]\n";
+	printf "\t[--pid  <pid>    ] ...\n";
+	printf "\t[--cmd  <pattern>] ...\n";
+	printf "\t[--exact <pattern>] ...\n";
+	printf "\t[--excl <pattern>] ...\n";
+	printf "\t[--detail]\n";
+	printf "\t[--thresh <MiB/d>]\n";
+	printf "\t[--transient]\n";
+	printf "\t[--dir <path>]\n";
+	printf "\t[--dur <days>]\n";
+	printf "\t[--report]\n";
+	printf "\t[--help | -?]\n";
+}
+
+sub ListHelp {
+	# Print out tool help
+	printf "$SCRIPT  -- parses 'filestats' data and prints processes with hirunner file growth\n";
+	&Usage();
+	printf "\nOptional input arguments:\n";
+	printf "  --list                   : list all available 'file' data\n";
+	printf "  --all                    : summarize all blades\n";
+	printf "  --name <glob_pattern>    : match files with pattern (file globbing allowed if in \"quotes\")\n";
+	printf "  --pid <pid>              : match 'pid' (can specify multiple pids)\n";
+	printf "  --cmd   <command|pattern> : match command name 'string' pattern (can specify multiple patterns)\n";
+	printf "  --exact <command|pattern> : exact match command name 'string' pattern (can specify multiple patterns)\n";
+	printf "  --excl  <command|pattern> : match command name 'string' pattern to exclude (can specify multiple patterns)\n";
+	printf "  --detail                 : time-series output\n";
+	printf "  --thresh                 : set threshold for hirunner growth processes : default > 0.005 MiB/d\n";
+	printf "  --transient              : include transient processes (i.e., do not filter out short-lived processes)\n";
+	printf "  --dir <path>             : path to filestat files : default: $DEFAULT_PATH\n";
+	printf "  --dur <days>             : number of days of data to process : default: 7.0\n";
+	printf "  --report                 : summarize details for hi-runner file growth\n";
+	printf "  --help                   : this help information\n";
+	printf "\nfile data storage:  %s/%s\n", $DEFAULT_PATH, "<hostname>_<yyyy>-<mm>-<dd>_<hh>00_filestats{.gz}";
+	printf "(most data files are gzip compressed)\n";
+	printf "\nExamples:\n";
+	printf "  $SCRIPT --all                       (i.e., summarize all hosts\n";
+	printf "  $SCRIPT --name 2014-02-22           (i.e., match files containing 2014-02-22)\n";
+	printf "  $SCRIPT --name compute-0 --cmd python   (i.e., compute-0, specify process(es))\n";
+	printf "  $SCRIPT --name compute-0 --pid 1 --pid 2 --detail (i.e., slot 1, specify PIDs 1 and 2 time-series)\n";
+	printf "  $SCRIPT --name controller-0 --cmd python --excl blah --detail (i.e., time-series for 'python', but not 'blah')\n";
+
+	printf "\nReported Memory Headings:\n";
+	printf "  FD    (#) - Total File descriptors for process\n";
+	printf "  U     (#) - Read Write files open for process\n";
+	printf "  W     (#) - Write Only files open for process\n";
+	printf "  R     (#) - Read Only files open for process\n";
+	printf "  TREND        - reported in change of Files per day";
+	printf "\n";
+	exit 0;
+}
+
+# Calculate linear regression coefficients for linear equation, y = a + b*x
+sub linear_fit {
+	my ($sum_X, $sum_Y, $sum_XY, $sum_XX, $n) = @_;
+	my ($a, $b, $s1_sq) = ();
+
+	# Prevent doing regression with less than 2 points
+	return (0,0) if ($n < 2);
+	$s1_sq = ($sum_XX - $sum_X / $n * $sum_X) / ($n - 1);
+	
+	# Prevent divide by zero
+	return (0,0) if ($s1_sq <= 0.0);
+	
+	$b = ($n * $sum_XY - $sum_X * $sum_Y) / $n / ($n - 1) / $s1_sq;
+	$a = ($sum_Y - $b * $sum_X)/$n;
+	return ($a, $b);
+}
+
+1;
