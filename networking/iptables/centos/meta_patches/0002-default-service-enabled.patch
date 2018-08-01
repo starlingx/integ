@@ -1,0 +1,24 @@
+From 48e4805ac9d088837bd639b06388dd34f0a6e0f1 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 16:15:33 -0400
+Subject: [PATCH 3/3] WRS: 0002-default-service-enabled.patch
+
+---
+ SPECS/iptables.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/iptables.spec b/SPECS/iptables.spec
+index 9d65fc7..9f59ede 100644
+--- a/SPECS/iptables.spec
++++ b/SPECS/iptables.spec
+@@ -223,6 +223,7 @@ done
+ 
+ %post services
+ %systemd_post iptables.service ip6tables.service
++/usr/bin/systemctl enable iptables.service ip6tables.service >/dev/null 2>&1
+ 
+ %preun services
+ %systemd_preun iptables.service ip6tables.service
+-- 
+1.9.1
+
