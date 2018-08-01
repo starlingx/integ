@@ -1,0 +1,113 @@
+Index: keyring-5.3/keyring/backends/file.py
+===================================================================
+--- keyring-5.3.orig/keyring/backends/file.py
++++ keyring-5.3/keyring/backends/file.py
+@@ -19,6 +19,8 @@ from ..util.escape import escape as esca
+ from oslo_concurrency import lockutils
+ 
+ 
++lockfile = "keyringlock"
++
+ class FileBacked(object):
+     @abc.abstractproperty
+     def filename(self):
+@@ -104,16 +106,18 @@ class BaseKeyring(FileBacked, KeyringBac
+         service = escape_for_ini(service)
+         username = escape_for_ini(username)
+ 
++        # ensure the file exists
++        self._ensure_file_path()
++
+         # encrypt the password
+         password_encrypted = self.encrypt(password.encode('utf-8'))
+         # encode with base64
+         password_base64 = base64.encodestring(password_encrypted).decode()
+ 
++        lockdir = os.path.dirname(self.file_path)
+ 
+-        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
++        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
+ 
+-            # ensure the file exists
+-            self._ensure_file_path()
+ 
+             config = None
+             try:
+@@ -159,14 +163,13 @@ class BaseKeyring(FileBacked, KeyringBac
+ 
+ 
+ 
+-
+-
+     def _ensure_file_path(self):
+         """
+         Ensure the storage path exists.
+         If it doesn't, create it with "go-rwx" permissions.
+         """
+         storage_root = os.path.dirname(self.file_path)
++        lockdir = storage_root
+         if storage_root and not os.path.isdir(storage_root):
+             os.makedirs(storage_root)
+         if not os.path.isfile(self.file_path):
+@@ -175,13 +178,22 @@ class BaseKeyring(FileBacked, KeyringBac
+                 pass
+             user_read_write = 0o644
+             os.chmod(self.file_path, user_read_write)
++        if not os.path.isfile(lockdir + "/" + lockfile):
++             import stat
++             with open(lockdir + "/" + lockfile, 'w'):
++                 pass
++             # must have the lock file with the correct group permissisions g+rw
++             os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
++
+ 
+     def delete_password(self, service, username):
+         """Delete the password for the username of the service.
+         """
+         service = escape_for_ini(service)
+         username = escape_for_ini(username)
+-        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
++
++        lockdir = os.path.dirname(self.file_path)
++        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
+             config = configparser.RawConfigParser()
+             if os.path.exists(self.file_path):
+                 config.read(self.file_path)
+@@ -290,17 +302,6 @@ class EncryptedKeyring(Encrypted, BaseKe
+         # set a reference password, used to check that the password provided
+         #  matches for subsequent checks.
+ 
+-        # try to pre-create the /tmp/keyringlock if it doesn't exist
+-        lockfile = "/tmp/keyringlock"
+-        if os.geteuid() == 0 and (not os.path.exists(lockfile)):
+-             from pwd import getpwnam
+-             import stat
+-             nonrootuser = "wrsroot"
+-             with open(lockfile, 'w'):
+-                 pass
+-             # must have the lock file with the correct group permissisions g+rw
+-             os.chmod(lockfile, stat.S_IRWXG | stat.S_IRWXU)
+-
+ 
+         self.set_password('keyring-setting', 'password reference',
+             'password reference value')
+@@ -313,9 +314,10 @@ class EncryptedKeyring(Encrypted, BaseKe
+             return False
+         self._migrate()
+ 
++        lockdir = os.path.dirname(self.file_path)
+         # lock access to the file_path here, make sure it's not being written
+         # to while while we're checking for keyring-setting
+-        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
++        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
+             config = configparser.RawConfigParser()
+             config.read(self.file_path)
+             try:
+@@ -325,7 +327,6 @@ class EncryptedKeyring(Encrypted, BaseKe
+                 )
+             except (configparser.NoSectionError, configparser.NoOptionError):
+                 # The current file doesn't have the keyring-setting, check the backup
+-                logging.warning("_check_file: The current file doesn't have the keyring-setting, check the backup")
+                 if os.path.exists(self.backup_file_path):
+                     config = configparser.RawConfigParser()
+                     config.read(self.backup_file_path)

@@ -1,0 +1,24 @@
+---
+ keyring/util/platform_.py |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/keyring/util/platform_.py
++++ b/keyring/util/platform_.py
+@@ -2,6 +2,7 @@ from __future__ import absolute_import
+ 
+ import os
+ import platform
++from tsconfig.tsconfig import SW_VERSION
+ 
+ def _settings_root_XP():
+ 	return os.path.join(os.environ['USERPROFILE'], 'Local Settings')
+@@ -19,7 +20,8 @@ def _data_root_Linux():
+ 	Use freedesktop.org Base Dir Specfication to determine storage
+ 	location.
+ 	"""
+-	fallback = os.path.expanduser('/opt/platform/.keyring/')
++	keyring_dir = os.path.join('/opt/platform/.keyring', SW_VERSION)
++	fallback = os.path.expanduser(keyring_dir)
+ 	root = os.environ.get('XDG_DATA_HOME', None) or fallback
+ 	return os.path.join(root, 'python_keyring')
+ 

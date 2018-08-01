@@ -1,0 +1,37 @@
+Index: keyring-5.3/keyring/backends/file.py
+===================================================================
+--- keyring-5.3.orig/keyring/backends/file.py
++++ keyring-5.3/keyring/backends/file.py
+@@ -68,6 +68,9 @@ class BaseKeyring(FileBacked, KeyringBac
+         service = escape_for_ini(service)
+         username = escape_for_ini(username)
+ 
++        # ensure the file exists
++        self._ensure_file_path()
++
+         # load the passwords from the file
+         config = configparser.RawConfigParser()
+         if os.path.exists(self.file_path):
+@@ -146,12 +149,16 @@ class BaseKeyring(FileBacked, KeyringBac
+             user_read_write = 0o644
+             os.chmod(self.file_path, user_read_write)
+         if not os.path.isfile(lockdir + "/" + lockfile):
+-             import stat
+-             with open(lockdir + "/" + lockfile, 'w'):
+-                 pass
+-             # must have the lock file with the correct group permissisions g+rw
+-             os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
+-             os.chown(lockdir + "/" + lockfile,-1,345)
++            with open(lockdir + "/" + lockfile, 'w'):
++                pass
++        if os.path.isfile(lockdir + "/" + lockfile):
++            import stat
++            import grp
++            if oct(stat.S_IMODE(os.stat(lockdir + "/" + lockfile).st_mode)) != '0770':
++                # Must have the lock file with the correct group and permissisions g+rw
++                os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
++                groupinfo = grp.getgrnam('wrs_protected')
++                os.chown(lockdir + "/" + lockfile,-1,groupinfo.gr_gid)
+ 
+ 
+     def delete_password(self, service, username):

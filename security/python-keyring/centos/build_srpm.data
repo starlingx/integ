@@ -1,0 +1,2 @@
+COPY_LIST="python-keyring/*"
+TIS_PATCH_VER=2

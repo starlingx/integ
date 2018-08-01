@@ -144,3 +144,4 @@ base/crontabs
 base/dnsmasq
 base/rsync
 filesystem/parted
+security/python-keyring
