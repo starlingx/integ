@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: libfdt
+Version: 1.4.4
+Summary: Device Tree Compiler
+Home-page: 
+Author: David Gibson
+Author-email: david@gibson.dropbear.id.au
+License: GPLv2
+
+Description: Device Tree Compiler
+
+        
+Platform: UNKNOWN

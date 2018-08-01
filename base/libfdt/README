@@ -1,0 +1,6 @@
+Only needed for building qemu on Centos.
+
+I have found traces of this package for earlier epel release (5 and 6).  Not
+sure why it's not provided anymore.
+
+Source: https://github.com/qemu/dtc

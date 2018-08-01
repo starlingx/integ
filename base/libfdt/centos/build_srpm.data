@@ -1,0 +1,2 @@
+COPY_LIST="$CGCS_BASE/downloads/dtc-1.4.4.tar.gz"
+TIS_PATCH_VER=1

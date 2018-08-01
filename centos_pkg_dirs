@@ -129,3 +129,4 @@ base/rpm
 base/dpkg
 base/cgcs-users
 base/cluster-resource-agents
+base/libfdt
