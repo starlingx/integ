@@ -1,0 +1,5 @@
+COPY_LIST=" \
+  $FILES_BASE/* \
+  $CGCS_BASE/mwa-gplv2/intel-ixgbevf/files/* \
+  $CGCS_BASE/downloads/ixgbevf-4.2.1.tar.gz"
+TIS_PATCH_VER=2
