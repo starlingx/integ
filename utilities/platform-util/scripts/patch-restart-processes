@@ -1,0 +1,637 @@
+#!/bin/bash
+#
+# Copyright (c) 2016-18 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+##############################################################################
+
+script=`basename "$0"`
+
+##############################################################################
+#
+# For Patch Writers
+# -----------------
+#
+# This script supports no-reboot process restart from command line list.
+# Must be run as root or y sudo
+# Calling sequence:
+#
+# /usr/sbin/process-restart process1 process2 ... processN
+# if [ $? != 0 ] ; then
+#    restart action failed
+#
+###############################################################################
+#
+# For Developers
+# --------------
+#
+# Process restart support can be added to this script by adding your process to the
+# command line parser as a new case based on the process's name in the following form.
+#
+#    "[process-name]")
+#        process_list =(${process_list[@]} "[monitor] [process-name] [process-alias] [hosttype] [pidfile] [status]
+#        ;;
+#
+# Field Descriptions: all fields are manditory
+#
+#           monitor      : sm or pmon
+#           process-name : the name of the process
+#                            - for sm monitored processes, this must be unique, but does
+#                              not need to match the actual binary name
+#                            - for pmon monitored processes, this must be unique and
+#                              must match the actual binary name
+#           process-alias: the alias name that SM uses instead of the actual process name
+#                            - valid for sm only
+#                            - if its the same as the process name then make it the same
+#           hosttype     : the supported hosttypes are ; stack with commas
+#                            - all   ...... all nodetypes
+#                            - controller . controllers
+#                            - storage .... storage nodes
+#                            - compute .... compute nodes
+#           pidfile      : the path to and name of the process's pidfile
+#           status       : set as 0
+#
+# Example: based on sysinv-api which is monitored by sm, only runs on the controller
+#          and has an sm alias.
+#
+#    "sysinv-api")
+#        process_list =(${process_list[@] } "sm:sysinv-api:sysinv-inv:controller:/var/run/sysinv-api.pid:0")
+#        ;;
+#
+# start with empty process restart control structure
+declare process_list=""
+declare pids=""
+
+# pull in loginfo and nodetype
+. /etc/patching/patch-functions
+. /etc/platform/platform.conf
+
+#
+# Declare an overall script return code
+#
+declare -i GLOBAL_RC=$PATCH_STATUS_FAILED
+
+# if set with -c or --clean options then the flag files for
+# each process are removed at the start.
+CLEAN=false
+
+#
+# if set with -p or --parallel options then restart each process in parallel
+PARALLEL=false
+
+#
+# Completion status ; stored in PID index
+#
+DISABLED="disabled"
+NOPID="not-running"
+SKIPPED="skipped"
+RESTARTED="restarted"
+
+#
+# process query and restart executables
+#
+SM_RESTART_EXEC="sm-restart-safe"
+SM_QUERY_EXEC="sm-query"
+PMON_RESTART_EXEC="pmon-restart"
+
+#
+# sleep delays (seconds)
+#
+SM_SLEEP=5
+PMON_SLEEP=2
+MONITOR_SLEEP=2
+
+#
+# Struct indexes
+#
+MONITOR_INDEX=0
+PROCESS_INDEX=1
+ALIAS_INDEX=2
+HOSTTYPE_INDEX=3
+PIDFILE_INDEX=4
+STATUS_INDEX=5
+
+
+#
+# update_status: update the specified process index's status field
+#
+# ${1} = process list index
+# ${2} = status
+#
+function update_status {
+   DAEMON=${process_list[${1}]}
+   info=(${DAEMON//:/ })
+   process_list[${1}]="${info[${MONITOR_INDEX}]}:${info[${PROCESS_INDEX}]}:${info[${ALIAS_INDEX}]}:${info[${HOSTTYPE_INDEX}]}:${info[${PIDFILE_INDEX}]}:${2}"
+}
+
+
+#
+# print the list of processes that this script supports restart of
+#
+function print_list {
+   printf "\nThis restart script supports post patching restart the following processes ...\n\n"
+   list=$(fgrep "process_list=(${process_list[@]}" ${0} | grep -v grep | cut -f 2 -d ':')
+   printf "${list}\n\n"
+}
+
+
+#
+# print the command and option syntax as well as the list of processes supported by this script
+#
+function print_help {
+   printf "\nTiS patching process restart script.\n"
+   printf "\n%s {-options} [processes ...]\n" "${script}"
+   printf "\noptions: -l or --list prints a list of supported processes\n"
+   print_list
+}
+
+#
+# patching.log banner for this script
+#
+loginfo "------------------------------------------"
+loginfo "No-Reboot Patching Process Restart Request"
+
+#
+# Option and process list parser
+# Build the process list.
+# All arguements should be a valid process name, not the SM alias.
+# See the list below for supported process names.
+#
+while [[ ${#} > 0 ]]
+do
+   process="${1}"
+   case $process in
+      -h|--help)
+          print_help
+         exit 0
+         ;;
+      -l|--list)
+         print_list
+         exit 0
+         ;;
+
+      -c|--clean)
+          CLEAN=true
+          ;;
+
+      -p|--parallel)
+          PARALLEL=true
+          ;;
+
+      # Sysinv processes
+      "sysinv-conductor")
+         process_list=(${process_list[@]} "sm:sysinv-conductor:sysinv-conductor:controller:/var/run/sysinv-conductor.pid:0")
+         ;;
+      "sysinv-api")
+         process_list=(${process_list[@]} "sm:sysinv-api:sysinv-inv:controller:/var/run/sysinv-api.pid:0")
+         ;;
+      "sysinv-agent")
+         process_list=(${process_list[@]} "pmon:sysinv-agent:sysinv-agent:all:/var/run/sysinv-agent.pid:0")
+         ;;
+
+      "ceilometer-polling")
+         process_list=(${process_list[@]} "pmon:ceilometer-polling:ceilometer-polling:all:/var/run/ceilometer-polling.pid:0")
+         ;;
+      "ceilometer-agent-notification")
+         process_list=(${process_list[@]} "sm:ceilometer-agent-notification:ceilometer-agent-notification:controller:/var/run/resource-agents/ceilometer-agent-notification.pid:0")
+         ;;
+      "ceilometer-collector")
+         process_list=(${process_list[@]} "sm:ceilometer-collector:ceilometer-collector:controller:/var/run/resource-agents/ceilometer-collector.pid:0")
+         ;;
+      "ceilometer-api")
+         process_list=(${process_list[@]} "sm:ceilometer-api:ceilometer-api:controller:/var/run/resource-agents/ceilometer-api.pid:0")
+         ;;
+      "keystone")
+         process_list=(${process_list[@]} "sm:keystone:keystone:controller:/var/run/openstack-keystone.pid:0")
+         ;;
+      # AODH processes
+      "aodh-api")
+         process_list=(${process_list[@]} "sm:aodh-api:aodh-api:controller:/var/run/resource-agents/aodh-api.pid:0")
+         ;;
+      "aodh-evaluator")
+         process_list=(${process_list[@]} "sm:aodh-evaluator:aodh-evaluator:controller:/var/run/resource-agents/aodh-evaluator.pid:0")
+         ;;
+      "aodh-listener")
+         process_list=(${process_list[@]} "sm:aodh-listener:aodh-listener:controller:/var/run/resource-agents/aodh-listener.pid:0")
+         ;;
+      "aodh-notifier")
+         process_list=(${process_list[@]} "sm:aodh-notifier:aodh-notifier:controller:/var/run/resource-agents/aodh-notifier.pid:0")
+         ;;
+      # Panko process
+      "panko-api")
+         process_list=(${process_list[@]} "sm:panko-api:panko-api:controller:/var/run/resource-agents/panko-api.pid:0")
+         ;;
+      # Murano processes
+      "murano-engine")
+         process_list=(${process_list[@]} "sm:murano-engine:murano-engine:controller:/var/run/resource-agents/murano-engine.pid:0")
+         ;;
+      "murano-api")
+         process_list=(${process_list[@]} "sm:murano-api:murano-api:controller:/var/run/resource-agents/murano-api.pid:0")
+         ;;
+      # Magnum processes
+      "magnum-conductor")
+         process_list=(${process_list[@]} "sm:magnum-conductor:magnum-conductor:controller:/var/run/resource-agent/magnum-conductor.pid:0")
+         ;;
+      "magnum-api")
+         process_list=(${process_list[@]} "sm:magnum-api:magnum-api:controller:/var/run/resource-agents/magnum-api.pid:0")
+         ;;
+      # Ironic processes
+      "ironic-conductor")
+         process_list=(${process_list[@]} "sm:ironic-conductor:ironic-conductor:controller:/var/run/resource-agents/ironic-conductor.pid:0")
+         ;;
+      "ironic-api")
+         process_list=(${process_list[@]} "sm:ironic-api:ironic-api:controller:/var/run/resource-agents/ironic-api.pid:0")
+         ;;
+      # IO-Monitor process
+      "io-monitor-manager")
+         process_list=(${process_list[@]} "pmon:io-monitor-manager:io-monitor-manager:controller:/var/run/io-monitor/io-monitor-manager.pid:0")
+         ;;
+      # HEAT processes
+      "heat-engine")
+         process_list=(${process_list[@]} "sm:heat-engine:heat-engine:controller:/var/run/resource-agents/heat-engine.pid:0")
+         ;;
+      "heat-api")
+         process_list=(${process_list[@]} "sm:heat-api:heat-api:controller:/var/run/resource-agents/heat-api.pid:0")
+         ;;
+      "heat-api-cfn")
+         process_list=(${process_list[@]} "sm:heat-api-cfn:heat-api-cfn:controller:/var/run/resource-agents/heat-api-cfn.pid:0")
+         ;;
+      "heat-api-cloudwatch")
+         process_list=(${process_list[@]} "sm:heat-api-cloudwatch:heat-api-cloudwatch:controller:/var/run/resource-agents/heat-api-cloudwatch.pid:0")
+         ;;
+      # Vim processes
+      "nfv-vim")
+         process_list=(${process_list[@]} "sm:nfv-vim:vim:controller:/var/run/nfv-vim.pid:0")
+         ;;
+      "nfv-vim-api")
+         process_list=(${process_list[@]} "sm:nfv-vim-api:vim-api:controller:/var/run/nfv-vim-api.pid:0")
+         ;;
+      "nfv-vim-webserver")
+         process_list=(${process_list[@]} "sm:nfv-vim-webserver:vim-webserver:controller:/var/run/nfv-vim-webserver.pid:0")
+         ;;
+      # NOVA processes
+      "nova-api")
+         process_list=(${process_list[@]} "sm:nova-api:nova-api:controller:/var/run/resource-agents/nova-api.pid:0")
+         ;;
+      "nova-placement-api")
+         process_list=(${process_list[@]} "sm:nova-placement-api:nova-placement-api:controller:/var/run/resource-agents/nova-placement-api.pid:0")
+         ;;
+      "nova-conductor")
+         process_list=(${process_list[@]} "sm:nova-conductor:nova-conductor:controller:/var/run/resource-agents/nova-conductor.pid:0")
+         ;;
+      "nova-console-auth")
+         process_list=(${process_list[@]} "sm:nova-console-auth:nova-console-auth:controller:/var/run/resource-agents/nova-console-auth.pid:0")
+         ;;
+      "nova-novnc")
+         process_list=(${process_list[@]} "sm:nova-novnc:nova-novnc:controller:/var/run/resource-agents/nova-novnc.pid:0")
+         ;;
+      "nova-scheduler")
+         process_list=(${process_list[@]} "sm:nova-scheduler:nova-scheduler:controller:/var/run/resource-agents/nova-scheduler.pid:0")
+         ;;
+      "nova-compute")
+         process_list=(${process_list[@]} "pmon:nova-compute:nova-compute:compute:/var/run/nova/nova-compute.pid:0" "sm:nova-compute:nova-compute:controller:/var/run/resource-agents/nova-compute.pid:0")
+         ;; 
+      "nova-serialproxy")
+         process_list=(${process_list[@]} "sm:nova-serialproxy:nova-serialproxy:controller:/var/run/resource-agents/nova-serialproxy.pid:0")
+         ;;
+      # NOVA proxy
+      "nova-api-proxy")
+         process_list=(${process_list[@]} "sm:nova-api-proxy:nova-api-proxy:controller:/var/run/nova-api-proxy.pid:0")
+         ;;
+      # Distributed Cloud processes
+      "dcmanager-manager")
+         process_list=(${process_list[@]} "sm:dcmanager-manager:dcmanager-manager:controller:/var/run/resource-agents/dcmanager-manager.pid:0")
+         ;;
+      "dcmanager-api")
+         process_list=(${process_list[@]} "sm:dcmanager-api:dcmanager-api:controller:/var/run/resource-agents/dcmanager-api.pid:0")
+         ;;
+      "dcorch-engine")
+         process_list=(${process_list[@]} "sm:dcorch-engine:dcorch-engine:controller:/var/run/resource-agents/dcorch-engine.pid:0")
+         ;;
+      "dcorch-snmp")
+         process_list=(${process_list[@]} "sm:dcorch-snmp:dcorch-snmp:controller:/var/run/resource-agents/dcorch-snmp.pid:0")
+         ;;
+      "dcorch-sysinv-api-proxy")
+         process_list=(${process_list[@]} "sm:dcorch-sysinv-api-proxy:dcorch-sysinv-api-proxy:controller:/var/run/resource-agents/dcorch-sysinv-api-proxy.pid:0")
+         ;;
+      "dcorch-nova-api-proxy")
+         process_list=(${process_list[@]} "sm:dcorch-nova-api-proxy:dcorch-nova-api-proxy:controller:/var/run/resource-agents/dcorch-nova-api-proxy.pid:0")
+         ;;
+      "dcorch-neutron-api-proxy")
+         process_list=(${process_list[@]} "sm:dcorch-neutron-api-proxy:dcorch-neutron-api-proxy:controller:/var/run/resource-agents/dcorch-neutron-api-proxy.pid:0")
+         ;;
+      "dcorch-patch-api-proxy")
+         process_list=(${process_list[@]} "sm:dcorch-patch-api-proxy:dcorch-patch-api-proxy:controller:/var/run/resource-agents/dcorch-patch-api-proxy.pid:0")
+         ;;
+
+      *)
+         echo "Unknown process:${process}"
+         loginfo "Unknown process:${process}"
+         ;;
+   esac
+   shift
+done
+
+# Assume we are done until we know we are not
+__done=true
+
+if [ -n "${process_list}" ] ; then
+
+   # Record current process IDs
+   index=0
+   for DAEMON in "${process_list[@]}"
+   do
+      info=(${DAEMON//:/ })
+
+      monitor="${info[${MONITOR_INDEX}]}"
+      pidfile="${info[${PIDFILE_INDEX}]}"
+      hosttype="${info[${HOSTTYPE_INDEX}]}"
+      process="${info[${PROCESS_INDEX}]}"
+      alias="${info[${ALIAS_INDEX}]}"
+      stat="${info[${STATUS_INDEX}]}"
+
+      if [ "${CLEAN}" = true ] ; then
+         rm -f $PATCH_FLAGDIR/${process}.restarted
+      fi
+
+      # default to not skipping this process
+      skip=true
+
+      # filter out based on current nodetype and specified hosttype
+      if [ "${hosttype}" == "all" ] ; then
+         skip=false
+      else
+
+         # check for controller function
+         if [[ ${hosttype} == *"controller"* ]] ; then
+            if [[ ${nodetype} == *"controller"* ]] ; then
+               skip=false
+            fi
+         fi
+
+         # Check for compute as subfunction
+         if [[ "${subfunction}" == *"compute"* ]] ; then
+            if [[ $hosttype} == *"compute"* ]] ; then
+               skip=false
+            fi
+         fi
+
+         # check for compute as main function
+         if [[ ${hosttype} == *"compute"* ]] ; then
+            if [[ ${nodetype} == *"compute"* ]] ; then
+                skip=false
+            fi
+         fi
+
+         # check for storage type
+         if [[ ${hosttype} == *"storage"* ]] ; then
+            if [[ "${nodetype}" == *"storage"* ]] ; then
+               skip=false
+            fi
+         fi
+      fi
+
+      if [ "${skip}" = true ] ; then
+         loginfo "${process} skipped for '${nodetype}' nodetype"
+         stat="${SKIPPED}"
+         update_status $index "$stat"
+         ((index++))
+         continue
+      fi
+
+      if [ -e ${PATCH_FLAGDIR}/${process}.restarted ] ; then
+
+         loginfo "${process} restart skipped - already done"
+         stat="${SKIPPED}"
+         update_status ${index} "${stat}"
+         ((index++))
+         continue
+
+      else
+
+          # record the existing PID for log purposes
+          if [ -e ${pidfile} ] ; then
+
+             stat=$(head -1 ${pidfile} 2>/dev/null)
+             # check if the pid is running
+             kill -0 ${stat} 2>/dev/null
+             rc=$?
+             if [ ${rc} -ne 0 ] ; then
+                loginfo "${process} is not running"
+                stat="${NOPID}"
+                update_status ${index} "${stat}"
+                ((index++))
+                continue
+             fi
+
+          else
+             loginfo "${process} is not running ; missing pidfile"
+             stat="${NOPID}"
+             update_status ${index} "${stat}"
+             ((index++))
+             continue
+          fi
+
+          #
+          # If we get here then we want to restart this process
+          # for this node type and the process is running
+          #
+          #
+          # Now manage restart of that process based on what its monitor method is
+          #
+          if [ "${monitor}" == "sm" ] ; then
+
+              # Managed/Monitored by SM
+              sm_query_result=$(${SM_QUERY_EXEC} service ${alias})
+              echo "sm_query_result:${sm_query_result} - alias:${alias}"
+              if [[ "${sm_query_result}" == *"enabled-active"* ]] ; then
+
+                  echo "${SM_RESTART_EXEC} of ${process} [pid:${stat}]"
+                  loginfo "${SM_RESTART_EXEC} of ${process} [pid:${stat}]"
+                  touch $PATCH_FLAGDIR/${process}.restarted 2>/dev/null
+                  ${SM_RESTART_EXEC} service "${alias}"
+                  __done=false
+                  if [ "${PARALLEL}" = true ] ; then
+                      sleep ${SM_SLEEP} &
+                      pids="$pids $!"
+                  else
+                      sleep ${SM_SLEEP}
+                  fi
+
+              elif [[ ${sm_query_result} == *"is enabling"* ]] ; then
+                  loginfo "sm-restart ${process} ; [in progress] ; [pid:${info[${STATUS_INDEX}]}]"
+                  stat="${NOPID}"
+              else
+                  loginfo "${process} is not active"
+                  stat="${DISABLED}"
+              fi
+
+          else
+
+              # Managed/Monitored by PMON
+              echo "${PMON_RESTART_EXEC} of ${process} [pid:${stat}]"
+              loginfo "${PMON_RESTART_EXEC} of ${process} [pid:${stat}]"
+              touch $PATCH_FLAGDIR/${process}.restarted 2>/dev/null
+              ${PMON_RESTART_EXEC} ${process}
+              __done=false
+              if [ "${PARALLEL}" = true ] ; then
+                  sleep ${PMON_SLEEP} &
+                  pids="$pids $!"
+              else
+                  sleep ${PMON_SLEEP}
+              fi
+
+          fi
+      fi
+
+      # echo "Monitor:${monitor} Process:${process} Alias:${alias} Node:${hosttype} Pidfile:${pidfile} Status:${stat}"
+
+      # Save the PID or NOPID status to the process line
+      update_status ${index} "${stat}"
+
+      ((index++))
+   done
+
+   # wait for background sleeps
+   wait ${pids}
+fi
+
+#
+# Now Loop over the process list waiting for all the processes to restart.
+# There is an overall timout of 20 seconds for all the processes to be restarted
+#
+if [ "${__done}" = true ] ; then
+
+   GLOBAL_RC=$PATCH_STATUS_OK
+   loginfo "No-Reboot Patching Process Restart Status: ${GLOBAL_RC} - nothing to do."
+   exit ${GLOBAL_RC}
+fi
+
+# Monitor the restart of processes
+#
+# Don't want to start from the beginning of the shell
+# Want time zero now plus 30 seconds.
+#
+SECONDS=0
+TIMEOUT=120
+let UNTIL=${SECONDS}+${TIMEOUT}
+loginfo "restart timeout is ${TIMEOUT}"
+
+while [ ${UNTIL} -ge ${SECONDS} ]
+do
+   if [ "${__done}" = false ] ; then
+      index=0
+      for DAEMON in "${process_list[@]}"
+      do
+         info=(${DAEMON//:/ })
+         pidfile="${info[${PIDFILE_INDEX}]}"
+         process="${info[${PROCESS_INDEX}]}"
+         alias="${info[${ALIAS_INDEX}]}"
+         stat="${info[${STATUS_INDEX}]}"
+
+         if [ "${stat}" != "${SKIPPED}" -a "${stat}" != "${RESTARTED}" -a "${stat}" != "${DISABLED}" -a "${stat}" != "${NOPID}" ] ; then
+            if [ -e ${pidfile} ] ; then
+
+               # Get the new PID
+               new_pid=$(head -1 ${pidfile} 2>/dev/null)
+
+               # check if the pid is running
+               kill -0 ${new_pid} 2>/dev/null
+               if [ $? -eq 0 -a -n ${new_pid} ] ; then
+
+                  # verify the pid is different
+                  if [ "${stat}" != "${new_pid}" ] ; then
+                     loginfo "${process} ${RESTARTED} ok [pid:${stat} -> ${new_pid}]"
+                     stat="${RESTARTED}"
+                     update_status ${index} "${stat}"
+                  fi
+               fi
+            fi
+         fi
+         ((index++))
+      done
+
+      sleep ${MONITOR_SLEEP}
+
+      # Loop over all proceses looking for complete restarts.
+      # Update process struct PID field as status is learned.
+
+      index=0
+      __not_done=false
+      for DAEMON in "${process_list[@]}"
+      do
+         info=(${DAEMON//:/ })
+         stat="${info[${STATUS_INDEX}]}"
+         if [ "${stat}" != "${SKIPPED}" -a "${stat}" != "${RESTARTED}" -a "${stat}" != "${DISABLED}" -a "${stat}" != "${NOPID}" ] ; then
+             __not_done=true
+         fi
+         ((index++))
+      done
+
+      # Exit if done
+      if [ "${__not_done}" = false ] ; then
+
+         __done=true
+         GLOBAL_RC=${PATCH_STATUS_OK}
+         break
+
+      fi
+  else
+     # should not get here but handle anyway
+     GLOBAL_RC=${PATCH_STATUS_OK}
+     break
+  fi
+done
+
+logged=false
+for DAEMON in "${process_list[@]}"
+do
+   info=(${DAEMON//:/ })
+   if [ "${info[${STATUS_INDEX}]}" == "${RESTARTED}" ] ; then
+      if [ "${logged}" = false ] ; then
+         loginfo "The following processes have been 'restarted'"
+         logged=true
+      fi
+      loginfo "... process: ${info[${PROCESS_INDEX}]}"
+   fi
+done
+
+logged=false
+for DAEMON in "${process_list[@]}"
+do
+   info=(${DAEMON//:/ })
+   if [ "${info[${STATUS_INDEX}]}" == "${SKIPPED}" ] ; then
+      if [ "${logged}" = false ] ; then
+         loginfo "The following processes have been 'skipped'"
+         logged=true
+      fi
+      loginfo "... process: ${info[${PROCESS_INDEX}]}"
+   fi
+done
+
+if [ "${__done}" = false ] ; then
+   loginfo "Process Restart Timeout ; waiting on "
+   for DAEMON in "${process_list[@]}"
+   do
+      info=(${DAEMON//:/ })
+      stat="${info[${STATUS_INDEX}]}"
+
+      if [ "${stat}" == "${SKIPPED}" ] ; then
+         ((index++))
+      elif [ "${stat}" == "${RESTARTED}" ] ; then
+         ((index++))
+      elif [ "${stat}" == "${DISABLED}" ] ; then
+         ((index++))
+      elif [ "${stat}" == "${NOPID}" ] ; then
+         ((index++))
+      else
+         loginfo "... process: ${stat}"
+      fi
+      ((index++))
+   done
+fi
+
+loginfo "No-Reboot Patching Process Restart Status: ${GLOBAL_RC}"
+
+exit ${GLOBAL_RC}

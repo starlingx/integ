@@ -113,3 +113,4 @@ utilities/branding
 config-files/io-scheduler
 tools/collector
 grub/grubby
+utilities/platform-util
