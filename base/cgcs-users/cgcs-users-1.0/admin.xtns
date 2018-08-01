@@ -1,0 +1,6 @@
+# Add any extension the user may use.
+.doc
+.txt
+.tgz
+.tar
+
