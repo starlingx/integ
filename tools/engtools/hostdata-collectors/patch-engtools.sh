@@ -23,7 +23,7 @@ PWD=$(pwd)
 
 # Create CGCS Patch
 cd ${MY_WORKSPACE}
-PATCH_BUILD=${MY_REPO}/stx/extras/scripts/patch_build.sh
+PATCH_BUILD=${MY_REPO}/stx/stx-update/extras/scripts/patch_build.sh
 ${PATCH_BUILD} --id ${PATCH_ID} --reboot-required=N \
     --summary "System engineering data collection and analysis tools." \
     --desc    "System engineering data collection and analysis tools." \
