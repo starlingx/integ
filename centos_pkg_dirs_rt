@@ -8,3 +8,4 @@ kernel/kernel-modules/intel-i40e
 kernel/kernel-modules/intel-ixgbevf
 kernel/kernel-modules/intel-ixgbe
 kernel/kernel-modules/qat17
+kernel/kernel-modules/tpmdd
