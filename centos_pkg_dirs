@@ -133,3 +133,4 @@ base/libfdt
 base/bash
 base/haproxy
 base/netpbm
+filesystem/iscsi-initiator-utils

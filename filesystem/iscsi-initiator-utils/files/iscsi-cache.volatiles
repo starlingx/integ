@@ -1,0 +1,3 @@
+# See "man tmpfiles.d" for details
+d /run/iscsi-cache 0755 root root -
+L /var/lib/iscsi - - - - /run/iscsi-cache

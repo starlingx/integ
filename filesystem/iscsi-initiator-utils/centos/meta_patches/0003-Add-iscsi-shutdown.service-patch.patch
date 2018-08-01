@@ -1,0 +1,26 @@
+From a6f22ef69ec794098fdd639f15a8266949de1499 Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Thu, 2 Nov 2017 11:03:43 -0400
+Subject: [PATCH] Add iscsi-shutdown.service patch
+
+---
+ SPECS/iscsi-initiator-utils.spec | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/iscsi-initiator-utils.spec b/SPECS/iscsi-initiator-utils.spec
+index 1457acb..0a95945 100644
+--- a/SPECS/iscsi-initiator-utils.spec
++++ b/SPECS/iscsi-initiator-utils.spec
+@@ -57,7 +57,8 @@ Patch198: keep-open-isns.patch
+ Patch199: 0199-use-Red-Hat-version-string-to-match-RPM-package-vers.patch
+ 
+ # WRS
+-Patch200: increase-default-error-timeouts-for-iSCSI-initiator.patch
++Patch10001: 0001-increase-default-error-timeouts-for-iSCSI-initiator.patch
++Patch10002: 0002-Add-dependency-against-network.service-to-iscsi-shut.patch
+ 
+ BuildRequires: flex bison python-devel doxygen kmod-devel systemd-devel libmount-devel autoconf automake libtool
+ # For dir ownership
+-- 
+1.8.3.1
+
