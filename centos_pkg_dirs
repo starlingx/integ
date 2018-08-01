@@ -117,3 +117,4 @@ utilities/platform-util
 tools/monitor-tools
 tools/engtools/hostdata-collectors
 kernel/kernel-modules/intel-e1000e
+kernel/kernel-modules/intel-i40evf
