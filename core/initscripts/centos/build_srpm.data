@@ -1,2 +1,0 @@
-COPY_LIST="$FILES_BASE/* $GIT_BASE/extended/procps/files/sysctl.conf"
-TIS_PATCH_VER=16

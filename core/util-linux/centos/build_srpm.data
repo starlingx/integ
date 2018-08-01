@@ -1,2 +1,0 @@
-COPY_LIST="$GIT_BASE/extended/shadow/files/pam.d/su"
-TIS_PATCH_VER=3

@@ -1,4 +1,4 @@
-kernel-rt
-mellanox/libibverbs
-mellanox/mlnx-ofa_kernel
-mellanox/rdma-core
+kernel/kernel-rt
+networking/mellanox/libibverbs
+kernel/kernel-modules/mlnx-ofa_kernel
+networking/mellanox/rdma-core
