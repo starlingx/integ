@@ -1,0 +1,1103 @@
+From 9e7ad12a13665d975ddb9ee4669f781a1a695f8a Mon Sep 17 00:00:00 2001
+From: Phillip Susi <psusi@ubuntu.com>
+Date: Sun, 14 Oct 2012 23:59:58 -0400
+Subject: [PATCH] 'parted -s <dev_node> print' causes device nodes to be
+ deleted from /dev for ~100-300ms
+
+The main problem is that, immediately after 'parted <dev_node> print', device
+nodes for block devices that exist are deleted for brief moments of time then
+are readded by udev. This causes commands accessing these nodes to fail.
+Although probability of this happening is small (after mount, partitions no
+longer disappear), it can cause critical error as we now believe to have
+happened in CGTS-8785 (ceph tried to configure an OSD at exactly the moment
+parted was gathering info).
+
+To fix this the following commit where patched from upstream:
+0. f0c0d53f998964e187f59de32ac92a2c0e2d5da9 libparted: refactor device-mapper partition sync code
+1. 5910f1bc983fbab31f9ec86a7166feee4869c21a libparted: avoid disturbing partitions
+2. 026736e9fed89ef00e6e6e84c7e422639ac2715c libparted: sync partitions > 16
+3. 9e07d797b18609613c53ceb2dabbb5e69d961186 libparted: remove old partitions *first* before adding new ones
+4. dfdd8b0dd99b7fa990f40a3d3a225c5b3ef13c57 libparted: remove all old partitions, even if new label allows less
+5. 7feb3b452c5ae57e75e16f8c00f46c9aa564a4cc libparted: don't create partition on loop label
+6. 7e87ca3c531228d35e13e802d2622006138b104c libparted/arch/linux.c: Compile without ENABLE_DEVICE_MAPPER
+7. 7cde99849ed321da2712248bc27c14a954d6b481 libparted: give correct partition device name on loop labels
+
+The most important is commit #1. Commit #0 is a prerequisite and the rest are bug fixes introduced by them.
+
+Details:
+
+libparted: refactor device-mapper partition sync code
+
+The device-mapper partition sync code was still using the remove all
+partitions, then add new partitions method.  Refactor to use the same
+algorithm as regular disks: try to remove all, and ignore any that could
+not be removed but have not changed.
+
+Conflicts:
+	NEWS
+	libparted/arch/linux.c
+	tests/Makefile.am
+
+libparted: avoid disturbing partitions
+
+The partition sync logic was first removing all
+partitions, then trying to re-add them.  This resulted in many
+udev events triggering annoying behavior like auto mounting.
+Refactor the code to avoid removing and re-adding unmodified
+partitions.
+
+Conflicts:
+	NEWS
+
+libparted: sync partitions > 16
+
+The linux partition sync code was hard coded to only flush
+the first 16 partitions.
+
+Conflicts:
+	NEWS
+	libparted/arch/linux.c
+
+libparted: remove old partitions *first* before adding new ones
+
+"libparted: avoid disturbing partitions" put the remove of the old
+partition in second pass.  If you simultaneously removed partitions 1
+and 2, and created a new partition #1 that overlapped the previous second
+partition, the sync would fail because it would try to create the new,
+larger partition #1 before removing the old partition #2.
+
+Conflicts:
+	libparted/arch/linux.c
+
+libparted: remove all old partitions, even if new label allows less
+
+We were limiting partition sync operations to the lesser number allowed
+by the device, or the label.  This meant that when creating a new label
+over an old label that had more partitions than the new one allows, the
+higher partitions would not be removed.  Use the greater of the two values
+for the remove pass, and the lesser for the add.
+
+Conflicts:
+	NEWS
+
+libparted: don't create partition on loop label
+
+The loop label represents an unpartitioned disk, but creates
+a dummy partition to represent the whole disk.  This dummy partition
+was actually being loaded into the kernel.  Don't do that.
+
+Conflicts:
+	NEWS
+
+libparted/arch/linux.c: Compile without ENABLE_DEVICE_MAPPER
+
+Signed-off-by: Brian C. Lane <bcl@redhat.com>
+
+libparted: give correct partition device name on loop labels
+
+ped_partition_get_path() was returning "/dev/foo1" instead of
+"/dev/foo" on loop labels.  This caused gparted to run tools like mkfs on
+a device node that did not actually exist.
+
+Conflicts:
+	NEWS
+---
+ NEWS                                    |  94 +++++-
+ libparted/arch/linux.c                  | 565 +++++++++++++++-----------------
+ tests/Makefile.am                       |   2 +
+ tests/t1104-remove-and-add-partition.sh |  50 +++
+ tests/t6010-dm-busy.sh                  |  92 ++++++
+ 5 files changed, 499 insertions(+), 304 deletions(-)
+ create mode 100644 tests/t1104-remove-and-add-partition.sh
+ create mode 100644 tests/t6010-dm-busy.sh
+
+diff --git a/NEWS b/NEWS
+index d1ab2a6..42ee12c 100644
+--- a/NEWS
++++ b/NEWS
+@@ -2,10 +2,98 @@ GNU parted NEWS                                    -*- outline -*-
+ 
+ * Noteworthy changes in release 3.1-18 (2014-08-12) [RHEL7.1]
+ 
+-** New features
++** New Features
++
++  You can now choose to ignore errors about partitions that overlap,
++  or are longer than the disk.  This allows you to use parted to
++  repair the problem.
++
++** Bug Fixes
++
++  libparted: ped_partition_get_path() was returning "/dev/foo1" instead
++  of "/dev/foo" for loop labels.
++
++  partprobe: when called on a disk that has become a loop label,
++  remove any partitions left over from a previous label.
++
++  libparted: The loop label represents an unpartitioned disk, but creates
++  a dummy partition to represent the whole disk.  This dummy partition
++  was actually being loaded into the kernel.  Don't do that.
++
++  libparted: fix loop labels to not vanish if you don't create
++  a filesystem, and to not return an error syncing when you do.
++
++  libparted: remove all old partitions, even if new label does not allow
++  as many.
++
++  libparted: fat and ntfs boot sectors were misdetected as dos
++  partition tables instead of being treated as a loop label.
++
++  libparted: previously if you chose to ignore the warning about
++  the gpt thinking the disk was smaller than it appears to be on
++  on disk, subsequent warnings on other disks would be suppressed.
++  Now parted will warn once per disk.
++
++  Fix filesystem detection on non 512 byte sector sizes
++
++  Fix linux partition sync code to flush partitions > 16
++
++  Do not reject a FAT boot sector as invalid because it has no
++  system ID string.
++
++  libparted: /dev/md/ symlink can change after libparted dereferences it,
++  instead it should just use the symlink as given by the caller in the
++  same way we do with /dev/mapper/.
++
++  libparted: On multipath systems new partitions would sometimes not
++  appear, reporting 'device-mapper: create ioctl failed: Device or
++  resource busy' until the system was rebooted. Added dm_udev_wait
++  calls to synchronize parted with udev.
++
++  Fix help text for disk_{set,toggle} to show *disk* flags instead
++  of partition flags.
++
++  Fix gpt to correctly handle non ASCII charcters in partition names
++
++  If a drive was 100 times an even multiple of two, sizes specified as
++  a percentage would trigger the exact placement rule and refuse to round
++  to the nearest half percent.
++
++  Avoid generating udev add/remove events for all unmodified partitions
++  when writing a new table.
++
++  Fix cache coherency issue by flushing partition block devices.
++  This had been mistakenly disabled in parted 2.0, and resulted
++  in parted sometimes identifying the previous filesystem type
++  after running an mkfs to format a partition to a new type.
++
++  libparted: fix gpt end of disk handling.  Previously if the backup
++  copy of the gpt was not at the end of the disk and you chose to
++  ignore this error, parted would move it to the end of the disk
++  anyhow.  It will now leave the backup in the same location if
++  you chose to ignore this error.
++
++  libparted: handle logical partitions starting immediately after
++  the EBR.  Creating a logical partition one sector after the EBR
++  used to cause parted to complain that it could not inform the
++  kernel of the changes, but after a reboot, everything was fine.
++  Parted will now correctly inform the kernel of the changes, but
++  only set the length of the extended partition to 1 sector instead
++  of two, which would cause it to overlap the logical partition.
++
++  parted: fix EOF and ctrl-c handling.  parted used to refuse to exit
++  in response to ctrl-c and would get stuck in an infinite loop
++  prompting for more input when it reached EOF on stdin.
++
++  libparted: Don't fail to manipulate partitions on dmraid disks that
++  have other partitions in use.
+ 
+-  Add support for prep flag to GPT to select PowerPC Reference Platform
+-  boot partition type.
++  libparted: mac: a MAC partition table could have a block_size larger
++  than the one the kernel told us about.  Upon reading that partition
++  table, libparted would ask if it's ok to use the larger block size.
++  If you were to respond in the affirmative, libparted would read the
++  larger number of bytes into a buffer of the shorter length,
++  overrunning it.
+ 
+ * Noteworthy changes in release 3.1-16 (2014-01-22) [RHEL7]
+ 
+diff --git a/libparted/arch/linux.c b/libparted/arch/linux.c
+index 67a5c2e..adb82f2 100644
+--- a/libparted/arch/linux.c
++++ b/libparted/arch/linux.c
+@@ -48,6 +48,7 @@
+ #include "../architecture.h"
+ #include "dirname.h"
+ #include "xstrtol.h"
++#include "xalloc.h"
+ 
+ #if ENABLE_NLS
+ #  include <libintl.h>
+@@ -285,11 +286,12 @@ struct blkdev_ioctl_param {
+ /* Maximum number of partitions supported by linux. */
+ #define MAX_NUM_PARTS		64
+ 
+-static char* _device_get_part_path (PedDevice* dev, int num);
++static char* _device_get_part_path (PedDevice const *dev, int num);
+ static int _partition_is_mounted_by_path (const char* path);
+ static int _device_open (PedDevice* dev, int flags);
+ static int _device_open_ro (PedDevice* dev);
+ static int _device_close (PedDevice* dev);
++static unsigned int _device_get_partition_range(PedDevice const* dev);
+ 
+ static int
+ _read_fd (int fd, char **buf)
+@@ -1495,8 +1497,8 @@ linux_is_busy (PedDevice* dev)
+         return 0;
+ }
+ 
+-/* we need to flush the master device, and with kernel < 2.6 all the partition
+- * devices, because there is no coherency between the caches with old kernels.
++/* we need to flush the master device, and all the partition devices,
++ *  * because there is no coherency between the caches.
+  * We should only flush unmounted partition devices, because:
+  *  - there is never a need to flush them (we're not doing IO there)
+  *  - flushing a device that is mounted causes unnecessary IO, and can
+@@ -1507,6 +1509,7 @@ _flush_cache (PedDevice* dev)
+ {
+         LinuxSpecific*  arch_specific = LINUX_SPECIFIC (dev);
+         int             i;
++	int             lpn = _device_get_partition_range(dev);
+ 
+         if (dev->read_only)
+                 return;
+@@ -1514,11 +1517,7 @@ _flush_cache (PedDevice* dev)
+ 
+         ioctl (arch_specific->fd, BLKFLSBUF);
+ 
+-        /* With linux-2.6.0 and newer, we're done.  */
+-        if (_have_kern26())
+-                return;
+-
+-        for (i = 1; i < 16; i++) {
++        for (i = 1; i < lpn; i++) {
+                 char*           name;
+                 int             fd;
+ 
+@@ -2265,34 +2264,72 @@ zasprintf (const char *format, ...)
+   return r < 0 ? NULL : resultp;
+ }
+ 
+-static char*
+-_device_get_part_path (PedDevice *dev, int num)
++#ifdef ENABLE_DEVICE_MAPPER
++static char *
++dm_canonical_path (PedDevice const *dev)
+ {
+-        size_t path_len = strlen (dev->path);
++        LinuxSpecific const *arch_specific = LINUX_SPECIFIC (dev);
+ 
++        /* Get map name from devicemapper */
++        struct dm_task *task = dm_task_create (DM_DEVICE_INFO);
++        if (!task)
++                goto err;
++        if (!dm_task_set_major_minor (task, arch_specific->major,
++                                      arch_specific->minor, 0))
++                goto err;
++        if (!dm_task_run(task))
++                goto err;
++        char *dev_name = zasprintf ("/dev/mapper/%s", dm_task_get_name (task));
++        if (dev_name == NULL)
++                goto err;
++        dm_task_destroy (task);
++        return dev_name;
++err:
++        return NULL;
++}
++#endif
++
++static char*
++_device_get_part_path (PedDevice const *dev, int num)
++{
++        char *devpath;
++        size_t path_len;
+         char *result;
++#ifdef ENABLE_DEVICE_MAPPER
++        devpath = (dev->type == PED_DEVICE_DM
++                         ? dm_canonical_path (dev) : dev->path);
++#else
++        devpath = dev->path;
++#endif
++        path_len = strlen (devpath);
+         /* Check for devfs-style /disc => /partN transformation
+            unconditionally; the system might be using udev with devfs rules,
+            and if not the test is harmless. */
+-        if (5 < path_len && !strcmp (dev->path + path_len - 5, "/disc")) {
++        if (5 < path_len && !strcmp (devpath + path_len - 5, "/disc")) {
+                 /* replace /disc with /part%d */
+                 result = zasprintf ("%.*s/part%d",
+-                                    (int) (path_len - 5), dev->path, num);
++                                    (int) (path_len - 5), devpath, num);
+         } else {
+                 char const *p = (dev->type == PED_DEVICE_DAC960
+                                  || dev->type == PED_DEVICE_CPQARRAY
+                                  || dev->type == PED_DEVICE_ATARAID
+-                                 || isdigit (dev->path[path_len - 1])
++                                 || isdigit (devpath[path_len - 1])
+                                  ? "p" : "");
+-                result = zasprintf ("%s%s%d", dev->path, p, num);
++                result = zasprintf ("%s%s%d", devpath, p, num);
+         }
+-
++#ifdef ENABLE_DEVICE_MAPPER
++        if (dev->type == PED_DEVICE_DM)
++                free (devpath);
++#endif
+         return result;
+ }
+ 
+ static char*
+ linux_partition_get_path (const PedPartition* part)
+ {
++        /* loop label means use the whole disk */
++        if (strcmp (part->disk->type->name, "loop") == 0)
++                return xstrdup (part->disk->dev->path);
+         return _device_get_part_path (part->disk->dev, part->num);
+ }
+ 
+@@ -2361,6 +2398,8 @@ linux_partition_is_busy (const PedPartition* part)
+ 
+         PED_ASSERT (part != NULL);
+ 
++        if (strcmp (part->disk->type->name, "loop") == 0)
++                return linux_is_busy (part->disk->dev);
+         if (_partition_is_mounted (part))
+                 return 1;
+         if (part->type == PED_PARTITION_EXTENDED) {
+@@ -2494,7 +2533,7 @@ _sysfs_ull_entry_from_part(PedPartition const* part, const char *entry,
+                            unsigned long long *val)
+ {
+         char path[128];
+-        char *part_name = linux_partition_get_path(part);
++        char *part_name = _device_get_part_path (part->disk->dev, part->num);
+         if (!part_name)
+                 return false;
+ 
+@@ -2529,7 +2568,7 @@ _kernel_get_partition_start_and_length(PedPartition const *part,
+         PED_ASSERT(start);
+         PED_ASSERT(length);
+ 
+-        char *dev_name = linux_partition_get_path (part);
++        char *dev_name = _device_get_part_path (part->disk->dev, part->num);
+         if (!dev_name)
+                 return false;
+ 
+@@ -2583,6 +2622,8 @@ static unsigned int
+ _device_get_partition_range(PedDevice const* dev)
+ {
+         int range;
++        if (dev->type == PED_DEVICE_DM)
++                return MAX_NUM_PARTS;
+         bool ok = _sysfs_int_entry_from_dev(dev, "ext_range", &range);
+ 
+         if (!ok)
+@@ -2591,6 +2632,133 @@ _device_get_partition_range(PedDevice const* dev)
+         return range > 1 ? range : 0;
+ }
+ 
++#ifdef ENABLE_DEVICE_MAPPER
++static int
++_dm_remove_partition(PedDisk* disk, int partno)
++{
++        int             rc;
++        char            *part_name = _device_get_part_path (disk->dev, partno);
++
++        int fd = open (part_name, O_RDONLY | O_EXCL);
++        if (fd == -1) {
++                if (errno == ENOENT)
++                        errno = ENXIO; /* nothing to remove, device already doesn't exist */
++                free (part_name);
++                return 0;
++        }
++        close (fd);
++        struct dm_task *task = dm_task_create(DM_DEVICE_REMOVE);
++        if (!task) {
++                free (part_name);
++                return 0;
++        }
++        dm_task_set_name (task, part_name);
++        rc = dm_task_run(task);
++        dm_task_update_nodes();
++        dm_task_destroy(task);
++        free (part_name);
++        if (!rc)
++                return 0;
++
++        return 1;
++}
++
++static bool
++_dm_get_partition_start_and_length(PedPartition const *part,
++                                   unsigned long long *start,
++                                   unsigned long long *length)
++{
++        struct dm_task* task = NULL;
++        int             rc = 0;
++
++        if (!(task = dm_task_create(DM_DEVICE_TABLE)))
++                return 0;
++        char *path = _device_get_part_path (part->disk->dev, part->num);
++        PED_ASSERT(path);
++        /* libdevmapper likes to complain on stderr instead of quietly
++           returning ENOENT or ENXIO, so try to stat first */
++        struct stat st;
++        if (stat(path, &st))
++                goto err;
++        dm_task_set_name(task, path);
++        if (!dm_task_run(task))
++                goto err;
++
++        int major, minor;
++        char *params;
++        char *target_type;
++        dm_get_next_target(task, NULL, (uint64_t *)start, (uint64_t *)length, &target_type, &params);
++        if (sscanf (params, "%d:%d %Ld", &major, &minor, start) != 3)
++                goto err;
++        rc = 1;
++err:
++        free (path);
++        dm_task_destroy(task);
++        return rc;
++}
++
++
++static int
++_dm_add_partition (PedDisk* disk, const PedPartition* part)
++{
++        LinuxSpecific*  arch_specific = LINUX_SPECIFIC (disk->dev);
++        char *params = NULL;
++        char *vol_name = NULL;
++
++        /* Get map name from devicemapper */
++        struct dm_task *task = dm_task_create (DM_DEVICE_INFO);
++        if (!task)
++                goto err;
++
++        if (!dm_task_set_major_minor (task, arch_specific->major,
++                                      arch_specific->minor, 0))
++                goto err;
++
++        if (!dm_task_run(task))
++                goto err;
++
++        const char *dev_name = dm_task_get_name (task);
++        size_t name_len = strlen (dev_name);
++        vol_name = zasprintf ("%s%s%d",
++                              dev_name,
++                              isdigit (dev_name[name_len - 1]) ? "p" : "",
++                              part->num);
++        if (vol_name == NULL)
++                goto err;
++
++        /* Caution: dm_task_destroy frees dev_name.  */
++        dm_task_destroy (task);
++        task = NULL;
++        if ( ! (params = zasprintf ("%d:%d %lld", arch_specific->major,
++                                    arch_specific->minor, part->geom.start)))
++                goto err;
++
++        task = dm_task_create (DM_DEVICE_CREATE);
++        if (!task)
++                goto err;
++
++        dm_task_set_name (task, vol_name);
++        dm_task_add_target (task, 0, part->geom.length,
++                "linear", params);
++        if (dm_task_run (task)) {
++                dm_task_update_nodes ();
++                dm_task_destroy (task);
++                free (params);
++                free (vol_name);
++                return 1;
++        } else {
++                _dm_remove_partition (disk, part->num);
++        }
++err:
++        dm_task_update_nodes();
++        if (task)
++                dm_task_destroy (task);
++        free (params);
++        free (vol_name);
++        return 0;
++}
++#endif
++
+ /*
+  * Sync the partition table in two step process:
+  * 1. Remove all of the partitions from the kernel's tables, but do not attempt
+@@ -2611,12 +2779,31 @@ _disk_sync_part_table (PedDisk* disk)
+         PED_ASSERT(disk != NULL);
+         PED_ASSERT(disk->dev != NULL);
+         int lpn;
+-
+         unsigned int part_range = _device_get_partition_range(disk->dev);
++        int (*add_partition)(PedDisk* disk, const PedPartition *part);
++        int (*remove_partition)(PedDisk* disk, int partno);
++        bool (*get_partition_start_and_length)(PedPartition const *part,
++                                               unsigned long long *start,
++                                               unsigned long long *length);
++
+ 
+-        /* lpn = largest partition number. */
++#ifdef ENABLE_DEVICE_MAPPER
++        if (disk->dev->type == PED_DEVICE_DM) {
++                add_partition = _dm_add_partition;
++                remove_partition = _dm_remove_partition;
++                get_partition_start_and_length = _dm_get_partition_start_and_length;
++        } else
++#endif
++        {
++                add_partition = _blkpg_add_partition;
++                remove_partition = _blkpg_remove_partition;
++                get_partition_start_and_length = _kernel_get_partition_start_and_length;
++        }
++
++        /* lpn = largest partition number.
++         * for remove pass, use greater of device or label limit */
+         if (ped_disk_get_max_supported_partition_count(disk, &lpn))
+-                lpn = PED_MIN(lpn, part_range);
++                lpn = PED_MAX(lpn, part_range);
+         else
+                 lpn = part_range;
+ 
+@@ -2633,59 +2820,68 @@ _disk_sync_part_table (PedDisk* disk)
+         if (!errnums)
+                 goto cleanup;
+ 
+-        /* Attempt to remove each and every partition, retrying for
+-           up to max_sleep_seconds upon any failure due to EBUSY. */
+-        unsigned int sleep_microseconds = 10000;
+-        unsigned int max_sleep_seconds = 1;
+-        unsigned int n_sleep = (max_sleep_seconds
+-                                * 1000000 / sleep_microseconds);
+         int i;
+-        for (i = 0; i < n_sleep; i++) {
+-	    if (i)
+-		usleep (sleep_microseconds);
+-            bool busy = false;
+-            int j;
+-            for (j = 0; j < lpn; j++) {
+-                if (!ok[j]) {
+-                    ok[j] = _blkpg_remove_partition (disk, j + 1);
+-                    errnums[j] = errno;
+-                    if (!ok[j] && errnums[j] == EBUSY)
+-                        busy = true;
+-                }
+-            }
+-            if (!busy)
+-                break;
+-        }
+-
++        /* remove old partitions first */
+         for (i = 1; i <= lpn; i++) {
+                 PedPartition *part = ped_disk_get_partition (disk, i);
+                 if (part) {
+-                        if (!ok[i - 1] && errnums[i - 1] == EBUSY) {
+-                                unsigned long long length;
+-                                unsigned long long start;
+-                                /* get start and length of existing partition */
+-                                if (!_kernel_get_partition_start_and_length(part,
+-                                                                &start, &length))
+-                                        goto cleanup;
+-                                if (start == part->geom.start
+-				    && length == part->geom.length)
+-                                        ok[i - 1] = 1;
+-                                /* If the new partition is unchanged and the
+-				   existing one was not removed because it was
+-				   in use, then reset the error flag and do not
+-				   try to add it since it is already there.  */
++                        unsigned long long length;
++                        unsigned long long start;
++                        /* get start and length of existing partition */
++                        if (get_partition_start_and_length(part,
++                                                           &start, &length)
++                            && start == part->geom.start
++                            && length == part->geom.length)
++                        {
++                                /* partition is unchanged, so nothing to do */
++                                ok[i - 1] = 1;
+                                 continue;
+                         }
+-
+-                        /* add the (possibly modified or new) partition */
+-                        if (!_blkpg_add_partition (disk, part)) {
+-                                ped_exception_throw (
+-                                        PED_EXCEPTION_ERROR,
+-                                        PED_EXCEPTION_RETRY_CANCEL,
+-                                        _("Failed to add partition %d (%s)"),
+-                                        i, strerror (errno));
+-                                goto cleanup;
+-                        }
++                }
++                /* Attempt to remove the partition, retrying for
++                   up to max_sleep_seconds upon any failure due to EBUSY. */
++                unsigned int sleep_microseconds = 10000;
++                unsigned int max_sleep_seconds = 1;
++                unsigned int n_sleep = (max_sleep_seconds
++                                        * 1000000 / sleep_microseconds);
++                do {
++                        ok[i - 1] = remove_partition (disk, i);
++                        errnums[i - 1] = errno;
++                        if (ok[i - 1] || errnums[i - 1] != EBUSY)
++                                break;
++                        usleep (sleep_microseconds);
++                } while (n_sleep--);
++                if (!ok[i - 1] && errnums[i - 1] == ENXIO)
++                        ok[i - 1] = 1; /* it already doesn't exist */
++	}
++        /* lpn = largest partition number.
++         * for add pass, use lesser of device or label limit */
++        if (ped_disk_get_max_supported_partition_count(disk, &lpn))
++                lpn = PED_MIN(lpn, part_range);
++        else
++                lpn = part_range;
++        /* don't actually add partitions for loop */
++        if (strcmp (disk->type->name, "loop") == 0)
++                lpn = 0;
++        for (i = 1; i <= lpn; i++) {
++                PedPartition *part = ped_disk_get_partition (disk, i);
++                if (!part)
++                        continue;
++                unsigned long long length;
++                unsigned long long start;
++                /* get start and length of existing partition */
++                if (get_partition_start_and_length(part,
++                                                   &start, &length)
++                    && start == part->geom.start
++                    && length == part->geom.length) {
++                        ok[i - 1] = 1;
++                        /* partition is unchanged, so nothing to do */
++                        continue;
++                }
++                /* add the (possibly modified or new) partition */
++                if (!add_partition (disk, part)) {
++                        ok[i - 1] = 0;
++                        errnums[i - 1] = errno;
+                 }
+         }
+ 
+@@ -2724,235 +2920,6 @@ _disk_sync_part_table (PedDisk* disk)
+         return ret;
+ }
+ 
+-#ifdef ENABLE_DEVICE_MAPPER
+-static int
+-_dm_remove_map_name(char *name)
+-{
+-        struct dm_task  *task = NULL;
+-        int             rc = 0;
+-        uint32_t        cookie = 0;
+-
+-        task = dm_task_create(DM_DEVICE_REMOVE);
+-        if (!task)
+-                return 1;
+-
+-        dm_task_set_name (task, name);
+-        if (!dm_task_set_cookie(task, &cookie, 0))
+-            goto err;
+-
+-        rc = dm_task_run(task);
+-        dm_udev_wait(cookie);
+-        dm_task_update_nodes();
+-err:
+-        dm_task_destroy(task);
+-        if (!rc)
+-                return 1;
+-
+-        return 0;
+-}
+-
+-static int
+-_dm_is_part (struct dm_info *this, char *name)
+-{
+-        struct dm_task* task = NULL;
+-        struct dm_info* info = alloca(sizeof *info);
+-        struct dm_deps* deps = NULL;
+-        int             rc = 0;
+-        unsigned int    i;
+-
+-        task = dm_task_create(DM_DEVICE_DEPS);
+-        if (!task)
+-                return 0;
+-
+-        dm_task_set_name(task, name);
+-        if (!dm_task_run(task))
+-                goto err;
+-
+-        memset(info, '\0', sizeof *info);
+-        dm_task_get_info(task, info);
+-        if (!info->exists)
+-                goto err;
+-
+-        deps = dm_task_get_deps(task);
+-        if (!deps)
+-                goto err;
+-
+-        for (i = 0; i < deps->count; i++) {
+-                unsigned int ma = major(deps->device[i]),
+-                             mi = minor(deps->device[i]);
+-
+-                if (ma == this->major && mi == this->minor)
+-                        rc = 1;
+-        }
+-
+-err:
+-        dm_task_destroy(task);
+-        return rc;
+-}
+-
+-static int
+-_dm_remove_parts (PedDevice* dev)
+-{
+-        struct dm_task*         task = NULL;
+-        struct dm_info*         info = alloca(sizeof *info);
+-        struct dm_names*        names = NULL;
+-        unsigned int            next = 0;
+-        int                     rc;
+-        LinuxSpecific*          arch_specific = LINUX_SPECIFIC (dev);
+-
+-        task = dm_task_create(DM_DEVICE_LIST);
+-        if (!task)
+-                goto err;
+-
+-        if (!dm_task_set_major_minor (task, arch_specific->major,
+-                                      arch_specific->minor, 0))
+-                goto err;
+-
+-        if (!dm_task_run(task))
+-                goto err;
+-
+-        memset(info, '\0', sizeof *info);
+-        dm_task_get_info(task, info);
+-        if (!info->exists)
+-                goto err;
+-
+-        names = dm_task_get_names(task);
+-        if (!names)
+-                goto err;
+-
+-        rc = 0;
+-        do {
+-                names = (void *) ((char *) names + next);
+-
+-                if (_dm_is_part(info, names->name))
+-                        rc += _dm_remove_map_name(names->name);
+-
+-                next = names->next;
+-        } while (next);
+-
+-        dm_task_update_nodes();
+-        dm_task_destroy(task);
+-        task = NULL;
+-
+-        if (!rc)
+-                return 1;
+-err:
+-        if (task)
+-                dm_task_destroy(task);
+-        ped_exception_throw (PED_EXCEPTION_WARNING, PED_EXCEPTION_IGNORE,
+-                _("parted was unable to re-read the partition "
+-                  "table on %s (%s).  This means Linux won't know "
+-                  "anything about the modifications you made. "),
+-                dev->path, strerror (errno));
+-        return 0;
+-}
+-
+-static int
+-_dm_add_partition (PedDisk* disk, PedPartition* part)
+-{
+-        char*           vol_name = NULL;
+-        const char*     dev_name = NULL;
+-        char*           vol_uuid = NULL;
+-        const char*     dev_uuid = NULL;
+-        char*           params = NULL;
+-        LinuxSpecific*  arch_specific = LINUX_SPECIFIC (disk->dev);
+-        uint32_t        cookie = 0;
+-
+-        /* Get map name from devicemapper */
+-        struct dm_task *task = dm_task_create (DM_DEVICE_INFO);
+-        if (!task)
+-                goto err;
+-
+-        if (!dm_task_set_major_minor (task, arch_specific->major,
+-                                      arch_specific->minor, 0))
+-                goto err;
+-
+-        if (!dm_task_run(task))
+-                goto err;
+-
+-        dev_name = dm_task_get_name (task);
+-        dev_uuid = dm_task_get_uuid (task);
+-
+-        if (isdigit (dev_name[strlen (dev_name) - 1])) {
+-                if ( ! (vol_name = zasprintf ("%sp%d", dev_name, part->num)))
+-                        goto err;
+-        } else if ( ! (vol_name = zasprintf ("%s%d", dev_name, part->num)))
+-                goto err;
+-
+-        if ( dev_uuid && (strlen(dev_uuid) > 0) \
+-             && ! (vol_uuid = zasprintf ("part%d-%s", part->num, dev_uuid)))
+-                goto err;
+-
+-        /* Caution: dm_task_destroy frees dev_name.  */
+-        dm_task_destroy (task);
+-        task = NULL;
+-
+-        /* device-mapper uses 512b units, not the device's sector size */
+-        if ( ! (params = zasprintf ("%d:%d %lld", arch_specific->major,
+-                                    arch_specific->minor,
+-                                    part->geom.start * (disk->dev->sector_size / PED_SECTOR_SIZE_DEFAULT))))
+-                goto err;
+-
+-        task = dm_task_create (DM_DEVICE_CREATE);
+-        if (!task)
+-                goto err;
+-
+-        dm_task_set_name (task, vol_name);
+-        if (vol_uuid)
+-                dm_task_set_uuid (task, vol_uuid);
+-        /* device-mapper uses 512b units, not the device's sector size */
+-        dm_task_add_target (task, 0, part->geom.length * (disk->dev->sector_size / PED_SECTOR_SIZE_DEFAULT),
+-                "linear", params);
+-        if (!dm_task_set_cookie(task, &cookie, 0))
+-            goto err;
+-        if (dm_task_run (task)) {
+-                //printf("0 %ld linear %s\n", part->geom.length, params);
+-                dm_udev_wait(cookie);
+-                dm_task_update_nodes();
+-                dm_task_destroy(task);
+-                free(params);
+-                free(vol_uuid);
+-                free(vol_name);
+-                return 1;
+-        } else {
+-                dm_udev_wait(cookie);
+-                _dm_remove_map_name(vol_name);
+-        }
+-err:
+-        dm_task_update_nodes();
+-        if (task)
+-                dm_task_destroy (task);
+-        free (params);
+-        free (vol_uuid);
+-        free (vol_name);
+-        return 0;
+-}
+-
+-static int
+-_dm_reread_part_table (PedDisk* disk)
+-{
+-        int largest_partnum = ped_disk_get_last_partition_num (disk);
+-        int     rc = 1;
+-        int     i;
+-
+-        sync();
+-        if (!_dm_remove_parts(disk->dev))
+-                rc = 0;
+-
+-        for (i = 1; i <= largest_partnum; i++) {
+-                PedPartition*      part;
+-
+-                part = ped_disk_get_partition (disk, i);
+-                if (!part)
+-                        continue;
+-
+-                if (!_dm_add_partition (disk, part))
+-                        rc = 0;
+-        }
+-        return rc;
+-}
+-#endif
+-
+ static int
+ _have_blkpg ()
+ {
+@@ -2970,10 +2937,6 @@ _have_blkpg ()
+ static int
+ linux_disk_commit (PedDisk* disk)
+ {
+-#ifdef ENABLE_DEVICE_MAPPER
+-        if (disk->dev->type == PED_DEVICE_DM)
+-                return _dm_reread_part_table (disk);
+-#endif
+         if (disk->dev->type != PED_DEVICE_FILE) {
+ 
+ 		/* We now require BLKPG support.  If this assertion fails,
+diff --git a/tests/Makefile.am b/tests/Makefile.am
+index 1cf859c..44518c8 100644
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -34,6 +34,7 @@ TESTS = \
+   t0501-duplicate.sh \
+   t1100-busy-label.sh \
+   t1101-busy-partition.sh \
++  t1104-remove-and-add-partition.sh \
+   t1700-probe-fs.sh \
+   t2200-dos-label-recog.sh \
+   t2201-pc98-label-recog.sh \
+@@ -58,6 +59,7 @@ TESTS = \
+   t6002-dm-many-partitions.sh \
+   t6003-dm-uuid.sh \
+   t6004-dm-512b-sectors.sh \
++  t6010-dm-busy.sh \
+   t6100-mdraid-partitions.sh \
+   t7000-scripting.sh \
+   t8000-loop.sh \
+diff --git a/tests/t1104-remove-and-add-partition.sh b/tests/t1104-remove-and-add-partition.sh
+new file mode 100644
+index 0000000..61cc392
+--- /dev/null
++++ b/tests/t1104-remove-and-add-partition.sh
+@@ -0,0 +1,50 @@
++#!/bin/sh
++# make sure that removing a higher numbered partition and adding a lower
++# one using that space at the same time works
++
++# Copyright (C) 2014 Free Software Foundation, Inc.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <http://www.gnu.org/licenses/>.
++
++. "${srcdir=.}/init.sh"; path_prepend_ ../parted
++path_prepend_ ../partprobe
++require_root_
++ss=$sector_size_
++
++d1= f1=
++cleanup_fn_()
++{
++  test -n "$d1" && losetup -d "$d1"
++  rm -f "$f1"
++}
++
++f1=$(pwd)/1; d1=$(loop_setup_ "$f1") \
++  || skip_ "is this partition mounted with 'nodev'?"
++
++require_partitionable_loop_device_ $d1
++
++# create one big partition
++parted -s $d1 mklabel msdos mkpart primary ext2 1m 10m || fail=1
++
++# save this table
++dd if=$d1 of=saved count=1 || fail=1
++
++# create two small partitions
++parted -s $d1 mklabel msdos mkpart primary ext2 1m 5m mkpart primary ext2 5m 10m || fail=1
++
++# restore first table and make sure partprobe works
++dd if=saved of=$d1 || fail=1
++partprobe $d1 || fail=1
++
++Exit $fail
+diff --git a/tests/t6010-dm-busy.sh b/tests/t6010-dm-busy.sh
+new file mode 100644
+index 0000000..9807b40
+--- /dev/null
++++ b/tests/t6010-dm-busy.sh
+@@ -0,0 +1,92 @@
++#!/bin/sh
++# ensure that parted can alter a partition on a dmraid disk
++# while another one is mounted
++
++# Copyright (C) 2008-2012 Free Software Foundation, Inc.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 3 of the License, or
++# (at your option) any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program.  If not, see <http://www.gnu.org/licenses/>.
++
++. "${srcdir=.}/init.sh"; path_prepend_ ../parted
++
++require_root_
++
++# We could make this work for arbitrary sector size, but I'm lazy.
++require_512_byte_sector_size_
++
++test "x$ENABLE_DEVICE_MAPPER" = xyes \
++  || skip_ "no device-mapper support"
++
++# Device maps names - should be random to not conflict with existing ones on
++# the system
++linear_=plinear-$$
++
++d1=
++f1=
++dev=
++cleanup_fn_() {
++    umount "${dev}p2" > /dev/null 2>&1
++    dmsetup remove ${linear_}p1
++    dmsetup remove ${linear_}p2
++    dmsetup remove $linear_
++    test -n "$d1" && losetup -d "$d1"
++    rm -f "$f1"
++}
++
++f1=$(pwd)/1; d1=$(loop_setup_ "$f1") \
++  || fail=1
++
++# setup: create a mapping
++n=204800
++echo "0 $n linear $d1 0" | dmsetup create $linear_ || fail=1
++dev="/dev/mapper/$linear_"
++
++# Create msdos partition table
++parted -s $dev mklabel msdos > out 2>&1 || fail=1
++compare /dev/null out || fail=1
++
++parted -s $dev -a none mkpart primary fat32 1s 1000s > out 2>&1 || fail=1
++compare /dev/null out || fail=1
++
++parted -s $dev -a none mkpart primary fat32 1001s 200000s > out 2>&1 || fail=1
++compare /dev/null out || fail=1
++
++# wait for new partition device to appear
++wait_for_dev_to_appear_ ${dev}p2 || fail_ ${dev}p2 did not appear
++
++mkfs.vfat -F 32 ${dev}p2 || fail_ mkfs.vfat failed
++
++mount_point=$(pwd)/mnt
++
++mkdir $mount_point || fail=1
++mount "${dev}p2" "$mount_point" || fail=1
++
++# Removal of unmounted partition must succeed.
++parted -s "$dev" rm 1 > /dev/null 2>&1 || fail=1
++
++# Removal of mounted partition must fail.
++parted -s "$dev" rm 2 > /dev/null 2>&1 && fail=1
++
++parted -m -s "$dev" u s print > out 2>&1 || fail=1
++sed "s,^$dev,DEV," out > k; mv k out
++
++# Create expected output file.
++cat <<EOF >> exp || fail=1
++BYT;
++DEV:${n}s:dm:512:512:msdos:Linux device-mapper (linear):;
++2:1001s:200000s:199000s:fat32::lba;
++EOF
++
++compare exp out || fail=1
++
++Exit $fail
+-- 
+1.9.1
+

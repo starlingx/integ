@@ -1,0 +1,42 @@
+From: "Allain Legacy" <allain.legacy@windriver.com>
+---
+Index: parted-3.1/libparted/arch/linux.c
+===================================================================
+--- parted-3.1.orig/libparted/arch/linux.c
++++ parted-3.1/libparted/arch/linux.c
+@@ -1646,12 +1646,14 @@ _device_close (PedDevice* dev)
+ 
+ #if SIZEOF_OFF_T < 8
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+ static _syscall5(int,_llseek,
+                  unsigned int, fd,
+                  unsigned long, offset_high,
+                  unsigned long, offset_low,
+                  loff_t*, result,
+                  unsigned int, origin)
++#endif
+ 
+ loff_t
+ llseek (unsigned int fd, loff_t offset, unsigned int whence)
+@@ -1659,11 +1661,20 @@ llseek (unsigned int fd, loff_t offset,
+         loff_t result;
+         int retval;
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+         retval = _llseek(fd,
+                          ((unsigned long long)offset) >> 32,
+                          ((unsigned long long)offset) & 0xffffffff,
+                          &result,
+                          whence);
++#else
++        retval = syscall(__NR__llseek, fd,
++                         ((unsigned long long)offset) >> 32,
++                         ((unsigned long long)offset) & 0xffffffff,
++                         &result,
++                         whence);
++#endif
++
+         return (retval==-1 ? (loff_t) retval : result);
+ }
+ 

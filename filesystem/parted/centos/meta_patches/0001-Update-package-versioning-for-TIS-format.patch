@@ -1,0 +1,25 @@
+From 74ab16d7e0c23b933b3d6f42eac63d70d07ab62d Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Tue, 27 Sep 2016 10:50:03 -0400
+Subject: [PATCH] Update package versioning for TIS format
+
+---
+ SPECS/parted.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/parted.spec b/SPECS/parted.spec
+index 644c2df..b79ca4a 100644
+--- a/SPECS/parted.spec
++++ b/SPECS/parted.spec
+@@ -4,7 +4,7 @@
+ Summary: The GNU disk partition manipulation program
+ Name:    parted
+ Version: 3.1
+-Release: 28%{?dist}
++Release: 28.el7%{?_tis_dist}.%{tis_patch_ver}
+ License: GPLv3+
+ Group:   Applications/System
+ URL:     http://www.gnu.org/software/parted
+-- 
+1.8.3.1
+

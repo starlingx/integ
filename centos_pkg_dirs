@@ -143,3 +143,4 @@ database/python-psycopg2
 base/crontabs
 base/dnsmasq
 base/rsync
+filesystem/parted
