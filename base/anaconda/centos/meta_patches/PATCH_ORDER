@@ -1,0 +1,5 @@
+0001-Update-package-versioning-for-TIS-format.patch
+0002-Add-TIS-patches.patch
+0003-revert-7.4-grub2-efi-handling.patch
+0004-Upversion-rpm-devel-dependency.patch
+0005-Add-TIS-patches-for-host-lookup.patch

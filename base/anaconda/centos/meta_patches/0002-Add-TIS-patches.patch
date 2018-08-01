@@ -1,0 +1,38 @@
+From 6bec7d96120f7eef019ab2841265bf4b74ebc64d Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Mon, 13 Nov 2017 17:22:49 -0500
+Subject: [PATCH] Add TIS patches
+
+---
+ SPECS/anaconda.spec | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/anaconda.spec b/SPECS/anaconda.spec
+index 00b19c4..79e1c55 100644
+--- a/SPECS/anaconda.spec
++++ b/SPECS/anaconda.spec
+@@ -22,7 +22,10 @@ Patch6:	anaconda-centos-help-text.patch
+ Patch7:	anaconda-centos-skip-retry-if-not-connected.patch
+ Patch8: 9800-rpmostreepayload-Rework-remote-add-handling.patch
+ Patch1000:	yumpayload-dont-verify-disabled-repos.patch
+- 
++
++# WRS
++Patch10001: 0001-TIS-Progress-and-error-handling.patch
++
+ # Versions of required components (done so we make sure the buildrequires
+ # match the requires versions of things).
+ %define gettextver 0.18.1
+@@ -243,6 +246,9 @@ runtime on NFS/HTTP/FTP servers or local disks.
+ %patch8 -p1
+ %patch1000 -p1
+ 
++# WRS
++%patch10001 -p1
++
+ %build
+ %configure --disable-static \
+            --enable-introspection \
+-- 
+1.8.3.1
+
