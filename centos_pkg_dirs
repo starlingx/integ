@@ -43,7 +43,6 @@ base/net-snmp
 ldap/openldap
 networking/mellanox/mlx4-config
 networking/openvswitch
-networking/scapy
 restapi-doc
 base/libevent
 security/wrs-ssl
