@@ -1,8 +1,0 @@
-{"name": "csv",
- "compress": false,
- "enabled": false,
- "meters": ["!vswitch.*", "!cpu_util"],
- "location": "/opt/cgcs/ceilometer/csv/pm2.csv",
- "backup_count": 4,
- "max_bytes": 9999999
-}

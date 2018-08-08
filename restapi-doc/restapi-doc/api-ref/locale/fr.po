@@ -32,7 +32,6 @@ msgstr "Extensions de l'API de Calcul v2 OpenStack"
 #: ./api-ref/src/docbkx/api-ref-networking-v2.xml13(year)
 #: ./api-ref/src/docbkx/api-ref-compute-v2.xml13(year)
 #: ./api-ref/src/docbkx/api-ref-image-v1.xml13(year)
-#: ./api-ref/src/docbkx/api-ref-telemetry-v2.xml13(year)
 #: ./api-ref/src/docbkx/api-ref-blockstorage-v2.xml13(year)
 #: ./api-ref/src/docbkx/api-ref-identity-v2.xml13(year)
 #: ./api-ref/src/docbkx/api-ref-databases-v1.xml13(year)
@@ -487,9 +486,6 @@ msgid "Orchestration API v1 (CURRENT)"
 msgstr "API d'Orchestration v1 (ACTUELLE)"
 
 #: ./api-ref/src/docbkx/itemizedlist-service-list.xml64(link)
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml9(title)
-msgid "Telemetry API v2 (CURRENT)"
-msgstr "API de Télémétrie v2 (ACTUELLE)"
 
 #: ./api-ref/src/docbkx/api-ref.xml11(title)
 msgid "OpenStack API Reference"
@@ -1935,10 +1931,6 @@ msgstr "Ajoute launched_at et terminated_at aux serveurs."
 msgid "Provide simple tenant usage for tenant."
 msgstr "Donne l'utilisation du client simple pour le client."
 
-#: ./api-ref/src/docbkx/api-ref-telemetry-v2.xml11(title)
-msgid "OpenStack Telemetry API v2"
-msgstr "API de Télémétrie v2 OpenStack"
-
 #: ./api-ref/src/docbkx/ch_blockstorage-api-v1.xml13(para)
 msgid ""
 "When making an API call to create, list, or delete volume(s), the following "
@@ -2177,34 +2169,6 @@ msgstr "API du Service de Base de données v1.0 OpenStack"
 #: ./api-ref/src/docbkx/api-ref-compute-v3.xml11(title)
 msgid "OpenStack Compute API v3"
 msgstr "API de Calcul v3 OpenStack"
-
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml10(para)
-msgid "Manage telemetry operations."
-msgstr "Gérer les opérations de télémétrie."
-
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml12(title)
-msgid "Alarms"
-msgstr "Alarmes"
-
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml13(para)
-msgid "List, create, gets details for, update, and delete alarms."
-msgstr "Liste, crée, obtient les informations, modifie, et supprime les alarmes."
-
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml39(title)
-msgid "Meters"
-msgstr "Mètres"
-
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml40(para)
-msgid "Get information for meters."
-msgstr " Obtient les informations des métriques."
-
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml58(title)
-msgid "Resources"
-msgstr "Ressources"
-
-#: ./api-ref/src/docbkx/ch_telemetry-v2.xml59(para)
-msgid "Get information for resources."
-msgstr "Obtenir les informations pour les resources."
 
 #: ./api-ref/src/docbkx/ch_identity-v3-ext.xml13(title)
 msgid "Identity API v3 extensions (STABLE)"

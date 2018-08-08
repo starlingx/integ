@@ -43,7 +43,6 @@ SPDX-License-Identifier: Apache-2.0
     <xi:include href="../../api-ref/src/docbkx/ch_compute-v2-cgcs-ext.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_networking-v2-cgcs-ext.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_blockstorage-api-v2-cgcs-ext.xml"/>
-    <xi:include href="../../api-ref/src/docbkx/ch_telemetry-v2-cgcs-ext.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_image-v2-cgcs-ext.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_sysinv-api-v1.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_patching-api-v1.xml"/>

@@ -78,17 +78,6 @@ SPDX-License-Identifier: Apache-2.0
             </configuration>
           </execution>
           <execution>
-            <id>os-api-ref-telemetry-v2-cgcs-ext</id>
-            <goals>
-              <goal>generate-pdf</goal>
-            </goals>
-            <phase>generate-sources</phase>
-            <configuration>
-              <includes> bk-api-ref-telemetry-v2-cgcs-ext.xml </includes>
-              <pdfFilenameBase>api-ref-telemetry-v2-cgcs-ext</pdfFilenameBase>
-            </configuration>
-          </execution>
-          <execution>
             <id>os-api-ref-image-v2-cgcs-ext</id>
             <goals>
               <goal>generate-pdf</goal>

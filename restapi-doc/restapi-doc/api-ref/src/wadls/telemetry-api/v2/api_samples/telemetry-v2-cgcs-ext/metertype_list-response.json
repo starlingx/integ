@@ -1,7 +1,0 @@
-[
-{
- "name": "memory.usage",
- "type": "gauge",
- "unit": "MB"
-}
-]
