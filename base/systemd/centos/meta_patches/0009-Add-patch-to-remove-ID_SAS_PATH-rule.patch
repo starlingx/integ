@@ -1,24 +1,24 @@
-From 022b18e4db4116905207c0603b60e932e4a7dacb Mon Sep 17 00:00:00 2001
+From fddd11d477de4eced32cf40c0524a11a24994fa1 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: [PATCH 08/10] WRS: 0009-Add-patch-to-remove-ID_SAS_PATH-rule.patch
+Subject: [PATCH 3/7] WRS: 0009-Add-patch-to-remove-ID_SAS_PATH-rule.patch
 
 ---
  SPECS/systemd.spec | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 332514c..33f3128 100644
+index ff9c519..e9fc3a4 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -543,6 +543,7 @@ Patch0501: 0501-inject-millisec-in-syslog-date.patch
- Patch0501: 0501-inject-millisec-in-syslog-date.patch
- Patch0503: 0503-Configure-journald-to-forward-to-syslog.patch
- Patch0504: 0504-Configure-journald-rate-limit.patch
-+Patch0505: 0505-remove-id-sas-path-symlink.patch
+@@ -657,6 +657,7 @@ Patch0613: 0613-sd-journal-when-picking-up-a-new-file-compare-inode-.patch
+ Patch0701: 0701-inject-millisec-in-syslog-date.patch
+ Patch0703: 0703-Configure-journald-to-forward-to-syslog.patch
+ Patch0704: 0704-Configure-journald-rate-limit.patch
++Patch0705: 0705-remove-id-sas-path-symlink.patch
  
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
  
 -- 
-1.9.1
+2.7.4
 
