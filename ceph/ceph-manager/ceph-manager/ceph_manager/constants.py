@@ -65,7 +65,7 @@ CEPH_MANAGER_TOPIC = 'sysinv.ceph_manager'
 SYSINV_CONFIG_FILE = '/etc/sysinv/sysinv.conf'
 
 # Titanium Cloud version strings
-TITANIUM_SERVER_VERSION_16_10 = '16.10'
+TITANIUM_SERVER_VERSION_18_03 = '18.03'
 
 CEPH_HEALTH_WARN_REQUIRE_JEWEL_OSDS_NOT_SET = (
     "all OSDs are running jewel or later but the "

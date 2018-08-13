@@ -97,9 +97,6 @@ class RpcEndpoint(PeriodicTasks):
         return self.service.monitor.cluster_is_up
 
 
-# This class is needed only when upgrading from 16.10 to 17.x
-# TODO:  remove it after 1st 17.x release
-#
 class SysinvConductorUpgradeApi(object):
     def __init__(self):
         self.sysinv_conductor = None
@@ -113,10 +110,10 @@ class SysinvConductorUpgradeApi(object):
         return upgrade
 
     @retry(wait_fixed=1000,
-           retry_on_exception=lambda exception:
+           retry_on_exception=lambda e:
                LOG.warn(_LW(
                    "Getting software upgrade status failed "
-                   "with: %s. Retrying... ") % str(exception)) or True)
+                   "with: %s. Retrying... ") % str(e)) or True)
     def retry_get_software_upgrade_status(self):
         return self.get_software_upgrade_status()
 
