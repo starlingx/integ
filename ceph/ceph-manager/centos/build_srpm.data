@@ -1,0 +1,3 @@
+SRC_DIR="ceph-manager"
+COPY_LIST_TO_TAR="files scripts"
+TIS_PATCH_VER=4
