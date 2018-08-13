@@ -1,14 +1,14 @@
-From d984ab4a020a20082190e8029f45f06031f320da Mon Sep 17 00:00:00 2001
+From 5dc19ad10a3f91803116a88c303134e9ff361bd5 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:05:59 -0400
-Subject: [PATCH 6/9] WRS: run-snmpd-as-non-root-user.patch
+Subject: [PATCH] WRS: run-snmpd-as-non-root-user.patch
 
 Conflicts:
 	SPECS/net-snmp.spec
 ---
  SOURCES/snmpd.service | 2 +-
- SPECS/net-snmp.spec   | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ SPECS/net-snmp.spec   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/SOURCES/snmpd.service b/SOURCES/snmpd.service
 index 84b6ca3..ad689c8 100644
@@ -24,19 +24,10 @@ index 84b6ca3..ad689c8 100644
  ExecStart=/etc/init.d/snmpd start
  ExecStop=/etc/init.d/snmpd stop
 diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
-index a433f40..0ac1eef 100644
+index 3e36cb5..9b313cb 100644
 --- a/SPECS/net-snmp.spec
 +++ b/SPECS/net-snmp.spec
-@@ -14,7 +14,7 @@
- Summary: A collection of SNMP protocol tools and libraries
- Name: net-snmp
- Version: 5.7.2
--Release: 28%{?dist}
-+Release: 28%{?dist}.1
- Epoch: 1
- 
- License: BSD
-@@ -413,7 +413,7 @@ install -m 644 %SOURCE6 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/snmptrapd.conf
+@@ -428,7 +428,7 @@ install -m 644 %SOURCE6 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/snmptrapd.conf
  
  # WRS
  install -m 644 %SOURCE12 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/snmpd.conf
@@ -46,5 +37,5 @@ index a433f40..0ac1eef 100644
  mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d
  install -m 755 %SOURCE13 ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d/snmpd
 -- 
-1.9.1
+2.7.4
 
