@@ -1,4 +1,4 @@
-From d5890a17f5b07a9d17665c2b4138bb244ab6c680 Mon Sep 17 00:00:00 2001
+From 328f19996b93b5be5cd856e600111d0dc87c8616 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:58:59 -0400
 Subject: [PATCH 2/2] WRS: 0001-Update-package-versioning-for-TIS-format.patch
@@ -8,18 +8,18 @@ Subject: [PATCH 2/2] WRS: 0001-Update-package-versioning-for-TIS-format.patch
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/centos-release.spec b/SPECS/centos-release.spec
-index be95b1b..91dad61 100644
+index ce64be4..8c05c28 100644
 --- a/SPECS/centos-release.spec
 +++ b/SPECS/centos-release.spec
-@@ -13,7 +13,7 @@
+@@ -14,7 +14,7 @@
  
  Name:           centos-release
  Version:        %{base_release_version}
--Release:        %{centos_rel}%{?dist}
-+Release:        %{centos_rel}.el7.centos%{?_tis_dist}.%{tis_patch_ver}
+-Release:        %{centos_rel}.1%{?dist}
++Release:        %{centos_rel}.1.el7.centos%{?_tis_dist}.%{tis_patch_ver}
  Summary:        %{product_family} release file
  Group:          System Environment/Base
  License:        GPLv2
 -- 
-1.9.1
+2.7.4
 
