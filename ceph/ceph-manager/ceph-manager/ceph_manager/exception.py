@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2017 Wind River Systems, Inc.
+# Copyright (c) 2016-2018 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -54,27 +54,6 @@ class CephPoolRulesetFailure(CephManagerException):
                 "pool %(name)s failed: %(reason)s")
 
 
-class CephPoolAddTierFailure(CephManagerException):
-    message = _("Failed to add OSD tier: "
-                "backing_pool=%(backing_pool)s, cache_pool=%(cache_pool)s, "
-                "response=%(response_status_code)s:%(response_reason)s, "
-                "status=%(status)s, output=%(output)s")
-
-
-class CephPoolRemoveTierFailure(CephManagerException):
-    message = _("Failed to remove tier: "
-                "backing_pool=%(backing_pool)s, cache_pool=%(cache_pool)s, "
-                "response=%(response_status_code)s:%(response_reason)s, "
-                "status=%(status)s, output=%(output)s")
-
-
-class CephCacheSetModeFailure(CephManagerException):
-    message = _("Failed to set OSD tier cache mode: "
-                "cache_pool=%(cache_pool)s, mode=%(mode)s, "
-                "response=%(response_status_code)s:%(response_reason)s, "
-                "status=%(status)s, output=%(output)s")
-
-
 class CephPoolSetParamFailure(CephManagerException):
     message = _("Cannot set Ceph OSD pool parameter: "
                 "pool_name=%(pool_name)s, param=%(param)s, value=%(value)s. "
@@ -85,37 +64,6 @@ class CephPoolGetParamFailure(CephManagerException):
     message = _("Cannot get Ceph OSD pool parameter: "
                 "pool_name=%(pool_name)s, param=%(param)s. "
                 "Reason: %(reason)s")
-
-
-class CephCacheCreateOverlayFailure(CephManagerException):
-    message = _("Failed to create overlay: "
-                "backing_pool=%(backing_pool)s, cache_pool=%(cache_pool)s, "
-                "response=%(response_status_code)s:%(response_reason)s, "
-                "status=%(status)s, output=%(output)s")
-
-
-class CephCacheDeleteOverlayFailure(CephManagerException):
-    message = _("Failed to delete overlay: "
-                "backing_pool=%(backing_pool)s, cache_pool=%(cache_pool)s, "
-                "response=%(response_status_code)s:%(response_reason)s, "
-                "status=%(status)s, output=%(output)s")
-
-
-class CephCacheFlushFailure(CephManagerException):
-    message = _("Failed to flush cache pool: "
-                "cache_pool=%(cache_pool)s, "
-                "return_code=%(return_code)s, "
-                "cmd=%(cmd)s, output=%(output)s")
-
-
-class CephCacheEnableFailure(CephManagerException):
-    message = _("Cannot enable Ceph cache tier. "
-                "Reason: cache tiering operation in progress.")
-
-
-class CephCacheDisableFailure(CephManagerException):
-    message = _("Cannot disable Ceph cache tier. "
-                "Reason: cache tiering operation in progress.")
 
 
 class CephSetKeyFailure(CephManagerException):
