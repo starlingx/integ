@@ -112,7 +112,7 @@ class HandleUpgradesMixin(object):
                     "Getting software upgrade status failed "
                     "with: %s. Skip auto-heal attempt "
                     "(will retry on next ceph status poll).") % str(ex))
-                return
+                return health
             state = upgrade.get('state')
             # surpress require_jewel_osds in case upgrade is
             # in progress but not completed or aborting
@@ -181,15 +181,23 @@ class Monitor(HandleUpgradesMixin):
     def run(self):
         # Wait until Ceph cluster is up and we can get the fsid
         while True:
-            self.ceph_get_fsid()
+            try:
+                self.ceph_get_fsid()
+            except Exception:
+                LOG.exception("Error getting fsid, "
+                              "will retry in %ss" % constants.CEPH_HEALTH_CHECK_INTERVAL)
             if self.service.entity_instance_id:
                 break
             time.sleep(constants.CEPH_HEALTH_CHECK_INTERVAL)
 
         # Start monitoring ceph status
         while True:
-            self.ceph_poll_status()
-            self.ceph_poll_quotas()
+            try:
+                self.ceph_poll_status()
+                self.ceph_poll_quotas()
+            except Exception:
+                LOG.exception("Error running periodic monitoring of ceph status, "
+                              "will retry in %ss" % constants.CEPH_HEALTH_CHECK_INTERVAL)
             time.sleep(constants.CEPH_HEALTH_CHECK_INTERVAL)
 
     def ceph_get_fsid(self):
