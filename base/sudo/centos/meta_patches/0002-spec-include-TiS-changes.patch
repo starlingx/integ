@@ -1,35 +1,35 @@
-From abc3ec24a957002962bb4038946291b84bea3859 Mon Sep 17 00:00:00 2001
+From 70046603b8d607445e2fbf5e7d934bcd43a77dc8 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:50:44 -0400
-Subject: [PATCH 2/3] WRS: 0002-spec-include-TiS-changes.patch
+Subject: [PATCH 2/4] WRS: 0002-spec-include-TiS-changes.patch
 
 ---
- SPECS/sudo.spec | 17 +++++++++++++++--
- 1 file changed, 15 insertions(+), 2 deletions(-)
+ SPECS/sudo.spec | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
-index 7d1486b..d731ba9 100644
+index b6402bb..acbcb26 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
-@@ -64,6 +64,8 @@ Patch17: sudo-1.8.19p2-get_process_ttyname.patch
- # 1459152 - CVE-2017-1000368: Privilege escalation via improper get_process_ttyname() parsing (insufficient fix for CVE-2017-1000367)
- Patch18: sudo-1.8.19p2-CVE-2017-1000368.patch
+@@ -78,6 +78,8 @@ Patch24: sudo-1.8.19p2-sssd-double-free.patch
+ # 1560657 - sudo blocks in poll() for /dev/ptmx with iolog enabled
+ Patch25: sudo-1.8.19p2-iolog-zombie.patch
  
 +# WRS patches
 +
  %description
  Sudo (superuser do) allows a system administrator to give certain
  users (or groups of users) the ability to run some (or all) commands
-@@ -106,6 +108,8 @@ plugins that use %{name}.
- %patch17 -p1 -b .get_process_ttyname
- %patch18 -p1 -b .CVE-2017-1000368
+@@ -127,6 +129,8 @@ plugins that use %{name}.
+ %patch24 -p1 -b .double-free
+ %patch25 -p1 -b .iolog-zombie
  
 +# WRS patches
 +
  %build
  autoreconf -I m4 -fv --install
  
-@@ -132,7 +136,7 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
+@@ -153,7 +157,7 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
          --with-ignore-dot \
          --with-tty-tickets \
          --with-ldap \
@@ -38,7 +38,7 @@ index 7d1486b..d731ba9 100644
          --with-selinux \
          --with-passprompt="[sudo] password for %p: " \
          --with-linux-audit \
-@@ -158,6 +162,12 @@ install -p -c -m 0440 %{SOURCE1} $RPM_BUILD_ROOT/etc/sudoers
+@@ -179,6 +183,12 @@ install -p -c -m 0440 %{SOURCE1} $RPM_BUILD_ROOT/etc/sudoers
  install -p -c -m 0640 %{SOURCE3} $RPM_BUILD_ROOT/etc/sudo.conf
  install -p -c -m 0640 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sudo-ldap.conf
  
@@ -51,7 +51,7 @@ index 7d1486b..d731ba9 100644
  # Remove execute permission on this script so we don't pull in perl deps
  chmod -x $RPM_BUILD_ROOT%{_docdir}/sudo-*/sudoers2ldif
  
-@@ -226,7 +236,8 @@ rm -rf $RPM_BUILD_ROOT
+@@ -247,7 +257,8 @@ rm -rf $RPM_BUILD_ROOT
  %{_mandir}/man8/visudo.8*
  %dir %{_docdir}/sudo-%{version}
  %{_docdir}/sudo-%{version}/*
@@ -62,5 +62,5 @@ index 7d1486b..d731ba9 100644
  # Make sure permissions are ok even if we're updating
  %post
 -- 
-1.9.1
+2.7.4
 
