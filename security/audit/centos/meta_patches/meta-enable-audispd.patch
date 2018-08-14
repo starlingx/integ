@@ -1,20 +1,20 @@
-From f0d91192bc8778899d01e7723ababcf7a3808c91 Mon Sep 17 00:00:00 2001
+From dc0677a11cede908f266ce4695320759b4694d18 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Fri, 6 Oct 2017 14:10:25 -0400
-Subject: [PATCH] meta patch for enabling audispd and LOG_AUTH facility
+Subject: [PATCH 2/2] meta patch for enabling audispd and LOG_AUTH facility
 
 ---
  SPECS/audit.spec | 7 +++++++
  1 file changed, 7 insertions(+)
 
 diff --git a/SPECS/audit.spec b/SPECS/audit.spec
-index e144332..a188b89 100644
+index 2bbd782..9e70f5d 100644
 --- a/SPECS/audit.spec
 +++ b/SPECS/audit.spec
-@@ -16,6 +16,10 @@ Patch2: audit-2.7.5-no-backlog-wait-time.patch
- Patch3: audit-2.7.7-queue_error_action.patch
- # BZ 1460110 - aureport does not report all anomalies
- Patch4: audit-2.7.7-aureport.patch
+@@ -20,6 +20,10 @@ Patch4: audit-2.8.2-ipv6-bind.patch
+ Patch5: audit-2.8.2-fix-reset-lost-return.patch
+ # This patch makes date a numeric field so auparse_search works
+ Patch6: audit-2.8.2-auparse-numeric_field.patch
 +
 +# WRS Patches
 +Patch1000: 0001-enable-audispd-and-auth-facility.patch
@@ -22,16 +22,16 @@ index e144332..a188b89 100644
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
  BuildRequires: openldap-devel
  BuildRequires: swig
-@@ -95,6 +99,9 @@ behavior.
- %patch3 -p1
- %patch4 -p1
+@@ -100,6 +104,9 @@ like relay events to remote machines.
+ %patch5 -p1
+ %patch6 -p1
  
 +# WRS patches
 +%patch1000 -p1
 +
  %build
- %configure --sbindir=/sbin --libdir=/%{_lib} --with-python=yes --with-libwrap --enable-gssapi-krb5=yes --with-libcap-ng=yes --with-arm --with-aarch64 \
- --without-golang --enable-zos-remote --enable-systemd
+ %configure --sbindir=/sbin --libdir=/%{_lib} --with-python=yes \
+ 	--with-libwrap --enable-gssapi-krb5=yes \
 -- 
-1.9.1
+2.7.4
 

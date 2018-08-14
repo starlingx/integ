@@ -1,25 +1,25 @@
-From c680a0f4c0cd01a575a3d0a79ba1356cb8c03012 Mon Sep 17 00:00:00 2001
+From 5f712d1cb936ace204ccbbcb8cc0002f7ee2cd76 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Fri, 6 Oct 2017 14:26:03 -0400
-Subject: [PATCH] Update package versioning for TIS format
+Subject: [PATCH 1/2] Update package versioning for TIS format
 
 ---
  SPECS/audit.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/audit.spec b/SPECS/audit.spec
-index 74b6e7a..f1b28fb 100644
+index ad10844..2bbd782 100644
 --- a/SPECS/audit.spec
 +++ b/SPECS/audit.spec
 @@ -3,7 +3,7 @@
  Summary: User space tools for 2.6 kernel auditing
  Name: audit
- Version: 2.7.6
+ Version: 2.8.1
 -Release: 3%{?dist}
 +Release: 3.el7%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2+
  Group: System Environment/Daemons
  URL: http://people.redhat.com/sgrubb/audit/
 -- 
-1.8.3.1
+2.7.4
 
