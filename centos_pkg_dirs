@@ -16,7 +16,6 @@ utilities/update-motd
 python/python-2.7.5
 python/python-django
 python/python-setuptools
-filesystem/e2fsprogs
 virt/libvirt
 virt/libvirt-python
 base/lighttpd
