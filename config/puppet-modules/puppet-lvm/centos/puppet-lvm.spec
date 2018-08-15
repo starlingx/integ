@@ -16,6 +16,7 @@ Patch0:         0001-puppet-lvm-kilo-quilt-changes.patch
 Patch1:         0002-UEFI-pvcreate-fix.patch
 Patch2:         0003-US94222-Persistent-Dev-Naming.patch
 Patch3:         0004-extendind-nuke_fs_on_resize_failure-functionality.patch
+Patch4:         Fix-the-logical-statement-for-nuke_fs_on_resize.patch
 
 BuildArch:      noarch
 
@@ -34,6 +35,7 @@ A Puppet module for Logical Resource Management (LVM)
 %patch1  -p1
 %patch2  -p1
 %patch3  -p1
+%patch4  -p1
 
 %install
 install -d -m 0755 %{buildroot}/%{_datadir}/puppet/modules/%{module_dir}
