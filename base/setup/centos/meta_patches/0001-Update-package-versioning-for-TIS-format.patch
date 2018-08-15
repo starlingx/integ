@@ -1,14 +1,14 @@
-From 412fc338e588c92ee0be3bf1b1af0040fac9f500 Mon Sep 17 00:00:00 2001
+From 667cc2ccdd4451ce9d943064d714bcf1a8d1e4ed Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Mon, 26 Sep 2016 17:40:54 -0400
-Subject: [PATCH] Update package versioning for TIS format
+Subject: [PATCH 09/15] Update package versioning for TIS format
 
 ---
  SPECS/setup.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/setup.spec b/SPECS/setup.spec
-index 223bfd5..89a4d2f 100644
+index 3ad2458..8f5fc46 100644
 --- a/SPECS/setup.spec
 +++ b/SPECS/setup.spec
 @@ -1,7 +1,7 @@
@@ -16,10 +16,10 @@ index 223bfd5..89a4d2f 100644
  Name: setup
  Version: 2.8.71
 -Release: 9%{?dist}
-+Release: 7.el7%{?_tis_dist}.%{tis_patch_ver}
++Release: 9.el7%{?_tis_dist}.%{tis_patch_ver}
  License: Public Domain
  Group: System Environment/Base
- URL: https://fedorahosted.org/setup/
+ URL: https://pagure.io/setup/
 -- 
-1.8.3.1
+2.7.4
 

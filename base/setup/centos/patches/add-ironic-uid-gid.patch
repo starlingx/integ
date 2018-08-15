@@ -1,11 +1,16 @@
-commit 51c505c59a1512c011fcda01d0583a2ddc6f3337
-Author: Shoaib Nasir <shoaib.nasir@windriver.com>
-Date:   Mon Sep 25 11:39:29 2017 -0400
+From 15d0ef24f88290887f1e154352b53f373a04e783 Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Thu, 16 Aug 2018 00:15:04 +0800
+Subject: [PATCH] add-ironic-uid-gid
 
-    add ironic group and passwd
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
+---
+ group  | 1 +
+ passwd | 1 +
+ 2 files changed, 2 insertions(+)
 
 diff --git a/group b/group
-index 7d0244f..9979b99 100644
+index f6a75e5..d9050fa 100644
 --- a/group
 +++ b/group
 @@ -27,3 +27,4 @@ nfv:x:172:nfv
@@ -22,3 +27,6 @@ index fce82e7..fb49ea3 100644
  fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
  magnum:x:1870:1870:OpenStack Magnum Daemons:/var/lib/magnum:/sbin/nologin
 +ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
+-- 
+2.7.4
+

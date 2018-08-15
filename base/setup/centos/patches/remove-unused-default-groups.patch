@@ -1,4 +1,4 @@
-From d79451c9a047313fb8da27007ea9d99435e05ff2 Mon Sep 17 00:00:00 2001
+From dbc791c8f24ffac0d98e86213e4d592660f6087c Mon Sep 17 00:00:00 2001
 From: Michel Thebeau <michel.thebeau@windriver.com>
 Date: Fri, 19 Aug 2016 09:21:44 -0400
 Subject: [PATCH] CGTS-4685: setup: remove unused default groups
@@ -14,7 +14,7 @@ Signed-off-by: Michel Thebeau <michel.thebeau@windriver.com>
  1 file changed, 2 deletions(-)
 
 diff --git a/group b/group
-index 8794dde..0b93beb 100644
+index 42a8ed1..a3bb69e 100644
 --- a/group
 +++ b/group
 @@ -2,12 +2,10 @@ root::0:
@@ -29,7 +29,7 @@ index 8794dde..0b93beb 100644
 -man::15:
  dialout::18:
  floppy::19:
- tape::30:
+ tape::33:
 -- 
-1.8.3.1
+2.7.4
 
