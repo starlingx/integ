@@ -8,18 +8,18 @@ Subject: [PATCH] update package patching
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/dnsmasq.spec b/SPECS/dnsmasq.spec
-index b3f178f..a583cf2 100644
+index 5cf440a..dd74293 100644
 --- a/SPECS/dnsmasq.spec
 +++ b/SPECS/dnsmasq.spec
 @@ -13,7 +13,7 @@
  
  Name:           dnsmasq
  Version:        2.76
--Release:        2%{?extraversion}%{?dist}.2
-+Release:        2.el7_4.2%{?_tis_dist}.%{tis_patch_ver}
+-Release:        5%{?extraversion}%{?dist}
++Release:        5.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        A lightweight DHCP/caching DNS server
  
  Group:          System Environment/Daemons
 -- 
-1.8.3.1
+2.7.4
 
