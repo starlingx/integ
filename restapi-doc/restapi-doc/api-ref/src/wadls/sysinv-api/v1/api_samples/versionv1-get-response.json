@@ -136,36 +136,6 @@
          "rel":"bookmark"
       }
    ],
-   "ialarms":[
-      {
-         "href":"http://128.224.150.54:6385/v1/ialarms/",
-         "rel":"self"
-      },
-      {
-         "href":"http://128.224.150.54:6385/ialarms/",
-         "rel":"bookmark"
-      }
-   ],
-   "event_log":[
-      {
-         "href":"http://128.224.150.54:6385/v1/event_log/",
-         "rel":"self"
-      },
-      {
-         "href":"http://128.224.150.54:6385/event_log/",
-         "rel":"bookmark"
-      }
-   ],
-   "event_suppression":[
-      {
-         "href":"http://128.224.150.54:6385/v1/event_suppression/",
-         "rel":"self"
-      },
-      {
-         "href":"http://128.224.150.54:6385/event_suppression/",
-         "rel":"bookmark"
-      }
-   ],
    "icommunity":[
       {
          "href":"http://128.224.150.54:6385/v1/icommunity/",
