@@ -3980,7 +3980,7 @@ SPDX-License-Identifier: Apache-2.0
                     name="community" style="plain" type="xsd:string" >
                     <wadl:doc xmlns="http://docbook.org/ns/docbook"
                         xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This parameter specifies the the community of which the trap destination is a member.</para>
+                        <para>This parameter specifies the community of which the trap destination is a member.</para>
                     </wadl:doc>
                 </param>
             </representation>
