@@ -154,6 +154,17 @@ SPDX-License-Identifier: Apache-2.0
               <pdfFilenameBase>api-ref-smapi-v1</pdfFilenameBase>
             </configuration>
           </execution>
+          <execution>
+            <id>os-api-ref-fm-v1</id>
+            <goals>
+              <goal>generate-pdf</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <includes>bk-api-ref-fm-v1.xml</includes>
+              <pdfFilenameBase>api-ref-fm-v1</pdfFilenameBase>
+            </configuration>
+          </execution>
         </executions>
         <configuration>
           <webhelpDirname>api-ref-guides</webhelpDirname>

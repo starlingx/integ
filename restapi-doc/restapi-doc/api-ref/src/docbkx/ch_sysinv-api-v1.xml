@@ -16,8 +16,8 @@ SPDX-License-Identifier: Apache-2.0
     <title>SysInv API v1</title>
     <para>Manage physical servers with the Titanium System Inventory API.  This includes
         inventory collection and configuration of nodes, ports, interfaces, CPUs, disks,
-        partitions, memory, and sensors.  The API also supports alarm collection for fault
-        events of the cloud itself as well as configuration of the cloud's SNMP interface. </para>
+        partitions, memory, and sensors.  The API also supports  configuration of the 
+        cloud's SNMP interface. </para>
     <para>The typical port used for the SysInv REST API is 6385.
         However, proper technique would be to look up the sysinv service endpoint in Keystone.</para>
 
@@ -628,77 +628,6 @@ configuration entity for the system.
             <wadl:resource
                 href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#drbdconfig_id">
                 <wadl:method href="#modifyDrbdconfig"/>
-            </wadl:resource>
-        </wadl:resources>
-    </section>
-
-
-    <!--*******************************************************-->
-    <!--               ALARMS                                  -->
-    <!--*******************************************************-->
-
-    <section xml:id="alarms-v1">
-        <title>Alarms</title>
-        <para>These APIs allow the display of the Active Alarms
-            in the system.</para>
-        <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#alarms">
-                <wadl:method href="#listAlarms"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#alarm_uuid">
-                <wadl:method href="#getAlarm"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#alarm_uuid">
-                <wadl:method href="#deleteAlarm"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#alarm_summary">
-                <wadl:method href="#alarmSummary"/>
-            </wadl:resource>
-        </wadl:resources>
-    </section>
-
-
-    <!--*******************************************************-->
-    <!--               EVENT LOG                            -->
-    <!--*******************************************************-->
-
-    <section xml:id="eventlog-v1">
-        <title>Event Log</title>
-        <para>These APIs allow the display of the Event Log
-            in the system.  The Event log contains both historical alarms and customer logs.</para>
-        <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#event_log">
-                <wadl:method href="#listEventLog"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#event_log_uuid">
-                <wadl:method href="#getEventLog"/>
-            </wadl:resource>
-        </wadl:resources>
-    </section>
-
-
-    <!--*******************************************************-->
-    <!--               EVENT SUPPRESSION                       -->
-    <!--*******************************************************-->
-
-    <section xml:id="eventsuppression-v1">
-        <title>Event Suppression</title>
-        <para>These APIs allow the display of the Event Suppression state
-            in the system.</para>
-        <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#event_suppression">
-                <wadl:method href="#listEventSuppression"/>
-            </wadl:resource>
-            <wadl:resource
-                href="../wadls/sysinv-api/v1/sysinv-api-v1.wadl#event_suppression_uuid">
-                <wadl:method href="#modifyEventSuppression"/>
             </wadl:resource>
         </wadl:resources>
     </section>

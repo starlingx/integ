@@ -49,4 +49,5 @@ SPDX-License-Identifier: Apache-2.0
     <xi:include href="../../api-ref/src/docbkx/ch_nfv-vim-api-v1.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_dcmanager-api-v1.xml"/>
     <xi:include href="../../api-ref/src/docbkx/ch_smapi-v1.xml"/>
+    <xi:include href="../../api-ref/src/docbkx/ch_fm-api-v1.xml"/>
 </book>

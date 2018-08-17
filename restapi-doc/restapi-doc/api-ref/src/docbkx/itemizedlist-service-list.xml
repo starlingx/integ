@@ -46,4 +46,8 @@ SPDX-License-Identifier: Apache-2.0
         <para><link xlink:href="api-ref-smapi-v1.html">Titanium SM API Service
                 API v1</link></para>
     </listitem>
+    <listitem>
+        <para><link xlink:href="api-ref-fm-v1.html">Titanium Fault Management Service
+                API v1</link></para>
+    </listitem>
 </itemizedlist>
