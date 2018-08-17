@@ -1,24 +1,26 @@
+From 2d237c31ea6d2fdfeaf61aef89b4755def0495a2 Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Fri, 17 Aug 2018 23:28:59 +0800
+Subject: [PATCH] remove-debug-pkgs
+
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
+---
+ SPECS/grub2.spec | 20 --------------------
+ 1 file changed, 20 deletions(-)
+
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index 4059aea..a56d930 100644
+index 88c6c09..11f6b0e 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -176,7 +176,6 @@ This subpackage provides tools for support of all platforms.
+@@ -172,7 +172,6 @@ rm -f grub-%{tarversion}/util/grub-setpassword.in.orig
  %install
  set -e
  rm -fr $RPM_BUILD_ROOT
 -
  %do_common_install
- # Fix for hardcoded efidir
- sed -i.orig -e 's@/efi/EFI/redhat/@/efi/EFI/%{efidir}/@' \
-@@ -184,7 +183,6 @@ sed -i.orig -e 's@/efi/EFI/redhat/@/efi/EFI/%{efidir}/@' \
- touch --reference=grub-%{tarversion}/util/grub-setpassword.in.orig \
-     grub-%{tarversion}/util/grub-setpassword.in
- rm -f grub-%{tarversion}/util/grub-setpassword.in.orig
--
  %if 0%{with_efi_arch}
  %do_efi_install %{grubefiarch} %{grubefiname} %{grubeficdname}
- %endif
-@@ -210,25 +208,6 @@ cat << EOF > ${RPM_BUILD_ROOT}%{_sysconfdir}/prelink.conf.d/grub2.conf
+@@ -199,25 +198,6 @@ cat << EOF > ${RPM_BUILD_ROOT}%{_sysconfdir}/prelink.conf.d/grub2.conf
  -b /usr/sbin/grub2-sparc64-setup
  EOF
  
@@ -44,3 +46,6 @@ index 4059aea..a56d930 100644
  %clean    
  rm -rf $RPM_BUILD_ROOT
  
+-- 
+2.7.4
+

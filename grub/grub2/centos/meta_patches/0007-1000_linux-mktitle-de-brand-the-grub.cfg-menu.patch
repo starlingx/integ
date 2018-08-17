@@ -1,21 +1,21 @@
-From 38914a0de0b29f5f0efbf3e93a60fa8596f160e7 Mon Sep 17 00:00:00 2001
+From 9056b35661962a311aafa1937b5d8e236f44b119 Mon Sep 17 00:00:00 2001
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Tue, 23 Jan 2018 13:29:11 -0500
-Subject: [PATCH 1/4] debrand the grub_cfg menu
+Subject: [PATCH] debrand the grub_cfg menu
 
 ---
  SOURCES/grub.patches | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
-index 2ef8ce5..b69fb31 100644
+index bac4594..d7475f0 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -257,3 +257,4 @@ Patch0256: 0256-efinet-Setting-DNS-server-from-UEFI-protocol.patch
- Patch0257: 0257-set-rootpath.patch
+@@ -258,3 +258,4 @@ Patch0257: 0257-set-rootpath.patch
  Patch0258: 0258-Fix-one-more-coverity-complaint.patch
  Patch0260: 0260-Fix-up-linux-params-usage.patch
+ Patch0261: 0261-Fix-grub_net_hwaddr_to_str.patch
 +Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
 -- 
-1.8.3.1
+2.7.4
 
