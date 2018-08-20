@@ -68,7 +68,7 @@ index 44a82c1..000b9a8 100644
 +
 +###############################################################################
 +#
-+# We will roll in the IMA X.509 certificate and pull it in the the kernel
++# We will roll in the IMA X.509 certificate and pull it in the kernel
 +# so that it gets loaded into the _ima keyring during boot.
 +#
 +# Ideally, this should have been treated similar to other .x509 certificates
