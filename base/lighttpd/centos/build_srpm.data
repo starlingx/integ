@@ -6,4 +6,4 @@ COPY_LIST="lighttpd-1.4.35/index.html.lighttpd \
            lighttpd-1.4.35/lighttpd-csr.conf \
            lighttpd-1.4.35/check-content-length.patch \
            lighttpd-1.4.35/lighttpd-tpm-support.patch"
-TIS_PATCH_VER=5
+TIS_PATCH_VER=6
