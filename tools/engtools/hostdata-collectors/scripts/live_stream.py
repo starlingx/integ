@@ -14,6 +14,8 @@ import psutil
 import fcntl
 import logging
 import ConfigParser
+import itertools
+import six
 from multiprocessing import Process, cpu_count
 from subprocess import Popen, PIPE
 from collections import OrderedDict
@@ -1114,60 +1116,37 @@ def collectCpuCount(influx_info, node, ci):
         except Exception:
             logging.error("cpu_count collection stopped unexpectedly with error: {}. Restarting process...".format(sys.exc_info()))
 
+def countApiStatsServices(lsof_lines, service_port, service_name):
+    service_count = 0
+    for line in lsof_lines:
+        if service_port is not None and service_name is not None and service_port in line and service_name in line:
+            service_count += 1
+    return service_count
 
-# collect API GET and POST requests/sec
-def collectApi(influx_info, node, ci, openstack_svcs):
+def collectApiStats(influx_info, node, ci, services):
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("api_request data starting collection with a collection interval of {}s".format(ci["cpu_count"]))
     measurement = "api_requests"
     tags = {"node": node}
-    openstack_services = openstack_svcs
     influx_string = ""
+    lsof_args = ['lsof', '-Pn', '-i', 'tcp']
     while True:
         try:
-            fields = {}
-            tmp = {}
-            tmp1 = {}
-            # get initial values
-            for s in openstack_services:
-                fields[s] = {"get": 0, "post": 0}
-                tmp[s] = {"get": 0, "post": 0}
-                log = "/var/log/{0}/{0}-api.log".format(s)
-                if os.path.exists(log):
-                    if s == "ceilometer":
-                        p = Popen("awk '/INFO/ && /500/' {} | wc -l".format(log), shell=True, stdout=PIPE)
-                    else:
-                        p = Popen("awk '/INFO/ && /GET/' {} | wc -l".format(log), shell=True, stdout=PIPE)
-                    init_api_get = int(p.stdout.readline())
-                    tmp[s]["get"] = init_api_get
-                    p.kill()
-                    p = Popen("awk '/INFO/ && /POST/' {} | wc -l".format(log), shell=True, stdout=PIPE)
-                    init_api_post = int(p.stdout.readline())
-                    tmp[s]["post"] = init_api_post
-                    p.kill()
-            time.sleep(1)
-            # get new values
-            for s in openstack_services:
-                tmp1[s] = {"get": 0, "post": 0}
-                log = "/var/log/{0}/{0}-api.log".format(s)
-                if os.path.exists(log):
-                    if s == "ceilometer":
-                        p = Popen("awk '/INFO/ && /500/' {} | wc -l".format(log), shell=True, stdout=PIPE)
-                    else:
-                        p = Popen("awk '/INFO/ && /GET/' {} | wc -l".format(log), shell=True, stdout=PIPE)
-                    api_get = int(p.stdout.readline())
-                    tmp1[s]["get"] = api_get
-                    p.kill()
-                    p = Popen("awk '/INFO/ && /POST/' {} | wc -l".format(log), shell=True, stdout=PIPE)
-                    api_post = int(p.stdout.readline())
-                    tmp1[s]["post"] = api_post
-                    p.kill()
-            # take difference
-            for key in fields:
-                if (key in tmp and key in tmp1) and (tmp1[key]["get"] >= tmp[key]["get"]) and (tmp1[key]["post"] >= tmp[key]["post"]):
-                    fields[key]["get"] = (tmp1[key]["get"] - tmp[key]["get"])
-                    fields[key]["post"] = (tmp1[key]["post"] - tmp[key]["post"])
-                    influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}'".format(measurement, "node", tags["node"], "service", key, "get_requests", fields[key]["get"], "post_requests", fields[key]["post"]) + "\n"
+           fields = {}
+           lsof_result = Popen(lsof_args, shell=False, stdout=PIPE)
+           lsof_lines = list()
+           while True:
+               line = lsof_result.stdout.readline().strip("\n")
+               if not line:
+                   break
+               lsof_lines.append(line)
+           lsof_result.kill()
+           for name, service in services.iteritems():
+                api_count = countApiStatsServices(lsof_lines, service['api-port'], service['name'])
+                db_count = countApiStatsServices(lsof_lines, service['db-port'], service['name'])
+                rabbit_count = countApiStatsServices(lsof_lines, service['rabbit-port'], service['name'])
+                fields[name] = {"api": api_count, "db": db_count, "rabbit": rabbit_count}
+                influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}'".format(measurement, "node", tags["node"], "service", name, "api", fields[name]["api"], "db", fields[name]["db"], "rabbit", fields[name]["rabbit"]) + "\n"
             p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string), shell=True)
             p.communicate()
             influx_string = ""
@@ -1176,7 +1155,6 @@ def collectApi(influx_info, node, ci, openstack_svcs):
         except Exception:
             logging.error("api_request collection stopped unexpectedly with error: {}. Restarting process...".format(sys.exc_info()))
             time.sleep(3)
-
 
 # returns the cores dedicated to platform use
 def getPlatformCores(node, cpe):
@@ -1347,12 +1325,7 @@ if __name__ == "__main__":
     common_services = list()
     services = {}
     live_svc = ("live_stream.py",)
-    static_svcs = ("occtop", "memtop", "schedtop", "top.sh", "iostat.sh", "netstats.sh", "diskstats.sh", "memstats.sh", "filestats.sh", "ceph.sh", "postgres.sh", "rabbitmq.sh", "vswitch.sh")
     collection_intervals = {"memtop": None, "memstats": None, "occtop": None, "schedtop": None, "load_avg": None, "cpu_count": None, "diskstats": None, "iostat": None, "filestats": None, "netstats": None, "postgres": None, "rabbitmq": None, "vswitch": None}
-    openstack_services = ("nova", "cinder", "aodh", "ceilometer", "heat", "glance", "ceph", "horizon", "keystone", "puppet", "sysinv", "neutron", "nova_api", "postgres", "panko", "nova_cell0", "magnum", "ironic", "murano", "gnocchi")
-    # memstats, schedtop, and filestats must skip/exclude certain fields when collect_all is enabled. No need to collect this stuff
-    exclude_list = ("python", "python2", "bash", "perl", "sudo", "init")
-    skip_list = ("ps", "top", "sh", "<defunct>", "curl", "awk", "wc", "sleep", "lsof", "cut", "grep", "ip", "tail", "su")
     duration = None
     unconverted_duration = ""
     collect_api_requests = False
@@ -1423,12 +1396,27 @@ if __name__ == "__main__":
         storage_services = tuple(config.get("StorageServices", "STORAGE_SERVICE_LIST").split())
         rabbit_services = tuple(config.get("RabbitmqServices", "RABBITMQ_QUEUE_LIST").split())
         common_services = tuple(config.get("CommonServices", "COMMON_SERVICE_LIST").split())
+        static_svcs = tuple(config.get("StaticServices", "STATIC_SERVICE_LIST").split())
+        openstack_services = tuple(config.get("OpenStackServices", "OPEN_STACK_SERVICE_LIST").split())
+        skip_list = tuple(config.get("SkipList", "SKIP_LIST").split())
+        exclude_list = tuple(config.get("ExcludeList", "EXCLUDE_LIST").split())
         # get collection intervals
         for i in config.options("Intervals"):
             if config.get("Intervals", i) == "" or config.get("Intervals", i) is None:
                 collection_intervals[i] = None
             else:
                 collection_intervals[i] = int(config.get("Intervals", i))
+        # get api-stats services
+        DB_PORT_NUMBER = config.get("ApiStatsConstantPorts", "DB_PORT_NUMBER")
+        RABBIT_PORT_NUMBER = config.get("ApiStatsConstantPorts", "RABBIT_PORT_NUMBER")
+        SERVICES = OrderedDict()
+        SERVICES_INFO = tuple(config.get("ApiStatsServices", "API_STATS_STRUCTURE").split('|'))
+        for service_string in SERVICES_INFO:
+            service_tuple = tuple(service_string.split(';'))
+            if service_tuple[2] != "" and service_tuple[2] != None:
+                SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'db-port': DB_PORT_NUMBER, 'rabbit-port': RABBIT_PORT_NUMBER, 'api-port': service_tuple[2]}
+            else:
+                SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'db-port': DB_PORT_NUMBER, 'rabbit-port': RABBIT_PORT_NUMBER, 'api-port': None}
     except Exception:
         print "An error has occurred when parsing the engtools.conf configuration file: {}".format(sys.exc_info())
         sys.exit(0)
@@ -1551,7 +1539,7 @@ if __name__ == "__main__":
             tasks.append(p)
             p.start()
         if collect_api_requests is True and node_type == "controller":
-            p = Process(target=collectApi, args=(influx_info, node, collection_intervals, openstack_services), name="api_requests")
+            p = Process(target=collectApiStats, args=(influx_info, node, collection_intervals, SERVICES), name="api_requests")
             tasks.append(p)
             p.start()
 
