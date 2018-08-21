@@ -11,7 +11,7 @@ Subject: [PATCH 1/1] WRS: Patch1: 9000-tboot-for-tis.patch
  4 files changed, 28 insertions(+), 18 deletions(-)
 
 diff --git a/tboot/20_linux_tboot b/tboot/20_linux_tboot
-index 7c25181..e4fd557 100644
+index 816d50a..eed512d 100644
 --- a/tboot/20_linux_tboot
 +++ b/tboot/20_linux_tboot
 @@ -22,6 +22,13 @@ exec_prefix=${prefix}
@@ -28,7 +28,7 @@ index 7c25181..e4fd557 100644
  if test -e /usr/share/grub/grub-mkconfig_lib; then
    . /usr/share/grub/grub-mkconfig_lib
  elif test -e ${libdir}/grub/grub-mkconfig_lib; then
-@@ -38,7 +45,7 @@ fi
+@@ -40,7 +47,7 @@ fi
  [ -z "${GRUB_CMDLINE_LINUX_TBOOT}" ] && unset GRUB_CMDLINE_LINUX_TBOOT
  [ -z "${GRUB_TBOOT_POLICY_DATA}" ] && unset GRUB_TBOOT_POLICY_DATA
  # Command line for tboot itself
@@ -37,7 +37,7 @@ index 7c25181..e4fd557 100644
  # Linux kernel parameters to append for tboot
  : ${GRUB_CMDLINE_LINUX_TBOOT='intel_iommu=on'}
  # Base name of LCP policy data file for list policy
-@@ -67,10 +74,8 @@ export TEXTDOMAINDIR=${prefix}/share/locale
+@@ -69,10 +76,8 @@ export TEXTDOMAINDIR=${prefix}/share/locale
  
  CLASS="--class gnu-linux --class gnu --class os --class tboot"
  
@@ -50,7 +50,7 @@ index 7c25181..e4fd557 100644
    CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr '[A-Z]' '[a-z]' | cut -d' ' -f1) ${CLASS}"
  fi
  
-@@ -107,9 +112,9 @@ linux_entry ()
+@@ -109,9 +114,9 @@ linux_entry ()
    iommu_args="$7"
    
    if ${recovery} ; then
@@ -62,15 +62,15 @@ index 7c25181..e4fd557 100644
    fi
  
    if [ -d /sys/firmware/efi ] ; then
-@@ -200,7 +205,6 @@ while [ "x${tboot_list}" != "x" ] && [ "x$linux_list" != "x" ] ; do
+@@ -202,7 +207,6 @@ while [ "x${tboot_list}" != "x" ] && [ "x$linux_list" != "x" ] ; do
      rel_tboot_dirname=`make_system_path_relative_to_its_root $tboot_dirname`
  #    tboot_version=`echo $tboot_basename | sed -e "s,.gz$,,g;s,^tboot-,,g"`
-     tboot_version="1.9.5"
+     tboot_version="1.9.6"
 -    echo "submenu \"tboot ${tboot_version}\" {"
      while [ "x$list" != "x" ] ; do
  	linux=`version_find_latest $list`
  	echo "Found linux image: $linux" >&2
-@@ -241,6 +245,5 @@ while [ "x${tboot_list}" != "x" ] && [ "x$linux_list" != "x" ] ; do
+@@ -243,6 +247,5 @@ while [ "x${tboot_list}" != "x" ] && [ "x$linux_list" != "x" ] ; do
  
  	list=`echo $list | tr ' ' '\n' | grep -vx $linux | tr '\n' ' '`
      done
@@ -78,10 +78,10 @@ index 7c25181..e4fd557 100644
      tboot_list=`echo $tboot_list | tr ' ' '\n' | grep -vx $current_tboot | tr '\n' ' '`
  done
 diff --git a/tboot/20_linux_xen_tboot b/tboot/20_linux_xen_tboot
-index b674834..4dc8d68 100644
+index a113a3c..b1e4b09 100644
 --- a/tboot/20_linux_xen_tboot
 +++ b/tboot/20_linux_xen_tboot
-@@ -39,7 +39,7 @@ fi
+@@ -41,7 +41,7 @@ fi
  [ -z "${GRUB_CMDLINE_LINUX_XEN_TBOOT}" ] && unset GRUB_CMDLINE_LINUX_XEN_TBOOT
  [ -z "${GRUB_TBOOT_POLICY_DATA}" ] && unset GRUB_TBOOT_POLICY_DATA
  # Command line for tboot itself
@@ -91,10 +91,10 @@ index b674834..4dc8d68 100644
  : ${GRUB_CMDLINE_XEN_TBOOT=''}
  # Linux kernel parameters to append for tboot + Xen
 diff --git a/tboot/common/policy.c b/tboot/common/policy.c
-index b30d299..9ec02be 100644
+index 9678b7c..5a16d81 100644
 --- a/tboot/common/policy.c
 +++ b/tboot/common/policy.c
-@@ -347,6 +347,7 @@ tb_error_t set_policy(void)
+@@ -349,6 +349,7 @@ tb_error_t set_policy(void)
       * type is LCP_POLTYPE_LIST (since we could have been give a policy data
       * file even though the policy was not a LIST */
      printk(TBOOT_INFO"reading Launch Control Policy from TPM NV...\n");
@@ -102,7 +102,7 @@ index b30d299..9ec02be 100644
      if ( read_policy_from_tpm(g_tpm->lcp_own_index,
               _policy_index_buf, &policy_index_size) ) {
          printk(TBOOT_DETA"\t:%lu bytes read\n", policy_index_size);
-@@ -406,6 +407,7 @@ bool hash_policy(tb_hash_t *hash, uint16_t hash_alg)
+@@ -408,6 +409,7 @@ bool hash_policy(tb_hash_t *hash, uint16_t hash_alg)
  
  /* generate hash by hashing cmdline and module image */
  static bool hash_module(hash_list_t *hl,
@@ -110,7 +110,7 @@ index b30d299..9ec02be 100644
                          const char* cmdline, void *base,
                          size_t size)
  {
-@@ -414,6 +416,7 @@ static bool hash_module(hash_list_t *hl,
+@@ -416,6 +418,7 @@ static bool hash_module(hash_list_t *hl,
          return false;
      }
  
@@ -118,7 +118,7 @@ index b30d299..9ec02be 100644
      /* final hash is SHA-1( SHA-1(cmdline) | SHA-1(image) ) */
      /* where cmdline is first stripped of leading spaces, file name, then */
      /* any spaces until the next non-space char */
-@@ -428,16 +431,17 @@ static bool hash_module(hash_list_t *hl,
+@@ -430,16 +433,17 @@ static bool hash_module(hash_list_t *hl,
      switch (g_tpm->extpol) {
      case TB_EXTPOL_FIXED: 
          hl->count = 1;
@@ -140,7 +140,7 @@ index b30d299..9ec02be 100644
              return false;
  
          break;
-@@ -633,7 +637,7 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
+@@ -635,7 +639,7 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
      }
  
      hash_list_t hl;
@@ -149,7 +149,7 @@ index b30d299..9ec02be 100644
          printk(TBOOT_ERR"\t hash cannot be generated.\n");
          return TB_ERR_MODULE_VERIFICATION_FAILED;
      }
-@@ -657,6 +661,8 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
+@@ -659,6 +663,8 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
      if ( pol_entry != NULL &&
           !is_hash_in_policy_entry(pol_entry, &hl.entries[0].hash, hash_alg) ) {
          printk(TBOOT_ERR"\t verification failed\n");
@@ -159,10 +159,10 @@ index b30d299..9ec02be 100644
      }
  
 diff --git a/tboot/common/tpm_20.c b/tboot/common/tpm_20.c
-index 678a3d2..63ca9dd 100644
+index b9b67c9..b7c5d62 100644
 --- a/tboot/common/tpm_20.c
 +++ b/tboot/common/tpm_20.c
-@@ -1933,7 +1933,7 @@ static bool tpm20_nv_read(struct tpm_if *ti, uint32_t locality,
+@@ -2096,7 +2096,7 @@ static bool tpm20_nv_read(struct tpm_if *ti, uint32_t locality,
  
      ret = _tpm20_nv_read(locality, &read_in, &read_out);
      if ( ret != TPM_RC_SUCCESS ) {
@@ -171,7 +171,7 @@ index 678a3d2..63ca9dd 100644
                  index, offset, ret);
          ti->error = ret;
          return false;
-@@ -2273,8 +2273,9 @@ static bool tpm20_init(struct tpm_if *ti)
+@@ -2505,8 +2505,9 @@ static bool tpm20_init(struct tpm_if *ti)
      get_tboot_extpol();
      if (info_list->capabilities.tpm_nv_index_set == 0){
          /* init NV index */
@@ -184,5 +184,5 @@ index 678a3d2..63ca9dd 100644
          ti->sgx_svn_index = 0x01800004;
      }
 -- 
-1.8.3.1
+2.7.4
 
