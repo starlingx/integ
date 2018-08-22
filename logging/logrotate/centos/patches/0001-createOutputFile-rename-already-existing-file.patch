@@ -1,6 +1,6 @@
-From e43ef5ea3ba1faffad5af528d37ac910e5c0407f Mon Sep 17 00:00:00 2001
+From cbd37cc302ed71fb27cb0af0293e949698ee4309 Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
-Date: Fri, 19 Jan 2018 23:17:55 -0500
+Date: Wed, 22 Aug 2018 00:13:32 +0800
 Subject: [PATCH] createOutputFile: rename already existing file
 
 Upstream patch:
@@ -20,7 +20,7 @@ Closes #23
  create mode 100644 test/test-config.72.in
 
 diff --git a/logrotate.c b/logrotate.c
-index 20f6ea5..42c3eeb 100644
+index e056ccd..e415164 100644
 --- a/logrotate.c
 +++ b/logrotate.c
 @@ -395,8 +395,24 @@ static int runScript(struct logInfo *log, char *logfn, char *script)
@@ -51,10 +51,10 @@ index 20f6ea5..42c3eeb 100644
  	fd = open(fileName, (flags | O_EXCL | O_NOFOLLOW),
  		(S_IRUSR | S_IWUSR) & sb->st_mode);
 diff --git a/test/test b/test/test
-index 54d57d2..755e582 100755
+index bcdfe05..b47ac6a 100755
 --- a/test/test
 +++ b/test/test
-@@ -1586,5 +1586,31 @@ EOF
+@@ -1586,6 +1586,32 @@ EOF
  rm -rf testdir adir
  rm -rf testdir bdir
  
@@ -84,8 +84,9 @@ index 54d57d2..755e582 100755
 +test.log.3.gz 1 first
 +EOF
 +
- cleanup
+ cleanup 73
  
+ # ------------------------------- Test 73 ------------------------------------
 diff --git a/test/test-config.72.in b/test/test-config.72.in
 new file mode 100644
 index 0000000..9fe50a2
@@ -100,5 +101,5 @@ index 0000000..9fe50a2
 +    create
 +}
 -- 
-1.8.3.1
+2.7.4
 
