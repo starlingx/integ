@@ -8,6 +8,5 @@ spec-lvm-cleanup-refs-on-stop.patch
 0001-Update-package-versioning-for-TIS-format.patch
 ipaddr2-if-down.patch
 spec-add-ipaddr2-ignore-lo-state.patch
-Modify-error-code-of-bz1454699-fix-to-prevent-inactive-controller-reboot-loop.patch
 Disable-creation-of-the-debug-package.patch
 metapatch-for-arp_bg.patch
