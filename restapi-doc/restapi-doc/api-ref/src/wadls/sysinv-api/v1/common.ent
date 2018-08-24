@@ -169,6 +169,55 @@
                     </wadl:doc>
                 </param>
                 <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="capabilities" style="plain" type="xsd:dictionary" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>System capabilities.</para>
+                        <itemizedlist>
+                            <listitem>
+                                <para>sdn_enabled : (Boolean) Software Defined Networking enabled.</para>
+                            </listitem>
+                            <listitem>
+                                <para>region_config : (Boolean) region selection:</para>
+                                <itemizedlist>
+                                    <listitem>
+                                        <para>true : Secondary region.</para>
+                                    </listitem>
+                                    <listitem>
+                                        <para>false : Primary region.</para>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            <listitem>
+                                <para>shared_services : Services provided by Primary region.</para>
+                            </listitem>
+                            <listitem>
+                                <para>bm_region : Board Management controller network selection:</para>
+                                <itemizedlist>
+                                    <listitem>
+                                        <para>External : OAM network.</para>
+                                    </listitem>
+                                    <listitem>
+                                        <para>Internal : Management network.</para>
+                                    </listitem>
+                                </itemizedlist>
+                            </listitem>
+                            <listitem>
+                                <para>cinder_backend : backend selection for Cinder.</para>
+                            </listitem>
+                            <listitem>
+                                <para>vswitch_type : vSwitch selection.</para>
+                            </listitem>
+                            <listitem>
+                                <para>security_feature : Selection of Spectre and Meltdown mitigation options.</para>
+                            </listitem>
+                            <listitem>
+                                <para>https_enabled : (Boolean) selection of https mode for public URLs.</para>
+                            </listitem>
+                        </itemizedlist>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
                     name="contact" style="plain" type="xsd:string" >
                     <wadl:doc xmlns="http://docbook.org/ns/docbook"
                         xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
