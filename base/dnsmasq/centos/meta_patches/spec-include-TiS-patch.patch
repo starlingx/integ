@@ -3,29 +3,28 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:27:13 -0400
 Subject: [PATCH 1/5] WRS: spec-include-TiS-patch.patch
 
-Conflicts:
-	SPECS/dnsmasq.spec
 ---
- SPECS/dnsmasq.spec | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ SPECS/dnsmasq.spec | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/dnsmasq.spec b/SPECS/dnsmasq.spec
-index 8a6450a..63ff820 100644
+index b312ef3..7f370d1 100644
 --- a/SPECS/dnsmasq.spec
 +++ b/SPECS/dnsmasq.spec
-@@ -39,6 +39,9 @@ Patch6:		dnsmasq-2.76-label-warning.patch
- Patch7:		dnsmasq-2.76-label-man.patch
- Patch8:		dnsmasq-2.76-coverity.patch
+@@ -55,6 +55,10 @@ Patch17:	dnsmasq-2.76-gita3303e196.patch
+ Patch18:	dnsmasq-2.76-underflow.patch
+ Patch19:	dnsmasq-2.76-misc-cleanups.patch
  
 +# WRS patches
 +Patch30:        dnsmasq-update-ipv6-leases-from-config.patch
 +
++
  BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
  
  BuildRequires:  dbus-devel
-@@ -82,6 +85,9 @@ query/remove a DHCP server's leases.
- %patch7 -p1
- %patch8 -p1 -b .coverity
+@@ -109,6 +113,9 @@ query/remove a DHCP server's leases.
+ %patch18 -p1 -b .underflow
+ %patch19 -p1 -b .misc
  
 +# WRS patches
 +%patch30 -p1
@@ -33,7 +32,7 @@ index 8a6450a..63ff820 100644
  # use /var/lib/dnsmasq instead of /var/lib/misc
  for file in dnsmasq.conf.example man/dnsmasq.8 man/es/dnsmasq.8 src/config.h; do
      sed -i 's|/var/lib/misc/dnsmasq.leases|/var/lib/dnsmasq/dnsmasq.leases|g' "$file"
-@@ -154,8 +160,8 @@ rm -rf $RPM_BUILD_ROOT
+@@ -181,8 +188,8 @@ rm -rf $RPM_BUILD_ROOT
  %files
  %defattr(-,root,root,-)
  %doc CHANGELOG COPYING COPYING-v3 FAQ doc.html setup.html dbus/DBus-interface
@@ -45,5 +44,5 @@ index 8a6450a..63ff820 100644
  %config(noreplace) %attr(644,root,root) %{_sysconfdir}/dbus-1/system.d/dnsmasq.conf
  %{_unitdir}/%{name}.service
 -- 
-1.9.1
+2.7.4
 

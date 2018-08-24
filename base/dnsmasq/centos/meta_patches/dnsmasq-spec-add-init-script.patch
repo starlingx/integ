@@ -3,14 +3,12 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:27:13 -0400
 Subject: [PATCH 2/5] WRS: dnsmasq-spec-add-init-script.patch
 
-Conflicts:
-	SPECS/dnsmasq.spec
 ---
  SPECS/dnsmasq.spec | 26 ++++++++++++++++----------
  1 file changed, 16 insertions(+), 10 deletions(-)
 
 diff --git a/SPECS/dnsmasq.spec b/SPECS/dnsmasq.spec
-index 63ff820..f8aace1 100644
+index 7f370d1..0641503 100644
 --- a/SPECS/dnsmasq.spec
 +++ b/SPECS/dnsmasq.spec
 @@ -21,6 +21,7 @@ License:        GPLv2 or GPLv3
@@ -21,7 +19,7 @@ index 63ff820..f8aace1 100644
  # upstream git: git://thekelleys.org.uk/dnsmasq.git
  
  # https://bugzilla.redhat.com/show_bug.cgi?id=1367772
-@@ -140,22 +141,26 @@ mkdir -p %{buildroot}%{_unitdir}
+@@ -168,22 +169,26 @@ mkdir -p %{buildroot}%{_unitdir}
  install -m644 %{SOURCE1} %{buildroot}%{_unitdir}
  rm -rf %{buildroot}%{_initrddir}
  
@@ -58,7 +56,7 @@ index 63ff820..f8aace1 100644
  
  %files
  %defattr(-,root,root,-)
-@@ -167,6 +172,7 @@ rm -rf $RPM_BUILD_ROOT
+@@ -195,6 +200,7 @@ rm -rf $RPM_BUILD_ROOT
  %{_unitdir}/%{name}.service
  %{_sbindir}/dnsmasq
  %{_mandir}/man8/dnsmasq*
@@ -67,5 +65,5 @@ index 63ff820..f8aace1 100644
  %files utils
  %{_bindir}/dhcp_*
 -- 
-1.9.1
+2.7.4
 
