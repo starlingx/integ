@@ -8,18 +8,18 @@ Subject: [PATCH] Update package versioning for TIS format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/puppet-ceph.spec b/SPECS/puppet-ceph.spec
-index ecde883..7f086c5 100644
+index 8cfc8c1..3d7dccf 100644
 --- a/SPECS/puppet-ceph.spec
 +++ b/SPECS/puppet-ceph.spec
 @@ -1,7 +1,7 @@
  %{!?upstream_version: %global upstream_version %{version}%{?milestone}}
  Name:           puppet-ceph
- Version:        2.2.0
+ Version:        2.4.1
 -Release:        1%{?dist}
 +Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        Community Developed Ceph Module
- License:        Apache-2.0
+ License:        ASL 2.0
  
 -- 
-1.8.3.1
+2.7.4
 
