@@ -327,3 +327,8 @@ grub2-efi-x64-modules
 kernel-rt
 kernel-rt-kvm
 kernel-rt-tools
+
+# mellanox drivers
+rdma-core
+mlnx-ofa_kernel-modules
+mlnx-ofa_kernel-rt-modules
