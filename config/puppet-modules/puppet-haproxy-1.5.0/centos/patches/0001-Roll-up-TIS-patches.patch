@@ -9,10 +9,10 @@ Subject: [PATCH] Roll up TIS patches
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/manifests/config.pp b/manifests/config.pp
-index 781b6fa..785740d 100644
+index 51c2741..4007bb8 100644
 --- a/manifests/config.pp
 +++ b/manifests/config.pp
-@@ -68,8 +68,8 @@ define haproxy::config (
+@@ -75,8 +75,8 @@ define haproxy::config (
    if $_global_options['chroot'] {
      file { $_global_options['chroot']:
        ensure => directory,
@@ -24,20 +24,20 @@ index 781b6fa..785740d 100644
    }
  }
 diff --git a/manifests/init.pp b/manifests/init.pp
-index e2d3d92..b0369f7 100644
+index f1109d0..54a1640 100644
 --- a/manifests/init.pp
 +++ b/manifests/init.pp
-@@ -101,8 +101,8 @@
+@@ -110,8 +110,8 @@
  class haproxy (
-   $package_ensure    = 'present',
-   $package_name      = $haproxy::params::package_name,
--  $service_ensure    = 'running',
--  $service_manage    = true,
+   $package_ensure      = 'present',
+   $package_name        = $haproxy::params::package_name,
+-  $service_ensure      = 'running',
+-  $service_manage      = true,
 +  $service_ensure    = false,
 +  $service_manage    = false,
-   $service_options   = $haproxy::params::service_options,
-   $sysconfig_options = $haproxy::params::sysconfig_options,
-   $global_options    = $haproxy::params::global_options,
+   $service_options     = $haproxy::params::service_options,
+   $sysconfig_options   = $haproxy::params::sysconfig_options,
+   $global_options      = $haproxy::params::global_options,
 -- 
-1.8.3.1
+2.7.4
 

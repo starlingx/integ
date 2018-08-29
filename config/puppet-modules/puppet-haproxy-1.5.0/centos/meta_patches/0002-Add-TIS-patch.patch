@@ -8,10 +8,10 @@ Subject: [PATCH 2/2] WRS: 0002-Add-TIS-patch.patch
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/puppet-haproxy.spec b/SPECS/puppet-haproxy.spec
-index a975f60..a843f00 100644
+index afb20d5..f58bd74 100644
 --- a/SPECS/puppet-haproxy.spec
 +++ b/SPECS/puppet-haproxy.spec
-@@ -15,6 +15,7 @@ License:        Apache-2.0
+@@ -15,6 +15,7 @@ License:        ASL 2.0
  URL:            https://github.com/puppetlabs/puppetlabs-haproxy
  
  Source0:        https://github.com/puppetlabs/%{upstream_name}/archive/%{commit}.tar.gz#/%{upstream_name}-%{shortcommit}.tar.gz
@@ -28,5 +28,5 @@ index a975f60..a843f00 100644
  find . -type f -name ".*" -exec rm {} +
  find . -size 0 -exec rm {} +
 -- 
-1.8.3.1
+2.7.4
 
