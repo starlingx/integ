@@ -436,23 +436,23 @@ if __name__ == "__main__":
     pool_size = len(controller_list) + len(compute_list) + len(storage_list)
 
     if options.file_list is not None and options.parse_all is True:
-        print "You cannot use the -a option with the -f option"
+        print("You cannot use the -a option with the -f option")
         sys.exit(0)
     if options.postgres_list is not None and options.file_list is not None:
-        print "You cannot use the -p option with the -f option"
+        print("You cannot use the -p option with the -f option")
         sys.exit(0)
     if options.parse_all is True and options.node_list is not None:
-        print "You cannot use the -a option with the -n option.  Ex: -n controller-0"
+        print("You cannot use the -a option with the -n option.  Ex: -n controller-0")
         sys.exit(0)
     if options.file_list is not None and options.node_list is None:
-        print "You must specify a node and a file.  Ex: -n controller-0 -f postgres-conns.csv"
+        print("You must specify a node and a file.  Ex: -n controller-0 -f postgres-conns.csv")
         sys.exit(0)
 
     working_dir = os.getcwd()
     pool = Pool(processes=pool_size)
     proc_list = []
 
-    print "Sending data to InfluxDB. Please tail /tmp/csv-to-influx.log"
+    print("Sending data to InfluxDB. Please tail /tmp/csv-to-influx.log")
 
     # create a process per node
     if len(controller_list) > 0:

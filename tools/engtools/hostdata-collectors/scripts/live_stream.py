@@ -1218,7 +1218,7 @@ def checkDuration(duration):
         return None
     else:
         time.sleep(duration)
-        print "Duration interval has ended. Killing processes now"
+        print("Duration interval has ended. Killing processes now")
         logging.warning("Duration interval has ended. Killing processes now")
         raise KeyboardInterrupt
 
@@ -1262,7 +1262,7 @@ def createDB(influx_info, grafana_port, grafana_api_key):
         if p is not None:
             p.kill()
     except Exception as e:
-        print e.message
+        print(e.message)
         sys.exit(0)
 
 
@@ -1277,7 +1277,7 @@ def deleteDB(influx_info, grafana_port, grafana_api_key):
     if answer is None or answer == "" or answer == "y" or answer == "yes":
         try:
             logging.info("Removing database from InfluxDB and Grafana")
-            print "Removing database from InfluxDB and Grafana. Please wait..."
+            print("Removing database from InfluxDB and Grafana. Please wait...")
             # delete database from InfluxDB
             p = Popen("curl -s -XPOST 'http://'{}':'{}'/query' --data-urlencode 'q=DROP DATABASE {}'".format(influx_info[0], influx_info[1], influx_info[2]), shell=True, stdout=PIPE)
             response = p.stdout.read().strip("\n")
@@ -1306,7 +1306,7 @@ def deleteDB(influx_info, grafana_port, grafana_api_key):
             if p is not None:
                 p.kill()
         except Exception as e:
-            print e.message
+            print(e.message)
         sys.exit(0)
 
 
@@ -1322,7 +1322,7 @@ def appendToFile(file, content):
 if __name__ == "__main__":
     # make sure user is root
     if os.geteuid() != 0:
-        print "Must be run as root!\n"
+        print("Must be run as root!\n")
         sys.exit(0)
 
     # initialize variables
@@ -1432,7 +1432,7 @@ if __name__ == "__main__":
             else:
                 SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'api-port': None}
     except Exception:
-        print "An error has occurred when parsing the engtools.conf configuration file: {}".format(sys.exc_info())
+        print("An error has occurred when parsing the engtools.conf configuration file: {}".format(sys.exc_info()))
         sys.exit(0)
 
     syseng_services = live_svc + static_svcs
@@ -1579,7 +1579,7 @@ if __name__ == "__main__":
                 tasks.append(p)
                 p.start()
 
-        print "Sending data to InfluxDB. Please tail /tmp/livestream.log"
+        print("Sending data to InfluxDB. Please tail /tmp/livestream.log")
 
         checkDuration(duration)
         # give a small delay to ensure services have started

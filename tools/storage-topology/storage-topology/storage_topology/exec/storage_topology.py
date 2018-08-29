@@ -200,7 +200,7 @@ def print_disk_view(rows=None, extended=False):
 
     if len(rows) > 0:
         print
-        print "DISKs: (Physical disk view)"
+        print("DISKs: (Physical disk view)")
 
         pt = PrettyTable(disk_lables_extended) if extended else  \
             PrettyTable(disk_lables_brief)
@@ -210,9 +210,9 @@ def print_disk_view(rows=None, extended=False):
             if len(r) == len(pt.field_names):
                 pt.add_row(r)
             else:
-                print "Disk row has incorrect number of values: %s" % r
+                print("Disk row has incorrect number of values: %s" % r)
 
-        print pt
+        print(pt)
 
 
 def print_vg_view(rows=None, extended=False):
@@ -228,7 +228,7 @@ def print_vg_view(rows=None, extended=False):
 
     if len(rows) > 0:
         print
-        print "VOLUME GROUPS:  (VG view)"
+        print("VOLUME GROUPS:  (VG view)")
 
         pt = PrettyTable(vg_labels_extended) if extended else  \
             PrettyTable(vg_labels_brief)
@@ -240,9 +240,9 @@ def print_vg_view(rows=None, extended=False):
             if len(r) == len(pt.field_names):
                 pt.add_row(r)
             else:
-                print "VG row has incorrect number of values: %s" % r
+                print("VG row has incorrect number of values: %s" % r)
 
-        print pt
+        print(pt)
 
 
 def get_info_and_display(cc, show=None):
@@ -409,8 +409,8 @@ def main():
         prog = os.path.basename(sys.argv[0])
         ts = datetime.datetime.now()
         if show['debug']:
-            print "%s: %s  options: view:%s System api version: %s" \
-                % (prog, ts.isoformat(), show, api_version)
+            print("%s: %s  options: view:%s System api version: %s"
+                % (prog, ts.isoformat(), show, api_version))
 
         cgts_client_creds = get_system_creds()
         if not cgts_client_creds['os_username']:

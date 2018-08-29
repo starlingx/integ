@@ -185,7 +185,7 @@ def main():
     if len(sys.argv) == 2 :
         licensefile = sys.argv[1]
     else:
-        print "Usage: verify-license <license file>"
+        print("Usage: verify-license <license file>")
         exit(-1)
 
     try:
