@@ -199,6 +199,11 @@ SPDX-License-Identifier: Apache-2.0
                         <method href="#downgradeHost"/>
                     </resource>
 
+        <!-- /v1/ihosts/{host_id}/labels                    -->
+                    <resource id="labels" path="labels">
+                        <method href="#listLabel"/>
+                    </resource>
+
                 </resource>
             </resource>
 
@@ -1001,6 +1006,26 @@ SPDX-License-Identifier: Apache-2.0
         <!-- /v1/license                     -->
             <resource id="license" path="license">
                 <method href="#listLicenseInfo"/>
+            </resource>
+
+        <!-- /v1/labels/{host_id}  -->
+            <resource id="assign_label" path="labels/{host_id}">
+                <param name="host_id" style="template" required="true" type="csapi:UUID">
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                        <para>The unique identifier of an existing host.</para>
+                    </wadl:doc>
+                </param>
+                <method href="#assignLabel"/>
+            </resource>
+
+        <!-- /v1/labels/{label_id}                     -->
+            <resource id="label_id" path="labels/{label_id}" >
+                <param name="label_id" style="template" required="true" type="csapi:UUID">
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                        <para>The unique identifier of an existing host label. </para>
+                    </wadl:doc>
+                </param>
+                <method href="#removeLabel"/>
             </resource>
 
         </resource>
@@ -7261,6 +7286,77 @@ OAM Controller-1 IP Address.</para>
             </representation>
         </response>
         &commonFaults; &getFaults;
+    </method>
+
+
+    <!-- ..................................................... -->
+    <!-- ..  Label                                          .. -->
+    <!-- ..................................................... -->
+
+    <method name="POST" id="assignLabel">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Assign label to a host">
+            <para role="shortdesc">Assign label to a host.</para>
+        </wadl:doc>
+        <request>
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="label" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>This parameter specifies the label key value pairs.
+                        </para>
+                    </wadl:doc>
+                </param>
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/host_label_assign-request.json"/>
+                </wadl:doc>
+            </representation>
+        </request>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+            </representation>
+        </response>
+        &commonFaults; &postPutFaults;
+    </method>
+
+    <method name="GET" id="listLabel">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="List label for a host">
+            <para role="shortdesc">List host label.</para>
+        </wadl:doc>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                &labelListParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/host_label_list-response.json"/>
+                </wadl:doc>
+            </representation>
+        </response>
+        &commonFaults; &getFaults;
+    </method>
+
+    <method name="DELETE" id="removeLabel">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Remove label from a host">
+            <para role="shortdesc">Remove label from a host.</para>
+        </wadl:doc>
+        <response status="204">
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+            </representation>
+        </response>
     </method>
 
 </application>

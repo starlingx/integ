@@ -3952,6 +3952,32 @@
                 </param>
             '>
 
+	 <!-- Host label list Parameters -->
+
+     <!ENTITY labelListParameters '
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="uuid" style="plain" type="csapi:UUID" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The universally unique identifier for this object.</para>
+                    </wadl:doc>
+                </param>
+	            <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="host_uuid" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The uuid for the host.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="label" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The label provisioned for the host.</para>
+                    </wadl:doc>
+                </param>
+            '>
+
      <!-- Useful for describing APIs -->
      <!ENTITY GET    '<command xmlns="http://docbook.org/ns/docbook">GET</command>'>
      <!ENTITY PUT    '<command xmlns="http://docbook.org/ns/docbook">PUT</command>'>
