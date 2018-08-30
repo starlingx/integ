@@ -36,7 +36,7 @@ if [ "$nodetype" = "controller" ] ; then
     DATABASE_DIR=$(awk -F "=" '/database_dir/ {print $2}' /etc/nfv/vim/config.ini)
 
     SQLITE_DUMP="/usr/bin/sqlite3 ${DATABASE_DIR}/vim_db_v1 .dump"
-    
+
     delimiter ${LOGFILE} "dump database"
     timeout 30 ${SQLITE_DUMP} >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 fi

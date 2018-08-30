@@ -8,7 +8,7 @@ OUTFILE=$1
 
 FILES=$(ls *rabbitmq.bz2 | sort)
 
-[ -e tmp.txt ] && rm tmp.txt 
+[ -e tmp.txt ] && rm tmp.txt
 
 echo "Time/Date,Memory Total,Connection Readers,Connection Writers,Connection Channels,Connection Other,Queue Procs,Queue Slave Procs,Plugins,Other Proc,Mnesia,Mgmt DB,Msg Index,Other ETS,Binary,Code,Atom,Other System,VM Memory High Watermark,VM Memory Limit,Disk Free Limit,Disk Free,Descriptor Limit,Descriptors Used,Sockets Limit,Sockets Used,Processes Limit,Processes Used,Run Queue,Uptime" >${OUTFILE}
 

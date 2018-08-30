@@ -6,8 +6,8 @@ TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 tools_init
 if [ $? -ne 0 ]; then
-  echo "FATAL, tools_init - could not setup environment"
-  exit $?
+    echo "FATAL, tools_init - could not setup environment"
+    exit $?
 fi
 
 # Enable use of INTERVAL_SEC sample interval
@@ -15,9 +15,9 @@ OPT_USE_INTERVALS=1
 
 IOSTAT=$( which iostat 2>/dev/null )
 if [ $? -ne 0 ]; then
-  print_separator
-  WARNLOG "iostat not available"
-  tools_cleanup 0
+    print_separator
+    WARNLOG "iostat not available"
+    tools_cleanup 0
 fi
 
 # MAIN Program:

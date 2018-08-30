@@ -13,24 +13,24 @@ TIMEOUT=60
 SECONDS=0
 
 if ! [ -f "$pidfile" ]; then
-	exit 0
+    exit 0
 fi
 
 MYSQLPID=`cat "$pidfile" 2>/dev/null`
 if [ -z "$MYSQLPID" ] ; then
-	exit 2
+    exit 2
 fi
 
 while /bin/true; do
-	# Check process still exists
-	if ! [ -d "/proc/${MYSQLPID}" ] ; then
-	    break
-	fi
-	if [ $SECONDS -gt $TIMEOUT ] ; then
-	    ret=3
-	    break
-	fi
-	sleep 1
+    # Check process still exists
+    if ! [ -d "/proc/${MYSQLPID}" ] ; then
+        break
+    fi
+    if [ $SECONDS -gt $TIMEOUT ] ; then
+        ret=3
+        break
+    fi
+    sleep 1
 done
 
 exit $ret

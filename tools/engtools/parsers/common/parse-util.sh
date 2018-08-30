@@ -10,17 +10,17 @@ LOGFILE="parserlog.txt"
 
 function LOG ()
 {
-  local tstamp_H=$( date +"%Y-%0m-%0e %H:%M:%S" )
-  echo -e "${tstamp_H} $0($$): $@" >> ${LOGFILE}
+    local tstamp_H=$( date +"%Y-%0m-%0e %H:%M:%S" )
+    echo -e "${tstamp_H} $0($$): $@" >> ${LOGFILE}
 }
 
 function ERRLOG ()
 {
-  LOG "ERROR: $@"
+    LOG "ERROR: $@"
 }
 
 function WARNLOG ()
 {
-  LOG "WARN: $@"
+    LOG "WARN: $@"
 }
 

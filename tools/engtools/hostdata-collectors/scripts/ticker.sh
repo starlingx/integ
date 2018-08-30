@@ -6,8 +6,8 @@ TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 tools_init
 if [ $? -ne 0 ]; then
-  echo "FATAL, tools_init - could not setup environment"
-  exit $?
+    echo "FATAL, tools_init - could not setup environment"
+    exit $?
 fi
 
 # Enable use of INTERVAL_SEC sample interval
@@ -31,15 +31,15 @@ LOG_NOCR "collecting "
 t=0
 for ((rep=1; rep <= REPEATS ; rep++))
 do
-  ((t++))
-  sleep ${INTERVAL_SEC}
-  if [ ${t} -ge ${REP_LOG} ]; then
-    t=0
-    echo "."
-    LOG_NOCR "collecting "
-  else
-    echo -n "."
-  fi
+    ((t++))
+    sleep ${INTERVAL_SEC}
+    if [ ${t} -ge ${REP_LOG} ]; then
+        t=0
+        echo "."
+        LOG_NOCR "collecting "
+    else
+        echo -n "."
+    fi
 done
 echo "."
 

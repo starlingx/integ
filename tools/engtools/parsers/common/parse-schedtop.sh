@@ -48,7 +48,7 @@ function parse_schedtop_data()
 
 if [[ $# -eq 0 ]]; then
     # Parsing detail schedtop stats for all services configured in host.conf for all hosts would
-    # take a very long time and is often unnecessary. Until the performance issue with parse_schedtop 
+    # take a very long time and is often unnecessary. Until the performance issue with parse_schedtop
     # is addressed, this is not supported.
     print_usage
 else

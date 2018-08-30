@@ -41,11 +41,11 @@ shift
 
 
 if [ "$have_rbd" == "enable" ]; then
-  rbd_driver=rbd,
+    rbd_driver=rbd,
 fi
 
 if [ "$have_gluster" == "enable" ]; then
-  gluster_driver=gluster,
+    gluster_driver=gluster,
 fi
 
 ./configure \

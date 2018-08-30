@@ -22,7 +22,7 @@ DESC="nfscheck"
 DAEMON="/usr/bin/nfscheck"
 PIDFILE="/var/run/nfscheck.pid"
 
-start() 
+start()
 {
     if [ -e $PIDFILE ]; then
         PIDDIR=/proc/$(cat $PIDFILE)
@@ -47,7 +47,7 @@ start()
     fi
 }
 
-stop() 
+stop()
 {
     echo -n "Stopping $DESC..."
     start-stop-daemon --stop --quiet --pidfile $PIDFILE

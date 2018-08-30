@@ -32,7 +32,7 @@ fi
 function test_valid_speed
 {
     # After the link is enabled but before the autonegotiation is complete
-    # the link speed may be read as either -1 or as 4294967295 (which is 
+    # the link speed may be read as either -1 or as 4294967295 (which is
     # uint(-1) in twos-complement) depending on the kernel.  Neither one is valid.
     if (( $1 > 0 )) && (( $1 != 4294967295 ))
     then
@@ -62,16 +62,16 @@ function is_consolidated
 {
     if ! infra_exists
     then
-       return 1
+        return 1
     else
        # determine whether the management interface is a parent of the
        # infrastructure interface based on name.
        # eg. this matches enp0s8 to enp0s8.10 but not enp0s88
-       if [[ $infrastructure_interface =~ $management_interface[\.][0-9]+$ ]]
-       then
-           return 0
-       fi
-       return 1
+        if [[ $infrastructure_interface =~ $management_interface[\.][0-9]+$ ]]
+        then
+            return 0
+        fi
+        return 1
     fi
 }
 

@@ -6,8 +6,8 @@ TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 tools_init
 if [ $? -ne 0 ]; then
-  echo "FATAL, tools_init - could not setup environment"
-  exit $?
+    echo "FATAL, tools_init - could not setup environment"
+    exit $?
 fi
 
 # Enable use of INTERVAL_SEC sample interval
@@ -16,25 +16,25 @@ OPT_USE_INTERVALS=1
 # Print key networking device statistics
 function print_vswitch()
 {
-  print_separator
-  TOOL_HIRES_TIME
+    print_separator
+    TOOL_HIRES_TIME
 
-  cmd='vshell engine-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
-  cmd='vshell engine-stats-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
-  cmd='vshell port-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
-  cmd='vshell port-stats-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
-  cmd='vshell network-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
-  cmd='vshell network-stats-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
-  cmd='vshell interface-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
-  cmd='vshell interface-stats-list'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell engine-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell engine-stats-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell port-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell port-stats-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell network-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell network-stats-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell interface-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='vshell interface-stats-list'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
 }
 
 #-------------------------------------------------------------------------------
@@ -57,8 +57,8 @@ tools_header
 
 for ((rep=1; rep <= REPEATS ; rep++))
 do
-  print_vswitch
-  sleep ${INTERVAL_SEC}
+    print_vswitch
+    sleep ${INTERVAL_SEC}
 done
 print_vswitch
 LOG "done"

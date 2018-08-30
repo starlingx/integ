@@ -19,7 +19,7 @@ function log()
 {
     local MSG="${PROGNAME}: $1"
     if [ ${DEBUG} -ne 0 ]; then
-       echo "${MSG}"
+        echo "${MSG}"
     fi
     echo "${MSG}" >> /var/log/mlx4-configure.log
 }
@@ -100,20 +100,20 @@ function status()
 }
 
 case "$1" in
-  start)
+    start)
         start
         ;;
-  stop)
+    stop)
         stop
         ;;
-  restart)
+    restart)
         stop
         start
         ;;
-  status)
+    status)
         status
         ;;
-  *)
+    *)
         echo "Usage: $0 {start|stop|restart|status}"
         exit 1
 esac

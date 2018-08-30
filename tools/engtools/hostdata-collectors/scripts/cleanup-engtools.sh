@@ -6,8 +6,8 @@
 TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 if [ $UID -ne 0 ]; then
-  ERRLOG "Require sudo/root access."
-  exit 1
+    ERRLOG "Require sudo/root access."
+    exit 1
 fi
 
 declare -a TOOLS
@@ -34,23 +34,23 @@ LOG "kill processes brute force"
 pids=( $(pidof -x /usr/local/bin/collect-engtools.sh) )
 if [ ${#pids[@]} -ne 0 ]
 then
-  LOG "killing: ${pids[@]}"
-  for pid in ${pids[@]}
-  do
+    LOG "killing: ${pids[@]}"
+    for pid in ${pids[@]}
+    do
     LOG "kill: [ ${pid} ] "
     pkill -KILL -P ${pid}
     kill -9 ${pid}
-  done
-  pkill -KILL iostat
-  pkill -KILL top
+    done
+    pkill -KILL iostat
+    pkill -KILL top
 else
-  LOG "no pids found"
+    LOG "no pids found"
 fi
 
 LOG "remove pidfiles"
 for TOOL in "${TOOLS[@]}"
 do
-  rm -f -v /var/run/${TOOL}.pid
+    rm -f -v /var/run/${TOOL}.pid
 done
 LOG "done"
 

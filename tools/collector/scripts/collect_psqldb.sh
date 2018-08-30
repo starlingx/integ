@@ -83,7 +83,7 @@ function database_dump()
     do
         if [ "$DB" != "keystone" -a "$DB" != "ceilometer" ] ; then
             echo "${hostname}: Dumping Database ..: ${DB_DIR}/$DB.$DB_EXT"
-            (cd ${DB_DIR} ; sudo -u postgres pg_dump $DB > $DB.$DB_EXT) 
+            (cd ${DB_DIR} ; sudo -u postgres pg_dump $DB > $DB.$DB_EXT)
         fi
     done
 }
@@ -107,7 +107,7 @@ if [ "$nodetype" = "controller" ] ; then
         pg_size_pretty(pg_database_size(pg_database.datname))
         FROM pg_database
         ORDER BY pg_database_size DESC;
-     " >> ${LOGFILE}
+    " >> ${LOGFILE}
 
     # Number of postgres connections
     delimiter ${LOGFILE} "ps -C postgres -o cmd="

@@ -7,22 +7,22 @@
 
 # This script is used to parse stats data for storage and compute hosts. It is not
 # relevant for CPE. For large office, it is called by parse-everything.sh script.
-# File lab.conf must exist for the script to run. The STORAGE_LIST and COMPUTE_LIST 
-# config parameters can be set to suit the parsing needs.   
+# File lab.conf must exist for the script to run. The STORAGE_LIST and COMPUTE_LIST
+# config parameters can be set to suit the parsing needs.
 
 PARSERDIR=$(dirname $0)
 . ${PARSERDIR}/parse-util.sh
 
 if [ ! -f lab.conf ]; then
-   echo "Lab configuration file is missing."
-   echo "See http://wiki.wrs.com/PBUeng/TitaniumServerSysengToolsAndDataAnalysis for more info."
-   exit 1
+    echo "Lab configuration file is missing."
+    echo "See http://wiki.wrs.com/PBUeng/TitaniumServerSysengToolsAndDataAnalysis for more info."
+    exit 1
 fi
 
 source ./lab.conf
 
 if [ -z "${STORAGE_LIST}" ]; then
-    # This script could be invoked from another script or run separately so write to both 
+    # This script could be invoked from another script or run separately so write to both
     # console and log file.
     echo "STORAGE_LIST is not set in lab.conf file. Skipping stats parsing for all storage."
     WARNLOG "STORAGE_LIST is not set in lab.conf file. Skipping stats parsing for all storage."
@@ -35,7 +35,7 @@ else
             ../parse-all.sh ${HOST} > /dev/null 2>&1 &
             cd ..
         else
-           ERRLOG "${HOST} does not exist. Parsing skipped."
+            ERRLOG "${HOST} does not exist. Parsing skipped."
         fi
     done
 fi
@@ -45,7 +45,7 @@ if [ -z "${COMPUTE_LIST}" ]; then
     WARNLOG "COMPUTE_LIST is not set in lab.conf file. Skipping stats parsing for all computes."
     exit 1
 else
-    # If there is a large number of computes, they need to be parsed one batch at a time, 
+    # If there is a large number of computes, they need to be parsed one batch at a time,
     # otherwise, the analysis server will be brought down to a crawl. Set the number of
     # computes to process in parallel as batches of 25 if it's not set in lab.conf
     BATCH_SIZE=${BATCH_SIZE:-25}

@@ -63,7 +63,7 @@ function generate_grep_str()
 {
     local grepstr="time:"
     for DB in ${DATABASE_LIST}; do
-       grepstr="${grepstr}|${DB}"
+        grepstr="${grepstr}|${DB}"
     done
     grepstr="${grepstr}|breakdown|connections total|rows"
     echo $grepstr

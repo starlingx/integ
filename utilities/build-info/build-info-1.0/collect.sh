@@ -24,7 +24,7 @@ if  [ ! -e $jenkinsBuildFile ]; then
 fi
 
 if [ -e $releaseInfoFile ]; then
-	source $releaseInfoFile
+    source $releaseInfoFile
 fi
 
 if [ "${REPO}x" == "x" ]; then
@@ -35,12 +35,12 @@ if  [ -e $jenkinsBuildFile ]; then
     cp $jenkinsBuildFile $destFile
     source $jenkinsBuildFile
 else
-	# PLATFORM_RELEASE should be set in release-info.inc
-	if [ "x${PLATFORM_RELEASE}" == "x" ]; then
-	    SW_VERSION="Unknown"
-	else
-		SW_VERSION="${PLATFORM_RELEASE}"
-	fi
+    # PLATFORM_RELEASE should be set in release-info.inc
+    if [ "x${PLATFORM_RELEASE}" == "x" ]; then
+        SW_VERSION="Unknown"
+    else
+        SW_VERSION="${PLATFORM_RELEASE}"
+    fi
 
     BUILD_TARGET="Unknown"
     BUILD_TYPE="Informal"
@@ -89,8 +89,8 @@ fi
 echo "#ifndef _BUILD_INFO_H_" > $destH
 echo "#define _BUILD_INFO_H_" >> $destH
 echo "" >> $destH
-echo "#define RELEASE_NAME \"$RELEASE_NAME\"" >> $destH 
-echo "#define SW_VERSION \"$SW_VERSION\"" >> $destH 
+echo "#define RELEASE_NAME \"$RELEASE_NAME\"" >> $destH
+echo "#define SW_VERSION \"$SW_VERSION\"" >> $destH
 echo "" >> $destH
 echo "#define BUILD_TARGET \"$BUILD_TARGET\"" >> $destH
 echo "#define BUILD_TYPE \"$BUILD_TYPE\""  >> $destH

@@ -7,7 +7,7 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: HA-Proxy TCP/HTTP reverse proxy
-# Description:       HA-Proxy is a TCP/HTTP reverse proxy 
+# Description:       HA-Proxy is a TCP/HTTP reverse proxy
 ### END INIT INFO
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
@@ -22,12 +22,12 @@ RETVAL=0
 # This is only needed till TPM In-Kernel
 # ResourceMgr comes in
 remove_TPM_transients () {
-   _HANDLES=`find $TPM_DATA_DIR -type f -name "hp*.bin" -printf "%f "`
-   for handle in $_HANDLES; do
+    _HANDLES=`find $TPM_DATA_DIR -type f -name "hp*.bin" -printf "%f "`
+    for handle in $_HANDLES; do
         handle_addr=`echo $handle | sed 's/hp\([0-9]*\)\.bin/\1/g'`
         tss2_flushcontext -ha $handle_addr &> /dev/null
-   done
-   rm -f $TPM_DATA_DIR/*
+    done
+    rm -f $TPM_DATA_DIR/*
 }
 
 start() {
@@ -60,9 +60,9 @@ start() {
 
 stop() {
     if [ ! -e $PIDFILE ]; then return; fi
-    
+
     echo -n "Stopping $DESC..."
-    
+
     start-stop-daemon --stop --quiet --retry 3 --oknodo --pidfile $PIDFILE -x "$DAEMON"
     if [ -n "`pidof $DAEMON`" ] ; then
         pkill -KILL -f $DAEMON
@@ -90,7 +90,7 @@ status()
 }
 
 check() {
-  /usr/sbin/$NAME -c -q -V -f /etc/$NAME/$NAME.cfg
+    /usr/sbin/$NAME -c -q -V -f /etc/$NAME/$NAME.cfg
 }
 
 # See how we were called.
@@ -116,5 +116,5 @@ case "$1" in
         RETVAL=1
         ;;
 esac
- 
+
 exit $RETVAL

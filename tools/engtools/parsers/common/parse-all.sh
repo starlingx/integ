@@ -8,7 +8,7 @@
 # This script is used to parse all stats data. It is designed to be called by either
 # parse-controllers.sh or parse-computes.sh and not used as a standalone script.
 # If the input node is a controller, it will parse controller specific postgres &
-# and rabbitmq stats first. If the input node is a compute, it will pars the compute 
+# and rabbitmq stats first. If the input node is a compute, it will pars the compute
 # specific vswitch stats first.
 #
 # The following parsing steps are common to all hosts and are executed in the specified order:
@@ -22,12 +22,12 @@
 #     - Parse filestats (summary)
 #     - Parse process level schedtop (optional step, configured in lab.conf)
 #     - Generate tarball
- 
+
 if [[ $# != 1 ]]; then
-   echo "ERROR: This script is meant to be called by either parse-controllers.sh or parse-computes.sh script."
-   echo "To run it separately, copy the script to the host directory that contains *.bz2 files."
-   echo "It takes a single argument - the name of the host directory (e.g. ./parse-all.sh controller-0)."
-   exit 1
+    echo "ERROR: This script is meant to be called by either parse-controllers.sh or parse-computes.sh script."
+    echo "To run it separately, copy the script to the host directory that contains *.bz2 files."
+    echo "It takes a single argument - the name of the host directory (e.g. ./parse-all.sh controller-0)."
+    exit 1
 fi
 
 source ../lab.conf
@@ -49,7 +49,7 @@ function sedit()
     # Remove any trailing comma
     sed -i "s/,$//" ${FILETOSED}
 }
-    
+
 function get_filename_from_mountname()
 {
     local name=$1
@@ -153,7 +153,7 @@ function parse_occtop_data()
     echo "${header}" > occtop-${NODE}-detailed.csv
     cat tmp2.txt >> occtop-${NODE}-detailed.csv
 
-    # Generate simple CSV file which is used to generate host CPU occupancy chart. Platform cores are 
+    # Generate simple CSV file which is used to generate host CPU occupancy chart. Platform cores are
     # defined in the host.conf. The simple CSV contains only the Date/Time and Total platform CPU occupancy e.g.
     # Date/Time,Total
     # 2016-11-22 00:29:16.523,94.9
@@ -187,7 +187,7 @@ function parse_memtop_data()
     bzcat *memtop.bz2 > memtop-${NODE}-${DATESTAMP}.txt
     cp memtop-${NODE}-${DATESTAMP}.txt tmp.txt
     sedit tmp.txt
-  
+
     # After dumping all memtop bz2 output into one text file and in-place sed, grab only relevant data
     # for CSV output. Generate both detailed and simple CSV files. Simple output will be used to generate
     # chart.
@@ -222,7 +222,7 @@ function parse_netstats_data()
             done < tmp.txt
         done
         rm tmp.txt
-    fi 
+    fi
 }
 
 function parse_iostats_data()
@@ -238,28 +238,28 @@ function parse_iostats_data()
             bzcat *iostat.bz2 | grep -E "/2015|/2016|/2017|${DEVICE}"   | awk '{print $1","$2","$3","$4","$5","$6","$7","$8","$9","$10","$11","$12","$13","$14}' > tmp.txt
             while IFS= read -r current
             do
-               if test "${current#*Linux}" != "$current"
-               then
-		   # Skip the line that contains the word "Linux"
-                   continue
-               else
-                   if test "${current#*$DEVICE}" == "$current"
-                   then
-                       # It's a date entry, look ahead
-                       read -r next
-                       if test "${next#*$DEVICE}" != "${next}"
-                       then
-			   # This next line contains the device stats
-			   # Combine date and time fields
-                           current="${current//2016,/2016 }"
-                           current="${current//2017,/2017 }"
-			   # Combine time and AM/PM fields
-                           current="${current//,AM/ AM}"
-                           current="${current//,PM/ PM}"
-                           # Write both lines to intermediate file
-                           echo "${current}" >> tmp2.txt
-                           echo "${next}" >> tmp2.txt
-                       fi
+                if test "${current#*Linux}" != "$current"
+                then
+           # Skip the line that contains the word "Linux"
+                    continue
+                else
+                    if test "${current#*$DEVICE}" == "$current"
+                    then
+                        # It's a date entry, look ahead
+                        read -r next
+                        if test "${next#*$DEVICE}" != "${next}"
+                        then
+                            # This next line contains the device stats
+                            # Combine date and time fields
+                            current="${current//2016,/2016 }"
+                            current="${current//2017,/2017 }"
+                            # Combine time and AM/PM fields
+                            current="${current//,AM/ AM}"
+                            current="${current//,PM/ PM}"
+                            # Write both lines to intermediate file
+                            echo "${current}" >> tmp2.txt
+                            echo "${next}" >> tmp2.txt
+                        fi
                     fi
                 fi
             done < tmp.txt
@@ -272,7 +272,7 @@ function parse_iostats_data()
             cut -d, -f2-11 --complement tmp2.txt > tmp.txt
             # Write final content to output csv
             cat tmp.txt >> iostat-${NODE}-${DEVICE}.csv
-	    rm tmp.txt tmp2.txt
+        rm tmp.txt tmp2.txt
         done
     fi
 }
@@ -317,9 +317,9 @@ parse_occtop_data
 # Parsing memtop data
 parse_memtop_data
 
-# Parsing memstats data to generate the high level report. The most important piece of info is the list of 
+# Parsing memstats data to generate the high level report. The most important piece of info is the list of
 # hi-runners at the end of the file. If there is a leak, run parse-daily.sh script to generate the time
-# series data for the offending processes only. Use process name, not PID as most Titanium Cloud processes have 
+# series data for the offending processes only. Use process name, not PID as most Titanium Cloud processes have
 # workers.
 LOG "Parsing memstats summary for ${NODE}"
 ../parse_memstats --report *memstats.bz2 > memstats-summary-${NODE}-${DATESTAMP}.txt
@@ -331,7 +331,7 @@ rm pid-*.csv
 parse_netstats_data
 
 # Parsing schedtop data to generate the high level report. Leave the process level schedtop parsing till
-# the end as it is a long running task.   
+# the end as it is a long running task.
 LOG "Parsing schedtop summary for ${NODE}"
 FILES=$(ls *schedtop.bz2)
 ../parse_schedtop ${FILES} > schedtop-summary-${NODE}-${DATESTAMP}.txt
@@ -342,17 +342,17 @@ parse_iostats_data
 # Parsing diskstats data
 parse_diskstats_data
 
-# Parsing filestats data to generate the high level report. If there is a file descriptor leak, run parse-daily.sh 
-# script to generate the time series data for the offending processes only. Use process name, not PID as most 
+# Parsing filestats data to generate the high level report. If there is a file descriptor leak, run parse-daily.sh
+# script to generate the time series data for the offending processes only. Use process name, not PID as most
 # Titanium Cloud processes have workers.
 LOG "Parsing filestats summary for ${NODE}"
-../parse_filestats --all *filestats.bz2 > filestats-summary-${NODE}-${DATESTAMP}.txt 
+../parse_filestats --all *filestats.bz2 > filestats-summary-${NODE}-${DATESTAMP}.txt
 
 # Parsing process level schedtop data. This is a long running task. To skip this step or generate data for
 # only specific processes, update the lab.conf and host.conf files.
 [[ ${GENERATE_PROCESS_SCHEDTOP} == Y ]] && parse_process_schedtop_data || WARNLOG "Parsing process level schedtop is skipped."
 
-# Done parsing for this host. If it's a controller host, check if the parsing of postgres connection stats which is run in 
+# Done parsing for this host. If it's a controller host, check if the parsing of postgres connection stats which is run in
 # parallel is done before creating a tar file.
 if test "${NODE#*"controller"}" != "${NODE}"; then
     # If postgres-conns.csv file has not been created which is highly unlikely, wait a couple of minutes

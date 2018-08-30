@@ -6,8 +6,8 @@ TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 tools_init
 if [ $? -ne 0 ]; then
-  echo "FATAL, tools_init - could not setup environment"
-  exit $?
+    echo "FATAL, tools_init - could not setup environment"
+    exit $?
 fi
 
 # Enable use of INTERVAL_SEC sample interval

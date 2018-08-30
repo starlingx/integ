@@ -28,7 +28,7 @@ LLDP_COMMAND=lldp
 function log()
 {
     local MSG="${PROGNAME}: $1"
-    logger -p notice "${MSG}" 
+    logger -p notice "${MSG}"
 }
 
 function err()
@@ -60,10 +60,10 @@ function configure_device()
 }
 
 function is_debugfs_mounted() {
-  if grep -qs "${DEBUGFS_PATH}" /proc/mounts; then
-    return 0 
-  fi
-  return 1 
+    if grep -qs "${DEBUGFS_PATH}" /proc/mounts; then
+    return 0
+    fi
+    return 1
 }
 
 function mount_debugfs() {
@@ -82,7 +82,7 @@ function scan_devices()
 
     if is_debugfs_mounted; then
         DEBUGFS_MOUNTED="true"
-    fi 
+    fi
 
     if [ ${DEBUGFS_MOUNTED} = "false" ]; then
         mount_debugfs
@@ -120,7 +120,7 @@ function start()
 function stop()
 {
     scan_devices stop
-    return $? 
+    return $?
 }
 
 function status()
@@ -129,20 +129,20 @@ function status()
 }
 
 case "$1" in
-  start)
+    start)
         start
         ;;
-  stop)
+    stop)
         stop
         ;;
-  restart)
+    restart)
         stop
         start
         ;;
-  status)
+    status)
         status
         ;;
-  *)
+    *)
         echo "Usage: $0 {start|stop|restart|status}"
         exit 1
 esac

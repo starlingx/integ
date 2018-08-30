@@ -14,9 +14,9 @@ PARSERDIR=$(dirname $0)
 . ${PARSERDIR}/parse-util.sh
 
 if [ ! -f lab.conf ]; then
-   echo "Lab configuration file is missing."
-   echo "See http://wiki.wrs.com/PBUeng/TitaniumServerSysengToolsAndDataAnalysis for more info."
-   exit 1
+    echo "Lab configuration file is missing."
+    echo "See http://wiki.wrs.com/PBUeng/TitaniumServerSysengToolsAndDataAnalysis for more info."
+    exit 1
 fi
 
 source ./lab.conf
@@ -36,12 +36,12 @@ for HOST in ${CONTROLLER_LIST}; do
         sleep 120
         cd ..
     else
-       ERRLOG "${HOST} does not exist. Parsing skipped."
+        ERRLOG "${HOST} does not exist. Parsing skipped."
     fi
 done
 
 # Parsing postgres connection stats is a time consuming step, run it in parallel with parse-all
-# script. 
+# script.
 for HOST in ${CONTROLLER_LIST}; do
     if [ -d ${HOST} ]; then
         LOG "Parsing postgres connection stats data for controller host ${HOST}"

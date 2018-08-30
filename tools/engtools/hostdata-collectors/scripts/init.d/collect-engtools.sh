@@ -41,76 +41,76 @@ fi
 # Check for sufficient priviledges
 # [ JGAULD : possibly provide user = 'operator' option instead... ]
 if [ $UID -ne 0 ]; then
-  log_daemon_msg "Starting ${NAME} requires sudo/root access."
-  exit 1
+    log_daemon_msg "Starting ${NAME} requires sudo/root access."
+    exit 1
 fi
 
 case $1 in
-  start)
+    start)
     if [ -e ${PIDFILE} ]; then
-      pid=$(pidof -x ${NAME})
-      if test "${pid}" != ""
-      then
-        echo_success "${NAME} already running"
+        pid=$(pidof -x ${NAME})
+        if test "${pid}" != ""
+        then
+            echo_success "${NAME} already running"
         exit
-      fi
+        fi
     fi
 
 
     log_daemon_msg "Starting ${NAME}"
     if start-stop-daemon --start --background --quiet --oknodo --pidfile ${PIDFILE} \
-                         --exec ${DAEMON} -- ${DAEMON_ARGS} ; then
-      log_end_msg 0
+                        --exec ${DAEMON} -- ${DAEMON_ARGS} ; then
+        log_end_msg 0
     else
-      log_end_msg 1
+        log_end_msg 1
     fi
     ;;
 
-  stop)
+    stop)
     if [ -e ${PIDFILE} ]; then
-      pids=$(pidof -x ${NAME})
-      if [[ ! -z "${pids}" ]]
-      then
-        echo_success "Stopping ${NAME} [$pid]"
-        start-stop-daemon --stop --quiet --oknodo --pidfile ${PIDFILE} --retry=TERM/3/KILL/5
-        # [ JGAULD: none of the following should be necessary ]
-        /usr/local/bin/cleanup-engtools.sh
-      else
-        echo_failure "${NAME} is not running"  
-      fi
+        pids=$(pidof -x ${NAME})
+        if [[ ! -z "${pids}" ]]
+        then
+            echo_success "Stopping ${NAME} [$pid]"
+            start-stop-daemon --stop --quiet --oknodo --pidfile ${PIDFILE} --retry=TERM/3/KILL/5
+            # [ JGAULD: none of the following should be necessary ]
+            /usr/local/bin/cleanup-engtools.sh
+        else
+            echo_failure "${NAME} is not running"
+        fi
     else
-      echo_failure "${PIDFILE} does not exist"
+        echo_failure "${PIDFILE} does not exist"
     fi
     ;;
 
-  restart)
+    restart)
     $0 stop && sleep 2 && $0 start
     ;;
 
-  status)
+    status)
     if [ -e ${PIDFILE} ]; then
-      pid=$(pidof -x ${NAME})
-      if test "${pid}" != ""
-      then
-        echo_success "${NAME} is running"
-      else
-        echo_success "${NAME} is not running"  
-      fi
+        pid=$(pidof -x ${NAME})
+        if test "${pid}" != ""
+        then
+            echo_success "${NAME} is running"
+        else
+            echo_success "${NAME} is not running"
+        fi
     else
-      echo_success "${NAME} is not running"
+        echo_success "${NAME} is not running"
     fi
     ;;
 
-  reload)
+    reload)
     if [ -e ${PIDFILE} ]; then
-      start-stop-daemon --stop --signal USR1 --quiet --pidfile ${PIDFILE} --name ${NAME}
-      echo_success "${NAME} reloaded successfully"
+        start-stop-daemon --stop --signal USR1 --quiet --pidfile ${PIDFILE} --name ${NAME}
+        echo_success "${NAME} reloaded successfully"
     else
-      echo_success "${PIDFILE} does not exist"
+        echo_success "${PIDFILE} does not exist"
     fi
     ;;
 
-  *)
+    *)
     echo "Usage: $0 {start|stop|restart|reload|status}"
     exit 2
     ;;

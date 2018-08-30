@@ -51,7 +51,7 @@ num_exchanges=$(rabbitmqctl list_exchanges | wc -l); ((num_exchanges-=2))
 num_connections=$(rabbitmqctl list_connections | wc -l); ((num_connections-=2))
 num_channels=$(rabbitmqctl list_channels | wc -l); ((num_channels-=2))
 arr=($(rabbitmqctl list_queues messages consumers memory | \
-   awk '/^[0-9]/ {a+=$1; b+=$2; c+=$3} END {print a, b, c}'))
+    awk '/^[0-9]/ {a+=$1; b+=$2; c+=$3} END {print a, b, c}'))
 messages=${arr[0]}; consumers=${arr[1]}; memory=${arr[2]}
 printf "%6s %8s %9s %11s %8s %8s %9s %10s\n" "queues" "bindings" "exchanges" "connections" "channels" "messages" "consumers" "memory" >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 printf "%6d %8d %9d %11d %8d %8d %9d %10d\n" $num_queues $num_bindings $num_exchanges $num_connections $num_channels $messages $consumers $memory >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}

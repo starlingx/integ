@@ -41,14 +41,14 @@ else
     fi
 
     myuser=`systemctl show -p User "${SERVICE_NAME}" |
-      sed 's/^User=//'`
+        sed 's/^User=//'`
     if [ x"$myuser" = x ]
     then
         myuser=mysql
     fi
 
     mygroup=`systemctl show -p Group "${SERVICE_NAME}" |
-      sed 's/^Group=//'`
+        sed 's/^Group=//'`
     if [ x"$mygroup" = x ]
     then
         mygroup=mysql

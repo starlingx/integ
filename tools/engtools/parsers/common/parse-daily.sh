@@ -102,8 +102,8 @@ elif [[ $# -eq 3 ]]; then
             cd $1
             parse_daily_stats $2 $3
         else
-           echo "ERROR: Specified host $1 does not exist."
-           exit 1
+            echo "ERROR: Specified host $1 does not exist."
+            exit 1
         fi
     else
         echo "Specified parser $2 is not a valid parser."

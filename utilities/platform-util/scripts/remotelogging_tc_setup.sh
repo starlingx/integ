@@ -34,7 +34,7 @@ function log
 function test_valid_speed
 {
     # After the link is enabled but before the autonegotiation is complete
-    # the link speed may be read as either -1 or as 4294967295 (which is 
+    # the link speed may be read as either -1 or as 4294967295 (which is
     # uint(-1) in twos-complement) depending on the kernel.  Neither one is valid.
     if (( $1 > 0 )) && (( $1 != 4294967295 ))
     then
