@@ -1,0 +1,30 @@
+From 73b4a43227e36aa32103e7d8a69bcb35678f7e6c Mon Sep 17 00:00:00 2001
+From: Kam Nasim <kam.nasim@windriver.com>
+Date: Fri, 26 May 2017 17:04:32 -0400
+Subject: [PATCH] disable configuration validation during haproxy manifest
+ apply since some files/options referenced in the configuration (such as for
+ TPM) may still be in flight while the haproxy manifest applies. This
+ validation option is a bit of an overkill anyways since it doesn't cause
+ Packstack to fail the manifest application, and is a soft error log but with
+ the added disadvantage of not applying any haproxy configuration (even the
+ sane bits) on a validation failure
+
+---
+ manifests/config.pp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/manifests/config.pp b/manifests/config.pp
+index 785740d..4d084fa 100644
+--- a/manifests/config.pp
++++ b/manifests/config.pp
+@@ -47,7 +47,6 @@ define haproxy::config (
+       owner        => '0',
+       group        => '0',
+       mode         => '0644',
+-      validate_cmd => '/usr/sbin/haproxy -f % -c',
+     }
+ 
+     # Simple Header
+-- 
+1.8.3.1
+
