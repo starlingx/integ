@@ -2,7 +2,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 <!--
-Copyright (c) 2014-2017 Wind River Systems, Inc.
+Copyright (c) 2014-2018 Wind River Systems, Inc.
 
 SPDX-License-Identifier: Apache-2.0
 
@@ -66,6 +66,17 @@ SPDX-License-Identifier: Apache-2.0
             </configuration>
           </execution>
           <execution>
+            <id>sm-api-v1</id>
+            <goals>
+              <goal>generate-html</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <includes>api-ref-smapi-v1.xml</includes>
+              <pdfFilename>bk-sm-api-v1</pdfFilename>
+            </configuration>
+          </execution>
+          <execution>
             <id>os-api-ref-dcmanager-api-v1</id>
             <goals>
               <goal>generate-html</goal>
@@ -74,6 +85,17 @@ SPDX-License-Identifier: Apache-2.0
             <configuration>
               <includes>api-ref-dcmanager-v1.xml</includes>
               <pdfFilename>bk-dcmanager-api-v1</pdfFilename>
+            </configuration>
+          </execution>
+          <execution>
+            <id>fm-api-v1</id>
+            <goals>
+              <goal>generate-html</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <includes>api-ref-fm-v1.xml</includes>
+              <pdfFilename>bk-fm-api-v1</pdfFilename>
             </configuration>
           </execution>
           <execution>
@@ -140,6 +162,17 @@ SPDX-License-Identifier: Apache-2.0
             <configuration>
               <includes>api-ref-nfv-vim-v1.xml</includes>
               <pdfFilename>bk-api-ref-nfv-vim-v1</pdfFilename>
+            </configuration>
+          </execution>
+           <execution>
+            <id>os-api-ref-smapi-v1</id>
+            <goals>
+              <goal>generate-html</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <includes>api-ref-smapi-v1.xml</includes>
+              <pdfFilename>bk-api-ref-smapi-v1</pdfFilename>
             </configuration>
           </execution>
           <!-- Configuration for OpenStack API References (pdf) -->

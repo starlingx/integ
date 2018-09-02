@@ -1,0 +1,3 @@
+wrsroot ALL=(www) NOPASSWD: /usr/local/sbin/helm-upload
+
+Defaults lecture=never, secure_path=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin

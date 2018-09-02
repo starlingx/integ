@@ -1,0 +1,244 @@
+
+     <!--
+         A collection of common faults, these are pretty much expected
+         in every request.
+     -->
+     <!ENTITY commonFaults
+           '
+        <response xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:computeFault"/>
+            <representation mediaType="application/json"/>
+        </response>
+        <response status="503" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:serviceUnavailable"/>
+            <representation mediaType="application/json"/>
+        </response>
+        <response status="400" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:badRequest"/>
+            <representation mediaType="application/json"/>
+        </response>
+        <response status="401" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:unauthorized"/>
+            <representation mediaType="application/json"/>
+        </response>
+        <response status="403" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:forbidden"/>
+            <representation mediaType="application/json"/>
+        </response>
+        <response status="405" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:badMethod"/>
+            <representation mediaType="application/json"/>
+        </response>
+        <response status="413" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:overLimit"/>
+            <representation mediaType="application/json"/>
+        </response>
+           '>
+      <!--
+          Faults on GET
+      -->
+     <!ENTITY getFaults
+           '
+        <response status="404" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:itemNotFound"/>
+            <representation mediaType="application/json"/>
+        </response>
+           '>
+      <!--
+          Faults on POST/PUT
+      -->
+
+     <!ENTITY postPutFaults
+           '
+        <response status="415" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:badMediaType"/>
+            <representation mediaType="application/json"/>
+        </response>'>
+         <!ENTITY rebootFaults
+           '<response status="422" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:HTTPUnprocessableEntity"/>
+            <representation mediaType="application/json"/>
+        </response>
+           '>
+      <!--
+          Faults that can occur when we are building servers or images.
+      -->
+     <!ENTITY buildFaults
+           '
+        <response status="503" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:serverCapacityUnavailable"/>
+            <representation mediaType="application/json"/>
+        </response>
+           '>
+      <!--
+          Holds build in progress which occurs when an operation fails
+          because the server is in the process of being built.
+      -->
+     <!ENTITY inProgressFault
+           '
+        <response status="409" xmlns="http://wadl.dev.java.net/2009/02">
+            <representation mediaType="application/xml" element="csapi:buildInProgress"/>
+            <representation mediaType="application/json"/>
+        </response>
+           '>
+
+
+     <!-- COMMON List/Show Parameters -->
+
+     <!ENTITY commonListShowParameters '
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="uuid" style="plain" type="csapi:UUID" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The universally unique identifier for this object.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="links" style="plain" type="xsd:list" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>For convenience, resources contain links to themselves.
+                            This allows a client to easily obtain rather than construct
+                            resource URIs. The following types of link relations are
+                            associated with resources: a self link containing a versioned
+                            link to the resource, and a bookmark link containing a permanent
+                            link to a resource that is appropriate for long term storage.</para>
+                    </wadl:doc>
+                </param>
+            '>
+
+
+    <!-- Service Node List/Show Parameters -->
+
+    <!ENTITY serviceNodeListShowParameters '
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="administrative_state" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>Administrative state of the node.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="ready_state" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The operational state of the node.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="name" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The name of the node.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="operational_state" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The operational state of the node</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="availability_status" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The availability status of the node.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="id" style="plain" type="xsd:integer" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The id of the node.</para>
+                    </wadl:doc>
+                </param>
+            '>
+
+	     <!-- Service Group List/Show Parameters -->
+
+    <!ENTITY serviceGroupListShowParameters '
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="name" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The type of host that the service is running on.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="service_group_name" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The name of the service group.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="node_name" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The name of the node that the service is running on.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="state" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The state of the service.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="uuid" style="plain" type="csapi:UUID" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The uuid of the service group.</para>
+                    </wadl:doc>
+                </param>
+            '>
+
+
+    <!-- Service List/Show Parameters -->
+
+    <!ENTITY serviceListShowParameters '
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="state" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The operational state of the service.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="id" style="plain" type="xsd:integer" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The id of the service.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="desired_state" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The desired state of the service</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="name" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The name of the service.</para>
+                    </wadl:doc>
+                </param>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="node_name" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>The name of the host which the service is running on.</para>
+                    </wadl:doc>
+                </param>
+            '>
+
+
+     <!-- Useful for describing APIs -->
+     <!ENTITY GET    '<command xmlns="http://docbook.org/ns/docbook">GET</command>'>
+     <!ENTITY PUT    '<command xmlns="http://docbook.org/ns/docbook">PUT</command>'>
+     <!ENTITY POST   '<command xmlns="http://docbook.org/ns/docbook">POST</command>'>
+     <!ENTITY DELETE '<command xmlns="http://docbook.org/ns/docbook">DELETE</command>'>

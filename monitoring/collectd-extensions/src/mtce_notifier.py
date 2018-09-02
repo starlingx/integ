@@ -58,7 +58,7 @@ FAIL = 1
 MTCE_CMD_RX_PORT = 2101
 
 # same state message throttle count.
-# ... only send the the degrade message every 'this' number
+# ... only send the degrade message every 'this' number
 #     while the state of assert or clear remains the same.
 ONE_EVERY = 10
 

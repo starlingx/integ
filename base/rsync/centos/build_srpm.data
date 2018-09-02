@@ -1,2 +1,2 @@
 COPY_LIST="$PKG_BASE/files/rsyncd.conf"
-TIS_PATCH_VER=1
+TIS_PATCH_VER=2

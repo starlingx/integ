@@ -1,0 +1,1 @@
+../../../../git/ceph/ceph.spec

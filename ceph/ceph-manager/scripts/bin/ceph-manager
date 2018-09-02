@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2016 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+import sys
+
+try:
+    from ceph_manager.server import run_service
+except EnvironmentError as e:
+    print >> sys.stderr, "Error importing ceph_manager: ", str(e)
+    sys.exit(1)
+
+run_service()

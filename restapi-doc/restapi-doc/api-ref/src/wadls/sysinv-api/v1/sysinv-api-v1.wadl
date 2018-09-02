@@ -199,6 +199,11 @@ SPDX-License-Identifier: Apache-2.0
                         <method href="#downgradeHost"/>
                     </resource>
 
+        <!-- /v1/ihosts/{host_id}/labels                    -->
+                    <resource id="labels" path="labels">
+                        <method href="#listLabel"/>
+                    </resource>
+
                 </resource>
             </resource>
 
@@ -520,29 +525,6 @@ SPDX-License-Identifier: Apache-2.0
             </resource>
 
 
-        <!-- /v1/ialarms                                       -->
-            <resource id="alarms" path="ialarms">
-                <method href="#listAlarms"/>
-
-        <!-- /v1/ialarms/{alarm_uuid}                            -->
-                <resource id="alarm_uuid" path="{alarm_uuid}" >
-                    <param name="alarm_uuid" style="template" required="true" type="csapi:UUID">
-                        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                            <para>The unique identifier of an existing active alarm.</para>
-                        </wadl:doc>
-                    </param>
-                    <method href="#getAlarm"/>
-                    <method href="#deleteAlarm"/>
-
-                </resource>
-
-        <!-- /v1/ialarms/summary                            -->
-                <resource id="alarm_summary" path="summary" >
-                    <method href="#alarmSummary"/>
-                </resource>
-
-            </resource>
-
         <!-- /v1/icommunity                                    -->
             <resource id="community" path="icommunity">
                 <method href="#listCommunities"/>
@@ -580,40 +562,6 @@ SPDX-License-Identifier: Apache-2.0
 
                 </resource>
             </resource>
-
-        <!-- /v1/event_log                               -->
-            <resource id="event_log" path="event_log">
-                <method href="#listEventLog"/>
-
-        <!-- /v1/event_log/{log_uuid}                            -->
-                <resource id="event_log_uuid" path="{log_uuid}" >
-                    <param name="log_uuid" style="template" required="true" type="csapi:UUID">
-                        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                            <para>The unique identifier of an event log.</para>
-                        </wadl:doc>
-                    </param>
-                    <method href="#getEventLog"/>
-
-                </resource>
-            </resource>
-
-        <!-- /v1/event_suppression                               -->
-            <resource id="event_suppression" path="event_suppression">
-                <method href="#listEventSuppression"/>
-            </resource>
-
-        <!-- /v1/event_suppression/{event_suppression_uuid}                    -->
-                <resource id="event_suppression_uuid" path="event_suppression/{event_suppression_uuid}" >
-                    <param name="event_suppression_uuid" style="template" required="true"
-                    type="csapi:UUID">
-                        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                            <para>The unique identifier of an event suppression.</para>
-                        </wadl:doc>
-                    </param>
-                    <method href="#modifyEventSuppression"/>
-
-              </resource>
-
 
         <!-- /v1/pci_devices                               -->
             <resource id="device" path="devices">
@@ -1058,6 +1006,26 @@ SPDX-License-Identifier: Apache-2.0
         <!-- /v1/license                     -->
             <resource id="license" path="license">
                 <method href="#listLicenseInfo"/>
+            </resource>
+
+        <!-- /v1/labels/{host_id}  -->
+            <resource id="assign_label" path="labels/{host_id}">
+                <param name="host_id" style="template" required="true" type="csapi:UUID">
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                        <para>The unique identifier of an existing host.</para>
+                    </wadl:doc>
+                </param>
+                <method href="#assignLabel"/>
+            </resource>
+
+        <!-- /v1/labels/{label_id}                     -->
+            <resource id="label_id" path="labels/{label_id}" >
+                <param name="label_id" style="template" required="true" type="csapi:UUID">
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                        <para>The unique identifier of an existing host label. </para>
+                    </wadl:doc>
+                </param>
+                <method href="#removeLabel"/>
             </resource>
 
         </resource>
@@ -3617,140 +3585,6 @@ SPDX-License-Identifier: Apache-2.0
 
 
     <!-- ..................................................... -->
-    <!-- ..  Alarms                                         .. -->
-    <!-- ..................................................... -->
-
-    <method href="#listAlarms"/>
-    <method href="#getAlarm"/>
-    <method href="#deleteAlarm"/>
-    <method href="#alarmSummary"/>
-
-    <method name="GET" id="listAlarms">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN" title="List alarms">
-            <para role="shortdesc">Lists all active alarms based on specified query.</para>
-            <para>The supported query options are alarm_id, entity_type_id, entity_instance_id,
-                severity and alarm_type.</para>
-        </wadl:doc>
-        <request>
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="include_suppress" style="query" type="xsd:boolean" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This optional parameter when set to true (include_suppress=true) specifies
-							to include suppressed alarms in output.</para>
-                    </wadl:doc>
-                </param>
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/alarm_list-request.json"/>
-                </wadl:doc>
-            </representation>
-        </request>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="ialarms" style="plain" type="xsd:list" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>The list of active alarms based on the specified query.</para>
-                    </wadl:doc>
-                </param>
-                &alarmListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/alarm_list-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &commonFaults; &getFaults;
-    </method>
-
-
-    <method name="GET" id="getAlarm">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Show alarm">
-            <para role="shortdesc">Shows information about a specific alarm.</para>
-            <para></para>
-        </wadl:doc>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                &alarmListShowParameters;
-                &alarmDetailShowParameters;
-                &commonListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/alarm-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &commonFaults; &getFaults;
-    </method>
-
-
-    <method name="DELETE" id="deleteAlarm">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Delete alarm">
-            <para role="shortdesc">Deletes a specific alarm.</para>
-            <para>NOTE Typically this command should NOT be used.  I.e typically
-                alarms will be and should be cleared by the system
-                when the alarm condition clears.  This command is only provided
-                in the event that the alarm has cleared but for some reason the
-                system has not removed the alarm.</para>
-        </wadl:doc>
-        <response status="204">
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-            </representation>
-        </response>
-    </method>
-
-
-    <method name="SUMMARY" id="alarmSummary">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN" title="Alarm Summary">
-            <para role="shortdesc">Summarize all active alarms by severity.</para>
-        </wadl:doc>
-        <request>
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="include_suppress" style="query" type="xsd:boolean" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This optional parameter when set to true (include_suppress=true) specifies
-                                                        to include suppressed alarms in the summations (default false).</para>
-                    </wadl:doc>
-                </param>
-            </representation>
-        </request>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                &alarmSummaryShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/alarm_summary-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &commonFaults;
-    </method>
-
-
-    <!-- ..................................................... -->
     <!-- ..  Communities                                    .. -->
     <!-- ..................................................... -->
 
@@ -3980,7 +3814,7 @@ SPDX-License-Identifier: Apache-2.0
                     name="community" style="plain" type="xsd:string" >
                     <wadl:doc xmlns="http://docbook.org/ns/docbook"
                         xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This parameter specifies the the community of which the trap destination is a member.</para>
+                        <para>This parameter specifies the community of which the trap destination is a member.</para>
                     </wadl:doc>
                 </param>
             </representation>
@@ -4564,197 +4398,6 @@ OAM Controller-1 IP Address.</para>
             <representation mediaType="application/json">
                 <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
                     <xsdxt:code href="api_samples/drbdsync_modify-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &postPutFaults;
-    </method>
-
-    <!-- ..................................................... -->
-    <!-- ..  Event Logs                                     .. -->
-    <!-- ..................................................... -->
-
-    <method href="#listEventLog"/>
-    <method href="#getEventLog"/>
-
-    <method name="GET" id="listEventLog">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN" title="List event logs">
-            <para role="shortdesc">Lists all event logs (historical alarms and customer logs) based on specified query. The logs
-	    	are returned in reverse chronological order.</para>
-            <para>The supported query options are event_log_id, entity_type_id, entity_instance_id,
-                severity, event_log_type, start and end.</para>
-        </wadl:doc>
-        <request>
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="q" style="query" type="xsd:list" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This parameter specifies filter rules for the logs to
-							be returned.</para>
-                    </wadl:doc>
-                </param>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="limit" style="query" type="xsd:int" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This parameter specifies the maximum number of event logs to
-							be returned.</para>
-                    </wadl:doc>
-                </param>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="alarms" style="query" type="xsd:boolean" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This optional parameter when set to true (alarms=true) specifies
-							that only alarm event log records should be returned.</para>
-                    </wadl:doc>
-                </param>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="logs" style="query" type="xsd:boolean" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This optional parameter when set to true (logs=true) specifies
-							that only customer log records should be returned.</para>
-                    </wadl:doc>
-                </param>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="include_suppress" style="query" type="xsd:boolean" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>This optional parameter when set to true (include_suppress=true) specifies
-							to include suppressed alarms in output.</para>
-                    </wadl:doc>
-                </param>
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/event_log_list-request.json"/>
-                </wadl:doc>
-            </representation>
-        </request>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="event_log" style="plain" type="xsd:list" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>The list of events log based on the specified query.</para>
-                    </wadl:doc>
-                </param>
-                &eventLogListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/event_log_list-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &commonFaults; &getFaults;
-    </method>
-
-    <method name="GET" id="getEventLog">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Show event log">
-            <para role="shortdesc">Shows information about a specific event log.</para>
-            <para></para>
-        </wadl:doc>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-		        &eventLogListShowParameters;
-                &commonListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/event_log_show-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &commonFaults; &getFaults;
-    </method>
-
-    <!-- ..................................................... -->
-    <!-- ..  Event Suppression                              .. -->
-    <!-- ..................................................... -->
-
-    <method href="#listEventSuppression"/>
-    <method href="#getEventSuppression"/>
-
-    <method name="GET" id="listEventSuppression">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN" title="List event suppression">
-            <para role="shortdesc">Lists suppressed event id's.
-	    </para>
-        </wadl:doc>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="event_suppression" style="plain" type="xsd:list" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>The list of suppressed event types.</para>
-                    </wadl:doc>
-                </param>
-                &EventSuppressionListShowParameters;
-                &commonListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/event_suppression_list-response.json"/>
-                </wadl:doc>
-            </representation>
-        </response>
-        &commonFaults; &getFaults;
-    </method>
-
-    <method name="PATCH" id="modifyEventSuppression">
-        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
-            title="Modify event suppression">
-            <para role="shortdesc">Modifies the value of an event suppression.</para>
-        </wadl:doc>
-        <request>
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="suppression_status" style="plain" type="xsd:string" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>The suppression status of an event suppression; <code>suppressed</code> or <code>unsuppressed</code></para>
-                    </wadl:doc>
-                </param>
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/event_suppression_modify-request.json"/>
-                </wadl:doc>
-            </representation>
-        </request>
-        <response status="200">
-            <representation mediaType="application/xml">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                </wadl:doc>
-                <param xmlns="http://wadl.dev.java.net/2009/02"
-                    name="event_suppression" style="plain" type="xsd:list" >
-                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
-                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
-                        <para>URIs to the modified event suppression.
-                             </para>
-                    </wadl:doc>
-                </param>
-                &EventSuppressionListShowParameters;
-                &commonListShowParameters;
-            </representation>
-            <representation mediaType="application/json">
-                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
-                    <xsdxt:code href="api_samples/event_suppression_modify-response.json"/>
                 </wadl:doc>
             </representation>
         </response>
@@ -7643,6 +7286,77 @@ OAM Controller-1 IP Address.</para>
             </representation>
         </response>
         &commonFaults; &getFaults;
+    </method>
+
+
+    <!-- ..................................................... -->
+    <!-- ..  Label                                          .. -->
+    <!-- ..................................................... -->
+
+    <method name="POST" id="assignLabel">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Assign label to a host">
+            <para role="shortdesc">Assign label to a host.</para>
+        </wadl:doc>
+        <request>
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                <param xmlns="http://wadl.dev.java.net/2009/02"
+                    name="label" style="plain" type="xsd:string" >
+                    <wadl:doc xmlns="http://docbook.org/ns/docbook"
+                        xmlns:wadl="http://wadl.dev.java.net/2009/02" xml:lang="EN">
+                        <para>This parameter specifies the label key value pairs.
+                        </para>
+                    </wadl:doc>
+                </param>
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/host_label_assign-request.json"/>
+                </wadl:doc>
+            </representation>
+        </request>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+            </representation>
+        </response>
+        &commonFaults; &postPutFaults;
+    </method>
+
+    <method name="GET" id="listLabel">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="List label for a host">
+            <para role="shortdesc">List host label.</para>
+        </wadl:doc>
+        <response status="200">
+            <representation mediaType="application/xml">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+                &labelListParameters;
+            </representation>
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                    <xsdxt:code href="api_samples/host_label_list-response.json"/>
+                </wadl:doc>
+            </representation>
+        </response>
+        &commonFaults; &getFaults;
+    </method>
+
+    <method name="DELETE" id="removeLabel">
+        <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN"
+            title="Remove label from a host">
+            <para role="shortdesc">Remove label from a host.</para>
+        </wadl:doc>
+        <response status="204">
+            <representation mediaType="application/json">
+                <wadl:doc xmlns="http://docbook.org/ns/docbook" xml:lang="EN">
+                </wadl:doc>
+            </representation>
+        </response>
     </method>
 
 </application>

@@ -1,7 +1,6 @@
 VERSION=2.9.1
 TAR_NAME=helm
 TAR="$TAR_NAME-v$VERSION-linux-amd64.tar.gz"
-#COPY_LIST="${CGCS_BASE}/downloads/$TAR ${CGCS_BASE}/downloads/tiller-2.9.1-docker-image.tgz"
-COPY_LIST="${CGCS_BASE}/downloads/$TAR"
+COPY_LIST="${CGCS_BASE}/downloads/$TAR $FILES_BASE/*"
 
-TIS_PATCH_VER=2
+TIS_PATCH_VER=3

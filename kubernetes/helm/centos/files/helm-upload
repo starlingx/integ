@@ -1,0 +1,79 @@
+#!/bin/bash
+
+#
+# Copyright (c) 2018 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This script takes the names of packaged helm charts as arguments.
+# It installs them in the on-node helm chart repository and regenerates
+# the repository index.
+
+
+# We want to run as the "www" user and scripts can't be setuid.  The
+# sudoers permissions are set up to allow wrsroot to run this script
+# as the "www" user without a password.
+if [ $USER != "www" ]; then
+    exec sudo -u www $0 $@
+fi
+
+
+RETVAL=0
+REINDEX=0
+
+REPO_DIR='/www/pages/helm_charts'
+
+for FILE in "$@"; do
+    if [ -r $FILE ]; then
+        # QUESTION:  should we disallow overwriting an existing file?
+        # The versions are embedded in the filename, so it shouldn't
+        # cause problems.
+        cp $FILE $REPO_DIR
+        if [ $? -ne 0 ]; then
+            echo Problem adding $FILE to helm chart registry.
+            RETVAL=1
+        else
+            REINDEX=1
+        fi
+    else
+        echo Cannot read file ${FILE}.
+        RETVAL=1
+    fi
+done
+
+
+# Now re-index the helm repository if we successfully copied in
+# any new charts.
+if [ $REINDEX -eq 1 ]; then
+    /usr/sbin/helm repo index $REPO_DIR
+fi
+
+if [ ! -f "/etc/platform/simplex" ]; then
+    # We're not a one node system, copy the files to the other
+    # controller if we can
+    if [ $HOSTNAME == "controller-0" ]; then
+        TARGET="controller-1"
+    else
+        TARGET="controller-0"
+    fi
+
+    # We've modified etc/rsyncd.conf to allow access to /www/helm_charts
+    # To avoid races, copy over the index file last.
+    rsync -acv --exclude=index.yaml ${REPO_DIR}/ rsync://${TARGET}/helm_charts
+    if [ $? -ne 0 ]; then
+        echo Problem syncing helm charts to $TARGET
+        RETVAL=1
+    fi
+
+    rsync -acv ${REPO_DIR}/index.yaml rsync://${TARGET}/helm_charts
+    if [ $? -ne 0 ]; then
+        echo Problem syncing helm chart index file to $TARGET
+        RETVAL=1
+    fi
+fi
+
+# We also need to sync the helm charts on node startup
+# in case they were added while the node was down.
+
+exit $RETVAL

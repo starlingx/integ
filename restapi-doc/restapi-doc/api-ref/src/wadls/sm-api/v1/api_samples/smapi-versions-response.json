@@ -1,0 +1,24 @@
+{
+   "default_version": {
+      "id": "v1",
+      "links": [
+         {
+            "href": "http://10.10.10.2:7777/v1/",
+            "rel": "self"
+         }
+      ]
+   },
+   "version": [
+      {
+         "id": "v1",
+         "links": [
+            {
+               "href": "http://10.10.10.2:7777/v1/",
+               "rel": "self"
+            }
+         ]
+      }
+   ],
+   "name": "System Management API",
+   "description": "System Management API from Wind River"
+}
