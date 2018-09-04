@@ -1,0 +1,32 @@
+From a8fc00f7d84327284643f70638da2201327bdd10 Mon Sep 17 00:00:00 2001
+From: Bin Qian <bin.qian@windriver.com>
+Date: Wed, 29 Aug 2018 11:22:32 -0400
+Subject: [PATCH 1/1] ipaddr2 avoid failing when svc i/f down
+
+---
+ SPECS/resource-agents.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
+index aa06c49..0eca09f 100644
+--- a/SPECS/resource-agents.spec
++++ b/SPECS/resource-agents.spec
+@@ -257,6 +257,7 @@ Patch1118: ipaddr2_if_down.patch
+ Patch1119: ipaddr2_ignore_lo_if_state.patch
+ Patch1120: Modify-error-code-of-bz1454699-fix-to-prevent-inactive-controller-reboot-loop.patch
+ Patch1121: Re-enable-background-execution-of-arp-commands.patch
++Patch1122: ipaddr2-avoid-failing-svc-if-down.patch
+ 
+ Obsoletes:	heartbeat-resources <= %{version}
+ Provides:	heartbeat-resources = %{version}
+@@ -568,6 +569,7 @@ exit 1
+ %patch1119 -p1
+ %patch1120 -p1
+ %patch1121 -p1
++%patch1122 -p1
+ 
+ %build
+ if [ ! -f configure ]; then
+-- 
+1.8.3.1
+
