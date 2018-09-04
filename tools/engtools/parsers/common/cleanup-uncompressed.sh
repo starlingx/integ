@@ -22,8 +22,7 @@ YEAR=`date +'%Y'`
 files="${FILE_LIST// /, }"
 read -p "Are you sure you want to remove all uncompressed $files files? [Y/N]: " -n 1 -r
 echo
-if [[ $REPLY =~ ^[Y]$ ]]
-then
+if [[ $REPLY =~ ^[Y]$ ]]; then
     for FILE in ${FILE_LIST}; do
         rm -v */*_${YEAR}-*${FILE}
     done

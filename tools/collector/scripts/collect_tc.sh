@@ -27,8 +27,8 @@ fi
 delimiter ${LOGFILE} "ip link"
 ip link >> ${LOGFILE}
 
-for i in $(ip link | grep mtu | grep eth |awk '{print $2}' | sed 's#:##g');
-do
+for i in $(ip link | grep mtu | grep eth |awk '{print $2}' | sed 's#:##g'); do
+
     delimiter ${LOGFILE} "ethtool ${i}"
     ethtool ${i} >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 
@@ -55,8 +55,8 @@ fi
 delimiter ${LOGFILE} "tc qdisc show"
 tc qdisc show >> ${LOGFILE}
 
-for i in $(ip link | grep htb | awk '{print $2}' | sed 's#:##g');
-do
+for i in $(ip link | grep htb | awk '{print $2}' | sed 's#:##g'); do
+
     delimiter ${LOGFILE} "tc class show dev ${i}"
     tc class show dev ${i} >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 
@@ -70,8 +70,8 @@ done
 delimiter ${LOGFILE} "tc -s qdisc show"
 tc -s qdisc show >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 
-for i in $(ip link | grep htb | awk '{print $2}' | sed 's#:##g');
-do
+for i in $(ip link | grep htb | awk '{print $2}' | sed 's#:##g'); do
+
     delimiter ${LOGFILE} "tc -s class show dev ${i}"
     tc -s class show dev ${i} >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 

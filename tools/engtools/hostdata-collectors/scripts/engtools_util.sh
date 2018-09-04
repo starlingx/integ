@@ -24,8 +24,7 @@ else
     . /etc/init.d/functions
 fi
 # Lightweight replacement for pidofproc -p <pid>
-function check_pidfile ()
-{
+function check_pidfile {
     local pidfile pid
 
     OPTIND=1
@@ -53,8 +52,7 @@ function check_pidfile ()
 }
 
 # tools_init - initialize tool resources
-function tools_init ()
-{
+function tools_init {
     local rc=0
     local error=0
     TOOLNAME=$(basename $0)
@@ -199,7 +197,7 @@ function tools_init ()
 }
 
 # tools_cleanup() - terminate child processes
-function tools_cleanup() {
+function tools_cleanup {
   # restore signal handling to default behaviour
     trap - INT HUP TERM EXIT
     trap - USR1 USR2
@@ -230,43 +228,47 @@ function tools_cleanup() {
 }
 
 # tools_exit_handler() - exit handler routine
-function tools_exit_handler() {
+function tools_exit_handler {
     TOOL_EXIT_SIGNAL=1
     tools_cleanup 128
 }
 # tools_usr1_handler() - USR1 handler routine
-function tools_usr1_handler() {
+function tools_usr1_handler {
     TOOL_USR1_SIGNAL=1
     LOG "caught USR1"
 }
 # tools_usr2_handler() - USR2 handler routine
-function tools_usr2_handler() {
+function tools_usr2_handler {
     TOOL_USR2_SIGNAL=1
     LOG "caught USR1"
 }
 
 # LOG(), WARNLOG(), ERRLOG() - simple print log functions (not logger)
-function LOG ()
-{
+function LOG {
     local tstamp_H=$( date +"%Y-%0m-%0e %H:%M:%S" )
     echo "${tstamp_H} ${HOSTNAME} $0($$): $@";
 }
-function LOG_NOCR ()
-{
+
+function LOG_NOCR {
     local tstamp_H=$( date +"%Y-%0m-%0e %H:%M:%S" )
     echo -n "${tstamp_H} ${HOSTNAME} $0($$): $@";
 }
-function WARNLOG () { LOG "WARN $@"; }
-function ERRLOG ()  { LOG "ERROR $@"; }
+
+function WARNLOG {
+    LOG "WARN $@";
+}
+
+function ERRLOG {
+    LOG "ERROR $@";
+}
 
 # TOOL_HIRES_TIME() - easily parsed date/timestamp and hi-resolution uptime
-function TOOL_HIRES_TIME()
-{
+function TOOL_HIRES_TIME {
     echo "time: " $( ${DATE} +"%a %F %H:%M:%S.%N %Z %z" ) "uptime: " $( cat /proc/uptime )
 }
 
 # set_affinity() - set affinity for current script if a a CPULIST is defined
-function set_affinity() {
+function set_affinity {
     local CPULIST=$1
     if [ -z "${CPULIST}" ]; then
         return
@@ -280,7 +282,7 @@ function set_affinity() {
 }
 
 # cmd_idle_priority() - command to set nice + ionice
-function cmd_idle_priority() {
+function cmd_idle_priority {
     local NICE=""
     local IONICE=""
 
@@ -301,13 +303,13 @@ function cmd_idle_priority() {
 
 
 # print_separator() - print a horizontal separation line '\u002d' is '-'
-function print_separator () {
+function print_separator {
     printf '\u002d%.s' {1..80}
     printf '\n'
 }
 
 # tools_header() - print out common GenWare tools header
-function tools_header() {
+function tools_header {
     local TOOLNAME=$(basename $0)
 
   # Get timestamp
@@ -393,7 +395,7 @@ function tools_header() {
 
 
 # tools_usage() - show generic tools tool usage
-function tools_usage() {
+function tools_usage {
     if [  ${OPT_USE_INTERVALS} -eq 1 ]; then
         echo "usage: ${TOOLNAME} [-f] [-p <period_mins>] [-i <interval_seconds>] [-c <cpulist>] [-h]"
     else
@@ -402,7 +404,7 @@ function tools_usage() {
 }
 
 # tools_print_help() - print generic tool help
-function tools_print_help() {
+function tools_print_help {
     tools_usage
     echo
     echo "Options:";
@@ -423,7 +425,7 @@ function tools_print_help() {
 }
 
 # tools_parse_options() -- parse common options for tools scripts
-function tools_parse_options() {
+function tools_parse_options {
   # check for no arguments, print usage
     if [ $# -eq "0" ]; then
         tools_usage
@@ -432,8 +434,7 @@ function tools_parse_options() {
     fi
 
   # parse the input arguments
-    while getopts "fp:i:c:h" Option
-    do
+    while getopts "fp:i:c:h" Option; do
     case $Option in
     f)
         OPT_FOREVER=1

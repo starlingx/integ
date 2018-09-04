@@ -12,8 +12,7 @@ source /usr/local/sbin/collect_utils
 LOGFILE="${extradir}/nfv-vim.info"
 echo    "${hostname}: NFV-Vim Info ......: ${LOGFILE}"
 
-function is_service_active()
-{
+function is_service_active {
     active=`sm-query service vim | grep "enabled-active"`
     if [ -z "$active" ] ; then
         return 0

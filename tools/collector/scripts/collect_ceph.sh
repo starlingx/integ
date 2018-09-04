@@ -14,8 +14,7 @@ SERVICE="ceph"
 LOGFILE="${extradir}/ceph.info"
 echo    "${hostname}: Ceph Info .........: ${LOGFILE}"
 
-function is_service_active()
-{
+function is_service_active {
     active=`sm-query service management-ip | grep "enabled-active"`
     if [ -z "$active" ] ; then
         return 0
@@ -24,8 +23,7 @@ function is_service_active()
     fi
 }
 
-function exit_if_timeout()
-{
+function exit_if_timeout {
     if [ "$?" = "124" ] ; then
         echo "Exiting due to ceph command timeout" >> ${LOGFILE}
         exit 0

@@ -19,8 +19,7 @@ DB_DIR="${extradir}/database"
 LOGFILE="${extradir}/database.info"
 echo    "${hostname}: Database Info .....: ${LOGFILE}"
 
-function is_service_active()
-{
+function is_service_active {
     active=`sm-query service postgres | grep "enabled-active"`
     if [ -z "$active" ] ; then
         return 0
@@ -34,11 +33,9 @@ function is_service_active()
 ###############################################################################
 mkdir -p ${DB_DIR}
 
-function log_database()
-{
+function log_database {
     db_list=( $(${PSQL_CMD} -t -c "SELECT datname FROM pg_database WHERE datistemplate = false;") )
-    for db in "${db_list[@]}"
-    do
+    for db in "${db_list[@]}"; do
         echo "postgres database: ${db}"
         ${PSQL_CMD} -d ${db} -c "
         SELECT
@@ -75,12 +72,10 @@ function log_database()
 
 
 DB_EXT=db.sql.txt
-function database_dump()
-{
+function database_dump {
     mkdir -p ${DB_DIR}
     db_list=( $(${PSQL_CMD} -t -c "SELECT datname FROM pg_database WHERE datistemplate = false;") )
-    for DB in "${db_list[@]}"
-    do
+    for DB in "${db_list[@]}"; do
         if [ "$DB" != "keystone" -a "$DB" != "ceilometer" ] ; then
             echo "${hostname}: Dumping Database ..: ${DB_DIR}/$DB.$DB_EXT"
             (cd ${DB_DIR} ; sudo -u postgres pg_dump $DB > $DB.$DB_EXT)

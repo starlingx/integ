@@ -14,8 +14,7 @@ fi
 OPT_USE_INTERVALS=1
 
 # Print key networking device statistics
-function print_vswitch()
-{
+function print_vswitch {
     print_separator
     TOOL_HIRES_TIME
 
@@ -55,8 +54,7 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
+for ((rep=1; rep <= REPEATS ; rep++)); do
     print_vswitch
     sleep ${INTERVAL_SEC}
 done

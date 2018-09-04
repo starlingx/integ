@@ -14,8 +14,7 @@ fi
 OPT_USE_INTERVALS=1
 
 # Print key networking device statistics
-function print_postgres()
-{
+function print_postgres {
     print_separator
     TOOL_HIRES_TIME
 
@@ -40,8 +39,7 @@ ORDER BY pg_database_size DESC;
 "
 
   # For each database, list tables and their sizes (similar to "\dt+")
-    for db in "${db_list[@]}"
-    do
+    for db in "${db_list[@]}"; do
     ${ECHO} "# postgres database: ${db}"
     ${PSQL} -d ${db} -c "
 SELECT
@@ -128,8 +126,7 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
+for ((rep=1; rep <= REPEATS ; rep++)); do
     print_postgres
     sleep ${INTERVAL_SEC}
 done

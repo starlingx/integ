@@ -16,8 +16,7 @@ PAGE_SIZE=$(getconf PAGE_SIZE)
 OPT_USE_INTERVALS=1
 
 # Print key networking device statistics
-function print_memory()
-{
+function print_memory {
   # Configuration for netcmds
     MEMINFO=/proc/meminfo
     NODEINFO=/sys/devices/system/node/node?/meminfo
@@ -99,8 +98,7 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
+for ((rep=1; rep <= REPEATS ; rep++)); do
     print_memory
     sleep ${INTERVAL_SEC}
 done

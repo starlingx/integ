@@ -69,8 +69,7 @@ case $1 in
     stop)
     if [ -e ${PIDFILE} ]; then
         pids=$(pidof -x ${NAME})
-        if [[ ! -z "${pids}" ]]
-        then
+        if [[ ! -z "${pids}" ]]; then
             echo_success "Stopping ${NAME} [$pid]"
             start-stop-daemon --stop --quiet --oknodo --pidfile ${PIDFILE} --retry=TERM/3/KILL/5
             # [ JGAULD: none of the following should be necessary ]

@@ -14,8 +14,7 @@ fi
 OPT_USE_INTERVALS=1
 
 # Print key networking device statistics
-function print_netcmds()
-{
+function print_netcmds {
   # Configuration for netcmds
     DEV=/proc/net/dev
     NETSTAT=/proc/net/netstat
@@ -26,8 +25,7 @@ function print_netcmds()
     for net in \
     ${DEV} ${NETSTAT}
     do
-        if [ -e "${net}" ]
-        then
+        if [ -e "${net}" ]; then
             ${ECHO} "# ${net}"
             ${CAT} ${net}
             ${ECHO}
@@ -53,8 +51,7 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
+for ((rep=1; rep <= REPEATS ; rep++)); do
     print_netcmds
     sleep ${INTERVAL_SEC}
 done

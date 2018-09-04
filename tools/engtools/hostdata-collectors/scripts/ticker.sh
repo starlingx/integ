@@ -29,8 +29,7 @@ set_affinity ${CPULIST}
 
 LOG_NOCR "collecting "
 t=0
-for ((rep=1; rep <= REPEATS ; rep++))
-do
+for ((rep=1; rep <= REPEATS ; rep++)); do
     ((t++))
     sleep ${INTERVAL_SEC}
     if [ ${t} -ge ${REP_LOG} ]; then

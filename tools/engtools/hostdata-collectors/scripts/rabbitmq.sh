@@ -15,8 +15,7 @@ OPT_USE_INTERVALS=1
 #Need this workaround
 MQOPT="-n rabbit@localhost"
 # Print key networking device statistics
-function print_rabbitmq()
-{
+function print_rabbitmq {
     print_separator
     TOOL_HIRES_TIME
 
@@ -72,8 +71,7 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
+for ((rep=1; rep <= REPEATS ; rep++)); do
     print_rabbitmq
     sleep ${INTERVAL_SEC}
 done

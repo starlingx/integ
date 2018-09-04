@@ -17,16 +17,14 @@
 PARSERDIR=$(dirname $0)
 . ${PARSERDIR}/parse-util.sh
 
-function print_usage()
-{
+function print_usage {
     echo "Usage: ./parse-schedtop.sh <host-name>"
     echo "       ./parse-schedtop.sh <host-name> <service-name>"
     echo "e.g. >./parse-schedtop.sh controller-0 nova-conductor"
     exit 1
 }
 
-function sedit()
-{
+function sedit {
     local FILETOSED=$1
     sed -i -e "s/  */ /g" ${FILETOSED}
     sed -i -e "s/ /,/2g" ${FILETOSED}
@@ -34,8 +32,7 @@ function sedit()
     sed -i "s/,$//" ${FILETOSED}
 }
 
-function parse_schedtop_data()
-{
+function parse_schedtop_data {
     HOST=$1
     SERVICE=$2
     LOG "Parsing ${SERVICE} schedtop for host ${HOST}"
