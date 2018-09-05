@@ -6,3 +6,6 @@
             voting: false
         - openstack-tox-linters:
             voting: false
+    gate:
+      jobs:
+        - noop
