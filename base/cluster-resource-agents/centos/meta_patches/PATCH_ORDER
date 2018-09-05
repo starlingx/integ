@@ -11,3 +11,4 @@ spec-add-ipaddr2-ignore-lo-state.patch
 Modify-error-code-of-bz1454699-fix-to-prevent-inactive-controller-reboot-loop.patch
 Disable-creation-of-the-debug-package.patch
 metapatch-for-arp_bg.patch
+ipaddr2-avoid-failing-svc-if-down-meta.patch
