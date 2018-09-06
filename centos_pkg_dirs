@@ -97,7 +97,6 @@ security/tboot
 networking/mellanox/libibverbs
 kernel/kernel-modules/mlnx-ofa_kernel
 networking/mellanox/rdma-core
-base/memcached
 config/puppet-modules/openstack/puppet-memcached-3.0.2
 config/puppet-modules/openstack/puppet-horizon-9.5.0
 config/puppet-modules/openstack/puppet-swift-11.3.0

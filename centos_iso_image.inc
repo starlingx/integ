@@ -104,6 +104,7 @@ collector
 # platform-util
 platform-util
 platform-util-noncontroller
+platform-util-controller
 
 # monitor-tools
 monitor-tools
