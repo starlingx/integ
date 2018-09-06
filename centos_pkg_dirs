@@ -89,8 +89,8 @@ python/python-requests
 base/systemd
 python/python-gunicorn
 config/puppet-modules/openstack/puppet-oslo-11.3.0
-strorage-drivers/python-3parclient
-strorage-drivers/python-lefthandclient
+storage-drivers/python-3parclient
+storage-drivers/python-lefthandclient
 networking/iproute
 security/tboot
 networking/mellanox/libibverbs
