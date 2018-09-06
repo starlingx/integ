@@ -13,7 +13,7 @@ import datetime
 import psutil
 import fcntl
 import logging
-import ConfigParser
+from six.moves import configparser
 import itertools
 import six
 from multiprocessing import Process, cpu_count
@@ -1349,7 +1349,7 @@ if __name__ == "__main__":
     all_services = ""
     fast_postgres_connections = False
     fast_postgres = ""
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
 
     node = os.popen("hostname").read().strip("\n")
 
