@@ -34,7 +34,6 @@ base/shadow-utils
 security/shim-unsigned
 security/shim-signed
 logging/syslog-ng
-base/novnc
 base/sanlock
 base/sudo
 virt/cloud-init
