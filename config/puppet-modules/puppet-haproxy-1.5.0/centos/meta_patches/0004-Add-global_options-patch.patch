@@ -8,7 +8,7 @@ Subject: [PATCH] Add global_options patch
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/puppet-haproxy.spec b/SPECS/puppet-haproxy.spec
-index a0a9be1..a446384 100644
+index 106ae3e..fb11c75 100644
 --- a/SPECS/puppet-haproxy.spec
 +++ b/SPECS/puppet-haproxy.spec
 @@ -17,6 +17,7 @@ URL:            https://github.com/puppetlabs/puppetlabs-haproxy
@@ -28,5 +28,5 @@ index a0a9be1..a446384 100644
  find . -type f -name ".*" -exec rm {} +
  find . -size 0 -exec rm {} +
 -- 
-1.8.3.1
+2.7.4
 
