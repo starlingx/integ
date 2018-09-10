@@ -1,7 +1,7 @@
-From 4bea2840e8b22d904be29d24d501c25201e13c57 Mon Sep 17 00:00:00 2001
+From 1c4a8d83d96eab943d1cb7b4f0d9b7175e6858f1 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 20 Mar 2017 10:21:28 -0400
-Subject: [PATCH 3/4] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/lighttpd.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
-index 71737ac..b795a3f 100644
+index 2f7b261..2553b27 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
 @@ -45,7 +45,7 @@
  Summary: Lightning fast webserver with light system requirements
  Name: lighttpd
- Version: 1.4.45
+ Version: 1.4.50
 -Release: 1%{?dist}
 +Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
  License: BSD
  Group: System Environment/Daemons
  URL: http://www.lighttpd.net/
 -- 
-1.8.3.1
+2.7.4
 
