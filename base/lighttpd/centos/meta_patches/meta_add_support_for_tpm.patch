@@ -1,7 +1,7 @@
 From 653e25505b1df7e7b3fd89e08729d6d9f9698d39 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Tue, 28 Mar 2017 17:33:34 -0400
-Subject: [PATCH] dding support for TPM 2.0
+Subject: [PATCH] Adding support for TPM 2.0
 
 ---
  SPECS/lighttpd.spec | 2 ++
