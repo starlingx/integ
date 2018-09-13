@@ -41,8 +41,7 @@ LOG "rsync engtools data from all blades:"
 # controllers
 SRC=/scratch/syseng_data/
 DEST=/opt/backups/syseng_data/
-for HOST in ${CONTROLLER[@]}
-do
+for HOST in ${CONTROLLER[@]}; do
     ping -c1 ${HOST} 1>/dev/null 2>/dev/null
     if [ $? -eq 0 ]; then
         LOG "rsync ${RSYNC_OPT} ${USER}@${HOST}:${SRC} ${DEST}"
@@ -55,8 +54,7 @@ done
 # computes & storage
 SRC=/tmp/syseng_data/
 DEST=/opt/backups/syseng_data/
-for HOST in ${STORAGE[@]} ${COMPUTE[@]}
-do
+for HOST in ${STORAGE[@]} ${COMPUTE[@]}; do
     ping -c1 ${HOST} 1>/dev/null 2>/dev/null
     if [ $? -eq 0 ]; then
         LOG "rsync ${RSYNC_OPT} ${USER}@${HOST}:${SRC} ${DEST}"

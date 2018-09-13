@@ -14,8 +14,7 @@ fi
 OPT_USE_INTERVALS=1
 
 # Print disk summary
-function print_disk()
-{
+function print_disk {
     print_separator
     TOOL_HIRES_TIME
 
@@ -57,8 +56,7 @@ function print_disk()
 }
 
 # Print disk static summary
-function print_disk_static()
-{
+function print_disk_static {
     print_separator
     cmd='cat /proc/scsi/scsi'
     ${ECHO} "Attached devices: ${cmd}"
@@ -109,8 +107,7 @@ print_disk_static
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
+for ((rep=1; rep <= REPEATS ; rep++)); do
     print_disk
     sleep ${INTERVAL_SEC}
 done

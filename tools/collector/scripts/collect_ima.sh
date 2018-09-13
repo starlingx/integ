@@ -10,8 +10,7 @@
 source /usr/local/sbin/collect_parms
 source /usr/local/sbin/collect_utils
 
-function is_extended_profile()
-{
+function is_extended_profile {
     if [ ! -n "${security_profile}" ] || [ "${security_profile}" != "extended" ]; then
         return 0
     else

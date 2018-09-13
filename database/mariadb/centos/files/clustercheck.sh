@@ -43,8 +43,7 @@ fi
 WSREP_STATUS=$($MYSQL_CMDLINE -e "SHOW STATUS LIKE 'wsrep_local_state';" \
     2>${ERR_FILE} | tail -1 2>>${ERR_FILE})
 
-if [[ "${WSREP_STATUS}" == "4" ]] || [[ "${WSREP_STATUS}" == "2" && ${AVAILABLE_WHEN_DONOR} == 1 ]]
-then
+if [[ "${WSREP_STATUS}" == "4" ]] || [[ "${WSREP_STATUS}" == "2" && ${AVAILABLE_WHEN_DONOR} == 1 ]]; then
     # Check only when set to 0 to avoid latency in response.
     if [[ $AVAILABLE_WHEN_READONLY -eq 0 ]];then
         READ_ONLY=$($MYSQL_CMDLINE -e "SHOW GLOBAL VARIABLES LIKE 'read_only';" \

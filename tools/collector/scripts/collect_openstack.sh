@@ -10,8 +10,7 @@
 source /usr/local/sbin/collect_parms
 source /usr/local/sbin/collect_utils
 
-function is_service_active()
-{
+function is_service_active {
     active=`sm-query service rabbit-fs | grep "enabled-active"`
     if [ -z "$active" ] ; then
         return 0

@@ -59,7 +59,9 @@ start() {
 }
 
 stop() {
-    if [ ! -e $PIDFILE ]; then return; fi
+    if [ ! -e $PIDFILE ]; then
+        return
+    fi
 
     echo -n "Stopping $DESC..."
 
@@ -73,8 +75,7 @@ stop() {
     remove_TPM_transients
 }
 
-status()
-{
+status() {
     pid=`cat $PIDFILE 2>/dev/null`
     if [ -n "$pid" ]; then
         if ps -p $pid &>/dev/null ; then

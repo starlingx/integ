@@ -32,14 +32,12 @@ LOG "Cleanup engtools:"
 # ( be sure not to clobber /etc/init.d/collect-engtools.sh )
 LOG "kill processes brute force"
 pids=( $(pidof -x /usr/local/bin/collect-engtools.sh) )
-if [ ${#pids[@]} -ne 0 ]
-then
+if [ ${#pids[@]} -ne 0 ]; then
     LOG "killing: ${pids[@]}"
-    for pid in ${pids[@]}
-    do
-    LOG "kill: [ ${pid} ] "
-    pkill -KILL -P ${pid}
-    kill -9 ${pid}
+    for pid in ${pids[@]}; do
+        LOG "kill: [ ${pid} ] "
+        pkill -KILL -P ${pid}
+        kill -9 ${pid}
     done
     pkill -KILL iostat
     pkill -KILL top
@@ -48,8 +46,7 @@ else
 fi
 
 LOG "remove pidfiles"
-for TOOL in "${TOOLS[@]}"
-do
+for TOOL in "${TOOLS[@]}"; do
     rm -f -v /var/run/${TOOL}.pid
 done
 LOG "done"

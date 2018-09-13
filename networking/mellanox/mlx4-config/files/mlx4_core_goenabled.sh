@@ -12,13 +12,11 @@ NAME=$(basename $0)
 OPTIONS_CHANGED_FLAG=/var/run/.mlx4_cx3_reboot_required
 COMPUTE_CONFIG_COMPLETE=/var/run/.compute_config_complete
 
-function LOG()
-{
+function LOG {
     logger "$NAME: $*"
 }
 
-if [ -f $OPTIONS_CHANGED_FLAG ] && [ -f $COMPUTE_CONFIG_COMPLETE ]
-then
+if [ -f $OPTIONS_CHANGED_FLAG ] && [ -f $COMPUTE_CONFIG_COMPLETE ]; then
     LOG "mlx4_core options has been changed. Failing goenabled check."
     exit 1
 fi

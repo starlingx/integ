@@ -27,30 +27,26 @@ should_initialize ()
 
 # If two args given first is user, second is group
 # otherwise the arg is the systemd service file
-if [ "$#" -eq 2 ]
-then
+if [ "$#" -eq 2 ]; then
     myuser="$1"
     mygroup="$2"
 else
     # Absorb configuration settings from the specified systemd service file,
     # or the default service if not specified
     SERVICE_NAME="$1"
-    if [ x"$SERVICE_NAME" = x ]
-    then
+    if [ x"$SERVICE_NAME" = x ]; then
         SERVICE_NAME=@DAEMON_NAME@.service
     fi
 
     myuser=`systemctl show -p User "${SERVICE_NAME}" |
         sed 's/^User=//'`
-    if [ x"$myuser" = x ]
-    then
+    if [ x"$myuser" = x ]; then
         myuser=mysql
     fi
 
     mygroup=`systemctl show -p Group "${SERVICE_NAME}" |
         sed 's/^Group=//'`
-    if [ x"$mygroup" = x ]
-    then
+    if [ x"$mygroup" = x ]; then
         mygroup=mysql
     fi
 fi
@@ -79,8 +75,7 @@ chmod 0640 "$errlogfile"
 if should_initialize "$datadir" ; then
     # First, make sure $datadir is there with correct permissions
     # (note: if it's not, and we're not root, this'll fail ...)
-    if [ ! -e "$datadir" -a ! -h "$datadir" ]
-    then
+    if [ ! -e "$datadir" -a ! -h "$datadir" ]; then
         mkdir -p "$datadir" || exit 1
     fi
     chown "$myuser:$mygroup" "$datadir"

@@ -8,19 +8,16 @@
 #LOGFILE="${PARSERDIR}/parserlog.txt"
 LOGFILE="parserlog.txt"
 
-function LOG ()
-{
+function LOG {
     local tstamp_H=$( date +"%Y-%0m-%0e %H:%M:%S" )
     echo -e "${tstamp_H} $0($$): $@" >> ${LOGFILE}
 }
 
-function ERRLOG ()
-{
+function ERRLOG {
     LOG "ERROR: $@"
 }
 
-function WARNLOG ()
-{
+function WARNLOG {
     LOG "WARN: $@"
 }
 

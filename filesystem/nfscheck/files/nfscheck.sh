@@ -12,12 +12,10 @@ MOUNT=/opt/platform
 previous=1
 delay=60
 
-while :
-do
+while : ; do
     # First, check that it's actually an NFS mount
     mount | grep -q $MOUNT
-    if [ $? -ne 0 ]
-    then
+    if [ $? -ne 0 ]; then
         logger -t NFSCHECK "$MOUNT is not mounted"
         previous=1
         sleep $delay
@@ -31,18 +29,15 @@ do
     # At this point, jobs will either report no jobs (empty) or Done,
     # unless the job is still running/hung
     rc=$(jobs)
-    if [[ -z "$rc" || $rc =~ "Done" ]]
-    then
+    if [[ -z "$rc" || $rc =~ "Done" ]]; then
         # NFS is successful
-        if [ $previous -ne 0 ]
-        then
+        if [ $previous -ne 0 ]; then
             logger -t NFSCHECK "NFS test of $MOUNT is ok"
             previous=0
         fi
     else
         # Keep waiting until the job is done
-        while ! [[ -z "$rc" || $rc =~ "Done" ]]
-        do
+        while ! [[ -z "$rc" || $rc =~ "Done" ]]; do
             logger -t NFSCHECK "NFS test of $MOUNT is failed"
             previous=1
             sleep $delay

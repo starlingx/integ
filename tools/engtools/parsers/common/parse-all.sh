@@ -41,8 +41,7 @@ NODE=$1
 CURDATE=$(date)
 DATESTAMP=$(date +%b-%d)
 
-function sedit()
-{
+function sedit {
     local FILETOSED=$1
     sed -i -e "s/  */ /g" ${FILETOSED}
     sed -i -e "s/ /,/g" ${FILETOSED}
@@ -50,8 +49,7 @@ function sedit()
     sed -i "s/,$//" ${FILETOSED}
 }
 
-function get_filename_from_mountname()
-{
+function get_filename_from_mountname {
     local name=$1
     local fname
     if test "${name#*"scratch"}" != "${name}"; then
@@ -82,8 +80,7 @@ function get_filename_from_mountname()
     echo $fname
 }
 
-function parse_process_schedtop_data()
-{
+function parse_process_schedtop_data {
     # Logic has been moved to a separate script so that parsing process level schedtop
     # can be run either as part of parse-all.sh script or independently.
     LOG "Process level schedtop parsing is turned on in lab.conf. Parsing schedtop detail..."
@@ -92,8 +89,7 @@ function parse_process_schedtop_data()
     cd ${NODE}
 }
 
-function parse_controller_specific()
-{
+function parse_controller_specific {
     # Parsing Postgres data, removing data from previous run if there are any. Generate summary
     # data for each database and detail data for specified tables
     LOG "Parsing postgres data for ${NODE}"
@@ -123,14 +119,12 @@ function parse_controller_specific()
     done
 }
 
-function parse_compute_specific()
-{
+function parse_compute_specific {
     LOG "Parsing vswitch data for ${NODE}"
     ../parse-vswitch.sh ${NODE}
 }
 
-function parse_occtop_data()
-{
+function parse_occtop_data {
     LOG "Parsing occtop data for ${NODE}"
     bzcat *occtop.bz2 >occtop-${NODE}-${DATESTAMP}.txt
     cp occtop-${NODE}-${DATESTAMP}.txt tmp.txt
@@ -181,8 +175,7 @@ function parse_occtop_data()
     rm tmp.txt tmp2.txt tmpdate.txt tmpcore.txt
 }
 
-function parse_memtop_data()
-{
+function parse_memtop_data {
     LOG "Parsing memtop data for ${NODE}"
     bzcat *memtop.bz2 > memtop-${NODE}-${DATESTAMP}.txt
     cp memtop-${NODE}-${DATESTAMP}.txt tmp.txt
@@ -200,8 +193,7 @@ function parse_memtop_data()
     rm tmp.txt tmp2.txt
 }
 
-function parse_netstats_data()
-{
+function parse_netstats_data {
     LOG "Parsing netstats data for ${NODE}"
     # First generate the summary data then detail data for specified interfaces
     ../parse_netstats *netstats.bz2 > netstats-summary-${NODE}-${DATESTAMP}.txt
@@ -225,8 +217,7 @@ function parse_netstats_data()
     fi
 }
 
-function parse_iostats_data()
-{
+function parse_iostats_data {
     LOG "Parsing iostat data for ${NODE}"
     if [ -z "${IOSTATS_DEVICE_LIST}" ]; then
         ERRLOG "IOSTAT_DEVICE_LIST is not set in host.conf. Skipping iostats..."
@@ -236,8 +227,7 @@ function parse_iostats_data()
             echo "Date/Time,${DEVICE},rqm/s,wrqm/s,r/s,w/s,rkB/s,wkB/s,avgrq-sz,avgqu-sz,await,r_await,w_await,svctm,%util" > iostat-${NODE}-${DEVICE}.csv
             # Dumping iostat content to tmp file
             bzcat *iostat.bz2 | grep -E "/2015|/2016|/2017|${DEVICE}"   | awk '{print $1","$2","$3","$4","$5","$6","$7","$8","$9","$10","$11","$12","$13","$14}' > tmp.txt
-            while IFS= read -r current
-            do
+            while IFS= read -r current; do
                 if test "${current#*Linux}" != "$current"
                 then
            # Skip the line that contains the word "Linux"
@@ -277,8 +267,7 @@ function parse_iostats_data()
     fi
 }
 
-function parse_diskstats_data()
-{
+function parse_diskstats_data {
     LOG "Parsing diskstats data for ${NODE}"
 
     if [ -z "${DISKSTATS_FILESYSTEM_LIST}" ]; then
@@ -362,8 +351,7 @@ if test "${NODE#*"controller"}" != "${NODE}"; then
     # is to use inotify which requires another inotify-tools package.
     oldsize=0
     newsize=0
-    while true
-    do
+    while true; do
         newsize=$(stat -c %s postgres-conns.csv)
         if [ "$oldsize" == "$newsize" ]; then
             break

@@ -19,16 +19,14 @@
 # e.g. >./parse-daily.sh memstats sm-eru
 #      >./parse-daily.sh controller-0 filestats postgress
 
-function print_usage()
-{
+function print_usage {
     echo "Usage: ./parse-daily.sh <parser-name> <process-name> will parse daily data for all hosts."
     echo "Usage: ./parse-daily.sh <host-name> <parser-name> <process-name> will parse daily data for specified host."
     echo "Valid parsers for daily stats are: memstats & filestats."
     exit 1
 }
 
-function parse_daily_stats()
-{
+function parse_daily_stats {
     local PARSER_NAME=$1
     local PROCESS_NAME=$2
     local TMPFILE="tmp.txt"

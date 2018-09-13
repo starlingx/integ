@@ -48,11 +48,9 @@ declare tgt_avail_bytes
 declare tgt_used_bytes
 
 # do_parallel_commands - launch parallel tools with separate output files
-function do_parallel_commands()
-{
+function do_parallel_commands {
     parallel_outfiles=()
-    for elem in "${tlist[@]}"
-    do
+    for elem in "${tlist[@]}"; do
         tool=""; period=""; repeat=""; interval=""
         my_hash="elem[*]"
         local ${!my_hash}
@@ -75,8 +73,7 @@ function do_parallel_commands()
 # get_current_avail_usage() - get output destination file-system usage and
 #                             availability.
 #                           - updates: df_size_bytes, df_avail_bytes, du_used_bytes
-function get_current_avail_usage()
-{
+function get_current_avail_usage {
     local -a df_arr_bytes=( $(df -P --block-size=1 ${TOOL_DEST_DIR} | awk 'NR==2 {print $2, $4}') )
     df_size_bytes=${df_arr_bytes[0]}
     df_avail_bytes=${df_arr_bytes[1]}
@@ -85,8 +82,7 @@ function get_current_avail_usage()
 
 # purge_oldest_files() - remove oldest files based on file-system available space,
 #                        and maximum collection size
-function purge_oldest_files()
-{
+function purge_oldest_files {
   # get current file-system usage
     get_current_avail_usage
     msg=$(printf "avail %d MB, headroom %d MB;  used %d MB, max %d MB" \
@@ -116,8 +112,7 @@ function purge_oldest_files()
 
   # remove files in oldest time sorted order until we meet usage targets,
   # incrementally updating usage as we remve files
-    for file in $( ls -rt ${TOOL_DEST_DIR}/${HOSTNAME}_* 2>/dev/null )
-    do
+    for file in $( ls -rt ${TOOL_DEST_DIR}/${HOSTNAME}_* 2>/dev/null ); do
         if [[ $df_avail_bytes -ge $tgt_avail_bytes ]] && \
             [[ $du_used_bytes  -le $tgt_used_bytes ]]; then
             break
@@ -307,9 +302,7 @@ REP=0
 
 if [ ${#tlist[@]} -ne 0 ]; then
   # Static stats collection is turned on
-    while [[ ${TOOL_USR1_SIGNAL} -eq 0 ]] &&
-        [[ ${OPT_FOREVER} -eq 1 || ${REP} -lt ${REPEATS} ]]
-    do
+    while [[ ${TOOL_USR1_SIGNAL} -eq 0 ]] && [[ ${OPT_FOREVER} -eq 1 || ${REP} -lt ${REPEATS} ]]; do
         # increment loop counter
         ((REP++))
 

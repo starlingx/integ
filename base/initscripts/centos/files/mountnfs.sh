@@ -29,8 +29,7 @@ mount_nfs=no
 mount_smb=no
 mount_ncp=no
 mount_cifs=no
-while read device mountpt fstype options
-do
+while read device mountpt fstype options; do
     case "$device" in
         ""|\#*)
             continue
@@ -70,8 +69,7 @@ done
 
 exec 0>&1
 
-if test "$rpcbind" = yes
-then
+if test "$rpcbind" = yes; then
     # WRL: Centos precheck: Dont start rpcbind in this init script.
     #      It is started by a systemd service file.
     if test "/etc/centos-release" = no
@@ -88,8 +86,7 @@ then
     fi
 fi
 
-if test "$mount_nfs" = yes || test "$mount_smb" = yes || test "$mount_ncp" = yes || test "$mount_cifs" = yes
-then
+if test "$mount_nfs" = yes || test "$mount_smb" = yes || test "$mount_ncp" = yes || test "$mount_cifs" = yes; then
     echo "Mounting remote filesystems..."
     test "$mount_nfs" = yes && mount -a -t nfs
     test "$mount_smb" = yes && mount -a -t smbfs

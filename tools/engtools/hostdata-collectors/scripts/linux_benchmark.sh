@@ -29,8 +29,7 @@ compute_ports=(8000 8001 8002)
 traffic_types=(storage migration default drbd)
 flow_ids=(1:20 1:30 1:40 1:50)
 
-function exec_cmd ()
-{
+function exec_cmd {
     node="$1"
     cmd="$2"
 
@@ -41,8 +40,7 @@ function exec_cmd ()
     fi
 }
 
-function iperf3_server_start ()
-{
+function iperf3_server_start {
     local server="$1"
     local result="$2"
     local port="$3"
@@ -55,8 +53,7 @@ function iperf3_server_start ()
     $(exec_cmd "${server}" "${cmd}")
 }
 
-function iperf3_client_tcp_start ()
-{
+function iperf3_client_tcp_start {
     local result="${result_dir}/throughput"
     local cmd=""
     local client="$1"
@@ -76,8 +73,7 @@ function iperf3_client_tcp_start ()
     $(exec_cmd "${client}" "${cmd} > ${result} 2>&1")
 }
 
-function iperf3_client_udp_start ()
-{
+function iperf3_client_udp_start {
     local result="${result_dir}/throughput_udp"
     local cmd=""
     local client="$1"
@@ -102,20 +98,17 @@ function iperf3_client_udp_start ()
     $(exec_cmd "${client}" "${cmd} -b ${bw} >> ${result} 2>&1" )
 }
 
-function iperf3_stop ()
-{
+function iperf3_stop {
     local node="$1"
     local cmd="pkill iperf3"
     $(exec_cmd "${node}" "${cmd}")
 }
 
-function get_ip_addr ()
-{
+function get_ip_addr {
     arp -a | grep -oP "(?<=$1 \()[^)]*" | head -n 1
 }
 
-function throughput_tcp_test()
-{
+function throughput_tcp_test {
     for (( i = 0; i < ${#nodes[@]} ; i+=2 )); do
         for interface in "${interfaces[@]}"; do
             local interface_name="management"
@@ -137,8 +130,7 @@ function throughput_tcp_test()
     done
 }
 
-function throughput_udp_test ()
-{
+function throughput_udp_test {
     for (( i = 0; i < ${#nodes[@]} ; i+=2 )); do
         for interface in "${interfaces[@]}"; do
             local interface_name="management"
@@ -229,8 +221,7 @@ function throughput_udp_test ()
     done
 }
 
-function throughput_parallel_test ()
-{
+function throughput_parallel_test {
     local dev=""
     local ip_addr=""
     local interface_name=""
@@ -304,8 +295,7 @@ function throughput_parallel_test ()
     done
 }
 
-function latency_test ()
-{
+function latency_test {
     for (( i = 0; i < ${#nodes[@]} ; i+=2 )); do
         for interface in "${interfaces[@]}"; do
             local interface_name="management"
@@ -328,16 +318,14 @@ function latency_test ()
     done
 }
 
-function setup ()
-{
+function setup {
     for node in ${nodes[@]}; do
         iperf3_stop "${node}"
         $(exec_cmd "${node}" "rm -rf ${result_dir}; mkdir -p ${result_dir}")
     done
 }
 
-function get_remote_results ()
-{
+function get_remote_results {
     for node in ${nodes[@]}; do
         if [ "${node}" != "${host}" ]; then
             mkdir ${result_dir}/${node}
@@ -346,8 +334,7 @@ function get_remote_results ()
     done
 }
 
-function get_interface_info ()
-{
+function get_interface_info {
     local dev=""
     local ip_addr=""
     printf "Network interfaces info\n" >> ${summary_file}
@@ -365,8 +352,7 @@ function get_interface_info ()
     done
 }
 
-function generate_summary ()
-{
+function generate_summary {
     local header=""
     local result=""
     local result_file=""
