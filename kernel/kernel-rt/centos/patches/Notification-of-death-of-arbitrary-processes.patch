@@ -1,10 +1,7 @@
-From 81c2c9a73d99e3df9c96daf65fec42997428af3e Mon Sep 17 00:00:00 2001
-Message-Id: <81c2c9a73d99e3df9c96daf65fec42997428af3e.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From 220edc1ccc6a0bc3dfb94a92946bf2b9a6cc0c61 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 7 Apr 2016 11:16:19 -0600
-Subject: [PATCH 11/32] Notification of death of arbitrary processes
+Subject: [PATCH] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -65,7 +62,7 @@ index d8c82e0..ba0c12e 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */		\
  	INIT_TIMER_LIST							\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index f8294d9..ab9c0f1 100644
+index 97ff026..0785453 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1664,6 +1664,12 @@ struct task_struct {
@@ -82,7 +79,7 @@ index f8294d9..ab9c0f1 100644
  	int numa_scan_seq;
  	unsigned int numa_scan_period;
 diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-index 8ddaa82..53d6392 100644
+index a817b5c..2cf7776 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
 @@ -55,6 +55,24 @@
@@ -457,7 +454,7 @@ index 8a908ea..448a3c3 100644
  	__exit_signal(p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index c390b02..6340c77 100644
+index 6bda4c0..f3cd3ad 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -1512,6 +1512,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
@@ -472,10 +469,10 @@ index c390b02..6340c77 100644
  	/* Perform scheduler related setup. Assign this task to a CPU. */
  	retval = sched_fork(clone_flags, p);
 diff --git a/kernel/signal.c b/kernel/signal.c
-index f1ecca9..daaa6ab 100644
+index 59e84a2..728daa9 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -47,6 +47,9 @@
+@@ -48,6 +48,9 @@
  #include <asm/siginfo.h>
  #include <asm/cacheflush.h>
  #include "audit.h"	/* audit_signal_info() */
@@ -485,7 +482,7 @@ index f1ecca9..daaa6ab 100644
  
  /*
   * SLAB caches for signal bits.
-@@ -1849,6 +1852,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+@@ -1853,6 +1856,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
  	__wake_up_parent(tsk, tsk->parent);
  	spin_unlock_irqrestore(&psig->siglock, flags);
  
@@ -496,7 +493,7 @@ index f1ecca9..daaa6ab 100644
  	return autoreap;
  }
  
-@@ -1920,6 +1927,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+@@ -1924,6 +1931,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
  	 */
  	__wake_up_parent(tsk, parent);
  	spin_unlock_irqrestore(&sighand->siglock, flags);
@@ -508,12 +505,12 @@ index f1ecca9..daaa6ab 100644
  
  static inline int may_ptrace_stop(void)
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 9c2a4ed..54538e3 100644
+index e79ea7e..5d43b93 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -64,6 +64,10 @@
- #include <asm/io.h>
- #include <asm/unistd.h>
+@@ -67,6 +67,10 @@
+ /* Hardening for Spectre-v1 */
+ #include <linux/nospec.h>
  
 +#ifdef CONFIG_SIGEXIT
 +#include "death_notify.h"
@@ -522,7 +519,7 @@ index 9c2a4ed..54538e3 100644
  #ifndef SET_UNALIGN_CTL
  # define SET_UNALIGN_CTL(a,b)	(-EINVAL)
  #endif
-@@ -2474,6 +2478,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+@@ -2478,6 +2482,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
  		else
  			error = PR_MCE_KILL_DEFAULT;
  		break;
@@ -535,5 +532,5 @@ index 9c2a4ed..54538e3 100644
  		error = prctl_set_mm(arg2, arg3, arg4, arg5);
  		break;
 -- 
-1.8.3.1
+2.7.4
 
