@@ -22,17 +22,15 @@ fi
 # network link to autonegotiate link speed.  Re-run the script in
 # the background so the parent can return right away and init can
 # continue.
-if [ $# -eq 3 ]
-then
+if [ $# -eq 3 ]; then
     $0 $DEV $NETWORKTYPE $NETWORKSPEED dummy &
     disown
     exit 0
 fi
 
-function test_valid_speed
-{
+function test_valid_speed {
     # After the link is enabled but before the autonegotiation is complete
-    # the link speed may be read as either -1 or as 4294967295 (which is 
+    # the link speed may be read as either -1 or as 4294967295 (which is
     # uint(-1) in twos-complement) depending on the kernel.  Neither one is valid.
     if (( $1 > 0 )) && (( $1 != 4294967295 ))
     then
@@ -42,51 +40,43 @@ function test_valid_speed
     fi
 }
 
-function log
-{
+function log {
     # It seems that syslog isn't yet running, so append directly to the syslog file
     echo `date +%FT%T.%3N` `hostname` CGCS_TC_SETUP: $@ >> /var/log/platform.log
 }
 
-function infra_exists
-{
-    if [ -z "$infrastructure_interface" ]
-    then
+function infra_exists {
+    if [ -z "$infrastructure_interface" ]; then
         return 1
     else
         return 0
     fi
 }
 
-function is_consolidated
-{
+function is_consolidated {
     if ! infra_exists
     then
-       return 1
+        return 1
     else
        # determine whether the management interface is a parent of the
        # infrastructure interface based on name.
        # eg. this matches enp0s8 to enp0s8.10 but not enp0s88
-       if [[ $infrastructure_interface =~ $management_interface[\.][0-9]+$ ]]
-       then
-           return 0
-       fi
-       return 1
+        if [[ $infrastructure_interface =~ $management_interface[\.][0-9]+$ ]]; then
+            return 0
+        fi
+        return 1
     fi
 }
 
-function is_vlan
-{
-    if [ -f /proc/net/vlan/$DEV ]
-    then
+function is_vlan {
+    if [ -f /proc/net/vlan/$DEV ]; then
         return 0
     else
         return 1
     fi
 }
 
-function is_loopback
-{
+function is_loopback {
     # (from include/uapi/linux/if.h)
     IFF_LOOPBACK=$((1<<3))
 
@@ -101,8 +91,7 @@ function is_loopback
     fi
 }
 
-function setup_tc_port_filter
-{
+function setup_tc_port_filter {
     local PORT=$1
     local PORTMASK=$2
     local FLOWID=$3

@@ -20,6 +20,12 @@ Summary: non controller platform utilities
 %description -n platform-util-noncontroller
 Platform utilities that don't get packaged on controller hosts
 
+%package -n platform-util-controller
+Summary: controller platform utilities
+
+%description -n platform-util-controller
+Platform utilities that packaged on controllers or one node system
+
 %define local_dir /usr/local
 %define local_bindir %{local_dir}/bin
 %define local_sbindir %{local_dir}/sbin
@@ -52,6 +58,7 @@ install -m 700 -p -D %{_buildsubdir}/scripts/patch-restart-haproxy %{buildroot}%
 install -d %{buildroot}/etc/systemd/system
 install -m 644 -p -D %{_buildsubdir}/scripts/opt-platform.mount %{buildroot}/etc/systemd/system
 install -m 644 -p -D %{_buildsubdir}/scripts/opt-platform.service %{buildroot}/etc/systemd/system
+install -m 644 -p -D %{_buildsubdir}/scripts/memcached.service %{buildroot}/etc/systemd/system
 
 # Mask the systemd ctrl-alt-delete.target, to disable reboot on ctrl-alt-del
 ln -sf /dev/null %{buildroot}/etc/systemd/system/ctrl-alt-del.target
@@ -85,3 +92,7 @@ systemctl enable opt-platform.service
 # from parsing the fstab is not used by systemd.
 /etc/systemd/system/opt-platform.mount
 /etc/systemd/system/opt-platform.service
+
+%files -n platform-util-controller
+%defattr(-,root,root,-)
+/etc/systemd/system/memcached.service

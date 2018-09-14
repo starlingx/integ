@@ -32,7 +32,6 @@ base/shadow-utils
 security/shim-unsigned
 security/shim-signed
 logging/syslog-ng
-base/novnc
 base/sanlock
 base/sudo
 virt/cloud-init
@@ -88,13 +87,12 @@ python/python-requests
 base/systemd
 python/python-gunicorn
 config/puppet-modules/openstack/puppet-oslo-11.3.0
-strorage-drivers/python-3parclient
-strorage-drivers/python-lefthandclient
+storage-drivers/python-3parclient
+storage-drivers/python-lefthandclient
 security/tboot
 networking/mellanox/libibverbs
 kernel/kernel-modules/mlnx-ofa_kernel
 networking/mellanox/rdma-core
-base/memcached
 config/puppet-modules/openstack/puppet-memcached-3.0.2
 config/puppet-modules/openstack/puppet-horizon-9.5.0
 config/puppet-modules/openstack/puppet-swift-11.3.0

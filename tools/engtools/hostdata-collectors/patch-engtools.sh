@@ -3,15 +3,15 @@
 #   http://twiki.wrs.com/PBUeng/Patching
 
 if [ -z $MY_WORKSPACE ] || [ -z $MY_REPO ]; then
-   echo "Some dev environment variables are not set."
-   echo "Refer to http://wiki.wrs.com/PBUeng/CentOSBuildProcess for instructions."
-   exit 1
+    echo "Some dev environment variables are not set."
+    echo "Refer to http://wiki.wrs.com/PBUeng/CentOSBuildProcess for instructions."
+    exit 1
 fi
 
 ENGTOOLS=$(ls ${MY_WORKSPACE}/std/rpmbuild/RPMS/engtools*noarch.rpm 2>/dev/null)
 if [ $? -ne 0 ]; then
-   echo "Engtools RPM has not been built. Please run \"build-pkgs engtools\" first."
-   exit 1
+    echo "Engtools RPM has not been built. Please run \"build-pkgs engtools\" first."
+    exit 1
 fi
 
 source ${MY_REPO}/stx/middleware/recipes-common/build-info/release-info.inc

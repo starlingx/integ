@@ -6,42 +6,40 @@ TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 tools_init
 if [ $? -ne 0 ]; then
-  echo "FATAL, tools_init - could not setup environment"
-  exit $?
+    echo "FATAL, tools_init - could not setup environment"
+    exit $?
 fi
 
 # Enable use of INTERVAL_SEC sample interval
 OPT_USE_INTERVALS=1
 
 # Print key networking device statistics
-function print_postgres()
-{
-  print_separator
-  TOOL_HIRES_TIME
-  
+function print_postgres {
+    print_separator
+    TOOL_HIRES_TIME
+
   # postgressql command: set user, disable pagination, and be quiet
-  PSQL="sudo -u postgres psql --pset pager=off -q"
+    PSQL="sudo -u postgres psql --pset pager=off -q"
 
   # List postgres databases
-  db_list=( $(${PSQL} -t -c "SELECT datname FROM pg_database WHERE datistemplate = false;") )
-  ${ECHO} "# postgres databases"
-  echo "db_list = ${db_list[@]}"
-  ${ECHO}
+    db_list=( $(${PSQL} -t -c "SELECT datname FROM pg_database WHERE datistemplate = false;") )
+    ${ECHO} "# postgres databases"
+    echo "db_list = ${db_list[@]}"
+    ${ECHO}
 
   # List sizes of all postgres databases (similar to "\l+")
-  ${ECHO} "# postgres database sizes"
-  ${PSQL} -c "
+    ${ECHO} "# postgres database sizes"
+    ${PSQL} -c "
 SELECT
-  pg_database.datname,
-  pg_database_size(pg_database.datname),
-  pg_size_pretty(pg_database_size(pg_database.datname))
+    pg_database.datname,
+    pg_database_size(pg_database.datname),
+    pg_size_pretty(pg_database_size(pg_database.datname))
 FROM pg_database
 ORDER BY pg_database_size DESC;
 "
 
   # For each database, list tables and their sizes (similar to "\dt+")
-  for db in "${db_list[@]}"
-  do
+    for db in "${db_list[@]}"; do
     ${ECHO} "# postgres database: ${db}"
     ${PSQL} -d ${db} -c "
 SELECT
@@ -85,29 +83,29 @@ SELECT
     last_autoanalyze
 FROM pg_stat_user_tables;
 "
-  done
+    done
 
   # Specific table counts (This is very SLOW, look at "live tuples" instead)
   # Number of keystone tokens
   #${ECHO} "# keystone token count"
 
   # Number of postgres connections
-  ${ECHO} "# postgres database connections"
-  CONN=$(ps -C postgres -o cmd= | wc -l)
-  CONN_T=$(ps -C postgres -o cmd= | awk '/postgres: / {print $3}' | awk '{for(i=1;i<=NF;i++) a[$i]++} END {for(k in a) print k, a[k]}' | sort -k 2 -nr )
-  ${ECHO} "connections total = ${CONN}"
-  ${ECHO}
-  ${ECHO} "connections breakdown:"
-  ${ECHO} "${CONN_T}"
-  ${ECHO}
+    ${ECHO} "# postgres database connections"
+    CONN=$(ps -C postgres -o cmd= | wc -l)
+    CONN_T=$(ps -C postgres -o cmd= | awk '/postgres: / {print $3}' | awk '{for(i=1;i<=NF;i++) a[$i]++} END {for(k in a) print k, a[k]}' | sort -k 2 -nr )
+    ${ECHO} "connections total = ${CONN}"
+    ${ECHO}
+    ${ECHO} "connections breakdown:"
+    ${ECHO} "${CONN_T}"
+    ${ECHO}
 
-  ${ECHO} "connections breakdown (query):"
-  ${PSQL} -c "SELECT datname,state,count(*) from pg_stat_activity group by datname,state;"
-  ${ECHO}
+    ${ECHO} "connections breakdown (query):"
+    ${PSQL} -c "SELECT datname,state,count(*) from pg_stat_activity group by datname,state;"
+    ${ECHO}
 
-  ${ECHO} "connections idle age:"
-  ${PSQL} -c "SELECT datname,age(now(),state_change) from pg_stat_activity where state='idle';"
-  ${ECHO}
+    ${ECHO} "connections idle age:"
+    ${PSQL} -c "SELECT datname,age(now(),state_change) from pg_stat_activity where state='idle';"
+    ${ECHO}
 }
 
 #-------------------------------------------------------------------------------
@@ -128,10 +126,9 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
-  print_postgres
-  sleep ${INTERVAL_SEC}
+for ((rep=1; rep <= REPEATS ; rep++)); do
+    print_postgres
+    sleep ${INTERVAL_SEC}
 done
 print_postgres
 LOG "done"

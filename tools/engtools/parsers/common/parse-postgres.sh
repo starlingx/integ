@@ -25,8 +25,7 @@ else
 fi
 LOG "Parsing postgres files ${FILES}"
 
-function generate_header()
-{
+function generate_header {
     local header="Date/Time,Total"
     for DB in ${DATABASE_LIST}; do
         if [ ${DB} == "nova_api" ]; then
@@ -59,18 +58,16 @@ function generate_header()
     echo $header
 }
 
-function generate_grep_str()
-{
+function generate_grep_str {
     local grepstr="time:"
     for DB in ${DATABASE_LIST}; do
-       grepstr="${grepstr}|${DB}"
+        grepstr="${grepstr}|${DB}"
     done
     grepstr="${grepstr}|breakdown|connections total|rows"
     echo $grepstr
 }
 
-function init_variables()
-{
+function init_variables {
     CONN_TOTAL="0"
     CONN_ACTIVE_TOTAL="0"
     CONN_IDLE_TOTAL="0"
@@ -85,8 +82,7 @@ function init_variables()
     done
 }
 
-function output_values()
-{
+function output_values {
     local result="${DATEVAL} ${TIMEVAL},${CONN_TOTAL}"
     for DB in ${DATABASE_LIST}; do
         val=$(eval echo \${CONN_${DB^^}})

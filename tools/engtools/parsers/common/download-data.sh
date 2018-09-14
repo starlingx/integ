@@ -14,9 +14,9 @@
 # This script is to be run after running download-computes.sh on one of the controllers.
 
 if [ ! -f lab.conf ]; then
-   echo "Lab configuration file is missing."
-   echo "See http://wiki.wrs.com/PBUeng/TitaniumServerSysengToolsAndDataAnalysis for more info."
-   exit 1
+    echo "Lab configuration file is missing."
+    echo "See http://wiki.wrs.com/PBUeng/TitaniumServerSysengToolsAndDataAnalysis for more info."
+    exit 1
 fi
 
 source ./lab.conf
@@ -38,6 +38,6 @@ for HOST in ${ALL_HOSTS}; do
         bzip2 ${HOST}*
         cd ${CURDIR}
     else
-       echo "${HOST} not found"
+        echo "${HOST} not found"
     fi
 done

@@ -9,8 +9,7 @@
 # $1 - listening port of remote log server
 PORT=$1
 
-function is_loopback
-{
+function is_loopback {
     # (from include/uapi/linux/if.h)
     IFF_LOOPBACK=$((1<<3))
 
@@ -25,16 +24,14 @@ function is_loopback
     fi
 }
 
-function log
-{
+function log {
     # It seems that syslog isn't yet running, so append directly to the syslog file
     echo `date +%FT%T.%3N` `hostname` CGCS_TC_SETUP: $@ >> /var/log/platform.log
 }
 
-function test_valid_speed
-{
+function test_valid_speed {
     # After the link is enabled but before the autonegotiation is complete
-    # the link speed may be read as either -1 or as 4294967295 (which is 
+    # the link speed may be read as either -1 or as 4294967295 (which is
     # uint(-1) in twos-complement) depending on the kernel.  Neither one is valid.
     if (( $1 > 0 )) && (( $1 != 4294967295 ))
     then
@@ -44,8 +41,7 @@ function test_valid_speed
     fi
 }
 
-function get_dev_speed
-{
+function get_dev_speed {
     # If the link doesn't come up we won't go enabled, so here we can
     # afford to wait forever for the link.
     while true

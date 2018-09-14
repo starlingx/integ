@@ -444,7 +444,7 @@ def _mask_to_cpulist(mask=0):
 
     # Assume max number of cpus for now...
     max_cpus = 128
-    for cpu in xrange(max_cpus):
+    for cpu in range(max_cpus):
         if ((1 << cpu) & mask):
             cpulist.append(cpu)
     return cpulist
@@ -492,9 +492,9 @@ def range_to_list(csv_range=None):
     """
     if not csv_range:
         return []
-    xranges = [(lambda L: xrange(L[0], L[-1] + 1))(map(int, r.split('-')))
+    ranges = [(lambda L: range(L[0], L[-1] + 1))(map(int, r.split('-')))
                for r in csv_range.split(',')]
-    return [y for x in xranges for y in x]
+    return [y for x in ranges for y in x]
 
 
 class TimeoutError(Exception):
@@ -613,7 +613,7 @@ def do_libvirt_domain_info((host)):
         cpulist_d = {}
         cpuset_total = 0
         up_total = 0
-        for vcpu in xrange(d_nrVirtCpu):
+        for vcpu in range(d_nrVirtCpu):
             cpuset_b = d_vcpus[1][vcpu]
             cpuset = 0
             for cpu, up in enumerate(cpuset_b):

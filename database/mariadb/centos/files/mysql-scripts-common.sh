@@ -11,18 +11,18 @@ export LC_ALL=C
 # We use my_print_defaults which prints all options from multiple files,
 # with the more specific ones later; hence take the last match.
 get_mysql_option(){
-	if [ $# -ne 3 ] ; then
-		echo "get_mysql_option requires 3 arguments: section option default_value"
-		return
-	fi
-	sections="$1"
-	option_name="$2"
-	default_value="$3"
-	result=`@bindir@/my_print_defaults $sections | sed -n "s/^--${option_name}=//p" | tail -n 1`
-	if [ -z "$result" ]; then
-	    # not found, use default
-	    result="${default_value}"
-	fi
+    if [ $# -ne 3 ] ; then
+        echo "get_mysql_option requires 3 arguments: section option default_value"
+        return
+    fi
+    sections="$1"
+    option_name="$2"
+    default_value="$3"
+    result=`@bindir@/my_print_defaults $sections | sed -n "s/^--${option_name}=//p" | tail -n 1`
+    if [ -z "$result" ]; then
+        # not found, use default
+        result="${default_value}"
+    fi
 }
 
 # Defaults here had better match what mysqld_safe will default to

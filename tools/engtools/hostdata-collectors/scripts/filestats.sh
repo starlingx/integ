@@ -6,8 +6,8 @@ TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 tools_init
 if [ $? -ne 0 ]; then
-  echo "FATAL, tools_init - could not setup environment"
-  exit $?
+    echo "FATAL, tools_init - could not setup environment"
+    exit $?
 fi
 
 PAGE_SIZE=$(getconf PAGE_SIZE)
@@ -16,21 +16,20 @@ PAGE_SIZE=$(getconf PAGE_SIZE)
 OPT_USE_INTERVALS=1
 
 
-function print_files()
-{
-	print_separator
+function print_files {
+    print_separator
     TOOL_HIRES_TIME
 
-	${ECHO} "# ls -l /proc/*/fd"
-	sudo ls -l /proc/*/fd 2>/dev/null | awk \
-		'$11 ~ /socket/ {a += 1} ; \
-		$11 ~ /null/ {b += 1} ; \
-		{c += 1} \
-		END {\
-			{printf "%-10s %-10s %-10s %-10s\n", "TOTAL", "FILES", "SOCKETS", "NULL PIPES"} \
-			{printf "%-10s %-10s %-10s %-10s\n", c, c-(a+b) , a, b}}'
+    ${ECHO} "# ls -l /proc/*/fd"
+    sudo ls -l /proc/*/fd 2>/dev/null | awk \
+        '$11 ~ /socket/ {a += 1} ; \
+        $11 ~ /null/ {b += 1} ; \
+        {c += 1} \
+        END {\
+            {printf "%-10s %-10s %-10s %-10s\n", "TOTAL", "FILES", "SOCKETS", "NULL PIPES"} \
+            {printf "%-10s %-10s %-10s %-10s\n", c, c-(a+b) , a, b}}'
 
-	${ECHO}
+    ${ECHO}
 
     ${ECHO} "# lsof"
     printf "%-7s %-7s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %s\n" "PID" "TOTAL" "FD" "U" "W" "R" "CWD" "RTD" "TXT" "MEM" "DEL" "TCP" "CMD"
@@ -46,7 +45,7 @@ function print_files()
                             {printf "%-7s %-7s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %-6s %s\n", \
                                 pids[i]["PID"], \
                                 pids[i]["TOTAL"],\
-								((pids[i]["u"]!="")? pids[i]["u"] : 0) +  ((pids[i]["w"]!="")? pids[i]["w"] : 0 )+ ((pids[i]["r"]!="")? pids[i]["r"] : 0),\
+                                ((pids[i]["u"]!="")? pids[i]["u"] : 0) +  ((pids[i]["w"]!="")? pids[i]["w"] : 0 )+ ((pids[i]["r"]!="")? pids[i]["r"] : 0),\
                                 (pids[i]["u"]!="")? pids[i]["u"] : 0,\
                                 (pids[i]["w"]!="")? pids[i]["w"] : 0,\
                                 (pids[i]["r"]!="")? pids[i]["r"] : 0,\
@@ -56,13 +55,13 @@ function print_files()
                                 (pids[i]["mem"]!="")? pids[i]["mem"] : 0,\
                                 (pids[i]["DEL"]!="")?  pids[i]["DEL"] : 0,\
                                 (pids[i]["TCP"]!="")?  pids[i]["TCP"] : 0,\
-								 pids[i]["COMMAND"]} }}}' | sort -n -r -k3
+                                pids[i]["COMMAND"]} }}}' | sort -n -r -k3
 
-	${ECHO}
+    ${ECHO}
 
-	${ECHO} "# lsof -nP +L1"
-	sudo lsof -nP +L1
-	${ECHO}
+    ${ECHO} "# lsof -nP +L1"
+    sudo lsof -nP +L1
+    ${ECHO}
 }
 
 
@@ -85,10 +84,9 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
-  print_files
-  sleep ${INTERVAL_SEC}
+for ((rep=1; rep <= REPEATS ; rep++)); do
+    print_files
+    sleep ${INTERVAL_SEC}
 done
 print_files
 LOG "done"

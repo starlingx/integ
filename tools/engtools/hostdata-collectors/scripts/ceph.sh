@@ -6,27 +6,26 @@ TOOLBIN=$(dirname $0)
 . ${TOOLBIN}/engtools_util.sh
 tools_init
 if [ $? -ne 0 ]; then
-  echo "FATAL, tools_init - could not setup environment"
-  exit $?
+    echo "FATAL, tools_init - could not setup environment"
+    exit $?
 fi
 
 # Enable use of INTERVAL_SEC sample interval
 OPT_USE_INTERVALS=1
 
 # Print key ceph statistics
-function print_ceph()
-{
-  print_separator
-  TOOL_HIRES_TIME
+function print_ceph {
+    print_separator
+    TOOL_HIRES_TIME
 
-  cmd='ceph -s'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='ceph -s'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
 
-  cmd='ceph osd tree'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='ceph osd tree'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
 
-  cmd='ceph df detail'
-  ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
+    cmd='ceph df detail'
+    ${ECHO} "# ${cmd}" ; ${cmd} ; ${ECHO}
 }
 
 #-------------------------------------------------------------------------------
@@ -47,10 +46,9 @@ tools_header
 # Calculate number of sample repeats based on overall interval and sampling interval
 ((REPEATS = PERIOD_MIN * 60 / INTERVAL_SEC))
 
-for ((rep=1; rep <= REPEATS ; rep++))
-do
-  print_ceph
-  sleep ${INTERVAL_SEC}
+for ((rep=1; rep <= REPEATS ; rep++)); do
+    print_ceph
+    sleep ${INTERVAL_SEC}
 done
 print_ceph
 LOG "done"

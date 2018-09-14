@@ -25,20 +25,17 @@ DEBUGFS_PATH=/sys/kernel/debug
 DEBUGFS_I40_DEVICES_PATH=$DEBUGFS_PATH/i40e
 LLDP_COMMAND=lldp
 
-function log()
-{
+function log {
     local MSG="${PROGNAME}: $1"
-    logger -p notice "${MSG}" 
+    logger -p notice "${MSG}"
 }
 
-function err()
-{
+function err {
     local MSG="${PROGNAME}: $1"
     logger -p error "${MSG}"
 }
 
-function configure_device()
-{
+function configure_device {
     local DEVICE=$1
     local ACTION=$2
     local DEVICE_PATH=${DEBUGFS_I40_DEVICES}/${DEVICE}
@@ -59,30 +56,29 @@ function configure_device()
     return ${RET}
 }
 
-function is_debugfs_mounted() {
-  if grep -qs "${DEBUGFS_PATH}" /proc/mounts; then
-    return 0 
-  fi
-  return 1 
+function is_debugfs_mounted {
+    if grep -qs "${DEBUGFS_PATH}" /proc/mounts; then
+    return 0
+    fi
+    return 1
 }
 
-function mount_debugfs() {
+function mount_debugfs {
     mount -t debugfs none ${DEBUGFS_PATH}
 }
 
-function unmount_debugfs() {
+function unmount_debugfs {
     umount ${DEBUGFS_PATH}
 }
 
-function scan_devices()
-{
+function scan_devices {
     local ACTION=$1
     local DEBUGFS_MOUNTED="false"
     local DEVICES=${DEBUGFS_I40_DEVICES_PATH}/*
 
     if is_debugfs_mounted; then
         DEBUGFS_MOUNTED="true"
-    fi 
+    fi
 
     if [ ${DEBUGFS_MOUNTED} = "false" ]; then
         mount_debugfs
@@ -111,38 +107,35 @@ function scan_devices()
     return 0
 }
 
-function start()
-{
+function start {
     scan_devices start
     return $?
 }
 
-function stop()
-{
+function stop {
     scan_devices stop
-    return $? 
+    return $?
 }
 
-function status()
-{
+function status {
     return 0
 }
 
 case "$1" in
-  start)
+    start)
         start
         ;;
-  stop)
+    stop)
         stop
         ;;
-  restart)
+    restart)
         stop
         start
         ;;
-  status)
+    status)
         status
         ;;
-  *)
+    *)
         echo "Usage: $0 {start|stop|restart|status}"
         exit 1
 esac

@@ -14,8 +14,7 @@ SERVICE="inventory"
 LOGFILE="${extradir}/${SERVICE}.info"
 RPMLOG="${extradir}/rpm.info"
 
-function is_service_active()
-{
+function is_service_active {
     active=`sm-query service management-ip | grep "enabled-active"`
     if [ -z "$active" ] ; then
         return 0

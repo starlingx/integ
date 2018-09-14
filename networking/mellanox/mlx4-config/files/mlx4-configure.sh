@@ -15,17 +15,15 @@ DEBUG=${DEBUG:-0}
 # all files beginning in "mlx4_port" and ending in one or more digits.
 shopt -s extglob
 
-function log()
-{
+function log {
     local MSG="${PROGNAME}: $1"
     if [ ${DEBUG} -ne 0 ]; then
-       echo "${MSG}"
+        echo "${MSG}"
     fi
     echo "${MSG}" >> /var/log/mlx4-configure.log
 }
 
-function configure_device()
-{
+function configure_device {
     local DEVICE=$1
     local DEVICE_PATH=${SYSFS_PCI_DEVICES}/${DEVICE}
 
@@ -58,8 +56,7 @@ function configure_device()
 }
 
 
-function scan_devices()
-{
+function scan_devices {
     local DEVICES=$(ls -1 ${SYSFS_PCI_DEVICES})
 
     for DEVICE in ${DEVICES}; do
@@ -83,37 +80,34 @@ function scan_devices()
 }
 
 
-function start()
-{
+function start {
     scan_devices
     return $?
 }
 
-function stop()
-{
+function stop {
     return 0
 }
 
-function status()
-{
+function status {
     return 0
 }
 
 case "$1" in
-  start)
+    start)
         start
         ;;
-  stop)
+    stop)
         stop
         ;;
-  restart)
+    restart)
         stop
         start
         ;;
-  status)
+    status)
         status
         ;;
-  *)
+    *)
         echo "Usage: $0 {start|stop|restart|status}"
         exit 1
 esac
