@@ -333,3 +333,6 @@ kernel-rt-tools
 rdma-core
 mlnx-ofa_kernel-modules
 mlnx-ofa_kernel-rt-modules
+
+# update-motd
+update-motd
