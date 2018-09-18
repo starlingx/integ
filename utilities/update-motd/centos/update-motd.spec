@@ -14,6 +14,7 @@ Source4: customize-banner
 Source5: apply_banner_customization
 Source6: install_banner_customization
 Source7: LICENSE
+Source8: motd.head
 
 Requires: crontabs
 
@@ -35,6 +36,7 @@ install -d %{buildroot}%{_sysconfdir}
 install -d %{buildroot}%{_sysconfdir}/motd.d
 install -m 755 %{SOURCE1} %{buildroot}%{_sysconfdir}/motd.d/00-header
 install -m 755 %{SOURCE0} %{buildroot}%{_sysconfdir}/motd.d/99-footer
+install -m 755 %{SOURCE8} %{buildroot}%{_sysconfdir}/motd.head
 
 install -d %{buildroot}%{_sysconfdir}/cron.d
 install -m 600 %{SOURCE3} %{buildroot}%{_sysconfdir}/cron.d/motd-update
@@ -49,6 +51,7 @@ install -m 700 %{SOURCE6} %{buildroot}%{_sbindir}/install_banner_customization
 %{_sysconfdir}/motd.d/*
 /usr/sbin/*
 /etc/motd.d/*
+%{_sysconfdir}/motd.head
 /etc/cron.d/*
 %{_sbindir}/motd-update
 %{_sbindir}/customize-banner
