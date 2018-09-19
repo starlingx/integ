@@ -1,16 +1,26 @@
+From 4d8601d4eda671c7da04f7eb438e20407f33b09b Mon Sep 17 00:00:00 2001
+From: zhipengl <zhipengs.liu@intel.com>
+Date: Wed, 22 Aug 2018 01:02:40 +0800
+Subject: 0001-remove-ghostscript.patch
+
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+---
+ SPECS/netpbm.spec | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
 diff --git a/SPECS/netpbm.spec b/SPECS/netpbm.spec
-index c0a2d27..c10c448 100644
+index 82eafb8..02dd5f8 100644
 --- a/SPECS/netpbm.spec
 +++ b/SPECS/netpbm.spec
-@@ -40,6 +40,7 @@ Patch28: netpbm-compare-same-images.patch
- Patch29: netpbm-manual-pages.patch
- Patch30: netpbm-pnmtops-hangs.patch
- Patch31: netpbm-pgmtexture-fault.patch
-+Patch32: remove-pstopnm.patch
+@@ -31,6 +31,7 @@ Patch15: netpbm-pamtojpeg2k.patch
+ Patch16: netpbm-manfix.patch
+ Patch17: netpbm-manual-pages.patch
+ Patch18: netpbm-ppmfadeusage.patch
++Patch19: remove-pstopnm.patch
  BuildRequires: libjpeg-devel, libpng-devel, libtiff-devel, flex
  BuildRequires: libX11-devel, python, jasper-devel, libxml2-devel
  
-@@ -66,7 +67,6 @@ to have the netpbm package installed.
+@@ -57,7 +58,6 @@ to have the netpbm package installed.
  %package progs
  Summary: Tools for manipulating graphics files in netpbm supported formats
  Group: Applications/Multimedia
@@ -18,12 +28,14 @@ index c0a2d27..c10c448 100644
  Requires: netpbm = %{version}-%{release}
  
  %description progs
-
-@@ -120,6 +120,7 @@ netpbm-doc.  You'll also need to install the netpbm-progs package.
- %patch29 -p1 -b .manual-pages
- %patch30 -p1 -b .pnmtops-hangs
- %patch31 -p1 -b .pgmtexture-fault
-+%patch32 -p1
-
- sed -i 's/STRIPFLAG = -s/STRIPFLAG =/g' config.mk.in
+@@ -102,6 +102,7 @@ netpbm-doc.  You'll also need to install the netpbm-progs package.
+ %patch16 -p1 -b .manfix
+ %patch17 -p1 -b .manual-pages
+ %patch18 -p1 -b .ppmfadeusage
++%patch19 -p1
+ 
  rm -rf converter/other/jpeg2000/libjasper/
+ sed -i -e 's/SUBDIRS += libjasper//' converter/other/jpeg2000/Makefile
+-- 
+2.7.4
+

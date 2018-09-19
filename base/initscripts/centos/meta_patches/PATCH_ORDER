@@ -10,7 +10,6 @@ run-ifdown-on-all-interfaces.patch
 spec-sysconfig-affirmative-check-for-link-carrier.patch
 spec-sysconfig-unsafe-usage-of-linkdelay-variable.patch
 fix-build-failures-due-to-unwanted-sgid.patch
-add_build_require_on_systemd.patch
 ipv6-static-route-support.patch
 spec-ifup-eth-stop-waiting-if-link-is-up.patch
 spec-run-dhclient-as-daemon-for-ipv6.patch

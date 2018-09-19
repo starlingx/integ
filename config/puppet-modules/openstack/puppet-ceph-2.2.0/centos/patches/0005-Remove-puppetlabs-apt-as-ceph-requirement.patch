@@ -9,17 +9,17 @@ We will never install apt or puppet-apt, so this requirement cannot be fulfilled
  1 file changed, 1 deletion(-)
 
 diff --git a/metadata.json b/metadata.json
-index 4175278..39d8c82 100644
+index 14d2f37..27b78e3 100644
 --- a/metadata.json
 +++ b/metadata.json
-@@ -47,7 +47,6 @@
-   ],
-   "description": "Installs and configures Ceph.",
+@@ -8,7 +8,6 @@
+   "project_page": "https://launchpad.net/puppet-ceph",
+   "issues_url": "https://bugs.launchpad.net/puppet-ceph",
    "dependencies": [
 -    {"name":"puppetlabs/apt","version_requirement":">=2.0.0 <3.0.0"},
      {"name":"puppetlabs/apache","version_requirement":">=1.4.1 <2.0.0"},
      {"name":"puppetlabs/concat","version_requirement":">=1.2.1 <3.0.0"},
      {"name":"puppetlabs/inifile","version_requirement":">=1.0.0 <2.0.0"},
 -- 
-1.8.3.1
+2.7.4
 

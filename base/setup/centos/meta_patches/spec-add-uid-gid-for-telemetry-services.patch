@@ -1,32 +1,32 @@
-From 8c24c1c8bc9b703714c52b9b45cd3ea90f4a6604 Mon Sep 17 00:00:00 2001
+From 34c8b5f204877ae54d07248b9729353c8f8dfecf Mon Sep 17 00:00:00 2001
 From: Angie Wang <angie.Wang@windriver.com>
 Date: Thu, 7 Jun 2018 16:39:08 -0400
-Subject: [PATCH] spec add uid gid for telemetry services
+Subject: [PATCH 15/15] spec add uid gid for telemetry services
 
 ---
  SPECS/setup.spec | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/setup.spec b/SPECS/setup.spec
-index b652b3c..76d4feb 100644
+index 7f636ea..4f11a37 100644
 --- a/SPECS/setup.spec
 +++ b/SPECS/setup.spec
-@@ -30,6 +30,7 @@ Patch11: add-fm-user-to-snmpd-group.patch
- Patch12: add-magnum-uid-gid.patch
- Patch13: add-ironic-uid-gid.patch
- Patch14: add-murano-uid-gid.patch
-+Patch15: add-uid-gid-for-telemetry-services.patch
+@@ -32,6 +32,7 @@ Patch13: add-fm-user-to-snmpd-group.patch
+ Patch14: add-magnum-uid-gid.patch
+ Patch15: add-ironic-uid-gid.patch
+ Patch16: add-murano-uid-gid.patch
++Patch17: add-uid-gid-for-telemetry-services.patch
  
  %description
  The setup package contains a set of important system configuration and
-@@ -52,6 +53,7 @@ setup files, such as passwd, group, and profile.
- %patch12 -p1
- %patch13 -p1
+@@ -56,6 +57,7 @@ setup files, such as passwd, group, and profile.
  %patch14 -p1
-+%patch15 -p1
+ %patch15 -p1
+ %patch16 -p1
++%patch17 -p1
  
  ./shadowconvert.sh
  
 -- 
-1.8.3.1
+2.7.4
 

@@ -1,42 +1,33 @@
-From e882a5dfad4ad41a256ea3867e1a4c4a08df9a98 Mon Sep 17 00:00:00 2001
+From 22d06a6c5c7b44db10060bf95b623dc3c1943a9a Mon Sep 17 00:00:00 2001
 From: Michel Thebeau <michel.thebeau@windriver.com>
 Date: Fri, 19 Aug 2016 09:28:43 -0400
-Subject: [PATCH] spec: add patch to remove unused groups
+Subject: [PATCH 08/15] spec: add patch to remove unused groups
 
 Signed-off-by: Michel Thebeau <michel.thebeau@windriver.com>
 ---
- SPECS/setup.spec | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ SPECS/setup.spec | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/setup.spec b/SPECS/setup.spec
-index 6c18614..223bfd5 100644
+index a612d24..3ad2458 100644
 --- a/SPECS/setup.spec
 +++ b/SPECS/setup.spec
-@@ -1,7 +1,7 @@
- Summary: A set of system configuration and setup files
- Name: setup
- Version: 2.8.71
--Release: 8%{?dist}
-+Release: 9%{?dist}
- License: Public Domain
- Group: System Environment/Base
- URL: https://fedorahosted.org/setup/
-@@ -24,6 +24,7 @@ Patch6: tis-uid-gid.patch
- Patch7: updating-gids-and-uids-to-support-upgrade-from-wrl.patch
- Patch8: passwd-remove-unused-default-users-and-groups.patch
- Patch9: snmpd-fm-user-group.patch
-+Patch10: remove-unused-default-groups.patch
+@@ -26,6 +26,7 @@ Patch8: tis-uid-gid.patch
+ Patch9: updating-gids-and-uids-to-support-upgrade-from-wrl.patch
+ Patch10: passwd-remove-unused-default-users-and-groups.patch
+ Patch11: snmpd-fm-user-group.patch
++Patch12: remove-unused-default-groups.patch
  
  %description
  The setup package contains a set of important system configuration and
-@@ -41,6 +42,7 @@ setup files, such as passwd, group, and profile.
- %patch7 -p1
- %patch8 -p1
+@@ -45,6 +46,7 @@ setup files, such as passwd, group, and profile.
  %patch9 -p1
-+%patch10 -p1
+ %patch10 -p1
+ %patch11 -p1
++%patch12 -p1
  
  ./shadowconvert.sh
  
 -- 
-1.8.3.1
+2.7.4
 

@@ -1,4 +1,4 @@
-From d3d109136f6e01ec1d8291ff89f3e00ff64cab31 Mon Sep 17 00:00:00 2001
+From 9b12287d8dade60c012969db3ae56b36d1e50966 Mon Sep 17 00:00:00 2001
 From: Allain Legacy <allain.legacy@windriver.com>
 Date: Thu, 17 Nov 2016 11:37:38 -0500
 Subject: [PATCH] sysconfig: unsafe usage of linkdelay variable
@@ -16,10 +16,10 @@ Signed-off-by: Allain Legacy <allain.legacy@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/sysconfig/network-scripts/network-functions b/sysconfig/network-scripts/network-functions
-index affa8ba..a9821f6 100644
+index 13cf4de..4bcc48f 100644
 --- a/sysconfig/network-scripts/network-functions
 +++ b/sysconfig/network-scripts/network-functions
-@@ -461,7 +461,7 @@ check_link_down ()
+@@ -471,7 +471,7 @@ check_link_down ()
      fi
      timeout=0
      delay=20
@@ -27,7 +27,7 @@ index affa8ba..a9821f6 100644
 +    [[ $LINKDELAY =~ ^[0-9]+$ ]] && delay=$(($LINKDELAY * 2))
      while [ $timeout -le $delay ]; do
          [ "$(cat /sys/class/net/$REALDEVICE/carrier 2>/dev/null)" == "1" ] && return 1
-         usleep 500000
+         sleep 0.5
 -- 
-1.9.1
+2.7.4
 

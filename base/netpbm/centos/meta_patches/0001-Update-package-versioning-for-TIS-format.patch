@@ -1,4 +1,4 @@
-From 55b381fed1b1bae9bd0bdfabd07246f40805252e Mon Sep 17 00:00:00 2001
+From bb0bf50256fd7d85d7f6f9eeb64d621a5698cfcc Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Tue, 27 Sep 2016 21:23:24 -0400
 Subject: [PATCH] Update package versioning for TIS format
@@ -8,18 +8,18 @@ Subject: [PATCH] Update package versioning for TIS format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/netpbm.spec b/SPECS/netpbm.spec
-index c10c448..74c13eb 100644
+index 02dd5f8..a4579f5 100644
 --- a/SPECS/netpbm.spec
 +++ b/SPECS/netpbm.spec
 @@ -1,7 +1,7 @@
  Summary: A library for handling different graphics file formats
  Name: netpbm
- Version: 10.61.02
--Release: 9%{?dist}
-+Release: 9.el7%{?_tis_dist}.%{tis_patch_ver}
+ Version: 10.79.00
+-Release: 7%{?dist}
++Release: 7.el7%{?_tis_dist}.%{tis_patch_ver}
  # See copyright_summary for details
  License: BSD and GPLv2 and IJG and MIT and Public Domain
  Group: System Environment/Libraries
 -- 
-1.8.3.1
+2.7.4
 

@@ -1,7 +1,7 @@
-From cfa8f478bd19cf706f87c3c5a8baf54df7f2ea16 Mon Sep 17 00:00:00 2001
+From 46b23c8cc8fffa24557cddf8507b8717c43b9171 Mon Sep 17 00:00:00 2001
 From: Ovidiu Poncea <ovidiu.poncea@windriver.com>
 Date: Fri, 2 Mar 2018 17:22:52 +0200
-Subject: [PATCH] 
+Subject: [PATCH 3/3] 
  fix-dev-nodes-getting-removed-for-100-to-300-ms-on-parted-print.patch
 
 ---
@@ -9,10 +9,10 @@ Subject: [PATCH]
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/parted.spec b/SPECS/parted.spec
-index 6979b14..06a09f8 100644
+index a79b888..f8c2969 100644
 --- a/SPECS/parted.spec
 +++ b/SPECS/parted.spec
-@@ -15,6 +15,7 @@ Source0: ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz
+@@ -13,6 +13,7 @@ Source0: ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz
  Source1: ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz.sig
  Source2: pubkey.jim.meyering
  Source3: resizepart.sh
@@ -20,14 +20,14 @@ index 6979b14..06a09f8 100644
  
  Patch0: parted-3.0-libparted-copy-pmbr_boot-when-duplicating-GPT-disk.patch
  Patch1: parted-3.1-libparted-check-PMBR-before-GPT-partition-table-8052.patch
-@@ -64,6 +65,7 @@ Patch42: 0042-tests-Set-optimal-blocks-to-64-for-scsi_debug-device.patch
- 
+@@ -67,6 +68,7 @@ Patch47: 0047-tests-excersise-resize-command.patch
+ Patch48: 0048-parted-add-resizepart-command.patch
  # WRS
- Patch43: syscalls.patch
-+Patch44: fix-dev-nodes-getting-removed-for-100-to-300-ms-on-parted-print.patch
+ Patch49: syscalls.patch
++Patch50: fix-dev-nodes-getting-removed-for-100-to-300-ms-on-parted-print.patch
  
  Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
  BuildRequires: e2fsprogs-devel
 -- 
-1.9.1
+2.7.4
 

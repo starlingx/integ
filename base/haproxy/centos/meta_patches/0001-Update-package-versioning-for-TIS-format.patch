@@ -1,7 +1,7 @@
-From 79f025b91d461a948ca6449eb25a11a6c89144b5 Mon Sep 17 00:00:00 2001
+From 55d52d8bc9f649b4871336aaffd87fb7d931eac8 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:12:36 -0400
-Subject: [PATCH 7/7] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/haproxy.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/haproxy.spec b/SPECS/haproxy.spec
-index c1547ef..097aa79 100644
+index 0d6e19a..3bc75e1 100644
 --- a/SPECS/haproxy.spec
 +++ b/SPECS/haproxy.spec
 @@ -8,7 +8,7 @@
  
  Name:           haproxy
  Version:        1.5.18
--Release:        6%{?dist}
-+Release:        6.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:        7%{?dist}
++Release:        7.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        TCP/HTTP proxy and load balancer for high availability environments
  
  Group:          System Environment/Daemons
 -- 
-1.9.1
+2.7.4
 

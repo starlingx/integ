@@ -1,3 +1,4 @@
 0001-Update-package-versioning-for-TIS-format.patch
 0002-Add-TIS-content.patch
 0003-add-fm-event-syslogger.patch
+0004-add-patch-to-skip-crypto-test.patch

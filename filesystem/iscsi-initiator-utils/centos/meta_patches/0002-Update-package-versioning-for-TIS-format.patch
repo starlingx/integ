@@ -1,4 +1,4 @@
-From 85c339bab120a0ca76e97af0ec3c48ad0448b066 Mon Sep 17 00:00:00 2001
+From d30974d064455030457b4b37de3b3ea72a9feba0 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:19:19 -0400
 Subject: [PATCH 2/2] WRS: 0001-Update-package-versioning-for-TIS-format.patch
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/iscsi-initiator-utils.spec b/SPECS/iscsi-initiator-utils.spec
-index ce2198d..e9402cb 100644
+index 847f95c..8865737 100644
 --- a/SPECS/iscsi-initiator-utils.spec
 +++ b/SPECS/iscsi-initiator-utils.spec
 @@ -4,7 +4,7 @@
  Summary: iSCSI daemon and utility programs
  Name: iscsi-initiator-utils
  Version: 6.%{open_iscsi_version}.%{open_iscsi_build}
--Release: 4%{?dist}
-+Release: 4.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 7%{?dist}
++Release: 7.el7%{?_tis_dist}.%{tis_patch_ver}
  Group: System Environment/Daemons
  License: GPLv2+
  URL: http://www.open-iscsi.org
 -- 
-1.9.1
+2.7.4
 

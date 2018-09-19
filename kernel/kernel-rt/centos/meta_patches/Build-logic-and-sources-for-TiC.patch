@@ -1,7 +1,7 @@
-From 779c7986900ecc5dcc736c46b80690df8626746b Mon Sep 17 00:00:00 2001
+From 4a2a30175a859e5a60b5a0e999c9edfde03eee7c Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Mon, 23 Apr 2018 15:18:45 -0400
-Subject: [PATCH 1/5] Build logic and sources for TiC
+Subject: [PATCH] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -9,7 +9,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 272 insertions(+), 7 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index dc814f7..4dc3361 100644
+index c05b910..dfbbe1f 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
 @@ -17,23 +17,33 @@ Summary: The Linux Realtime kernel
@@ -520,7 +520,7 @@ index dc814f7..4dc3361 100644
 +%endif # do_sign
 +
  %changelog
- * Mon Jun 18 2018 Luis Claudio R. Goncalves <lgoncalv@redhat.com> [3.10.0-862.6.3.rt56.811.el7]
+ * Fri Aug 10 2018 Luis Claudio R. Goncalves <lgoncalv@redhat.com> [3.10.0-862.11.6.rt56.819.el7]
  - [rt] Update source tree to match RHEL 7.5 tree [1549768 1462329]
 -- 
 2.7.4

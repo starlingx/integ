@@ -13,11 +13,9 @@ config/facter
 virt/qemu
 filesystem/nfscheck
 utilities/update-motd
-base/vim
 python/python-2.7.5
 python/python-django
 python/python-setuptools
-filesystem/e2fsprogs
 virt/libvirt
 virt/libvirt-python
 base/lighttpd
@@ -91,7 +89,6 @@ python/python-gunicorn
 config/puppet-modules/openstack/puppet-oslo-11.3.0
 storage-drivers/python-3parclient
 storage-drivers/python-lefthandclient
-networking/iproute
 security/tboot
 networking/mellanox/libibverbs
 kernel/kernel-modules/mlnx-ofa_kernel

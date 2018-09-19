@@ -5,12 +5,12 @@ Subject: [PATCH] ceph jewel rebase
 
 ---
  manifests/mon.pp          |  1 +
- manifests/rgw.pp          | 34 +++++++++++++++++++++++++---------
+ manifests/rgw.pp          | 33 +++++++++++++++++++++++++--------
  manifests/rgw/keystone.pp |  6 +++---
- 3 files changed, 29 insertions(+), 12 deletions(-)
+ 3 files changed, 29 insertions(+), 11 deletions(-)
 
 diff --git a/manifests/mon.pp b/manifests/mon.pp
-index 41fd8df..acc112e 100644
+index 543d044..ad92061 100644
 --- a/manifests/mon.pp
 +++ b/manifests/mon.pp
 @@ -107,6 +107,7 @@ define ceph::mon (
@@ -22,10 +22,10 @@ index 41fd8df..acc112e 100644
      }
  
 diff --git a/manifests/rgw.pp b/manifests/rgw.pp
-index 2a79c07..d7af122 100644
+index ebc83ce..56fb4a8 100644
 --- a/manifests/rgw.pp
 +++ b/manifests/rgw.pp
-@@ -185,23 +185,39 @@ define ceph::rgw (
+@@ -193,23 +193,40 @@ define ceph::rgw (
        status   => "systemctl status ceph-radosgw",
      }
    } else {
@@ -35,6 +35,7 @@ index 2a79c07..d7af122 100644
 +        before => Service["radosgw-${name}"],
 +      }
 +    }
++
      Service {
 -      name   => "ceph-radosgw@${name}",
 -      enable => $rgw_enable,
@@ -47,8 +48,6 @@ index 2a79c07..d7af122 100644
    }
  
 -  service { $rgw_service:
--    ensure => $rgw_ensure,
--    tag    => ['ceph-radosgw']
 +  #for RHEL/CentOS7, systemctl needs to reload to pickup the ceph-radosgw init file
 +  if (($::operatingsystem == 'RedHat' or $::operatingsystem == 'CentOS') and (versioncmp($::operatingsystemmajrelease, '7') >= 0))
 +  {
@@ -57,11 +56,12 @@ index 2a79c07..d7af122 100644
 +    }
 +  }
 +  service { "radosgw-${name}":
-+     ensure => $rgw_ensure,
+     ensure => $rgw_ensure,
+-    tag    => ['ceph-radosgw']
 +    tag    => ['radosgw']
    }
  
--  Ceph_config<||> -> Service<| tag == 'ceph-radosgw' |>
+-  Ceph_config<||> ~> Service<| tag == 'ceph-radosgw' |>
 +  Ceph_config<||> -> Service["radosgw-${name}"]
    Package<| tag == 'ceph' |> -> File['/var/lib/ceph/radosgw']
    Package<| tag == 'ceph' |> -> File[$log_file]
@@ -75,7 +75,7 @@ index 2a79c07..d7af122 100644
 +  Ceph::Pool<||> -> Service["radosgw-${name}"]
  }
 diff --git a/manifests/rgw/keystone.pp b/manifests/rgw/keystone.pp
-index e17e4e1..72a0554 100644
+index 8351177..c371fd0 100644
 --- a/manifests/rgw/keystone.pp
 +++ b/manifests/rgw/keystone.pp
 @@ -148,7 +148,7 @@ define ceph::rgw::keystone (
@@ -106,5 +106,5 @@ index e17e4e1..72a0554 100644
      ceph_config {
        "client.${name}/nss_db_path":                      ensure => absent;
 -- 
-1.8.3.1
+2.7.4
 

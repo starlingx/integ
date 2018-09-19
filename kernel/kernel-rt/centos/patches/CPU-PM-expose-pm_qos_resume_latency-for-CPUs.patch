@@ -1,10 +1,7 @@
-From cb5a4baadb715440ce03e5e751f7125fc0d5427a Mon Sep 17 00:00:00 2001
-Message-Id: <cb5a4baadb715440ce03e5e751f7125fc0d5427a.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From ef42dfab80cff26850695de8c95c3e1ba294e05c Mon Sep 17 00:00:00 2001
 From: Alex Shi <alex.shi@linaro.org>
 Date: Thu, 12 Jan 2017 21:27:03 +0800
-Subject: [PATCH 23/32] CPU / PM: expose pm_qos_resume_latency for CPUs
+Subject: [PATCH] CPU / PM: expose pm_qos_resume_latency for CPUs
 
 [ commit 37efa4b41ffb31dcdfc3beb97d47992bb2a083e5 from linux-stable ]
 
@@ -39,18 +36,18 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/drivers/base/cpu.c b/drivers/base/cpu.c
-index 803d2a0..1d9bba3 100644
+index 65e786d..91d620f 100644
 --- a/drivers/base/cpu.c
 +++ b/drivers/base/cpu.c
-@@ -15,6 +15,7 @@
- #include <linux/percpu.h>
+@@ -16,6 +16,7 @@
  #include <linux/acpi.h>
  #include <linux/tick.h>
+ #include <linux/nospec.h>
 +#include <linux/pm_qos.h>
  
  #include "base.h"
  
-@@ -318,6 +319,7 @@ int register_cpu(struct cpu *cpu, int num)
+@@ -319,6 +320,7 @@ int register_cpu(struct cpu *cpu, int num)
  		per_cpu(cpu_sys_devices, num) = &cpu->dev;
  	if (!error)
  		register_cpu_under_node(num, cpu_to_node(num));
@@ -59,5 +56,5 @@ index 803d2a0..1d9bba3 100644
  #ifdef CONFIG_KEXEC
  	if (!error)
 -- 
-1.8.3.1
+2.7.4
 

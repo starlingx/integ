@@ -1,7 +1,7 @@
-From e665a4b1693745e5c97c14c473e531883225df12 Mon Sep 17 00:00:00 2001
+From 9ca3c8b4c62532cfbcdf5b9bf1c24a5a53e4f619 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:55:36 -0400
-Subject: [PATCH 3/3] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/util-linux.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/util-linux.spec b/SPECS/util-linux.spec
-index bed4869..2388f6a 100644
+index 537a03c..3897c16 100644
 --- a/SPECS/util-linux.spec
 +++ b/SPECS/util-linux.spec
 @@ -2,7 +2,7 @@
  Summary: A collection of basic system utilities
  Name: util-linux
  Version: 2.23.2
--Release: 43%{?dist}
-+Release: 43.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 52%{?dist}
++Release: 52.el7%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2 and GPLv2+ and LGPLv2+ and BSD with advertising and Public Domain
  Group: System Environment/Base
  URL: http://en.wikipedia.org/wiki/Util-linux
 -- 
-1.9.1
+2.7.4
 

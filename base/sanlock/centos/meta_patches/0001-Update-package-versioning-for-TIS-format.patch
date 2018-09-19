@@ -1,7 +1,7 @@
-From 112dfdc394a779a860c79c067d47142dc1db2484 Mon Sep 17 00:00:00 2001
+From b37781fdf5c5f4b373f124875c39ae10697c5898 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:45:32 -0400
-Subject: [PATCH 3/3] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/sanlock.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/sanlock.spec b/SPECS/sanlock.spec
-index b4996de..ebce8c1 100644
+index 5bfb8e4..587fcb2 100644
 --- a/SPECS/sanlock.spec
 +++ b/SPECS/sanlock.spec
 @@ -6,7 +6,7 @@
  
  Name:           sanlock
- Version:        3.5.0
+ Version:        3.6.0
 -Release:        1%{?dist}
 +Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        A shared storage lock manager
  
  Group:          System Environment/Base
 -- 
-1.9.1
+2.7.4
 

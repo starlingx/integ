@@ -1,7 +1,7 @@
-From 2f9511e04b5af2b214b949acf9577eaa95153a60 Mon Sep 17 00:00:00 2001
+From ebe97c306c3251fc4ba58110ad4f0fa709d04969 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:22:44 -0400
-Subject: [PATCH 2/2] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/logrotate.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/logrotate.spec b/SPECS/logrotate.spec
-index 1b4e4e3..46e17e8 100644
+index c22af07..0dbde7d 100644
 --- a/SPECS/logrotate.spec
 +++ b/SPECS/logrotate.spec
 @@ -1,7 +1,7 @@
  Summary: Rotates, compresses, removes and mails system log files
  Name: logrotate
  Version: 3.8.6
--Release: 14%{?dist}
-+Release: 14.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 15%{?dist}
++Release: 15.el7%{?_tis_dist}.%{tis_patch_ver}
  License: GPL+
  Group: System Environment/Base
- Url: https://fedorahosted.org/logrotate/
+ URL: https://github.com/logrotate/logrotate
 -- 
-1.9.1
+2.7.4
 

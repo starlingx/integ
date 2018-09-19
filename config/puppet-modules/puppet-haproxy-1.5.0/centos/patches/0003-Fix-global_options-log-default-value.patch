@@ -1,8 +1,9 @@
-From 872a041122b1e443e23a16e5816c3d8aa18714f8 Mon Sep 17 00:00:00 2001
+From 16163f14c8f9b1b81b6e394c31c72030938435c7 Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
-Date: Sun, 24 Sep 2017 00:14:25 -0400
+Date: Tue, 4 Sep 2018 20:01:53 +0800
 Subject: [PATCH] Fix global_options log default value
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
  manifests/params.pp | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -21,5 +22,5 @@ index 21e6bb0..b29e427 100644
          'pidfile' => '/var/run/haproxy.pid',
          'maxconn' => '4000',
 -- 
-1.8.3.1
+2.7.4
 

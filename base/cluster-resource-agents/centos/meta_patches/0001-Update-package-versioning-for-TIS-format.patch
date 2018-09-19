@@ -1,8 +1,7 @@
-From 2bc73669b8de70bf32d2f786b158738506e480ff Mon Sep 17 00:00:00 2001
+From 85cd40238fb1f76483848007bd1e5663bb3f21ff Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:59 -0400
-Subject: [PATCH 08/10] WRS:
- 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/resource-agents.spec
@@ -11,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index 6be3418..28a8129 100644
+index 21fa049..fd8bc97 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
 @@ -48,7 +48,7 @@
  Name:		resource-agents
  Summary:	Open Source HA Reusable Cluster Resource Scripts
  Version:	3.9.5
--Release:	105%{?dist}
-+Release:	105.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:	124%{?dist}
++Release:       124.el7%{?_tis_dist}.%{tis_patch_ver}
  License:	GPLv2+, LGPLv2+ and ASL 2.0
  URL:		https://github.com/ClusterLabs/resource-agents
  %if 0%{?fedora} || 0%{?centos_version} || 0%{?rhel}
 -- 
-1.9.1
+2.7.4
 

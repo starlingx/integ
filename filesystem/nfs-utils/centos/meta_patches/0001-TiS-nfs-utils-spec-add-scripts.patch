@@ -1,7 +1,7 @@
-From b7c902072f15c14507ab837f769b6adcf299f2ed Mon Sep 17 00:00:00 2001
+From 535d4790b40ae2eaf9435ece40cf420165874877 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:19:43 -0400
-Subject: [PATCH 1/4] WRS: 0001-TiS-nfs-utils-spec-add-scripts.patch
+Subject: [PATCH] WRS: 0001-TiS-nfs-utils-spec-add-scripts.patch
 
 Conflicts:
 	SPECS/nfs-utils.spec
@@ -10,7 +10,7 @@ Conflicts:
  1 file changed, 29 insertions(+)
 
 diff --git a/SPECS/nfs-utils.spec b/SPECS/nfs-utils.spec
-index a8d651a..583990d 100644
+index 6dfddc0..282511e 100644
 --- a/SPECS/nfs-utils.spec
 +++ b/SPECS/nfs-utils.spec
 @@ -15,6 +15,10 @@ Source2: nfs.sysconfig
@@ -24,30 +24,30 @@ index a8d651a..583990d 100644
  
  #
  # RHEL7.1
-@@ -131,6 +135,10 @@ Patch101: nfs-utils-1.2.1-exp-subtree-warn-off.patch
- Patch102: nfs-utils-1.2.3-sm-notify-res_init.patch
- Patch103: nfs-utils-1.2.5-idmap-errmsg.patch
+@@ -145,6 +149,10 @@ Patch1001: nfs-utils-1.2.1-exp-subtree-warn-off.patch
+ Patch1002: nfs-utils-1.2.3-sm-notify-res_init.patch
+ Patch1003: nfs-utils-1.2.5-idmap-errmsg.patch
  
 +# Titanium Cloud Patches
-+Patch200: nfs-utils-support-mountprog-and-nfsprog-options.patch
-+Patch201: nfs-utils-do-not-pass-CFLAGS-to-native.patch
++Patch2000: nfs-utils-support-mountprog-and-nfsprog-options.patch
++Patch2001: nfs-utils-do-not-pass-CFLAGS-to-native.patch
 +
  Group: System Environment/Daemons
  Provides: exportfs    = %{epoch}:%{version}-%{release}
  Provides: nfsstat     = %{epoch}:%{version}-%{release}
-@@ -382,6 +390,11 @@ This package also contains the mount.nfs and umount.nfs program.
- %patch102 -p1
- %patch103 -p1
+@@ -418,6 +426,11 @@ This package also contains the mount.nfs and umount.nfs program.
+ %patch1002 -p1
+ %patch1003 -p1
  
-+%patch200 -p1
++%patch2000 -p1
 +# Titanium Cloud support mountprog and nfsprog options
-+%patch201 -p1
++%patch2001 -p1
 +# Titanium Cloud do not pass CFLAGS to native 
 +
  # Remove .orig files
  find . -name "*.orig" | xargs rm -f
  
-@@ -443,6 +456,13 @@ install -m 755 %{SOURCE3} $RPM_BUILD_ROOT/usr/lib/systemd/scripts/nfs-utils_env.
+@@ -479,6 +492,13 @@ install -m 755 %{SOURCE3} $RPM_BUILD_ROOT/usr/lib/systemd/scripts/nfs-utils_env.
  install -m 644 %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/lockd.conf
  install -m 644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/gssproxy
  
@@ -61,7 +61,7 @@ index a8d651a..583990d 100644
  #
  # For backwards compatablity 
  #
-@@ -521,6 +541,9 @@ if [ $1 -eq 1 ] ; then
+@@ -557,6 +577,9 @@ if [ $1 -eq 1 ] ; then
  	# Initial installation
  	/bin/systemctl enable nfs-client.target >/dev/null 2>&1 || :
  	/bin/systemctl restart nfs-config  >/dev/null 2>&1 || :
@@ -71,7 +71,7 @@ index a8d651a..583990d 100644
  fi
  %systemd_post nfs-config
  %systemd_post nfs-server
-@@ -532,6 +555,9 @@ chown -R rpcuser:rpcuser /var/lib/nfs/statd
+@@ -568,6 +591,9 @@ chown -R rpcuser:rpcuser /var/lib/nfs/statd
  if [ $1 -eq 0 ]; then
  	%systemd_preun nfs-client.target
  	%systemd_preun nfs-server.server
@@ -81,7 +81,7 @@ index a8d651a..583990d 100644
  
      /usr/sbin/userdel rpcuser 2>/dev/null || :
      /usr/sbin/groupdel rpcuser 2>/dev/null || :
-@@ -618,6 +644,9 @@ fi
+@@ -654,6 +680,9 @@ fi
  %{_sbindir}/nfsdcltrack
  %{_mandir}/*/*
  %{_unitdir}/*
@@ -90,7 +90,7 @@ index a8d651a..583990d 100644
 +
  %attr(755,root,root) /usr/lib/systemd/scripts/nfs-utils_env.sh
  %{_prefix}/lib/systemd/system-generators/nfs-server-generator
- 
+ %{_prefix}/lib/systemd/system-generators/rpc-pipefs-generator
 -- 
-1.9.1
+2.7.4
 

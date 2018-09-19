@@ -1,32 +1,32 @@
-From bb774f39b779de4e31007fc70bead641820ae74f Mon Sep 17 00:00:00 2001
+From 07aca8a7f571059552dceb9a83d7b231e6ba01ff Mon Sep 17 00:00:00 2001
 From: Jerry Sun <jerry.sun@windriver.com>
 Date: Mon, 8 Jan 2018 12:28:08 -0500
-Subject: [PATCH 1/1] meta add murano uid and gid
+Subject: [PATCH 14/15] meta add murano uid and gid
 
 ---
  SPECS/setup.spec | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/setup.spec b/SPECS/setup.spec
-index 55dd30b..b652b3c 100644
+index 974113e..7f636ea 100644
 --- a/SPECS/setup.spec
 +++ b/SPECS/setup.spec
-@@ -29,6 +29,7 @@ Patch10: remove-unused-default-groups.patch
- Patch11: add-fm-user-to-snmpd-group.patch
- Patch12: add-magnum-uid-gid.patch
- Patch13: add-ironic-uid-gid.patch
-+Patch14: add-murano-uid-gid.patch
+@@ -31,6 +31,7 @@ Patch12: remove-unused-default-groups.patch
+ Patch13: add-fm-user-to-snmpd-group.patch
+ Patch14: add-magnum-uid-gid.patch
+ Patch15: add-ironic-uid-gid.patch
++Patch16: add-murano-uid-gid.patch
  
  %description
  The setup package contains a set of important system configuration and
-@@ -50,6 +51,7 @@ setup files, such as passwd, group, and profile.
- %patch11 -p1
- %patch12 -p1
+@@ -54,6 +55,7 @@ setup files, such as passwd, group, and profile.
  %patch13 -p1
-+%patch14 -p1
+ %patch14 -p1
+ %patch15 -p1
++%patch16 -p1
  
  ./shadowconvert.sh
  
 -- 
-1.8.3.1
+2.7.4
 

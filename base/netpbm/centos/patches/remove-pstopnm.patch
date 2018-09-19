@@ -1,25 +1,37 @@
-diff --git a/netpbm-10.61.02/converter/other/Makefile b/netpbm-10.61.02/converter/other/Makefile
-index 746db87..02c66b4 100644
---- a/netpbm-10.61.02/converter/other/Makefile
-+++ b/netpbm-10.61.02/converter/other/Makefile
+From ba7b88e20f58d1d549bf7eec2e7fc2fa2a229362 Mon Sep 17 00:00:00 2001
+From: zhipengl <zhipengs.liu@intel.com>
+Date: Wed, 22 Aug 2018 00:50:54 +0800
+Subject: remove-pstopnm.patch
+
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+---
+ converter/other/Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/converter/other/Makefile b/converter/other/Makefile
+index b01f66a..6e9c84f 100644
+--- a/converter/other/Makefile
++++ b/converter/other/Makefile
 @@ -7,6 +7,7 @@ VPATH=.:$(SRCDIR)/$(SUBDIR)
  
  include $(BUILDDIR)/config.mk
  
 +USE_GHOSTSCRIPT=N
- TEST_PKGCONFIG_LIBXML2 = if pkg-config libxml-2.0; then echo exists; fi
+ TEST_PKGCONFIG_LIBXML2 = if $(PKG_CONFIG) libxml-2.0; then echo exists; fi
  
  ifneq ($(shell $(TEST_PKGCONFIG_LIBXML2)),)
-@@ -134,10 +135,12 @@ BINARIES = \
-   rasttopnm \
-   srftopam \
+@@ -126,9 +127,11 @@ PORTBINARIES =  avstopam bmptopnm fitstopnm \
+ 		rasttopnm rlatopam sgitopnm sirtopnm srftopam sunicontopnm \
+ 		winicontopam xwdtopnm yuy2topam zeisstopnm
  
 +ifneq ($(USE_GHOSTSCRIPT),N)
  ifneq ($(DONT_HAVE_PROCESS_MGMT),Y)
-   PORTBINARIES += pstopnm
-   BINARIES += pnmtops
+   PORTBINARIES += pstopnm pnmtops
  endif
 +endif
  
  ifeq ($(HAVE_PNGLIB),Y)
-   BINARIES += pnmtopng pngtopam pamrgbatopng
+   PORTBINARIES += pamtopng pnmtopng pngtopam
+-- 
+2.7.4
+

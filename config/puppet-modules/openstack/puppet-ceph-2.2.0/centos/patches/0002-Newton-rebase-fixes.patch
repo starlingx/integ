@@ -9,7 +9,7 @@ Subject: [PATCH] Newton rebase fixes
  2 files changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/manifests/mon.pp b/manifests/mon.pp
-index 54f9909..41fd8df 100644
+index 5f7138f..543d044 100644
 --- a/manifests/mon.pp
 +++ b/manifests/mon.pp
 @@ -100,10 +100,13 @@ define ceph::mon (
@@ -30,7 +30,7 @@ index 54f9909..41fd8df 100644
      }
  
 diff --git a/manifests/osd.pp b/manifests/osd.pp
-index 5d3628d..ef171eb 100644
+index 9b8cd99..2187361 100644
 --- a/manifests/osd.pp
 +++ b/manifests/osd.pp
 @@ -56,7 +56,7 @@ define ceph::osd (
@@ -41,7 +41,7 @@ index 5d3628d..ef171eb 100644
 +  $fsid = undef,
    ) {
  
-     $data = $name
+     include ::ceph::params
 -- 
-1.8.3.1
+2.7.4
 

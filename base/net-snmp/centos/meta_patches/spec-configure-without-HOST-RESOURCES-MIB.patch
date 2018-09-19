@@ -1,8 +1,18 @@
+From 0358f8ee4e56fbd3f4c54409b3dbe5c9fdff3a27 Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Sun, 12 Aug 2018 22:07:24 +0800
+Subject: [PATCH] spec-configure-without-HOST-RESOURCES-MIB
+
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
+---
+ SPECS/net-snmp.spec | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
 diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
-index 12323a4..1e23fba 100644
+index a1b3720..e6e5d8c 100644
 --- a/SPECS/net-snmp.spec
 +++ b/SPECS/net-snmp.spec
-@@ -331,7 +331,7 @@ rm testing/fulltests/default/T200*
+@@ -342,7 +342,7 @@ rm testing/fulltests/default/T200*
  %endif
  
  %build
@@ -11,7 +21,7 @@ index 12323a4..1e23fba 100644
       ucd-snmp/diskio tcp-mib udp-mib mibII/mta_sendmail \
       ip-mib/ipv4InterfaceTable ip-mib/ipv6InterfaceTable \
       ip-mib/ipAddressPrefixTable/ipAddressPrefixTable \
-@@ -352,6 +352,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
+@@ -363,6 +363,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
      --with-logfile="/var/log/snmpd.log" \
      --with-persistent-directory="/var/lib/net-snmp" \
      --with-mib-modules="$MIBS" \
@@ -19,3 +29,6 @@ index 12323a4..1e23fba 100644
  %if %{netsnmp_tcp_wrappers}
      --with-libwrap=yes \
  %endif
+-- 
+2.7.4
+

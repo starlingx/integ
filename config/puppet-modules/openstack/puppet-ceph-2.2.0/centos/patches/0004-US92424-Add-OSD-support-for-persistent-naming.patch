@@ -12,18 +12,18 @@ associated with udev link.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/manifests/osd.pp b/manifests/osd.pp
-index ef171eb..b9deea3 100644
+index 2187361..d9cf5b1 100644
 --- a/manifests/osd.pp
 +++ b/manifests/osd.pp
-@@ -59,7 +59,7 @@ define ceph::osd (
-   $fsid = undef,
-   ) {
+@@ -61,7 +61,7 @@ define ceph::osd (
+ 
+     include ::ceph::params
  
 -    $data = $name
 +    $data = generate('/bin/bash','-c',"/bin/readlink -f ${name}")
  
      if $cluster {
-       $cluster_option = "--cluster ${cluster}"
+       $cluster_name = $cluster
 -- 
-2.9.0
+2.7.4
 

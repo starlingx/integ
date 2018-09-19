@@ -1,4 +1,4 @@
-From 6dc3b747b2688498a69d3ca8f826f30aecfc9f5b Mon Sep 17 00:00:00 2001
+From 00b88829aad297c6732617a706501b466bb9be7a Mon Sep 17 00:00:00 2001
 From: Al Bailey <Al.Bailey@windriver.com>
 Date: Mon, 28 May 2018 14:12:45 -0500
 Subject: [PATCH] metapatch for arp_bg
@@ -8,25 +8,25 @@ Subject: [PATCH] metapatch for arp_bg
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index 2536cb7..5b38434 100644
+index c70d20b..520d9c3 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -253,6 +253,7 @@ Patch1117: lvm_cleanup_refs_on_stop.patch
+@@ -282,6 +282,7 @@ Patch1116: ocf-shellfuncs_change_logtag.patch
+ Patch1117: lvm_cleanup_refs_on_stop.patch
  Patch1118: ipaddr2_if_down.patch
  Patch1119: ipaddr2_ignore_lo_if_state.patch
- Patch1120: Modify-error-code-of-bz1454699-fix-to-prevent-inactive-controller-reboot-loop.patch
-+Patch1121: Re-enable-background-execution-of-arp-commands.patch
++Patch1120: Re-enable-background-execution-of-arp-commands.patch
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -563,6 +564,7 @@ exit 1
+@@ -618,6 +619,7 @@ exit 1
+ %patch1117 -p1
  %patch1118 -p1
  %patch1119 -p1
- %patch1120 -p1
-+%patch1121 -p1
++%patch1120 -p1
  
  %build
  if [ ! -f configure ]; then
 -- 
-1.8.3.1
+2.7.4
 

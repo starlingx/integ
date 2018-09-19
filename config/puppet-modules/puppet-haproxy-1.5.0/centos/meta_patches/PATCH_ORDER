@@ -2,3 +2,5 @@
 0002-Add-TIS-patch.patch
 0003-disable-config-validation-prechecks.patch
 0004-Add-global_options-patch.patch
+0005-Stop-invalid-warning-message.patch
+

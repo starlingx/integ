@@ -1,7 +1,7 @@
-From a75195ff25cd30a4662cae5835d32a2403032a33 Mon Sep 17 00:00:00 2001
+From 32af2a0ea3905e23d85a65fd9326dbc6db0a21c4 Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 20 Apr 2018 14:51:56 -0400
-Subject: [PATCH 1/5] Build logic and sources for TiC
+Subject: [PATCH] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -9,7 +9,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 60 insertions(+), 13 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 31a5f11..eef356a 100644
+index 1c3a765..f2499b4 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -5,7 +5,8 @@ Summary: The Linux kernel
@@ -26,13 +26,13 @@ index 31a5f11..eef356a 100644
  %global distro_build 862
  
  %define rpmversion 3.10.0
--%define pkgrelease 862.6.3.el7
-+%define _pkgrelease 862.6.3
+-%define pkgrelease 862.11.6.el7
++%define _pkgrelease 862.11.6
 +%define pkgrelease %{_pkgrelease}.el7
 +
  
  # allow pkg_release to have configurable %%{?dist} tag
- %define specrelease 862.6.3%{?dist}
+ %define specrelease 862.11.6%{?dist}
  
 -%define pkg_release %{specrelease}%{?buildid}
 +%define pkg_release %{specrelease}%{buildid}
@@ -224,7 +224,7 @@ index 31a5f11..eef356a 100644
 +%endif
 +
  %changelog
- * Tue Jun 26 2018 CentOS Sources <bugs@centos.org> - 3.10.0-862.6.3.el7
+ * Tue Aug 14 2018 CentOS Sources <bugs@centos.org> - 3.10.0-862.11.6.el7
  - Apply debranding changes
 -- 
 2.7.4

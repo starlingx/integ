@@ -1,6 +1,6 @@
-From 98591b479bd64c2835ab1e8884118c57dd499b9c Mon Sep 17 00:00:00 2001
+From 7c181a1afdc85456333f9cbf9c5827ceb0554a91 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
-Date: Tue, 21 Jun 2016 14:29:36 -0400
+Date: Fri, 24 Aug 2018 03:51:37 +0800
 Subject: [PATCH] Fix VG activity bug in heartbeat/LVM script
 
 There is currently an issue in the lvm2 package where if you create an LVM thin
@@ -19,17 +19,20 @@ group is not active.
 
 This commit changes the code to directly query lvm about the volume group
 activity rather than relying on side effects.
+
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+
 ---
  heartbeat/LVM | 15 ++++++---------
  1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/heartbeat/LVM b/heartbeat/LVM
-index 1c23c05..d91a3bc 100755
+index 893ece8..1efb207 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -350,19 +350,16 @@ LVM_status() {
- 		ocf_exit_reason "LVM Volume $1 is not available"
- 		return $OCF_ERR_GENERIC
+@@ -338,19 +338,16 @@ LVM_status() {
+ 			fi
+ 		fi
  	fi
 -	
 -	if [ -d /dev/$1 ]; then
@@ -54,5 +57,5 @@ index 1c23c05..d91a3bc 100755
  		1) # exclusive with tagging.
  			# If vg is running, make sure the correct tag is present. Otherwise we
 -- 
-1.9.1
+2.7.4
 

@@ -1,7 +1,7 @@
-From c579b798af2fa3b5596bae14d506d1308e8766c6 Mon Sep 17 00:00:00 2001
+From c6c1fee74830348a437cf0b467d299e1f4c42391 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:19:43 -0400
-Subject: [PATCH 4/4] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/nfs-utils.spec
@@ -10,19 +10,19 @@ Conflicts:
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/nfs-utils.spec b/SPECS/nfs-utils.spec
-index 8585c5d..029e2e3 100644
+index a947119..2602031 100644
 --- a/SPECS/nfs-utils.spec
 +++ b/SPECS/nfs-utils.spec
 @@ -2,7 +2,7 @@ Summary: NFS utilities and supporting clients and daemons for the kernel NFS ser
  Name: nfs-utils
  URL: http://sourceforge.net/projects/nfs
  Version: 1.3.0
--Release: 0.48%{?dist}
-+Release: 0.48.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 0.54%{?dist}
++Release: 0.54.el7%{?_tis_dist}.%{tis_patch_ver}
  Epoch: 1
  
  # group all 32bit related archs
-@@ -150,6 +150,7 @@ Provides: rpc.mountd  = %{epoch}:%{version}-%{release}
+@@ -164,6 +164,7 @@ Provides: rpc.mountd  = %{epoch}:%{version}-%{release}
  Provides: rpc.nfsd    = %{epoch}:%{version}-%{release}
  Provides: rpc.statd   = %{epoch}:%{version}-%{release}
  Provides: rpc.gssd    = %{epoch}:%{version}-%{release}
@@ -31,5 +31,5 @@ index 8585c5d..029e2e3 100644
  Provides: mount.nfs4  = %{epoch}:%{version}-%{release}
  Provides: umount.nfs  = %{epoch}:%{version}-%{release}
 -- 
-1.9.1
+2.7.4
 
