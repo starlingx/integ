@@ -8,10 +8,10 @@ Subject: [PATCH] Add TIS patches
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/puppet-ceph.spec b/SPECS/puppet-ceph.spec
-index 7f086c5..771eb26 100644
+index 3d7dccf..5b0deea 100644
 --- a/SPECS/puppet-ceph.spec
 +++ b/SPECS/puppet-ceph.spec
-@@ -8,6 +8,8 @@ License:        Apache-2.0
+@@ -8,6 +8,8 @@ License:        ASL 2.0
  URL:            https://launchpad.net/puppet-ceph
  
  Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_version}.tar.gz
@@ -23,12 +23,12 @@ index 7f086c5..771eb26 100644
 @@ -23,6 +25,8 @@ Community Developed Ceph Module
  
  %prep
- %setup -q -n openstack-ceph-%{version}
+ %setup -q -n openstack-ceph-%{upstream_version}
 +%patch0001 -p1
 +%patch0002 -p1
  
  find . -type f -name ".*" -exec rm {} +
  find . -size 0 -exec rm {} +
 -- 
-1.8.3.1
+2.7.4
 

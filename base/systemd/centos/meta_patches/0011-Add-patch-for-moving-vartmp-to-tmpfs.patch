@@ -1,24 +1,24 @@
-From 4457eecec7e750c2e60f2bc33a0f7c4c70955a86 Mon Sep 17 00:00:00 2001
+From 776961a3addc58b47e9b10bc29d07ae31f2853f8 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: [PATCH 10/10] WRS: 0011-Add-patch-for-moving-vartmp-to-tmpfs.patch
+Subject: [PATCH 5/7] WRS: 0011-Add-patch-for-moving-vartmp-to-tmpfs.patch
 
 ---
  SPECS/systemd.spec | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index a8e1846..e36e410 100644
+index e79f10e..acc059f 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -545,6 +545,7 @@ Patch0503: 0503-Configure-journald-to-forward-to-syslog.patch
- Patch0504: 0504-Configure-journald-rate-limit.patch
- Patch0505: 0505-remove-id-sas-path-symlink.patch
- Patch0506: 0506-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
-+Patch0507: 0507-move-vartmp-to-tmpfs.patch
+@@ -659,6 +659,7 @@ Patch0703: 0703-Configure-journald-to-forward-to-syslog.patch
+ Patch0704: 0704-Configure-journald-rate-limit.patch
+ Patch0705: 0705-remove-id-sas-path-symlink.patch
+ Patch0706: 0706-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
++Patch0707: 0707-move-vartmp-to-tmpfs.patch
  
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
  
 -- 
-1.9.1
+2.7.4
 

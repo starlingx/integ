@@ -1,7 +1,15 @@
+From 02610c6c7bf89593a9b1e98eb5ee0cfba5c48707 Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Thu, 16 Aug 2018 00:13:14 +0800
+Subject: [PATCH] add-fm-user-to-snmpd-group
+
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
 ---
- group |    2 +-
+ group | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/group b/group
+index a3bb69e..9b77aae 100644
 --- a/group
 +++ b/group
 @@ -21,7 +21,7 @@ neutron:x:164:neutron
@@ -13,3 +21,6 @@
  heat:x:187:heat
  nfv:x:172:nfv
  fm:x:195:fm
+-- 
+2.7.4
+

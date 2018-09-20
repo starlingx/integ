@@ -1,7 +1,7 @@
-From 20f4e2f0f19c6d0e9c8ee1314481bc8e85dbd5bb Mon Sep 17 00:00:00 2001
+From a6709dfc64368bac4970e3b99512a4e1b4b8e756 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:32:24 -0400
-Subject: [PATCH 1/1] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/rsync.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/rsync.spec b/SPECS/rsync.spec
-index 85b01f2..310b284 100644
+index d5f6d55..d9cb5ed 100644
 --- a/SPECS/rsync.spec
 +++ b/SPECS/rsync.spec
 @@ -8,7 +8,7 @@
  Summary: A program for synchronizing files over a network
  Name: rsync
- Version: 3.0.9
--Release: 18%{?prerelease}%{?dist}
-+Release: 18.el7%{?_tis_dist}.%{tis_patch_ver}
+ Version: 3.1.2
+-Release: 4%{?prerelease}%{?dist}
++Release: 4.el7%{?_tis_dist}.%{tis_patch_ver}
  Group: Applications/Internet
  URL: http://rsync.samba.org/
  
 -- 
-1.9.1
+2.7.4
 

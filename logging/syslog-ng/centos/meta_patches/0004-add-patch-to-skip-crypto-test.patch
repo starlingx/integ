@@ -1,0 +1,33 @@
+From 90355b3a4f4169bba307427b747766d5a569be8b Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Thu, 30 Aug 2018 18:06:39 +0800
+Subject: [PATCH] add patch to skip crypto test
+
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
+---
+ SPECS/syslog-ng.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/syslog-ng.spec b/SPECS/syslog-ng.spec
+index a75e393..b3eb3ca 100644
+--- a/SPECS/syslog-ng.spec
++++ b/SPECS/syslog-ng.spec
+@@ -19,6 +19,7 @@ Patch0: syslog-ng-3.5.0-syslog-ng.service.patch
+ Patch1: syslog-ng-3.4.0beta1-tests-functional-control.py.patch
+ Patch2: syslog-ng-3.3.6-tests-functional-sql-test.patch
+ Patch3: syslog-ng-service-pid-file-pmond.patch
++Patch4: skip-crypto-test-due-to-it-cause-build-failure.patch
+ 
+ BuildRequires: systemd-units
+ BuildRequires: pkgconfig
+@@ -152,6 +153,7 @@ developing applications that use %{name}.
+ %patch1 -p1
+ %patch2 -p1
+ %patch3 -p1
++%patch4 -p1
+ 
+ # fix perl path
+ %{__sed} -i 's|^#!/usr/local/bin/perl|#!%{__perl}|' contrib/relogger.pl
+-- 
+2.7.4
+

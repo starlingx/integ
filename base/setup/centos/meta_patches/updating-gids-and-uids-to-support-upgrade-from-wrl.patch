@@ -1,32 +1,33 @@
-From b4a83aefe522dc1674c4979436398661f3ae4572 Mon Sep 17 00:00:00 2001
+From 935277306d01c917b81fa33ebc7f27b0edd61f7f Mon Sep 17 00:00:00 2001
 From: Bart Wensley <barton.wensley@windriver.com>
 Date: Mon, 27 Jun 2016 12:28:36 -0400
-Subject: [PATCH 1/1] updating-gids-and-uids-to-support-upgrade-from-wrl.patch
+Subject: [PATCH 04/15] 
+ updating-gids-and-uids-to-support-upgrade-from-wrl.patch
 
 ---
  SPECS/setup.spec | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/setup.spec b/SPECS/setup.spec
-index 184670f..3debacf 100644
+index aa6b36e..18283cd 100644
 --- a/SPECS/setup.spec
 +++ b/SPECS/setup.spec
-@@ -21,6 +21,7 @@ Patch3: setup-2.8.71-uidgidchanges.patch
- Patch4: setup-2.8.71-filesystems.patch
- Patch5: setup-2.8.71-fullpath.patch
- Patch6: tis-uid-gid.patch
-+Patch7: updating-gids-and-uids-to-support-upgrade-from-wrl.patch
+@@ -23,6 +23,7 @@ Patch5: setup-2.8.71-fullpath.patch
+ Patch6: setup-2.8.71-tapeid.patch
+ Patch7: setup-2.8.71-shlocal.patch
+ Patch8: tis-uid-gid.patch
++Patch9: updating-gids-and-uids-to-support-upgrade-from-wrl.patch
  
  %description
  The setup package contains a set of important system configuration and
-@@ -35,6 +36,7 @@ setup files, such as passwd, group, and profile.
- %patch4 -p1
- %patch5 -p1
+@@ -39,6 +40,7 @@ setup files, such as passwd, group, and profile.
  %patch6 -p1
-+%patch7 -p1
+ %patch7 -p1
+ %patch8 -p1
++%patch9 -p1
  
  ./shadowconvert.sh
  
 -- 
-1.8.3.1
+2.7.4
 

@@ -1,4 +1,4 @@
-From 2fb3bb85ad9c2627f8e7f11a64d6dd2f967fb230 Mon Sep 17 00:00:00 2001
+From 157e5047361b4444330481414337adf44f21ed77 Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Mon, 26 Sep 2016 17:40:10 -0400
 Subject: [PATCH] Update package versioning for TIS format
@@ -8,18 +8,18 @@ Subject: [PATCH] Update package versioning for TIS format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/nss-pam-ldapd.spec b/SPECS/nss-pam-ldapd.spec
-index 72aa77f..e04eb55 100644
+index 6313d0f..90dca69 100644
 --- a/SPECS/nss-pam-ldapd.spec
 +++ b/SPECS/nss-pam-ldapd.spec
 @@ -39,7 +39,7 @@
  
  Name:		nss-pam-ldapd
  Version:	0.8.13
--Release:	8%{?dist}
-+Release:	8.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:	16%{?dist}
++Release:       16.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:	An nsswitch module which uses directory servers
  Group:		System Environment/Base
  License:	LGPLv2+
 -- 
-1.8.3.1
+2.7.4
 

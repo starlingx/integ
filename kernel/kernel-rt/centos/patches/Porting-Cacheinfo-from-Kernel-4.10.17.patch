@@ -1,10 +1,7 @@
-From 3b5212f6cf0d7746dd48324fa99030f49073ca8c Mon Sep 17 00:00:00 2001
-Message-Id: <3b5212f6cf0d7746dd48324fa99030f49073ca8c.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From 7c074369c609a20df6a4467bc2de59b8945ee326 Mon Sep 17 00:00:00 2001
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Wed, 19 Jul 2017 02:21:59 -0500
-Subject: [PATCH 19/32] Porting Cacheinfo from Kernel 4.10.17
+Subject: [PATCH] Porting Cacheinfo from Kernel 4.10.17
 
 Original source code from tag v4.10.17 in Linux stable tree for:
 intel_cacheinfo.c, cacheinfo.c and cacheinfo.h.
@@ -61,7 +58,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  create mode 100644 include/linux/cacheinfo.h
 
 diff --git a/Documentation/ABI/testing/sysfs-devices-system-cpu b/Documentation/ABI/testing/sysfs-devices-system-cpu
-index 55338e6..eaf8da1 100644
+index ff65f15..7521be8 100644
 --- a/Documentation/ABI/testing/sysfs-devices-system-cpu
 +++ b/Documentation/ABI/testing/sysfs-devices-system-cpu
 @@ -201,6 +201,71 @@ Description:	address and size of the percpu note.
@@ -1931,10 +1928,10 @@ index 0000000..eb3af27
 +}
 +device_initcall(cacheinfo_sysfs_init);
 diff --git a/drivers/base/cpu.c b/drivers/base/cpu.c
-index bd82212..803d2a0 100644
+index 290609b..65e786d 100644
 --- a/drivers/base/cpu.c
 +++ b/drivers/base/cpu.c
-@@ -338,6 +338,60 @@ struct device *get_cpu_device(unsigned cpu)
+@@ -340,6 +340,60 @@ struct device *get_cpu_device(unsigned cpu)
  }
  EXPORT_SYMBOL_GPL(get_cpu_device);
  
@@ -2106,12 +2103,12 @@ index 0000000..6a524bf
 +
 +#endif /* _LINUX_CACHEINFO_H */
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index 80e2b1d..06f9893 100644
+index a5dd694..ceaa393 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
-@@ -43,6 +43,9 @@ extern ssize_t cpu_show_spectre_v1(struct device *dev,
- extern ssize_t cpu_show_spectre_v2(struct device *dev,
- 				   struct device_attribute *attr, char *buf);
+@@ -49,6 +49,9 @@ extern ssize_t cpu_show_spec_store_bypass(struct device *dev,
+ extern ssize_t cpu_show_l1tf(struct device *dev,
+ 			     struct device_attribute *attr, char *buf);
  
 +extern struct device *cpu_device_create(struct device *parent, void *drvdata,
 +					const struct attribute_group **groups,
@@ -2120,5 +2117,5 @@ index 80e2b1d..06f9893 100644
  extern void unregister_cpu(struct cpu *cpu);
  extern ssize_t arch_cpu_probe(const char *, size_t);
 -- 
-1.8.3.1
+2.7.4
 

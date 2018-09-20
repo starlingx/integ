@@ -1,0 +1,26 @@
+From 193fcf879dbee168238227e2123d63f5bf8a135d Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Thu, 9 Aug 2018 18:38:18 +0800
+Subject: [PATCH] fix build error for unused variable
+
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
+---
+ src/journal/journald-syslog.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
+index 33062ea..fd4e070 100644
+--- a/src/journal/journald-syslog.c
++++ b/src/journal/journald-syslog.c
+@@ -165,8 +165,6 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
+         char header_priority[DECIMAL_STR_MAX(priority) + 3], header_time[64],
+              header_pid[sizeof("[]: ")-1 + DECIMAL_STR_MAX(pid_t) + 1];
+         int n = 0;
+-        time_t t;
+-        struct tm *tm;
+         char *ident_buf = NULL;
+ 
+         assert(s);
+-- 
+2.7.4
+

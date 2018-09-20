@@ -8,7 +8,7 @@ Subject: [PATCH] meta patch for patch5
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/puppet-ceph.spec b/SPECS/puppet-ceph.spec
-index 66fc8ad..c855fc2 100644
+index ef82b81..ad75ea5 100644
 --- a/SPECS/puppet-ceph.spec
 +++ b/SPECS/puppet-ceph.spec
 @@ -12,6 +12,7 @@ Patch0001:      0001-Roll-up-TIS-patches.patch
@@ -28,5 +28,5 @@ index 66fc8ad..c855fc2 100644
  find . -type f -name ".*" -exec rm {} +
  find . -size 0 -exec rm {} +
 -- 
-1.8.3.1
+2.7.4
 

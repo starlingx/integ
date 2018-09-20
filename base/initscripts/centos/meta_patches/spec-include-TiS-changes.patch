@@ -1,7 +1,7 @@
-From 9caa7a0860a8adcf38047fb39b6e1577099104d6 Mon Sep 17 00:00:00 2001
+From 29d8980d8c67a302a27a3084f58657414578a2b9 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:49:27 -0400
-Subject: [PATCH 01/13] WRS: spec-include-TiS-changes.patch
+Subject: [PATCH] WRS: spec-include-TiS-changes.patch
 
 Conflicts:
 	SPECS/initscripts.spec
@@ -10,7 +10,7 @@ Conflicts:
  1 file changed, 15 insertions(+)
 
 diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
-index 6b81095..7f93a30 100644
+index e96290a..665b576 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
 @@ -7,6 +7,10 @@ Group: System Environment/Base
@@ -24,8 +24,8 @@ index 6b81095..7f93a30 100644
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
  Obsoletes: initscripts-legacy <= 9.39
  Requires: /bin/awk, sed, coreutils
-@@ -35,6 +39,10 @@ Requires(preun): /sbin/chkconfig
- BuildRequires: glib2-devel popt-devel gettext pkgconfig
+@@ -36,6 +40,10 @@ Requires(preun): /sbin/chkconfig
+ BuildRequires: glib2-devel popt-devel gettext pkgconfig systemd
  Provides: /sbin/service
  
 +Patch4: support-interface-scriptlets.patch
@@ -35,7 +35,7 @@ index 6b81095..7f93a30 100644
  %description
  The initscripts package contains basic system scripts used
  during a boot of the system. It also contains scripts which
-@@ -54,6 +62,10 @@ Currently, this consists of various memory checking code.
+@@ -55,6 +63,10 @@ Currently, this consists of various memory checking code.
  %prep
  %setup -q
  
@@ -46,7 +46,7 @@ index 6b81095..7f93a30 100644
  %build
  make
  
-@@ -74,6 +86,9 @@ rm -f \
+@@ -75,6 +87,9 @@ rm -f \
  touch $RPM_BUILD_ROOT/etc/crypttab
  chmod 600 $RPM_BUILD_ROOT/etc/crypttab
  
@@ -57,5 +57,5 @@ index 6b81095..7f93a30 100644
  /usr/sbin/groupadd -g 22 -r -f utmp
  
 -- 
-1.9.1
+2.7.4
 

@@ -1,24 +1,24 @@
-From e188f1148982166624ae72f8fac70775a2bc8d73 Mon Sep 17 00:00:00 2001
+From f651db58b668b32e1f365eaeb35bcff12bcbc5ad Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: 0010-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
+Subject: [PATCH 4/7] 0010-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
 
 ---
  SPECS/systemd.spec | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 33f3128..a8e1846 100644
+index e9fc3a4..e79f10e 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -544,6 +544,7 @@ Patch0502: 0502-udev-path_id-introduce-support-for-NVMe-devices-4169.patch
- Patch0503: 0503-Configure-journald-to-forward-to-syslog.patch
- Patch0504: 0504-Configure-journald-rate-limit.patch
- Patch0505: 0505-remove-id-sas-path-symlink.patch
-+Patch0506: 0506-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
+@@ -658,6 +658,7 @@ Patch0701: 0701-inject-millisec-in-syslog-date.patch
+ Patch0703: 0703-Configure-journald-to-forward-to-syslog.patch
+ Patch0704: 0704-Configure-journald-rate-limit.patch
+ Patch0705: 0705-remove-id-sas-path-symlink.patch
++Patch0706: 0706-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
  
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
  
 -- 
-1.9.1
+2.7.4
 

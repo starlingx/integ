@@ -9,3 +9,4 @@
 0011-Add-patch-for-moving-vartmp-to-tmpfs.patch
 0012-Add-patch-for-restricting-tmpfs-size.patch
 0013-fix-systemd-tmpfiles-ACL-warnings.patch
+0014-fix-build-error-for-unused-variable.patch

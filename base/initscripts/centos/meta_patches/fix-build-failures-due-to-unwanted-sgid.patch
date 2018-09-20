@@ -1,25 +1,17 @@
-From 8351b22a5a517ebe779d4bf4904694bd1bd85890 Mon Sep 17 00:00:00 2001
+From 2c096cfd84fea55fd1f2df466d5635c06daab2a2 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:49:27 -0400
-Subject: [PATCH 12/13] WRS: fix-build-failures-due-to-unwanted-sgid.patch
+Subject: [PATCH] WRS: fix-build-failures-due-to-unwanted-sgid.patch
 
 ---
- SPECS/initscripts.spec | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ SPECS/initscripts.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
-index f2d0271..09674a7 100644
+index 938e9bb..e60c826 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -197,6 +197,7 @@ rm -rf $RPM_BUILD_ROOT
- %dir /etc/rwtab.d
- %dir /etc/statetab.d
- /usr/lib/systemd/rhel-*
-+%dir %attr(0755,root,root) /usr/lib/systemd/system/*wants
- /usr/lib/systemd/system/*
- /etc/inittab
- /etc/rc[0-9].d
-@@ -237,7 +238,7 @@ rm -rf $RPM_BUILD_ROOT
+@@ -239,7 +239,7 @@ rm -rf $RPM_BUILD_ROOT
  %ghost %attr(0664,root,utmp) /var/run/utmp
  %ghost %attr(0644,root,root) /etc/sysconfig/kvm
  %ghost %verify(not md5 size mtime) %config(noreplace,missingok) /etc/crypttab
@@ -29,5 +21,5 @@ index f2d0271..09674a7 100644
  %dir /usr/libexec/initscripts
  %dir /usr/libexec/initscripts/legacy-actions
 -- 
-1.9.1
+2.7.4
 

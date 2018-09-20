@@ -1,4 +1,4 @@
-From df02d7127b6feba73728380493033f5b212faab7 Mon Sep 17 00:00:00 2001
+From ebeb61340d3bc91c2489846a00878c557310634d Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Tue, 27 Sep 2016 10:49:05 -0400
 Subject: [PATCH] Update package versioning for TIS format
@@ -8,18 +8,18 @@ Subject: [PATCH] Update package versioning for TIS format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/pam.spec b/SPECS/pam.spec
-index a702aca..dabbeee 100644
+index 0ee1747..e397385 100644
 --- a/SPECS/pam.spec
 +++ b/SPECS/pam.spec
 @@ -3,7 +3,7 @@
  Summary: An extensible library which provides authentication for applications
  Name: pam
  Version: 1.1.8
--Release: 18%{?dist}
-+Release: 18.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 22%{?dist}
++Release: 22.el7%{?_tis_dist}.%{tis_patch_ver}
  # The library is BSD licensed with option to relicense as GPLv2+
  # - this option is redundant as the BSD license allows that anyway.
  # pam_timestamp, pam_loginuid, and pam_console modules are GPLv2+.
 -- 
-1.8.3.1
+2.7.4
 

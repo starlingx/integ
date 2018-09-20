@@ -8,10 +8,10 @@ Subject: [PATCH] Add OSD support for persistent naming
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/puppet-ceph.spec b/SPECS/puppet-ceph.spec
-index bb4392d..99e4ac8 100644
+index 23e0562..ef82b81 100644
 --- a/SPECS/puppet-ceph.spec
 +++ b/SPECS/puppet-ceph.spec
-@@ -13,6 +13,7 @@ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_versio
+@@ -11,6 +11,7 @@ Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_versio
  Patch0001:      0001-Roll-up-TIS-patches.patch
  Patch0002:      0002-Newton-rebase-fixes.patch
  Patch0003:      0003-Ceph-Jewel-rebase.patch
@@ -19,7 +19,7 @@ index bb4392d..99e4ac8 100644
  
  BuildArch:      noarch
  
-@@ -31,6 +32,7 @@ Community Developed Ceph Module
+@@ -29,6 +30,7 @@ Community Developed Ceph Module
  %patch0001 -p1
  %patch0002 -p1
  %patch0003 -p1
@@ -28,5 +28,5 @@ index bb4392d..99e4ac8 100644
  find . -type f -name ".*" -exec rm {} +
  find . -size 0 -exec rm {} +
 -- 
-1.8.3.1
+2.7.4
 

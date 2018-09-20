@@ -1,4 +1,4 @@
-From 974b70a23b6a6c579fc4d43efd42e42f26c27310 Mon Sep 17 00:00:00 2001
+From cd3e0b0fea9588c987db119cb6d7840ace399368 Mon Sep 17 00:00:00 2001
 From: Allain Legacy <allain.legacy@windriver.com>
 Date: Thu, 17 Nov 2016 08:27:42 -0500
 Subject: [PATCH] sysconfig: affirmative check for link carrier
@@ -25,18 +25,18 @@ Signed-off-by: Allain Legacy <allain.legacy@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/sysconfig/network-scripts/network-functions b/sysconfig/network-scripts/network-functions
-index 798f28a..affa8ba 100644
+index d08f618..13cf4de 100644
 --- a/sysconfig/network-scripts/network-functions
 +++ b/sysconfig/network-scripts/network-functions
-@@ -463,7 +463,7 @@ check_link_down ()
+@@ -473,7 +473,7 @@ check_link_down ()
      delay=20
      [ -n "$LINKDELAY" ] && delay=$(($LINKDELAY * 2))
      while [ $timeout -le $delay ]; do
 -        [ "$(cat /sys/class/net/$REALDEVICE/carrier 2>/dev/null)" != "0" ] && return 1
 +        [ "$(cat /sys/class/net/$REALDEVICE/carrier 2>/dev/null)" == "1" ] && return 1
-         usleep 500000
+         sleep 0.5
          timeout=$((timeout+1))
      done
 -- 
-1.9.1
+2.7.4
 

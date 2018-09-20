@@ -1,7 +1,7 @@
-From af36b0f028b07a6487e57040bb6c980ff6a4a41c Mon Sep 17 00:00:00 2001
+From 30615fcee3c857e0bb2900a64e14b807adff5495 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:29:01 -0400
-Subject: [PATCH 3/3] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/ntp.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/ntp.spec b/SPECS/ntp.spec
-index f717899..454020c 100644
+index 73ab0f7..bf9c32b 100644
 --- a/SPECS/ntp.spec
 +++ b/SPECS/ntp.spec
 @@ -1,7 +1,7 @@
  Summary: The NTP daemon and utilities
  Name: ntp
  Version: 4.2.6p5
--Release: 25%{?dist}.2
-+Release: 25.el7.centos.2%{?_tis_dist}.%{tis_patch_ver}
+-Release: 28%{?dist}
++Release: 28.el7.centos%{?_tis_dist}.%{tis_patch_ver}
  # primary license (COPYRIGHT) : MIT
  # ElectricFence/ (not used) : GPLv2
  # kernel/sys/ppsclock.h (not used) : BSD with advertising
 -- 
-1.9.1
+2.7.4
 

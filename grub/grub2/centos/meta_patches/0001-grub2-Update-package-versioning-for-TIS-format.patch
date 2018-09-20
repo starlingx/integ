@@ -1,13 +1,25 @@
+From 008445e8d11202f53190da4a12386df338549000 Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Fri, 17 Aug 2018 22:48:46 +0800
+Subject: [PATCH] Update-package-versioning-for-TIS-format
+
+---
+ SPECS/grub2.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index a56d930..a4e87f5 100644
+index 12d34ad..88c6c09 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -8,7 +8,7 @@
+@@ -6,7 +6,7 @@
  Name:           grub2
  Epoch:          1
  Version:        2.02
--Release:        0.64%{?dist}%{?buildid}
-+Release:        0.64.el7.centos%{?_tis_dist}.%{tis_patch_ver}
+-Release:        0.65%{?dist}%{?buildid}.2
++Release:        0.65.el7.centos.2%{?_tis_dist}.%{tis_patch_ver}
  Summary:        Bootloader with support for Linux, Multiboot and more
  Group:          System Environment/Base
  License:        GPLv3+
+-- 
+2.7.4
+

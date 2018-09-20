@@ -1,7 +1,7 @@
-From 099d1c1f3376673e9a3c5747c87c8c756c883ce6 Mon Sep 17 00:00:00 2001
+From 857b95ac924a980c60d894148d3c5d41aca8447d Mon Sep 17 00:00:00 2001
 From: Andy Ning <andy.ning@windriver.com>
 Date: Thu, 22 Mar 2018 11:45:26 -0400
-Subject: [PATCH 1/1] CGTS-9265: patch to harden server and client config
+Subject: [PATCH] CGTS-9265: patch to harden server and client config
 
 Replace the hardcoded sshd_config and ssh_config files with patches
 to openssh.
@@ -12,12 +12,12 @@ Signed-off-by: Andy Ning <andy.ning@windriver.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
-index 7ee5bd8..7c464a2 100644
+index 442261e..c62e6c8 100644
 --- a/SPECS/openssh.spec
 +++ b/SPECS/openssh.spec
-@@ -240,6 +240,9 @@ Patch955: openssh-7.4p1-sandbox-ibmca.patch
- # Back to UseDNS=yes by default (#1478175)
- Patch956: openssh-7.4p1-usedns-yes.patch
+@@ -251,6 +251,9 @@ Patch959: openssh-7.4p1-authorized_keys_command.patch
+ # Fix for CVE-2017-15906 (#1517226)
+ Patch960: openssh-7.5p1-sftp-empty-files.patch
  
 +# WRS: harden server and client config
 +Patch1000: harden-server-and-client-config.patch
@@ -25,7 +25,7 @@ index 7ee5bd8..7c464a2 100644
  License: BSD
  Group: Applications/Internet
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-@@ -494,6 +497,9 @@ popd
+@@ -511,6 +514,9 @@ popd
  
  %patch100 -p1 -b .coverity
  
@@ -36,5 +36,5 @@ index 7ee5bd8..7c464a2 100644
  # Nothing here yet
  %endif
 -- 
-1.8.3.1
+2.7.4
 

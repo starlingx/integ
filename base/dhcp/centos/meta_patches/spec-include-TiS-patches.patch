@@ -1,14 +1,14 @@
-From 68081498cde44d9b5320e795229865e46a1552ac Mon Sep 17 00:00:00 2001
+From 7e7a9f1bce5884da1e57d5bdc4f5215b7231924e Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:25:05 -0400
-Subject: [PATCH 1/7] WRS: spec-include-TiS-patches.patch
+Subject: [PATCH] WRS: spec-include-TiS-patches.patch
 
 ---
  SPECS/dhcp.spec | 28 ++++++++++++++++++++++++++++
  1 file changed, 28 insertions(+)
 
 diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
-index 9647a5a..78ee924 100644
+index 14da097..904e3ad 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
 @@ -39,6 +39,10 @@ Source8:  dhcrelay.service
@@ -22,9 +22,9 @@ index 9647a5a..78ee924 100644
  
  Patch0:   dhcp-4.2.0-errwarn-message.patch
  Patch1:   dhcp-4.2.4-dhclient-options.patch
-@@ -99,6 +103,14 @@ Patch62:  dhcp-max-fd-value.patch
- Patch63:  dhcp-4.2.5-rh1355827.patch
- Patch64:  dhcp-4.2.5-centos-branding.patch
+@@ -111,6 +115,14 @@ Patch70:  dhcp-4.2.5-reference_count_overflow.patch
+ Patch71:  dhcp-4.2.5-centos-branding.patch
+ 
  
 +# WRS
 +Patch101: support-disable-nsupdate.patch
@@ -37,9 +37,9 @@ index 9647a5a..78ee924 100644
  BuildRequires: autoconf
  BuildRequires: automake
  BuildRequires: libtool
-@@ -409,6 +421,14 @@ rm -rf includes/isc-dhcp
- %patch63 -p1
- %patch64 -p1
+@@ -439,6 +451,14 @@ rm -rf includes/isc-dhcp
+ %patch70 -p1 -b .reference_overflow
+ %patch71 -p1
  
 +# WRS
 +%patch101 -p1
@@ -52,7 +52,7 @@ index 9647a5a..78ee924 100644
  # Update paths in all man pages
  for page in client/dhclient.conf.5 client/dhclient.leases.5 \
              client/dhclient-script.8 client/dhclient.8 ; do
-@@ -552,6 +572,10 @@ EOF
+@@ -582,6 +602,10 @@ EOF
  # Don't package libtool *.la files
  find ${RPM_BUILD_ROOT}/%{_libdir} -name '*.la' -exec '/bin/rm' '-f' '{}' ';';
  
@@ -63,7 +63,7 @@ index 9647a5a..78ee924 100644
  %pre
  # /usr/share/doc/setup/uidgid
  %global gid_uid 177
-@@ -667,6 +691,10 @@ done
+@@ -697,6 +721,10 @@ done
  %attr(0644,root,root) %{_mandir}/man8/dhclient.8.gz
  %attr(0644,root,root) %{_mandir}/man8/dhclient-script.8.gz
  
@@ -75,5 +75,5 @@ index 9647a5a..78ee924 100644
  %doc LICENSE README RELNOTES doc/References.txt
  %attr(0644,root,root) %{_mandir}/man5/dhcp-options.5.gz
 -- 
-1.9.1
+2.7.4
 

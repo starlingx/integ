@@ -1,8 +1,7 @@
-From 844630caa811b9fb1a2944385ce31726aff1df00 Mon Sep 17 00:00:00 2001
+From e1b3591beb36a45f7cc4bf9340dd640b359955b7 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: [PATCH 01/10] WRS:
- 0001-update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/systemd.spec
@@ -11,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 4dce0a3..955cc4b 100644
+index 6bdbb74..3b2aa7f 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
 @@ -7,7 +7,7 @@
  Name:           systemd
  Url:            http://www.freedesktop.org/wiki/Software/systemd
  Version:        219
--Release:        42%{?dist}.1
-+Release:        42.el7_4.1%{?_tis_dist}.%{tis_patch_ver}
+-Release:        57%{?dist}
++Release:        57.el7%{?_tis_dist}.%{tis_patch_ver}
  # For a breakdown of the licensing, see README
  License:        LGPLv2+ and MIT and GPLv2+
  Summary:        A System and Service Manager
 -- 
-1.9.1
+2.7.4
 

@@ -1,33 +1,33 @@
-From e3b655b415b04559e558c6f5dadbd6c6e95af33f Mon Sep 17 00:00:00 2001
+From 388d312346bb408149f97b58287089a6754944c3 Mon Sep 17 00:00:00 2001
 From: Saju Oommen <saju.oommen@windriver.com>
 Date: Mon, 15 Jan 2018 13:59:26 -0500
-Subject: [PATCH 1/1] remove-ldap-conf-cgcs-file
+Subject: [PATCH] remove-ldap-conf-cgcs-file
 
 ---
  SPECS/openldap.spec | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/SPECS/openldap.spec b/SPECS/openldap.spec
-index 50bb499..50937c0 100644
+index 468ca0e..c38f1bd 100644
 --- a/SPECS/openldap.spec
 +++ b/SPECS/openldap.spec
-@@ -25,7 +25,6 @@ Source54: libexec-create-certdb.sh
- Source55: libexec-generate-server-cert.sh
+@@ -26,7 +26,6 @@ Source55: libexec-generate-server-cert.sh
+ Source56: libexec-update-ppolicy-schema.sh
  
  # WRS:
--Source56: ldap.conf.cgcs
- Source57: slapd.conf.cgcs
- Source58: initial_config.ldif
- Source60: initscript
-@@ -446,7 +445,7 @@ rm -f %{buildroot}%{_localstatedir}/openldap-data/DB_CONFIG.example
+-Source100: ldap.conf.cgcs
+ Source101: slapd.conf.cgcs
+ Source102: initial_config.ldif
+ Source103: initscript
+@@ -417,7 +416,7 @@ rm -f %{buildroot}%{_localstatedir}/openldap-data/DB_CONFIG.example
  rmdir %{buildroot}%{_localstatedir}/openldap-data
  
  # WRS: slapd-config is backward compatible with slapd.conf
--install -m 600 %{SOURCE56} %{buildroot}%{_sysconfdir}/openldap/ldap.conf
-+# WRS: SOURCE56 (ldap.conf.cgcs) is replaced by puppet template
- install -m 600 %{SOURCE57} %{buildroot}%{_sysconfdir}/openldap/slapd.conf
- install -m 600 %{SOURCE58} %{buildroot}%{_sysconfdir}/openldap/initial_config.ldif
+-install -m 600 %{SOURCE100} %{buildroot}%{_sysconfdir}/openldap/ldap.conf
++# WRS: SOURCE100 (ldap.conf.cgcs) is replaced by puppet template
+ install -m 600 %{SOURCE101} %{buildroot}%{_sysconfdir}/openldap/slapd.conf
+ install -m 600 %{SOURCE102} %{buildroot}%{_sysconfdir}/openldap/initial_config.ldif
  
 -- 
-1.8.3.1
+2.7.4
 

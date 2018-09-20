@@ -1,24 +1,24 @@
-From 508f3f3f6b114fe081cc2c0594912fd6451d1045 Mon Sep 17 00:00:00 2001
+From 2d2e804d3d48f47c207a6a58d6932e1119f61f93 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Thu, 12 Oct 2017 18:22:33 -0400
-Subject: meta patch for restricting tmpfs size
+Subject: [PATCH 6/7] meta patch for restricting tmpfs size
 
 ---
  SPECS/systemd.spec | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 9e5ac92..66df00b 100644
+index acc059f..6152e33 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -462,6 +462,7 @@ Patch0504: 0504-Configure-journald-rate-limit.patch
- Patch0505: 0505-remove-id-sas-path-symlink.patch
- Patch0506: 0506-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
- Patch0507: 0507-move-vartmp-to-tmpfs.patch
-+Patch0508: 0508-set-a-1GB-size-restriction-on-tpmfs.patch
+@@ -660,6 +660,7 @@ Patch0704: 0704-Configure-journald-rate-limit.patch
+ Patch0705: 0705-remove-id-sas-path-symlink.patch
+ Patch0706: 0706-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
+ Patch0707: 0707-move-vartmp-to-tmpfs.patch
++Patch0708: 0708-set-a-1GB-size-restriction-on-tpmfs.patch
  
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
  
 -- 
-1.8.3.1
+2.7.4
 

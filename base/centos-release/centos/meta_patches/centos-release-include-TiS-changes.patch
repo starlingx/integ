@@ -1,4 +1,4 @@
-From 4905ace48eb3feae48a02d2bd61e3778f8062532 Mon Sep 17 00:00:00 2001
+From e18f905977fa94fa20a2d9a9cc565dc8d7fe8dac Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:58:59 -0400
 Subject: [PATCH 1/2] WRS: centos-release-include-TiS-changes.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 1/2] WRS: centos-release-include-TiS-changes.patch
  1 file changed, 8 insertions(+)
 
 diff --git a/SPECS/centos-release.spec b/SPECS/centos-release.spec
-index af82c8b..be95b1b 100644
+index 67f1550..ce64be4 100644
 --- a/SPECS/centos-release.spec
 +++ b/SPECS/centos-release.spec
-@@ -25,6 +25,8 @@ Provides:       system-release(releasever) = %{base_release_version}
+@@ -27,6 +27,8 @@ Provides:       system-release(releasever) = %{base_release_version}
  Source0:        centos-release-%{base_release_version}-%{centos_rel}.tar.gz
  Source1:        85-display-manager.preset
  Source2:        90-default.preset
@@ -20,9 +20,9 @@ index af82c8b..be95b1b 100644
  
  %description
  %{product_family} release files
-@@ -118,6 +120,12 @@ mkdir -p %{buildroot}%{_prefix}/lib/systemd/system-preset/
- install -m 0644 %{SOURCE1} %{buildroot}%{_prefix}/lib/systemd/system-preset/
- install -m 0644 %{SOURCE2} %{buildroot}%{_prefix}/lib/systemd/system-preset/
+@@ -123,6 +125,12 @@ install -m 0644 %{SOURCE2} %{buildroot}%{_prefix}/lib/systemd/system-preset/
+ %posttrans
+ /usr/bin/uname -m | grep -q 'x86_64'  && echo 'centos' >/etc/yum/vars/contentdir || echo 'altarch' > /etc/yum/vars/contentdir
  
 +# Overwrite default issue files with cgcs related files.
 +install -m 0644 %{SOURCE3} %{buildroot}/etc/issue
@@ -34,5 +34,5 @@ index af82c8b..be95b1b 100644
  %clean
  rm -rf %{buildroot}
 -- 
-1.9.1
+2.7.4
 

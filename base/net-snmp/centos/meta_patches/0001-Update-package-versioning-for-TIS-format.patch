@@ -1,7 +1,7 @@
-From 2b9054a9278f5b7a6af660eb5842b9ec32d50e74 Mon Sep 17 00:00:00 2001
+From c25a30b4a0c7347234c2af4afab099b5735bbf71 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:05:59 -0400
-Subject: [PATCH 8/9] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/net-snmp.spec
@@ -10,18 +10,18 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
-index 0ac1eef..8d109b8 100644
+index 9b313cb..b015436 100644
 --- a/SPECS/net-snmp.spec
 +++ b/SPECS/net-snmp.spec
 @@ -14,7 +14,7 @@
  Summary: A collection of SNMP protocol tools and libraries
  Name: net-snmp
  Version: 5.7.2
--Release: 28%{?dist}.1
-+Release: 28.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 33%{?dist}.2
++Release: 33.el7_5.2%{?_tis_dist}.%{tis_patch_ver}
  Epoch: 1
  
  License: BSD
 -- 
-1.9.1
+2.7.4
 

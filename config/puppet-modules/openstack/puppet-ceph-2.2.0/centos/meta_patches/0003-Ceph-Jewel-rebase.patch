@@ -8,7 +8,7 @@ Subject: [PATCH] ceph jewel rebase
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/puppet-ceph.spec b/SPECS/puppet-ceph.spec
-index cd07d2c..90d30d5 100644
+index 5b0deea..23e0562 100644
 --- a/SPECS/puppet-ceph.spec
 +++ b/SPECS/puppet-ceph.spec
 @@ -10,6 +10,7 @@ URL:            https://launchpad.net/puppet-ceph
@@ -20,7 +20,7 @@ index cd07d2c..90d30d5 100644
  BuildArch:      noarch
  
 @@ -27,6 +28,7 @@ Community Developed Ceph Module
- %setup -q -n openstack-ceph-%{version}
+ %setup -q -n openstack-ceph-%{upstream_version}
  %patch0001 -p1
  %patch0002 -p1
 +%patch0003 -p1
@@ -28,5 +28,5 @@ index cd07d2c..90d30d5 100644
  find . -type f -name ".*" -exec rm {} +
  find . -size 0 -exec rm {} +
 -- 
-1.8.3.1
+2.7.4
 
