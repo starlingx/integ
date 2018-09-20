@@ -1143,6 +1143,7 @@ def notifier_func(nObject):
         if api.clear_fault(base_obj.id, obj.entity_id) is False:
             collectd.error("%s %s:%s clear_fault failed" %
                            (PLUGIN, base_obj.id, obj.entity_id))
+            return 0
     else:
         reason = obj.resource_name
         reason += " threshold exceeded"
