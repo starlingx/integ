@@ -36,7 +36,7 @@ install -d %{buildroot}%{_sysconfdir}
 install -d %{buildroot}%{_sysconfdir}/motd.d
 install -m 755 %{SOURCE1} %{buildroot}%{_sysconfdir}/motd.d/00-header
 install -m 755 %{SOURCE0} %{buildroot}%{_sysconfdir}/motd.d/99-footer
-install -m 755 %{SOURCE8} %{buildroot}%{_sysconfdir}/motd.head
+install -m 644 %{SOURCE8} %{buildroot}%{_sysconfdir}/motd.head
 
 install -d %{buildroot}%{_sysconfdir}/cron.d
 install -m 600 %{SOURCE3} %{buildroot}%{_sysconfdir}/cron.d/motd-update
