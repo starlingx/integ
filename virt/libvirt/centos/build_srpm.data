@@ -1,8 +1,8 @@
 SRC_DIR="$CGCS_BASE/git/libvirt"
 COPY_LIST="\
-    libvirt-3.5.0/* \
+    libvirt/* \
     $CGCS_BASE/downloads/gnulib-ffc927e.tar.gz \
-    $CGCS_BASE/downloads/keycodemapdb-8370ba8.tar.gz"
-TIS_BASE_SRCREV=9bd7c96bd0a0cc879c1e44277f5a734166bf1add
+    $CGCS_BASE/downloads/keycodemapdb-16e5b07.tar.gz"
+TIS_BASE_SRCREV=ab58260efaa712650c63bb1917122f270070fa4b
 TIS_PATCH_VER=GITREVCOUNT
 BUILD_IS_SLOW=4
