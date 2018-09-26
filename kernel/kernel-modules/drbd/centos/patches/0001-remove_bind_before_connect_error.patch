@@ -2,7 +2,7 @@ Index: drbd-8.4.7-1/drbd/drbd_receiver.c
 ===================================================================
 --- drbd-8.4.7-1.orig/drbd/drbd_receiver.c
 +++ drbd-8.4.7-1/drbd/drbd_receiver.c
-@@ -718,6 +718,7 @@ out:
+@@ -719,6 +719,7 @@ out:
  			/* peer not (yet) available, network problem */
  		case ECONNREFUSED: case ENETUNREACH:
  		case EHOSTDOWN:    case EHOSTUNREACH:
