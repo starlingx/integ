@@ -200,7 +200,7 @@ vim-enhanced
 python
 
 # libvirt-python
-libvirt-python
+python2-libvirt
 
 # lighttpd
 lighttpd

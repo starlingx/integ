@@ -98,6 +98,7 @@
 %define with_libssh2       0%{!?_without_libssh2:0}
 %define with_wireshark     0%{!?_without_wireshark:0}
 %define with_libssh        0%{!?_without_libssh:0}
+%define with_bash_completion  0%{!?_without_bash_completion:0}
 %define with_pm_utils      1
 
 # Finally set the OS / architecture specific special cases
@@ -195,6 +196,7 @@
     %define with_libssh 0%{!?_without_libssh:1}
 %endif
 
+%define with_bash_completion  0%{!?_without_bash_completion:1}
 
 %if %{with_qemu} || %{with_lxc} || %{with_uml}
 # numad is used to manage the CPU and memory placement dynamically,
@@ -243,7 +245,7 @@
 
 Summary: Library providing a simple virtualization API
 Name: libvirt
-Version: 3.5.0
+Version: 4.7.0
 Release: 1%{?_tis_dist}.%{tis_patch_ver}
 License: LGPLv2+
 Group: Development/Libraries
@@ -262,7 +264,7 @@ Source3: libvirt.lxc
 Source4: libvirt.qemu
 Source5: libvirt.uml
 Source6: gnulib-ffc927e.tar.gz
-Source7: keycodemapdb-8370ba8.tar.gz
+Source7: keycodemapdb-16e5b07.tar.gz
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -317,6 +319,9 @@ BuildRequires: libxml2-devel
 BuildRequires: xhtml1-dtds
 BuildRequires: libxslt
 BuildRequires: readline-devel
+%if %{with_bash_completion}
+BuildRequires: bash-completion >= 2.0
+%endif
 BuildRequires: ncurses-devel
 BuildRequires: gettext
 BuildRequires: libtasn1-devel
@@ -998,6 +1003,9 @@ Requires: gnutls-utils
 # Needed for probing the power management features of the host.
 Requires: pm-utils
 %endif
+%if %{with_bash_completion}
+Requires: %{name}-bash-completion = %{version}-%{release}
+%endif
 
 %description client
 The client binaries needed to access the virtualization
@@ -1022,9 +1030,20 @@ Summary: Set of tools to control libvirt daemon
 Group: Development/Libraries
 Requires: %{name}-libs = %{version}-%{release}
 Requires: readline
+%if %{with_bash_completion}
+Requires: %{name}-bash-completion = %{version}-%{release}
+%endif
 
 %description admin
 The client side utilities to control the libvirt daemon.
+
+%if %{with_bash_completion}
+%package bash-completion
+Summary: Bash completion script
+
+%description bash-completion
+Bash completion script stub.
+%endif
 
 %if %{with_wireshark}
 %package wireshark
@@ -1384,6 +1403,8 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/connection-driver/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/connection-driver/*.a
 rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/storage-backend/*.la
 rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/storage-backend/*.a
+rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/storage-file/*.la
+rm -f $RPM_BUILD_ROOT%{_libdir}/libvirt/storage-file/*.a
 %if %{with_wireshark}
     %if 0%{fedora} >= 24
 rm -f $RPM_BUILD_ROOT%{_libdir}/wireshark/plugins/libvirt.la
@@ -1761,7 +1782,7 @@ exit 0
 
 %files docs
 # TODO(WRS): NEWS is not present in git source repo.
-%doc AUTHORS ChangeLog.gz README TODO
+%doc AUTHORS ChangeLog.gz README
 %doc libvirt-docs/*
 
 # API docs
@@ -1791,14 +1812,16 @@ exit 0
 %{_unitdir}/virt-guest-shutdown.target
 %{_unitdir}/virtlogd.service
 %{_unitdir}/virtlogd.socket
+%{_unitdir}/virtlogd-admin.socket
 %{_unitdir}/virtlockd.service
 %{_unitdir}/virtlockd.socket
+%{_unitdir}/virtlockd-admin.socket
 %else
 %{_sysconfdir}/rc.d/init.d/libvirtd
 %{_sysconfdir}/rc.d/init.d/virtlogd
 %{_sysconfdir}/rc.d/init.d/virtlockd
 %endif
-%doc daemon/libvirtd.upstart
+%doc src/remote/libvirtd.upstart
 %config(noreplace) %{_sysconfdir}/sysconfig/libvirtd
 %config(noreplace) %{_sysconfdir}/sysconfig/virtlogd
 %config(noreplace) %{_sysconfdir}/sysconfig/virtlockd
@@ -1893,6 +1916,7 @@ exit 0
 %attr(0755, root, root) %{_libexecdir}/libvirt_parthelper
 %{_libdir}/%{name}/connection-driver/libvirt_driver_storage.so
 %{_libdir}/%{name}/storage-backend/libvirt_storage_backend_fs.so
+%{_libdir}/%{name}/storage-file/libvirt_storage_file_fs.so
 
 %files daemon-driver-storage-disk
 %{_libdir}/%{name}/storage-backend/libvirt_storage_backend_disk.so
@@ -1912,6 +1936,7 @@ exit 0
 %if %{with_storage_gluster}
 %files daemon-driver-storage-gluster
 %{_libdir}/%{name}/storage-backend/libvirt_storage_backend_gluster.so
+%{_libdir}/%{name}/storage-file/libvirt_storage_file_gluster.so
 %endif
 
 %if %{with_storage_rbd}
@@ -2041,6 +2066,9 @@ exit 0
 # %{_datadir}/systemtap/tapset/libvirt_qemu_probes*.stp
 # %{_datadir}/systemtap/tapset/libvirt_functions.stp
 
+%if %{with_bash_completion}
+%{_datadir}/bash-completion/completions/virsh
+%endif
 
 %if %{with_systemd}
 %{_unitdir}/libvirt-guests.service
@@ -2074,12 +2102,15 @@ exit 0
 %{_datadir}/libvirt/schemas/networkcommon.rng
 %{_datadir}/libvirt/schemas/nodedev.rng
 %{_datadir}/libvirt/schemas/nwfilter.rng
+%{_datadir}/libvirt/schemas/nwfilter_params.rng
+%{_datadir}/libvirt/schemas/nwfilterbinding.rng
 %{_datadir}/libvirt/schemas/secret.rng
 %{_datadir}/libvirt/schemas/storagecommon.rng
 %{_datadir}/libvirt/schemas/storagepool.rng
 %{_datadir}/libvirt/schemas/storagevol.rng
 
-%{_datadir}/libvirt/cpu_map.xml
+%dir %{_datadir}/libvirt/cpu_map/
+%{_datadir}/libvirt/cpu_map/*
 
 %{_datadir}/libvirt/test-screenshot.png
 
@@ -2088,7 +2119,14 @@ exit 0
 %files admin
 %{_mandir}/man1/virt-admin.1*
 %{_bindir}/virt-admin
+%if %{with_bash_completion}
+%{_datadir}/bash-completion/completions/virt-admin
+%endif
 
+%if %{with_bash_completion}
+%files bash-completion
+%{_datadir}/bash-completion/completions/vsh
+%endif
 
 %if %{with_wireshark}
 %files wireshark
@@ -2139,6 +2177,7 @@ exit 0
 %{_datadir}/libvirt/api/libvirt-admin-api.xml
 %{_datadir}/libvirt/api/libvirt-qemu-api.xml
 %{_datadir}/libvirt/api/libvirt-lxc-api.xml
+
 # Needed building python bindings
 %doc docs/libvirt-api.xml
 
