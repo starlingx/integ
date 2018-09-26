@@ -11,7 +11,7 @@ diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
 index 7f93a30..5349c54 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -176,10 +176,7 @@ rm -rf $RPM_BUILD_ROOT
+@@ -178,10 +178,7 @@ rm -rf $RPM_BUILD_ROOT
  /usr/lib/systemd/rhel-*
  /usr/lib/systemd/system/*
  /etc/inittab
@@ -22,7 +22,7 @@ index 7f93a30..5349c54 100644
  /etc/rc.d/init.d/*
  %config(noreplace) /etc/sysctl.conf
  /usr/lib/sysctl.d/00-system.conf
-@@ -201,7 +198,6 @@ rm -rf $RPM_BUILD_ROOT
+@@ -203,7 +200,6 @@ rm -rf $RPM_BUILD_ROOT
  /usr/sbin/ppp-watch
  %{_mandir}/man*/*
  %dir %attr(775,root,root) /var/run/netreport
@@ -30,7 +30,7 @@ index 7f93a30..5349c54 100644
  %dir /etc/ppp/peers
  /etc/ppp/ip-up
  /etc/ppp/ip-down
-@@ -209,8 +205,6 @@ rm -rf $RPM_BUILD_ROOT
+@@ -211,8 +207,6 @@ rm -rf $RPM_BUILD_ROOT
  /etc/ppp/ip-down.ipv6to4
  /etc/ppp/ipv6-up
  /etc/ppp/ipv6-down

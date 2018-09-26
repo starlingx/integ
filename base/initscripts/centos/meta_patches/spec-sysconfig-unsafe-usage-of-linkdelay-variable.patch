@@ -12,7 +12,7 @@ diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
 index e3748e5..f2d0271 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -51,6 +51,7 @@ Patch8: 0001-dhclient-remove-1-arg.patch
+@@ -52,6 +52,7 @@ Patch8: 0001-dhclient-remove-1-arg.patch
  Patch9: 0001-force-delay-check-link-down.patch
  Patch10: run-ifdown-on-all-interfaces.patch
  Patch11: sysconfig-affirmative-check-for-link-carrier.patch
@@ -20,7 +20,7 @@ index e3748e5..f2d0271 100644
  
  %description
  The initscripts package contains basic system scripts used
-@@ -79,6 +80,7 @@ Currently, this consists of various memory checking code.
+@@ -80,6 +81,7 @@ Currently, this consists of various memory checking code.
  %patch9 -p1
  %patch10 -p1
  %patch11 -p1

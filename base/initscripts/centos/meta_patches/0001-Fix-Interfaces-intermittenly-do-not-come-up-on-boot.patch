@@ -14,7 +14,7 @@ diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
 index 5ba669b..63ad994 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -4,7 +4,7 @@ Version: 9.49.39
+@@ -4,7 +4,7 @@ Version: 9.49.41
  # ppp-watch is GPLv2+, everything else is GPLv2
  License: GPLv2 and GPLv2+
  Group: System Environment/Base
@@ -23,7 +23,7 @@ index 5ba669b..63ad994 100644
  URL: https://github.com/fedora-sysv/initscripts
  Source: https://github.com/fedora-sysv/initscripts/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
  
-@@ -47,6 +47,7 @@ Patch4: support-interface-scriptlets.patch
+@@ -48,6 +48,7 @@ Patch4: support-interface-scriptlets.patch
  Patch5: relocate-dhclient-leases-to-var-run.patch
  Patch6: dhclient-restrict-interfaces-to-those-on-c.patch
  Patch7: support-interface-promisc.patch
@@ -31,7 +31,7 @@ index 5ba669b..63ad994 100644
  
  %description
  The initscripts package contains basic system scripts used
-@@ -71,6 +72,7 @@ Currently, this consists of various memory checking code.
+@@ -72,6 +73,7 @@ Currently, this consists of various memory checking code.
  %patch5 -p1
  %patch6 -p1
  %patch7 -p1

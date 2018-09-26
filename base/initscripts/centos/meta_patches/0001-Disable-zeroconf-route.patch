@@ -22,7 +22,7 @@ diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
 index 5349c54..6a7a76d 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -4,12 +4,13 @@ Version: 9.49.39
+@@ -4,12 +4,13 @@ Version: 9.49.41
  # ppp-watch is GPLv2+, everything else is GPLv2
  License: GPLv2 and GPLv2+
  Group: System Environment/Base
@@ -37,7 +37,7 @@ index 5349c54..6a7a76d 100644
  
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
  Obsoletes: initscripts-legacy <= 9.39
-@@ -88,6 +89,7 @@ chmod 600 $RPM_BUILD_ROOT/etc/crypttab
+@@ -89,6 +90,7 @@ chmod 600 $RPM_BUILD_ROOT/etc/crypttab
  
  # WRS: Overwrite with our config
  install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/etc/sysctl.conf
@@ -45,7 +45,7 @@ index 5349c54..6a7a76d 100644
  
  %pre
  /usr/sbin/groupadd -g 22 -r -f utmp
-@@ -220,6 +222,8 @@ rm -rf $RPM_BUILD_ROOT
+@@ -222,6 +224,8 @@ rm -rf $RPM_BUILD_ROOT
  %dir /usr/libexec/initscripts/legacy-actions
  %ghost %{_localstatedir}/log/dmesg
  %ghost %{_localstatedir}/log/dmesg.old

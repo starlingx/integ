@@ -31,7 +31,7 @@ diff --git a/sysconfig/network-scripts/ifdown-post b/sysconfig/network-scripts/i
 index 8b56e14..bd4198a 100755
 --- a/sysconfig/network-scripts/ifdown-post
 +++ b/sysconfig/network-scripts/ifdown-post
-@@ -61,4 +61,16 @@ if [ -x /sbin/ifdown-local ]; then
+@@ -69,4 +69,16 @@ if [ -x /sbin/ifdown-local ]; then
      /sbin/ifdown-local ${DEVICE}
  fi
  
@@ -69,7 +69,7 @@ diff --git a/sysconfig/network-scripts/ifup-post b/sysconfig/network-scripts/ifu
 index ab0710b..3b76492 100755
 --- a/sysconfig/network-scripts/ifup-post
 +++ b/sysconfig/network-scripts/ifup-post
-@@ -117,4 +117,16 @@ if [ -x /sbin/ifup-local ]; then
+@@ -148,4 +148,16 @@ if [ -x /sbin/ifup-local ]; then
      /sbin/ifup-local ${DEVICE}
  fi
  

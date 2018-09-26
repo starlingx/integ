@@ -11,7 +11,7 @@ diff --git a/sysconfig/network-scripts/ifup-eth b/sysconfig/network-scripts/ifup
 index fdbbf13..439c4c5 100755
 --- a/sysconfig/network-scripts/ifup-eth
 +++ b/sysconfig/network-scripts/ifup-eth
-@@ -195,7 +195,8 @@ if [ -n "${DYNCONFIG}" ] && [ -x /sbin/dhclient ]; then
+@@ -212,7 +212,8 @@ if [ -n "${DYNCONFIG}" ] && [ -x /sbin/dhclient ]; then
      generate_lease_file_name
  
      # Initialize the dhclient args and obtain the hostname options if needed:
