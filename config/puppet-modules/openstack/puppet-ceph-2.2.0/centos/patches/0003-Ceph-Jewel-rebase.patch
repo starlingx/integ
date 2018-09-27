@@ -1,4 +1,4 @@
-From b245ba801e8dccffe6df30b448d307b9c332a8bf Mon Sep 17 00:00:00 2001
+From c9a5520620d313c08e7f751f3469ec5f4c220486 Mon Sep 17 00:00:00 2001
 From: Daniel Badea <daniel.badea@windriver.com>
 Date: Thu, 23 Mar 2017 08:04:31 +0000
 Subject: [PATCH] ceph jewel rebase
@@ -10,10 +10,10 @@ Subject: [PATCH] ceph jewel rebase
  3 files changed, 29 insertions(+), 11 deletions(-)
 
 diff --git a/manifests/mon.pp b/manifests/mon.pp
-index 543d044..ad92061 100644
+index b3458d6..17cb925 100644
 --- a/manifests/mon.pp
 +++ b/manifests/mon.pp
-@@ -107,6 +107,7 @@ define ceph::mon (
+@@ -106,6 +106,7 @@ define ceph::mon (
          start    => "service ceph start mon.${id}",
          stop     => "service ceph stop mon.${id}",
          status   => "service ceph status mon.${id}",

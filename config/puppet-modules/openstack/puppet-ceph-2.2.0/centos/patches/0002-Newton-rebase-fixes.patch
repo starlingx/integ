@@ -1,4 +1,4 @@
-From 89e1781309a8415d65c50c13c18742a92c970362 Mon Sep 17 00:00:00 2001
+From 570520c5197dd36c3e4a7956d5916426fb75856a Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Tue, 7 Feb 2017 15:49:02 -0500
 Subject: [PATCH] Newton rebase fixes
@@ -9,10 +9,10 @@ Subject: [PATCH] Newton rebase fixes
  2 files changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/manifests/mon.pp b/manifests/mon.pp
-index 5f7138f..543d044 100644
+index fa99df5..b3458d6 100644
 --- a/manifests/mon.pp
 +++ b/manifests/mon.pp
-@@ -100,10 +100,13 @@ define ceph::mon (
+@@ -99,10 +99,13 @@ define ceph::mon (
        }
      # Everything else that is supported by puppet-ceph should run systemd.
      } else {
