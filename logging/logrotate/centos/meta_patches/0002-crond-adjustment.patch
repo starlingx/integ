@@ -1,25 +1,25 @@
-From ecd78bb1b347dfe3da380e100ce1f566418279a1 Mon Sep 17 00:00:00 2001
+From 29fcff1071739e05f6623ffb7f5af828e2261e87 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:22:44 -0400
-Subject: [PATCH 1/2] WRS: crond-adjustment.patch
+Subject: WRS: crond-adjustment.patch
 
 ---
  SPECS/logrotate.spec | 8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/logrotate.spec b/SPECS/logrotate.spec
-index c66cf89..1b4e4e3 100644
+index 0dbde7d..0eac8bf 100644
 --- a/SPECS/logrotate.spec
 +++ b/SPECS/logrotate.spec
 @@ -7,6 +7,7 @@ Group: System Environment/Base
- Url: https://fedorahosted.org/logrotate/
+ URL: https://github.com/logrotate/logrotate
  Source: https://fedorahosted.org/releases/l/o/logrotate/logrotate-%{version}.tar.gz
  Source1: rwtab
 +Source2: logrotate-cron.d
  Patch0: logrotate-3.8.6-force.patch
  Patch1: logrotate-3.8.6-r465.patch
  Patch2: logrotate-3.8.6-sortglob.patch
-@@ -89,6 +90,10 @@ install -p -m 755 examples/logrotate.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.da
+@@ -105,6 +106,10 @@ install -p -m 755 examples/logrotate.cron $RPM_BUILD_ROOT/%{_sysconfdir}/cron.da
  mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/rwtab.d
  install -m644 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rwtab.d/logrotate
  
@@ -30,7 +30,7 @@ index c66cf89..1b4e4e3 100644
  %pre
  # If /var/lib/logrotate/logrotate.status does not exist, create it and copy
  # the /var/lib/logrotate.status in it (if it exists). We have to do that in pre
-@@ -108,12 +113,13 @@ rm -rf $RPM_BUILD_ROOT
+@@ -124,12 +129,13 @@ rm -rf $RPM_BUILD_ROOT
  %attr(0755, root, root) %{_sbindir}/logrotate
  %attr(0644, root, root) %{_mandir}/man8/logrotate.8*
  %attr(0644, root, root) %{_mandir}/man5/logrotate.conf.5*
@@ -44,7 +44,7 @@ index c66cf89..1b4e4e3 100644
 +%attr(0700, root, root) %{_sysconfdir}/logrotate.cron
  
  %changelog
- * Tue Jan 24 2017 Kamil Dudka <kdudka@redhat.com> - 3.8.6-14
+ * Mon Sep 25 2017 Kamil Dudka <kdudka@redhat.com> - 3.8.6-15
 -- 
-1.9.1
+2.7.4
 

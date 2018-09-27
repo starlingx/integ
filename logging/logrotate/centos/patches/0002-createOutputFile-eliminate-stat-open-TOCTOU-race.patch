@@ -1,17 +1,17 @@
-From aff4a30807218a52b6b5f200c5aa0eea335547ba Mon Sep 17 00:00:00 2001
+From 92b0959366a4677d8ac916cd9246a80853ae4765 Mon Sep 17 00:00:00 2001
 From: Kamil Dudka <kdudka@redhat.com>
 Date: Mon, 17 Oct 2016 17:59:31 +0200
-Subject: [PATCH] createOutputFile: eliminate stat/open TOCTOU race
+Subject: createOutputFile: eliminate stat/open TOCTOU race
 
 ---
  logrotate.c | 15 ++++++++++-----
  1 file changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/logrotate.c b/logrotate.c
-index 10f4b52..79f4755 100644
+index e415164..c4b8e0c 100644
 --- a/logrotate.c
 +++ b/logrotate.c
-@@ -366,11 +366,18 @@ static int runScript(struct logInfo *log, char *logfn, char *script)
+@@ -394,11 +394,18 @@ static int runScript(struct logInfo *log, char *logfn, char *script)
  
  int createOutputFile(char *fileName, int flags, struct stat *sb, acl_type acl, int force_mode)
  {
@@ -32,7 +32,7 @@ index 10f4b52..79f4755 100644
  	/* the destination file already exists, while it should not */
  	struct tm now = *localtime(&nowSecs);
  	size_t fileName_size = strlen(fileName);
-@@ -384,11 +391,9 @@ int createOutputFile(char *fileName, int flags, struct stat *sb, acl_type acl, i
+@@ -412,11 +419,9 @@ int createOutputFile(char *fileName, int flags, struct stat *sb, acl_type acl, i
  		    fileName, backupName, strerror(errno));
  	    return -1;
  	}
@@ -46,5 +46,5 @@ index 10f4b52..79f4755 100644
  	message(MESS_ERROR, "error creating output file %s: %s\n",
  		fileName, strerror(errno));
 -- 
-1.8.3.1
+2.7.4
 

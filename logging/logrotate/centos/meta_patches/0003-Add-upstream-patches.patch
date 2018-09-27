@@ -1,19 +1,19 @@
-From a4c9be7a2b9c9216b87930436d815f0d765a2ba4 Mon Sep 17 00:00:00 2001
+From dfd8e1c325e43cc8a5eb5ba939e355f89515a1d3 Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Fri, 19 Jan 2018 23:04:46 -0500
-Subject: [PATCH] Add upstream patches
+Subject: Add upstream patches
 
 ---
  SPECS/logrotate.spec | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/logrotate.spec b/SPECS/logrotate.spec
-index 46e17e8..d67e4bb 100644
+index 0eac8bf..99a22ac 100644
 --- a/SPECS/logrotate.spec
 +++ b/SPECS/logrotate.spec
-@@ -37,6 +37,9 @@ Patch13: logrotate-3.8.6-selinux.patch
- # fix #1387533 - make 'su' directive accept usernames starting with digits
- Patch14: logrotate-3.8.6-su-username.patch
+@@ -49,6 +49,9 @@ Patch17: logrotate-3.8.6-config-mode-err.patch
+ # fix #1483800 - update references to project page
+ Patch18: logrotate-3.8.6-upstream-url.patch
  
 +Patch10001: 0001-createOutputFile-rename-already-existing-file.patch
 +Patch10002: 0002-createOutputFile-eliminate-stat-open-TOCTOU-race.patch
@@ -21,9 +21,9 @@ index 46e17e8..d67e4bb 100644
  Requires: coreutils >= 5.92 popt
  BuildRequires: libselinux-devel popt-devel libacl-devel acl
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-@@ -70,6 +73,9 @@ log files on your system.
- %patch13 -p1
- %patch14 -p1
+@@ -86,6 +89,9 @@ log files on your system.
+ %patch17 -p1
+ %patch18 -p1
  
 +%patch10001 -p1
 +%patch10002 -p1
@@ -32,5 +32,5 @@ index 46e17e8..d67e4bb 100644
  make %{?_smp_mflags} RPM_OPT_FLAGS="$RPM_OPT_FLAGS" WITH_SELINUX=yes WITH_ACL=yes
  
 -- 
-1.8.3.1
+2.7.4
 
