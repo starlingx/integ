@@ -1,17 +1,17 @@
-From 49fde785386db1dd3b13b1a3902c0b63aa7ff673 Mon Sep 17 00:00:00 2001
+From a51920cbcd728da7d867a78daf1dc78e5e3d7598 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:25:05 -0400
-Subject: [PATCH 7/7] WRS: dhclient-disable-NSUPDATE.patch
+Subject: WRS: dhclient-disable-NSUPDATE.patch
 
 ---
  SPECS/dhcp.spec | 4 ++++
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
-index 7301e63..92e7b30 100644
+index fc17edb..b0a385e 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
-@@ -110,6 +110,7 @@ Patch103: dhclient-ipv6-bind-to-interface.patch
+@@ -122,6 +122,7 @@ Patch103: dhclient-ipv6-bind-to-interface.patch
  Patch104: dhclient-ipv6-conditionally-set-hostname.patch
  Patch105: dhclient-handle-wrs-install-uuid.patch
  Patch106: dhclient-dhcp6-wrs-install-uuid.patch
@@ -19,7 +19,7 @@ index 7301e63..92e7b30 100644
  
  BuildRequires: autoconf
  BuildRequires: automake
-@@ -428,6 +429,7 @@ rm -rf includes/isc-dhcp
+@@ -458,6 +459,7 @@ rm -rf includes/isc-dhcp
  %patch104 -p1
  %patch105 -p1
  %patch106 -p1
@@ -27,7 +27,7 @@ index 7301e63..92e7b30 100644
  
  # Update paths in all man pages
  for page in client/dhclient.conf.5 client/dhclient.leases.5 \
-@@ -449,6 +451,7 @@ done
+@@ -479,6 +481,7 @@ done
  #libtoolize --copy --force
  autoreconf --verbose --force --install
  
@@ -35,7 +35,7 @@ index 7301e63..92e7b30 100644
  CFLAGS="%{optflags} -fno-strict-aliasing" \
  %configure \
      --with-srv-lease-file=%{_localstatedir}/lib/dhcpd/dhcpd.leases \
-@@ -463,6 +466,7 @@ CFLAGS="%{optflags} -fno-strict-aliasing" \
+@@ -493,6 +496,7 @@ CFLAGS="%{optflags} -fno-strict-aliasing" \
      --with-ldap \
      --with-ldapcrypto \
      --with-libbind=%{_includedir} --with-libbind-libs=%{_libdir} \
@@ -44,5 +44,5 @@ index 7301e63..92e7b30 100644
  %if %sdt
      --enable-systemtap \
 -- 
-1.9.1
+2.7.4
 
