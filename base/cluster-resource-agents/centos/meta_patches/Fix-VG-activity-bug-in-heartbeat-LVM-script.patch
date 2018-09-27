@@ -1,4 +1,4 @@
-From 231334d30e9ad3f32dc915f973c71ac18d9c8191 Mon Sep 17 00:00:00 2001
+From 75bbb081b6cd87f7da59d597e1737f7b4ed395c7 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:59 -0400
 Subject: [PATCH 05/10] WRS: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 05/10] WRS: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index 28b6e50..832d588 100644
+index 3d8ece2..9fa7f86 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -247,6 +247,7 @@ Patch1111: pgsql.patch
+@@ -274,6 +274,7 @@ Patch1111: pgsql.patch
  
  Patch1113: create-var-run-resource-agents.patch
  Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
@@ -19,7 +19,7 @@ index 28b6e50..832d588 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -551,6 +552,7 @@ exit 1
+@@ -605,6 +606,7 @@ exit 1
  
  %patch1113 -p1
  %patch1114 -p1
@@ -28,5 +28,5 @@ index 28b6e50..832d588 100644
  %build
  if [ ! -f configure ]; then
 -- 
-1.9.1
+2.7.4
 

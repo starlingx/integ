@@ -1,4 +1,4 @@
-From 273da7710af8e7fbaf39eb1d31872089b77f0b0b Mon Sep 17 00:00:00 2001
+From d8db42cf6aac88403c9f9101230061864a96eec0 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:59 -0400
 Subject: [PATCH 07/10] WRS: spec-lvm-cleanup-refs-on-stop.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 07/10] WRS: spec-lvm-cleanup-refs-on-stop.patch
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index e3a7ce1..6be3418 100644
+index c325197..21fa049 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -249,6 +249,7 @@ Patch1113: create-var-run-resource-agents.patch
+@@ -276,6 +276,7 @@ Patch1113: create-var-run-resource-agents.patch
  Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
  Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
  Patch1116: ocf-shellfuncs_change_logtag.patch
@@ -19,7 +19,7 @@ index e3a7ce1..6be3418 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -555,6 +556,7 @@ exit 1
+@@ -609,6 +610,7 @@ exit 1
  %patch1114 -p1
  %patch1115 -p1
  %patch1116 -p1
@@ -28,5 +28,5 @@ index e3a7ce1..6be3418 100644
  %build
  if [ ! -f configure ]; then
 -- 
-1.9.1
+2.7.4
 

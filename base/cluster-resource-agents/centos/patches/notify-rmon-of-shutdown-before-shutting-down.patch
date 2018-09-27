@@ -1,4 +1,4 @@
-From bf3f5ed67ee862cbd4fd3f4f8c2c3760ebd88900 Mon Sep 17 00:00:00 2001
+From f658722ec239a258cd3ec2e828ca3f37ba2fe536 Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Fri, 17 Jun 2016 00:31:20 -0400
 Subject: [PATCH 1/1] Notify rmon of shutdown before shutting down LVM and
@@ -30,10 +30,10 @@ index 05e4097..d5f3417 100755
  esac
  
 diff --git a/heartbeat/LVM b/heartbeat/LVM
-index 3a52e56..69f284c 100755
+index 38092f9..893ece8 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -891,10 +891,11 @@ case "$1" in
+@@ -879,10 +879,11 @@ case "$1" in
          fi
          exit $rc;;
  
@@ -50,5 +50,5 @@ index 3a52e56..69f284c 100755
  	status)	LVM_status $VOLUME $1
          rc=$?
 -- 
-1.9.1
+2.7.4
 

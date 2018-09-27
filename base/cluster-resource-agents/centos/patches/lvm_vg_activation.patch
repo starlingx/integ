@@ -1,4 +1,4 @@
-From 3304fb0e1f1eeb2bfe52611541c5dd12bdc908e0 Mon Sep 17 00:00:00 2001
+From 577055560d55b388d479ef398ffd839792dc1996 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:12:54 -0400
 Subject: [PATCH 06/13] WRS: Patch1110: lvm_vg_activation.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 06/13] WRS: Patch1110: lvm_vg_activation.patch
  1 file changed, 116 insertions(+), 14 deletions(-)
 
 diff --git a/heartbeat/LVM b/heartbeat/LVM
-index 5de88b6..3a52e56 100755
+index b0ca87a..38092f9 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -449,6 +449,81 @@ retry_exclusive_start()
+@@ -437,6 +437,81 @@ retry_exclusive_start()
  }
  
  #
@@ -93,7 +93,7 @@ index 5de88b6..3a52e56 100755
  #	Enable LVM volume
  #
  LVM_start() {
-@@ -489,20 +564,47 @@ EOF
+@@ -477,20 +552,47 @@ EOF
  		: ;;
  	esac
  
@@ -156,5 +156,5 @@ index 5de88b6..3a52e56 100755
  	if LVM_status $vg; then
  		: OK Volume $vg activated just fine!
 -- 
-1.9.1
+2.7.4
 

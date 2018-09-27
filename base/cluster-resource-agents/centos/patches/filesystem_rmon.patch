@@ -1,4 +1,4 @@
-From ec5790e7d930bd3436d67319c5214a7bf64fa164 Mon Sep 17 00:00:00 2001
+From a4b297ec4b5decaa1752a2f867ba890604804159 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:12:25 -0400
 Subject: [PATCH 01/13] WRS: Patch1105: filesystem_rmon.patch
@@ -111,7 +111,7 @@ index d834096..8cd9c6b 100755
  	notify) Filesystem_notify
  		;;
 diff --git a/heartbeat/LVM b/heartbeat/LVM
-index eae7a91..733d113 100755
+index 425a60a..ba6c198 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
 @@ -22,6 +22,7 @@
@@ -122,7 +122,7 @@ index eae7a91..733d113 100755
  #		
  #######################################################################
  # Initialization:
-@@ -711,6 +712,34 @@ then
+@@ -699,6 +700,34 @@ then
  	exit $OCF_ERR_CONFIGURED 
  fi
  
@@ -157,7 +157,7 @@ index eae7a91..733d113 100755
  # Get the LVM version number, for this to work we assume(thanks to panjiam):
  # 
  # LVM1 outputs like this
-@@ -752,16 +781,37 @@ case "$1" in
+@@ -740,16 +769,37 @@ case "$1" in
  	start)
  		LVM_validate_all
  		LVM_start $VOLUME
@@ -200,5 +200,5 @@ index eae7a91..733d113 100755
  	validate-all)	LVM_validate_all
  		;;
 -- 
-1.9.1
+2.7.4
 

@@ -1,4 +1,7 @@
-CGTS-5173: LVM ocf cleanup refs on stop
+From 72fcaed4a9cc3c847278dd4fca88ba0bca88125a Mon Sep 17 00:00:00 2001
+From: Vu Tran <vu.tran@windriver.com>
+Date: Thu Sep 29 19:07:25 2016 -0400
+Subject: CGTS-5173: LVM ocf cleanup refs on stop
 
 In LVM ocf script, LVM_stop() fails if any of the created logical volume
 dm block devices are being held by any process with the following error
@@ -18,15 +21,16 @@ opening files and then umount the dm block devices.
 * processes just hold/open dm block devices directly.  We need to kill
 these processes.
 
+Signed-off-by: Sun Austin <austin.sun@intel.com>
 ---
  heartbeat/LVM | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 76 insertions(+)
 
 diff --git a/heartbeat/LVM b/heartbeat/LVM
-index 69f284c..e56f7d8 100755
+index 1efb207..bde381c 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -616,6 +616,81 @@ EOF
+@@ -601,6 +601,81 @@ EOF
  }
  
  #
@@ -108,7 +112,7 @@ index 69f284c..e56f7d8 100755
  #	Disable the LVM volume
  #
  LVM_stop() {
-@@ -647,6 +722,7 @@ LVM_stop() {
+@@ -632,6 +707,7 @@ LVM_stop() {
  			break
  		fi
  
@@ -117,5 +121,5 @@ index 69f284c..e56f7d8 100755
  		ocf_log warn "$vg still Active"
  		ocf_log info "Retry deactivating volume group $vg"
 -- 
-1.9.1
+2.7.4
 

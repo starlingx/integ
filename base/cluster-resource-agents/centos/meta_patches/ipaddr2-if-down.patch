@@ -1,4 +1,4 @@
-From 1c5dc7640e843a553df5663305a739fc0c7aa9e1 Mon Sep 17 00:00:00 2001
+From 87673fd8f797034a206ac4e54ac85d258daece13 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:59 -0400
 Subject: [PATCH 09/10] WRS: ipaddr2-if-down.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 09/10] WRS: ipaddr2-if-down.patch
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index 28a8129..71d6cc4 100644
+index fd8bc97..bbf2754 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -250,6 +250,7 @@ Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
+@@ -277,6 +277,7 @@ Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
  Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
  Patch1116: ocf-shellfuncs_change_logtag.patch
  Patch1117: lvm_cleanup_refs_on_stop.patch
@@ -19,7 +19,7 @@ index 28a8129..71d6cc4 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -557,6 +558,7 @@ exit 1
+@@ -611,6 +612,7 @@ exit 1
  %patch1115 -p1
  %patch1116 -p1
  %patch1117 -p1
@@ -28,5 +28,5 @@ index 28a8129..71d6cc4 100644
  %build
  if [ ! -f configure ]; then
 -- 
-1.9.1
+2.7.4
 

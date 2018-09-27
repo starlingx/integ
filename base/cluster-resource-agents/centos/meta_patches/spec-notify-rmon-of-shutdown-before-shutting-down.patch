@@ -1,4 +1,4 @@
-From 057decd3b529f9bea96cf4071ae206c4dddc871c Mon Sep 17 00:00:00 2001
+From 6dc1e2534a877800b35dd3cf7312c332cd83edb0 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:59 -0400
 Subject: [PATCH 04/10] WRS:
@@ -9,10 +9,10 @@ Subject: [PATCH 04/10] WRS:
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index ba7af5b..28b6e50 100644
+index 0725e97..3d8ece2 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -246,6 +246,7 @@ Patch1110: lvm_vg_activation.patch
+@@ -273,6 +273,7 @@ Patch1110: lvm_vg_activation.patch
  Patch1111: pgsql.patch
  
  Patch1113: create-var-run-resource-agents.patch
@@ -20,7 +20,7 @@ index ba7af5b..28b6e50 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -549,6 +550,7 @@ exit 1
+@@ -603,6 +604,7 @@ exit 1
  %patch1111 -p1
  
  %patch1113 -p1
@@ -29,5 +29,5 @@ index ba7af5b..28b6e50 100644
  %build
  if [ ! -f configure ]; then
 -- 
-1.9.1
+2.7.4
 

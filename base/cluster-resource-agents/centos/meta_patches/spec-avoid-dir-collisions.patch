@@ -1,4 +1,4 @@
-From 72fdb47d6d79b950fc900c88d77605911cdcb4b1 Mon Sep 17 00:00:00 2001
+From 8c725e6e7a4931066488a74227f902269850a263 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:58 -0400
 Subject: [PATCH 02/10] WRS: spec-avoid-dir-collisions.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 02/10] WRS: spec-avoid-dir-collisions.patch
  1 file changed, 9 insertions(+), 8 deletions(-)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index 453398a..52c3c93 100644
+index 6c1ec89..7d53666 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -642,14 +642,15 @@ rm -rf %{buildroot}
+@@ -704,14 +704,15 @@ rm -rf %{buildroot}
  %endif
  
  %if %{with linuxha}
@@ -33,7 +33,7 @@ index 453398a..52c3c93 100644
  %if %{with rgmanager}
  /usr/lib/ocf/resource.d/redhat
  %endif
-@@ -669,7 +670,7 @@ rm -rf %{buildroot}
+@@ -734,7 +735,7 @@ rm -rf %{buildroot}
  
  %{_includedir}/heartbeat
  
@@ -42,7 +42,7 @@ index 453398a..52c3c93 100644
  
  %{_mandir}/man7/*.7*
  
-@@ -780,7 +781,7 @@ rm -rf %{buildroot}
+@@ -845,7 +846,7 @@ rm -rf %{buildroot}
  %exclude %{_mandir}/man8/ldirectord.8.gz
  
  # For compatability with pre-existing agents
@@ -52,5 +52,5 @@ index 453398a..52c3c93 100644
  
  %{_libexecdir}/heartbeat
 -- 
-1.9.1
+2.7.4
 

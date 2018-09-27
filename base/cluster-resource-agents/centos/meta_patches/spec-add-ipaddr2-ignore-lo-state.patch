@@ -1,4 +1,4 @@
-From 389034e186f6dfabdfa4bb75671a3f21d448bcbb Mon Sep 17 00:00:00 2001
+From 0af59dc6da82061d551c452fac36fa9c93c313f2 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:59 -0400
 Subject: [PATCH 10/10] WRS: spec-add-ipaddr2-ignore-lo-state.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 10/10] WRS: spec-add-ipaddr2-ignore-lo-state.patch
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index 71d6cc4..460fc8f 100644
+index bbf2754..0a25ab0 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -251,6 +251,7 @@ Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
+@@ -278,6 +278,7 @@ Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
  Patch1116: ocf-shellfuncs_change_logtag.patch
  Patch1117: lvm_cleanup_refs_on_stop.patch
  Patch1118: ipaddr2_if_down.patch
@@ -19,7 +19,7 @@ index 71d6cc4..460fc8f 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -559,6 +560,7 @@ exit 1
+@@ -613,6 +614,7 @@ exit 1
  %patch1116 -p1
  %patch1117 -p1
  %patch1118 -p1
@@ -28,5 +28,5 @@ index 71d6cc4..460fc8f 100644
  %build
  if [ ! -f configure ]; then
 -- 
-1.9.1
+2.7.4
 

@@ -1,4 +1,4 @@
-From 142af55450aa91fe2d7fc3586388efebae64af97 Mon Sep 17 00:00:00 2001
+From 5da3820896a51fd018371bbc08900f22ca0ea4a3 Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Tue, 3 May 2016 21:53:21 -0400
 Subject: [PATCH 1/1] Create /var/run/resource-agents, if needed
@@ -8,10 +8,10 @@ Subject: [PATCH 1/1] Create /var/run/resource-agents, if needed
  1 file changed, 5 insertions(+)
 
 diff --git a/heartbeat/ocf-shellfuncs.in b/heartbeat/ocf-shellfuncs.in
-index fd916e7..56f01e6 100644
+index 7b5f831..3565e20 100644
 --- a/heartbeat/ocf-shellfuncs.in
 +++ b/heartbeat/ocf-shellfuncs.in
-@@ -165,6 +165,11 @@ __ocf_set_defaults() {
+@@ -166,6 +166,11 @@ __ocf_set_defaults() {
  		ha_log "ERROR: Need to tell us our resource instance name."
  		exit $OCF_ERR_ARGS
  	fi
@@ -24,5 +24,5 @@ index fd916e7..56f01e6 100644
  
  hadate() {
 -- 
-1.9.1
+2.7.4
 
