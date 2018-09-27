@@ -1,9 +1,5 @@
----
- SPECS/pam.spec | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
 diff --git a/SPECS/pam.spec b/SPECS/pam.spec
-index 0cbf153..a702aca 100644
+index 0faa1d3..0ee1747 100644
 --- a/SPECS/pam.spec
 +++ b/SPECS/pam.spec
 @@ -27,6 +27,11 @@ Source14: 20-nproc.conf
@@ -18,7 +14,7 @@ index 0cbf153..a702aca 100644
  Patch1:  pam-1.0.90-redhat-modules.patch
  Patch2:  pam-1.1.6-std-noclose.patch
  Patch4:  pam-1.1.0-console-nochmod.patch
-@@ -207,6 +212,11 @@ install -m 644 %{SOURCE8} $RPM_BUILD_ROOT%{_pamconfdir}/fingerprint-auth
+@@ -217,6 +222,11 @@ install -m 644 %{SOURCE8} $RPM_BUILD_ROOT%{_pamconfdir}/fingerprint-auth
  install -m 644 %{SOURCE9} $RPM_BUILD_ROOT%{_pamconfdir}/smartcard-auth
  install -m 644 %{SOURCE10} $RPM_BUILD_ROOT%{_pamconfdir}/config-util
  install -m 644 %{SOURCE16} $RPM_BUILD_ROOT%{_pamconfdir}/postlogin
@@ -30,7 +26,7 @@ index 0cbf153..a702aca 100644
  install -m 644 %{SOURCE14} $RPM_BUILD_ROOT%{_secconfdir}/limits.d/20-nproc.conf
  install -m 600 /dev/null $RPM_BUILD_ROOT%{_secconfdir}/opasswd
  install -d -m 755 $RPM_BUILD_ROOT/var/log
-@@ -297,6 +307,11 @@ fi
+@@ -307,6 +317,11 @@ fi
  %config(noreplace) %{_pamconfdir}/smartcard-auth
  %config(noreplace) %{_pamconfdir}/config-util
  %config(noreplace) %{_pamconfdir}/postlogin
@@ -42,6 +38,3 @@ index 0cbf153..a702aca 100644
  %doc Copyright
  %doc doc/txts
  %doc doc/sag/*.txt doc/sag/html
--- 
-1.8.3.1
-
