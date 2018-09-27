@@ -1,4 +1,4 @@
-From 1e57fa5c972496c35b0b1e2aa6f7c9b906cec08c Mon Sep 17 00:00:00 2001
+From 5204f1aaeb0a71eba1cacd16fdf716b3d01c0985 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:05:59 -0400
 Subject: [PATCH 9/9] WRS: snmp-spec-add-snmp-config.patch
@@ -8,7 +8,7 @@ Subject: [PATCH 9/9] WRS: snmp-spec-add-snmp-config.patch
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
-index 8d109b8..f0c1d48 100644
+index b015436..6fc0da2 100644
 --- a/SPECS/net-snmp.spec
 +++ b/SPECS/net-snmp.spec
 @@ -42,6 +42,7 @@ Source11: snmptrapd.service
@@ -19,7 +19,7 @@ index 8d109b8..f0c1d48 100644
  
  Patch1: net-snmp-5.7.2-pie.patch
  Patch2: net-snmp-5.5-dir-fix.patch
-@@ -418,6 +419,8 @@ chmod 660 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/*
+@@ -433,6 +434,8 @@ chmod 660 ${RPM_BUILD_ROOT}%{_sysconfdir}/snmp/*
  mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d
  install -m 755 %SOURCE13 ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d/snmpd
  
@@ -28,7 +28,7 @@ index 8d109b8..f0c1d48 100644
  install -d ${RPM_BUILD_ROOT}%{_initrddir}
  install -m 755 %SOURCE3 ${RPM_BUILD_ROOT}%{_initrddir}/snmptrapd
  
-@@ -552,6 +555,7 @@ rm -rf ${RPM_BUILD_ROOT}
+@@ -567,6 +570,7 @@ rm -rf ${RPM_BUILD_ROOT}
  %attr(0644,root,root) %{_mandir}/man1/net-snmp-create-v3-user*
  %attr(0644,root,root) %{_mandir}/man1/snmpconf.1.gz
  %dir %{_datadir}/snmp
@@ -37,5 +37,5 @@ index 8d109b8..f0c1d48 100644
  %dir %{_localstatedir}/run/net-snmp
  %{_prefix}/lib/tmpfiles.d/net-snmp.conf
 -- 
-1.9.1
+2.7.4
 
