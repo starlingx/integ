@@ -1,8 +1,8 @@
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 168b89b..c9e5177 100644
+index 6e12329..10f74df 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -12,16 +12,7 @@
+@@ -15,16 +15,7 @@
  %global cc_equals %{nil}
  %endif
  

@@ -1,7 +1,7 @@
-From 9f0825676d399b40dd28ea405f09d26c9459f1e8 Mon Sep 17 00:00:00 2001
+From 25964e485c769efcccf853babcc8263eb1c89baf Mon Sep 17 00:00:00 2001
 From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 28 Mar 2018 12:53:34 -0400
-Subject: [PATCH 1/2] WRS: 0010-grub2-add-tboot.patch
+Subject: WRS: 0010-grub2-add-tboot.patch
 
 ---
  SOURCES/grub.macros  | 5 +++++
@@ -9,10 +9,10 @@ Subject: [PATCH 1/2] WRS: 0010-grub2-add-tboot.patch
  2 files changed, 6 insertions(+)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 40cb5d5..247bb71 100755
+index 9ef91d6..ffdd23c 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -78,6 +78,10 @@
+@@ -81,6 +81,10 @@
  %global legacy_package_arch pc
  %global platform pc
  
@@ -23,7 +23,7 @@ index 40cb5d5..247bb71 100755
  %endif
  
  %ifarch aarch64
-@@ -324,6 +328,7 @@ GRUB_MODULES="	all_video boot btrfs cat chain configfile echo	\\\
+@@ -327,6 +331,7 @@ GRUB_MODULES="	all_video boot btrfs cat chain configfile echo	\\\
  		search_label serial sleep syslinuxcfg test tftp \\\
  		video xfs"					\
  GRUB_MODULES+=%{efi_modules}					\
@@ -32,14 +32,14 @@ index 40cb5d5..247bb71 100755
  %{nil}
  
 diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
-index b69fb31..5e63d71 100644
+index d7475f0..e24bd8c 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -258,3 +258,4 @@ Patch0257: 0257-set-rootpath.patch
- Patch0258: 0258-Fix-one-more-coverity-complaint.patch
+@@ -259,3 +259,4 @@ Patch0258: 0258-Fix-one-more-coverity-complaint.patch
  Patch0260: 0260-Fix-up-linux-params-usage.patch
+ Patch0261: 0261-Fix-grub_net_hwaddr_to_str.patch
  Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
 +Patch1001: 1001-add-tboot.patch
 -- 
-1.8.3.1
+2.7.4
 
