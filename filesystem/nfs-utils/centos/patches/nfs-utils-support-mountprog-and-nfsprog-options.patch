@@ -1,7 +1,7 @@
-From 10ecc386dc9e8aec697f782473b71fd6702e849c Mon Sep 17 00:00:00 2001
+From 63619d0ee991bd7bcf3e09c7f0dbff283b57be06 Mon Sep 17 00:00:00 2001
 From: Jackie Huang <jackie.huang@windriver.com>
 Date: Mon, 15 Apr 2013 17:12:26 +0800
-Subject: [PATCH] nfs-utils: support mountprog and nfsprog options
+Subject: nfs-utils: support mountprog and nfsprog options
 
 Add back the support for mountprog and nfsprog options since they
 are supported by our kernel NFS client.
@@ -10,14 +10,14 @@ Upstream-status: Inappropriate
 
 Signed-off-by: Jackie Huang <jackie.huang@windriver.com>
 ---
- utils/mount/stropts.c      |   10 -
+ utils/mount/stropts.c | 10 ----------
  1 file changed, 10 deletions(-)
 
 diff --git a/utils/mount/stropts.c b/utils/mount/stropts.c
-index 44a941f..e686577 100644
+index 4b59974..ca082b6 100644
 --- a/utils/mount/stropts.c
 +++ b/utils/mount/stropts.c
-@@ -451,9 +451,6 @@ static int nfs_construct_new_options(struct mount_options *options,
+@@ -445,9 +445,6 @@ static int nfs_construct_new_options(struct mount_options *options,
  	char new_option[64];
  	char *netid;
  
@@ -27,7 +27,7 @@ index 44a941f..e686577 100644
  	po_remove_all(options, "v2");
  	po_remove_all(options, "v3");
  	po_remove_all(options, "vers");
-@@ -563,13 +560,6 @@ nfs_rewrite_pmap_mount_options(struct mount_options *options, int checkv4)
+@@ -557,13 +554,6 @@ nfs_rewrite_pmap_mount_options(struct mount_options *options, int checkv4)
  		return 0;
  	}
  
@@ -42,5 +42,5 @@ index 44a941f..e686577 100644
  	/*
  	 * If the server's rpcbind service isn't available, we can't
 -- 
-1.9.1
+2.7.4
 
