@@ -1,4 +1,4 @@
-From 70c42ca7d05032305e77b7ea10d003cac0b932ef Mon Sep 17 00:00:00 2001
+From 5a1612476a2b2a4783b5a1bd0f5493b3b3974ecb Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:19:19 -0400
 Subject: [PATCH 1/2] WRS: spec-include-TiS-changes.patch
@@ -8,7 +8,7 @@ Subject: [PATCH 1/2] WRS: spec-include-TiS-changes.patch
  1 file changed, 21 insertions(+), 9 deletions(-)
 
 diff --git a/SPECS/iscsi-initiator-utils.spec b/SPECS/iscsi-initiator-utils.spec
-index e164c03..ce2198d 100644
+index a7bd696..847f95c 100644
 --- a/SPECS/iscsi-initiator-utils.spec
 +++ b/SPECS/iscsi-initiator-utils.spec
 @@ -13,6 +13,9 @@ Source0: https://github.com/open-iscsi/open-iscsi/archive/%{open_iscsi_version}.
@@ -21,7 +21,7 @@ index e164c03..ce2198d 100644
  # upstream patches, post last tagged version
  Patch1: open-iscsi-2.0.874-1-iBFT-origin-is-an-enum-not-a-string.patch
  Patch2: open-iscsi-2.0.874-4-iscsid-treat-SIGTERM-like-iscsiadm-k-0.patch
-@@ -54,6 +57,9 @@ Patch198: keep-open-isns.patch
+@@ -55,6 +58,9 @@ Patch198: keep-open-isns.patch
  # version string, needs to be updated with each build
  Patch199: 0199-use-Red-Hat-version-string-to-match-RPM-package-vers.patch
  
@@ -31,7 +31,7 @@ index e164c03..ce2198d 100644
  BuildRequires: flex bison python-devel doxygen kmod-devel systemd-devel libmount-devel autoconf automake libtool
  # For dir ownership
  Requires: %{name}-iscsiuio >= %{version}-%{release}
-@@ -167,6 +173,9 @@ touch $RPM_BUILD_ROOT/var/lock/iscsi/lock
+@@ -168,6 +174,9 @@ touch $RPM_BUILD_ROOT/var/lock/iscsi/lock
  %{__install} -pm 755 libiscsi/build/lib.linux-*/libiscsimodule.so \
  	$RPM_BUILD_ROOT%{python_sitearch}
  
@@ -41,7 +41,7 @@ index e164c03..ce2198d 100644
  
  %post
  /sbin/ldconfig
-@@ -229,13 +238,13 @@ fi
+@@ -232,13 +241,13 @@ fi
  
  %files
  %doc README
@@ -62,7 +62,7 @@ index e164c03..ce2198d 100644
  %ghost %{_var}/lock/iscsi
  %ghost %{_var}/lock/iscsi/lock
  %{_unitdir}/iscsi.service
-@@ -245,8 +254,8 @@ fi
+@@ -248,8 +257,8 @@ fi
  %{_libexecdir}/iscsi-mark-root-nodes
  %{_sysconfdir}/NetworkManager/dispatcher.d/04-iscsi
  %{_tmpfilesdir}/iscsi.conf
@@ -73,7 +73,7 @@ index e164c03..ce2198d 100644
  %{_sbindir}/iscsi-iname
  %{_sbindir}/iscsiadm
  %{_sbindir}/iscsid
-@@ -258,6 +267,9 @@ fi
+@@ -261,6 +270,9 @@ fi
  %{_mandir}/man8/iscsid.8.gz
  %{_mandir}/man8/iscsistart.8.gz
  
@@ -84,5 +84,5 @@ index e164c03..ce2198d 100644
  %{_sbindir}/iscsiuio
  %{_unitdir}/iscsiuio.service
 -- 
-1.9.1
+2.7.4
 
