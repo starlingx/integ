@@ -1,15 +1,14 @@
-From e3e273f70ea4f8b33f89478020a421bdc203666e Mon Sep 17 00:00:00 2001
+From 31e35dced8a76f9bec4ed2be86d0cca234751d09 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Fri, 26 Aug 2016 16:04:48 -0400
 Subject: [PATCH 2/2] WRS: Patch501:
  bash-history-exit-child-on-parent-death.patch
 
 ---
- shell.c                                    |   16 +-
- sig.c                                      |   13 +
- sig.h                                      |    2 +
+ shell.c | 16 +++++++++++++++-
+ sig.c   | 13 +++++++++++++
+ sig.h   |  2 ++
  3 files changed, 30 insertions(+), 1 deletion(-)
-
 
 diff --git a/shell.c b/shell.c
 index 7eca4e3..dcba61a 100644
@@ -60,10 +59,10 @@ index 7eca4e3..dcba61a 100644
      }
    else
 diff --git a/sig.c b/sig.c
-index d38246d..5ad0c2d 100644
+index 6bd1319..94864fa 100644
 --- a/sig.c
 +++ b/sig.c
-@@ -561,6 +561,19 @@ termsig_handler (sig)
+@@ -556,6 +556,19 @@ termsig_handler (sig)
    kill (getpid (), sig);
  }
  
@@ -102,4 +101,5 @@ index 540aa3e..8f47c56 100644
  extern void initialize_terminating_signals __P((void));
  extern void reset_terminating_signals __P((void));
 -- 
-1.9.1
+2.7.4
+
