@@ -1,7 +1,7 @@
-From 573c0da6014e782b5b598c054e8b6fc90e3cb780 Mon Sep 17 00:00:00 2001
+From e54be64fa16349c94826b17a4dc206a7513f0d9c Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: [PATCH 03/10] WRS:
+Subject: [PATCH] [PATCH 03/10] WRS:
  0004-Protect-sections-of-systemd-post-from-running-on-pat.patch
 
 ---
@@ -9,10 +9,10 @@ Subject: [PATCH 03/10] WRS:
  1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 5474181..912d31e 100644
+index 6e1d7e1..6a04c16 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -1041,6 +1041,7 @@ fi
+@@ -1159,6 +1159,7 @@ fi
  rm -f /etc/sysconfig/i18n >/dev/null 2>&1 || :
  rm -f /etc/sysconfig/keyboard >/dev/null 2>&1 || :
  
@@ -20,7 +20,7 @@ index 5474181..912d31e 100644
  # Migrate HOSTNAME= from /etc/sysconfig/network
  if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
      unset HOSTNAME
-@@ -1048,6 +1049,7 @@ if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
+@@ -1166,6 +1167,7 @@ if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
      [ -n "$HOSTNAME" ] && echo $HOSTNAME > /etc/hostname 2>&1 || :
  fi
  sed -i '/^HOSTNAME=/d' /etc/sysconfig/network >/dev/null 2>&1 || :
@@ -28,7 +28,7 @@ index 5474181..912d31e 100644
  
  # Migrate the old systemd-setup-keyboard X11 configuration fragment
  if [ ! -e /etc/X11/xorg.conf.d/00-keyboard.conf ] ; then
-@@ -1056,6 +1058,7 @@ else
+@@ -1174,6 +1176,7 @@ else
      rm -f /etc/X11/xorg.conf.d/00-system-setup-keyboard.conf >/dev/null 2>&1 || :
  fi
  
@@ -36,7 +36,7 @@ index 5474181..912d31e 100644
  # sed-fu to add myhostname to the hosts line of /etc/nsswitch.conf
  # Only do that when installing, not when updating.
  if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
-@@ -1065,6 +1068,7 @@ if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
+@@ -1183,6 +1186,7 @@ if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
  s/[[:blank:]]*$/ myhostname/
  ' /etc/nsswitch.conf >/dev/null 2>&1 || :
  fi
@@ -45,5 +45,5 @@ index 5474181..912d31e 100644
  %posttrans
  # Convert old /etc/sysconfig/desktop settings
 -- 
-1.9.1
+2.7.4
 

@@ -1,17 +1,17 @@
-From f322cd1a7678c6e50ac1a842b887ea1fc3e21627 Mon Sep 17 00:00:00 2001
+From 3bc9bedbcc6dedd5b68875ce572884c686abce65 Mon Sep 17 00:00:00 2001
 From: Irina Mihai <irina.mihai@windriver.com>
 Date: Mon, 15 May 2017 18:58:48 +0000
-Subject: [PATCH] Remove ID_SAS_PATH rule
+Subject: [PATCH] [PATCH] Remove ID_SAS_PATH rule
 
 ---
  rules/60-persistent-storage.rules | 2 --
  1 file changed, 2 deletions(-)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index 06e3329..3f2c1c1 100644
+index ba61963..f690034 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
-@@ -64,9 +64,7 @@ KERNEL=="mspblk[0-9]p[0-9]", ENV{ID_NAME}=="?*", ENV{ID_SERIAL}=="?*", SYMLINK+=
+@@ -65,9 +65,7 @@ KERNEL=="mspblk[0-9]p[0-9]", ENV{ID_NAME}=="?*", ENV{ID_SERIAL}=="?*", SYMLINK+=
  # by-path (parent device path)
  ENV{DEVTYPE}=="disk", DEVPATH!="*/virtual/*", IMPORT{builtin}="path_id"
  ENV{DEVTYPE}=="disk", ENV{ID_PATH}=="?*", SYMLINK+="disk/by-path/$env{ID_PATH}"
@@ -22,5 +22,5 @@ index 06e3329..3f2c1c1 100644
  # skip unpartitioned removable media devices from drivers which do not send "change" events
  ENV{DEVTYPE}=="disk", KERNEL!="sd*|sr*", ATTR{removable}=="1", GOTO="persistent_storage_end"
 -- 
-1.8.3.1
+2.7.4
 
