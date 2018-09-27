@@ -11,7 +11,7 @@ diff --git a/sysconfig/network-scripts/network-functions b/sysconfig/network-scr
 index 080101b..798f28a 100644
 --- a/sysconfig/network-scripts/network-functions
 +++ b/sysconfig/network-scripts/network-functions
-@@ -460,7 +460,7 @@ check_link_down ()
+@@ -470,7 +470,7 @@ check_link_down ()
          ip link set dev $1 up >/dev/null 2>&1
      fi
      timeout=0

@@ -24,7 +24,7 @@ index 6ec4bea..5ba669b 100644
  Requires: /bin/awk, sed, coreutils
  Requires: /sbin/sysctl
  Requires: grep
-@@ -93,6 +96,11 @@ chmod 600 $RPM_BUILD_ROOT/etc/crypttab
+@@ -94,6 +97,11 @@ chmod 600 $RPM_BUILD_ROOT/etc/crypttab
  install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/etc/sysctl.conf
  install -m 644 %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/network
  
@@ -36,7 +36,7 @@ index 6ec4bea..5ba669b 100644
  %pre
  /usr/sbin/groupadd -g 22 -r -f utmp
  
-@@ -101,6 +109,7 @@ touch /var/log/wtmp /var/run/utmp /var/log/btmp
+@@ -104,6 +112,7 @@ touch /var/log/wtmp /var/run/utmp /var/log/btmp
  chown root:utmp /var/log/wtmp /var/run/utmp /var/log/btmp
  chmod 664 /var/log/wtmp /var/run/utmp
  chmod 600 /var/log/btmp
@@ -44,7 +44,7 @@ index 6ec4bea..5ba669b 100644
  
  /usr/sbin/chkconfig --add network
  /usr/sbin/chkconfig --add netconsole
-@@ -226,6 +235,8 @@ rm -rf $RPM_BUILD_ROOT
+@@ -228,6 +237,8 @@ rm -rf $RPM_BUILD_ROOT
  %ghost %{_localstatedir}/log/dmesg.old
  # WRS
  /etc/sysconfig/network

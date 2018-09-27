@@ -29,7 +29,8 @@ diff --git a/sysconfig/network-scripts/ifdown-eth b/sysconfig/network-scripts/if
 index 7ccbddf..5b75162 100755
 --- a/sysconfig/network-scripts/ifdown-eth
 +++ b/sysconfig/network-scripts/ifdown-eth
-@@ -93,6 +93,6 @@ for VER in "" 6 ; do
+@@ -92,7 +92,7 @@ for VER in "" 6 ; do
+         dhcpid=$(cat /var/run/dhclient$VER-${DEVICE}.pid)
          generate_lease_file_name $VER
          if is_true "$DHCPRELEASE";  then
 -            /sbin/dhclient -r -lf ${LEASEFILE} -pf /var/run/dhclient$VER-${DEVICE}.pid ${DEVICE} >/dev/null 2>&1
@@ -41,7 +42,7 @@ diff --git a/sysconfig/network-scripts/ifup-eth b/sysconfig/network-scripts/ifup
 index 3da5c16..9bcf57f 100755
 --- a/sysconfig/network-scripts/ifup-eth
 +++ b/sysconfig/network-scripts/ifup-eth
-@@ -187,7 +187,7 @@ if [ -n "${DYNCONFIG}" ] && [ -x /sbin/dhclient ]; then
+@@ -204,7 +204,7 @@ if [ -n "${DYNCONFIG}" ] && [ -x /sbin/dhclient ]; then
      generate_lease_file_name
  
      # Initialize the dhclient args and obtain the hostname options if needed:
@@ -50,7 +51,8 @@ index 3da5c16..9bcf57f 100755
      set_hostname_options DHCLIENTARGS
  
      echo
-@@ -333,6 +333,6 @@ if is_true "${DHCPV6C}" && [ -x /sbin/dhclient ]; then
+@@ -354,7 +354,7 @@ if is_true "${DHCPV6C}" && [ -x /sbin/dhclient ]; then
+     echo -n $"Determining IPv6 information for ${DEVICE}..."
  
      # Initialize the dhclient args for IPv6 and obtain the hostname options if needed:
 -    DHCLIENTARGS="-6 -1 ${DHCPV6C_OPTIONS} ${DHCLIENTCONF} -lf ${LEASEFILE} -pf /var/run/dhclient6-${DEVICE}.pid ${DEVICE}"

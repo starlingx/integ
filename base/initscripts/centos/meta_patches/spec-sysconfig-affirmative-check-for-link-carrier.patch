@@ -12,7 +12,7 @@ diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
 index fd84a75..e3748e5 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -50,6 +50,7 @@ Patch7: support-interface-promisc.patch
+@@ -51,6 +51,7 @@ Patch7: support-interface-promisc.patch
  Patch8: 0001-dhclient-remove-1-arg.patch
  Patch9: 0001-force-delay-check-link-down.patch
  Patch10: run-ifdown-on-all-interfaces.patch
@@ -20,7 +20,7 @@ index fd84a75..e3748e5 100644
  
  %description
  The initscripts package contains basic system scripts used
-@@ -77,6 +78,7 @@ Currently, this consists of various memory checking code.
+@@ -78,6 +79,7 @@ Currently, this consists of various memory checking code.
  %patch8 -p1
  %patch9 -p1
  %patch10 -p1

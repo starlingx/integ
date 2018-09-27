@@ -11,7 +11,7 @@ diff --git a/sysconfig/network-scripts/ifup-eth b/sysconfig/network-scripts/ifup
 index 192ad18..4b8b992 100755
 --- a/sysconfig/network-scripts/ifup-eth
 +++ b/sysconfig/network-scripts/ifup-eth
-@@ -151,7 +151,7 @@ if [ "$ISALIAS" = no ] && is_bonding_device ${DEVICE} ; then
+@@ -168,7 +168,7 @@ if [ "$ISALIAS" = no ] && is_bonding_device ${DEVICE} ; then
          /sbin/ifup ${device##*/} || net_log "Unable to start slave device ${device##*/} for master ${DEVICE}." warning
      done
  
@@ -20,7 +20,7 @@ index 192ad18..4b8b992 100755
  
      # add the bits to setup the needed post enslavement parameters
      for arg in $BONDING_OPTS ; do   
-@@ -171,7 +171,7 @@ if [ -n "${BRIDGE}" ] && [ -x /usr/sbin/brctl ]; then
+@@ -188,7 +188,7 @@ if [ -n "${BRIDGE}" ] && [ -x /usr/sbin/brctl ]; then
      /sbin/ip addr flush dev ${DEVICE} 2>/dev/null
      /sbin/ip link set dev ${DEVICE} up
      ethtool_set
@@ -29,7 +29,7 @@ index 192ad18..4b8b992 100755
      /usr/sbin/brctl addif -- ${BRIDGE} ${DEVICE}
      # add the bits to setup driver parameters here
      for arg in $BRIDGING_OPTS ; do
-@@ -227,7 +227,7 @@ else
+@@ -244,7 +244,7 @@ else
          # enable device without IP, useful for e.g. PPPoE
          ip link set dev ${REALDEVICE} up
          ethtool_set
@@ -38,7 +38,7 @@ index 192ad18..4b8b992 100755
      else
  
          expand_config
-@@ -242,7 +242,7 @@ else
+@@ -259,7 +259,7 @@ else
  
          ethtool_set
  
