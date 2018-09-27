@@ -1,4 +1,4 @@
-From 294f4a58442180dc2787b3c67aaea8e83910ae6c Mon Sep 17 00:00:00 2001
+From 3558b107aa5464f867516e2d734592d0f6363b97 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:05:58 -0400
 Subject: [PATCH 5/9] WRS: fix-snmpd-initscript.patch
@@ -8,10 +8,10 @@ Subject: [PATCH 5/9] WRS: fix-snmpd-initscript.patch
  1 file changed, 1 deletion(-)
 
 diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
-index df248ac..a433f40 100644
+index 035d2f8..3e36cb5 100644
 --- a/SPECS/net-snmp.spec
 +++ b/SPECS/net-snmp.spec
-@@ -419,7 +419,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d
+@@ -434,7 +434,6 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d
  install -m 755 %SOURCE13 ${RPM_BUILD_ROOT}%{_sysconfdir}/rc.d/init.d/snmpd
  
  install -d ${RPM_BUILD_ROOT}%{_initrddir}
@@ -20,5 +20,5 @@ index df248ac..a433f40 100644
  
  install -d ${RPM_BUILD_ROOT}%{_sysconfdir}/sysconfig
 -- 
-1.9.1
+2.7.4
 
