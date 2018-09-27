@@ -1,4 +1,4 @@
-From 81fde18810538b9c01e32ef76dbbd0b48761dcb8 Mon Sep 17 00:00:00 2001
+From a59312d5e966405d0053acae383f315d8ffa9dd2 Mon Sep 17 00:00:00 2001
 From: Jack Ding <jack.ding@windriver.com>
 Date: Fri, 11 May 2018 21:45:14 -0400
 Subject: [PATCH 2/3] update memcached dependency
@@ -8,7 +8,7 @@ Subject: [PATCH 2/3] update memcached dependency
  1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/puppet-horizon.spec b/SPECS/puppet-horizon.spec
-index 03ed102..6ad467c 100644
+index 511cf25..ada0538 100644
 --- a/SPECS/puppet-horizon.spec
 +++ b/SPECS/puppet-horizon.spec
 @@ -9,6 +9,9 @@ URL:            https://launchpad.net/puppet-horizon
@@ -32,5 +32,5 @@ index 03ed102..6ad467c 100644
  find . -type f -name ".*" -exec rm {} +
  find . -size 0 -exec rm {} +
 -- 
-1.8.3.1
+2.7.4
 
