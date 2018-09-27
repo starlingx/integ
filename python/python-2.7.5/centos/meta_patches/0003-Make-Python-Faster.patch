@@ -1,4 +1,4 @@
-From ff1efc0b077c78bedead5fdc6792240806f5a97c Mon Sep 17 00:00:00 2001
+From 089860dac0d15120466dc7d9e38041dbaae505eb Mon Sep 17 00:00:00 2001
 From: Al Bailey <Al.Bailey@windriver.com>
 Date: Wed, 28 Mar 2018 08:26:56 -0500
 Subject: [PATCH] Make Python Faster
@@ -8,10 +8,10 @@ Subject: [PATCH] Make Python Faster
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/python.spec b/SPECS/python.spec
-index adc6815..fadf838 100644
+index 94adb05..36289ea 100644
 --- a/SPECS/python.spec
 +++ b/SPECS/python.spec
-@@ -1195,6 +1195,8 @@ Patch268: 00268-set-stream-name-to-None.patch
+@@ -1259,6 +1259,8 @@ Patch305: 00305-CVE-2016-2183.patch
  # above:
  Patch5000: 05000-autotool-intermediates.patch
  
@@ -20,7 +20,7 @@ index adc6815..fadf838 100644
  # ======================================================
  # Additional metadata, and subpackages
  # ======================================================
-@@ -1591,6 +1593,7 @@ find -name "*~" |xargs rm -f
+@@ -1670,6 +1672,7 @@ find -name "*~" |xargs rm -f
  %patch5000 -p0 -b .autotool-intermediates
  %endif
  
@@ -28,7 +28,7 @@ index adc6815..fadf838 100644
  
  # ======================================================
  # Configuring and building the code:
-@@ -1721,7 +1724,7 @@ BuildPython debug \
+@@ -1800,7 +1803,7 @@ BuildPython debug \
  BuildPython optimized \
    python \
    python%{pybasever} \
@@ -38,5 +38,5 @@ index adc6815..fadf838 100644
  
  
 -- 
-1.8.3.1
+2.7.4
 
