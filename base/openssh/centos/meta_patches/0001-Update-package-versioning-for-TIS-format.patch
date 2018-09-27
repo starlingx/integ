@@ -1,14 +1,14 @@
-From 5c046dab0c2f53a7a4ff643011fb367d8f5fbe6e Mon Sep 17 00:00:00 2001
+From 4da56227f47a96f37eb0e46e0222f7e1d2f95c2b Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:32:16 -0400
-Subject: [PATCH 5/7] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [3/6] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
 ---
  SPECS/openssh.spec | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
-index 9607a75..332152d 100644
+index d10e73e..be83a63 100644
 --- a/SPECS/openssh.spec
 +++ b/SPECS/openssh.spec
 @@ -71,7 +71,7 @@
@@ -20,7 +20,7 @@ index 9607a75..332152d 100644
  URL: http://www.openssh.com/portable.html
  #URL1: http://pamsshagentauth.sourceforge.net
  Source0: ftp://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-%{version}.tar.gz
-@@ -339,7 +339,7 @@ Requires: openssh = %{version}-%{release}
+@@ -350,7 +350,7 @@ Requires: openssh = %{version}-%{release}
  Summary: PAM module for authentication with ssh-agent
  Group: System Environment/Base
  Version: %{pam_ssh_agent_ver}
@@ -30,5 +30,5 @@ index 9607a75..332152d 100644
  
  %description
 -- 
-1.9.1
+2.7.4
 

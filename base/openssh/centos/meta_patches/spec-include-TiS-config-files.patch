@@ -1,14 +1,14 @@
-From f4b2a7d1f5f139ffd622a5617e63cbdc1fd838bd Mon Sep 17 00:00:00 2001
+From 2056c72dc2aa852397c59b864ed3011c71998d36 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:32:15 -0400
-Subject: [PATCH 1/7] WRS: spec-include-TiS-config-files.patch
+Subject: [1/6] WRS: spec-include-TiS-config-files.patch
 
 ---
  SPECS/openssh.spec | 9 +++++++++
  1 file changed, 9 insertions(+)
 
 diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
-index 69a8ae4..2302061 100644
+index 5c030bc..e137156 100644
 --- a/SPECS/openssh.spec
 +++ b/SPECS/openssh.spec
 @@ -88,6 +88,10 @@ Source11: sshd.service
@@ -22,7 +22,7 @@ index 69a8ae4..2302061 100644
  # Internal debug
  Patch0: openssh-5.9p1-wIm.patch
  
-@@ -684,6 +688,11 @@ pushd pam_ssh_agent_auth-%{pam_ssh_agent_ver}
+@@ -701,6 +705,11 @@ pushd pam_ssh_agent_auth-%{pam_ssh_agent_ver}
  make install DESTDIR=$RPM_BUILD_ROOT
  popd
  %endif
@@ -35,5 +35,5 @@ index 69a8ae4..2302061 100644
  rm -rf $RPM_BUILD_ROOT
  
 -- 
-1.9.1
+2.7.4
 
