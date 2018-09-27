@@ -1,17 +1,17 @@
-From 49c227e1ec30dc7b0417f74972cd5414ac68ce46 Mon Sep 17 00:00:00 2001
+From 788beea32cfa09f61c27db117ec3b3b0500fbad8 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:32:16 -0400
-Subject: [PATCH 4/7] WRS: openssh-spec-file-add-init.patch
+Subject: [2/6] WRS: openssh-spec-file-add-init.patch
 
 ---
  SPECS/openssh.spec | 5 -----
  1 file changed, 5 deletions(-)
 
 diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
-index 2302061..9607a75 100644
+index e137156..d10e73e 100644
 --- a/SPECS/openssh.spec
 +++ b/SPECS/openssh.spec
-@@ -711,9 +711,6 @@ getent passwd sshd >/dev/null || \
+@@ -728,9 +728,6 @@ getent passwd sshd >/dev/null || \
  %preun server
  %systemd_preun sshd.service sshd.socket
  
@@ -21,7 +21,7 @@ index 2302061..9607a75 100644
  %files
  %defattr(-,root,root)
  %{!?_licensedir:%global license %%doc}
-@@ -776,8 +773,6 @@ getent passwd sshd >/dev/null || \
+@@ -793,8 +790,6 @@ getent passwd sshd >/dev/null || \
  %attr(0644,root,root) %{_unitdir}/sshd.socket
  %attr(0644,root,root) %{_unitdir}/sshd-keygen.service
  
@@ -31,5 +31,5 @@ index 2302061..9607a75 100644
  %endif
  
 -- 
-1.9.1
+2.7.4
 
