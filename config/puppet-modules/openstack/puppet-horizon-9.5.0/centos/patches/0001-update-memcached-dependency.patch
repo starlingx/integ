@@ -1,4 +1,4 @@
-From 0d0409579a7f66fce15375a8193d17d7d7bd130e Mon Sep 17 00:00:00 2001
+From ece3e238c13425113f7882448a0e0fe40d07637c Mon Sep 17 00:00:00 2001
 From: Jack Ding <jack.ding@windriver.com>
 Date: Fri, 11 May 2018 21:45:24 -0400
 Subject: [PATCH 3/3] update memcached dependency
@@ -8,10 +8,10 @@ Subject: [PATCH 3/3] update memcached dependency
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/metadata.json b/metadata.json
-index cc20f92..df162ac 100644
+index 222be17..a9d8a91 100644
 --- a/metadata.json
 +++ b/metadata.json
-@@ -49,6 +49,6 @@
+@@ -47,6 +47,6 @@
    "dependencies": [
      {"name":"puppetlabs/apache","version_requirement":">=1.2.0 <2.0.0"},
      {"name":"puppetlabs/stdlib","version_requirement":">=4.0.0 <5.0.0"},
@@ -20,5 +20,5 @@ index cc20f92..df162ac 100644
    ]
  }
 -- 
-1.8.3.1
+2.7.4
 
