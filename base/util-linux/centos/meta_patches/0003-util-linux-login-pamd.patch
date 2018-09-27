@@ -1,7 +1,7 @@
-From 48483baf9bcce5fbf9040f1f400eea9a0fd76c86 Mon Sep 17 00:00:00 2001
+From 3db968a14a7a93d08d9d801e79d96d05dc100519 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:55:36 -0400
-Subject: [PATCH 2/3] WRS: 0003-util-linux-login-pamd.patch
+Subject: WRS: 0003-util-linux-login-pamd.patch
 
 ---
  SOURCES/util-linux-login.pamd | 1 +
@@ -21,10 +21,10 @@ index 3c03927..9c57d31 100644
  session    optional     pam_console.so
  # pam_selinux.so open should only be followed by sessions to be executed in the user context
 diff --git a/SPECS/util-linux.spec b/SPECS/util-linux.spec
-index 8d4dae6..bed4869 100644
+index 4b045fd..537a03c 100644
 --- a/SPECS/util-linux.spec
 +++ b/SPECS/util-linux.spec
-@@ -688,7 +688,7 @@ fi
+@@ -738,7 +738,7 @@ fi
  
  %config(noreplace)	%{_sysconfdir}/pam.d/chfn
  %config(noreplace)	%{_sysconfdir}/pam.d/chsh
@@ -34,5 +34,5 @@ index 8d4dae6..bed4869 100644
  %config(noreplace)	%{_sysconfdir}/pam.d/su
  %config(noreplace)	%{_sysconfdir}/pam.d/su-l
 -- 
-1.9.1
+2.7.4
 
