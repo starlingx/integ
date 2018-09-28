@@ -1,17 +1,17 @@
-From 93b0c27355df9fd944ad627413135c1da952c0a9 Mon Sep 17 00:00:00 2001
+From 484178cab006e67cc132eec2587e59c5605edac7 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:25:05 -0400
-Subject: [PATCH 4/7] WRS: dhclient-dhcp6-set-hostname.patch
+Subject: WRS: dhclient-dhcp6-set-hostname.patch
 
 ---
  SOURCES/dhclient-script | 8 ++++++++
  1 file changed, 8 insertions(+)
 
 diff --git a/SOURCES/dhclient-script b/SOURCES/dhclient-script
-index 9f725a0..e4dbc20 100644
+index 87bad65..fb51eb5 100644
 --- a/SOURCES/dhclient-script
 +++ b/SOURCES/dhclient-script
-@@ -598,6 +598,10 @@ dh6config() {
+@@ -653,6 +653,10 @@ dh6config() {
              add_ipv6_addr_with_DAD
  
              make_resolv_conf
@@ -22,7 +22,7 @@ index 9f725a0..e4dbc20 100644
              ;;
  
          RENEW6|REBIND6)
-@@ -615,6 +619,10 @@ dh6config() {
+@@ -670,6 +674,10 @@ dh6config() {
                 [ ! "${new_dhcp6_domain_search}" = "${old_dhcp6_domain_search}" ]; then
                  make_resolv_conf
              fi
@@ -34,5 +34,5 @@ index 9f725a0..e4dbc20 100644
  
          DEPREF6)
 -- 
-1.9.1
+2.7.4
 

@@ -1,14 +1,14 @@
-From 03b852ace37cc26df4462185f51b5eecef808ad2 Mon Sep 17 00:00:00 2001
+From 79b8e2f34a5746e43e64e375c4fbf236de064c63 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:25:05 -0400
-Subject: [PATCH 2/7] WRS: spec-dhcp-enter-hooks.patch
+Subject: WRS: spec-dhcp-enter-hooks.patch
 
 ---
  SPECS/dhcp.spec | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
-index 78ee924..0150767 100644
+index 904e3ad..fd66dc4 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
 @@ -42,7 +42,7 @@ Source10: README.scripts
@@ -20,7 +20,7 @@ index 78ee924..0150767 100644
  
  Patch0:   dhcp-4.2.0-errwarn-message.patch
  Patch1:   dhcp-4.2.4-dhclient-options.patch
-@@ -575,6 +575,7 @@ find ${RPM_BUILD_ROOT}/%{_libdir} -name '*.la' -exec '/bin/rm' '-f' '{}' ';';
+@@ -605,6 +605,7 @@ find ${RPM_BUILD_ROOT}/%{_libdir} -name '*.la' -exec '/bin/rm' '-f' '{}' ';';
  # WRS: Overwrite with our config
  %{__install} -p -m 0755 %{SOURCE20} %{buildroot}%{dhcpconfdir}/dhclient-exit-hooks
  %{__install} -p -m 0644 %{SOURCE21} %{buildroot}%{dhcpconfdir}/dhclient.conf
@@ -28,7 +28,7 @@ index 78ee924..0150767 100644
  
  %pre
  # /usr/share/doc/setup/uidgid
-@@ -694,6 +696,7 @@ done
+@@ -724,6 +725,7 @@ done
  # WRS
  %{dhcpconfdir}/dhclient-exit-hooks
  %{dhcpconfdir}/dhclient.conf
@@ -37,5 +37,5 @@ index 78ee924..0150767 100644
  %files common
  %doc LICENSE README RELNOTES doc/References.txt
 -- 
-1.9.1
+2.7.4
 

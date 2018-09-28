@@ -1,28 +1,29 @@
-From 01736403c13648dff7a02366ef994e157ee74970 Mon Sep 17 00:00:00 2001
+From 238c53632f948d293cbcfb4c92fba29096808080 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:25:05 -0400
-Subject: [PATCH 3/7] WRS: remove-unecessary-dhcp-exit-hooks-file.patch
+Subject: WRS: remove-unecessary-dhcp-exit-hooks-file.patch
 
 ---
  SPECS/dhcp.spec | 4 +---
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
-index 0150767..edc4113 100644
+index fd66dc4..42409f6 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
-@@ -40,9 +40,9 @@ Source9: azure-cloud.sh
+@@ -40,10 +40,10 @@ Source9: azure-cloud.sh
  Source10: README.scripts
  
  # WRS
 -Source20: dhclient-exit-hooks
  Source21: dhclient.conf
  Source22: dhclient-enter-hooks
-+
  
++
  Patch0:   dhcp-4.2.0-errwarn-message.patch
  Patch1:   dhcp-4.2.4-dhclient-options.patch
-@@ -573,7 +573,6 @@ EOF
+ Patch2:   dhcp-4.2.0-release-by-ifup.patch
+@@ -603,7 +603,6 @@ EOF
  find ${RPM_BUILD_ROOT}/%{_libdir} -name '*.la' -exec '/bin/rm' '-f' '{}' ';';
  
  # WRS: Overwrite with our config
@@ -30,7 +31,7 @@ index 0150767..edc4113 100644
  %{__install} -p -m 0644 %{SOURCE21} %{buildroot}%{dhcpconfdir}/dhclient.conf
  %{__install} -p -m 0755 %{SOURCE22} %{buildroot}%{dhcpconfdir}/dhclient-enter-hooks
  
-@@ -693,7 +692,6 @@ done
+@@ -723,7 +722,6 @@ done
  %attr(0644,root,root) %{_mandir}/man8/dhclient-script.8.gz
  
  # WRS
@@ -39,5 +40,5 @@ index 0150767..edc4113 100644
  %{dhcpconfdir}/dhclient-enter-hooks
  
 -- 
-1.9.1
+2.7.4
 
