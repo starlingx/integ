@@ -1,17 +1,17 @@
-From 3a2d3bf327d82d3d916fa1a14b3dbbe84023a29c Mon Sep 17 00:00:00 2001
+From 432caafd03704396941acec4ff059390ad749719 Mon Sep 17 00:00:00 2001
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Mon, 22 Jan 2018 16:05:57 -0500
-Subject: [PATCH] macros
+Subject: macros
 
 ---
- SOURCES/grub.macros | 14 +++-----------
- 1 file changed, 3 insertions(+), 11 deletions(-)
+ SOURCES/grub.macros | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index c9e5177..f03bc1a 100755
+index 10f74df..075727c 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -78,15 +78,6 @@
+@@ -81,15 +81,6 @@
  %global legacy_package_arch pc
  %global platform pc
  
@@ -27,7 +27,7 @@ index c9e5177..f03bc1a 100755
  %endif
  
  %ifarch aarch64
-@@ -378,6 +369,7 @@ cd grub-%{1}-%{tarversion}					\
+@@ -381,6 +372,7 @@ cd grub-%{1}-%{tarversion}					\
  install -m 755 -d $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/	\
  install -m 755 -d $RPM_BUILD_ROOT/boot/grub2/			\
  make DESTDIR=$RPM_BUILD_ROOT install				\
@@ -36,5 +36,5 @@ index c9e5177..f03bc1a 100755
  	rm -f $RPM_BUILD_ROOT%{_infodir}/grub.info		\
  fi								\
 -- 
-1.8.3.1
+2.7.4
 

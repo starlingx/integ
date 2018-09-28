@@ -1,40 +1,39 @@
-From f38f3a21e50130d5807088bae79c163233271a97 Mon Sep 17 00:00:00 2001
+From 5e0c8a6125403db7e90990d20c1cdda5cb9deb78 Mon Sep 17 00:00:00 2001
 From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 28 Mar 2018 14:08:57 -0400
-Subject: [PATCH 2/2] Patch GRUB so that it doesn't add a trailing colon after
- MAC
+Subject: Patch GRUB so that it doesn't add a trailing colon after MAC
 
 A CentOS GRUB patch added support for macs > 6B in size.  This
 breaks PXEbooting the installer, because a routine within grub
 relies on the max MAC string length.
 ---
  SOURCES/grub.macros  | 2 +-
- SOURCES/grub.patches | 4 +++-
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ SOURCES/grub.patches | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 247bb71..908315d 100755
+index ffdd23c..8fcb272 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -78,7 +78,7 @@
+@@ -81,7 +81,7 @@
  %global legacy_package_arch pc
  %global platform pc
-
+ 
 -%global wrs_modules " multiboot multiboot2"
 +%global wrs_modules " multiboot multiboot2 regexp"
  %else
  %global wrs_modules ""
-
+ 
 diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
-index 5e63d71..688d81b 100644
+index e24bd8c..73ccdee 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -259,3 +259,5 @@ Patch0258: 0258-Fix-one-more-coverity-complaint.patch
- Patch0260: 0260-Fix-up-linux-params-usage.patch
+@@ -260,3 +260,5 @@ Patch0260: 0260-Fix-up-linux-params-usage.patch
+ Patch0261: 0261-Fix-grub_net_hwaddr_to_str.patch
  Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
  Patch1001: 1001-add-tboot.patch
 +Patch1002: 1002-Don-t-write-trailing-colon-when-populating-MAC-strin.patch
 +
 -- 
-1.8.3.1
+2.7.4
 

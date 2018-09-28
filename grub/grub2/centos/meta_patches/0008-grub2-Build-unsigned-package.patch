@@ -1,17 +1,17 @@
-From 0e70c8a35c4434fa23717228cfa819bd64ed082f Mon Sep 17 00:00:00 2001
+From fadbfe260a2678e1a6e79f8df4372b2eaee5dc9f Mon Sep 17 00:00:00 2001
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Tue, 23 Jan 2018 14:46:01 -0500
-Subject: [PATCH 2/4] add unsigned package
+Subject: add unsigned package
 
 ---
  SOURCES/grub.macros | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index f03bc1a..486604c 100755
+index 075727c..5581deb 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -212,6 +212,13 @@ Requires:	%{name}-common = %{evr}					\
+@@ -215,6 +215,13 @@ Requires:	%{name}-common = %{evr}					\
  %{expand:%%description %{1}-cdboot}					\
  %{desc}									\
  This subpackage provides optional components of grub used with removeable media on %{1} systems.\
@@ -25,7 +25,7 @@ index f03bc1a..486604c 100755
  %{nil}
  
  %global do_common_setup()					\
-@@ -286,6 +293,8 @@ done								\
+@@ -289,6 +296,8 @@ done								\
  	-p /EFI/%{efidir} -d grub-core ${GRUB_MODULES}		\
  %{4}./grub-mkimage -O %{1} -o %{3}.orig				\\\
  	-p /EFI/BOOT -d grub-core ${GRUB_MODULES}		\
@@ -34,7 +34,7 @@ index f03bc1a..486604c 100755
  %{expand:%%{pesign -s -i %{2}.orig -o %{2} -a %{5} -c %{6} -n %{7}}}	\
  %{expand:%%{pesign -s -i %{3}.orig -o %{3} -a %{5} -c %{6} -n %{7}}}	\
  %{nil}
-@@ -380,6 +389,8 @@ find $RPM_BUILD_ROOT -iname "*.module" -exec chmod a-x {} '\;'	\
+@@ -383,6 +392,8 @@ find $RPM_BUILD_ROOT -iname "*.module" -exec chmod a-x {} '\;'	\
  touch $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/grub.cfg		\
  ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
  	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
@@ -43,7 +43,7 @@ index f03bc1a..486604c 100755
  install -m 755 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
  install -m 755 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
  install -D -m 644 unicode.pf2					\\\
-@@ -470,4 +481,8 @@ cd ..								\
+@@ -473,4 +484,8 @@ cd ..								\
  %defattr(-,root,root,-)						\
  %attr(0755,root,root)/boot/efi/EFI/%{efidir}/%{3}		\
  %attr(0755,root,root)/boot/efi/EFI/%{efidir}/fonts		\
@@ -53,5 +53,5 @@ index f03bc1a..486604c 100755
 +/boot/efi/EFI/%{efidir}/%{grubeficdname}.unsigned               \
  %{nil}
 -- 
-1.8.3.1
+2.7.4
 

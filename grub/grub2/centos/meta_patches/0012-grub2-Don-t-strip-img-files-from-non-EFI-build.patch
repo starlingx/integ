@@ -1,17 +1,17 @@
-From a62820e84598cf6007a751db01567a8a2ac8d369 Mon Sep 17 00:00:00 2001
+From 31310ca5b5d10aff6bd4480bc78ef75504711ab1 Mon Sep 17 00:00:00 2001
 From: root <root@yow-cgts1-lx.wrs.com>
 Date: Fri, 6 Apr 2018 11:36:01 -0400
-Subject: [PATCH] Don't strip files from non-EFI build of grub
+Subject: Don't strip files from non-EFI build of grub
 
 ---
  SOURCES/grub.macros | 2 --
  1 file changed, 2 deletions(-)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 4e3bdc0..f403c91 100755
+index 8fcb272..cd2da06 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -468,8 +468,6 @@ cd ..								\
+@@ -471,8 +471,6 @@ cd ..								\
  %defattr(-,root,root)						\
  %dir %{_libdir}/grub/%{2}/					\
  %{_libdir}/grub/%{2}/*						\
@@ -21,5 +21,5 @@ index 4e3bdc0..f403c91 100755
  %{nil}
  
 -- 
-1.8.3.1
+2.7.4
 

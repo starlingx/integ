@@ -1,17 +1,17 @@
-From 22076d1eea7ccb10541073c7318043d7634b7852 Mon Sep 17 00:00:00 2001
+From ca7e4edddd48b0ffd0520a2ccb271bbe036aa1e5 Mon Sep 17 00:00:00 2001
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Tue, 23 Jan 2018 14:57:29 -0500
-Subject: [PATCH 3/4] add pxeboot package
+Subject: add pxeboot package
 
 ---
  SOURCES/grub.macros | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 486604c..40cb5d5 100755
+index 5581deb..9ef91d6 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -219,6 +219,13 @@ Summary:    Unsigned versions of GRUB EFI binaries                      \
+@@ -222,6 +222,13 @@ Summary:    Unsigned versions of GRUB EFI binaries                      \
  %description %{1}-unsigned                                              \
  This package contains unsigned version of GRUB EFI binaries.            \
                                                                          \
@@ -25,7 +25,7 @@ index 486604c..40cb5d5 100755
  %{nil}
  
  %global do_common_setup()					\
-@@ -391,6 +398,7 @@ ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
+@@ -394,6 +401,7 @@ ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
  	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
  install -m 755 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}.unsigned \
  install -m 755 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3}.unsigned \
@@ -33,7 +33,7 @@ index 486604c..40cb5d5 100755
  install -m 755 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
  install -m 755 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
  install -D -m 644 unicode.pf2					\\\
-@@ -485,4 +493,8 @@ cd ..								\
+@@ -488,4 +496,8 @@ cd ..								\
  %{expand:%%files %{1}-unsigned}                                 \
  /boot/efi/EFI/%{efidir}/%{grubefiname}.unsigned                 \
  /boot/efi/EFI/%{efidir}/%{grubeficdname}.unsigned               \
@@ -43,5 +43,5 @@ index 486604c..40cb5d5 100755
 +								\
  %{nil}
 -- 
-1.8.3.1
+2.7.4
 
