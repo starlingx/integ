@@ -1,4 +1,4 @@
-From 653e25505b1df7e7b3fd89e08729d6d9f9698d39 Mon Sep 17 00:00:00 2001
+From 2cfc139ffabdb52c82834be2f88333f99c181677 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Tue, 28 Mar 2017 17:33:34 -0400
 Subject: [PATCH] Adding support for TPM 2.0
@@ -8,10 +8,10 @@ Subject: [PATCH] Adding support for TPM 2.0
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
-index 0598472..64df753 100644
+index c27f78f..bc11989 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
-@@ -81,6 +81,7 @@ Patch8: lighttpd-1.4.43-mysql.patch
+@@ -82,6 +82,7 @@ Patch3: lighttpd-1.4.39-socket.patch
  
  # WRS Patches
  Patch100: check-content-length.patch
@@ -19,7 +19,7 @@ index 0598472..64df753 100644
  
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
  # For the target poweredby.png image (skip requirement + provide image on EL5)
-@@ -186,6 +187,7 @@ Authentication module for lighttpd that uses GSSAPI
+@@ -189,6 +190,7 @@ Authentication module for lighttpd that uses GSSAPI
  
  # WRS Patches
  %patch100 -p1 -b .content_length
@@ -28,5 +28,5 @@ index 0598472..64df753 100644
  #install -p -m 0644 %{SOURCE100} src/mod_geoip.c
  #install -p -m 0644 %{SOURCE101} mod_geoip.txt
 -- 
-1.8.3.1
+2.7.4
 

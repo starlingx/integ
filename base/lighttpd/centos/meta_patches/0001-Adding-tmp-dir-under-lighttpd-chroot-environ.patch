@@ -1,4 +1,4 @@
-From bfca4119209067c0af4abf88b62d54767fcfd7ab Mon Sep 17 00:00:00 2001
+From 804b1d2ae37de293c2859d37d1c2cc9885e9d09e Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 20 Mar 2017 10:21:28 -0400
 Subject: [PATCH 2/4] WRS:
@@ -9,10 +9,10 @@ Subject: [PATCH 2/4] WRS:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
-index a313a1b..71737ac 100644
+index 7acdc84..2f7b261 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
-@@ -267,7 +267,7 @@ echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
+@@ -271,7 +271,7 @@ echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
  # WRS
  CONFDIR=%{buildroot}%{_sysconfdir}/lighttpd
  ROOTDIR=%{buildroot}/www
@@ -22,5 +22,5 @@ index a313a1b..71737ac 100644
  install -d ${ROOTDIR}/pages/dav
  install -m 0640 %{SOURCE103} ${CONFDIR}/lighttpd.conf
 -- 
-1.8.3.1
+2.7.4
 
