@@ -19,6 +19,7 @@ import six
 from multiprocessing import Process, cpu_count
 from subprocess import Popen, PIPE
 from collections import OrderedDict
+from six.moves import input
 
 
 # generates the required string for the areas where fields are not static
@@ -1270,7 +1271,7 @@ def deleteDB(influx_info, grafana_port, grafana_api_key):
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     p = None
     try:
-        answer = str(raw_input("\nAre you sure you would like to delete {}? (Y/N): ".format(influx_info[2]))).lower()
+        answer = str(input("\nAre you sure you would like to delete {}? (Y/N): ".format(influx_info[2]))).lower()
     except Exception:
         answer = None
     if answer is None or answer == "" or answer == "y" or answer == "yes":
