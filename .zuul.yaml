@@ -12,3 +12,6 @@
         - build-openstack-releasenotes
         - openstack-tox-pep8
         - openstack-tox-linters
+    post:
+      jobs:
+        - publish-stx-tox
