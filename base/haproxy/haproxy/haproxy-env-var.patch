@@ -1,8 +1,8 @@
-Index: haproxy-1.5.11/src/cfgparse.c
-===================================================================
---- haproxy-1.5.11.orig/src/cfgparse.c
-+++ haproxy-1.5.11/src/cfgparse.c
-@@ -5789,12 +5789,19 @@ out:
+diff --git a/src/cfgparse.c b/src/cfgparse.c
+index 39abf6b..6a7f80c 100644
+--- a/src/cfgparse.c
++++ b/src/cfgparse.c
+@@ -5821,12 +5821,19 @@ out:
   */
  int readcfgfile(const char *file)
  {
@@ -23,7 +23,7 @@ Index: haproxy-1.5.11/src/cfgparse.c
  
  	/* Register internal sections */
  	if (!cfg_register_section("listen",   cfg_parse_listen) ||
-@@ -5810,11 +5817,14 @@ int readcfgfile(const char *file)
+@@ -5842,11 +5849,14 @@ int readcfgfile(const char *file)
  	if ((f=fopen(file,"r")) == NULL)
  		return -1;
  
@@ -39,7 +39,7 @@ Index: haproxy-1.5.11/src/cfgparse.c
  
  		linenum++;
  
-@@ -5824,11 +5834,25 @@ int readcfgfile(const char *file)
+@@ -5856,11 +5866,25 @@ int readcfgfile(const char *file)
  			/* Check if we reached the limit and the last char is not \n.
  			 * Watch out for the last line without the terminating '\n'!
  			 */
@@ -68,7 +68,7 @@ Index: haproxy-1.5.11/src/cfgparse.c
  		/* skip leading spaces */
  		while (isspace((unsigned char)*line))
  			line++;
-@@ -5837,10 +5861,26 @@ int readcfgfile(const char *file)
+@@ -5869,10 +5893,26 @@ int readcfgfile(const char *file)
  		args[arg] = line;
  
  		while (*line && arg < MAX_LINE_ARGS) {
@@ -99,7 +99,7 @@ Index: haproxy-1.5.11/src/cfgparse.c
  				int skip = 0;
  				if (line[1] == ' ' || line[1] == '\\' || line[1] == '#') {
  					*line = line[1];
-@@ -5872,6 +5912,15 @@ int readcfgfile(const char *file)
+@@ -5904,6 +5944,15 @@ int readcfgfile(const char *file)
  						Alert("parsing [%s:%d] : invalid or incomplete '\\x' sequence in '%s'.\n", file, linenum, args[0]);
  						err_code |= ERR_ALERT | ERR_FATAL;
  					}
@@ -115,7 +115,7 @@ Index: haproxy-1.5.11/src/cfgparse.c
  				}
  				if (skip) {
  					memmove(line + 1, line + 1 + skip, end - (line + skip));
-@@ -5879,23 +5928,117 @@ int readcfgfile(const char *file)
+@@ -5911,23 +5960,117 @@ int readcfgfile(const char *file)
  				}
  				line++;
  			}
@@ -235,7 +235,7 @@ Index: haproxy-1.5.11/src/cfgparse.c
  		/* empty line */
  		if (!**args)
  			continue;
-@@ -5966,6 +6109,7 @@ int readcfgfile(const char *file)
+@@ -5998,6 +6141,7 @@ int readcfgfile(const char *file)
  			break;
  	}
  	cursection = NULL;
