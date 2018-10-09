@@ -4,11 +4,11 @@ Date: Fri, 1 Jun 2018 19:49:33 -0500
 Subject: [PATCH] add pmon conf files
 
 ---
- SPECS/openvswitch.spec | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ SPECS/openvswitch.spec | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/openvswitch.spec b/SPECS/openvswitch.spec
-index 6fc2b67..57a3055 100644
+index b1e285d..16447e0 100644
 --- a/SPECS/openvswitch.spec
 +++ b/SPECS/openvswitch.spec
 @@ -76,6 +76,9 @@ Source504: arm64-armv8a-linuxapp-gcc-config
@@ -21,7 +21,7 @@ index 6fc2b67..57a3055 100644
  # The DPDK is designed to optimize througput of network traffic using, among
  # other techniques, carefully crafted assembly instructions.  As such it
  # needs extensive work to port it to other architectures.
-@@ -429,6 +432,8 @@ touch $RPM_BUILD_ROOT%{_sysconfdir}/openvswitch/system-id.conf
+@@ -430,6 +433,8 @@ touch $RPM_BUILD_ROOT%{_sysconfdir}/openvswitch/system-id.conf
  %endif
  %endif
  
@@ -30,7 +30,7 @@ index 6fc2b67..57a3055 100644
  # remove unpackaged files
  rm -f $RPM_BUILD_ROOT/%{_bindir}/ovs-benchmark \
          $RPM_BUILD_ROOT/%{_bindir}/ovs-docker \
-@@ -631,6 +636,7 @@ rm -rf $RPM_BUILD_ROOT
+@@ -632,6 +637,7 @@ rm -rf $RPM_BUILD_ROOT
  %{_sysconfdir}/bash_completion.d/ovs-appctl-bashcomp.bash
  %{_sysconfdir}/bash_completion.d/ovs-vsctl-bashcomp.bash
  %config(noreplace) %{_sysconfdir}/logrotate.d/openvswitch
@@ -38,5 +38,6 @@ index 6fc2b67..57a3055 100644
  %{_unitdir}/openvswitch.service
  %{_unitdir}/ovsdb-server.service
  %{_unitdir}/ovs-vswitchd.service
-1.8.3.1
+-- 
+2.7.4
 
