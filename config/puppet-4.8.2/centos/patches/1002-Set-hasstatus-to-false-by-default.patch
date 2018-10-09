@@ -1,7 +1,7 @@
-From a0ce82562d75c62fbe7258d0ed4e3ac6d0248ed4 Mon Sep 17 00:00:00 2001
+From 3e0ed33dcd0871fbccefd5b561f41fb46c35e32a Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Fri, 30 Dec 2016 10:59:44 -0500
-Subject: [PATCH] Set hasstatus to false by default
+Subject: Set hasstatus to false by default
 
 Many of the WR init scripts do not have proper status functions,
 so set "hasstatus" to false by default.
@@ -11,10 +11,10 @@ so set "hasstatus" to false by default.
  2 files changed, 10 insertions(+), 2 deletions(-)
 
 diff --git a/lib/puppet/provider/service/init.rb b/lib/puppet/provider/service/init.rb
-index 9f2d030..69940ca 100644
+index 2806ee0..17f727a 100644
 --- a/lib/puppet/provider/service/init.rb
 +++ b/lib/puppet/provider/service/init.rb
-@@ -81,7 +81,14 @@ Puppet::Type.type(:service).provide :init, :parent => :base do
+@@ -98,7 +98,14 @@ Puppet::Type.type(:service).provide :init, :parent => :base do
          next if exclude.include? name
          next if not FileTest.executable?(fullpath)
          next if not is_init?(fullpath)
@@ -31,10 +31,10 @@ index 9f2d030..69940ca 100644
      end
      instances
 diff --git a/lib/puppet/type/service.rb b/lib/puppet/type/service.rb
-index dc54f1d..2bab7fc 100644
+index 1f8d266..61498b5 100644
 --- a/lib/puppet/type/service.rb
 +++ b/lib/puppet/type/service.rb
-@@ -134,7 +134,8 @@ module Puppet
+@@ -154,7 +154,8 @@ module Puppet
  
        newvalues(:true, :false)
  
@@ -45,5 +45,5 @@ index dc54f1d..2bab7fc 100644
      newparam(:name) do
        desc <<-EOT
 -- 
-1.8.3.1
+2.7.4
 
