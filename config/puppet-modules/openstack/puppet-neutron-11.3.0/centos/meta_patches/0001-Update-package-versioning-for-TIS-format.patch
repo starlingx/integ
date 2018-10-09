@@ -1,14 +1,14 @@
-From 4f8a132a691a6c4610424b7a7def4266e1ac5143 Mon Sep 17 00:00:00 2001
+From 28173c888231555fda5e85da6967fe64d201449a Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Tue, 3 Jan 2017 13:30:12 -0500
-Subject: [PATCH] Update package versioning for TIS format
+Subject: Update package versioning for TIS format
 
 ---
  SPECS/puppet-neutron.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/puppet-neutron.spec b/SPECS/puppet-neutron.spec
-index 854a666..652d16e 100644
+index 5563e1d..12252ad 100644
 --- a/SPECS/puppet-neutron.spec
 +++ b/SPECS/puppet-neutron.spec
 @@ -1,7 +1,7 @@
@@ -18,8 +18,8 @@ index 854a666..652d16e 100644
 -Release:        1%{?dist}
 +Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        Puppet module for OpenStack Neutron
- License:        Apache-2.0
+ License:        ASL 2.0
  
 -- 
-1.8.3.1
+2.7.4
 
