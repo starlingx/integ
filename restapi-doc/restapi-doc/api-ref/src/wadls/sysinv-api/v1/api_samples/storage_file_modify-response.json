@@ -1,3 +1,0 @@
-{
-    "error_message": "{\"debuginfo\": null, \"faultcode\": \"Client\", \"faultstring\": \"Service cinder is not supported for the file backend\"}"
-}

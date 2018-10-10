@@ -1,8 +1,0 @@
-{
-    "network": {
-        "admin_state_up": true, 
-        "name": "test-net-0", 
-        "wrs-tm:qos": "102c64e4-ad26-4610-ae39-f59e15fcb80c", 
-        "tenant_id": "0590d9fa3dd74bfe9bdf7ed4e5331a10",
-    }
-}

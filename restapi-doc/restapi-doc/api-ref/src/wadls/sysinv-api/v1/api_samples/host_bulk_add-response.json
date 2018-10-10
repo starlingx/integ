@@ -1,4 +1,0 @@
-{
-   "success":"compute-0, compute-1"
-   "error":"compute-2: Host-add Rejected: Host with mgmt_mac 08:00:28:A9:54:19 already exists"
-}

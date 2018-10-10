@@ -1,7 +1,0 @@
-[
-    {
-        "path": "/services",
-        "value": "glance,cinder",
-        "op": "replace"
-    }
-]

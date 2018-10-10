@@ -1,9 +1,0 @@
-{
-  "firewallrules": [
-    {
-      "firewall_sig": "ab9695c4ef143d72317a860c6db7f699",
-      "uuid": "bc276605-7ae2-476a-a8c0-01f097f5177e",
-      "updated_at": "2018-03-02T15:59:14.114812+00:00"
-    }
-  ]
-}

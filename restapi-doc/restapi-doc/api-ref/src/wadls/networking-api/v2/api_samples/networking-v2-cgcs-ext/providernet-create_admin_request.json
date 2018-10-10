@@ -1,8 +1,0 @@
-{
-    "providernet": {
-        "description": "A sample provider network", 
-        "name": "test", 
-        "type": "vlan",
-        "vlan_transparent": false,
-    }
-}

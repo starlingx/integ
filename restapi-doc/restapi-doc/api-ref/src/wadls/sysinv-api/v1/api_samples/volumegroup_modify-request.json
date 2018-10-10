@@ -1,7 +1,0 @@
-[
-   {
-      "path": "/capabilities",
-      "value": "{\\"instances_lv_size_mib\\": 10240}",
-      "op": "replace"
-   }
-]

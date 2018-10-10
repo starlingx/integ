@@ -1,7 +1,0 @@
-{
-  "max-parallel-computes": 3, 
-  "default-instance-action": "migrate", 
-  "alarm-restriction-type": "relaxed", 
-  "storage-apply-type": "parallel", 
-  "compute-apply-type": "parallel"
-}

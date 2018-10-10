@@ -1,6 +1,0 @@
-{
-	"state" : "enabled",
-	"ip_address" : "192.168.0.1",
-	"port" : "6640",
-	"transport" : "TCP"
-}

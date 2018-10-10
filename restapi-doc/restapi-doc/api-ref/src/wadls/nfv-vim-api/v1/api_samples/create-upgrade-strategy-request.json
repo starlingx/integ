@@ -1,5 +1,0 @@
-{
-  "compute-apply-type": "serial",
-  "storage-apply-type": "serial",
-  "alarm-restrictions": "relaxed"
-}

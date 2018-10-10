@@ -1,7 +1,0 @@
-{
-   "infra_subnet": "192.168.205.0/24"
-   "infra_start": "192.168.205.2",
-   "infra_end": "192.168.205.254",
-   "infra_mtu": "9216",
-   "infra_vlan_id": "137",
-}
