@@ -1,17 +1,17 @@
-From 3dad4deb5e1de9be2a6722dc2f1716bb228a7c15 Mon Sep 17 00:00:00 2001
+From 7418bcd86697c9403418ea90ddfe2ad3092d9854 Mon Sep 17 00:00:00 2001
 From: Don Penney <don.penney@windriver.com>
 Date: Fri, 30 Dec 2016 11:01:22 -0500
-Subject: [PATCH] Add timestamps to logs
+Subject: Add timestamps to logs
 
 ---
  lib/puppet/util/log/destinations.rb | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/lib/puppet/util/log/destinations.rb b/lib/puppet/util/log/destinations.rb
-index fb8b6aa..10fff6e 100644
+index 14d5008..36f5367 100644
 --- a/lib/puppet/util/log/destinations.rb
 +++ b/lib/puppet/util/log/destinations.rb
-@@ -165,7 +165,7 @@ Puppet::Util::Log.newdesttype :console do
+@@ -167,7 +167,7 @@ Puppet::Util::Log.newdesttype :console do
      str = msg.source == "Puppet" ? str : "#{msg.source}: #{str}"
  
      level = levels[msg.level]
@@ -21,5 +21,5 @@ index fb8b6aa..10fff6e 100644
  end
  
 -- 
-1.8.3.1
+2.7.4
 
