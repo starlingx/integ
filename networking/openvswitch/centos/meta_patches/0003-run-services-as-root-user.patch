@@ -19,7 +19,7 @@ index 6950479..6fc2b67 100644
  
  # OVS (including OVN) backports (0 - 300)
  
-@@ -507,24 +508,6 @@ rm -rf $RPM_BUILD_ROOT
+@@ -508,24 +509,6 @@ rm -rf $RPM_BUILD_ROOT
      fi
  %endif
  
