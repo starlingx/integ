@@ -1,5 +1,5 @@
-From 4233b90d468bc9e0eb975d96eb69a72ec30cabda Mon Sep 17 00:00:00 2001
-From: Roy.Li <rongqing.li@windriver.com>
+From 6623991e7f7f14678e39bf2ed8d16ed36fbe07d4 Mon Sep 17 00:00:00 2001
+From: "Roy.Li" <rongqing.li@windriver.com>
 Date: Wed, 1 Jun 2016 11:12:48 -0400
 Subject: watchdog: Fix ping mode failure
 
@@ -36,7 +36,7 @@ Signed-off-by: Nam Ninh <nam.ninh@windriver.com>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/src/watchdog.c b/src/watchdog.c
-index 6f93de8..33ba528 100644
+index bab7f82..e24c947 100644
 --- a/src/watchdog.c
 +++ b/src/watchdog.c
 @@ -28,6 +28,7 @@
@@ -47,7 +47,7 @@ index 6f93de8..33ba528 100644
  #include <linux/watchdog.h>
  #include <string.h>
  
-@@ -567,6 +568,8 @@ int main(int argc, char *const argv[])
+@@ -573,6 +574,8 @@ int main(int argc, char *const argv[])
      pid_t child_pid;
      int oom_adjusted = 0;
      struct stat s;
@@ -56,7 +56,7 @@ index 6f93de8..33ba528 100644
  
  #if USE_SYSLOG
      char *opts = "d:i:n:Ffsvbql:p:t:c:r:m:a:";
-@@ -703,7 +706,7 @@ int main(int argc, char *const argv[])
+@@ -709,7 +712,7 @@ int main(int argc, char *const argv[])
  		perror(progname);
  		exit(1);
  	    }
@@ -66,5 +66,5 @@ index 6f93de8..33ba528 100644
  	    (void) setsockopt(net->sock_fp, SOL_SOCKET, SO_BROADCAST, (char *)&hold, sizeof(hold));
      
 -- 
-1.8.3.1
+2.7.4
 
