@@ -1,10 +1,8 @@
----
- scripts/drbd |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
+diff --git a/scripts/drbd b/scripts/drbd
+index f45f258..7640097 100755
 --- a/scripts/drbd
 +++ b/scripts/drbd
-@@ -185,7 +185,10 @@ case "$1" in
+@@ -160,7 +160,10 @@ case "$1" in
  	done
  
  	[ -d /var/lock/subsys ] && touch /var/lock/subsys/drbd	# for RedHat
