@@ -5,3 +5,4 @@
 0005-log-rotation-config.patch
 0006-rpm-check-with-condition.patch
 0007-enable-mlx-pmds.patch
+0008-iommu-width-fix.patch
