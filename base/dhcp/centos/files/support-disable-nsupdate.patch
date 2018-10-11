@@ -12,7 +12,7 @@ diff --git a/server/dhcpd.c b/server/dhcpd.c
 index 67fec83..7523093 100644
 --- a/server/dhcpd.c
 +++ b/server/dhcpd.c
-@@ -504,8 +504,10 @@ main(int argc, char **argv) {
+@@ -424,8 +424,10 @@ main(int argc, char **argv) {
  	trace_srandom = trace_type_register ("random-seed", (void *)0,
  					     trace_seed_input,
  					     trace_seed_stop, MDL);
@@ -27,7 +27,7 @@ diff --git a/server/failover.c b/server/failover.c
 index 8944102..d26adfa 100644
 --- a/server/failover.c
 +++ b/server/failover.c
-@@ -5232,7 +5232,9 @@ isc_result_t dhcp_failover_process_bind_update (dhcp_failover_state_t *state,
+@@ -5290,7 +5290,9 @@ isc_result_t dhcp_failover_process_bind_update (dhcp_failover_state_t *state,
  	 */
  	if (msg->binding_status == FTS_ACTIVE &&
  	    (chaddr_changed || ident_changed)) {
