@@ -1,0 +1,77 @@
+26,27c26
+< %global commit                  fc32d2f3698e36b93322a3465f63a14e9f0eaead
+< %global shortcommit              %(c=%{commit}; echo ${c:0:7})
+---
+> %global commit                  1.12.1
+32c31
+< %global con_repo                contrib
+---
+> %global con_repo                kubernetes-contrib
+34,36c33
+< %global con_provider_prefix     %{con_provider}.%{con_provider_tld}/%{con_project}/%{con_repo}
+< %global con_commit              5b445f1c53aa8d6457523526340077935f62e691
+< %global con_shortcommit         %(c=%{con_commit}; echo ${c:0:7})
+---
+> %global con_commit              1.12.1
+38c35
+< %global kube_version            1.10.0
+---
+> %global kube_version            1.12.1
+48c45
+< Release:        1%{?dist}
+---
+> Release:        1%{?_tis_dist}.%{tis_patch_ver}
+53,54c50,51
+< Source0:        https://%{provider_prefix}/archive/%{commit}/%{repo}-%{shortcommit}.tar.gz
+< Source1:        https://%{con_provider_prefix}/archive/%{con_commit}/%{con_repo}-%{con_shortcommit}.tar.gz
+---
+> Source0:        %{project}-v%{kube_version}.tar.gz
+> Source1:        %{con_repo}-v%{con_commit}.tar.gz
+60,68d56
+< Patch3:         build-with-debug-info.patch
+< #Patch4:         make-test-cmd-run-over-hyperkube-based-kubectl.patch
+< #Patch5:         make-e2e_node-run-over-distro-bins.patch
+< 
+< # ppc64le
+< Patch16:        fix-support-for-ppc64le.patch
+< 
+< Patch20:        use_go_build-is-not-fully-propagated-so-make-it-fixe.patch
+< 
+810c798
+< Suggests: docker
+---
+> Suggests: docker-ce
+812c800
+< Requires: docker
+---
+> Requires: docker-ce
+816c804
+< BuildRequires: golang >= 1.2-7
+---
+> BuildRequires: golang >=  1.10.2
+858,863d845
+< %if 0%{?with_debug}
+< %patch3 -p1
+< %endif
+< 
+< %patch20 -p1
+< 
+883,890d864
+< # Patch tests to be run over distro bins
+< #patch4 -p1
+< #patch5 -p1
+< 
+< %ifarch ppc64le
+< %patch16 -p1
+< %endif
+< 
+893a868
+> export PBR_VERSION=%{version}
+904c879
+< make WHAT="--use_go_build cmd/hyperkube cmd/kube-apiserver cmd/kubeadm"
+---
+> make WHAT="cmd/hyperkube cmd/kube-apiserver cmd/kubeadm"
+917a893
+> export PBR_VERSION=%{version}
+1072a1049
+> %config(noreplace) %{_sysconfdir}/%{name}/kubelet.kubeconfig

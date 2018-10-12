@@ -1,1 +1,8 @@
+VERSION=1.12.1
+TAR_NAME=kubernetes
+TAR="$TAR_NAME-v$VERSION.tar.gz"
+CONTRIB="$TAR_NAME-contrib-v$VERSION.tar.gz"
+
+COPY_LIST="${CGCS_BASE}/downloads/$TAR ${CGCS_BASE}/downloads/$CONTRIB  $FILES_BASE/*"
+
 TIS_PATCH_VER=1
