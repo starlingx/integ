@@ -1,16 +1,14 @@
-From c6c1fee74830348a437cf0b467d299e1f4c42391 Mon Sep 17 00:00:00 2001
+From 182dd62962039d383c96d7a50779aefb62cac9a0 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
-Date: Mon, 2 Oct 2017 15:19:43 -0400
+Date: Mon, 15 Oct 2018 23:17:14 +0800
 Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
-Conflicts:
-	SPECS/nfs-utils.spec
 ---
  SPECS/nfs-utils.spec | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/nfs-utils.spec b/SPECS/nfs-utils.spec
-index a947119..2602031 100644
+index d10c87c..b866788 100644
 --- a/SPECS/nfs-utils.spec
 +++ b/SPECS/nfs-utils.spec
 @@ -2,7 +2,7 @@ Summary: NFS utilities and supporting clients and daemons for the kernel NFS ser
@@ -22,7 +20,7 @@ index a947119..2602031 100644
  Epoch: 1
  
  # group all 32bit related archs
-@@ -164,6 +164,7 @@ Provides: rpc.mountd  = %{epoch}:%{version}-%{release}
+@@ -160,6 +160,7 @@ Provides: rpc.mountd  = %{epoch}:%{version}-%{release}
  Provides: rpc.nfsd    = %{epoch}:%{version}-%{release}
  Provides: rpc.statd   = %{epoch}:%{version}-%{release}
  Provides: rpc.gssd    = %{epoch}:%{version}-%{release}

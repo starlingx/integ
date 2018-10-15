@@ -1,5 +1,4 @@
-0001-TiS-nfs-utils-spec-add-scripts.patch
-0002-Add-nfs-utils-update-nfsmount.conf-with-required-con.patch
+spec-include-TiS-changes.patch
 nfs-utils-spec-file-disable-statd-service.patch
 0001-Update-package-versioning-for-TIS-format.patch
 0001-add-rpm-4.14-compatibility.patch

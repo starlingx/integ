@@ -1,6 +1,6 @@
-From bbd7bc3626b3af6543b66d23a965276bd29038b5 Mon Sep 17 00:00:00 2001
+From feb40bdf71992f9374e82aeb081431d2b91f1224 Mon Sep 17 00:00:00 2001
 From: slin14 <shuicheng.lin@intel.com>
-Date: Thu, 16 Aug 2018 21:07:20 +0800
+Date: Mon, 15 Oct 2018 23:21:15 +0800
 Subject: [PATCH] add-rpm-4.14-compatibility
 
 Signed-off-by: slin14 <shuicheng.lin@intel.com>
@@ -9,10 +9,10 @@ Signed-off-by: slin14 <shuicheng.lin@intel.com>
  1 file changed, 1 insertion(+), 8 deletions(-)
 
 diff --git a/SPECS/nfs-utils.spec b/SPECS/nfs-utils.spec
-index 2602031..75212eb 100644
+index b866788..96fce13 100644
 --- a/SPECS/nfs-utils.spec
 +++ b/SPECS/nfs-utils.spec
-@@ -635,14 +635,7 @@ if [ -h /etc/systemd/system/multi-user.target.wants/nfs.target ]; then
+@@ -621,14 +621,7 @@ if [ -h /etc/systemd/system/multi-user.target.wants/nfs.target ]; then
  	fi
  fi
  
