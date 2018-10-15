@@ -2785,8 +2785,8 @@ index 8f97390..8e581ab 100644
 +  with port None or "0" and flags AI_NUMERICSERV.
 +
 +- Issue #18080: When building a C extension module on OS X, if the compiler
-+  is overriden with the CC environment variable, use the new compiler as
-+  the default for linking if LDSHARED is not also overriden.  This restores
++  is overridden with the CC environment variable, use the new compiler as
++  the default for linking if LDSHARED is not also overridden.  This restores
 +  Distutils behavior introduced in 2.7.3 and inadvertently dropped in 2.7.4.
 +
 +- Issue #18071: C extension module builds on OS X could fail with TypeError
