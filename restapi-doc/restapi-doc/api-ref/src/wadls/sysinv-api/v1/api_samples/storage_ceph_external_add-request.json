@@ -1,7 +1,0 @@
-{
-    "services": "cinder",
-    "confirmed": true,
-    "name": "ceph-ext-bk",
-    "ceph_conf": "ext-ceph.conf",
-    "capabilities": {"cinder_pool": "cinder-volumes"}
-}

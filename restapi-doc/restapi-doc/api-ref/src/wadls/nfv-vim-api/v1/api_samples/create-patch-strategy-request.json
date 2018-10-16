@@ -1,8 +1,0 @@
-{
-  "controller-apply-type": "serial",
-  "default-instance-action": "stop-start",
-  "compute-apply-type": "serial",
-  "storage-apply-type": "serial",
-  "swift-apply-type": "ignore",
-  "alarm-restrictions": "strict"
-}

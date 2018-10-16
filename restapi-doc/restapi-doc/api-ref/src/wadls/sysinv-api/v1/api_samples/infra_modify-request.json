@@ -1,7 +1,0 @@
-[  
-   {  
-      "path":"/infra_subnet",
-      "value":"192.168.205.0/24",
-      "op":"replace"
-   }
-]

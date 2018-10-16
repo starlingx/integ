@@ -1,1 +1,0 @@
-http://192.168.204.2:18002/v1/alarms?q.field=severity&q.op=eq&q.type=&q.value=major&include_suppress=True

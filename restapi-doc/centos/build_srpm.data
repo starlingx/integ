@@ -1,7 +1,0 @@
-SRC_DIR=restapi-doc
-COPY_LIST="$SRC_DIR/* \
-           $CGCS_BASE/downloads/mvn.repo.tgz \
-           "
-
-TIS_PATCH_VER=27
-BUILD_IS_SLOW=3

@@ -1,7 +1,0 @@
-[
-    {
-        "path": "/partition_table",
-        "value": "gpt",
-        "op": "replace"
-    }
-]
