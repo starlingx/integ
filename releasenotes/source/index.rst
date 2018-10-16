@@ -1,3 +1,4 @@
+=======================
 stx-integ Release Notes
 =======================
 
@@ -5,3 +6,8 @@ stx-integ Release Notes
    :maxdepth: 2
 
    unreleased
+
+Search
+------
+
+:ref:`search`
