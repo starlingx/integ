@@ -62,7 +62,7 @@ diff --git a/sig.c b/sig.c
 index 6bd1319..94864fa 100644
 --- a/sig.c
 +++ b/sig.c
-@@ -556,6 +556,19 @@ termsig_handler (sig)
+@@ -561,6 +561,19 @@ termsig_handler (sig)
    kill (getpid (), sig);
  }
  
