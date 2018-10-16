@@ -1,20 +1,10 @@
-From b531e69617e54bd767ff58d1794e48b8150d74b9 Mon Sep 17 00:00:00 2001
-From: slin14 <shuicheng.lin@intel.com>
-Date: Tue, 14 Aug 2018 22:10:32 +0800
-Subject: [PATCH 4/4] remove-make-check
-
-Signed-off-by: slin14 <shuicheng.lin@intel.com>
----
- SPECS/sudo.spec | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
 diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index 8c3f395..17531f7 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
 @@ -166,7 +166,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
  #       --without-kerb4
- make -j"%(nproc)"
+ make
  
 -make check
 +# "make check" fails if there is no group named "bin" in the mock system
