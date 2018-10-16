@@ -19,9 +19,7 @@ Patch0: sudo-support.patch
 Patch1: sudo-delete-support.patch
 Patch2: log_timestamp.patch
 Patch3: ldap-user-setup-support.patch
-Patch4: ldap-user-setup-support-input-validation.patch
-Patch5: ldap-user-setup-noninteractive-mode-fix.patch
-Patch6: allow-anonymous-bind-for-ldap-search.patch
+Patch4: allow-anonymous-bind-for-ldap-search.patch
 
 %define debug_package %{nil}
 
@@ -31,7 +29,6 @@ Patch6: allow-anonymous-bind-for-ldap-search.patch
 %description
 Shell scripts that allow to manage POSIX accounts (users, groups, machines) in an LDAP directory.
 
-
 %prep
 %setup -q
 %patch0 -p1
@@ -39,12 +36,8 @@ Shell scripts that allow to manage POSIX accounts (users, groups, machines) in a
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
-%patch6 -p1
-
 
 %build
-
 
 %install
 make install DESTDIR=%{buildroot}
@@ -52,7 +45,7 @@ make install DESTDIR=%{buildroot}
 rm -Rf %{buildroot}/usr/local/man
 rm -f %{buildroot}/usr/local/sbin/*machine*
 rm -f %{buildroot}/usr/local/etc/ldapscripts/ldapaddmachine.template.sample
-install -d ldroot}}/usr/local/etc/
+install -d %{buildroot}/usr/local/etc/
 install -m 644 %{SOURCE1} %{buildroot}/usr/local/etc/ldapscripts/ldapscripts.conf
 install -m 644 %{SOURCE2} %{buildroot}/usr/local/etc/ldapscripts/ldapadduser.template.cgcs
 install -m 644 %{SOURCE3} %{buildroot}/usr/local/etc/ldapscripts/ldapaddgroup.template.cgcs

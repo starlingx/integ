@@ -9,3 +9,4 @@ wrsroot ALL=(root) NOPASSWD: /usr/bin/config_management
 wrsroot ALL=(root) NOPASSWD: /usr/local/sbin/collect
 
 Defaults lecture=never, secure_path=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+Defaults passprompt="Password: "

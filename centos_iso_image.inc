@@ -169,9 +169,6 @@ initscripts
 # setup
 setup
 
-# lshell
-lshell
-
 # nss-pam-ldapd
 nss-pam-ldapd
 
@@ -231,6 +228,9 @@ novnc
 
 # sudo
 sudo
+
+# config files
+sudo-config
 
 # net-snmp
 net-snmp-utils
