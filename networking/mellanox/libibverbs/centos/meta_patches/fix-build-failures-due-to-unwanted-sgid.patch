@@ -11,7 +11,7 @@ diff --git a/SPECS/libibverbs.spec b/SPECS/libibverbs.spec
 index b8913c6..1e7b1eb 100644
 --- a/SPECS/libibverbs.spec
 +++ b/SPECS/libibverbs.spec
-@@ -106,6 +106,7 @@ rm -rf $RPM_BUILD_ROOT
+@@ -107,6 +107,7 @@ rm -rf $RPM_BUILD_ROOT
  %if %{_with_valgrind}
  %{_libdir}/mlnx_ofed/valgrind/lib*.so
  %endif
