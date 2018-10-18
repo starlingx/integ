@@ -32,7 +32,6 @@ base/shadow-utils
 security/shim-unsigned
 security/shim-signed
 logging/syslog-ng
-base/sanlock
 base/sudo
 virt/cloud-init
 base/watchdog
