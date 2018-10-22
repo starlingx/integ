@@ -10,6 +10,8 @@ BuildArch: noarch
 Source: %name-%version.tar.gz
 
 BuildRequires: python-setuptools
+BuildRequires: python2-pip
+BuildRequires: python2-wheel
 
 %description
 Platform utilities
@@ -36,6 +38,7 @@ Platform utilities that packaged on controllers or one node system
 
 %build
 %{__python} setup.py build
+%py2_build_wheel
 
 %install
 %{__python} setup.py install --root=$RPM_BUILD_ROOT \
@@ -43,6 +46,8 @@ Platform utilities that packaged on controllers or one node system
                              --prefix=/usr \
                              --install-data=/usr/share \
                              --single-version-externally-managed
+mkdir -p $RPM_BUILD_ROOT/wheels
+install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
 %global _buildsubdir %{_builddir}/%{name}-%{version}
 install -d %{buildroot}%{local_bindir}
@@ -96,3 +101,12 @@ systemctl enable opt-platform.service
 %files -n platform-util-controller
 %defattr(-,root,root,-)
 /etc/systemd/system/memcached.service
+
+%package wheels
+Summary: %{name} wheels
+
+%description wheels
+Contains python wheels for %{name}
+
+%files wheels
+/wheels/*

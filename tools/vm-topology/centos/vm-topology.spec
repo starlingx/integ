@@ -15,6 +15,8 @@ BuildArch:      noarch
 
 BuildRequires: python
 BuildRequires: python-setuptools
+BuildRequires: python2-pip
+BuildRequires: python2-wheel
 BuildRequires: python-keyring
 BuildRequires: libvirt
 
@@ -35,10 +37,12 @@ rm -f requirements.txt
 
 %build
 %{__python2} setup.py build
+%py2_build_wheel
 
 %install
 %{__python2} setup.py install --skip-build --root %{buildroot}
-
+mkdir -p $RPM_BUILD_ROOT/wheels
+install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
 %files
 %defattr(-,root,root,-)
@@ -47,3 +51,11 @@ rm -f requirements.txt
 %{python2_sitelib}/vm_topology
 %{python2_sitelib}/*.egg-info
 
+%package wheels
+Summary: %{name} wheels
+
+%description wheels
+Contains python wheels for %{name}
+
+%files wheels
+/wheels/*

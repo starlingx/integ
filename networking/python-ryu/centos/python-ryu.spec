@@ -41,6 +41,8 @@ Requires:  python-webob
 Requires:  python-%{pypi_name}-common = %{version}-%{release}
 
 BuildRequires:  python2-devel
+BuildRequires:  python2-pip
+BuildRequires:  python2-wheel
 BuildRequires:  python-debtcollector
 BuildRequires:  python-eventlet
 BuildRequires:  python-greenlet
@@ -153,6 +155,7 @@ rm -rf %{pypi_name}/tests/integrated/common
 %build
 export PBR_VERSION=%{version}
 %py2_build
+%py2_build_wheel
 %if 0%{?with_python3}
 %py3_build
 %endif
@@ -174,6 +177,8 @@ for bin in %{pypi_name}{,-manager}; do
     ln -s ./$bin-%{python2_version} %{buildroot}%{_bindir}/$bin-2
     ln -s ./$bin-%{python2_version} %{buildroot}%{_bindir}/$bin
 done;
+mkdir -p $RPM_BUILD_ROOT/wheels
+install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
 
 install -d -m 755 %{buildroot}%{_sysconfdir}/%{pypi_name}
@@ -223,6 +228,15 @@ PYTHON=%{__python2} ./run_tests.sh -N -P
 %files -n python-%{pypi_name}-tests
 %license LICENSE
 %{python2_sitelib}/%{pypi_name}/tests
+
+%package wheels
+Summary: %{name} wheels
+
+%description wheels
+Contains python wheels for %{name}
+
+%files wheels
+/wheels/*
 
 %changelog
 * Tue Jul 04 2017 Matt Peters <matt.peters@windriver.com> - 4.15-0
