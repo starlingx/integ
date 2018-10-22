@@ -11,7 +11,7 @@ diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
 index e137156..d10e73e 100644
 --- a/SPECS/openssh.spec
 +++ b/SPECS/openssh.spec
-@@ -728,9 +728,6 @@ getent passwd sshd >/dev/null || \
+@@ -719,9 +719,6 @@ getent passwd sshd >/dev/null || \
  %preun server
  %systemd_preun sshd.service sshd.socket
  
@@ -21,7 +21,7 @@ index e137156..d10e73e 100644
  %files
  %defattr(-,root,root)
  %{!?_licensedir:%global license %%doc}
-@@ -793,8 +790,6 @@ getent passwd sshd >/dev/null || \
+@@ -784,8 +781,6 @@ getent passwd sshd >/dev/null || \
  %attr(0644,root,root) %{_unitdir}/sshd.socket
  %attr(0644,root,root) %{_unitdir}/sshd-keygen.service
  
