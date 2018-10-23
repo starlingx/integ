@@ -9,6 +9,8 @@ URL: unknown
 Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: python-setuptools
+BuildRequires: python2-pip
+BuildRequires: python2-wheel
 BuildRequires: systemd-units
 BuildRequires: systemd-devel
 Requires: sysinv
@@ -31,6 +33,7 @@ Handle sysinv RPC calls for long running Ceph API operations:
 
 %build
 %{__python} setup.py build
+%py2_build_wheel
 
 %install
 %{__python} setup.py install --root=$RPM_BUILD_ROOT \
@@ -38,6 +41,8 @@ Handle sysinv RPC calls for long running Ceph API operations:
                              --prefix=/usr \
                              --install-data=/usr/share \
                              --single-version-externally-managed
+mkdir -p $RPM_BUILD_ROOT/wheels
+install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
 install -d -m 755 %{buildroot}%{local_etc_initd}
 install -p -D -m 700 scripts/init.d/ceph-manager %{buildroot}%{local_etc_initd}/ceph-manager
@@ -68,3 +73,12 @@ rm -rf $RPM_BUILD_ROOT
 %{pythonroot}/ceph_manager/*
 %dir %{pythonroot}/ceph_manager-%{version}.0-py2.7.egg-info
 %{pythonroot}/ceph_manager-%{version}.0-py2.7.egg-info/*
+
+%package wheels
+Summary: %{name} wheels
+
+%description wheels
+Contains python wheels for %{name}
+
+%files wheels
+/wheels/*

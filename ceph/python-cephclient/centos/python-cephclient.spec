@@ -25,6 +25,8 @@ BuildArch: noarch
 
 BuildRequires: python
 BuildRequires: ceph
+BuildRequires: python2-pip
+BuildRequires: python2-wheel
 
 Requires: python
 
@@ -44,9 +46,12 @@ rm -f requirements.txt
 
 %build
 %{__python2} setup.py build
+%py2_build_wheel
 
 %install
 %{__python2} setup.py install --skip-build --root %{buildroot}
+mkdir -p $RPM_BUILD_ROOT/wheels
+install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
 %files
 %doc README.rst
@@ -54,3 +59,11 @@ rm -f requirements.txt
 %{python2_sitelib}/cephclient
 %{python2_sitelib}/*.egg-info
 
+%package wheels
+Summary: %{name} wheels
+
+%description wheels
+Contains python wheels for %{name}
+
+%files wheels
+/wheels/*
