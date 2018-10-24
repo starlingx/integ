@@ -29,7 +29,6 @@ logging/logrotate
 utilities/nova-utils
 base/ntp
 base/pam
-base/shadow-utils
 security/shim-unsigned
 security/shim-signed
 logging/syslog-ng
@@ -106,6 +105,7 @@ utilities/branding
 config-files/io-scheduler
 config-files/sudo-config
 config-files/memcached-custom
+config-files/shadow-utils-config
 tools/collector
 grub/grubby
 utilities/platform-util
