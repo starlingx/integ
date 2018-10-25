@@ -4,7 +4,7 @@ base/util-linux
 base/setup
 utilities/namespace-utils
 ldap/nss-pam-ldapd
-base/centos-release
+base/centos-release-config
 filesystem/nfs-utils
 base/dhcp
 base/openssh

@@ -172,8 +172,8 @@ setup
 # nss-pam-ldapd
 nss-pam-ldapd
 
-# centos-release
-centos-release
+# centos-release-config
+centos-release-config
 
 # nfs-utils
 nfs-utils
