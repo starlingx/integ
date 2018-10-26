@@ -1,6 +1,6 @@
 [Unit]
 Description=Titanium Cloud Filesystem Auto-mounter
-After=network.target
+After=network.target nfscommon.service
 Before=uexportfs.service
 
 [Service]
