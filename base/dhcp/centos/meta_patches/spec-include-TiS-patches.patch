@@ -11,17 +11,6 @@ diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
 index 14da097..904e3ad 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
-@@ -39,6 +39,10 @@ Source8:  dhcrelay.service
- Source9: azure-cloud.sh
- Source10: README.scripts
- 
-+# WRS
-+Source20: dhclient-exit-hooks
-+Source21: dhclient.conf
-+
- 
- Patch0:   dhcp-4.2.0-errwarn-message.patch
- Patch1:   dhcp-4.2.4-dhclient-options.patch
 @@ -111,6 +115,14 @@ Patch70:  dhcp-4.2.5-reference_count_overflow.patch
  Patch71:  dhcp-4.2.5-centos-branding.patch
  
@@ -52,28 +41,6 @@ index 14da097..904e3ad 100644
  # Update paths in all man pages
  for page in client/dhclient.conf.5 client/dhclient.leases.5 \
              client/dhclient-script.8 client/dhclient.8 ; do
-@@ -582,6 +602,10 @@ EOF
- # Don't package libtool *.la files
- find ${RPM_BUILD_ROOT}/%{_libdir} -name '*.la' -exec '/bin/rm' '-f' '{}' ';';
- 
-+# WRS: Overwrite with our config
-+%{__install} -p -m 0755 %{SOURCE20} %{buildroot}%{dhcpconfdir}/dhclient-exit-hooks
-+%{__install} -p -m 0644 %{SOURCE21} %{buildroot}%{dhcpconfdir}/dhclient.conf
-+
- %pre
- # /usr/share/doc/setup/uidgid
- %global gid_uid 177
-@@ -697,6 +721,10 @@ done
- %attr(0644,root,root) %{_mandir}/man8/dhclient.8.gz
- %attr(0644,root,root) %{_mandir}/man8/dhclient-script.8.gz
- 
-+# WRS
-+%{dhcpconfdir}/dhclient-exit-hooks
-+%{dhcpconfdir}/dhclient.conf
-+
- %files common
- %doc LICENSE README RELNOTES doc/References.txt
- %attr(0644,root,root) %{_mandir}/man5/dhcp-options.5.gz
 -- 
 2.7.4
 

@@ -1,7 +1,4 @@
 spec-include-TiS-patches.patch
-spec-dhcp-enter-hooks.patch
-remove-unecessary-dhcp-exit-hooks-file.patch
 dhclient-dhcp6-set-hostname.patch
 0001-Update-package-versioning-for-TIS-format.patch
-mark-dhclient.conf-as-config.patch
 dhclient-disable-NSUPDATE.patch

@@ -11,7 +11,7 @@ diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
 index fc17edb..b0a385e 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
-@@ -122,6 +122,7 @@ Patch103: dhclient-ipv6-bind-to-interface.patch
+@@ -118,6 +118,7 @@ Patch103: dhclient-ipv6-bind-to-interface.patch
  Patch104: dhclient-ipv6-conditionally-set-hostname.patch
  Patch105: dhclient-handle-wrs-install-uuid.patch
  Patch106: dhclient-dhcp6-wrs-install-uuid.patch
@@ -19,7 +19,7 @@ index fc17edb..b0a385e 100644
  
  BuildRequires: autoconf
  BuildRequires: automake
-@@ -458,6 +459,7 @@ rm -rf includes/isc-dhcp
+@@ -454,6 +455,7 @@ rm -rf includes/isc-dhcp
  %patch104 -p1
  %patch105 -p1
  %patch106 -p1
@@ -27,7 +27,7 @@ index fc17edb..b0a385e 100644
  
  # Update paths in all man pages
  for page in client/dhclient.conf.5 client/dhclient.leases.5 \
-@@ -479,6 +481,7 @@ done
+@@ -475,6 +477,7 @@ done
  #libtoolize --copy --force
  autoreconf --verbose --force --install
  
@@ -35,7 +35,7 @@ index fc17edb..b0a385e 100644
  CFLAGS="%{optflags} -fno-strict-aliasing" \
  %configure \
      --with-srv-lease-file=%{_localstatedir}/lib/dhcpd/dhcpd.leases \
-@@ -493,6 +496,7 @@ CFLAGS="%{optflags} -fno-strict-aliasing" \
+@@ -489,6 +492,7 @@ CFLAGS="%{optflags} -fno-strict-aliasing" \
      --with-ldap \
      --with-ldapcrypto \
      --with-libbind=%{_includedir} --with-libbind-libs=%{_libdir} \
