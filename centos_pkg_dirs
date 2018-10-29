@@ -136,6 +136,7 @@ networking/iptables
 database/python-psycopg2
 base/crontabs
 base/dnsmasq
+base/dnsmasq-config
 base/rsync
 filesystem/parted
 security/python-keyring

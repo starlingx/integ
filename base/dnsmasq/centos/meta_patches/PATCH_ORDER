@@ -1,4 +1,2 @@
 spec-include-TiS-patch.patch
-dnsmasq-spec-add-init-script.patch
-patch-tftp-to-close-sockets-immediately.patch
 0001-Update-package-versioning-for-TIS-format.patch
