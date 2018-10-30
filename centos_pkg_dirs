@@ -103,6 +103,7 @@ filesystem/filesystem-scripts
 utilities/branding
 config-files/io-scheduler
 config-files/sudo-config
+config-files/memcached-custom
 tools/collector
 grub/grubby
 utilities/platform-util

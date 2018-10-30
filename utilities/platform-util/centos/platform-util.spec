@@ -13,6 +13,8 @@ BuildRequires: python-setuptools
 BuildRequires: python2-pip
 BuildRequires: python2-wheel
 
+%global _buildsubdir %{_builddir}/%{name}-%{version}
+
 %description
 Platform utilities
 
@@ -21,12 +23,6 @@ Summary: non controller platform utilities
 
 %description -n platform-util-noncontroller
 Platform utilities that don't get packaged on controller hosts
-
-%package -n platform-util-controller
-Summary: controller platform utilities
-
-%description -n platform-util-controller
-Platform utilities that packaged on controllers or one node system
 
 %define local_dir /usr/local
 %define local_bindir %{local_dir}/bin
@@ -41,15 +37,17 @@ Platform utilities that packaged on controllers or one node system
 %py2_build_wheel
 
 %install
+
+
 %{__python} setup.py install --root=$RPM_BUILD_ROOT \
                              --install-lib=%{pythonroot} \
                              --prefix=/usr \
                              --install-data=/usr/share \
                              --single-version-externally-managed
+
 mkdir -p $RPM_BUILD_ROOT/wheels
 install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
-%global _buildsubdir %{_builddir}/%{name}-%{version}
 install -d %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/cgcs_tc_setup.sh %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/remotelogging_tc_setup.sh %{buildroot}%{local_bindir}
@@ -63,7 +61,6 @@ install -m 700 -p -D %{_buildsubdir}/scripts/patch-restart-haproxy %{buildroot}%
 install -d %{buildroot}/etc/systemd/system
 install -m 644 -p -D %{_buildsubdir}/scripts/opt-platform.mount %{buildroot}/etc/systemd/system
 install -m 644 -p -D %{_buildsubdir}/scripts/opt-platform.service %{buildroot}/etc/systemd/system
-install -m 644 -p -D %{_buildsubdir}/scripts/memcached.service %{buildroot}/etc/systemd/system
 
 # Mask the systemd ctrl-alt-delete.target, to disable reboot on ctrl-alt-del
 ln -sf /dev/null %{buildroot}/etc/systemd/system/ctrl-alt-del.target
@@ -97,10 +94,6 @@ systemctl enable opt-platform.service
 # from parsing the fstab is not used by systemd.
 /etc/systemd/system/opt-platform.mount
 /etc/systemd/system/opt-platform.service
-
-%files -n platform-util-controller
-%defattr(-,root,root,-)
-/etc/systemd/system/memcached.service
 
 %package wheels
 Summary: %{name} wheels

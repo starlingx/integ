@@ -104,7 +104,6 @@ collector
 # platform-util
 platform-util
 platform-util-noncontroller
-platform-util-controller
 
 # monitor-tools
 monitor-tools
@@ -278,6 +277,7 @@ tboot
 
 # memcached
 memcached
+memcached-custom
 
 # kubernetes
 kubernetes
