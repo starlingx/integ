@@ -7,6 +7,8 @@
         - build-openstack-releasenotes
         - openstack-tox-pep8
         - openstack-tox-linters
+        - stx-devstack-integ:
+            voting: false
     gate:
       jobs:
         - build-openstack-releasenotes
@@ -16,3 +18,49 @@
       jobs:
         - publish-stx-tox
         - publish-stx-releasenotes
+
+- job:
+    name: stx-devstack-integ
+    parent: stx-devstack-base
+    timeout: 7800
+    required-projects:
+      - openstack/stx-fault
+    vars:
+      tox_envlist: functional
+      devstack_services:
+        # Cinder services
+        c-api: false
+        c-bak: false
+        c-sch: false
+        c-vol: false
+        cinder: false
+        # Glance services
+        g-api: false
+        g-reg: false
+        # Nova services
+        n-api: false
+        n-api-meta: false
+        n-cauth: false
+        n-cond: false
+        n-cpu: false
+        n-novnc: false
+        n-obj: false
+        n-sch: false
+        placement-api: false
+        # Neutron services
+        q-agt: true
+        q-dhcp: false
+        q-l3: false
+        q-meta: false
+        q-metering: false
+        q-svc: false
+        horizon: false
+        # StarlingX services
+        platform-util: true
+      devstack_plugins:
+        stx-fault: git://git.starlingx.io/stx-fault
+        stx-integ: git://git.starlingx.io/stx-integ
+      devstack_localrc:
+        LIBS_FROM_GIT: keystone
+    files:
+      - ^devstack/.*

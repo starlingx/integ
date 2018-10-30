@@ -1,0 +1,15 @@
+#!/bin/bash
+# Devstack settings
+
+# Defaults
+# --------
+
+STX_INTEG_NAME=stx-integ
+
+######### Plugin Specific ##########
+enable_service $STX_INTEG_NAME
+
+#platform_license
+
+# Initial source of lib script
+source $DEST/stx-integ/devstack/lib/stx-integ
