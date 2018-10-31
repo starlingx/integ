@@ -1,0 +1,68 @@
+From 90e9f692040a804f74bd32a8032a34b0f1e31ae9 Mon Sep 17 00:00:00 2001
+From: Daniel Badea <daniel.badea@windriver.com>
+Date: Wed, 31 Oct 2018 16:28:45 +0000
+Subject: [PATCH] ceph-disk prepare invalid data disk value
+
+ceph-disk prepare data OSD parameter contains a new line causing
+puppet manifest to fail:
+
+1. $data = generate('/bin/bash','-c',"/bin/readlink -f ${name}")
+
+   is expanded together with a new line in:
+
+   exec { $ceph_prepare:
+     command   => "/usr/sbin/ceph-disk prepare ${cluster_option}
+                    ${cluster_uuid_option} ${uuid_option}
+                    --fs-type xfs --zap-disk ${data} ${journal}"
+
+   just before ${journal} is expanded. Puppet reports:
+
+     sh: line 1: : command not found
+
+   when trying to run '' (default journal value).
+
+2. 'readlink' should be called when running ceph-disk prepare
+   command, not when the puppet resource is defined. Let
+   exec's shell call readlink instead of using puppet's
+   generate() . See also:
+
+     https://github.com/openstack/puppet-ceph/commit/ff2b2e689846dd3d980c7c706c591e8cfb8f33a9
+
+Added --verbose and --log-stdout options to log commands executed
+by 'ceph-disk prepare' and identify where it fails.
+---
+ manifests/osd.pp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index d9cf5b1..53709bb 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -61,7 +61,7 @@ define ceph::osd (
+ 
+     include ::ceph::params
+ 
+-    $data = generate('/bin/bash','-c',"/bin/readlink -f ${name}")
++    $data = $name
+ 
+     if $cluster {
+       $cluster_name = $cluster
+@@ -131,13 +131,13 @@ test -z $(ceph-disk list $(readlink -f ${data}) | egrep -o '[0-9a-f]{8}-([0-9a-f
+       # ceph-disk: prepare should be idempotent http://tracker.ceph.com/issues/7475
+       exec { $ceph_prepare:
+ 
+-        command   => "/usr/sbin/ceph-disk prepare ${cluster_option} ${cluster_uuid_option} ${uuid_option} --fs-type xfs --zap-disk ${data} ${journal}",
++        command   => "/usr/sbin/ceph-disk --verbose --log-stdout prepare ${cluster_option} ${cluster_uuid_option} ${uuid_option} --fs-type xfs --zap-disk $(readlink -f ${data}) $(readlink -f ${journal})",
+         # We don't want to erase the disk if:
+         # 1. There is already ceph data on the disk for our cluster AND
+         # 2. The uuid for the OSD we are configuring matches the uuid for the
+         #    OSD on the disk. We don't want to attempt to re-use an OSD that
+         #    had previously been deleted.
+-        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep ' *${data}.*ceph data' | grep 'osd uuid ${uuid}'",
++        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep ' *$(readlink -f ${data}).*ceph data' | grep 'osd uuid ${uuid}'",
+ 
+         logoutput => true,
+         timeout   => $exec_timeout,
+-- 
+1.8.3.1
+
