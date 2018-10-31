@@ -27,7 +27,6 @@ python/python-voluptuous
 networking/lldpd
 logging/logrotate
 utilities/nova-utils
-base/ntp
 base/pam
 security/shim-unsigned
 security/shim-signed
@@ -106,6 +105,7 @@ config-files/io-scheduler
 config-files/sudo-config
 config-files/memcached-custom
 config-files/shadow-utils-config
+config-files/ntp-config
 tools/collector
 grub/grubby
 utilities/platform-util
