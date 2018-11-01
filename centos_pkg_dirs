@@ -127,6 +127,7 @@ base/cluster-resource-agents
 base/libfdt
 base/bash
 base/haproxy
+base/haproxy-config
 filesystem/iscsi-initiator-utils
 ldap/ldapscripts
 networking/net-tools

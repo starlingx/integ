@@ -1,7 +1,3 @@
-spec-include-TiS-config.patch
-haproxy-spec-add-init-script.patch
-spec-add-haproxy-env-var-patch.patch
+spec-include-TiS-changes.patch
 meta_remove_bad_logrotate.patch
-haproxy-service-file.patch
-meta_add_support_for_tpm.patch
 0001-Update-package-versioning-for-TIS-format.patch

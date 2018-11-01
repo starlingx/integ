@@ -296,6 +296,7 @@ bash
 
 # haproxy
 haproxy
+haproxy-config
 
 # iscsi-initiator-utils
 iscsi-initiator-utils

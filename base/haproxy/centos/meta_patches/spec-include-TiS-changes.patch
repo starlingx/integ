@@ -1,0 +1,53 @@
+From 0b326ac9fcee3fbac7e41e3bc269cc7251dcf9dd Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 16:12:36 -0400
+Subject: WRS: spec-include-TiS-changes.patch
+
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+---
+ SPECS/haproxy.spec | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/haproxy.spec b/SPECS/haproxy.spec
+index 30dca25..53def97 100644
+--- a/SPECS/haproxy.spec
++++ b/SPECS/haproxy.spec
+@@ -26,6 +26,8 @@ Patch0:         halog-unused-variables.patch
+ Patch1:         iprange-return-type.patch
+ Patch2:         haproxy-tcp-user-timeout.patch
+ Patch3:         haproxy-systemd-wrapper-exit-code.patch
++Patch4:         haproxy-env-var.patch
++Patch5:         haproxy-tpm-support.patch
+ 
+ BuildRequires:  pcre-devel
+ BuildRequires:  zlib-devel
+@@ -37,6 +39,8 @@ Requires(post):     systemd
+ Requires(preun):    systemd
+ Requires(postun):   systemd
+ 
++Requires: tpm2-openssl-engine
++
+ %description
+ HAProxy is a TCP/HTTP reverse proxy which is particularly suited for high
+ availability environments. Indeed, it can:
+@@ -57,6 +61,8 @@ availability environments. Indeed, it can:
+ %patch1 -p0
+ %patch2 -p1
+ %patch3 -p1
++%patch4 -p1
++%patch5 -p1
+ 
+ %build
+ regparm_opts=
+@@ -79,7 +85,7 @@ popd
+ %{__make} install-man DESTDIR=%{buildroot} PREFIX=%{_prefix}
+ 
+ %{__install} -p -D -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
+-%{__install} -p -D -m 0644 %{SOURCE2} %{buildroot}%{haproxy_confdir}/%{name}.cfg
++%{__install} -p -D -m 0640 %{SOURCE2} %{buildroot}%{haproxy_confdir}/%{name}.cfg
+ %{__install} -p -D -m 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
+ %{__install} -p -D -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
+ %{__install} -p -D -m 0644 %{SOURCE5} %{buildroot}%{_mandir}/man1/halog.1
+-- 
+1.8.3.1
+

@@ -1,14 +1,15 @@
 From 3eac39ba534b92dbcb3a898442b09be7acc389bb Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:12:36 -0400
-Subject: [PATCH 4/7] WRS: meta_remove_bad_logrotate.patch
+Subject: [PATCH] WRS: meta_remove_bad_logrotate.patch
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
  SPECS/haproxy.spec | 3 ---
  1 file changed, 3 deletions(-)
 
 diff --git a/SPECS/haproxy.spec b/SPECS/haproxy.spec
-index af94d46..3d112e0 100644
+index 53def97..39c0c86 100644
 --- a/SPECS/haproxy.spec
 +++ b/SPECS/haproxy.spec
 @@ -18,7 +18,6 @@ URL:            http://www.haproxy.org/
@@ -18,16 +19,16 @@ index af94d46..3d112e0 100644
 -Source3:        %{name}.logrotate
  Source4:        %{name}.sysconfig
  Source5:        halog.1
- Source10:       %{name}.sh
-@@ -88,7 +87,6 @@ mkdir -p /etc/init.d
+ 
+@@ -86,7 +85,6 @@ popd
  
  %{__install} -p -D -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
  %{__install} -p -D -m 0640 %{SOURCE2} %{buildroot}%{haproxy_confdir}/%{name}.cfg
 -%{__install} -p -D -m 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
  %{__install} -p -D -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
  %{__install} -p -D -m 0644 %{SOURCE5} %{buildroot}%{_mandir}/man1/halog.1
- %{__install} -p -D -m 0755 %{SOURCE10} %{buildroot}/etc/init.d/%{name}
-@@ -147,7 +145,6 @@ fi
+ %{__install} -d -m 0755 %{buildroot}%{haproxy_home}
+@@ -139,7 +137,6 @@ fi
  %dir %{haproxy_datadir}
  %{haproxy_datadir}/*
  %config(noreplace) %{haproxy_confdir}/%{name}.cfg
@@ -36,5 +37,5 @@ index af94d46..3d112e0 100644
  %{_unitdir}/%{name}.service
  %{_sbindir}/%{name}
 -- 
-1.9.1
+1.8.3.1
 
