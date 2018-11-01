@@ -10,8 +10,8 @@
 # more information see the vTPM HLD in /folk/cgts/docs/security/
 #
 # The vTPM data path will be in the following format
-#     /etc/nova/instances/<guest uuid>/<tpm device name>
-#     e.g /etc/nova/instances/137d8de2-1079-46f8-9d96-8b6fd1599238/vtpm-instance-00000036
+#     /var/lib/nova/instances/<guest uuid>/<tpm device name>
+#     e.g /var/lib/nova/instances/137d8de2-1079-46f8-9d96-8b6fd1599238/vtpm-instance-00000036
 #
 # This script parameters are
 #     OPERATION: "clear" or "setup"
@@ -26,7 +26,7 @@ TPM_DEVICE=$2
 INSTANCE_UUID=$3
 
 TPM_DEVICENAME=`basename $TPM_DEVICE`
-DATA_PATH=/etc/nova/instances/$INSTANCE_UUID/$TPM_DEVICENAME
+DATA_PATH=/var/lib/nova/instances/$INSTANCE_UUID/$TPM_DEVICENAME
 
 logger -p info -t $0 "$OPERATION the vTPM device $TPM_DEVICE with data path $DATA_PATH for guest $INSTANCE_UUID"
 
