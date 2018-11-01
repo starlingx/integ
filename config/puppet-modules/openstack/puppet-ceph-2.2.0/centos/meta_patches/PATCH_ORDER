@@ -3,3 +3,4 @@
 0003-Ceph-Jewel-rebase.patch
 0004-Add-OSD-support-for-persistent-naming.patch
 0005-meta-patch-for-patch5.patch
+0006-add-ceph-disk-prepare-invalid-data-disk-value-patch.patch
