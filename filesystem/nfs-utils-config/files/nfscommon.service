@@ -1,5 +1,5 @@
 [Unit]
-Description=Titanium Cloud Filesystem Common
+Description=StarlingX Filesystem Common
 After=network.target rpcbind.service
 Before=nfsserver.service mountnfs.service
 

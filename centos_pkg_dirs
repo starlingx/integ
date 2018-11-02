@@ -6,6 +6,7 @@ utilities/namespace-utils
 ldap/nss-pam-ldapd
 base/centos-release-config
 filesystem/nfs-utils
+filesystem/nfs-utils-config
 base/dhcp
 base/openssh
 config/facter

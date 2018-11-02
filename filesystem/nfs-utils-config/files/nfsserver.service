@@ -1,5 +1,5 @@
 [Unit]
-Description=Titanium Cloud Filesystem Server
+Description=StarlingX Filesystem Server
 After=network.target nfscommon.service hwclock.service
 Before=ntpd.service
 
