@@ -78,7 +78,7 @@ def is_partitioning_correct(disk_path, partition_sizes):
     output, _, _ = command(["udevadm", "settle", "-E", disk_node])
     output, _, _ = command(["parted", "-s", disk_node, "print"])
     if not re.search('Partition Table: gpt', output):
-        print "Format of disk node %s is not GPT, zapping disk" % disk_node
+        print("Format of disk node %s is not GPT, zapping disk" % disk_node)
         return False
 
     # Check each partition size
@@ -93,7 +93,7 @@ def is_partitioning_correct(disk_path, partition_sizes):
         regex = ("^Disk " + str(partition_node) + ":\\s*" +
                  str(size) + "[\\.0]*MiB")
         if not re.search(regex, output, re.MULTILINE):
-            print ("Journal partition %(node)s size is not %(size)s, "
+            print("Journal partition %(node)s size is not %(size)s, "
                    "zapping disk" % {"node": partition_node, "size": size})
             return False
 
@@ -124,7 +124,7 @@ def create_partitions(disk_path, partition_sizes):
     # Erase all partitions on current node by creating a new GPT table
     _, err, ret = command(["parted", "-s", disk_node, "mktable", "gpt"])
     if ret:
-        print ("Error erasing partition table of %(node)s\n"
+        print("Error erasing partition table of %(node)s\n"
                "Return code: %(ret)s reason: %(reason)s" %
                {"node": disk_node, "ret": ret, "reason": err})
         exit(1)
@@ -146,10 +146,10 @@ def create_partitions(disk_path, partition_sizes):
                  "start": used_space_mib,
                  "end": used_space_mib + size,
                  "reason": err}
-        print ("Created partition from start=%(start)s MiB to end=%(end)s MiB"
+        print("Created partition from start=%(start)s MiB to end=%(end)s MiB"
                " on %(disk_node)s" % parms)
         if ret:
-            print ("Failed to create partition with "
+            print("Failed to create partition with "
                    "start=%(start)s, end=%(end)s "
                    "on %(disk_node)s reason: %(reason)s" % parms)
             exit(1)
@@ -164,7 +164,7 @@ def create_partitions(disk_path, partition_sizes):
                disk_node]
         _, err, ret = command(cmd)
         if ret:
-            print ("WARNINIG: Failed to set partition name and typecode")
+            print("WARNINIG: Failed to set partition name and typecode")
         used_space_mib += size
         num += 1
 
@@ -189,10 +189,10 @@ def mount_data_partition(data_path, osdid):
         _, _, ret = command(cmd)
         params = {"node": data_node, "path": mount_path}
         if ret:
-            print "Failed to mount %(node)s to %(path), aborting" % params
+            print("Failed to mount %(node)s to %(path), aborting" % params)
             exit(1)
         else:
-            print "Mounted %(node)s to %(path)s" % params
+            print("Mounted %(node)s to %(path)s" % params)
     return mount_path
 
 
@@ -224,9 +224,9 @@ def fix_location(mount_point, journal_path, osdid):
         if os.path.lexists(path):
             os.unlink(path)  # delete the old symlink
         os.symlink(new_target, path)
-        print "Symlink created: %(path)s -> %(target)s" % params
+        print("Symlink created: %(path)s -> %(target)s" % params)
     except:
-        print "Failed to create symlink: %(path)s -> %(target)s" % params
+        print("Failed to create symlink: %(path)s -> %(target)s" % params)
         exit(1)
     # Fix journal_uuid
     path = mount_point + "/journal_uuid"
@@ -237,7 +237,7 @@ def fix_location(mount_point, journal_path, osdid):
         # The operation is noncritical, it only makes 'ceph-disk list'
         # display complete output. We log and continue.
         params = {"path": path, "uuid": journal_uuid}
-        print "WARNING: Failed to set uuid of %(path)s to %(uuid)s" % params
+        print("WARNING: Failed to set uuid of %(path)s to %(uuid)s" % params)
 
     # Clean the journal partition
     # even if erasing the partition table, if another journal was present here
@@ -257,10 +257,10 @@ def fix_location(mount_point, journal_path, osdid):
               "ret": ret,
               "reason": err}
     if not ret:
-        print ("Prepared new journal partition: %(journal_node)s "
-               "for osd id: %(osdid)s") % params
+        print("Prepared new journal partition: %(journal_node)s "
+               "for osd id: %(osdid)s" % params)
     else:
-        print ("Error initializing journal node: "
+        print("Error initializing journal node: "
                "%(journal_node)s for osd id: %(osdid)s "
                "ceph-osd return code: %(ret)s reason: %(reason)s" % params)
 
@@ -293,7 +293,7 @@ def main(argv):
     else:
         err = True
     if err:
-        print "Command intended for internal use only"
+        print("Command intended for internal use only")
         exit(-1)
 
     if partitions:
@@ -302,7 +302,7 @@ def main(argv):
                                        partitions['journals']):
             create_partitions(partitions['disk_path'], partitions['journals'])
         else:
-            print ("Partition table for %s is correct, "
+            print("Partition table for %s is correct, "
                    "no need to repartition" %
                    device_path_to_device_node(partitions['disk_path']))
     elif location:
@@ -313,14 +313,14 @@ def main(argv):
         if not is_location_correct(mount_point,
                                    location['journal_path'],
                                    location['osdid']):
-            print ("Fixing journal location for "
+            print("Fixing journal location for "
                    "OSD id: %(id)s" % {"node": location['data_path'],
                                        "id": location['osdid']})
             fix_location(mount_point,
                          location['journal_path'],
                          location['osdid'])
         else:
-            print ("Journal location for %s is correct,"
+            print("Journal location for %s is correct,"
                    "no need to change it" % location['data_path'])
 
 main(sys.argv[1:])

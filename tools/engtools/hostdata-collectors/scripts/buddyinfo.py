@@ -112,9 +112,9 @@ def main():
     logger = Logger(logging.DEBUG).get_logger()
     logger.info("Starting....")
     logger.info("Parsed options: %s" % options)
-    print logger
+    print(logger)
     buddy = BuddyInfo(logger)
-    print buddy
+    print(buddy)
 
 if __name__ == '__main__':
     main()

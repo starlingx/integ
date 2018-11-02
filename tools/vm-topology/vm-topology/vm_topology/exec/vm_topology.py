@@ -855,7 +855,7 @@ def print_all_tables(tenants=None,
     # Print list of aggregates
     if show['aggregates']:
         print
-        print "AGGREGATES:"
+        print("AGGREGATES:")
         pt = PrettyTable(
             ['Name',
              'Avail Zone',
@@ -870,13 +870,13 @@ def print_all_tables(tenants=None,
                  ", ".join([str(x) for x in A.hosts]),
                  str(A.metadata)
                 ])
-        print pt
+        print(pt)
 
     # Print list of compute host hypervisors, showing per numa details
     if show['computes']:
         print
-        print 'COMPUTE HOSTS:  ' \
-              'Legend: U = Used, A = Avail'
+        print('COMPUTE HOSTS:  '
+              'Legend: U = Used, A = Avail')
         pt = PrettyTable(
             ['Host',
              'status',
@@ -1018,7 +1018,7 @@ def print_all_tables(tenants=None,
     # Print list of compute hosts topology
     if show['topology']:
         print
-        print 'LOGICAL CPU TOPOLOGY (compute hosts):'
+        print('LOGICAL CPU TOPOLOGY (compute hosts):')
         for host_name, topology in sorted(topologies.iteritems(),
                                           key=lambda (k, v): (natural_keys(k))):
             H = hypervisors[host_name]
@@ -1042,13 +1042,13 @@ def print_all_tables(tenants=None,
             n_cores = len(topology[socket_id].keys())
             n_threads = len(topology[socket_id][core_id].keys())
 
-            print '%s:  Model:%s, Arch:%s, Vendor:%s, ' \
-                  'Sockets=%d, Cores/Socket=%d, Threads/Core=%d, Logical=%d' \
+            print('%s:  Model:%s, Arch:%s, Vendor:%s, '
+                  'Sockets=%d, Cores/Socket=%d, Threads/Core=%d, Logical=%d'
                   % (host_name,
                      H.cpu_info['model'],
                      H.cpu_info['arch'],
                      H.cpu_info['vendor'],
-                     n_sockets, n_cores, n_threads, len(cpu_ids))
+                     n_sockets, n_cores, n_threads, len(cpu_ids)))
 
             # cpu_id row
             L = ['cpu_id']
@@ -1076,13 +1076,13 @@ def print_all_tables(tenants=None,
             {L.append(','.join(
                 str(s) for s in siblings[i]) or '-') for i in cpu_ids}
             pt.add_row(L)
-            print pt
+            print(pt)
             print
 
     # Print list of compute hosts topology
     if show['topology-long']:
         print
-        print 'LOGICAL CPU TOPOLOGY (compute hosts):'
+        print('LOGICAL CPU TOPOLOGY (compute hosts):')
         for host_name, topology in sorted(topologies.iteritems(),
                                           key=lambda (k, v): (natural_keys(k))):
             H = hypervisors[host_name]
@@ -1106,13 +1106,13 @@ def print_all_tables(tenants=None,
             n_cores = len(topology[socket_id].keys())
             n_threads = len(topology[socket_id][core_id].keys())
 
-            print '%s:  Model:%s, Arch:%s, Vendor:%s, ' \
-                  'Sockets=%d, Cores/Socket=%d, Threads/Core=%d, Logical=%d' \
+            print('%s:  Model:%s, Arch:%s, Vendor:%s, '
+                  'Sockets=%d, Cores/Socket=%d, Threads/Core=%d, Logical=%d'
                   % (host_name,
                      H.cpu_info['model'],
                      H.cpu_info['arch'],
                      H.cpu_info['vendor'],
-                     n_sockets, n_cores, n_threads, len(cpu_ids))
+                     n_sockets, n_cores, n_threads, len(cpu_ids)))
             pt = PrettyTable(
                 ['cpu_id',
                  'socket_id',
@@ -1132,14 +1132,14 @@ def print_all_tables(tenants=None,
                      list_to_range(siblings[i]) or '-',
                      '0x%x' % (1 << i)
                     ])
-            print pt
+            print(pt)
             print
 
     # Print list of servers
     if show['servers']:
         re_server_group = re.compile(r'^(\S+)\s+\((\S+)\)$')
         print
-        print 'SERVERS (nova view):'
+        print('SERVERS (nova view):')
         pt = PrettyTable(
             ['tenant',
              'ID',
@@ -1237,8 +1237,8 @@ def print_all_tables(tenants=None,
     # Print each libvirt domain info
     if show['libvirt']:
         print
-        print 'SERVERS (libvirt view):  ' \
-              'Legend: cpulist = [pcpu[i], ...]'
+        print('SERVERS (libvirt view):  '
+              'Legend: cpulist = [pcpu[i], ...]')
         pt = PrettyTable(
             ['uuid',
              'instance_name',
@@ -1278,7 +1278,7 @@ def print_all_tables(tenants=None,
     # Print list of in-progress migrations
     if show['migrations']:
         print
-        print "MIGRATIONS (in progress):  Legend: S=Source, D=Destination"
+        print("MIGRATIONS (in progress):  Legend: S=Source, D=Destination")
         pt = PrettyTable(
             ['ID',
              'status',
@@ -1310,7 +1310,7 @@ def print_all_tables(tenants=None,
     pp = pprint.PrettyPrinter(indent=1, width=40)
     if show['flavors']:
         print
-        print "FLAVORS (in use):"
+        print("FLAVORS (in use):")
         pt = PrettyTable(
             ['id',
              'name',
@@ -1342,13 +1342,13 @@ def print_all_tables(tenants=None,
                      F.is_public,
                      pp.pformat(extra_specs[F.id]),
                     ])
-        print pt
+        print(pt)
 
     # Print images for instances currently in use
     pp = pprint.PrettyPrinter(indent=1, width=40)
     if show['images']:
         print
-        print "IMAGES (in use):"
+        print("IMAGES (in use):")
         pt = PrettyTable(
             ['id',
              'name',
@@ -1373,12 +1373,12 @@ def print_all_tables(tenants=None,
                      I.status,
                      I.properties,
                     ])
-        print pt
+        print(pt)
 
     # Print server groups for instances currently in use (exclude members data)
     if show['server_groups']:
         print
-        print "SERVER GROUPS (in use):"
+        print("SERVER GROUPS (in use):")
         pt = PrettyTable(
             ['Tenant',
              'Id',
@@ -1398,7 +1398,7 @@ def print_all_tables(tenants=None,
                      str(S.policies),
                      str(S.metadata),
                     ])
-        print pt
+        print(pt)
 
 
 def _get_host_id(tenant_id=None, host_name=None):
@@ -2108,12 +2108,12 @@ def get_info_and_display(show=None):
     # Print out warnings if we detect mismatches between nova and libvirt
     if warnings:
         print
-        print "WARNINGS (mismatch):"
+        print("WARNINGS (mismatch):")
         pt = PrettyTable(['Message'])
         pt.align = 'l'
         for W in warnings:
             pt.add_row([W])
-        print pt
+        print(pt)
 
     if True in debug.values():
         logger.debug('done.')
@@ -2126,7 +2126,7 @@ def main():
     try:
         # Enforce 'root' access since we need to read nova.conf .
         if os.geteuid() != 0:
-            print ('Require sudo/root.')
+            print('Require sudo/root.')
             os.execvp('sudo', ['sudo'] + sys.argv)
 
         # Process command line options and arguments, configure logging,
@@ -2136,7 +2136,7 @@ def main():
         # Print selected options, and timestamp
         prog = os.path.basename(sys.argv[0])
         ts = datetime.datetime.now()
-        print "%s: %s  options: show:%s" % (prog, ts.isoformat(), show['show'])
+        print("%s: %s  options: show:%s" % (prog, ts.isoformat(), show['show']))
         if show['volumes']:
             logger.info('volumes selected: displaying will take some time')
 

@@ -1161,23 +1161,23 @@ index 808e53a..9265cd9 100644
          self._firstconflicts = True
 @@ -711,6 +734,22 @@ class TextOutput(NullOutput):
              name = str(prvpkg)
-         print "       ", "%s (%s)" % (name, prv)
+         print("       ", "%s (%s)" % (name, prv))
  
 +    def showRecommends(self, pkg, rec):
 +        if self._firstrecommends:
 +            self._firstrecommends = False
-+            print " ", _("Recommends:")
-+        print "   ", rec
++            print(" ", _("Recommends:"))
++        print("   ", rec)
 +
 +    def showRecommendsProvidedBy(self, pkg, req, prv, prvpkg):
 +        if self._firstrecommendsprovidedby:
 +            self._firstrecommendsprovidedby = False
-+            print "     ", _("Provided By:")
++            print("     ", _("Provided By:"))
 +        if self.opts.hide_version:
 +            name = prvpkg.name
 +        else:
 +            name = str(prvpkg)
-+        print "       ", "%s (%s)" % (name, prv)
++        print("       ", "%s (%s)" % (name, prv))
 +
      def showUpgrades(self, pkg, upg):
          if self._firstupgrades:
@@ -1189,14 +1189,14 @@ index 808e53a..9265cd9 100644
 +    def showRecommends(self, pkg, req):
 +        if (pkg, req) not in self._shown:
 +            self._shown[pkg, req] = True
-+            print '    "%s" -> "Recommends: %s";' % (pkg, req)
++            print('    "%s" -> "Recommends: %s";' % (pkg, req))
 +
 +    def showRecommendsProvidedBy(self, pkg, req, prv, prvpkg):
 +        self.showPackage(prvpkg)
 +        self.showProvides(prvpkg, prv)
 +        if (req, prv) not in self._shown:
 +            self._shown[req, prv] = True
-+            print '    "Recommends: %s" -> "Provides: %s";' % (req, prv)
++            print('    "Recommends: %s" -> "Provides: %s";' % (req, prv))
 +
      def showUpgrades(self, pkg, upg):
          if (pkg, upg) not in self._shown:
