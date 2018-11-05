@@ -1117,10 +1117,11 @@ index 808e53a..9265cd9 100644
      parser.add_option("--show-upgrades", action="store_true",
                        help=_("show upgrades for the given packages"))
      parser.add_option("--show-conflicts", action="store_true",
-@@ -488,6 +490,19 @@ def main(ctrl, opts, reloadchannels=True):
+@@ -488,6 +490,21 @@ def main(ctrl, opts, reloadchannels=True):
                                  continue
                              output.showRequiresProvidedBy(pkg, req,
                                                            prv, prvpkg)
++
 +        if pkg.recommends and (opts.show_recommends):
 +            pkg.recommends.sort()
 +            first = True
@@ -1134,10 +1135,11 @@ index 808e53a..9265cd9 100644
 +                                continue
 +                            output.showRecommendsProvidedBy(pkg, req,
 +                                                          prv, prvpkg)
++
          if pkg.upgrades and (opts.show_upgrades or whoupgrades):
              pkg.upgrades.sort()
              first = True
-@@ -594,6 +609,12 @@ class NullOutput(object):
+@@ -594,6 +611,12 @@ class NullOutput(object):
      def showRequiresProvidedBy(self, pkg, req, prv, prvpkg):
          pass
  
@@ -1150,7 +1152,7 @@ index 808e53a..9265cd9 100644
      def showUpgrades(self, pkg, upg):
          pass
  
-@@ -619,6 +640,8 @@ class TextOutput(NullOutput):
+@@ -619,6 +642,8 @@ class TextOutput(NullOutput):
          self._firstconflictedby = True
          self._firstrequires = True
          self._firstrequiresprovidedby = True
@@ -1159,9 +1161,9 @@ index 808e53a..9265cd9 100644
          self._firstupgrades = True
          self._firstupgradesprovidedby = True
          self._firstconflicts = True
-@@ -711,6 +734,22 @@ class TextOutput(NullOutput):
+@@ -711,6 +736,22 @@ class TextOutput(NullOutput):
              name = str(prvpkg)
-         print("       ", "%s (%s)" % (name, prv))
+         print "       ", "%s (%s)" % (name, prv)
  
 +    def showRecommends(self, pkg, rec):
 +        if self._firstrecommends:
@@ -1182,7 +1184,7 @@ index 808e53a..9265cd9 100644
      def showUpgrades(self, pkg, upg):
          if self._firstupgrades:
              self._firstupgrades = False
-@@ -797,6 +836,18 @@ class GraphVizOutput(NullOutput):
+@@ -797,6 +838,18 @@ class GraphVizOutput(NullOutput):
              self._shown[req, prv] = True
              print '    "Requires: %s" -> "Provides: %s";' % (req, prv)
  
