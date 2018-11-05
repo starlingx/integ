@@ -8,7 +8,8 @@ Packager: Wind River <info@windriver.com>
 URL: unknown
 BuildArch: noarch
 Source: %name-%version.tar.gz
-#Requires: /usr/bin/perl
+
+Requires: initscripts-config
 
 %description
 This package contains data collection tools to monitor host performance.

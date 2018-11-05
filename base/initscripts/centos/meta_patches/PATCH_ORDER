@@ -1,15 +1,4 @@
 spec-include-TiS-changes.patch
 stop-creating-shared-dirs.patch
-0001-Disable-zeroconf-route.patch
-0001-Support-PROMISC-for-interfaces-config.patch
-spec-add-mountnfs-init-script.patch
-0001-Fix-Interfaces-intermittenly-do-not-come-up-on-boot.patch
-force-delay-check-link-down.patch
-run-ifdown-on-all-interfaces.patch
-0001-Update-package-versioning-for-TIS-format.patch
-spec-sysconfig-affirmative-check-for-link-carrier.patch
-spec-sysconfig-unsafe-usage-of-linkdelay-variable.patch
 fix-build-failures-due-to-unwanted-sgid.patch
-ipv6-static-route-support.patch
-spec-ifup-eth-stop-waiting-if-link-is-up.patch
-spec-run-dhclient-as-daemon-for-ipv6.patch
+0001-Update-package-versioning-for-TIS-format.patch

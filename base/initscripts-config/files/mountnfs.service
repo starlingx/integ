@@ -1,5 +1,5 @@
 [Unit]
-Description=Titanium Cloud Filesystem Auto-mounter
+Description=StarlingX Cloud Filesystem Auto-mounter
 After=network.target nfscommon.service
 Before=uexportfs.service
 

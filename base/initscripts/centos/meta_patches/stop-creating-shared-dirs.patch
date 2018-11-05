@@ -3,15 +3,16 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:49:27 -0400
 Subject: [PATCH 02/13] WRS: stop-creating-shared-dirs.patch
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
  SPECS/initscripts.spec | 6 ------
  1 file changed, 6 deletions(-)
 
 diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
-index 7f93a30..5349c54 100644
+index d3c2ce6..967317f 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -178,10 +178,7 @@ rm -rf $RPM_BUILD_ROOT
+@@ -189,10 +189,7 @@ rm -rf $RPM_BUILD_ROOT
  /usr/lib/systemd/rhel-*
  /usr/lib/systemd/system/*
  /etc/inittab
@@ -22,7 +23,7 @@ index 7f93a30..5349c54 100644
  /etc/rc.d/init.d/*
  %config(noreplace) /etc/sysctl.conf
  /usr/lib/sysctl.d/00-system.conf
-@@ -203,7 +200,6 @@ rm -rf $RPM_BUILD_ROOT
+@@ -214,7 +211,6 @@ rm -rf $RPM_BUILD_ROOT
  /usr/sbin/ppp-watch
  %{_mandir}/man*/*
  %dir %attr(775,root,root) /var/run/netreport
@@ -30,7 +31,7 @@ index 7f93a30..5349c54 100644
  %dir /etc/ppp/peers
  /etc/ppp/ip-up
  /etc/ppp/ip-down
-@@ -211,8 +207,6 @@ rm -rf $RPM_BUILD_ROOT
+@@ -222,8 +218,6 @@ rm -rf $RPM_BUILD_ROOT
  /etc/ppp/ip-down.ipv6to4
  /etc/ppp/ipv6-up
  /etc/ppp/ipv6-down
@@ -40,5 +41,5 @@ index 7f93a30..5349c54 100644
  %doc sysconfig.txt sysvinitfiles static-routes-ipv6 ipv6-tunnel.howto ipv6-6to4.howto changes.ipv6 COPYING
  %doc examples
 -- 
-1.9.1
+1.8.3.1
 

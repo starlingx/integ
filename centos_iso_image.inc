@@ -164,6 +164,7 @@ build-info
 
 # initscripts
 initscripts
+initscripts-config
 
 # setup
 setup
