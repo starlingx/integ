@@ -1,4 +1,4 @@
-From 90e9f692040a804f74bd32a8032a34b0f1e31ae9 Mon Sep 17 00:00:00 2001
+From 5d8f3dd5d18d611151b4658c5c876e8a3ad8fe51 Mon Sep 17 00:00:00 2001
 From: Daniel Badea <daniel.badea@windriver.com>
 Date: Wed, 31 Oct 2018 16:28:45 +0000
 Subject: [PATCH] ceph-disk prepare invalid data disk value
@@ -35,7 +35,7 @@ by 'ceph-disk prepare' and identify where it fails.
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/manifests/osd.pp b/manifests/osd.pp
-index d9cf5b1..53709bb 100644
+index d9cf5b1..889d28a 100644
 --- a/manifests/osd.pp
 +++ b/manifests/osd.pp
 @@ -61,7 +61,7 @@ define ceph::osd (
@@ -59,10 +59,10 @@ index d9cf5b1..53709bb 100644
          #    OSD on the disk. We don't want to attempt to re-use an OSD that
          #    had previously been deleted.
 -        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep ' *${data}.*ceph data' | grep 'osd uuid ${uuid}'",
-+        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep ' *$(readlink -f ${data}).*ceph data' | grep 'osd uuid ${uuid}'",
++        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep \" *$(readlink -f ${data}).*ceph data\" | grep 'osd uuid ${uuid}'",
  
          logoutput => true,
          timeout   => $exec_timeout,
 -- 
-1.8.3.1
+2.16.5
 
