@@ -12,7 +12,7 @@ diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
 index 7acdc84..2f7b261 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
-@@ -271,7 +271,7 @@ echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
+@@ -281,7 +281,7 @@ echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
  # WRS
  CONFDIR=%{buildroot}%{_sysconfdir}/lighttpd
  ROOTDIR=%{buildroot}/www

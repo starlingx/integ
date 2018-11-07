@@ -12,7 +12,7 @@ diff --git a/src/request.c b/src/request.c
 index 213a87e..8c97f45 100644
 --- a/src/request.c
 +++ b/src/request.c
-@@ -8,10 +8,39 @@
+@@ -9,11 +9,40 @@
  #include "sock_addr.h"
  
  #include <sys/stat.h>
@@ -21,6 +21,7 @@ index 213a87e..8c97f45 100644
  #include <limits.h>
  #include <stdlib.h>
  #include <string.h>
+ #include <sys-strings.h>
 +#include <errno.h>
 +
 +static size_t get_tempdirs_free_space(server *srv)
@@ -53,9 +54,9 @@ index 213a87e..8c97f45 100644
  
  static int request_check_hostname(buffer *host) {
  	enum { DOMAINLABEL, TOPLABEL } stage = TOPLABEL;
-@@ -1287,6 +1316,22 @@ int http_request_parse(server *srv, connection *con) {
- 			return 0;
- 
+@@ -1149,6 +1178,22 @@ int http_request_parse(server *srv, connection *con) {
+ 			con->http_status = 411;
+ 			goto failure;
  		}
 +		/* content-length is larger than 64k */
 +		if (con->request.content_length > 64*1024) {

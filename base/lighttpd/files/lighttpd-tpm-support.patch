@@ -36,7 +36,7 @@ index 2fe60b6..bddcd01 100644
  struct fdevents;        /* declaration */
  struct stat_cache;      /* declaration */
  
-@@ -360,6 +375,13 @@ typedef struct {
+@@ -344,6 +359,13 @@ typedef struct {
  	unsigned short high_precision_timestamps;
  	time_t loadts;
  	double loadavg[3];
@@ -50,7 +50,7 @@ index 2fe60b6..bddcd01 100644
  	buffer *syslog_facility;
  } server_config;
  
-@@ -400,6 +422,8 @@ struct server {
+@@ -384,6 +406,8 @@ struct server {
  	int con_written;
  	int con_closed;
  
@@ -63,7 +63,7 @@ diff --git a/src/configfile.c b/src/configfile.c
 index c3b0f16..dca2a29 100644
 --- a/src/configfile.c
 +++ b/src/configfile.c
-@@ -276,8 +276,10 @@ static int config_insert(server *srv) {
+@@ -273,8 +273,10 @@ static int config_insert(server *srv) {
  		{ "server.syslog-facility",            NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 80 */
  		{ "server.socket-perms",               NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 81 */
  		{ "server.http-parseopts",             NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_SERVER     }, /* 82 */
@@ -75,7 +75,7 @@ index c3b0f16..dca2a29 100644
  	};
  
  	/* all T_CONFIG_SCOPE_SERVER options */
-@@ -318,6 +320,8 @@ static int config_insert(server *srv) {
+@@ -315,6 +317,8 @@ static int config_insert(server *srv) {
  	cv[80].destination = srv->srvconf.syslog_facility;
  	http_parseopts = array_init();
  	cv[82].destination = http_parseopts;
@@ -88,7 +88,7 @@ diff --git a/src/mod_openssl.c b/src/mod_openssl.c
 index 75e0873..4cb0335 100644
 --- a/src/mod_openssl.c
 +++ b/src/mod_openssl.c
-@@ -422,6 +422,29 @@ error:
+@@ -444,6 +444,29 @@ error:
      return NULL;
  }
  
@@ -118,7 +118,7 @@ index 75e0873..4cb0335 100644
  
  static EVP_PKEY *
  evp_pkey_load_pem_file (server *srv, const char *file)
-@@ -476,15 +499,23 @@ network_openssl_load_pemfile (server *srv, plugin_config *s, size_t ndx)
+@@ -498,15 +521,23 @@ network_openssl_load_pemfile (server *srv, plugin_config *s, size_t ndx)
  
      s->ssl_pemfile_x509 = x509_load_pem_file(srv, s->ssl_pemfile->ptr);
      if (NULL == s->ssl_pemfile_x509) return -1;
@@ -151,7 +151,7 @@ index 75e0873..4cb0335 100644
      }
  
      return 0;
-@@ -651,6 +682,43 @@ network_init_ssl (server *srv, void *p_d)
+@@ -673,6 +704,43 @@ network_init_ssl (server *srv, void *p_d)
              force_assert(NULL != local_send_buffer);
          }
  
@@ -195,7 +195,7 @@ index 75e0873..4cb0335 100644
          if (!buffer_string_is_empty(s->ssl_pemfile)) {
            #ifdef OPENSSL_NO_TLSEXT
              data_config *dc = (data_config *)srv->config_context->data[i];
-@@ -911,29 +979,36 @@ network_init_ssl (server *srv, void *p_d)
+@@ -935,29 +1003,36 @@ network_init_ssl (server *srv, void *p_d)
              }
          }
  
@@ -246,7 +246,7 @@ diff --git a/src/server.c b/src/server.c
 index f6409bb..2ace3f8 100644
 --- a/src/server.c
 +++ b/src/server.c
-@@ -246,6 +246,11 @@ static server *server_init(void) {
+@@ -247,6 +247,11 @@ static server *server_init(void) {
  	CLEAN(srvconf.pid_file);
  	CLEAN(srvconf.syslog_facility);
  
@@ -258,7 +258,7 @@ index f6409bb..2ace3f8 100644
  	CLEAN(tmp_chunk_len);
  #undef CLEAN
  
-@@ -347,6 +352,14 @@ static void server_free(server *srv) {
+@@ -348,6 +353,14 @@ static void server_free(server *srv) {
  	CLEAN(srvconf.xattr_name);
  	CLEAN(srvconf.syslog_facility);
  
@@ -273,13 +273,13 @@ index f6409bb..2ace3f8 100644
  	CLEAN(tmp_chunk_len);
  #undef CLEAN
  
-@@ -776,7 +789,9 @@ static int log_error_open(server *srv) {
+@@ -782,7 +795,9 @@ static int log_error_open(server *srv) {
          if (-1 == (errfd = fdevent_open_devnull())) {
              log_error_write(srv, __FILE__, __LINE__, "ss",
                              "opening /dev/null failed:", strerror(errno));
 -            return -1;
 +            /* In version 1.4.45 it will also failed here but not check return value of openDevNull(STDERR_FILENO)
-+            need further check with upstrean to see if there is a potential bug */
++            need further check with upstream to see if there is a potential bug */
 +            //return -1;
          }
      }
