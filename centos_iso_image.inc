@@ -338,3 +338,6 @@ mlnx-ofa_kernel-rt-modules
 
 # update-motd
 update-motd
+
+# python2-ruamel-yaml
+python2-ruamel-yaml
