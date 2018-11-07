@@ -3,17 +3,15 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:05:59 -0400
 Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
-Conflicts:
-	SPECS/net-snmp.spec
 ---
  SPECS/net-snmp.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
-index 9b313cb..b015436 100644
+index a59db4f..8a24ba1 100644
 --- a/SPECS/net-snmp.spec
 +++ b/SPECS/net-snmp.spec
-@@ -14,7 +14,7 @@
+@@ -11,7 +11,7 @@
  Summary: A collection of SNMP protocol tools and libraries
  Name: net-snmp
  Version: 5.7.2

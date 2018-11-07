@@ -1,11 +1,2 @@
-spec-include-TiS-patches.patch
-snmpd-service-OPTIONS.patch
-snmp-spec-add-init-script.patch
-fix-snmpd-service.patch
-fix-snmpd-initscript.patch
-run-snmpd-as-non-root-user.patch
-fix-snmpd-service-reload.patch
 0001-Update-package-versioning-for-TIS-format.patch
-snmp-spec-add-snmp-config.patch
-snmp-spec-config-file-permission.patch
-spec-configure-without-HOST-RESOURCES-MIB.patch
+spec-build-configure-changes.patch
