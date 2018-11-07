@@ -26,6 +26,7 @@ python/python-smartpm
 python/python-voluptuous
 networking/lldpd
 logging/logrotate
+logging/logrotate-config
 utilities/nova-utils
 base/ntp
 base/pam

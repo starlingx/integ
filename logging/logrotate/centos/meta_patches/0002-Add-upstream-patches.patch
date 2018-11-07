@@ -11,7 +11,7 @@ diff --git a/SPECS/logrotate.spec b/SPECS/logrotate.spec
 index 0eac8bf..99a22ac 100644
 --- a/SPECS/logrotate.spec
 +++ b/SPECS/logrotate.spec
-@@ -49,6 +49,9 @@ Patch17: logrotate-3.8.6-config-mode-err.patch
+@@ -48,6 +48,9 @@ Patch17: logrotate-3.8.6-config-mode-err.patch
  # fix #1483800 - update references to project page
  Patch18: logrotate-3.8.6-upstream-url.patch
  
@@ -21,7 +21,7 @@ index 0eac8bf..99a22ac 100644
  Requires: coreutils >= 5.92 popt
  BuildRequires: libselinux-devel popt-devel libacl-devel acl
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-@@ -86,6 +89,9 @@ log files on your system.
+@@ -85,6 +88,9 @@ log files on your system.
  %patch17 -p1
  %patch18 -p1
  

@@ -208,6 +208,7 @@ lighttpd-mod_mysql_vhost
 
 # logrotate
 logrotate
+logrotate-config
 
 # ntp
 ntp

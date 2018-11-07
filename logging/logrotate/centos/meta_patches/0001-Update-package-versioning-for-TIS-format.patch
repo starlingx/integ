@@ -3,8 +3,6 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:22:44 -0400
 Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
-Conflicts:
-	SPECS/logrotate.spec
 ---
  SPECS/logrotate.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
