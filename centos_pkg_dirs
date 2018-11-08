@@ -1,6 +1,7 @@
 tools/vm-topology
 base/initscripts
 base/initscripts-config
+base/setup-config
 base/setup
 utilities/namespace-utils
 base/centos-release-config

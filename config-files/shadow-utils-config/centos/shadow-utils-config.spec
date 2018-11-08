@@ -14,6 +14,7 @@ Source2: clear_shadow_locks.service
 BuildArch: noarch
 # systemd provides %{_unitdir}
 BuildRequires: systemd
+Requires: setup
 Requires: shadow-utils
 
 %define debug_package %{nil}
