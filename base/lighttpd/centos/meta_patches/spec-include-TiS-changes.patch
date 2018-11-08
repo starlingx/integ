@@ -11,7 +11,7 @@ diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
 index de52e46..7acdc84 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
-@@ -61,6 +61,14 @@ Source13: http://www.lighttpd.net/light_logo.png
+@@ -62,6 +62,14 @@ Source13: http://www.lighttpd.net/light_logo.png
  Source14: lighttpd-empty.png
  #Source100: lighttpd-mod_geoip.c
  #Source101: lighttpd-mod_geoip.txt
@@ -26,10 +26,10 @@ index de52e46..7acdc84 100644
  Patch0: lighttpd-1.4.39-defaultconf.patch
  #Patch1: lighttpd-1.4.40-mod_geoip.patch
  Patch2: lighttpd-1.4.35-system-crypto-policy.patch
-@@ -184,17 +192,19 @@ autoreconf -if
- %configure \
+@@ -194,17 +202,19 @@ autoreconf -if
      --libdir='%{_libdir}/lighttpd' \
      %{confswitch mysql} \
+     %{confswitch pam} \
 -    %{confswitch ldap} \
 +    --without-ldap \
      %{confswitch attr} \
@@ -53,7 +53,7 @@ index de52e46..7acdc84 100644
      %{confswitch geoip} \
      %{confswitch krb5}
  make %{?_smp_mflags}
-@@ -213,13 +223,14 @@ install -D -p -m 0644 %{SOURCE2} \
+@@ -223,13 +233,14 @@ install -D -p -m 0644 %{SOURCE2} \
      %{buildroot}%{_sysconfdir}/php.d/lighttpd.ini
  
  # Install our own init script (included one is old style) or systemd service
@@ -71,7 +71,7 @@ index de52e46..7acdc84 100644
  
  # Install our own default web page and images
  mkdir -p %{buildroot}%{webroot}
-@@ -257,6 +268,20 @@ echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
+@@ -267,6 +278,20 @@ echo 'D /var/run/lighttpd 0750 lighttpd lighttpd -' > \
      %{buildroot}%{_sysconfdir}/tmpfiles.d/lighttpd.conf
  %endif
  
@@ -92,7 +92,7 @@ index de52e46..7acdc84 100644
  
  %clean
  rm -rf %{buildroot}
-@@ -305,11 +330,8 @@ fi
+@@ -315,11 +340,8 @@ fi
  %config %{_sysconfdir}/lighttpd/conf.d/mod.template
  %config %{_sysconfdir}/lighttpd/vhosts.d/vhosts.template
  %config(noreplace) %{_sysconfdir}/logrotate.d/lighttpd
@@ -104,7 +104,7 @@ index de52e46..7acdc84 100644
  %if %{with tmpfiles}
  %config(noreplace) %{_sysconfdir}/tmpfiles.d/lighttpd.conf
  %endif
-@@ -335,6 +357,11 @@ fi
+@@ -345,6 +367,11 @@ fi
  # This is not really configuration, but prevent loss of local changes
  %config %{webroot}/index.html
  

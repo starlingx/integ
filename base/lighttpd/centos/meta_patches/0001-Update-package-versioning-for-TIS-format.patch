@@ -13,10 +13,10 @@ diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
 index 2f7b261..2553b27 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
-@@ -45,7 +45,7 @@
+@@ -46,7 +46,7 @@
  Summary: Lightning fast webserver with light system requirements
  Name: lighttpd
- Version: 1.4.50
+ Version: 1.4.51
 -Release: 1%{?dist}
 +Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
  License: BSD
