@@ -11,7 +11,7 @@ diff --git a/SPECS/openvswitch.spec b/SPECS/openvswitch.spec
 index f286a13..6d95f35 100644
 --- a/SPECS/openvswitch.spec
 +++ b/SPECS/openvswitch.spec
-@@ -127,7 +127,7 @@ Patch422: 0003-vhost-extract-virtqueue-cleaning-and-freeing-functio.patch
+@@ -123,7 +123,7 @@ Patch422: 0003-vhost-extract-virtqueue-cleaning-and-freeing-functio.patch
  Patch423: 0004-vhost-destroy-unused-virtqueues-when-multiqueue-not-.patch
  Patch424: 0005-vhost-add-flag-for-built-in-virtio-driver.patch
  Patch425: 0006-vhost-drop-virtqueues-only-with-built-in-virtio-driv.patch

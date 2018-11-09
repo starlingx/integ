@@ -21,7 +21,7 @@ diff --git a/SPECS/openvswitch.spec b/SPECS/openvswitch.spec
 index 29255d5..f392e95 100644
 --- a/SPECS/openvswitch.spec
 +++ b/SPECS/openvswitch.spec
-@@ -155,6 +155,7 @@ BuildRequires: libcap-ng libcap-ng-devel
+@@ -151,6 +151,7 @@ BuildRequires: libcap-ng libcap-ng-devel
  %ifarch %{dpdkarches}
  # DPDK driver dependencies
  BuildRequires: zlib-devel libpcap-devel numactl-devel
@@ -29,7 +29,7 @@ index 29255d5..f392e95 100644
  Requires: python-pyelftools
  
  # Virtual provide for depending on DPDK-enabled OVS
-@@ -356,7 +357,12 @@ cd -
+@@ -352,7 +353,12 @@ cd -
          --dpdk \
          < rhel/usr_lib_systemd_system_ovs-vswitchd.service.in \
          > rhel/usr_lib_systemd_system_ovs-vswitchd.service

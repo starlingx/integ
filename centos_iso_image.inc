@@ -240,6 +240,7 @@ openldap-clients
 
 # openvswitch
 openvswitch
+openvswitch-config
 
 # libevent
 libevent

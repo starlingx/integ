@@ -39,6 +39,7 @@ base/net-snmp
 ldap/openldap
 networking/mellanox/mlx4-config
 networking/openvswitch
+networking/openvswitch-config
 base/libevent
 security/wrs-ssl
 security/tss2
