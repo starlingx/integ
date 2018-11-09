@@ -212,10 +212,6 @@ logrotate
 # pam
 pam
 
-# syslog-ng
-syslog-ng
-syslog-ng-libdbi
-
 # novnc
 novnc
 
@@ -226,6 +222,7 @@ sudo
 sudo-config
 shadow-utils-config
 ntp-config
+syslog-ng-config
 
 # net-snmp
 net-snmp-utils
