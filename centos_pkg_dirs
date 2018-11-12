@@ -45,7 +45,6 @@ security/tpm2-tools
 security/tpm2-openssl-engine
 security/libtpms
 security/swtpm
-security/audit
 security/spectre-meltdown-checker
 kernel/kernel-std
 config/puppet-4.8.2
@@ -104,6 +103,7 @@ utilities/branding
 config-files/io-scheduler
 config-files/sudo-config
 config-files/memcached-custom
+config-files/audit-config
 config-files/shadow-utils-config
 config-files/ntp-config
 tools/collector

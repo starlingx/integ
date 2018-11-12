@@ -247,7 +247,7 @@ libevent
 tpm2-tools
 
 # audit
-audit
+audit-config
 
 # kernel
 kernel
