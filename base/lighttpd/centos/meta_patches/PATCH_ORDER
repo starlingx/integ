@@ -1,5 +1,4 @@
 spec-include-TiS-changes.patch
-0001-Adding-tmp-dir-under-lighttpd-chroot-environ.patch
-0001-Update-package-versioning-for-TIS-format.patch
+Update-package-versioning-for-TIS-format.patch
 spec-check-content-length.patch
 meta_add_support_for_tpm.patch

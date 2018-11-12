@@ -20,6 +20,7 @@ python/python-setuptools
 virt/libvirt
 virt/libvirt-python
 base/lighttpd
+base/lighttpd-config
 ceph/python-cephclient
 networking/python-ryu
 python/python-smartpm
