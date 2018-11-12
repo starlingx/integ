@@ -3,12 +3,13 @@ From: jmckenna <jason.mckenna@windriver.com>
 Date: Fri, 9 Feb 2018 13:51:24 -0500
 Subject: [PATCH] update package patching
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
  SPECS/dnsmasq.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/dnsmasq.spec b/SPECS/dnsmasq.spec
-index 5cf440a..dd74293 100644
+index 4d30b0a..689158e 100644
 --- a/SPECS/dnsmasq.spec
 +++ b/SPECS/dnsmasq.spec
 @@ -13,7 +13,7 @@
@@ -21,5 +22,5 @@ index 5cf440a..dd74293 100644
  
  Group:          System Environment/Daemons
 -- 
-2.7.4
+1.8.3.1
 

@@ -3,12 +3,13 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:27:13 -0400
 Subject: [PATCH 1/5] WRS: spec-include-TiS-patch.patch
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
- SPECS/dnsmasq.spec | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ SPECS/dnsmasq.spec | 26 ++++++++++----------------
+ 1 file changed, 10 insertions(+), 16 deletions(-)
 
 diff --git a/SPECS/dnsmasq.spec b/SPECS/dnsmasq.spec
-index b312ef3..7f370d1 100644
+index b312ef3..4d30b0a 100644
 --- a/SPECS/dnsmasq.spec
 +++ b/SPECS/dnsmasq.spec
 @@ -55,6 +55,10 @@ Patch17:	dnsmasq-2.76-gita3303e196.patch
@@ -17,32 +18,50 @@ index b312ef3..7f370d1 100644
  
 +# WRS patches
 +Patch30:        dnsmasq-update-ipv6-leases-from-config.patch
-+
++Patch31:        close-tftp-sockets-immediately.patch
 +
  BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
  
  BuildRequires:  dbus-devel
-@@ -109,6 +113,9 @@ query/remove a DHCP server's leases.
+@@ -109,6 +113,10 @@ query/remove a DHCP server's leases.
  %patch18 -p1 -b .underflow
  %patch19 -p1 -b .misc
  
 +# WRS patches
 +%patch30 -p1
++%patch31 -p1
 +
  # use /var/lib/dnsmasq instead of /var/lib/misc
  for file in dnsmasq.conf.example man/dnsmasq.8 man/es/dnsmasq.8 src/config.h; do
      sed -i 's|/var/lib/misc/dnsmasq.leases|/var/lib/dnsmasq/dnsmasq.leases|g' "$file"
-@@ -181,8 +188,8 @@ rm -rf $RPM_BUILD_ROOT
+@@ -164,25 +172,11 @@ rm -rf %{buildroot}%{_initrddir}
+ %clean
+ rm -rf $RPM_BUILD_ROOT
+ 
+-%post
+-%systemd_post dnsmasq.service
+-
+-%preun
+-%systemd_preun dnsmasq.service
+-
+-%postun
+-%systemd_postun_with_restart dnsmasq.service
+-
+-%triggerun -- dnsmasq < 2.52-3
+-%{_bindir}/systemd-sysv-convert --save dnsmasq >/dev/null 2>&1 ||:
+-/sbin/chkconfig --del dnsmasq >/dev/null 2>&1 || :
+-/bin/systemctl try-restart dnsmasq.service >/dev/null 2>&1 || :
+-
  %files
  %defattr(-,root,root,-)
  %doc CHANGELOG COPYING COPYING-v3 FAQ doc.html setup.html dbus/DBus-interface
 -%config(noreplace) %attr(644,root,root) %{_sysconfdir}/dnsmasq.conf
 -%dir /etc/dnsmasq.d
 +%config(noreplace) %attr(640,root,root) %{_sysconfdir}/dnsmasq.conf
-+%dir %attr(750,root,root) /etc/dnsmasq.d
++%dir %attr(750,root,root) %{_sysconfdir}/dnsmasq.d
  %dir %{_var}/lib/dnsmasq
  %config(noreplace) %attr(644,root,root) %{_sysconfdir}/dbus-1/system.d/dnsmasq.conf
  %{_unitdir}/%{name}.service
 -- 
-2.7.4
+1.8.3.1
 
