@@ -224,6 +224,7 @@ sudo-config
 shadow-utils-config
 ntp-config
 syslog-ng-config
+rsync-config
 
 # net-snmp
 net-snmp-utils
@@ -305,9 +306,6 @@ python-psycopg2
 dnsmasq
 dnsmasq-utils
 dnsmasq-config
-
-# rsync
-rsync
 
 # parted
 parted

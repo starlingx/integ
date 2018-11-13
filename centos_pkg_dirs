@@ -109,6 +109,7 @@ config-files/audit-config
 config-files/shadow-utils-config
 config-files/ntp-config
 config-files/syslog-ng-config
+config-files/rsync-config
 tools/collector
 grub/grubby
 utilities/platform-util
@@ -140,7 +141,6 @@ database/python-psycopg2
 base/crontabs
 base/dnsmasq
 base/dnsmasq-config
-base/rsync
 filesystem/parted
 security/python-keyring
 grub/grub2
