@@ -9,7 +9,7 @@ account     sufficient    pam_localuser.so
 account     sufficient    pam_succeed_if.so uid < 1000 quiet
 account     required      pam_permit.so
 
-################# Titanium Cloud Password Rules #######################
+################# StarlingX Cloud Password Rules #######################
 # Enforce a password containing atleast 1 lower case, 1 upper case,   #
 # 1 digit and 1 special character. Such a password will have a        #
 # minimum length of 7 characters. A user may not re-use the last most #

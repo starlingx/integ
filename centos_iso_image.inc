@@ -211,9 +211,6 @@ lighttpd-mod_mysql_vhost
 logrotate
 logrotate-config
 
-# pam
-pam
-
 # novnc
 novnc
 
@@ -226,6 +223,7 @@ shadow-utils-config
 ntp-config
 syslog-ng-config
 rsync-config
+pam-config
 
 # net-snmp
 net-snmp-utils

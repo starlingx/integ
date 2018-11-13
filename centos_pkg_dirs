@@ -29,7 +29,6 @@ networking/lldpd
 logging/logrotate
 logging/logrotate-config
 utilities/nova-utils
-base/pam
 security/shim-unsigned
 security/shim-signed
 base/sudo
@@ -112,6 +111,7 @@ config-files/shadow-utils-config
 config-files/ntp-config
 config-files/syslog-ng-config
 config-files/rsync-config
+config-files/pam-config
 tools/collector
 grub/grubby
 utilities/platform-util
