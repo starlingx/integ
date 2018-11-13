@@ -93,9 +93,6 @@ do
        "mtcAgent")
            sm_managed_processes=(  ${sm_managed_processes[@]} "mtcAgent:0:mtc-agent")
            ;;
-       "hbsAgent")
-           sm_managed_processes=(  ${sm_managed_processes[@]} "hbsAgent:0:hbs-agent")
-           ;;
        "guestAgent")
            sm_managed_processes=(  ${sm_managed_processes[@]} "guestAgent:0:guest-agent")
            ;;
@@ -109,6 +106,9 @@ do
            ;;
        "guestServer")
            pmon_managed_processes=(${pmon_managed_processes[@]} "guestServer:0")
+           ;;
+       "hbsAgent")
+           pmon_managed_processes=(${pmon_managed_processes[@]} "hbsAgent:0")
            ;;
        "mtcClient")
            pmon_managed_processes=(${pmon_managed_processes[@]} "mtcClient:0")
