@@ -20,6 +20,7 @@ RUN set -ex ;\
         dmidecode \
         ebtables \
         iproute \
+        libcgroup-tools \
         libvirt \
         pm-utils \
         qemu \
