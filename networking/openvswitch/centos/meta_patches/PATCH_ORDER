@@ -1,9 +1,7 @@
 0001-update-package-versioning-for-TIS-format.patch
 0002-dpdk-usertools.patch
 0003-run-services-as-root-user.patch
-0004-add-pmon-conf-files.patch
-0005-log-rotation-config.patch
-0006-rpm-check-with-condition.patch
-0007-enable-mlx-pmds.patch
-0008-iommu-width-fix.patch
-0009-net-mlx5-fix-memory-region-cache-lookup.patch
+0004-rpm-check-with-condition.patch
+0005-enable-mlx-pmds.patch
+0006-iommu-width-fix.patch
+0007-net-mlx5-fix-memory-region-cache-lookup.patch
