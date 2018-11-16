@@ -36,6 +36,7 @@ virt/cloud-init
 base/watchdog
 base/net-snmp
 ldap/openldap
+ldap/openldap-config
 networking/mellanox/mlx4-config
 networking/openvswitch
 networking/openvswitch-config
