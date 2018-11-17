@@ -130,6 +130,7 @@ base/bash
 base/haproxy
 base/haproxy-config
 filesystem/iscsi-initiator-utils
+filesystem/iscsi-initiator-utils-config
 ldap/ldapscripts
 networking/net-tools
 filesystem/drbd/drbd-tools
