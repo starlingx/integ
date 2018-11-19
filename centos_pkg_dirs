@@ -31,7 +31,6 @@ utilities/nova-utils
 base/pam
 security/shim-unsigned
 security/shim-signed
-logging/syslog-ng
 base/sudo
 virt/cloud-init
 base/watchdog
@@ -108,6 +107,7 @@ config-files/memcached-custom
 config-files/audit-config
 config-files/shadow-utils-config
 config-files/ntp-config
+config-files/syslog-ng-config
 tools/collector
 grub/grubby
 utilities/platform-util
