@@ -11,36 +11,6 @@ diff --git a/SPECS/iscsi-initiator-utils.spec b/SPECS/iscsi-initiator-utils.spec
 index a7bd696..847f95c 100644
 --- a/SPECS/iscsi-initiator-utils.spec
 +++ b/SPECS/iscsi-initiator-utils.spec
-@@ -13,6 +13,9 @@ Source0: https://github.com/open-iscsi/open-iscsi/archive/%{open_iscsi_version}.
- Source4: 04-iscsi
- Source5: iscsi-tmpfiles.conf
- 
-+# WRS
-+Source6: iscsi-cache.volatiles
-+
- # upstream patches, post last tagged version
- Patch1: open-iscsi-2.0.874-1-iBFT-origin-is-an-enum-not-a-string.patch
- Patch2: open-iscsi-2.0.874-4-iscsid-treat-SIGTERM-like-iscsiadm-k-0.patch
-@@ -55,6 +58,9 @@ Patch198: keep-open-isns.patch
- # version string, needs to be updated with each build
- Patch199: 0199-use-Red-Hat-version-string-to-match-RPM-package-vers.patch
- 
-+# WRS
-+Patch200: increase-default-error-timeouts-for-iSCSI-initiator.patch
-+
- BuildRequires: flex bison python-devel doxygen kmod-devel systemd-devel libmount-devel autoconf automake libtool
- # For dir ownership
- Requires: %{name}-iscsiuio >= %{version}-%{release}
-@@ -168,6 +174,9 @@ touch $RPM_BUILD_ROOT/var/lock/iscsi/lock
- %{__install} -pm 755 libiscsi/build/lib.linux-*/libiscsimodule.so \
- 	$RPM_BUILD_ROOT%{python_sitearch}
- 
-+# WRS
-+%{__install} -D -p -m 0644 %{SOURCE6} $RPM_BUILD_ROOT%{_tmpfilesdir}/iscsi-cache.conf
-+
- 
- %post
- /sbin/ldconfig
 @@ -232,13 +241,13 @@ fi
  
  %files
@@ -73,16 +43,6 @@ index a7bd696..847f95c 100644
  %{_sbindir}/iscsi-iname
  %{_sbindir}/iscsiadm
  %{_sbindir}/iscsid
-@@ -261,6 +270,9 @@ fi
- %{_mandir}/man8/iscsid.8.gz
- %{_mandir}/man8/iscsistart.8.gz
- 
-+# WRS
-+%{_tmpfilesdir}/iscsi-cache.conf
-+
- %files iscsiuio
- %{_sbindir}/iscsiuio
- %{_unitdir}/iscsiuio.service
 -- 
 2.7.4
 
