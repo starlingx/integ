@@ -296,9 +296,7 @@ iscsi-initiator-utils
 iscsi-initiator-utils-iscsiuio
 
 # iptables
-iptables
-iptables-services
-iptables-utils
+iptables-config
 
 # python-psycopg2
 python-psycopg2

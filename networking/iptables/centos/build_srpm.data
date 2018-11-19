@@ -1,2 +1,0 @@
-COPY_LIST="iptables/*"
-TIS_PATCH_VER=3
