@@ -202,6 +202,7 @@ python2-libvirt
 
 # lighttpd
 lighttpd
+lighttpd-config
 lighttpd-fastcgi
 lighttpd-mod_geoip
 lighttpd-mod_mysql_vhost
