@@ -233,6 +233,7 @@ net-snmp-python
 
 # openldap
 openldap
+openldap-config
 openldap-servers
 openldap-clients
 

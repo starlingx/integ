@@ -1,6 +1,3 @@
 openldap-spec-file.patch
-openldap-service-file.patch
-openldap-sysconfig-file.patch
 openldap-enable-password-policy.patch
-openldap-remove-ldap-conf-cgcs-file.patch
-0001-Update-package-versioning-for-TIS-format.patch
+Update-package-versioning-for-TIS-format.patch

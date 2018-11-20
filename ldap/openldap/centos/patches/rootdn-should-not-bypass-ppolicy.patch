@@ -17,15 +17,15 @@ index b446deb..fa79872 100644
  	}
 -
 -	if (be_isroot( op )) goto do_modify;
-+    
++
 +	/* WRS UPDATE: Run ppolicy for all user password modify ops */
 +	//if (be_isroot( op )) goto do_modify;
- 
+
  	/* NOTE: according to draft-behera-ldap-password-policy
  	 * pwdAllowUserChange == FALSE must only prevent pwd changes
 @@ -2009,7 +2010,13 @@ ppolicy_modify( Operation *op, SlapReply *rs )
  	}
- 
+
  	bv = newpw.bv_val ? &newpw : &addmod->sml_values[0];
 -	if (pp.pwdCheckQuality > 0) {
 +
@@ -35,9 +35,9 @@ index b446deb..fa79872 100644
 +	 * creation
 +	 */
 +	if (pp.pwdCheckQuality > 0 && !(be_isroot( op ) && !pa)) {
- 
+
  		rc = check_password_quality( bv, &pp, &pErr, e, (char **)&txt );
  		if (rc != LDAP_SUCCESS) {
--- 
+--
 1.9.1
 

@@ -1,0 +1,23 @@
+[Unit]
+Description=OpenLDAP Server Daemon
+Before=rsyncd.service
+After=network.target syslog-ng.target
+Documentation=man:slapd
+Documentation=man:slapd-config
+Documentation=man:slapd-hdb
+Documentation=man:slapd-mdb
+Documentation=file:///usr/share/doc/openldap-servers/guide.html
+
+[Service]
+Type=forking
+PIDFile=/var/run/slapd.pid
+Environment="SLAPD_URLS=ldap:/// ldapi:///" "SLAPD_OPTIONS="
+EnvironmentFile=/etc/sysconfig/slapd
+ExecStartPre=/usr/libexec/openldap/check-config.sh
+ExecStart=/etc/init.d/openldap start
+ExecStop=/etc/init.d/openldap stop
+ExecReload=/etc/init.d/openldap restart
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
