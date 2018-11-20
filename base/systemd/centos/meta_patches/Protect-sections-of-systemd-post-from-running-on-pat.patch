@@ -15,7 +15,7 @@ index 6e1d7e1..6a04c16 100644
 @@ -1159,6 +1159,7 @@ fi
  rm -f /etc/sysconfig/i18n >/dev/null 2>&1 || :
  rm -f /etc/sysconfig/keyboard >/dev/null 2>&1 || :
- 
+
 +if [ $1 -eq 1 ]; then
  # Migrate HOSTNAME= from /etc/sysconfig/network
  if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
@@ -25,13 +25,13 @@ index 6e1d7e1..6a04c16 100644
  fi
  sed -i '/^HOSTNAME=/d' /etc/sysconfig/network >/dev/null 2>&1 || :
 +fi
- 
+
  # Migrate the old systemd-setup-keyboard X11 configuration fragment
  if [ ! -e /etc/X11/xorg.conf.d/00-keyboard.conf ] ; then
 @@ -1174,6 +1176,7 @@ else
      rm -f /etc/X11/xorg.conf.d/00-system-setup-keyboard.conf >/dev/null 2>&1 || :
  fi
- 
+
 +if [ 1 -eq 0 ] ; then # TIS: Skip this. We don't want myhostname in nsswitch.conf
  # sed-fu to add myhostname to the hosts line of /etc/nsswitch.conf
  # Only do that when installing, not when updating.
@@ -41,9 +41,9 @@ index 6e1d7e1..6a04c16 100644
  ' /etc/nsswitch.conf >/dev/null 2>&1 || :
  fi
 +fi
- 
+
  %posttrans
  # Convert old /etc/sysconfig/desktop settings
--- 
+--
 2.7.4
 
