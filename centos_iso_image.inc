@@ -187,6 +187,7 @@ dhcp-config
 openssh
 openssh-clients
 openssh-server
+openssh-config
 
 # facter
 facter

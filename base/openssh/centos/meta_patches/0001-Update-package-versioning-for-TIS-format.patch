@@ -1,14 +1,15 @@
 From 4da56227f47a96f37eb0e46e0222f7e1d2f95c2b Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:32:16 -0400
-Subject: [3/6] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: 0001-Update-package-versioning-for-TIS-format.patch
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
  SPECS/openssh.spec | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
-index d10e73e..be83a63 100644
+index 5c030bc..0a91b56 100644
 --- a/SPECS/openssh.spec
 +++ b/SPECS/openssh.spec
 @@ -71,7 +71,7 @@
@@ -30,5 +31,5 @@ index d10e73e..be83a63 100644
  
  %description
 -- 
-2.7.4
+1.8.3.1
 

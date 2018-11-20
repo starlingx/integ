@@ -1,6 +1,3 @@
-sshd-pam-use-common-includes.patch
-openssh-service-file.patch
-openssh-spec-file-add-init.patch
 0001-Update-package-versioning-for-TIS-format.patch
+spec-include-TiS-changes.patch
 openssh-init-script-kill-old-instances-on-start.patch
-spec-harden-server-and-client-config.patch

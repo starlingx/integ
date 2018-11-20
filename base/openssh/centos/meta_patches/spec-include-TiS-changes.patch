@@ -1,0 +1,54 @@
+From 788beea32cfa09f61c27db117ec3b3b0500fbad8 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 15:32:16 -0400
+Subject: spec-include-TiS-changes.patch
+
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+---
+ SPECS/openssh.spec | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
+index 0a91b56..bbae9d7 100644
+--- a/SPECS/openssh.spec
++++ b/SPECS/openssh.spec
+@@ -250,6 +250,8 @@ Patch958: openssh-7.4p1-winscp-compat.patch
+ Patch959: openssh-7.4p1-authorized_keys_command.patch
+ # Fix for CVE-2017-15906 (#1517226)
+ Patch960: openssh-7.5p1-sftp-empty-files.patch
++# WRS: harden server and client config
++Patch1000: harden-server-and-client-config.patch
+ 
+ License: BSD
+ Group: Applications/Internet
+@@ -510,6 +512,8 @@ popd
+ %patch700 -p1 -b .fips
+ 
+ %patch100 -p1 -b .coverity
++# WRS
++%patch1000 -p1 -b .harden
+ 
+ %if 0
+ # Nothing here yet
+@@ -719,9 +723,6 @@ getent passwd sshd >/dev/null || \
+ %preun server
+ %systemd_preun sshd.service sshd.socket
+ 
+-%postun server
+-%systemd_postun_with_restart sshd.service
+-
+ %files
+ %defattr(-,root,root)
+ %{!?_licensedir:%global license %%doc}
+@@ -784,8 +785,6 @@ getent passwd sshd >/dev/null || \
+ %attr(0644,root,root) %{_unitdir}/sshd.socket
+ %attr(0644,root,root) %{_unitdir}/sshd-keygen.service
+ 
+-%files server-sysvinit
+-%defattr(-,root,root)
+ %attr(0755,root,root) /etc/rc.d/init.d/sshd
+ %endif
+ 
+-- 
+1.8.3.1
+

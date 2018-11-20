@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenSSH server daemon
+Documentation=man:sshd(8) man:sshd_config(5)
+After=network.target sshd-keygen.service
+Wants=sshd-keygen.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/sshd
+ExecStart=/etc/init.d/sshd start
+ExecStop=/etc/init.d/sshd stop
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/var/run/sshd.pid
+KillMode=none
+#Restart=on-failure
+#RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
