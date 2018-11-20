@@ -1,7 +1,6 @@
 tools/vm-topology
 base/initscripts
 base/initscripts-config
-base/util-linux
 base/setup
 utilities/namespace-utils
 ldap/nss-pam-ldapd
@@ -113,6 +112,7 @@ config-files/ntp-config
 config-files/syslog-ng-config
 config-files/rsync-config
 config-files/pam-config
+config-files/util-linux-config
 tools/collector
 grub/grubby
 utilities/platform-util
