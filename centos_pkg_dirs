@@ -1,5 +1,6 @@
 tools/vm-topology
 base/initscripts
+base/initscripts-config
 base/util-linux
 base/setup
 utilities/namespace-utils

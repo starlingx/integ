@@ -3,15 +3,16 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:49:27 -0400
 Subject: [PATCH] WRS: fix-build-failures-due-to-unwanted-sgid.patch
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
  SPECS/initscripts.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
-index 938e9bb..e60c826 100644
+index 967317f..ad32f19 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -239,7 +239,7 @@ rm -rf $RPM_BUILD_ROOT
+@@ -227,7 +227,7 @@ rm -rf $RPM_BUILD_ROOT
  %ghost %attr(0664,root,utmp) /var/run/utmp
  %ghost %attr(0644,root,root) /etc/sysconfig/kvm
  %ghost %verify(not md5 size mtime) %config(noreplace,missingok) /etc/crypttab
@@ -21,5 +22,5 @@ index 938e9bb..e60c826 100644
  %dir /usr/libexec/initscripts
  %dir /usr/libexec/initscripts/legacy-actions
 -- 
-2.7.4
+1.8.3.1
 

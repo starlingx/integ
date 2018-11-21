@@ -3,59 +3,55 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 14:49:27 -0400
 Subject: [PATCH] WRS: spec-include-TiS-changes.patch
 
-Conflicts:
-	SPECS/initscripts.spec
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
- SPECS/initscripts.spec | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ SPECS/initscripts.spec | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
 diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
-index e96290a..665b576 100644
+index e96290a..d3c2ce6 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -7,6 +7,10 @@ Group: System Environment/Base
- Release: 1%{?dist}
- URL: https://github.com/fedora-sysv/initscripts
- Source: https://github.com/fedora-sysv/initscripts/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
-+
-+# WRS
-+Source1: sysctl.conf
-+
- BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
- Obsoletes: initscripts-legacy <= 9.39
- Requires: /bin/awk, sed, coreutils
-@@ -36,6 +40,10 @@ Requires(preun): /sbin/chkconfig
+@@ -36,6 +36,19 @@ Requires(preun): /sbin/chkconfig
  BuildRequires: glib2-devel popt-devel gettext pkgconfig systemd
  Provides: /sbin/service
  
-+Patch4: support-interface-scriptlets.patch
-+Patch5: relocate-dhclient-leases-to-var-run.patch
-+Patch6: dhclient-restrict-interfaces-to-those-on-c.patch
++Patch1: support-interface-scriptlets.patch
++Patch2: relocate-dhclient-leases-to-var-run.patch
++Patch3: dhclient-restrict-interfaces-to-those-on-c.patch
++Patch4: support-interface-promisc.patch
++Patch5: 0001-dhclient-remove-1-arg.patch
++Patch6: 0001-force-delay-check-link-down.patch
++Patch7: run-ifdown-on-all-interfaces.patch
++Patch8: sysconfig-affirmative-check-for-link-carrier.patch
++Patch9: sysconfig-unsafe-usage-of-linkdelay-variable.patch
++Patch10: ipv6-static-route-support.patch
++Patch11: ifup-eth-stop-waiting-if-link-is-up.patch
++Patch12: run-dhclient-as-daemon-for-ipv6.patch
 +
  %description
  The initscripts package contains basic system scripts used
  during a boot of the system. It also contains scripts which
-@@ -55,6 +63,10 @@ Currently, this consists of various memory checking code.
+@@ -55,6 +68,19 @@ Currently, this consists of various memory checking code.
  %prep
  %setup -q
  
++%patch1 -p1
++%patch2 -p1
++%patch3 -p1
 +%patch4 -p1
 +%patch5 -p1
 +%patch6 -p1
-+
++%patch7 -p1
++%patch8 -p1
++%patch9 -p1
++%patch10 -p1
++%patch11 -p1
++%patch12 -p1
++ 
  %build
  make
  
-@@ -75,6 +87,9 @@ rm -f \
- touch $RPM_BUILD_ROOT/etc/crypttab
- chmod 600 $RPM_BUILD_ROOT/etc/crypttab
- 
-+# WRS: Overwrite with our config
-+install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/etc/sysctl.conf
-+
- %pre
- /usr/sbin/groupadd -g 22 -r -f utmp
- 
 -- 
-2.7.4
+1.8.3.1
 
