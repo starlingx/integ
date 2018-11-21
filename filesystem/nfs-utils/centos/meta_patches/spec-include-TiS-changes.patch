@@ -4,39 +4,14 @@ Date: Mon, 15 Oct 2018 22:50:46 +0800
 Subject: [PATCH] WRS: spec-include-TiS-changes.patch
 
 ---
- SPECS/nfs-utils.spec | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ SPECS/nfs-utils.spec | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/SPECS/nfs-utils.spec b/SPECS/nfs-utils.spec
 index 6dfddc0..0a5e9fb 100644
 --- a/SPECS/nfs-utils.spec
 +++ b/SPECS/nfs-utils.spec
-@@ -145,6 +145,11 @@ Patch1001: nfs-utils-1.2.1-exp-subtree-warn-off.patch
- Patch1002: nfs-utils-1.2.3-sm-notify-res_init.patch
- Patch1003: nfs-utils-1.2.5-idmap-errmsg.patch
- 
-+# Titanium Cloud Patches
-+Patch2000: nfs-utils-support-mountprog-and-nfsprog-options.patch
-+Patch2001: nfs-utils-do-not-pass-CFLAGS-to-native.patch
-+
-+
- Group: System Environment/Daemons
- Provides: exportfs    = %{epoch}:%{version}-%{release}
- Provides: nfsstat     = %{epoch}:%{version}-%{release}
-@@ -418,6 +423,12 @@ This package also contains the mount.nfs and umount.nfs program.
- %patch1002 -p1
- %patch1003 -p1
- 
-+%patch2000 -p1
-+# Titanium Cloud support mountprog and nfsprog options
-+%patch2001 -p1
-+# Titanium Cloud do not pass CFLAGS to native
-+
-+
- # Remove .orig files
- find . -name "*.orig" | xargs rm -f
- 
-@@ -569,6 +580,9 @@ if [ $1 -eq 0 ]; then
+@@ -569,6 +569,9 @@ if [ $1 -eq 0 ]; then
  	%systemd_preun nfs-client.target
  	%systemd_preun nfs-server.server
  

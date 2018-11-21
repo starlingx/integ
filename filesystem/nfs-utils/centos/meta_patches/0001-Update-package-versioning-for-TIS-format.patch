@@ -20,7 +20,7 @@ index d10c87c..b866788 100644
  Epoch: 1
  
  # group all 32bit related archs
-@@ -160,6 +160,7 @@ Provides: rpc.mountd  = %{epoch}:%{version}-%{release}
+@@ -155,6 +155,7 @@ Provides: rpc.mountd  = %{epoch}:%{version}-%{release}
  Provides: rpc.nfsd    = %{epoch}:%{version}-%{release}
  Provides: rpc.statd   = %{epoch}:%{version}-%{release}
  Provides: rpc.gssd    = %{epoch}:%{version}-%{release}
