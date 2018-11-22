@@ -1,24 +1,25 @@
-From 4fadd91b4153c4e7a462585e78139ee530b6b292 Mon Sep 17 00:00:00 2001
-From: Scott Little <scott.little@windriver.com>
-Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: [PATCH 1/7] WRS: 0007-Add-patch-for-journald-config.patch
+From 6aead74fb56ae75cc16be507165d3fc75c38fac0 Mon Sep 17 00:00:00 2001
+From: slin14 <shuicheng.lin@intel.com>
+Date: Thu, 9 Aug 2018 18:40:36 +0800
+Subject: [PATCH] Add 0702-fix-build-error-for-unused-variable.patch
 
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
 ---
  SPECS/systemd.spec | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 845d1dd..6c277f9 100644
+index ffd0770..3f7cc10 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
 @@ -655,6 +655,7 @@ Patch0613: 0613-sd-journal-when-picking-up-a-new-file-compare-inode-.patch
- 
+
  #WRS Patches
  Patch0701: 0701-inject-millisec-in-syslog-date.patch
-+Patch0703: 0703-Configure-journald-to-forward-to-syslog.patch
- 
++Patch0702: 0702-fix-build-error-for-unused-variable.patch
+
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
- 
--- 
+
+--
 2.7.4
 

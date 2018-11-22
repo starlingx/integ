@@ -1,12 +1,4 @@
-0001-update-package-versioning-for-TIS-format.patch
-0003-spec-expand-_udevrulesdir-macro.patch
-0004-Protect-sections-of-systemd-post-from-running-on-pat.patch
-0005-spec-millisec-in-syslog-date.patch
-0007-Add-patch-for-journald-config.patch
-0008-Add-patch-for-journald-config-rate-limit.patch
-0009-Add-patch-to-remove-ID_SAS_PATH-rule.patch
-0010-fix-ACL-warnings-from-systemd-tmpfiles-set.patch
-0011-Add-patch-for-moving-vartmp-to-tmpfs.patch
-0012-Add-patch-for-restricting-tmpfs-size.patch
-0013-fix-systemd-tmpfiles-ACL-warnings.patch
-0014-fix-build-error-for-unused-variable.patch
+update-package-versioning-for-TIS-format.patch
+Protect-sections-of-systemd-post-from-running-on-pat.patch
+spec-millisec-in-syslog-date.patch
+fix-build-error-for-unused-variable.patch

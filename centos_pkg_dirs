@@ -84,6 +84,7 @@ utilities/tis-extensions
 python/python-eventlet
 python/python-requests
 base/systemd
+base/systemd-config
 python/python-gunicorn
 config/puppet-modules/openstack/puppet-oslo-11.3.0
 storage-drivers/python-3parclient
