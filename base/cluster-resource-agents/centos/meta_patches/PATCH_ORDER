@@ -1,6 +1,5 @@
 spec-include-TiS-patches.patch
 spec-avoid-dir-collisions.patch
-spec-add-create-var-run-resource-agents.patch
 spec-notify-rmon-of-shutdown-before-shutting-down.patch
 Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
 spec-include-tis-logtag-patch.patch

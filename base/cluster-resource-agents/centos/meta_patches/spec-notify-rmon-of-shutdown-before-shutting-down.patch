@@ -12,18 +12,18 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index 0725e97..3d8ece2 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -273,6 +273,7 @@ Patch1110: lvm_vg_activation.patch
+@@ -272,6 +272,7 @@ Patch1109:  umount-in-namespace.patch
+ Patch1110: lvm_vg_activation.patch
  Patch1111: pgsql.patch
  
- Patch1113: create-var-run-resource-agents.patch
 +Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -603,6 +604,7 @@ exit 1
+@@ -601,6 +602,7 @@ exit 1
+ %patch1110 -p1
  %patch1111 -p1
  
- %patch1113 -p1
 +%patch1114 -p1
  
  %build

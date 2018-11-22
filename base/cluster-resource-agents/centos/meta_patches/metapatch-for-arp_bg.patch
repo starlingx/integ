@@ -11,7 +11,7 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index c70d20b..520d9c3 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -282,6 +282,7 @@ Patch1116: ocf-shellfuncs_change_logtag.patch
+@@ -281,6 +281,7 @@ Patch1116: ocf-shellfuncs_change_logtag.patch
  Patch1117: lvm_cleanup_refs_on_stop.patch
  Patch1118: ipaddr2_if_down.patch
  Patch1119: ipaddr2_ignore_lo_if_state.patch
@@ -19,7 +19,7 @@ index c70d20b..520d9c3 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -618,6 +619,7 @@ exit 1
+@@ -616,6 +617,7 @@ exit 1
  %patch1117 -p1
  %patch1118 -p1
  %patch1119 -p1

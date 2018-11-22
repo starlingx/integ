@@ -11,7 +11,7 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index bbf2754..0a25ab0 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -278,6 +278,7 @@ Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
+@@ -277,6 +277,7 @@ Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
  Patch1116: ocf-shellfuncs_change_logtag.patch
  Patch1117: lvm_cleanup_refs_on_stop.patch
  Patch1118: ipaddr2_if_down.patch
@@ -19,7 +19,7 @@ index bbf2754..0a25ab0 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -613,6 +614,7 @@ exit 1
+@@ -611,6 +612,7 @@ exit 1
  %patch1116 -p1
  %patch1117 -p1
  %patch1118 -p1
