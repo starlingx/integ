@@ -11,17 +11,17 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index 3d8ece2..9fa7f86 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -274,6 +274,7 @@ Patch1111: pgsql.patch
+@@ -273,6 +273,7 @@ Patch1110: lvm_vg_activation.patch
+ Patch1111: pgsql.patch
  
- Patch1113: create-var-run-resource-agents.patch
  Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
 +Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -605,6 +606,7 @@ exit 1
+@@ -603,6 +604,7 @@ exit 1
+ %patch1111 -p1
  
- %patch1113 -p1
  %patch1114 -p1
 +%patch1115 -p1
  

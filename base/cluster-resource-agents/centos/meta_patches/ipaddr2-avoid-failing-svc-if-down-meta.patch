@@ -11,7 +11,7 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index 520d9c3..959f4db 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -283,6 +283,7 @@ Patch1117: lvm_cleanup_refs_on_stop.patch
+@@ -282,6 +282,7 @@ Patch1117: lvm_cleanup_refs_on_stop.patch
  Patch1118: ipaddr2_if_down.patch
  Patch1119: ipaddr2_ignore_lo_if_state.patch
  Patch1120: Re-enable-background-execution-of-arp-commands.patch
@@ -19,7 +19,7 @@ index 520d9c3..959f4db 100644
  
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
-@@ -620,6 +621,7 @@ exit 1
+@@ -618,6 +619,7 @@ exit 1
  %patch1118 -p1
  %patch1119 -p1
  %patch1120 -p1
