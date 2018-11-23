@@ -10,6 +10,7 @@ filesystem/nfs-utils-config
 base/dhcp
 base/dhcp-config
 base/openssh
+base/openssh-config
 config/facter
 virt/qemu
 filesystem/nfscheck
