@@ -1,2 +1,0 @@
-COPY_LIST="files/pam.d/su"
-TIS_PATCH_VER=4
