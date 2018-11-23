@@ -10,3 +10,4 @@ spec-add-ipaddr2-ignore-lo-state.patch
 Disable-creation-of-the-debug-package.patch
 metapatch-for-arp_bg.patch
 ipaddr2-avoid-failing-svc-if-down-meta.patch
+spec-ipaddr2-use-host-scope-for-addresses-on-loopbac.patch
