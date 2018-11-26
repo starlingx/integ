@@ -1,2 +1,0 @@
-COPY_LIST="files/*"
-TIS_PATCH_VER=4

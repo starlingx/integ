@@ -3,7 +3,6 @@ base/initscripts
 base/initscripts-config
 base/setup
 utilities/namespace-utils
-ldap/nss-pam-ldapd
 base/centos-release-config
 filesystem/nfs-utils
 filesystem/nfs-utils-config
