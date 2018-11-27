@@ -5,8 +5,8 @@ Subject: [PATCH] WRS: spec-include-TiS-patches.patch
 
 Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
- SPECS/resource-agents.spec | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ SPECS/resource-agents.spec | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index a16660a..ec85fc2 100644
@@ -38,7 +38,7 @@ index a16660a..ec85fc2 100644
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
  
-@@ -582,6 +601,25 @@ exit 1
+@@ -582,6 +601,26 @@ exit 1
  %patch203 -p1
  %patch204 -p1
  
