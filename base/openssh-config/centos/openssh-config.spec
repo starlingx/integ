@@ -33,7 +33,6 @@ if [ $1 -eq 1 ] ; then
         # Initial installation
         cp -f %{_datadir}/starlingx/sshd.pam  %{_pamconfdir}/sshd
 fi
-%{_bindir}/systemctl disable sshd.service  > /dev/null 2>&1 || :
 
 %files
 %{_datadir}/starlingx/sshd.pam
