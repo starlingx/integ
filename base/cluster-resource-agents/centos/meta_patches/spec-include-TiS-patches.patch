@@ -3,15 +3,16 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:58 -0400
 Subject: [PATCH] WRS: spec-include-TiS-patches.patch
 
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
- SPECS/resource-agents.spec | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ SPECS/resource-agents.spec | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
-index a16660a..6c1ec89 100644
+index a16660a..ec85fc2 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -263,6 +263,16 @@ Patch202:	bz1536548-sap_redhat_cluster_connector-fix-unknown-gvi-function.patch
+@@ -263,6 +263,25 @@ Patch202:	bz1536548-sap_redhat_cluster_connector-fix-unknown-gvi-function.patch
  Patch203:	bz1543366-redis-add-support-for-tunneling-replication-traffic.patch
  Patch204:	bz1546083-galera-fix-temp-logfile-rights.patch
  
@@ -25,10 +26,19 @@ index a16660a..6c1ec89 100644
 +Patch1111: pgsql.patch
 +
 +
++Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
++Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
++Patch1116: ocf-shellfuncs_change_logtag.patch
++Patch1117: lvm_cleanup_refs_on_stop.patch
++Patch1118: ipaddr2_if_down.patch
++Patch1119: ipaddr2_ignore_lo_if_state.patch
++Patch1120: Re-enable-background-execution-of-arp-commands.patch
++Patch1121: ipaddr2-avoid-failing-svc-if-down.patch
++Patch1122: ipaddr2-use-host-scope-for-addresses-on-loopback.patch
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
  
-@@ -582,6 +592,16 @@ exit 1
+@@ -582,6 +601,25 @@ exit 1
  %patch203 -p1
  %patch204 -p1
  
@@ -42,9 +52,19 @@ index a16660a..6c1ec89 100644
 +%patch1111 -p1
 +
 +
++%patch1114 -p1
++%patch1115 -p1
++%patch1116 -p1
++%patch1117 -p1
++%patch1118 -p1
++%patch1119 -p1
++%patch1120 -p1
++%patch1121 -p1
++%patch1122 -p1
++
  %build
  if [ ! -f configure ]; then
  	./autogen.sh
 -- 
-2.7.4
+1.8.3.1
 
