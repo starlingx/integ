@@ -2,21 +2,19 @@ diff --git a/SPECS/libevent.spec b/SPECS/libevent.spec
 index fd59ca3..9c6cc3e 100644
 --- a/SPECS/libevent.spec
 +++ b/SPECS/libevent.spec
-@@ -13,6 +13,8 @@ BuildRequires: doxygen openssl-devel
+@@ -13,6 +13,7 @@ BuildRequires: doxygen openssl-devel
  Patch00: libevent-2.0.10-stable-configure.patch
  # Disable network tests
  Patch01: libevent-nonettests.patch
 +Patch02: libevent-ipv6-client-socket.patch
-+Patch03: libevent-disable-tests.patch
  
  %description
  The libevent API provides a mechanism to execute a callback function
-@@ -49,6 +51,8 @@ need to install %{name}-doc.
+@@ -49,6 +50,7 @@ need to install %{name}-doc.
  # 477685 -  libevent-devel multilib conflict
  %patch00 -p1
  %patch01 -p1 -b .nonettests
 +%patch02 -p1
-+%patch03 -p1
  
  %build
  %configure \
