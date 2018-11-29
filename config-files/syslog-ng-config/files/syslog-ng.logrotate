@@ -33,6 +33,7 @@
 /var/log/snmp-api.log
 /var/log/dcmanager/*.log
 /var/log/dcorch/*.log
+/var/log/barbican/*.log
 {
         nodateext
         size 10M

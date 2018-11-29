@@ -95,7 +95,7 @@ function parse_controller_specific {
     LOG "Parsing postgres data for ${NODE}"
     if [ -z "${DATABASE_LIST}" ]; then
         WARNLOG "DATABASE_LIST is not set in the lab.conf file. Use default setting"
-        DATABASE_LIST="cinder glance keystone nova neutron ceilometer heat sysinv aodh postgres nova_api"
+        DATABASE_LIST="cinder glance keystone nova neutron ceilometer heat sysinv aodh barbican postgres nova_api"
     fi
 
     for DB in ${DATABASE_LIST}; do
