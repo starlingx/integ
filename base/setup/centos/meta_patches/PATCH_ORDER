@@ -1,15 +1,2 @@
-spec-include-TiS-changes.patch
-spec-include-tis-uid-gid.patch
-spec-set-custom-prompt.patch
-updating-gids-and-uids-to-support-upgrade-from-wrl.patch
-spec-passwd-remove-unused-default-users-and-groups.patch
-spec-include-snmpd-fm-user-group.patch
-security-make-exports-and-fstab-only-root-accessible.patch
-spec-remove-unused-default-groups.patch
 0001-Update-package-versioning-for-TIS-format.patch
-spec-add-TMOUT-variable.patch
-spec-include-add-fm-user-to-snmpd-group.patch
-spec-add-magnum-uid-gid.patch
-spec-add-ironic-uid-gid.patch
-spec-add-murano-uid-gid.patch
-spec-add-uid-gid-for-telemetry-services.patch
+0001-WRS-change-passwd-group-uidgid.patch
