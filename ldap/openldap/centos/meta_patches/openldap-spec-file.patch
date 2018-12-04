@@ -4,27 +4,14 @@ Date: Mon, 2 Oct 2017 17:11:21 -0400
 Subject: [PATCH] WRS: openldap-spec-file.patch
 
 ---
- SPECS/openldap.spec | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ SPECS/openldap.spec | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/SPECS/openldap.spec b/SPECS/openldap.spec
 index 85abac9..66a1377 100644
 --- a/SPECS/openldap.spec
 +++ b/SPECS/openldap.spec
-@@ -245,9 +245,11 @@ pushd openldap-%{version}
- 	--enable-backends=mod \
- 	--enable-bdb=yes \
- 	--enable-hdb=yes \
--	--enable-mdb=yes \
-+	--enable-mdb=mod \
- 	--enable-monitor=yes \
- 	--disable-ndb \
-+    --enable-syncprov=mod \
-+    --enable-ppolicy=mod \
- 	\
- 	--enable-overlays=mod \
- 	\
-@@ -296,7 +298,7 @@ mv check_password.so check_password.so.%{check_password_version}
+@@ -296,7 +296,7 @@ mv check_password.so check_password.so.%{check_password_version}
  ln -s check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/check_password.so
  install -m 755 check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/
  # install -m 644 README %{buildroot}%{_libdir}/openldap
@@ -33,7 +20,7 @@ index 85abac9..66a1377 100644
  cat > %{buildroot}%{_sysconfdir}/openldap/check_password.conf <<EOF
  # OpenLDAP pwdChecker library configuration
  
-@@ -432,6 +434,7 @@ exit 0
+@@ -432,6 +432,7 @@ exit 0
  %post servers
  
  /sbin/ldconfig -n %{_libdir}/openldap
@@ -41,7 +28,7 @@ index 85abac9..66a1377 100644
  
  %systemd_post slapd.service
  
-@@ -442,7 +445,6 @@ exit 0
+@@ -442,7 +443,6 @@ exit 0
  if [ ! -f %{_sysconfdir}/openldap/slapd.d/cn=config.ldif ]; then
  	if [ -f %{_sysconfdir}/openldap/slapd.conf ]; then
  		%{_libexecdir}/openldap/convert-config.sh &>/dev/null
@@ -49,7 +36,7 @@ index 85abac9..66a1377 100644
  	else
  		%{_libexecdir}/openldap/convert-config.sh -f %{_datadir}/openldap-servers/slapd.ldif &>/dev/null
  	fi
-@@ -641,8 +643,9 @@ exit 0
+@@ -641,8 +641,8 @@ exit 0
  %{_mandir}/man5/slapd*.5*
  %{_mandir}/man5/slapo-*.5*
  # obsolete configuration
@@ -57,7 +44,6 @@ index 85abac9..66a1377 100644
 -%ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/openldap/slapd.conf.bak
 +# %ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/openldap/slapd.conf
 +# %ghost %config(noreplace,missingok) %attr(0640,ldap,ldap) %{_sysconfdir}/openldap/slapd.conf.bak
-+%{_libdir}/openldap/back_mdb*
  
  %files servers-sql
  %doc openldap-%{version}/servers/slapd/back-sql/docs/*
