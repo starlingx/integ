@@ -82,7 +82,7 @@ Obsoletes: %1 < %{obsoletes_version}
 
 Summary: QEMU is a FAST! processor emulator
 Name:    %{pkgname}%{?pkgsuffix}
-Version: 2.10.0
+Version: 3.0.0
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
@@ -158,6 +158,7 @@ Source25: kvm-unit-tests.git-4ea7633.tar.bz2
 Source26: vhost.conf
 Source27: kvm.conf
 Source28: 95-kvm-memlock.conf
+Source29: keycodemapdb-16e5b07.tar.gz
 
 #WRS
 Source127: qemu_clean
@@ -422,6 +423,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
+tar xzf %{SOURCE29} -C ui
+
 cp %{SOURCE24} build_configure.sh
 
 ./build_configure.sh  \
@@ -593,6 +596,9 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-netboot.img
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot.e500
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/canyonlands.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/hppa-firmware.img
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot-sam460-20100605.bin
 
 %ifnarch %{power64}
    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
@@ -794,7 +800,7 @@ exit 0
 %files
 %defattr(-,root,root)
 %ifarch x86_64
-    %{_datadir}/%{pkgname}/acpi-dsdt.aml
+#   %{_datadir}/%{pkgname}/acpi-dsdt.aml
     %{_datadir}/%{pkgname}/bios.bin
     %{_datadir}/%{pkgname}/bios-256k.bin
     %{_datadir}/%{pkgname}/linuxboot.bin
@@ -856,7 +862,9 @@ exit 0
 %{_bindir}/qemu-img
 %{_bindir}/qemu-io
 %{_bindir}/qemu-nbd
+%{_bindir}/qemu-pr-helper
 %{_mandir}/man1/qemu-img.1*
+%{_mandir}/man7/qemu-block-drivers.7*
 %{_mandir}/man8/qemu-nbd.8*
 # WRS: virtfs
 %{_mandir}/man1/virtfs-proxy-helper.1*

@@ -60,7 +60,6 @@ fi
     --with-pkgversion=${nvr} \
     --with-confsuffix=/${pkgname} \
     --with-coroutine=ucontext \
-    --with-system-pixman \
     --disable-bluez \
     --disable-brlapi \
     --enable-cap-ng \
