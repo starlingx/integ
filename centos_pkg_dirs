@@ -5,7 +5,6 @@ base/setup-config
 base/setup
 utilities/namespace-utils
 base/centos-release-config
-filesystem/nfs-utils
 filesystem/nfs-utils-config
 base/dhcp
 base/dhcp-config

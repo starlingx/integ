@@ -176,8 +176,7 @@ nss-pam-ldapd
 # centos-release-config
 centos-release-config
 
-# nfs-utils
-nfs-utils
+# nfs-utils series package
 nfs-utils-config
 
 # dhcp
