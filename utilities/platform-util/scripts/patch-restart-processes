@@ -218,6 +218,16 @@ do
       "aodh-notifier")
          process_list=(${process_list[@]} "sm:aodh-notifier:aodh-notifier:controller:/var/run/resource-agents/aodh-notifier.pid:0")
          ;;
+      # Barbican processes
+      "barbican-api")
+         process_list=(${process_list[@]} "sm:barbican-api:barbican-api:controller:/var/run/barbican/pid:0")
+         ;;
+      "barbican-keystone-listener")
+         process_list=(${process_list[@]} "sm:barbican-keystone-listener:barbican-keystone-listener:controller:/var/run/resource-agents/barbican-keystone-listener.pid:0")
+         ;;
+      "barbican-worker")
+         process_list=(${process_list[@]} "sm:barbican-worker:barbican-worker:controller:/var/run/resource-agents/barbican-worker.pid:0")
+         ;;
       # Panko process
       "panko-api")
          process_list=(${process_list[@]} "sm:panko-api:panko-api:controller:/var/run/resource-agents/panko-api.pid:0")

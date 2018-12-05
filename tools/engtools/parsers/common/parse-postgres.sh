@@ -14,7 +14,7 @@ PARSERDIR=$(dirname $0)
 
 if [ -z "${DATABASE_LIST}" ]; then
     WARNLOG "DATABASE_LIST is not set in the lab.conf file. Use default setting"
-    DATABASE_LIST="cinder glance keystone nova neutron ceilometer heat sysinv aodh postgres nova_api"
+    DATABASE_LIST="cinder glance keystone nova neutron ceilometer heat sysinv aodh barbican postgres nova_api"
 fi
 
 # Do all files if no files specified
