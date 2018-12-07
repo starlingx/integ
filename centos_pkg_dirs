@@ -142,7 +142,6 @@ networking/net-tools
 filesystem/drbd/drbd-tools
 database/mariadb
 database/python-psycopg2
-base/crontabs
 base/dnsmasq
 base/dnsmasq-config
 filesystem/parted
