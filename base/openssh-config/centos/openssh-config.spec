@@ -26,14 +26,20 @@ package StarlingX configuration files of openssh to system folder.
 %{__install} -d  %{buildroot}%{_sysconfdir}/systemd/system
 %{__install} -m 644 sshd.pam      %{buildroot}%{_datadir}/starlingx/sshd.pam
 %{__install} -m 644 sshd.service  %{buildroot}%{_sysconfdir}/systemd/system/sshd.service
+%{__install} -m 644 ssh_config    %{buildroot}%{_datadir}/starlingx/ssh_config
+%{__install} -m 600 sshd_config   %{buildroot}%{_datadir}/starlingx/sshd_config
 
 %post
 %define _pamconfdir %{_sysconfdir}/pam.d
 if [ $1 -eq 1 ] ; then
         # Initial installation
-        cp -f %{_datadir}/starlingx/sshd.pam  %{_pamconfdir}/sshd
+        cp -f %{_datadir}/starlingx/sshd.pam    %{_pamconfdir}/sshd
+        cp -f %{_datadir}/starlingx/ssh_config  %{_sysconfdir}/ssh/ssh_config
+        cp -f %{_datadir}/starlingx/sshd_config %{_sysconfdir}/ssh/sshd_config
 fi
 
 %files
 %{_datadir}/starlingx/sshd.pam
 %{_sysconfdir}/systemd/system/sshd.service
+%{_datadir}/starlingx/ssh_config
+%{_datadir}/starlingx/sshd_config
