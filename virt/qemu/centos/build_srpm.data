@@ -1,8 +1,10 @@
 SRC_DIR="$CGCS_BASE/git/qemu"
 COPY_LIST="$CGCS_BASE/downloads/kvm-unit-tests.git-4ea7633.tar.bz2 \
+           $CGCS_BASE/downloads/keycodemapdb-16e5b07.tar.gz \
            $FILES_BASE/* \
            $PKG_BASE/qemu/qemu_clean \
            $PKG_BASE/qemu/qemu_clean.service \
            $PKG_BASE/qemu/qemu-system-x86.conf"
-TIS_BASE_SRCREV=c284b3d419e1cc9b1f25661f4f636f19b1399970
+TIS_BASE_SRCREV=38441756b70eec5807b5f60dad11a93a91199866
 TIS_PATCH_VER=GITREVCOUNT
+
