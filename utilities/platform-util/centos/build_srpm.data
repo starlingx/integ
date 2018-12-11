@@ -1,4 +1,4 @@
 SRC_DIR="platform-util"
 COPY_LIST_TO_TAR="scripts"
 
-TIS_PATCH_VER=14
+TIS_PATCH_VER=15

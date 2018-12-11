@@ -28,6 +28,7 @@ Platform utilities that don't get packaged on controller hosts
 %define local_bindir %{local_dir}/bin
 %define local_sbindir %{local_dir}/sbin
 %define pythonroot /usr/lib64/python2.7/site-packages
+%define local_etc_initd %{_sysconfdir}/init.d
 
 %prep
 %setup
@@ -52,6 +53,9 @@ install -d %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/cgcs_tc_setup.sh %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/remotelogging_tc_setup.sh %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/connectivity_test %{buildroot}%{local_bindir}
+
+install -d %{buildroot}%{local_etc_initd}
+install %{_buildsubdir}/scripts/log_functions.sh %{buildroot}%{local_etc_initd}
 
 install -d %{buildroot}%{local_sbindir}
 install -m 700 -P -D %{_buildsubdir}/scripts/patch-restart-mtce %{buildroot}%{local_sbindir}
@@ -87,6 +91,7 @@ systemctl enable opt-platform.service
 %{pythonroot}/platform_util/*
 %dir %{pythonroot}/platform_util-%{version}.0-py2.7.egg-info
 %{pythonroot}/platform_util-%{version}.0-py2.7.egg-info/*
+%{local_etc_initd}/log_functions.sh
 
 %files -n platform-util-noncontroller
 %defattr(-,root,root,-)
