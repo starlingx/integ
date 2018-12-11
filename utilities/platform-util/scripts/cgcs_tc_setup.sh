@@ -1,14 +1,15 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2017 Wind River Systems, Inc.
+# Copyright (c) 2017-2018 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 # $1 - interface
 # $2 - interface type [mgmt, infra]
-# $3 - dummy used to determine if we're backgrounded or not
+# $3 - link capacity
+# $4 - dummy used to determine if we're backgrounded or not
 
 DEV=$1
 NETWORKTYPE=$2
@@ -42,7 +43,8 @@ function test_valid_speed {
 
 function log {
     # It seems that syslog isn't yet running, so append directly to the syslog file
-    echo `date +%FT%T.%3N` `hostname` CGCS_TC_SETUP: $@ >> /var/log/platform.log
+    FILE=/var/log/platform.log
+    echo `date +%FT%T.%3N` `hostname` CGCS_TC_SETUP: $@ >> $FILE
 }
 
 function infra_exists {
@@ -57,15 +59,18 @@ function is_consolidated {
     if ! infra_exists
     then
         return 1
-    else
-       # determine whether the management interface is a parent of the
-       # infrastructure interface based on name.
-       # eg. this matches enp0s8 to enp0s8.10 but not enp0s88
-        if [[ $infrastructure_interface =~ $management_interface[\.][0-9]+$ ]]; then
-            return 0
-        fi
-        return 1
     fi
+
+    local INFRA=$infrastructure_interface
+    local MGMT=$management_interface
+
+    # determine whether the management interface is a parent of the
+    # infrastructure interface based on name.
+    # eg. this matches enp0s8 to enp0s8.10 but not enp0s88
+    if [[ $INFRA =~ $MGMT[\.][0-9]+$ ]]; then
+        return 0
+    fi
+    return 1
 }
 
 function is_vlan {
@@ -78,7 +83,8 @@ function is_vlan {
 
 function is_loopback {
     # (from include/uapi/linux/if.h)
-    IFF_LOOPBACK=$((1<<3))
+    # IFF_LOOPBACK = 1<<3 = 8. Using a left shifted syntax can confuse bashate.
+    IFF_LOOPBACK=8
 
     # get the interface flags
     FLAGS=`cat /sys/class/net/$DEV/flags`
@@ -91,42 +97,78 @@ function is_loopback {
     fi
 }
 
+function get_tc_filter_ethertype {
+    local ETHERTYPE=$DEFAULT_ETHERTYPE
+
+    if is_consolidated
+    then
+        if ! is_vlan
+        then
+            # If we have a consolidated VLAN interface, we must set the
+            # protocol to '802.1q' for the underlying Ethernet interface
+            # to be able to match on IP packets coming from the VLAN
+            # interface.
+            ETHERTYPE=802.1q
+        fi
+    fi
+    echo $ETHERTYPE
+    return 0
+}
+
 function setup_tc_port_filter {
     local PORT=$1
     local PORTMASK=$2
     local FLOWID=$3
     local PROTOCOL=$4
+    local PRIORITY=$DEFAULT_PRIORITY
+    local ETHERTYPE=$DEFAULT_ETHERTYPE
 
-    if [ -z $PROTOCOL ]
-    then
+    ETHERTYPE=$(get_tc_filter_ethertype)
+
+    if [ -z $PROTOCOL ]; then
         # Apply to TCP and UDP
-        tc filter add dev $DEV protocol ip parent 1:0 prio 1 u32 match ip dport $PORT $PORTMASK flowid $FLOWID
-        tc filter add dev $DEV protocol ip parent 1:0 prio 1 u32 match ip sport $PORT $PORTMASK flowid $FLOWID
+        tc filter add dev $DEV protocol $ETHERTYPE parent 1:0 prio $PRIORITY \
+            u32 match ip dport $PORT $PORTMASK flowid $FLOWID
+        tc filter add dev $DEV protocol $ETHERTYPE parent 1:0 prio $PRIORITY \
+            u32 match ip sport $PORT $PORTMASK flowid $FLOWID
     else
         # Apply to specific protocol only
-        tc filter add dev $DEV protocol ip parent 1:0 prio 1 u32 match ip protocol 6 0xff match ip dport $PORT $PORTMASK flowid $FLOWID
-        tc filter add dev $DEV protocol ip parent 1:0 prio 1 u32 match ip protocol 6 0xff match ip sport $PORT $PORTMASK flowid $FLOWID
+        tc filter add dev $DEV protocol $ETHERTYPE parent 1:0 prio $PRIORITY \
+            u32 match ip protocol $PROTOCOL 0xff match \
+            ip dport $PORT $PORTMASK flowid $FLOWID
+        tc filter add dev $DEV protocol $ETHERTYPE parent 1:0 prio $PRIORITY \
+            u32 match ip protocol $PROTOCOL 0xff match \
+            ip sport $PORT $PORTMASK flowid $FLOWID
     fi
 }
 
-function setup_tc_tos_filter
-{
+function setup_tc_tos_filter {
     local TOS=$1
     local TOSMASK=$2
     local FLOWID=$3
+    local ETHERTYPE=$4
+    local PRIORITY=$5
 
-    tc filter add dev $DEV protocol ip parent 1:0 prio 1 u32 match ip tos $TOS $TOSMASK flowid $FLOWID
+    if [ -z $ETHERTYPE ]; then
+        ETHERTYPE=$DEFAULT_ETHERTYPE
+    fi
+
+    if [ -z $PRIORITY ]; then
+        PRIORITY=$DEFAULT_PRIORITY
+    fi
+
+    tc filter add dev $DEV protocol $ETHERTYPE parent 1:0 prio $PRIORITY \
+        u32 match ip tos $TOS $TOSMASK flowid $FLOWID
 }
 
-function setup_root_tc
-{
+function setup_root_tc {
     # create new qdiscs, classes and queues
     tc qdisc add dev $DEV root handle 1: htb default 40
-    tc class add dev $DEV parent 1: classid 1:1 htb rate ${SPEED}mbit burst 15k quantum 60000
+    tc class add dev $DEV parent 1: classid 1:1 htb rate ${SPEED}mbit \
+        burst 15k quantum 60000
 }
 
-function setup_default_tc
-{
+function setup_default_tc {
     local RATE=$1
     local CEIL=$2
 
@@ -135,29 +177,40 @@ function setup_default_tc
     local FLOWID=$CLASSID
 
     # create default qdiscs, classes
-    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k ceil $((${CEIL}*${SPEED}/100))mbit prio 4 quantum 60000
+    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k \
+        ceil $((${CEIL}*${SPEED}/100))mbit prio 4 quantum 60000
     tc qdisc add dev $DEV parent $CLASSID handle $FLOWQ: sfq perturb 10
 }
 
-function setup_hiprio_tc
-{
+function setup_hiprio_tc {
     local RATE=$1
     local CEIL=$2
 
     local FLOWQ=10
     local CLASSID=1:$FLOWQ
     local FLOWID=$CLASSID
+    local ETHERTYPE=$DEFAULT_ETHERTYPE
+    ETHERTYPE=$(get_tc_filter_ethertype)
 
     # create high priority qdiscs, classes, and queues
-    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k ceil $((${CEIL}*${SPEED}/100))mbit prio 3 quantum 60000
+    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k \
+        ceil $((${CEIL}*${SPEED}/100))mbit prio 3 quantum 60000
     tc qdisc add dev $DEV parent $CLASSID handle $FLOWQ: sfq perturb 10
 
     # filter for high priority traffic
-    setup_tc_tos_filter 0x10 0xf8 $FLOWID
+    setup_tc_tos_filter 0x10 0xf8 $FLOWID $ETHERTYPE
+
+    if [ "$ETHERTYPE" != "$DEFAULT_ETHERTYPE" ]; then
+        # For the 'hiprio' class, a second filter at a different priority is
+        # needed in this case to match traffic with the default ethertype.
+        # (ie. high priority management traffic).
+        local PRIORITY
+        PRIORITY=$(($DEFAULT_PRIORITY + 1))
+        setup_tc_tos_filter 0x10 0xf8 $FLOWID $DEFAULT_ETHERTYPE $PRIORITY
+    fi
 }
 
-function setup_migration_tc
-{
+function setup_migration_tc {
     local RATE=$1
     local CEIL=$2
 
@@ -166,7 +219,8 @@ function setup_migration_tc
     local FLOWID=$CLASSID
 
     # create migration qdiscs, classes, and queues
-    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k ceil $((${CEIL}*${SPEED}/100))mbit prio 2 quantum 60000
+    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k \
+        ceil $((${CEIL}*${SPEED}/100))mbit prio 2 quantum 60000
     tc qdisc add dev $DEV parent $CLASSID handle $FLOWQ: sfq perturb 10
 
     # Migration (TCP, ports 49152-49215)
@@ -176,8 +230,7 @@ function setup_migration_tc
     setup_tc_port_filter 16509 0xffff $FLOWID $TCP
 }
 
-function setup_storage_tc
-{
+function setup_storage_tc {
     local RATE=$1
     local CEIL=$2
 
@@ -186,7 +239,8 @@ function setup_storage_tc
     local FLOWID=$CLASSID
 
     # create storage qdiscs, classes, and queues
-    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k ceil $((${CEIL}*${SPEED}/100))mbit prio 1 quantum 60000
+    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k \
+        ceil $((${CEIL}*${SPEED}/100))mbit prio 1 quantum 60000
     tc qdisc add dev $DEV parent $CLASSID handle $FLOWQ: sfq perturb 10
 
     # Storage, NFS (UDP/TCP, port 2049)
@@ -205,8 +259,7 @@ function setup_storage_tc
     done
 }
 
-function setup_drbd_tc
-{
+function setup_drbd_tc {
     local RATE=$1
     local CEIL=$2
 
@@ -215,14 +268,15 @@ function setup_drbd_tc
     local FLOWID=$CLASSID
 
     # create DRBD qdiscs, classes and queues
-    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k ceil $((${CEIL}*${SPEED}/100))mbit quantum 60000
+    $AC $CLASSID htb rate $((${RATE}*${SPEED}/100))mbit burst 15k \
+        ceil $((${CEIL}*${SPEED}/100))mbit quantum 60000
 
     tc qdisc add dev $DEV parent $CLASSID handle $FLOWQ: sfq perturb 10
 
     # DRDB (TCP, ports 7789,7790,7791,7799)
     # port 7793 is used with drdb-extension
     PORTS=( 7789 7790 7791 7792 7799 7793 )
-    PORTMASKS=( 0xffff 0xffff 0xffff 0xffff 0xffff )
+    PORTMASKS=( 0xffff 0xffff 0xffff 0xffff 0xffff 0xffff)
     for idx in "${!PORTS[@]}"; do
         PORT=${PORTS[$idx]}
         MASK=${PORTMASKS[$idx]}
@@ -230,8 +284,7 @@ function setup_drbd_tc
     done
 }
 
-function setup_mgmt_tc_individual
-{
+function setup_mgmt_tc_individual {
     # Configure high priority and default traffic classes.
 
     setup_root_tc
@@ -251,8 +304,7 @@ function setup_mgmt_tc_individual
 }
 
 
-function setup_mgmt_tc_vlan
-{
+function setup_mgmt_tc_vlan {
     # Configure high priority and default traffic classes.
 
     setup_root_tc
@@ -271,8 +323,7 @@ function setup_mgmt_tc_vlan
     setup_default_tc $DEFAULT_BW $DEFAULT_CBW
 }
 
-function setup_mgmt_tc_consolidated
-{
+function setup_mgmt_tc_consolidated {
     # Configure management classes.
     # All traffic coming from the infra will get treated again by the
     # management traffic classes. We need to apply the same TCs as the
@@ -282,8 +333,7 @@ function setup_mgmt_tc_consolidated
     setup_tc_all
 }
 
-function setup_mgmt_tc_infra_exists
-{
+function setup_mgmt_tc_infra_exists {
     if is_consolidated
     then
         # Infra over mgmt.  In this case we want to reserve
@@ -301,8 +351,7 @@ function setup_mgmt_tc_infra_exists
     fi
 }
 
-function setup_mgmt_tc_no_infra
-{
+function setup_mgmt_tc_no_infra {
     # Configure traffic classes for a management interface when
     # no infrastructure interface exists.  Configure the full
     # set of TCs.
@@ -311,35 +360,34 @@ function setup_mgmt_tc_no_infra
     setup_tc_all
 }
 
-function setup_infra_tc_consolidated
-{
+function setup_infra_tc_consolidated {
     # Configure the full set of traffic classes, but leave a small
     # portion of bandwidth for the management interface.
 
     # reserve 1% BW for management
-    local RESERVED=$((1*${SPEED}/100))
+    local RESERVED
+    RESERVED=$((1*${SPEED}/100))
     SPEED=$((${SPEED}-${RESERVED}))
 
     setup_root_tc
     setup_tc_all
 }
 
-function setup_infra_tc_individual
-{
+function setup_infra_tc_individual {
     # Configure the full set of traffic classes.
 
     setup_root_tc
     if is_vlan
     then
         # reserve 1% BW for sibling vlan interfaces
-        local RESERVED=$((1*${SPEED}/100))
+        local RESERVED
+        RESERVED=$((1*${SPEED}/100))
         SPEED=$((${SPEED}-${RESERVED}))
     fi
     setup_tc_all
 }
 
-function setup_tc_all
-{
+function setup_tc_all {
     # bandwidth percentages, in case of over-percentage, bandwidth is divided based
     # on bandwidth ratios
     local MIG_BW=30
@@ -359,24 +407,18 @@ function setup_tc_all
     setup_storage_tc $STOR_BW $STOR_CBW
     setup_migration_tc $MIG_BW $MIG_CBW
     setup_default_tc $DEFAULT_BW $DEFAULT_CBW
-    if [ $nodetype == "controller" ]
-    then
+    if [ $nodetype == "controller" ]; then
         setup_drbd_tc $DRBD_BW $DRBD_CBW
     fi
 }
 
-function get_dev_speed
-{
+function get_dev_speed {
     # If the link doesn't come up we won't go enabled, so here we can
     # afford to wait forever for the link.
-    while true
-    do
-        if [ -e /sys/class/net/$1/bonding ]
-        then
-            for VAL in `cat /sys/class/net/$1/lower_*/speed`
-            do
-                if test_valid_speed $VAL
-                then
+    while true; do
+        if [ -e /sys/class/net/$1/bonding ]; then
+            for VAL in `cat /sys/class/net/$1/lower_*/speed`; do
+                if test_valid_speed $VAL; then
                     log slave for bond link $1 reported speed $VAL
                     echo $VAL
                     return 0
@@ -384,38 +426,36 @@ function get_dev_speed
                     log slave for bond link $1 reported invalid speed $VAL
                 fi
             done
-            log all slaves for bond link $1 reported invalid speeds, will sleep 30 sec and try again
+            log all slaves for bond link $1 reported invalid speeds, \
+                will sleep 30 sec and try again
         else
             VAL=`cat /sys/class/net/$1/speed`
-            if test_valid_speed $VAL
-            then
+            if test_valid_speed $VAL; then
                 log link $1 reported speed $VAL
                 echo $VAL
                 return 0
             else
-                log link $1 returned invalid speed $VAL, will sleep 30 sec and try again
+                log link $1 returned invalid speed $VAL, \
+                    will sleep 30 sec and try again
             fi
         fi
         sleep 30
     done
 }
 
-function get_speed
-{
+function get_speed {
     local dev=$1
     local networktype=$2
     local net_speed=$NETWORKSPEED
-    local dev_speed=$(get_dev_speed $DEV)
+    local dev_speed
+    dev_speed=$(get_dev_speed $DEV)
     local speed=$dev_speed
-    if [ $net_speed != $dev_speed ]
-    then
+    if [ $net_speed != $dev_speed ]; then
         log WARNING: $dev has a different operational speed [$dev_speed] \
             than configured speed [$net_speed] for network type $networktype
-        if test_valid_speed $net_speed
-        then
+        if test_valid_speed $net_speed; then
             # Use greater of configured net speed / recorded dev speed
-            if [ $net_speed -gt $dev_speed ]
-            then
+            if [ $net_speed -gt $dev_speed ]; then
                 speed=$net_speed
             fi
         fi
@@ -433,8 +473,7 @@ fi
 
 log running tc setup script for $DEV $NETWORKTYPE in background
 
-if [ -f /etc/platform/platform.conf ]
-then
+if [ -f /etc/platform/platform.conf ]; then
     source /etc/platform/platform.conf
 fi
 
@@ -453,11 +492,16 @@ AC="tc class add dev $DEV parent 1:1 classid"
 TCP=6
 UDP=17
 
+# default ethertype for filters
+DEFAULT_ETHERTYPE=ip
+
+# default priority for filters
+DEFAULT_PRIORITY=1
+
 # delete existing qdiscs
 tc qdisc del dev $DEV root > /dev/null 2>&1
 
-if [ ${NETWORKTYPE} = "mgmt" ]
-then
+if [ ${NETWORKTYPE} = "mgmt" ]; then
     if infra_exists
     then
         setup_mgmt_tc_infra_exists
