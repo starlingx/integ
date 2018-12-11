@@ -32,6 +32,9 @@ mkdir -p %{_sysconfdir}/init.d
 
 %post
 /bin/systemctl disable haproxy.service
+if test -s %{_sysconfdir}/logrotate.d/haproxy ; then
+    echo '#See /etc/logrotate.d/syslog for haproxy rules' > %{_sysconfdir}/logrotate.d/haproxy
+fi
 
 %files
 %defattr(-,root,root,-)
