@@ -313,6 +313,14 @@ static int tpm_engine_init(ENGINE * e)
     * pkg is installed with the modified tpm_crb KLM
     */
     if ((result = p_tpm2_Set_Property(hContext, 
+                    TPM_INTERFACE_TYPE, "dev"))) {
+        DBG("Failed to set Resource Manager in context (%p): rc %d",
+            hContext, (int)result);
+        TSSerr(TPM_F_TPM_ENGINE_INIT, TPM_R_UNIT_FAILURE);
+        goto err;
+    }
+
+    if ((result = p_tpm2_Set_Property(hContext, 
                     TPM_DEVICE, "/dev/tpmrm0"))) {
         DBG("Failed to set Resource Manager in context (%p): rc %d",
             hContext, (int)result);
