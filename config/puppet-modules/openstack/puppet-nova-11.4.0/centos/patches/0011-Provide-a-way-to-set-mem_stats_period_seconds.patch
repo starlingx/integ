@@ -1,0 +1,56 @@
+From 3b825e021fea2a4223f72c5c1a8182a593750a40 Mon Sep 17 00:00:00 2001
+From: Alex Kozyrev <alex.kozyrev@windriver.com>
+Date: Tue, 11 Dec 2018 14:10:01 -0500
+Subject: [PATCH 1/1] Provide a way to set mem_stats_period_seconds in Nova.
+
+There is no support of mem_stats_period_seconds in puppet-nova now.
+We need to add a way to set it to 0 to disable QEMU memory balloon statistics.
+The intention is to help with cyclictest spikes due to stats collection.
+
+Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
+---
+ manifests/compute/libvirt.pp | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/manifests/compute/libvirt.pp b/manifests/compute/libvirt.pp
+index 0d89c04..813d740 100644
+--- a/manifests/compute/libvirt.pp
++++ b/manifests/compute/libvirt.pp
+@@ -151,6 +151,11 @@
+ #   forward progress in transferring data before aborting.
+ #   Defaults to 150
+ #
++# [*mem_stats_period_seconds*]
++#   (optional) A number of seconds to memory usage statistics period.'
++#   Zero or negative value mean to disable memory usage statistics.
++#   Defaults to 10
++#
+ class nova::compute::libvirt (
+   $ensure_package                             = 'present',
+   $libvirt_virt_type                          = 'kvm',
+@@ -182,6 +187,7 @@ class nova::compute::libvirt (
+   $live_migration_downtime_delay              = undef,
+   $live_migration_completion_timeout          = undef,
+   $live_migration_progress_timeout            = undef,
++  $mem_stats_period_seconds                   = undef,
+ ) inherits nova::params {
+ 
+   include ::nova::deps
+@@ -367,4 +373,14 @@ class nova::compute::libvirt (
+     }
+   }
+ 
++  if $mem_stats_period_seconds != undef {
++    nova_config {
++      'libvirt/mem_stats_period_seconds': value => $live_migration_progress_timeout;
++    }
++  } else {
++    nova_config {
++      'libvirt/mem_stats_period_seconds': ensure => absent;
++    }
++  }
++
+ }
+-- 
+1.8.3.1
+
