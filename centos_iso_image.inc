@@ -296,9 +296,7 @@ bash
 haproxy
 haproxy-config
 
-# iscsi-initiator-utils
-iscsi-initiator-utils
-iscsi-initiator-utils-iscsiuio
+# iscsi-initiator-utils-config
 iscsi-initiator-utils-config
 
 # iptables

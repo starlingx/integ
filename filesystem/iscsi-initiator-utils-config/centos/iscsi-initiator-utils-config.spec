@@ -10,6 +10,7 @@ BuildArch: noarch
 Source: %name-%version.tar.gz
 
 Requires: iscsi-initiator-utils
+Requires: iscsi-initiator-utils-iscsiuio
 Summary: package StarlingX configuration files of iscsi-initiator-utils to system folder.
 
 %description
@@ -33,6 +34,8 @@ package StarlingX configuration files of iscsi-initiator-utils to system folder.
 if [ $1 -eq 1 ] ; then
         # Initial installation
         cp -f %{_datadir}/starlingx/stx.iscsid.conf %{_sysconfdir}/iscsi/iscsid.conf
+        chmod 0750 %{_sysconfdir}/iscsi
+        chmod 0640 %{_sysconfdir}/iscsi/iscsid.conf
 fi
 /bin/systemctl disable iscsi-shutdown.service
 
