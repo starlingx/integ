@@ -49,12 +49,12 @@
 +  end
 +end
 +
-+Facter.add('is_compute_subfunction') do
++Facter.add('is_worker_subfunction') do
 +  confine :kernel => :linux
 +
 +  setcode do
 +    if release = Facter::Util::FileRead.read('/etc/platform/platform.conf')
-+      match = release.match(/^subfunction\=.*compute/) ? true : false
++      match = release.match(/^subfunction\=.*worker/) ? true : false
 +    end
 +  end
 +end

@@ -11,7 +11,7 @@
 # platform core usable since the previous sample.
 #
 #  Init Function:
-#    - if 'compute_reserved.conf exists then query/store PLATFORM_CPU_LIST
+#    - if 'worker_reserved.conf exists then query/store PLATFORM_CPU_LIST
 #
 ############################################################################
 import os
