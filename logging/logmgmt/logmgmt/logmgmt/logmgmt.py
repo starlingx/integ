@@ -78,7 +78,7 @@ class LogMgmtDaemon():
         my_exec = os.path.basename(sys.argv[0])
 
         if not os.path.exists(LOG_DIR):
-            os.mkdir(LOG_DIR, 0755)
+            os.mkdir(LOG_DIR, 0o755)
 
         log_format = '%(asctime)s: ' \
                      + my_exec + '[%(process)s]: ' \
