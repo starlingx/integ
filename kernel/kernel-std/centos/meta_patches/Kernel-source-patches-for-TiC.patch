@@ -12,11 +12,11 @@ diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
 index eef356a..f1a0092 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -445,6 +445,36 @@ Patch1002: debrand-rh-i686-cpu.patch
+@@ -460,6 +460,36 @@ Patch1002: debrand-rh-i686-cpu.patch
  Source30000: kernel-3.10.0-x86_64.config.tis_extra
  Source30001: ima_signing_key.pub
  
-+# Titanium Cloud patches here.
++# StarlingX Cloud patches here.
 +Patch40001: Fix-compile-issue-when-transparent-hugepages-are-off.patch
 +Patch40002: Notification-of-death-of-arbitrary-processes.patch
 +Patch40003: CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
@@ -49,11 +49,11 @@ index eef356a..f1a0092 100644
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -776,6 +806,34 @@ ApplyOptionalPatch debrand-single-cpu.patch
+@@ -802,6 +832,34 @@ ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
  ApplyOptionalPatch debrand-rh-i686-cpu.patch
  
-+# Titanium Cloud patches here.
++# StarlingX Cloud patches here.
 +ApplyOptionalPatch Fix-compile-issue-when-transparent-hugepages-are-off.patch
 +ApplyOptionalPatch Notification-of-death-of-arbitrary-processes.patch
 +ApplyOptionalPatch CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
