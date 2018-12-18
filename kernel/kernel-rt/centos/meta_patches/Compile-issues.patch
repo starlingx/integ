@@ -6,26 +6,29 @@ Subject: [PATCH 1/1] Compile issues
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 2 ++
- 1 file changed, 2 insertions(+)
+ SPECS/kernel-rt.spec | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index ab6daf3..3c0e4b4 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -420,6 +420,7 @@ Patch1029: dpt_i2o-fix-build-warning.patch
+@@ -418,6 +418,9 @@ Patch1027: dpt_i2o-fix-build-warning.patch
  # DRBD was choking on write same
- Patch1030: turn-off-write-same-in-smartqpi-driver.patch
- Patch1031: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
-+Patch1032: fix-compilation-issues.patch
+ Patch1028: turn-off-write-same-in-smartqpi-driver.patch
+ Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
++Patch1030: fix-compilation-issues.patch
++# Fix CentOS 7.6 upgrade compile error
++Patch1031: fix-CentOS-7.6-upgrade-compile-error.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -784,6 +785,7 @@ ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
+@@ -780,6 +783,8 @@ ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
  ApplyPatch dpt_i2o-fix-build-warning.patch
  ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
  ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
 +ApplyPatch fix-compilation-issues.patch
++ApplyPatch fix-CentOS-7.6-upgrade-compile-error.patch
  
  # move off upstream version mechanism
  if [ -e localversion-rt ]; then

@@ -8,14 +8,14 @@ Subject: [PATCH 2/3] Kernel source patches for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
+ SPECS/kernel-rt.spec | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index 905ae52..15114e6 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -386,6 +386,40 @@ Source1000: modprobe-dccp-blacklist.conf
+@@ -386,6 +386,38 @@ Source1000: modprobe-dccp-blacklist.conf
  
  # Empty final patch file to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
@@ -45,18 +45,16 @@ index 905ae52..15114e6 100644
 +Patch1023: cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
 +Patch1024: US101216-IMA-support-in-Titanium-kernel.patch
 +Patch1025: US103091-IMA-System-Configuration.patch
-+Patch1026: timer-Reduce-timer-migration-overhead-if-disabled.patch
-+Patch1027: timer-Minimize-nohz-off-overhead.patch
 +# Fix compile warnings that break the build
-+Patch1028: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
-+Patch1029: dpt_i2o-fix-build-warning.patch
++Patch1026: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
++Patch1027: dpt_i2o-fix-build-warning.patch
 +# DRBD was choking on write same
-+Patch1030: turn-off-write-same-in-smartqpi-driver.patch
-+Patch1031: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
++Patch1028: turn-off-write-same-in-smartqpi-driver.patch
++Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -718,6 +752,38 @@ cp %{SOURCE38} .
+@@ -718,6 +750,36 @@ cp %{SOURCE38} .
  
  ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
@@ -86,8 +84,6 @@ index 905ae52..15114e6 100644
 +ApplyPatch cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
 +ApplyPatch US101216-IMA-support-in-Titanium-kernel.patch
 +ApplyPatch US103091-IMA-System-Configuration.patch
-+ApplyPatch timer-Reduce-timer-migration-overhead-if-disabled.patch
-+ApplyPatch timer-Minimize-nohz-off-overhead.patch
 +ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
 +ApplyPatch dpt_i2o-fix-build-warning.patch
 +ApplyPatch turn-off-write-same-in-smartqpi-driver.patch

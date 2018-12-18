@@ -13,7 +13,7 @@ diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
 index f27ca00..9eca4ac 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
-@@ -922,7 +922,7 @@ static void rh_check_supported(void)
+@@ -931,7 +931,7 @@ static void rh_check_supported(void)
  	if (((boot_cpu_data.x86_max_cores * smp_num_siblings) == 1) &&
  	    !x86_hyper && !cpu_has_hypervisor && !is_kdump_kernel()) {
  		pr_crit("Detected single cpu native boot.\n");
