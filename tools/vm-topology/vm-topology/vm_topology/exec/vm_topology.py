@@ -492,7 +492,7 @@ def range_to_list(csv_range=None):
     """
     if not csv_range:
         return []
-    ranges = [(lambda L: range(L[0], L[-1] + 1))(map(int, r.split('-')))
+    ranges = [(lambda L: range(L[0], L[-1] + 1))([int(x) for x in r.split('-')])
                for r in csv_range.split(',')]
     return [y for x in ranges for y in x]
 

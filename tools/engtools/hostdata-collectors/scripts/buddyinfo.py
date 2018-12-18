@@ -57,7 +57,7 @@ class BuddyInfo(object):
         for line in map(self.parse_line, buddyinfo):
             numa_node =  int(line["numa_node"])
             zone = line["zone"]
-            free_fragments = map(int, line["nr_free"].split())
+            free_fragments = [int(nr) for nr in line["nr_free"].split()]
             max_order = len(free_fragments)
             fragment_sizes = self.get_order_sizes(max_order)
             usage_in_bytes =  [block[0] * block[1] for block in zip(free_fragments, fragment_sizes)]
