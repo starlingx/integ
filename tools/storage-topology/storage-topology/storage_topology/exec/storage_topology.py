@@ -286,7 +286,7 @@ def get_info_and_display(cc, show=None):
     pv_pd_num_ext = 4
     pv_pd_num = 3
 
-    for k, v in host_storage_attr.iteritems():
+    for k, v in host_storage_attr.items():
         if show['diskview'] or show['all']:
             for disk_o in v['host_disks']:
                 device_node = getattr(disk_o, 'device_node', '')

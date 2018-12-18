@@ -287,7 +287,7 @@ def parse_arguments(debug, show):
     S[0:0] = L_opts
 
     # Enable debug option, but its usage/help is hidden.
-    D = debug.keys()
+    D = list(debug.keys())
     D.sort()
     D.insert(0, 'all')
 
@@ -338,7 +338,7 @@ def parse_arguments(debug, show):
     # Enable all debug flags (except libvirt_xml) if 'all' is specified
     x = debug['libvirt_xml']
     if debug['all']:
-        {debug.update({e: True}) for e in debug.keys()}
+        {debug.update({e: True}) for e in debug}
         debug['libvirt_xml'] = x
 
     # Flatten show options list
@@ -370,8 +370,8 @@ def _translate_keys(collection, convert):
     """ For a collection of elements, translate _info field names
     into human-readable names based on a list of conversion tuples.
     """
-    for k, item in collection.iteritems():
-        keys = item.__dict__.keys()
+    for k, item in collection.items():
+        keys = list(item.__dict__.keys())
         for from_key, to_key in convert:
             if from_key in keys and to_key not in keys:
                 try:
@@ -394,7 +394,7 @@ def _translate_extended_states(collection):
         'Crashed',   # 0x06
         'Suspended'  # 0x07
     ]
-    for k, item in collection.iteritems():
+    for k, item in collection.items():
         try:
             setattr(item, 'power_state',
                     power_states[getattr(item, 'power_state')])
@@ -624,7 +624,7 @@ def do_libvirt_domain_info((host)):
                     up_total += 1
             cpuset_total |= cpuset
         cpulist_f = _mask_to_cpulist(mask=cpuset_total)
-        for key in sorted(cpulist_d.iterkeys()):
+        for key in sorted(cpulist_d.keys()):
             cpulist_p.append(cpulist_d[key])
 
         # Determine if floating or pinned, display appropriate cpulist
@@ -833,7 +833,7 @@ def define_option_flags(show, options=[],
     if 'all' in options:
         {show.update({e: True}) for e in L_brief + L_details}
     for e in options:
-        if e in show.keys():
+        if e in show:
             show.update({e: True})
 
 
@@ -898,9 +898,9 @@ def print_all_tables(tenants=None,
         for C in ['servers', 'pcpus', 'U:dedicated', 'U:shared',
                   'memory', 'U:memory', 'A:mem_4K', 'A:mem_2M', 'A:mem_1G']:
             pt.align[C] = 'r'
-        for host_name, H in sorted(hypervisors.iteritems(),
+        for host_name, H in sorted(hypervisors.items(),
                                    key=lambda (k, v): (natural_keys(k))):
-            A = agg_h[host_name].keys()
+            A = list(agg_h[host_name].keys())
 
             try:
                 topology_idx = topologies_idx[host_name]
@@ -914,9 +914,9 @@ def print_all_tables(tenants=None,
                 cpu_id = 0
                 socket_id = topology_idx[cpu_id]['s']
                 core_id = topology_idx[cpu_id]['c']
-                n_sockets = len(topology.keys())
-                n_cores = len(topology[socket_id].keys())
-                n_threads = len(topology[socket_id][core_id].keys())
+                n_sockets = len(list(topology.keys()))
+                n_cores = len(list(topology[socket_id].keys()))
+                n_threads = len(list(topology[socket_id][core_id].keys()))
             else:
                 if 'topology' in H.cpu_info:
                     topology = H.cpu_info['topology']
@@ -1019,7 +1019,7 @@ def print_all_tables(tenants=None,
     if show['topology']:
         print
         print('LOGICAL CPU TOPOLOGY (compute hosts):')
-        for host_name, topology in sorted(topologies.iteritems(),
+        for host_name, topology in sorted(topologies.items(),
                                           key=lambda (k, v): (natural_keys(k))):
             H = hypervisors[host_name]
             try:
@@ -1038,9 +1038,9 @@ def print_all_tables(tenants=None,
             cpu_id = 0
             socket_id = topology_idx[cpu_id]['s']
             core_id = topology_idx[cpu_id]['c']
-            n_sockets = len(topology.keys())
-            n_cores = len(topology[socket_id].keys())
-            n_threads = len(topology[socket_id][core_id].keys())
+            n_sockets = len(list(topology.keys()))
+            n_cores = len(list(topology[socket_id].keys()))
+            n_threads = len(list(topology[socket_id][core_id].keys()))
 
             print('%s:  Model:%s, Arch:%s, Vendor:%s, '
                   'Sockets=%d, Cores/Socket=%d, Threads/Core=%d, Logical=%d'
@@ -1083,7 +1083,7 @@ def print_all_tables(tenants=None,
     if show['topology-long']:
         print
         print('LOGICAL CPU TOPOLOGY (compute hosts):')
-        for host_name, topology in sorted(topologies.iteritems(),
+        for host_name, topology in sorted(topologies.items(),
                                           key=lambda (k, v): (natural_keys(k))):
             H = hypervisors[host_name]
             try:
@@ -1102,9 +1102,9 @@ def print_all_tables(tenants=None,
             cpu_id = 0
             socket_id = topology_idx[cpu_id]['s']
             core_id = topology_idx[cpu_id]['c']
-            n_sockets = len(topology.keys())
-            n_cores = len(topology[socket_id].keys())
-            n_threads = len(topology[socket_id][core_id].keys())
+            n_sockets = len(list(topology.keys()))
+            n_cores = len(list(topology[socket_id].keys()))
+            n_threads = len(list(topology[socket_id][core_id].keys()))
 
             print('%s:  Model:%s, Arch:%s, Vendor:%s, '
                   'Sockets=%d, Cores/Socket=%d, Threads/Core=%d, Logical=%d'
@@ -1160,7 +1160,7 @@ def print_all_tables(tenants=None,
             pt.align[C] = 'r'
         for C in ['in_libvirt']:
             pt.align[C] = 'c'
-        for _, S in sorted(servers.iteritems(),
+        for _, S in sorted(servers.items(),
                            key=lambda (k, v): (natural_keys(v.host),
                                                v.server_group,
                                                v.instance_name)
@@ -1211,7 +1211,7 @@ def print_all_tables(tenants=None,
                 vcpus_scale = flavor_vcpus
 
             in_libvirt = False
-            for h, D in domains.iteritems():
+            for h, D in domains.items():
                 if S.id in D:
                     in_libvirt = True
                     break
@@ -1256,9 +1256,9 @@ def print_all_tables(tenants=None,
             pt.align[C] = 'r'
         for C in ['in_nova']:
             pt.align[C] = 'c'
-        for host, D in sorted(domains.iteritems(),
+        for host, D in sorted(domains.items(),
                               key=lambda (k, v): (natural_keys(k))):
-            for _, S in sorted(D.iteritems(),
+            for _, S in sorted(D.items(),
                                key=lambda (k, v): (v['name'])):
                 in_nova = True if S['uuid'] in servers else False
                 pt.add_row(
@@ -1291,7 +1291,7 @@ def print_all_tables(tenants=None,
              'created_at',
             ])
         pt.align = 'l'
-        for _, M in sorted(migrations.iteritems(),
+        for _, M in sorted(migrations.items(),
                            key=lambda (k, v): (k)):
             pt.add_row(
                 [M.instance_uuid,
@@ -1327,7 +1327,7 @@ def print_all_tables(tenants=None,
         for C in ['id', 'vcpus', 'ram', 'disk', 'ephemeral', 'swap',
                   'rxtx_factor']:
             pt.align[C] = 'r'
-        for _, F in sorted(flavors.iteritems(),
+        for _, F in sorted(flavors.items(),
                            key=lambda (k, v): (k)):
             if F.id in flavors_in_use:
                 pt.add_row(
@@ -1361,7 +1361,7 @@ def print_all_tables(tenants=None,
         pt.align = 'l'
         for C in ['id', 'min_disk', 'min_ram', 'status']:
             pt.align[C] = 'r'
-        for _, I in sorted(images.iteritems(),
+        for _, I in sorted(images.items(),
                            key=lambda (k, v): (k)):
             if I.id in images_in_use:
                 pt.add_row(
@@ -1387,7 +1387,7 @@ def print_all_tables(tenants=None,
              'Metadata',
             ])
         pt.align = 'l'
-        for _, S in sorted(server_groups.iteritems(),
+        for _, S in sorted(server_groups.items(),
                            key=lambda (k, v): (k)):
             if S.id in server_groups_in_use:
                 tenant = tenants[S.project_id].name
@@ -1615,7 +1615,7 @@ def get_info_and_display(show=None):
     # translate fields into human-readable names
     _translate_keys(images, convert)
 
-    for I_id, I in images.iteritems():
+    for I_id, I in images.items():
         meta = copy.deepcopy(I.properties)
         I.properties = {}
         for k, v in meta.items():
@@ -1708,7 +1708,7 @@ def get_info_and_display(show=None):
 
     # Get extra_specs
     extra_specs = {}
-    for f_id, F in flavors.iteritems():
+    for f_id, F in flavors.items():
         try:
             specs = F.get_keys()
         except Exception as e:
@@ -1794,7 +1794,7 @@ def get_info_and_display(show=None):
 
     # Build up aggregate list per compute host
     agg_h = {}
-    for H in hypervisors.keys():
+    for H in hypervisors:
         agg_h[H] = {}
     for A in aggregates.values():
         for H in A.hosts:
@@ -1837,7 +1837,7 @@ def get_info_and_display(show=None):
         sys.exit(1)
 
     hosts = []
-    for h in hypervisors.keys():
+    for h in hypervisors:
         hosts.append(h)
 
     # Launch tasks
@@ -1851,7 +1851,7 @@ def get_info_and_display(show=None):
         # Reap aged workers that exceed hang timeout
         now = time.time()
         reap = []
-        for pid in active_pids.keys():
+        for pid in active_pids:
             if pid == 0:
                 continue
             try:
@@ -1957,7 +1957,7 @@ def get_info_and_display(show=None):
         # We need libvirt topology information to make sense of cpusets.
         have_topology = True
         try:
-            if len(topologies_idx[host].keys()) < 1:
+            if len(list(topologies_idx[host].keys())) < 1:
                 have_topology = False
         except:
             have_topology = False
@@ -2042,7 +2042,7 @@ def get_info_and_display(show=None):
     server_mismatch = False
     for S in servers.values():
         in_libvirt = False
-        for h, D in domains.iteritems():
+        for h, D in domains.items():
             if S.id in D and S.host == h:
                 in_libvirt = True
                 break
@@ -2053,8 +2053,8 @@ def get_info_and_display(show=None):
                             % (S.id, S.instance_name, S.name, S.host))
 
     # Detect mismatch where server is in libvirt but not in nova
-    for host, D in domains.iteritems():
-        for k, S in D.iteritems():
+    for host, D in domains.items():
+        for k, S in D.items():
             in_nova = False
             uuid = S['uuid']
             if uuid in servers and servers[uuid].host == host:
