@@ -3,14 +3,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-from ctypes import cdll,util,c_bool,c_int,c_char_p,pointer,create_string_buffer
+from ctypes import cdll
+from ctypes import util
+from ctypes import c_bool
+from ctypes import c_int
+from ctypes import c_char_p
+from ctypes import pointer
+from ctypes import create_string_buffer
 import logging
 import os
-from platform_util.license import constants,exception
+from platform_util.license import constants
+from platform_util.license import exception
 import re
 import sys
 from sysinv.common import constants as sysinv_constants
-from tsconfig.tsconfig import system_type,system_mode, SW_VERSION
+from tsconfig.tsconfig import system_type
+from tsconfig.tsconfig import system_mode
+from tsconfig.tsconfig import SW_VERSION
 
 LOG = logging.getLogger(__name__)
 

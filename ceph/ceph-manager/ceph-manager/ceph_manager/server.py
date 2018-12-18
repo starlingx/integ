@@ -30,11 +30,12 @@ from oslo_service import loopingcall
 # noinspection PyUnresolvedReferences
 from cephclient import wrapper
 
-from monitor import Monitor
-import exception
-import constants
+from ceph_manager.monitor import Monitor
+from ceph_manager import exception
+from ceph_manager import constants
 
-from i18n import _LI, _LW
+from ceph_manager.i18n import _LI
+from ceph_manager.i18n import _LW
 from retrying import retry
 
 eventlet.monkey_patch(all=True)

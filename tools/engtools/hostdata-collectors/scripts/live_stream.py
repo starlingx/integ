@@ -16,8 +16,10 @@ import logging
 from six.moves import configparser
 import itertools
 import six
-from multiprocessing import Process, cpu_count
-from subprocess import Popen, PIPE
+from multiprocessing import Process
+from multiprocessing import cpu_count
+from subprocess import Popen
+from subprocess import PIPE
 from collections import OrderedDict
 from six.moves import input
 
