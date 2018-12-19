@@ -1,0 +1,19 @@
+[Unit]
+Description=v2 Registry token server for Docker
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/docker-distribution/registry/token_server.conf
+ExecStart=/usr/bin/registry-token-server -addr=${REGISTRY_TOKEN_SERVER_ADDR} \
+    -issuer=${REGISTRY_TOKEN_SERVER_ISSUER} \
+    -endpoint=${REGISTRY_TOKEN_SERVER_KS_ENDPOINT} \
+    -tlscert=${REGISTRY_TOKEN_SERVER_TLSCERT} \
+    -tlskey=${REGISTRY_TOKEN_SERVER_TLSKEY} \
+    -realm=${REGISTRY_TOKEN_SERVER_REALM} \
+    -key=${REGISTRY_TOKEN_SERVER_KEY}
+Restart=on-failure
+ExecStartPost=/bin/bash -c 'echo $MAINPID > /var/run/registry-token-server.pid'
+ExecStopPost=/bin/rm -f /var/run/registry-token-server.pid
+
+[Install]
+WantedBy=multi-user.target
