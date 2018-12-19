@@ -11,7 +11,7 @@ diff --git a/SPECS/python.spec b/SPECS/python.spec
 index 94adb05..36289ea 100644
 --- a/SPECS/python.spec
 +++ b/SPECS/python.spec
-@@ -1259,6 +1259,8 @@ Patch305: 00305-CVE-2016-2183.patch
+@@ -1301,6 +1301,8 @@ Patch306: 00306-fix-oserror-17-upon-semaphores-creation.patch
  # above:
  Patch5000: 05000-autotool-intermediates.patch
  
@@ -20,7 +20,7 @@ index 94adb05..36289ea 100644
  # ======================================================
  # Additional metadata, and subpackages
  # ======================================================
-@@ -1670,6 +1672,7 @@ find -name "*~" |xargs rm -f
+@@ -1719,6 +1721,7 @@ find -name "*~" |xargs rm -f
  %patch5000 -p0 -b .autotool-intermediates
  %endif
  
@@ -28,7 +28,7 @@ index 94adb05..36289ea 100644
  
  # ======================================================
  # Configuring and building the code:
-@@ -1800,7 +1803,7 @@ BuildPython debug \
+@@ -1849,7 +1852,7 @@ BuildPython debug \
  BuildPython optimized \
    python \
    python%{pybasever} \
