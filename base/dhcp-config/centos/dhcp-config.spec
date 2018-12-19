@@ -27,10 +27,11 @@ package StarlingX configuration files of dhcp to system folder.
 %{__install} -d %{buildroot}%{dhcpconfdir}
 %{__install} -p -m 0755 dhclient-enter-hooks %{buildroot}%{dhcpconfdir}/dhclient-enter-hooks
 %{__install} -p -m 0644 dhclient.conf %{buildroot}%{dhcpconfdir}/dhclient.conf
+ln -s  %{dhcpconfdir}/dhclient-enter-hooks  %{buildroot}%{_sysconfdir}/dhclient-enter-hooks
 
 %post
 
 %files
 %config(noreplace) %{dhcpconfdir}/dhclient.conf
 %{dhcpconfdir}/dhclient-enter-hooks
-
+%{_sysconfdir}/dhclient-enter-hooks

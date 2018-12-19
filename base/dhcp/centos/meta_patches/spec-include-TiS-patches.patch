@@ -11,36 +11,30 @@ diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
 index 14da097..904e3ad 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
-@@ -111,6 +115,14 @@ Patch70:  dhcp-4.2.5-reference_count_overflow.patch
+@@ -111,6 +115,11 @@ Patch70:  dhcp-4.2.5-reference_count_overflow.patch
  Patch71:  dhcp-4.2.5-centos-branding.patch
- 
- 
+
+
 +# WRS
-+Patch101: support-disable-nsupdate.patch
-+Patch102: dhclient-restrict-interfaces-to-command-line.patch
-+Patch103: dhclient-ipv6-bind-to-interface.patch
-+Patch104: dhclient-ipv6-conditionally-set-hostname.patch
-+Patch105: dhclient-handle-wrs-install-uuid.patch
-+Patch106: dhclient-dhcp6-wrs-install-uuid.patch
++Patch101: dhclient-restrict-interfaces-to-command-line.patch
++Patch102: dhclient-ipv6-bind-to-interface.patch
++Patch103: dhclient-ipv6-conditionally-set-hostname.patch
 +
  BuildRequires: autoconf
  BuildRequires: automake
  BuildRequires: libtool
-@@ -439,6 +451,14 @@ rm -rf includes/isc-dhcp
+@@ -439,6 +451,11 @@ rm -rf includes/isc-dhcp
  %patch70 -p1 -b .reference_overflow
  %patch71 -p1
- 
+
 +# WRS
 +%patch101 -p1
 +%patch102 -p1
 +%patch103 -p1
-+%patch104 -p1
-+%patch105 -p1
-+%patch106 -p1
 +
  # Update paths in all man pages
  for page in client/dhclient.conf.5 client/dhclient.leases.5 \
              client/dhclient-script.8 client/dhclient.8 ; do
--- 
+--
 2.7.4
 
