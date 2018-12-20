@@ -1176,7 +1176,7 @@ def getPlatformCores(node, cpe):
         logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
         core_list = list()
         try:
-            with open("/etc/nova/compute_reserved.conf", "r") as f:
+            with open("/etc/platform/worker_reserved.conf", "r") as f:
                 for line in f:
                     if line.startswith("PLATFORM_CPU_LIST"):
                         core_list = line.split("=")[1].replace("\"", "").strip("\n").split(",")

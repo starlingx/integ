@@ -1,0 +1,112 @@
+From b5e101b0a02e4693f57b42ac487621685f839bee Mon Sep 17 00:00:00 2001
+From: Tao Liu <tao.liu@windriver.com>
+Date: Thu, 29 Nov 2018 10:48:37 -0600
+Subject: [PATCH 1/1] Remove compute reserved VM huge pages
+
+---
+ .../compute_reserved_config/ini_setting.rb         | 22 ----------------------
+ lib/puppet/type/compute_reserved_config.rb         | 19 -------------------
+ manifests/compute.pp                               | 18 ------------------
+ 3 files changed, 59 deletions(-)
+ delete mode 100644 lib/puppet/provider/compute_reserved_config/ini_setting.rb
+ delete mode 100644 lib/puppet/type/compute_reserved_config.rb
+
+diff --git a/lib/puppet/provider/compute_reserved_config/ini_setting.rb b/lib/puppet/provider/compute_reserved_config/ini_setting.rb
+deleted file mode 100644
+index e7d142f..0000000
+--- a/lib/puppet/provider/compute_reserved_config/ini_setting.rb
++++ /dev/null
+@@ -1,22 +0,0 @@
+-Puppet::Type.type(:compute_reserved_config).provide(
+-  :ini_setting,
+-  :parent => Puppet::Type.type(:ini_setting).provider(:ruby)
+-) do
+-
+-  def section
+-    resource[:name].split('/', 2).first
+-  end
+-
+-  def setting
+-    resource[:name].split('/', 2).last
+-  end
+-
+-  def separator
+-    '='
+-  end
+-
+-  def file_path
+-    '/etc/nova/compute_reserved.conf'
+-  end
+-
+-end
+diff --git a/lib/puppet/type/compute_reserved_config.rb b/lib/puppet/type/compute_reserved_config.rb
+deleted file mode 100644
+index fa9d441..0000000
+--- a/lib/puppet/type/compute_reserved_config.rb
++++ /dev/null
+@@ -1,19 +0,0 @@
+-Puppet::Type.newtype(:compute_reserved_config) do
+-
+-  ensurable
+-
+-  newparam(:name, :namevar => true) do
+-    desc 'Section/setting name to manage from compute_reserved.conf'
+-    newvalues(/\S*\/\S+/)
+-  end
+-
+-  newproperty(:value) do
+-    desc 'The value of the setting to be defined.'
+-    munge do |value|
+-      value = value.to_s.strip
+-      value.capitalize! if value =~ /^(true|false)$/i
+-      value
+-    end
+-  end
+-
+-end
+diff --git a/manifests/compute.pp b/manifests/compute.pp
+index 719729a..62f3ac2 100644
+--- a/manifests/compute.pp
++++ b/manifests/compute.pp
+@@ -148,9 +148,6 @@
+ #   for shared machine processes
+ #   Defaults to undef
+ #
+-# [*compute_reserved_vm_memory_2M*]
+-# [*compute_reserved_vm_memory_1G*]
+-#
+ # DEPRECATED
+ #
+ # [*pci_passthrough*]
+@@ -194,8 +191,6 @@ class nova::compute (
+   $consecutive_build_service_disable_threshold = $::os_service_default,
+   # WRS PARAMETERS
+   $shared_pcpu_map                    = undef,
+-  $compute_reserved_vm_memory_2M      = '()',
+-  $compute_reserved_vm_memory_1G      = '()',
+   # DEPRECATED PARAMETERS
+   $pci_passthrough                             = undef,
+ ) {
+@@ -253,19 +248,6 @@ class nova::compute (
+     'DEFAULT/shared_pcpu_map':                   value => join(any2array($shared_pcpu_map), ',');
+   }
+
+-  ## Only override build default if value is provided at runtime.
+-  ## Setting to () has effect of calculating maximum 2M hugepages.
+-  if ($compute_reserved_vm_memory_2M and ($compute_reserved_vm_memory_2M != '()')) {
+-    compute_reserved_config {
+-      '/COMPUTE_VM_MEMORY_2M' : value => $compute_reserved_vm_memory_2M;
+-    }
+-  }
+-  if ($compute_reserved_vm_memory_1G and ($compute_reserved_vm_memory_1G != '()')) {
+-    compute_reserved_config {
+-      '/COMPUTE_VM_MEMORY_1G' : value => $compute_reserved_vm_memory_1G;
+-    }
+-  }
+-
+   ensure_resource('nova_config', 'DEFAULT/allow_resize_to_same_host', { value => $allow_resize_to_same_host })
+
+   if ($vnc_enabled) {
+--
+1.8.3.1
+
