@@ -60,8 +60,8 @@ while read line; do
         # be logged
         if [ ${nodetype} == "controller" ]; then
             _configuration_flag_file="/var/run/.controller_config_complete"
-        elif [ ${nodetype} == "compute" ]; then
-            _configuration_flag_file="/var/run/.compute_config_complete"
+        elif [ ${nodetype} == "worker" ]; then
+            _configuration_flag_file="/var/run/.worker_config_complete"
         elif [ ${nodetype} == "storage" ]; then
             _configuration_flag_file="/var/run/.storage_config_complete"
         else

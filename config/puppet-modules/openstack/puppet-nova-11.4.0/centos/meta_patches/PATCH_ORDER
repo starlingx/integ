@@ -9,3 +9,4 @@
 0009-Remove-SerialConsole-from-NovaConf.patch
 0010-Remove-compute-huge.patch
 0011-Provide-a-way-to-set-mem_stats_period_seconds.patch
+0012-Remove-compute-reserved-VM-huge-pages.patch

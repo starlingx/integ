@@ -11,7 +11,7 @@
 # platform core usable since the previous sample.
 #
 #  Init Function:
-#    - if 'compute_reserved.conf exists then query/store PLATFORM_CPU_LIST
+#    - if 'worker_reserved.conf exists then query/store PLATFORM_CPU_LIST
 #
 ############################################################################
 import os
@@ -24,7 +24,7 @@ PASS = 0
 FAIL = 1
 
 PATH = '/proc/cpuinfo'
-COMPUTE_RESERVED_CONF = '/etc/nova/compute_reserved.conf'
+WORKER_RESERVED_CONF = '/etc/platform/worker_reserved.conf'
 
 PLUGIN = 'platform cpu usage plugin'
 
@@ -63,8 +63,8 @@ def init_func():
     collectd.info('%s init function for %s' % (PLUGIN, c.hostname))
 
     raw_list = ""
-    if os.path.exists(COMPUTE_RESERVED_CONF):
-        with open(COMPUTE_RESERVED_CONF, 'r') as infile:
+    if os.path.exists(WORKER_RESERVED_CONF):
+        with open(WORKER_RESERVED_CONF, 'r') as infile:
             for line in infile:
                 if 'PLATFORM_CPU_LIST' in line:
                     val = line.split("=")
