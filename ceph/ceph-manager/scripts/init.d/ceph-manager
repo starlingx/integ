@@ -27,8 +27,8 @@ LOGFILE="/var/log/ceph-manager.log"
 start() 
 {
     if [ -e $PIDFILE ]; then
-        PIDDIR=/prod/$(cat $PIDFILE)
-        if [ -d ${PIDFILE} ]; then
+        PIDDIR=/proc/$(cat $PIDFILE)
+        if [ -d ${PIDDIR} ]; then
             echo "$DESC already running."
             exit 0
         else
