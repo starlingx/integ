@@ -4,3 +4,4 @@
 0004-Add-OSD-support-for-persistent-naming.patch
 0005-meta-patch-for-patch5.patch
 0006-add-ceph-disk-prepare-invalid-data-disk-value-patch.patch
+0007-Add-StarlingX-specific-restart-command-for-Ceph-moni.patch
