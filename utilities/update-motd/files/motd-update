@@ -11,5 +11,5 @@ MOTD_PATH=${MOTD_PATH:-"/etc/motd.d"}
 MOTD_TAG=${MOTD_TAG:-"motd-update"}
 
 if [ -d ${MOTD_PATH} ]; then
-    run-parts --without-progname ${MOTD_PATH} 1>${MOTD_FILE}
+    run-parts ${MOTD_PATH} 1>${MOTD_FILE}
 fi
