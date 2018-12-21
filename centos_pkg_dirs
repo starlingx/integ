@@ -145,6 +145,7 @@ database/python-psycopg2
 base/crontabs
 base/dnsmasq
 base/dnsmasq-config
+base/golang-dep
 filesystem/parted
 security/python-keyring
 grub/grub2

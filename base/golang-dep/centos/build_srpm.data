@@ -1,0 +1,2 @@
+COPY_LIST="$CGCS_BASE/downloads/dep-v0.5.0.tar.gz"
+TIS_PATCH_VER=0
