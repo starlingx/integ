@@ -12,9 +12,9 @@ diff --git a/SPECS/dnsmasq.spec b/SPECS/dnsmasq.spec
 index b312ef3..4d30b0a 100644
 --- a/SPECS/dnsmasq.spec
 +++ b/SPECS/dnsmasq.spec
-@@ -55,6 +55,10 @@ Patch17:	dnsmasq-2.76-gita3303e196.patch
- Patch18:	dnsmasq-2.76-underflow.patch
- Patch19:	dnsmasq-2.76-misc-cleanups.patch
+@@ -57,6 +57,10 @@ Patch19:	dnsmasq-2.76-misc-cleanups.patch
+ Patch20:	dnsmasq-2.76-CVE-2017-14491-2.patch
+ Patch21:	dnsmasq-2.76-inotify.patch
  
 +# WRS patches
 +Patch30:        dnsmasq-update-ipv6-leases-from-config.patch
@@ -23,9 +23,9 @@ index b312ef3..4d30b0a 100644
  BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
  
  BuildRequires:  dbus-devel
-@@ -109,6 +113,10 @@ query/remove a DHCP server's leases.
- %patch18 -p1 -b .underflow
- %patch19 -p1 -b .misc
+@@ -113,6 +117,10 @@ query/remove a DHCP server's leases.
+ %patch20 -p1 -b .CVE-2017-14491-2
+ %patch21 -p1 -b .inotify
  
 +# WRS patches
 +%patch30 -p1
@@ -34,7 +34,7 @@ index b312ef3..4d30b0a 100644
  # use /var/lib/dnsmasq instead of /var/lib/misc
  for file in dnsmasq.conf.example man/dnsmasq.8 man/es/dnsmasq.8 src/config.h; do
      sed -i 's|/var/lib/misc/dnsmasq.leases|/var/lib/dnsmasq/dnsmasq.leases|g' "$file"
-@@ -164,25 +172,11 @@ rm -rf %{buildroot}%{_initrddir}
+@@ -168,25 +176,11 @@ rm -rf %{buildroot}%{_initrddir}
  %clean
  rm -rf $RPM_BUILD_ROOT
  
