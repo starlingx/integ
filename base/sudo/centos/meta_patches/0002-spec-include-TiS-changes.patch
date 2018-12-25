@@ -1,35 +1,17 @@
 From 70046603b8d607445e2fbf5e7d934bcd43a77dc8 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:50:44 -0400
-Subject: [PATCH 2/4] WRS: 0002-spec-include-TiS-changes.patch
+Subject: [PATCH 2/4] STX: 0002-spec-include-TiS-changes.patch
 
 ---
- SPECS/sudo.spec | 15 +++++++++++++--
- 1 file changed, 13 insertions(+), 2 deletions(-)
+ SPECS/sudo.spec | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index b6402bb..acbcb26 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
-@@ -78,6 +78,8 @@ Patch24: sudo-1.8.19p2-sssd-double-free.patch
- # 1560657 - sudo blocks in poll() for /dev/ptmx with iolog enabled
- Patch25: sudo-1.8.19p2-iolog-zombie.patch
- 
-+# WRS patches
-+
- %description
- Sudo (superuser do) allows a system administrator to give certain
- users (or groups of users) the ability to run some (or all) commands
-@@ -127,6 +129,8 @@ plugins that use %{name}.
- %patch24 -p1 -b .double-free
- %patch25 -p1 -b .iolog-zombie
- 
-+# WRS patches
-+
- %build
- autoreconf -I m4 -fv --install
- 
-@@ -153,7 +157,7 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
+@@ -111,7 +111,7 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
          --with-ignore-dot \
          --with-tty-tickets \
          --with-ldap \
@@ -38,26 +20,21 @@ index b6402bb..acbcb26 100644
          --with-selinux \
          --with-passprompt="[sudo] password for %p: " \
          --with-linux-audit \
-@@ -179,6 +183,12 @@ install -p -c -m 0440 %{SOURCE1} $RPM_BUILD_ROOT/etc/sudoers
- install -p -c -m 0640 %{SOURCE3} $RPM_BUILD_ROOT/etc/sudo.conf
- install -p -c -m 0640 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sudo-ldap.conf
+@@ -138,6 +138,9 @@ install -p -c -m 0440 %{SOURCE1} %{buildroot}%{_sysconfdir}/sudoers
+ install -p -c -m 0640 %{SOURCE3} %{buildroot}%{_sysconfdir}/sudo.conf
+ install -p -c -m 0640 %{SOURCE2} %{buildroot}%{_sysconfdir}/sudo-ldap.conf
  
-+install -d $RPM_BUILD_ROOT/%{_sysconfdir}/openldap/schema/
-+install -m 644 doc/schema.OpenLDAP $RPM_BUILD_ROOT/%{_sysconfdir}/openldap/schema/sudo.schema
++install -d %{buildroot}%{_sysconfdir}/openldap/schema/
++install -m 644 doc/schema.OpenLDAP %{buildroot}%{_sysconfdir}/openldap/schema/sudo.schema
 +
-+install -d $RPM_BUILD_ROOT/%{_datadir}/sudo
-+install -m 700 plugins/sudoers/sudoers2ldif $RPM_BUILD_ROOT/%{_datadir}/sudo/sudoers2ldif
-+
- # Remove execute permission on this script so we don't pull in perl deps
- chmod -x $RPM_BUILD_ROOT%{_docdir}/sudo-*/sudoers2ldif
+ # Remove upstream sudoers file
+ rm -f %{buildroot}%{_sysconfdir}/sudoers.dist
  
-@@ -247,7 +257,8 @@ rm -rf $RPM_BUILD_ROOT
- %{_mandir}/man8/visudo.8*
+@@ -210,6 +213,7 @@ rm -rf %{buildroot}
+ %{_mandir}/man5/sudoers_timestamp.5.gz
  %dir %{_docdir}/sudo-%{version}
  %{_docdir}/sudo-%{version}/*
--
 +%{_sysconfdir}/openldap/schema/sudo.schema
-+%{_datadir}/sudo/sudoers2ldif
  
  # Make sure permissions are ok even if we're updating
  %post
