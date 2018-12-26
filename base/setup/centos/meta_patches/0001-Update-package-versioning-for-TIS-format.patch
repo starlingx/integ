@@ -15,11 +15,11 @@ index 3ad2458..8f5fc46 100644
  Summary: A set of system configuration and setup files
  Name: setup
  Version: 2.8.71
--Release: 9%{?dist}
-+Release: 9.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 10%{?dist}
++Release: 10.el7%{?_tis_dist}.%{tis_patch_ver}
  License: Public Domain
  Group: System Environment/Base
  URL: https://pagure.io/setup/
--- 
+--
 2.7.4
 

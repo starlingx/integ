@@ -11,20 +11,20 @@ diff --git a/SPECS/setup.spec b/SPECS/setup.spec
 index 0bd1e98..a173b95 100644
 --- a/SPECS/setup.spec
 +++ b/SPECS/setup.spec
-@@ -21,6 +21,8 @@ Patch5: setup-2.8.71-fullpath.patch
- Patch6: setup-2.8.71-tapeid.patch
- Patch7: setup-2.8.71-shlocal.patch
+@@ -23,6 +23,8 @@ Patch7: setup-2.8.71-shlocal.patch
+ Patch8: setup-2.8.71-protocolscrudp.patch
+ Patch9: setup-2.8.71-shellsnologin.patch
 
-+Patch8: 0001-Change-group-passwd-and-uidgid.patch
++Patch1001: 0001-Change-group-passwd-and-uidgid.patch
 +
  %description
  The setup package contains a set of important system configuration and
  setup files, such as passwd, group, and profile.
-@@ -36,6 +38,8 @@ setup files, such as passwd, group, and profile.
- %patch6 -p1
- %patch7 -p1
+@@ -40,6 +42,8 @@ setup files, such as passwd, group, and profile.
+ %patch8 -p1
+ %patch9 -p1
 
-+%patch8 -p1
++%patch1001 -p1
 +
  ./shadowconvert.sh
 
