@@ -17,8 +17,8 @@ index dd8fa7f..22bff31 100644
 @@ -1,6 +1,6 @@
  Name: grubby
  Version: 8.28
--Release: 23%{?dist}
-+Release: 23.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 25%{?dist}
++Release: 25.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary: Command line tool for updating bootloader configs
  Group: System Environment/Base
  License: GPLv2+
