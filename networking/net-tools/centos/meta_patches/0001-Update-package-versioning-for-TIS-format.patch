@@ -17,8 +17,8 @@ index 2f09372..c8b94cd 100644
  Summary: Basic networking tools
  Name: net-tools
  Version: 2.0
--Release: 0.22.%{checkout}%{?dist}
-+Release: 0.22.20131004git.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 0.24.%{checkout}%{?dist}
++Release: 0.24.20131004git.el7%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2+
  Group: System Environment/Base
  URL: http://sourceforge.net/projects/net-tools/
