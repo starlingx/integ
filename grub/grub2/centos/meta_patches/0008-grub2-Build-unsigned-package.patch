@@ -11,7 +11,7 @@ diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
 index 075727c..5581deb 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -215,6 +215,13 @@ Requires:	%{name}-common = %{evr}					\
+@@ -235,6 +235,13 @@ Requires:	%{name}-common = %{evr}					\
  %{expand:%%description %{1}-cdboot}					\
  %{desc}									\
  This subpackage provides optional components of grub used with removeable media on %{1} systems.\
@@ -25,7 +25,7 @@ index 075727c..5581deb 100644
  %{nil}
  
  %global do_common_setup()					\
-@@ -289,6 +296,8 @@ done								\
+@@ -309,6 +316,8 @@ done								\
  	-p /EFI/%{efidir} -d grub-core ${GRUB_MODULES}		\
  %{4}./grub-mkimage -O %{1} -o %{3}.orig				\\\
  	-p /EFI/BOOT -d grub-core ${GRUB_MODULES}		\
@@ -34,20 +34,20 @@ index 075727c..5581deb 100644
  %{expand:%%{pesign -s -i %{2}.orig -o %{2} -a %{5} -c %{6} -n %{7}}}	\
  %{expand:%%{pesign -s -i %{3}.orig -o %{3} -a %{5} -c %{6} -n %{7}}}	\
  %{nil}
-@@ -383,6 +392,8 @@ find $RPM_BUILD_ROOT -iname "*.module" -exec chmod a-x {} '\;'	\
+@@ -403,6 +412,8 @@ find $RPM_BUILD_ROOT -iname "*.module" -exec chmod a-x {} '\;'	\
  touch $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/grub.cfg		\
  ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
  	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
-+install -m 755 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}.unsigned \
-+install -m 755 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3}.unsigned \
- install -m 755 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
- install -m 755 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
- install -D -m 644 unicode.pf2					\\\
-@@ -473,4 +484,8 @@ cd ..								\
++install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}.unsigned \
++install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3}.unsigned \
+ install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
+ install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
+ install -D -m 700 unicode.pf2					\\\
+@@ -490,4 +501,8 @@ cd ..								\
  %defattr(-,root,root,-)						\
- %attr(0755,root,root)/boot/efi/EFI/%{efidir}/%{3}		\
- %attr(0755,root,root)/boot/efi/EFI/%{efidir}/fonts		\
-+								\
+ %attr(0700,root,root)/boot/efi/EFI/%{efidir}/%{3}		\
+ %attr(0700,root,root)/boot/efi/EFI/%{efidir}/fonts		\
++                                                               \
 +%{expand:%%files %{1}-unsigned}                                 \
 +/boot/efi/EFI/%{efidir}/%{grubefiname}.unsigned                 \
 +/boot/efi/EFI/%{efidir}/%{grubeficdname}.unsigned               \

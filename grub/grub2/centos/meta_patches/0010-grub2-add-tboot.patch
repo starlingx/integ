@@ -12,7 +12,7 @@ diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
 index 9ef91d6..ffdd23c 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -81,6 +81,10 @@
+@@ -82,6 +82,10 @@
  %global legacy_package_arch pc
  %global platform pc
  
@@ -21,9 +21,9 @@ index 9ef91d6..ffdd23c 100644
 +%global wrs_modules ""
 +
  %endif
- 
- %ifarch aarch64
-@@ -327,6 +331,7 @@ GRUB_MODULES="	all_video boot btrfs cat chain configfile echo	\\\
+ %ifarch %{ix86}
+ %global target_cpu_name %{_arch}
+@@ -347,6 +351,7 @@ GRUB_MODULES="	all_video boot btrfs cat chain configfile echo	\\\
  		search_label serial sleep syslinuxcfg test tftp \\\
  		video xfs"					\
  GRUB_MODULES+=%{efi_modules}					\
@@ -35,9 +35,9 @@ diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
 index d7475f0..e24bd8c 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -259,3 +259,4 @@ Patch0258: 0258-Fix-one-more-coverity-complaint.patch
- Patch0260: 0260-Fix-up-linux-params-usage.patch
- Patch0261: 0261-Fix-grub_net_hwaddr_to_str.patch
+@@ -287,3 +287,4 @@ Patch0286: 0286-efinet-also-use-the-firmware-acceleration-for-http.patch
+ Patch0287: 0287-Make-root_url-reflect-the-protocol-hostname-of-our-b.patch
+ Patch0289: 0288-efi-uga-Fix-PCIe-LER-when-GRUB2-accesses-non-enabled.patch
  Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
 +Patch1001: 1001-add-tboot.patch
 -- 
