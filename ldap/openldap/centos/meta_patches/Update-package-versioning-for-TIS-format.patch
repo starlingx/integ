@@ -17,8 +17,8 @@ index c38f1bd..d35d73f 100644
  
  Name: openldap
  Version: 2.4.44
--Release: 15%{?dist}
-+Release: 15.el7_5%{?_tis_dist}.%{tis_patch_ver}
+-Release: 20%{?dist}
++Release: 20.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary: LDAP support libraries
  Group: System Environment/Daemons
  License: OpenLDAP
