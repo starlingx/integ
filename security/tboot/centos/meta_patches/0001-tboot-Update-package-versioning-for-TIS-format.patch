@@ -15,8 +15,8 @@ index 2f6f0a8..c2d5eb7 100644
  Summary:        Performs a verified launch using Intel TXT
  Name:           tboot
  Version:        1.9.6
--Release:        2%{?dist}
-+Release:        2.e17%{?_tis_dist}.%{tis_patch_ver}
+-Release:        3%{?dist}
++Release:        3.e17%{?_tis_dist}.%{tis_patch_ver}
  Epoch:          1
  
  Group:          System Environment/Base
@@ -26,7 +26,7 @@ index 2f6f0a8..c2d5eb7 100644
 +
  BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
  
- Patch01:	0001-MANPATH-should-not-be-used-as-install-dir.patch
+ Patch01: ../patches/0001-Fix-a-logical-error-in-function-bool-evtlog_append.patch
 -- 
 2.7.4
 
