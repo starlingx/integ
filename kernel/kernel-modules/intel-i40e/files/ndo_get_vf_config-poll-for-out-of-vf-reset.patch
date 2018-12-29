@@ -19,16 +19,16 @@ diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
 index da29fc3..d5935d6 100644
 --- a/src/i40e_virtchnl_pf.c
 +++ b/src/i40e_virtchnl_pf.c
-@@ -3431,6 +3431,7 @@ int i40e_ndo_get_vf_config(struct net_device *netdev,
+@@ -4829,6 +4829,7 @@ int i40e_ndo_get_vf_config(struct net_device *netdev,
  	struct i40e_pf *pf = vsi->back;
  	struct i40e_vf *vf;
  	int ret = 0;
 +	u8 i;
  
- 	/* validate the request */
- 	if (vf_id >= pf->num_alloc_vfs) {
-@@ -3442,6 +3443,16 @@ int i40e_ndo_get_vf_config(struct net_device *netdev,
- 	vf = &(pf->vf[vf_id]);
+ 	if (test_and_set_bit(__I40E_VIRTCHNL_OP_PENDING, pf->state)) {
+ 		dev_warn(&pf->pdev->dev, "Unable to configure VFs, other operation is pending.\n");
+@@ -4843,6 +4844,16 @@ int i40e_ndo_get_vf_config(struct net_device *netdev,
+ 	vf = &pf->vf[vf_id];
  	/* first vsi is always the LAN vsi */
  	vsi = pf->vsi[vf->lan_vsi_idx];
 +
