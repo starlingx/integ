@@ -13,7 +13,7 @@ index d2a13b1..9cfcb2f 100644
 +++ b/SPECS/shim-signed.spec
 @@ -1,6 +1,6 @@
  Name:           shim-signed
- Version:        12
+ Version:        15
 -Release:        1%{?dist}%{?buildid}
 +Release:        1%{?_tis_dist}.%{tis_patch_ver}
  Summary:        First-stage UEFI bootloader
