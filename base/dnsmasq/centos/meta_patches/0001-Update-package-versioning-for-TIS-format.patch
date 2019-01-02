@@ -16,8 +16,8 @@ index 4d30b0a..689158e 100644
  
  Name:           dnsmasq
  Version:        2.76
--Release:        5%{?extraversion}%{?dist}
-+Release:        5.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:        7%{?extraversion}%{?dist}
++Release:        7.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        A lightweight DHCP/caching DNS server
  
  Group:          System Environment/Daemons
