@@ -11,7 +11,7 @@ diff --git a/rc.d/init.d/network b/rc.d/init.d/network
 index a8deed3..852ef94 100755
 --- a/rc.d/init.d/network
 +++ b/rc.d/init.d/network
-@@ -214,6 +214,9 @@ stop)
+@@ -228,6 +228,9 @@ stop)
          if ! check_device_down $DEVICE; then
              action $"Shutting down interface $i: " ./ifdown $i boot
              [ $? -ne 0 ] && rc=1
