@@ -23,7 +23,7 @@ class CephManagerException(Exception):
                 message = self.message % kwargs
             except TypeError:
                 LOG.warn(_LW('Exception in string format operation'))
-                for name, value in kwargs.iteritems():
+                for name, value in kwargs.items():
                     LOG.error("%s: %s" % (name, value))
                 # at least get the core message out if something happened
                 message = self.message

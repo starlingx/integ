@@ -106,7 +106,7 @@ def collectMemtop(influx_info, node, ci):
                         fields["platform_avail"] += avail / MiB
                         fields["platform_hfree"] += hfree
                         f1.close()
-            s = generateString(measurement, tags.keys(), tags.values(), fields.keys(), fields.values())
+            s = generateString(measurement, list(tags.keys()), list(tags.values()), list(fields.keys()), list(fields.values()))
             if s is None:
                 good_string = False
             else:
@@ -221,7 +221,7 @@ def collectMemstats(influx_info, node, ci, services, syseng_services, openstack_
                                 fields["total"]["vsz"] += vsz
                                 break
             # send data to InfluxDB
-            for key in fields.keys():
+            for key in fields:
                 influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}'".format(measurement, "node", tags["node"], "service", key, "rss", fields[key]["rss"], "vsz", fields[key]["vsz"]) + "\n"
             p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string), shell=True)
             p.communicate()
@@ -333,7 +333,7 @@ def collectSchedtop(influx_info, node, ci, services, syseng_services, openstack_
                                         fields[svc] += occ
                                     fields["total"] += occ
                                     break
-                for key in fields.keys():
+                for key in fields:
                     influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}'".format(measurement, "node", tags["node"], "service", key, "occ", fields[key]) + "\n"
                 # send data to InfluxDB
                 p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string), shell=True)
@@ -800,7 +800,7 @@ def collectRabbitMq(influx_info, node, ci):
                                     info[i] = "processes_" + info[i]
                                 if info[i].replace("_", "").isalpha() and info[i + 1].isdigit():
                                     fields[info[i]] = info[i + 1]
-                            s = generateString(measurement, tags.keys(), tags.values(), fields.keys(), fields.values())
+                            s = generateString(measurement, list(tags.keys()), list(tags.values()), list(fields.keys()), list(fields.values()))
                             if s is None:
                                 rabbitmq_output.kill()
                             else:
@@ -993,7 +993,7 @@ def collectFilestats(influx_info, node, ci, services, syseng_services, exclude_l
                             p.kill()
                             continue
                         p.kill()
-            for key in fields.keys():
+            for key in fields:
                 influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}'".format(measurement, "node", tags["node"], "service", key, "read/write", fields[key]["read/write"], "write", fields[key]["write"], "read", fields[key]["read"]) + "\n"
                 # send data to InfluxDB
             p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string), shell=True)
@@ -1041,7 +1041,7 @@ def collectVswitch(influx_info, node, ci):
                     for key in fields:
                         fields[key] = line[i].strip("%")
                         i += 1
-                    influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement, tags.keys()[0], tags.values()[0], tags.keys()[1], tags.values()[1], fields.keys()[0], fields.values()[0], fields.keys()[1], fields.values()[1], fields.keys()[2], fields.values()[2], fields.keys()[3], fields.values()[3], fields.keys()[4], fields.values()[4], fields.keys()[5], fields.values()[5], fields.keys()[6], fields.values()[6], fields.keys()[7], fields.values()[7], fields.keys()[8], fields.values()[8]) + "\n"
+                    influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement, list(tags.keys())[0], list(tags.values())[0], list(tags.keys())[1], list(tags.values())[1], list(fields.keys())[0], list(fields.values())[0], list(fields.keys())[1], list(fields.values())[1], list(fields.keys())[2], list(fields.values())[2], list(fields.keys())[3], list(fields.values())[3], list(fields.keys())[4], list(fields.values())[4], list(fields.keys())[5], list(fields.values())[5], list(fields.keys())[6], list(fields.values())[6], list(fields.keys())[7], list(fields.values())[7], list(fields.keys())[8], list(fields.values())[8]) + "\n"
             vshell_engine_stats_output.kill()
             vshell_port_stats_output = Popen("vshell port-stats-list", shell=True, stdout=PIPE)
             vshell_port_stats_output.stdout.readline()
@@ -1059,7 +1059,7 @@ def collectVswitch(influx_info, node, ci):
                     for key in fields1:
                         fields1[key] = line[i].strip("%")
                         i += 1
-                    influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement, tags1.keys()[0], tags1.values()[0], tags1.keys()[1], tags1.values()[1], fields1.keys()[0], fields1.values()[0], fields1.keys()[1], fields1.values()[1], fields1.keys()[2], fields1.values()[2], fields1.keys()[3], fields1.values()[3], fields1.keys()[4], fields1.values()[4], fields1.keys()[5], fields1.values()[5], fields1.keys()[6], fields1.values()[6]) + "\n"
+                    influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement, list(tags1.keys())[0], list(tags1.values())[0], list(tags1.keys())[1], list(tags1.values())[1], list(fields1.keys())[0], list(fields1.values())[0], list(fields1.keys())[1], list(fields1.values())[1], list(fields1.keys())[2], list(fields1.values())[2], list(fields1.keys())[3], list(fields1.values())[3], list(fields1.keys())[4], list(fields1.values())[4], list(fields1.keys())[5], list(fields1.values())[5], list(fields1.keys())[6], list(fields1.values())[6]) + "\n"
             vshell_port_stats_output.kill()
             vshell_interface_stats_output = Popen("vshell interface-stats-list", shell=True, stdout=PIPE)
             vshell_interface_stats_output.stdout.readline()
@@ -1078,7 +1078,7 @@ def collectVswitch(influx_info, node, ci):
                         for key in fields2:
                             fields2[key] = line[i].strip("%")
                             i += 1
-                        influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement, tags2.keys()[0], tags2.values()[0], tags2.keys()[1], tags2.values()[1], fields2.keys()[0], fields2.values()[0], fields2.keys()[1], fields2.values()[1], fields2.keys()[2], fields2.values()[2], fields2.keys()[3], fields2.values()[3], fields2.keys()[4], fields2.values()[4], fields2.keys()[5], fields2.values()[5], fields2.keys()[6], fields2.values()[6], fields2.keys()[7], fields2.values()[7], fields2.keys()[8], fields2.values()[8], fields2.keys()[9], fields2.values()[9]) + "\n"
+                        influx_string += "{},'{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement, list(tags2.keys())[0], list(tags2.values())[0], list(tags2.keys())[1], list(tags2.values())[1], list(fields2.keys())[0], list(fields2.values())[0], list(fields2.keys())[1], list(fields2.values())[1], list(fields2.keys())[2], list(fields2.values())[2], list(fields2.keys())[3], list(fields2.values())[3], list(fields2.keys())[4], list(fields2.values())[4], list(fields2.keys())[5], list(fields2.values())[5], list(fields2.keys())[6], list(fields2.values())[6], list(fields2.keys())[7], list(fields2.values())[7], list(fields2.keys())[8], list(fields2.values())[8], list(fields2.keys())[9], list(fields2.values())[9]) + "\n"
                     else:
                         continue
             vshell_interface_stats_output.kill()
@@ -1135,7 +1135,7 @@ def collectApiStats(influx_info, node, ci, services, db_port, rabbit_port):
                     break
                 lsof_lines.append(line)
             lsof_result.kill()
-            for name, service in services.iteritems():
+            for name, service in services.items():
                 pid_list = list()
                 check_pid = False
                 if name == "keystone-public":
