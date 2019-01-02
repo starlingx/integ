@@ -11,7 +11,7 @@ diff --git a/SPECS/puppet-openstacklib.spec b/SPECS/puppet-openstacklib.spec
 index 0ed0c1d..38faf85 100644
 --- a/SPECS/puppet-openstacklib.spec
 +++ b/SPECS/puppet-openstacklib.spec
-@@ -8,6 +8,7 @@ License:        Apache-2.0
+@@ -8,6 +8,7 @@ License:        ASL 2.0
  URL:            https://launchpad.net/puppet-openstacklib
  
  Source0:        https://tarballs.openstack.org/%{name}/%{name}-%{upstream_version}.tar.gz
