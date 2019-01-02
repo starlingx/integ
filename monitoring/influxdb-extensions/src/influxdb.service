@@ -1,8 +1,10 @@
 [Unit]
 Description=InfluxDB open-source, distributed, time series database
 Documentation=https://influxdb.com/docs/
-After=local-fs.target network.target
 Before=collectd.service
+Before=pmon.service
+After=local-fs.target network-online.target
+Requires=local-fs.target network-online.target
 
 [Service]
 User=influxdb
