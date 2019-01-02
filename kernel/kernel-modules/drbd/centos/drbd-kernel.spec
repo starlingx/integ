@@ -9,7 +9,7 @@
 
 Name: drbd-kernel%{?bt_ext}
 Summary: Kernel driver for DRBD
-Version: 8.4.7
+Version: 8.4.11
 %define upstream_release 1
 Release: %{upstream_release}%{?_tis_dist}.%{tis_patch_ver}
 %global tarball_version %(echo "%{version}-%{?upstream_release}" | sed -e "s,%{?dist}$,,")
@@ -25,7 +25,6 @@ Source0: http://oss.linbit.com/drbd/drbd-%{tarball_version}.tar.gz
 
 # WRS
 Patch0001: 0001-remove_bind_before_connect_error.patch
-Patch0002: compat-Statically-initialize-families.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -86,7 +85,6 @@ echo "Done."
 %prep
 %setup -q -n drbd-%{tarball_version}
 %patch0001 -p1
-%patch0002 -p1
 
 %build
 rm -rf obj
