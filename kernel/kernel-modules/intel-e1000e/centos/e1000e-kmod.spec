@@ -8,7 +8,7 @@
 %define kmod_name e1000e
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 3.4.1.1
+Version: 3.4.2.1
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
