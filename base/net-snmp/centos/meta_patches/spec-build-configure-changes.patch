@@ -9,7 +9,7 @@ index 8a24ba1..40af31f 100644
  # use netsnmp_tcp_wrappers 0 to disable tcp_wrappers support
  %{!?netsnmp_tcp_wrappers:%global netsnmp_tcp_wrappers 1}
  # use nestnmp_check 0 to speed up packaging by disabling 'make test'
-@@ -333,7 +336,7 @@ rm testing/fulltests/default/T200*
+@@ -339,7 +342,7 @@ rm testing/fulltests/default/T200*
  %endif
 
  %build
@@ -18,7 +18,7 @@ index 8a24ba1..40af31f 100644
       ucd-snmp/diskio tcp-mib udp-mib mibII/mta_sendmail \
       ip-mib/ipv4InterfaceTable ip-mib/ipv6InterfaceTable \
       ip-mib/ipAddressPrefixTable/ipAddressPrefixTable \
-@@ -354,6 +357,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
+@@ -360,6 +363,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
      --with-logfile="/var/log/snmpd.log" \
      --with-persistent-directory="/var/lib/net-snmp" \
      --with-mib-modules="$MIBS" \
@@ -26,7 +26,7 @@ index 8a24ba1..40af31f 100644
  %if %{netsnmp_tcp_wrappers}
      --with-libwrap=yes \
  %endif
-@@ -372,6 +376,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
+@@ -378,6 +382,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
      --with-security-modules=tsm  \
      --with-mysql \
      --with-systemd \
