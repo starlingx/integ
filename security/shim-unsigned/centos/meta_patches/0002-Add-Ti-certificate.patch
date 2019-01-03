@@ -14,7 +14,7 @@ new mode 100755
 index de216b6..83da6cd
 --- a/SPECS/shim.spec
 +++ b/SPECS/shim.spec
-@@ -14,8 +14,10 @@ Source0:        https://github.com/mjg59/shim/releases/download/%{version}/shim-
+@@ -12,8 +12,10 @@ Source0:        https://github.com/mjg59/shim/releases/download/%{version}/shim-
  #Source3:       dbx-aa64.esl
  Source4:        shim-find-debuginfo.sh
  Source5:	centos.esl
@@ -25,7 +25,7 @@ index de216b6..83da6cd
  
  BuildRequires: git openssl-devel openssl
  BuildRequires: pesign >= 0.106-1
-@@ -106,6 +108,7 @@ git commit -a -q -m "%{version} baseline."
+@@ -104,6 +106,7 @@ git commit -a -q -m "%{version} baseline."
  git am --ignore-whitespace %{patches} </dev/null
  git config --unset user.email
  git config --unset user.name
@@ -33,7 +33,7 @@ index de216b6..83da6cd
  
  %ifarch x86_64
  cd ..
-@@ -120,6 +123,7 @@ git commit -a -q -m "%{version} baseline."
+@@ -118,6 +121,7 @@ git commit -a -q -m "%{version} baseline."
  git am --ignore-whitespace %{patches} </dev/null
  git config --unset user.email
  git config --unset user.name
