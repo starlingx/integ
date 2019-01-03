@@ -16,7 +16,7 @@ index afd533b..de216b6
 +++ b/SPECS/shim.spec
 @@ -1,6 +1,6 @@
  Name:           shim
- Version:        12
+ Version:        15
 -Release:        1%{?dist}
 +Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        First-stage UEFI bootloader
