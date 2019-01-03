@@ -2,16 +2,16 @@ diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index 8c3f395..17531f7 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
-@@ -166,7 +166,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
- #       --without-kerb4
+@@ -120,7 +120,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
  make
  
+ %check
 -make check
 +# "make check" fails if there is no group named "bin" in the mock system
 +# make check
  
  %install
- rm -rf $RPM_BUILD_ROOT
+ rm -rf %{buildroot}
 -- 
 2.7.4
 
