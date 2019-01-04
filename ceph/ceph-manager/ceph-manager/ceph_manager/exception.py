@@ -5,7 +5,8 @@
 #
 
 # noinspection PyUnresolvedReferences
-from i18n import _, _LW
+from ceph_manager.i18n import _
+from ceph_manager.i18n import _LW
 # noinspection PyUnresolvedReferences
 from oslo_log import log as logging
 

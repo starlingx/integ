@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 ###################
 # IMPORTS
 ###################
+from __future__ import absolute_import
 import logging
 import logging.handlers
 import time
@@ -19,7 +20,7 @@ import sys
 
 from daemon import runner
 
-import prepostrotate
+from logmgmt import prepostrotate
 
 ###################
 # CONSTANTS
