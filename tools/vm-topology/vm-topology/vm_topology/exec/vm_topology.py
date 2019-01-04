@@ -482,7 +482,7 @@ def list_to_range(L=[]):
     """ Convert a list into a string of comma separate ranges.
         E.g.,  [1,2,3,8,9,15] is converted to '1-3,8-9,15'
     """
-    G = (list(x) for _, x in groupby(enumerate(L), lambda (i, x): i - x))
+    G = (list(x) for _, x in groupby(enumerate(L), lambda i_x: i_x[0] - i_x[1]))
     return ",".join(
         "-".join(map(str, (g[0][1], g[-1][1])[:len(g)])) for g in G)
 
@@ -505,7 +505,8 @@ def timeout_handler(signum, frame):
     raise TimeoutError('timeout')
 
 
-def libvirt_domain_info_worker((host)):
+def libvirt_domain_info_worker(tuple_hosts):
+    (host) = tuple_hosts
     pid = os.getpid()
     active_pids.update({pid: (host, time.time())})
     error = None
@@ -519,11 +520,12 @@ def libvirt_domain_info_worker((host)):
     return (host, domain, topology, time.time(), error)
 
 
-def do_libvirt_domain_info((host)):
+def do_libvirt_domain_info(tuple_hosts):
     """
     Connect to libvirt for specified host, and retrieve per-domain information
     including cpu affinity per vcpu.
     """
+    (host) = tuple_hosts
     domains = {}
     topology = {}
     if not host:
@@ -899,7 +901,7 @@ def print_all_tables(tenants=None,
                   'memory', 'U:memory', 'A:mem_4K', 'A:mem_2M', 'A:mem_1G']:
             pt.align[C] = 'r'
         for host_name, H in sorted(hypervisors.items(),
-                                   key=lambda (k, v): (natural_keys(k))):
+                                   key=lambda k_v1: (natural_keys(k_v1[0]))):
             A = list(agg_h[host_name].keys())
 
             try:
@@ -1020,7 +1022,7 @@ def print_all_tables(tenants=None,
         print
         print('LOGICAL CPU TOPOLOGY (compute hosts):')
         for host_name, topology in sorted(topologies.items(),
-                                          key=lambda (k, v): (natural_keys(k))):
+                                          key=lambda k_v2: (natural_keys(k_v2[0]))):
             H = hypervisors[host_name]
             try:
                 topology_idx = topologies_idx[host_name]
@@ -1084,7 +1086,7 @@ def print_all_tables(tenants=None,
         print
         print('LOGICAL CPU TOPOLOGY (compute hosts):')
         for host_name, topology in sorted(topologies.items(),
-                                          key=lambda (k, v): (natural_keys(k))):
+                                          key=lambda k_v3: (natural_keys(k_v3[0]))):
             H = hypervisors[host_name]
             try:
                 topology_idx = topologies_idx[host_name]
@@ -1161,10 +1163,10 @@ def print_all_tables(tenants=None,
         for C in ['in_libvirt']:
             pt.align[C] = 'c'
         for _, S in sorted(servers.items(),
-                           key=lambda (k, v): (natural_keys(v.host),
-                                               v.server_group,
-                                               v.instance_name)
-                           if (v.host is not None) else 'None'
+                           key=lambda k_v4: (natural_keys(k_v4[1].host),
+                                               k_v4[1].server_group,
+                                               k_v4[1].instance_name)
+                           if (k_v4[1].host is not None) else 'None'
         ):
             if S.server_group is not None and S.server_group:
                 match = re_server_group.search(S.server_group)
@@ -1257,9 +1259,9 @@ def print_all_tables(tenants=None,
         for C in ['in_nova']:
             pt.align[C] = 'c'
         for host, D in sorted(domains.items(),
-                              key=lambda (k, v): (natural_keys(k))):
+                              key=lambda k_v5: (natural_keys(k_v5[0]))):
             for _, S in sorted(D.items(),
-                               key=lambda (k, v): (v['name'])):
+                               key=lambda k_v: (k_v[1]['name'])):
                 in_nova = True if S['uuid'] in servers else False
                 pt.add_row(
                     [S['uuid'],
@@ -1292,7 +1294,7 @@ def print_all_tables(tenants=None,
             ])
         pt.align = 'l'
         for _, M in sorted(migrations.items(),
-                           key=lambda (k, v): (k)):
+                           key=lambda k_v6: (k_v6[0])):
             pt.add_row(
                 [M.instance_uuid,
                  M.status,
@@ -1328,7 +1330,7 @@ def print_all_tables(tenants=None,
                   'rxtx_factor']:
             pt.align[C] = 'r'
         for _, F in sorted(flavors.items(),
-                           key=lambda (k, v): (k)):
+                           key=lambda k_v7: (k_v7[0])):
             if F.id in flavors_in_use:
                 pt.add_row(
                     [F.id,
@@ -1362,7 +1364,7 @@ def print_all_tables(tenants=None,
         for C in ['id', 'min_disk', 'min_ram', 'status']:
             pt.align[C] = 'r'
         for _, I in sorted(images.items(),
-                           key=lambda (k, v): (k)):
+                           key=lambda k_v8: (k_v8[0])):
             if I.id in images_in_use:
                 pt.add_row(
                     [I.id,
@@ -1388,7 +1390,7 @@ def print_all_tables(tenants=None,
             ])
         pt.align = 'l'
         for _, S in sorted(server_groups.items(),
-                           key=lambda (k, v): (k)):
+                           key=lambda k_v9: (k_v9[0])):
             if S.id in server_groups_in_use:
                 tenant = tenants[S.project_id].name
                 pt.add_row(
