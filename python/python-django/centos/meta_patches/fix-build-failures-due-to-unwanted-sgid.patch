@@ -12,8 +12,8 @@ diff --git a/SPECS/python-django.spec b/SPECS/python-django.spec
 index 5cf8579..79557de 100644
 --- a/SPECS/python-django.spec
 +++ b/SPECS/python-django.spec
-@@ -421,6 +421,8 @@ popd
- %doc docs/_build/html/*
+@@ -396,6 +396,8 @@ cd tests
+ # %doc docs/_build/html/*
  
  %files bash-completion
 +%dir %attr(0755,root,root) %{_datadir}/bash-completion
