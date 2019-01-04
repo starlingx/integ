@@ -870,6 +870,9 @@ def _database_setup(database):
                           (PLUGIN, database, retention))
             collectd.info("%s influxdb:%s is setup" % (PLUGIN, database))
             PluginObject.database_setup = True
+    else:
+        collectd.error("%s influxdb:%s setup %s" %
+                       (PLUGIN, database, error_str))
 
 
 def _clear_alarm_for_missing_filesystems():
