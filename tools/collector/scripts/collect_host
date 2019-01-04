@@ -164,8 +164,8 @@ function collect_extra()
     delimiter ${LOGFILE} "pstree --arguments --ascii --long --show-pids"
     pstree --arguments --ascii --long --show-pids >> ${LOGFILE}
 
-    # Collect process, thread and scheduling info (compute subfunction only)
-    # (also gets process 'affinity' which is useful on computes;  
+    # Collect process, thread and scheduling info (worker subfunction only)
+    # (also gets process 'affinity' which is useful on workers;
     which ps-sched.sh >/dev/null 2>&1
     if [ $? -eq 0 ]; then
         delimiter ${LOGFILE} "ps-sched.sh"
@@ -226,7 +226,7 @@ function collect_extra()
         facter >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
     fi
 
-    if [[ "$nodetype" == "compute" || "$subfunction" == *"compute"* ]] ; then
+    if [[ "$nodetype" == "worker" || "$subfunction" == *"worker"* ]] ; then
         delimiter ${LOGFILE} "topology"
         topology >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
     fi
@@ -323,18 +323,18 @@ function collect_extra()
         delimiter ${LOGFILE} "targetcli sessions detail"
         targetcli sessions detail >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 
-    elif [[ "$nodetype" == "compute" || "$subfunction" == *"compute"* ]] ; then
-        # Compute - iSCSI initiator information
+    elif [[ "$nodetype" == "worker" || "$subfunction" == *"worker"* ]] ; then
+        # Worker - iSCSI initiator information
         collect_dir=${EXTRA_DIR}/iscsi_initiator_info
         mkdir -p ${collect_dir}
         cp -rf /run/iscsi-cache/nodes/* ${collect_dir}
         find ${collect_dir} -type d -exec chmod 750 {} \;
 
-        # Compute - iSCSI initiator active sessions
+        # Worker - iSCSI initiator active sessions
         delimiter ${LOGFILE} "iscsiadm -m session"
         iscsiadm -m session >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 
-        # Compute - iSCSI udev created nodes
+        # Worker - iSCSI udev created nodes
         delimiter  ${LOGFILE} "ls -la /dev/disk/by-path | grep \"iqn\""
         ls -la /dev/disk/by-path | grep "iqn" >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
     fi
