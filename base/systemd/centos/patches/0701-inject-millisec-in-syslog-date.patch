@@ -56,7 +56,7 @@ index 4e118aa..85cdeb9 100644
  static void forward_syslog_iovec(Server *s, const struct iovec *iovec, unsigned n_iovec, const struct ucred *ucred, const struct timeval *tv) {
  
          static const union sockaddr_union sa = {
-@@ -143,13 +181,11 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
+@@ -145,13 +183,11 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
          xsprintf(header_priority, "<%i>", priority);
          IOVEC_SET_STRING(iovec[n++], header_priority);
  
