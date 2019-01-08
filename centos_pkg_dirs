@@ -99,6 +99,7 @@ monitoring/collectd-extensions
 monitoring/influxdb-extensions
 kubernetes/kubernetes
 kubernetes/docker-distribution
+kubernetes/registry-token-server
 kubernetes/helm
 logging/logmgmt
 filesystem/filesystem-scripts
