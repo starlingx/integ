@@ -1,5 +1,5 @@
 Name: helm
-Version: 2.11.0
+Version: 2.12.1
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Summary: The Kubernetes Package Manager 
 License: Apache-2.0
