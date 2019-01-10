@@ -17,9 +17,9 @@ LOGFILE="${extradir}/${SERVICE}.info"
 
 
 ###############################################################################
-# Only Compute Nodes
+# Only Worker Nodes
 ###############################################################################
-if [[ "$nodetype" == "compute" || "$subfunction" == *"compute"* ]] ; then
+if [[ "$nodetype" == "worker" || "$subfunction" == *"worker"* ]] ; then
 
     if [[ "$vswitch_type" == *ovs* ]]; then
         echo    "${hostname}: OVS Info ..........: ${LOGFILE}"

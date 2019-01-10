@@ -76,7 +76,7 @@ if [ -e ${PLATFORM_CONF} ] ; then
     source ${PLATFORM_CONF}
 fi
 
-if [ "${nodetype}" != "controller" -a "${nodetype}" != "compute" -a "${nodetype}" != "storage" ] ; then
+if [ "${nodetype}" != "controller" -a "${nodetype}" != "worker" -a "${nodetype}" != "storage" ] ; then
     logger -t ${COLLECT_TAG} "could not identify nodetype ($nodetype)"
     exit $FAIL_NODETYPE
 fi

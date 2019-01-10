@@ -44,9 +44,9 @@ iptables -L -v -x -n -t mangle >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 
 
 ###############################################################################
-# Only Compute
+# Only Worker
 ###############################################################################
-if [[ "$nodetype" = "compute" || "$subfunction" == *"compute"* ]] ; then
+if [[ "$nodetype" = "worker" || "$subfunction" == *"worker"* ]] ; then
     NAMESPACES=($(ip netns))
     for NS in ${NAMESPACES[@]}; do
         delimiter ${LOGFILE} "${NS}"

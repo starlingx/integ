@@ -207,8 +207,8 @@ function print_help()
     echo "collect --all --start-date 20150101                          ... logs dated on and after Jan 1 2015 from all hosts"
     echo "collect --all --start-date 20151101 --end-date 20160201      ... logs dated between Nov 1, 2015 and Feb 1 2016 from all hosts"
     echo "collect --start-date 20151101 --end-date 20160201            ... only logs dated between Nov 1, 2015 and Feb 1 2016 for current host"
-    echo "collect --list controller-0 compute-0 storage-0              ... all logs from specified host list"
-    echo "collect --list controller-0 compute-1 --end-date 20160201    ... only logs before Nov 1, 2015 for host list"
+    echo "collect --list controller-0 worker-0 storage-0              ... all logs from specified host list"
+    echo "collect --list controller-0 worker-1 --end-date 20160201    ... only logs before Nov 1, 2015 for host list"
     echo "collect --list controller-1 storage-0 --start-date 20160101  ... only logs after Jan 1 2016 for controller-1 and storage-0"
     echo ""
     exit 0
