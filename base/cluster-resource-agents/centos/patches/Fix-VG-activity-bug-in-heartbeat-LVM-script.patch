@@ -30,11 +30,10 @@ diff --git a/heartbeat/LVM b/heartbeat/LVM
 index 893ece8..1efb207 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -338,19 +338,16 @@ LVM_status() {
- 			fi
+@@ -191,18 +191,15 @@ LVM_status() {
  		fi
  	fi
--	
+ 	
 -	if [ -d /dev/$1 ]; then
 -		test "`cd /dev/$1 && ls`" != ""
 -		rc=$?
@@ -42,7 +41,7 @@ index 893ece8..1efb207 100755
 -			ocf_exit_reason "VG $1 with no logical volumes is not supported by this RA!"
 -		fi
 -	fi
- 
+-
 -	if [ $rc -ne 0 ]; then
 +	# Ask lvm whether the volume group is active.  This maps to
 +	# the question "Are there any logical volumes that are active in
@@ -53,9 +52,9 @@ index 893ece8..1efb207 100755
  		rc=$OCF_NOT_RUNNING
  	else
 +		rc=0
- 		case $(get_vg_mode) in
- 		1) # exclusive with tagging.
- 			# If vg is running, make sure the correct tag is present. Otherwise we
+ 		lvm_status
+ 		rc=$?
+ 	fi
 -- 
 2.7.4
 

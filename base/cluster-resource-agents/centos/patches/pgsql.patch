@@ -4,14 +4,14 @@ Date: Mon, 2 Oct 2017 15:12:59 -0400
 Subject: [PATCH 07/13] WRS: Patch1111: pgsql.patch
 
 ---
- heartbeat/pgsql | 23 ++++++++++++++++++++---
+ heartbeat/pgsql  | 23 ++++++++++++++++++++---
  1 file changed, 20 insertions(+), 3 deletions(-)
 
 diff --git a/heartbeat/pgsql b/heartbeat/pgsql
 index 768608e..28cc046 100755
 --- a/heartbeat/pgsql
 +++ b/heartbeat/pgsql
-@@ -38,6 +38,7 @@ get_pgsql_param() {
+@@ -46,6 +46,7 @@ get_pgsql_param() {
  OCF_RESKEY_pgctl_default=/usr/bin/pg_ctl
  OCF_RESKEY_psql_default=/usr/bin/psql
  OCF_RESKEY_pgdata_default=/var/lib/pgsql/data
@@ -19,7 +19,7 @@ index 768608e..28cc046 100755
  OCF_RESKEY_pgdba_default=postgres
  OCF_RESKEY_pghost_default=""
  OCF_RESKEY_pgport_default=5432
-@@ -67,10 +68,11 @@ OCF_RESKEY_stop_escalate_in_slave_default=30
+@@ -78,11 +79,12 @@ OCF_RESKEY_replication_slot_name_default=""
  : ${OCF_RESKEY_pgctl=${OCF_RESKEY_pgctl_default}}
  : ${OCF_RESKEY_psql=${OCF_RESKEY_psql_default}}
  : ${OCF_RESKEY_pgdata=${OCF_RESKEY_pgdata_default}}
@@ -27,12 +27,13 @@ index 768608e..28cc046 100755
  : ${OCF_RESKEY_pgdba=${OCF_RESKEY_pgdba_default}}
  : ${OCF_RESKEY_pghost=${OCF_RESKEY_pghost_default}}
  : ${OCF_RESKEY_pgport=${OCF_RESKEY_pgport_default}}
+ : ${OCF_RESKEY_pglibs=${OCF_RESKEY_pglibs_default}}
 -: ${OCF_RESKEY_config=${OCF_RESKEY_pgdata}/postgresql.conf}
 +: ${OCF_RESKEY_config=${OCF_RESKEY_pgconf}/postgresql.conf}
  : ${OCF_RESKEY_start_opt=${OCF_RESKEY_start_opt_default}}
+ : ${OCF_RESKEY_ctl_opt=${OCF_RESKEY_ctl_opt_default}}
  : ${OCF_RESKEY_pgdb=${OCF_RESKEY_pgdb_default}}
- : ${OCF_RESKEY_logfile=${OCF_RESKEY_logfile_default}}
-@@ -166,6 +168,14 @@ Path to PostgreSQL data directory.
+@@ -180,6 +182,14 @@ Path to PostgreSQL data directory.
  <content type="string" default="${OCF_RESKEY_pgdata_default}" />
  </parameter>
  
@@ -47,7 +48,7 @@ index 768608e..28cc046 100755
  <parameter name="pgdba" unique="0" required="0">
  <longdesc lang="en">
  User that owns PostgreSQL.
-@@ -220,7 +230,7 @@ SQL script that will be used for monitor operations.
+@@ -243,7 +253,7 @@ SQL script that will be used for monitor operations.
  Path to the PostgreSQL configuration file for the instance.
  </longdesc>
  <shortdesc lang="en">Configuration file</shortdesc>
@@ -56,10 +57,10 @@ index 768608e..28cc046 100755
  </parameter>
  
  <parameter name="pgdb" unique="0" required="0">
-@@ -549,6 +559,12 @@ pgsql_real_start() {
-         ocf_log debug "PostgreSQL still hasn't started yet. Waiting..."
-     done
-
+@@ -630,6 +640,12 @@ pgsql_real_start() {
+         fi
+     fi
+ 
 +    # WRS: Create an unversioned symlink under /var/run so SM can easily
 +    # find the PID file.
 +    if [ ! -h $PIDFILE_SYMLINK ]; then
@@ -69,8 +70,8 @@ index 768608e..28cc046 100755
      ocf_log info "PostgreSQL is started."
      return $rc
  }
-@@ -1756,10 +1772,11 @@ fi
- 
+@@ -2078,10 +2094,11 @@ then
+ fi
  
  PIDFILE=${OCF_RESKEY_pgdata}/postmaster.pid
 +PIDFILE_SYMLINK=/var/run/postmaster.pid
@@ -81,7 +82,7 @@ index 768608e..28cc046 100755
 +RECOVERY_CONF=${OCF_RESKEY_pgconf}/recovery.conf
  NODENAME=$(ocf_local_nodename | tr '[A-Z]' '[a-z]')
  
- if is_replication; then
+ case "$1" in
 -- 
 1.9.1
 

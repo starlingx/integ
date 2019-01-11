@@ -5,50 +5,44 @@ Subject: [PATCH 1/1] Notify rmon of shutdown before shutting down LVM and
  Filesystem
 
 ---
- heartbeat/Filesystem | 9 +++++----
- heartbeat/LVM        | 9 +++++----
- 2 files changed, 10 insertions(+), 8 deletions(-)
+ heartbeat/Filesystem | 5 +++--
+ heartbeat/LVM        | 5 +++--
+ 2 files changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/heartbeat/Filesystem b/heartbeat/Filesystem
 index 05e4097..d5f3417 100755
 --- a/heartbeat/Filesystem
 +++ b/heartbeat/Filesystem
-@@ -1200,10 +1200,11 @@ case $OP in
+@@ -883,9 +883,10 @@ case $OP in
  	validate-all) Filesystem_validate_all
  		exit $?
  		;;
 -	stop) Filesystem_stop
--        rc=$?
--        rmon_notify "disabled" 300
--        exit $rc
+-		rc=$?
 +	stop)
-+		rmon_notify "disabled" 300
+ 		rmon_notify "disabled" 300
 +		Filesystem_stop
 +		rc=$?
-+		exit $rc
+ 		exit $rc
  		;;
  esac
- 
 diff --git a/heartbeat/LVM b/heartbeat/LVM
 index 38092f9..893ece8 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -879,10 +879,11 @@ case "$1" in
-         fi
-         exit $rc;;
+@@ -599,9 +599,10 @@ case "$1" in
+ 		fi
+ 		exit $rc;;
  
 -	stop)	LVM_stop $VOLUME
--        rc=$?
--        rmon_notify "disabled" 300
--        exit $rc;;
+-		rc=$?
 +	stop)
-+		rmon_notify "disabled" 300
+ 		rmon_notify "disabled" 300
 +		LVM_stop $VOLUME
 +		rc=$?
-+		exit $rc;;
+ 		exit $rc;;
  
  	status)	LVM_status $VOLUME $1
-         rc=$?
 -- 
 2.7.4
 

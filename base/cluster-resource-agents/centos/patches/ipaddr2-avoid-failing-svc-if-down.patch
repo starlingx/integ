@@ -11,49 +11,49 @@ diff --git a/heartbeat/IPaddr2 b/heartbeat/IPaddr2
 index 86009b9..2da5c5e 100755
 --- a/heartbeat/IPaddr2
 +++ b/heartbeat/IPaddr2
-@@ -885,12 +885,8 @@ ip_start() {
-             then
-                 exit $OCF_SUCCESS
-             else
--                if [ "$OCF_RESKEY_dc" = "yes" ]; then
--                    ocf_log info "NIC $NIC is DOWN..."
--                    exit $OCF_SUCCESS
--                else
--                    exit $OCF_ERR_GENERIC
--                fi
-+                ocf_log info "NIC $NIC is DOWN..."
-+                exit $OCF_SUCCESS
-             fi
+@@ -968,12 +968,8 @@ ip_start() {
+ 		then
+ 			exit $OCF_SUCCESS
+ 		else
+-			if [ "$OCF_RESKEY_dc" = "yes" ]; then
+-				ocf_log info "NIC $NIC is DOWN..."
+-				exit $OCF_SUCCESS
+-			else
+-				exit $OCF_ERR_GENERIC
+-			fi
++			ocf_log info "NIC $NIC is DOWN..."
++			exit $OCF_SUCCESS
+ 		fi
  	fi
  	
-@@ -954,12 +950,8 @@ ip_start() {
-     then
-         exit $OCF_SUCCESS
-     else
--        if [ "$OCF_RESKEY_dc" = "yes" ]; then
--            ocf_log info "NIC $NIC is DOWN"
--            exit $OCF_SUCCESS
--        else
--            exit $OCF_ERR_GENERIC
--        fi
-+        ocf_log info "NIC $NIC is DOWN"
-+        exit $OCF_SUCCESS
-     fi
+@@ -1037,12 +1033,8 @@ ip_start() {
+ 	then
+ 		exit $OCF_SUCCESS
+ 	else
+-		if [ "$OCF_RESKEY_dc" = "yes" ]; then
+-			ocf_log info "NIC $NIC is DOWN"
+-			exit $OCF_SUCCESS
+-		else
+-			exit $OCF_ERR_GENERIC
+-		fi
++		ocf_log info "NIC $NIC is DOWN"
++		exit $OCF_SUCCESS
+ 	fi
  }
  
-@@ -1040,12 +1032,8 @@ ip_monitor() {
-         then
-             return $OCF_SUCCESS
-         else
--            if [ "$OCF_RESKEY_dc" = "yes" ]; then
--                ocf_log info "NIC $NIC is DOWN"
--                return $OCF_SUCCESS
--            else
--                return $OCF_NOT_RUNNING
--            fi
-+            ocf_log info "NIC $NIC is DOWN"
-+            return $OCF_SUCCESS
-         fi
+@@ -1123,12 +1115,8 @@ ip_monitor() {
+ 		then
+ 			return $OCF_SUCCESS
+ 		else
+-			if [ "$OCF_RESKEY_dc" = "yes" ]; then
+-				ocf_log info "NIC $NIC is DOWN"
+-				return $OCF_SUCCESS
+-			else
+-				return $OCF_NOT_RUNNING
+-			fi
++			ocf_log info "NIC $NIC is DOWN"
++			exit $OCF_SUCCESS
+ 		fi
  		;;
  	partial|no|partial2)
 -- 
