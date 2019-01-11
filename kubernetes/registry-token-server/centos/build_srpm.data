@@ -1,0 +1,4 @@
+TAR_NAME="registry-token-server"
+SRC_DIR="$PKG_BASE/src"
+COPY_LIST="$FILES_BASE/*"
+TIS_PATCH_VER=0

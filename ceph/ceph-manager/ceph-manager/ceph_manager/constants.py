@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from i18n import _
+from ceph_manager.i18n import _
 # noinspection PyUnresolvedReferences
 from sysinv.common import constants as sysinv_constants
 

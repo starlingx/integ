@@ -1,4 +1,4 @@
-VERSION=2.11.0
+VERSION=2.12.1
 TAR_NAME=helm
 TAR="$TAR_NAME-v$VERSION-linux-amd64.tar.gz"
 COPY_LIST="${CGCS_BASE}/downloads/$TAR $FILES_BASE/*"

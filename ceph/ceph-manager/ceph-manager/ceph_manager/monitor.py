@@ -14,10 +14,13 @@ from fm_api import constants as fm_constants
 from oslo_log import log as logging
 
 # noinspection PyProtectedMember
-from i18n import _, _LI, _LW, _LE
+from ceph_manager.i18n import _
+from ceph_manager.i18n import _LI
+from ceph_manager.i18n import _LW
+from ceph_manager.i18n import _LE
 
-import constants
-import exception
+from ceph_manager import constants
+from ceph_manager import exception
 
 LOG = logging.getLogger(__name__)
 

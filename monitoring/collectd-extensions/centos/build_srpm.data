@@ -16,4 +16,4 @@ COPY_LIST="$PKG_BASE/src/LICENSE \
   $PKG_BASE/src/example.py \
   $PKG_BASE/src/example.conf"
 
-TIS_PATCH_VER=4
+TIS_PATCH_VER=5

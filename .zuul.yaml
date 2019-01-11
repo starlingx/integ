@@ -7,6 +7,7 @@
         - build-openstack-releasenotes
         - openstack-tox-pep8
         - openstack-tox-linters
+        - stx-integ-pylint
         - stx-devstack-integ:
             voting: false
     gate:
@@ -14,6 +15,7 @@
         - build-openstack-releasenotes
         - openstack-tox-pep8
         - openstack-tox-linters
+        - stx-integ-pylint
     post:
       jobs:
         - publish-stx-tox
@@ -64,3 +66,11 @@
         LIBS_FROM_GIT: keystone
     files:
       - ^devstack/.*
+
+- job:
+    name: stx-integ-pylint
+    parent: openstack-tox-pylint
+    required-projects:
+      - openstack/stx-config
+      - openstack/stx-fault
+      - openstack/stx-update
