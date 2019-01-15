@@ -3,8 +3,6 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
 Subject: [PATCH] WRS: 0001-update-package-versioning-for-TIS-format.patch
 
-Conflicts:
-	SPECS/systemd.spec
 ---
  SPECS/systemd.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -17,8 +15,8 @@ index 6bdbb74..3b2aa7f 100644
  Name:           systemd
  Url:            http://www.freedesktop.org/wiki/Software/systemd
  Version:        219
--Release:        57%{?dist}
-+Release:        57.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:        62%{?dist}
++Release:        62.el7%{?_tis_dist}.%{tis_patch_ver}
  # For a breakdown of the licensing, see README
  License:        LGPLv2+ and MIT and GPLv2+
  Summary:        A System and Service Manager
