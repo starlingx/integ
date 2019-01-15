@@ -1,7 +1,8 @@
 From 5e0c8a6125403db7e90990d20c1cdda5cb9deb78 Mon Sep 17 00:00:00 2001
 From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 28 Mar 2018 14:08:57 -0400
-Subject: Patch GRUB so that it doesn't add a trailing colon after MAC
+Subject: [PATCH 11/12] Patch GRUB so that it doesn't add a trailing colon
+ after MAC
 
 A CentOS GRUB patch added support for macs > 6B in size.  This
 breaks PXEbooting the installer, because a routine within grub
@@ -15,7 +16,7 @@ diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
 index ffdd23c..8fcb272 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -81,7 +81,7 @@
+@@ -82,7 +82,7 @@
  %global legacy_package_arch pc
  %global platform pc
  
@@ -28,8 +29,8 @@ diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
 index e24bd8c..73ccdee 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -260,3 +260,5 @@ Patch0260: 0260-Fix-up-linux-params-usage.patch
- Patch0261: 0261-Fix-grub_net_hwaddr_to_str.patch
+@@ -288,3 +288,5 @@ Patch0287: 0287-Make-root_url-reflect-the-protocol-hostname-of-our-b.patch
+ Patch0289: 0288-efi-uga-Fix-PCIe-LER-when-GRUB2-accesses-non-enabled.patch
  Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
  Patch1001: 1001-add-tboot.patch
 +Patch1002: 1002-Don-t-write-trailing-colon-when-populating-MAC-strin.patch

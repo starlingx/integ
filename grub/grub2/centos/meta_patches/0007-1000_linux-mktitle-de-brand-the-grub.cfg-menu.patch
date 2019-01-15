@@ -11,10 +11,10 @@ diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
 index bac4594..d7475f0 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -258,3 +258,4 @@ Patch0257: 0257-set-rootpath.patch
- Patch0258: 0258-Fix-one-more-coverity-complaint.patch
- Patch0260: 0260-Fix-up-linux-params-usage.patch
- Patch0261: 0261-Fix-grub_net_hwaddr_to_str.patch
+@@ -286,3 +286,4 @@ Patch0285: 0285-editenv-handle-relative-symlinks.patch
+ Patch0286: 0286-efinet-also-use-the-firmware-acceleration-for-http.patch
+ Patch0287: 0287-Make-root_url-reflect-the-protocol-hostname-of-our-b.patch
+ Patch0289: 0288-efi-uga-Fix-PCIe-LER-when-GRUB2-accesses-non-enabled.patch
 +Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
 -- 
 2.7.4

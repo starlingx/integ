@@ -12,7 +12,7 @@ diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
 index 88c6c09..11f6b0e 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -172,7 +172,6 @@ rm -f grub-%{tarversion}/util/grub-setpassword.in.orig
+@@ -187,7 +187,6 @@ rm -f grub-%{tarversion}/util/grub-setpassword.in.orig
  %install
  set -e
  rm -fr $RPM_BUILD_ROOT
@@ -20,7 +20,7 @@ index 88c6c09..11f6b0e 100644
  %do_common_install
  %if 0%{with_efi_arch}
  %do_efi_install %{grubefiarch} %{grubefiname} %{grubeficdname}
-@@ -199,25 +198,6 @@ cat << EOF > ${RPM_BUILD_ROOT}%{_sysconfdir}/prelink.conf.d/grub2.conf
+@@ -215,25 +214,6 @@ cat << EOF > ${RPM_BUILD_ROOT}%{_sysconfdir}/prelink.conf.d/grub2.conf
  -b /usr/sbin/grub2-sparc64-setup
  EOF
  

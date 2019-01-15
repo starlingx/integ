@@ -11,7 +11,7 @@ diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
 index 10f74df..075727c 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -81,15 +81,6 @@
+@@ -82,15 +82,6 @@
  %global legacy_package_arch pc
  %global platform pc
  
@@ -25,11 +25,11 @@ index 10f74df..075727c 100644
 -		-e 's/-m64//g'				\\\
 -	) %{nil}
  %endif
- 
- %ifarch aarch64
-@@ -381,6 +372,7 @@ cd grub-%{1}-%{tarversion}					\
- install -m 755 -d $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/	\
- install -m 755 -d $RPM_BUILD_ROOT/boot/grub2/			\
+ %ifarch %{ix86}
+ %global target_cpu_name %{_arch}
+@@ -401,6 +392,7 @@ cd grub-%{1}-%{tarversion}					\
+ install -m 700 -d $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/	\
+ install -m 700 -d $RPM_BUILD_ROOT/boot/grub2/			\
  make DESTDIR=$RPM_BUILD_ROOT install				\
 +find $RPM_BUILD_ROOT -name "grub2-bios-setup*" | xargs rm -f \
  if [ -f $RPM_BUILD_ROOT%{_infodir}/grub.info ]; then		\
