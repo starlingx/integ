@@ -11,7 +11,7 @@ diff --git a/heartbeat/ocf-shellfuncs.in b/heartbeat/ocf-shellfuncs.in
 index 3565e20..688c150 100644
 --- a/heartbeat/ocf-shellfuncs.in
 +++ b/heartbeat/ocf-shellfuncs.in
-@@ -180,9 +180,9 @@ hadate() {
+@@ -176,9 +176,9 @@ hadate() {
  set_logtag() {
  	if [ -z "$HA_LOGTAG" ]; then
  		if [ -n "$OCF_RESOURCE_INSTANCE" ]; then

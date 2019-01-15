@@ -4,14 +4,14 @@ Date: Mon, 2 Oct 2017 15:12:54 -0400
 Subject: [PATCH 06/13] WRS: Patch1110: lvm_vg_activation.patch
 
 ---
- heartbeat/LVM | 130 +++++++++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 116 insertions(+), 14 deletions(-)
+ heartbeat/LVM | 119 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 116 insertions(+), 3 deletions(-)
 
 diff --git a/heartbeat/LVM b/heartbeat/LVM
 index b0ca87a..38092f9 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -437,6 +437,81 @@ retry_exclusive_start()
+@@ -222,6 +222,81 @@ LVM_status() {
  }
  
  #
@@ -93,65 +93,54 @@ index b0ca87a..38092f9 100755
  #	Enable LVM volume
  #
  LVM_start() {
-@@ -477,20 +552,47 @@ EOF
- 		: ;;
- 	esac
+@@ -241,9 +316,47 @@ LVM_start() {
+ 		ocf_run vgscan
+ 	fi
  
--	if ! ocf_run vgchange $vgchange_options $vg; then
--		if [ $clvmd -eq 0 ]; then
--			return $OCF_ERR_GENERIC
--		fi
--
--		# Failure to exclusively activate cluster vg.:
--		# This could be caused by a remotely active LV, Attempt
--		# to disable volume group cluster wide and try again.
--		# Allow for some settling
--		sleep 5
--		if ! retry_exclusive_start; then
--			return $OCF_ERR_GENERIC
--		fi
--	fi
-+  # Kick off activation of all volumes.  If it doesn't complete within
-+  # the timeout period, then we'll log the not-yet-activated volumes and
-+  # continue on.
-+  (ocf_run vgchange $vgchange_options $1) & PID=$!
+-	lvm_pre_activate || exit
+-	ocf_run vgchange $vgchange_activate_options $vg
+-	lvm_post_activate $?
++	 # Kick off activation of all volumes.  If it doesn't complete within
++	# the timeout period, then we'll log the not-yet-activated volumes and
++	# continue on.
++	(ocf_run vgchange $vgchange_options $1) & PID=$!
 +
-+  # Check every second for up to TIMEOUT seconds whether the vgchange has
-+  # completed.
-+  TIMEOUT=300
-+  TIMED_OUT=true
-+  SECONDS=0;
-+  PARALLEL_ACTIVATE_DELAY=10
-+  PARALLEL_ACTIVATE_DONE=false
-+  while [ $SECONDS -lt $TIMEOUT ] ; do
-+    kill -0 $PID &> /dev/null
-+    if [ $? -eq 1 ] ; then
-+      # process with pid of $PID doesn't exist, vgchange command completed
-+      TIMED_OUT=false
-+      break
-+    fi
-+    if [ $SECONDS -ge $PARALLEL_ACTIVATE_DELAY ] && \
-+       [ "$PARALLEL_ACTIVATE_DONE" != true ] && \
-+       [ "$1" == "cinder-volumes" ] ; then
-+      # This will kick off parallel activation of all LVs in the VG.
-+      # The delay is to ensure the VG is activated first.
-+      PARALLEL_ACTIVATE_DONE=true
-+      ocf_log info Explicitly activating all volumes in $1 with: $vgchange_options
-+      activate_all_volumes $1 $vgchange_options
-+    fi
-+    sleep 1
-+  done
++	# Check every second for up to TIMEOUT seconds whether the vgchange has
++	# completed.
++	TIMEOUT=300
++	TIMED_OUT=true
++	SECONDS=0;
++	PARALLEL_ACTIVATE_DELAY=10
++	PARALLEL_ACTIVATE_DONE=false
++	while [ $SECONDS -lt $TIMEOUT ] ; do
++		kill -0 $PID &> /dev/null
++		if [ $? -eq 1 ] ; then
++		# process with pid of $PID doesn't exist, vgchange command completed
++			TIMED_OUT=false
++			break
++		fi
++		if [ $SECONDS -ge $PARALLEL_ACTIVATE_DELAY ] && \
++	   	   [ "$PARALLEL_ACTIVATE_DONE" != true ] && \
++	   	   [ "$1" == "cinder-volumes" ] ; then
++			# This will kick off parallel activation of all LVs in the VG.
++			# The delay is to ensure the VG is activated first.
++			PARALLEL_ACTIVATE_DONE=true
++			ocf_log info Explicitly activating all volumes in $1 with: $vgchange_options
++			activate_all_volumes $1 $vgchange_options
++		fi
++		sleep 1
++	done
 +
-+  if [ "$TIMED_OUT" = true ] ; then
-+    ocf_log err "Timed out running ocf_run vgchange $vgchange_options $1"
-+    log_inactive_volumes $1
-+  else
-+    # Child process completed, get its status.
-+    wait $PID
-+    if [ $? -ne 0 ] ; then
-+      return $OCF_ERR_GENERIC
-+    fi
-+  fi
++	if [ "$TIMED_OUT" = true ] ; then
++		ocf_log err "Timed out running ocf_run vgchange $vgchange_options $1"
++		log_inactive_volumes $1
++	else
++		# Child process completed, get its status.
++		wait $PID
++		if [ $? -ne 0 ] ; then
++			return $OCF_ERR_GENERIC
++		fi
++	fi
  
  	if LVM_status $vg; then
  		: OK Volume $vg activated just fine!

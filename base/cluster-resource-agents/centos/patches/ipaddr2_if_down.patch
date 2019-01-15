@@ -11,46 +11,46 @@ diff --git a/heartbeat/IPaddr2 b/heartbeat/IPaddr2
 index 67a7ca3..2cd822d 100755
 --- a/heartbeat/IPaddr2
 +++ b/heartbeat/IPaddr2
-@@ -884,7 +884,12 @@ ip_start() {
-             then
-                 exit $OCF_SUCCESS
-             else
--                exit $OCF_ERR_GENERIC
-+                if [ "$OCF_RESKEY_dc" = "yes" ]; then
-+                    ocf_log info "NIC $NIC is DOWN..."
-+                    exit $OCF_SUCCESS
-+                else
-+                    exit $OCF_ERR_GENERIC
-+                fi
-             fi
+@@ -968,7 +968,12 @@ ip_start() {
+ 		then
+ 			exit $OCF_SUCCESS
+ 		else
+-			exit $OCF_ERR_GENERIC
++			if [ "$OCF_RESKEY_dc" = "yes" ]; then
++				ocf_log info "NIC $NIC is DOWN..."
++				exit $OCF_SUCCESS
++			else
++				exit $OCF_ERR_GENERIC
++			fi
+ 		fi
  	fi
  	
-@@ -948,7 +953,12 @@ ip_start() {
-     then
-         exit $OCF_SUCCESS
-     else
--        exit $OCF_ERR_GENERIC
-+        if [ "$OCF_RESKEY_dc" = "yes" ]; then
-+            ocf_log info "NIC $NIC is DOWN"
-+            exit $OCF_SUCCESS
-+        else
-+            exit $OCF_ERR_GENERIC
-+        fi
-     fi
+@@ -1032,7 +1037,12 @@ ip_start() {
+ 	then
+ 		exit $OCF_SUCCESS
+ 	else
+-		exit $OCF_ERR_GENERIC
++		if [ "$OCF_RESKEY_dc" = "yes" ]; then
++			ocf_log info "NIC $NIC is DOWN"
++			exit $OCF_SUCCESS
++		else
++			exit $OCF_ERR_GENERIC
++		fi
+ 	fi
  }
  
-@@ -1029,7 +1039,12 @@ ip_monitor() {
-         then
-             return $OCF_SUCCESS
-         else
--            return $OCF_NOT_RUNNING
-+            if [ "$OCF_RESKEY_dc" = "yes" ]; then
-+                ocf_log info "NIC $NIC is DOWN"
-+                return $OCF_SUCCESS
-+            else
-+                return $OCF_NOT_RUNNING
-+            fi
-         fi
+@@ -1113,7 +1123,12 @@ ip_monitor() {
+ 		then
+ 			return $OCF_SUCCESS
+ 		else
+-			return $OCF_NOT_RUNNING
++			if [ "$OCF_RESKEY_dc" = "yes" ]; then
++				ocf_log info "NIC $NIC is DOWN"
++				return $OCF_SUCCESS
++			else
++				return $OCF_NOT_RUNNING
++			fi
+ 		fi
  		;;
  	partial|no|partial2)
 -- 

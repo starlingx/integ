@@ -16,7 +16,7 @@ index d834096..8cd9c6b 100755
  #		OCF_RESKEY_run_fsck
  #		OCF_RESKEY_fast_stop
  #		OCF_RESKEY_force_clones
-+#       OCF_RESKEY_rmon_rsc_name
++#		OCF_RESKEY_rmon_rsc_name
  #
  #OCF_RESKEY_device    : name of block device for the filesystem. e.g. /dev/sda1, /dev/md0
  #                       Or a -U or -L option for mount, or an NFS mount specification
@@ -28,7 +28,7 @@ index d834096..8cd9c6b 100755
  #
  #
  # This assumes you want to manage a filesystem on a shared (SCSI) bus,
-@@ -1137,20 +1139,65 @@ if [ "$OP" != "monitor" ]; then
+@@ -822,18 +824,63 @@ if [ "$OP" != "monitor" ]; then
  	ocf_log info "Running $OP for $DEVICE on $MOUNTPOINT"
  fi
  
@@ -61,55 +61,53 @@ index d834096..8cd9c6b 100755
 +    fi
 +}
 +
- # These operations do not require the clone checking + OCFS2
- # initialization.
  case $OP in
  	status) Filesystem_status
 -		exit $?
-+        rc=$?
-+        if [ $rc -eq $OCF_SUCCESS ]
-+        then
-+            rmon_notify "enabled" 300
-+        else
-+            rmon_notify "disabled" 300
-+        fi
-+        exit $rc
++		rc=$?
++		if [ $rc -eq $OCF_SUCCESS ]
++		then
++			rmon_notify "enabled" 300
++		else
++			rmon_notify "disabled" 300
++		fi
++		exit $rc
  		;;
  	monitor) Filesystem_monitor
 -		exit $?
-+        rc=$?
-+        if [ $rc -eq $OCF_SUCCESS ]
-+        then
-+            rmon_notify "enabled" 300
-+        else
-+            rmon_notify "disabled" 300
-+        fi
-+        exit $rc
++		rc=$?
++		if [ $rc -eq $OCF_SUCCESS ]
++		then
++			rmon_notify "enabled" 300
++		else
++			rmon_notify "disabled" 300
++		fi
++		exit $rc
  		;;
  	validate-all) Filesystem_validate_all
  		exit $?
  		;;
  	stop) Filesystem_stop
 -		exit $?
-+        rc=$?
-+        rmon_notify "disabled" 300
-+        exit $rc
++		rc=$?
++		rmon_notify "disabled" 300
++		exit $rc
  		;;
  esac
  
-@@ -1199,6 +1246,12 @@ fi
+@@ -879,6 +926,12 @@ fi
  
  case $OP in
  	start) Filesystem_start
-+        rc=$?
-+        if [ $rc -eq $OCF_SUCCESS ]
-+        then
-+            rmon_notify "enabled" 300
-+        fi
-+        exit $rc
++		rc=$?
++		if [ $rc -eq $OCF_SUCCESS ]
++		then
++			rmon_notify "enabled" 300
++		fi
++		exit $rc
  		;;
- 	notify) Filesystem_notify
- 		;;
+ 	*) usage
+ 		exit $OCF_ERR_UNIMPLEMENTED
 diff --git a/heartbeat/LVM b/heartbeat/LVM
 index 425a60a..ba6c198 100755
 --- a/heartbeat/LVM
@@ -118,11 +116,11 @@ index 425a60a..ba6c198 100755
  #
  #		OCF parameters are as below:
  #		OCF_RESKEY_volgrpname
-+#       OCF_RESKEY_rmon_rsc_name
++#		OCF_RESKEY_rmon_rsc_name
  #		
  #######################################################################
  # Initialization:
-@@ -699,6 +700,34 @@ then
+@@ -406,6 +407,34 @@ then
  	exit $OCF_ERR_CONFIGURED 
  fi
  
@@ -157,45 +155,45 @@ index 425a60a..ba6c198 100755
  # Get the LVM version number, for this to work we assume(thanks to panjiam):
  # 
  # LVM1 outputs like this
-@@ -740,16 +769,37 @@ case "$1" in
+@@ -449,16 +478,37 @@ case "$1" in
  	start)
  		LVM_validate_all
  		LVM_start $VOLUME
 -		exit $?;;
-+        rc=$?
-+        if [ $rc -eq $OCF_SUCCESS ]
-+        then
-+            rmon_notify "enabled" 300
-+        fi
-+        exit $rc;;
++		rc=$?
++		if [ $rc -eq $OCF_SUCCESS ]
++		then
++			rmon_notify "enabled" 300
++		fi
++		exit $rc;;
  
  	stop)	LVM_stop $VOLUME
 -		exit $?;;
-+        rc=$?
-+        rmon_notify "disabled" 300
-+        exit $rc;;
++		rc=$?
++		rmon_notify "disabled" 300
++		exit $rc;;
  
  	status)	LVM_status $VOLUME $1
 -		exit $?;;
-+        rc=$?
-+        if [ $rc -eq $OCF_SUCCESS ]
-+        then
-+            rmon_notify "enabled" 300
-+        else
-+            rmon_notify "disabled" 300
-+        fi
-+        exit $rc;;
++		rc=$?
++		if [ $rc -eq $OCF_SUCCESS ]
++		then
++			rmon_notify "enabled" 300
++		else
++			rmon_notify "disabled" 300
++		fi
++		exit $rc;;
  
  	monitor)	LVM_status $VOLUME
 -		exit $?;;
-+        rc=$?
-+        if [ $rc -eq $OCF_SUCCESS ]
-+        then
-+            rmon_notify "enabled" 300
-+        else
-+            rmon_notify "disabled" 300
-+        fi
-+        exit $rc;;
++		rc=$?
++		if [ $rc -eq $OCF_SUCCESS ]
++		then
++			rmon_notify "enabled" 300
++		else
++			rmon_notify "disabled" 300
++		fi
++		exit $rc;;
  
  	validate-all)	LVM_validate_all
  		;;

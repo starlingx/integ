@@ -5,18 +5,18 @@ Subject: [PATCH] WRS: spec-include-TiS-patches.patch
 
 Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
- SPECS/resource-agents.spec | 39 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 39 insertions(+)
+ SPECS/resource-agents.spec | 37 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
 diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index a16660a..ec85fc2 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -263,6 +263,25 @@ Patch202:	bz1536548-sap_redhat_cluster_connector-fix-unknown-gvi-function.patch
- Patch203:	bz1543366-redis-add-support-for-tunneling-replication-traffic.patch
- Patch204:	bz1546083-galera-fix-temp-logfile-rights.patch
+@@ -148,6 +148,24 @@ Patch1002:	bz1568588-9-google-cloud-sdk-oauth2client-python-rsa-to-cryptography.
+ Patch1003:	bz1568588-10-gcloud-support-info.patch
+ Patch1004:	bz1568589-4-aliyun-vpc-move-ip-bundled.patch
  
-+# WRS
++# STX
 +Patch1105:  filesystem_rmon.patch
 +Patch1106:  new_ocf_return_codes.patch
 +Patch1107:  ipaddr2_check_if_state.patch
@@ -32,17 +32,16 @@ index a16660a..ec85fc2 100644
 +Patch1117: lvm_cleanup_refs_on_stop.patch
 +Patch1118: ipaddr2_if_down.patch
 +Patch1119: ipaddr2_ignore_lo_if_state.patch
-+Patch1120: Re-enable-background-execution-of-arp-commands.patch
 +Patch1121: ipaddr2-avoid-failing-svc-if-down.patch
 +Patch1122: ipaddr2-use-host-scope-for-addresses-on-loopback.patch
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
  
-@@ -582,6 +601,26 @@ exit 1
- %patch203 -p1
- %patch204 -p1
+@@ -508,6 +526,25 @@ cp %{aliyuncli_dir}/LICENSE %{aliyuncli}_LICENSE
+ %patch1004 -p1
+ %endif
  
-+# WRS
++# STX
 +%patch1105 -p1
 +%patch1106 -p1
 +%patch1107 -p1
@@ -58,7 +57,6 @@ index a16660a..ec85fc2 100644
 +%patch1117 -p1
 +%patch1118 -p1
 +%patch1119 -p1
-+%patch1120 -p1
 +%patch1121 -p1
 +%patch1122 -p1
 +

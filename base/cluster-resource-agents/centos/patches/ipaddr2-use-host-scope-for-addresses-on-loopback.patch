@@ -11,7 +11,7 @@ diff --git a/heartbeat/IPaddr2 b/heartbeat/IPaddr2
 index 2da5c5e..79dbdcf 100755
 --- a/heartbeat/IPaddr2
 +++ b/heartbeat/IPaddr2
-@@ -584,10 +584,18 @@ add_interface () {
+@@ -622,10 +622,18 @@ add_interface () {
  	    add_ipv6_addrlabel $ipaddr
  	fi
  
