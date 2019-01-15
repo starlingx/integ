@@ -11,7 +11,7 @@ diff --git a/SPECS/tpm2-tools.spec b/SPECS/tpm2-tools.spec
 index 308ecfa..935580d 100644
 --- a/SPECS/tpm2-tools.spec
 +++ b/SPECS/tpm2-tools.spec
-@@ -46,7 +46,7 @@ tpm2-tools is a batch of testing tools for tpm2.0. It is based on tpm2-tss.
+@@ -43,7 +43,7 @@ tpm2-tools is a batch of testing tools for tpm2.0. It is based on tpm2-tss.
  ./bootstrap
  
  %build

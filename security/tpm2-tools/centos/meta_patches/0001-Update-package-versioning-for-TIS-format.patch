@@ -3,11 +3,10 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:30:57 -0400
 Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
-Conflicts:
-	SPECS/tpm2-tools.spec
+
 ---
- SPECS/tpm2-tools.spec | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ SPECS/tpm2-tools.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/tpm2-tools.spec b/SPECS/tpm2-tools.spec
 index 935580d..12aa6a0 100644
@@ -15,21 +14,12 @@ index 935580d..12aa6a0 100644
 +++ b/SPECS/tpm2-tools.spec
 @@ -1,6 +1,6 @@
  Name: tpm2-tools
- Version: 3.0.1
--Release: 1%{?dist}
-+Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
+ Version: 3.0.4
+-Release: 2%{?dist}
++Release: 2.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary: A TPM2.0 testing tool build upon TPM2.0-TSS
  
  License: BSD
-@@ -33,7 +33,7 @@ BuildRequires: pkgconfig(tcti-tabrmd)
- ExclusiveArch: %{ix86} x86_64
- 
- # tpm2-tools is heavily depending on TPM2.0-TSS project, matched tss is required
--Requires: tpm2-tss%{?_isa} >= 1.3.0-1%{?dist}
-+Requires: tpm2-tss%{?_isa} = 1.3.0-2.el7
- 
- # tpm2-tools project changed the install path for binaries and man page section
- Obsoletes: tpm2-tools <= 2.1.0-2
 -- 
 2.7.4
 
