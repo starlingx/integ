@@ -2,26 +2,24 @@ diff --git a/django/template/defaultfilters.py b/django/template/defaultfilters.
 index cd2457d..dc10ea3 100644
 --- a/django/template/defaultfilters.py
 +++ b/django/template/defaultfilters.py
-@@ -896,15 +896,15 @@ def filesizeformat(bytes_):
-     if bytes_ < KB:
-         value = ungettext("%(size)d byte", "%(size)d bytes", bytes_) % {'size': bytes_}
-     elif bytes_ < MB:
--        value = ugettext("%s KB") % filesize_number_format(bytes_ / KB)
-+        value = ugettext("%s KiB") % filesize_number_format(bytes_ / KB)
-     elif bytes_ < GB:
--        value = ugettext("%s MB") % filesize_number_format(bytes_ / MB)
-+        value = ugettext("%s MiB") % filesize_number_format(bytes_ / MB)
-     elif bytes_ < TB:
--        value = ugettext("%s GB") % filesize_number_format(bytes_ / GB)
-+        value = ugettext("%s GiB") % filesize_number_format(bytes_ / GB)
-     elif bytes_ < PB:
--        value = ugettext("%s TB") % filesize_number_format(bytes_ / TB)
-+        value = ugettext("%s TiB") % filesize_number_format(bytes_ / TB)
+@@ -905,15 +905,15 @@ def filesizeformat(bytes):
+     if bytes < KB:
+         value = ungettext("%(size)d byte", "%(size)d bytes", bytes) % {'size': bytes}
+     elif bytes < MB:
+-        value = ugettext("%s KB") % filesize_number_format(bytes / KB)
++        value = ugettext("%s KiB") % filesize_number_format(bytes / KB)
+     elif bytes < GB:
+-        value = ugettext("%s MB") % filesize_number_format(bytes / MB)
++        value = ugettext("%s MiB") % filesize_number_format(bytes / MB)
+     elif bytes < TB:
+-        value = ugettext("%s GB") % filesize_number_format(bytes / GB)
++        value = ugettext("%s GiB") % filesize_number_format(bytes / GB)
+     elif bytes < PB:
+-        value = ugettext("%s TB") % filesize_number_format(bytes / TB)
++        value = ugettext("%s TiB") % filesize_number_format(bytes / TB)
      else:
--        value = ugettext("%s PB") % filesize_number_format(bytes_ / PB)
-+        value = ugettext("%s PiB") % filesize_number_format(bytes_ / PB)
+-        value = ugettext("%s PB") % filesize_number_format(bytes / PB)
++        value = ugettext("%s PiB") % filesize_number_format(bytes / PB)
  
-     if negative:
-         value = "-%s" % value
-
-
+     return avoid_wrapping(value)
+ 

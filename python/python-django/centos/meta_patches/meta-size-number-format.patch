@@ -3,23 +3,30 @@ From: Wei Zhou <wei.zhou@windriver.com>
 Date: Wed, 11 Oct 2017 22:23:10 -0500
 Subject: [PATCH 1/1] meta size number format
 
-Signed-off-by: SidneyAn <ran1.an@intel.com>
 ---
- SPECS/python-django.spec | 1 +
- 1 file changed, 1 insertion(+)
+ SPECS/python-django.spec | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/python-django.spec b/SPECS/python-django.spec
 index 79557de..5bef0ec 100644
 --- a/SPECS/python-django.spec
 +++ b/SPECS/python-django.spec
-@@ -32,6 +32,7 @@ Source0:        https://files.pythonhosted.org/packages/source/D/Django/Django-%
+@@ -41,6 +41,7 @@ Patch0:         python-django-1.8.3-shell-completion.patch
  
  # WRS
- Patch0:         session-filebase-backend-fix.patch
-+Patch1:         size-number-format.patch
+ Patch1:         session-filebase-backend-fix.patch
++Patch2:         size-number-format.patch
  
  BuildArch:      noarch
+ BuildRequires:  python2-devel
+@@ -154,6 +155,7 @@ rm -rf Django.egg-info
  
+ # WRS
+ %patch1 -p1
++%patch2 -p1
+ 
+ # empty files
+ for f in \
 -- 
 1.8.3.1
 

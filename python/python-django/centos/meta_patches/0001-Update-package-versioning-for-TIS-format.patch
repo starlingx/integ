@@ -11,12 +11,12 @@ diff --git a/SPECS/python-django.spec b/SPECS/python-django.spec
 index d0e54bb..5cf8579 100644
 --- a/SPECS/python-django.spec
 +++ b/SPECS/python-django.spec
-@@ -22,7 +22,7 @@
+@@ -29,7 +29,7 @@
  Name:           python-django
  
- Version:        1.11.13
--Release:        4%{?dist}
-+Release:        4.el7%{?_tis_dist}.%{tis_patch_ver}
+ Version:        1.8.14
+-Release:        1%{?dist}
++Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        A high-level Python Web framework
  
  Group:          Development/Languages

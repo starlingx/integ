@@ -2,3 +2,4 @@ spec-include-TiS-patches.patch
 0001-Update-package-versioning-for-TIS-format.patch
 fix-build-failures-due-to-unwanted-sgid.patch
 meta-size-number-format.patch
+spec-patch-to-remove-SmartyPants.patch

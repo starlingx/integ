@@ -1,0 +1,20 @@
+diff --git a/SPECS/python-django.spec b/SPECS/python-django.spec
+index 5bef0ec..827d08f 100644
+--- a/SPECS/python-django.spec
++++ b/SPECS/python-django.spec
+@@ -42,6 +42,7 @@ Patch0:         python-django-1.8.3-shell-completion.patch
+ # WRS
+ Patch1:         session-filebase-backend-fix.patch
+ Patch2:         size-number-format.patch
++Patch3:         remove-SmartyPantsHTMLTranslator.patch
+ 
+ BuildArch:      noarch
+ BuildRequires:  python2-devel
+@@ -156,6 +157,7 @@ rm -rf Django.egg-info
+ # WRS
+ %patch1 -p1
+ %patch2 -p1
++%patch3 -p1
+ 
+ # empty files
+ for f in \

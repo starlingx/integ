@@ -3,34 +3,34 @@ From: Scott Little <scott.little@windriver.com>
 Date: Fri, 26 Aug 2016 15:10:15 -0400
 Subject: [PATCH 1/1] WRS: spec-include-TiS-patches.patch
 
-Signed-off-by: SidneyAn <ran1.an@intel.com>
 ---
- SPECS/python-django.spec | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ SPECS/python-django.spec | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/python-django.spec b/SPECS/python-django.spec
 index 269991d..d0e54bb 100644
 --- a/SPECS/python-django.spec
 +++ b/SPECS/python-django.spec
-@@ -30,6 +30,9 @@ License:        BSD
- URL:            http://www.djangoproject.com/
- Source0:        https://files.pythonhosted.org/packages/source/D/Django/Django-%{version}.tar.gz
+@@ -39,6 +39,9 @@ Source0:        https://files.pythonhosted.org/packages/source/D/Django/Django-%
+ 
+ Patch0:         python-django-1.8.3-shell-completion.patch
  
 +# WRS
-+Patch0:         session-filebase-backend-fix.patch
++Patch1:         session-filebase-backend-fix.patch
 +
  BuildArch:      noarch
+ BuildRequires:  python2-devel
  
+@@ -149,6 +152,9 @@ rm -rf Django.egg-info
  
-@@ -146,7 +149,7 @@ principle.
- %endif
+ %patch0
  
- %prep
--%autosetup -n %{pkgname}-%{version}
-+%autosetup -n %{pkgname}-%{version} -p1
- 
- 
- %build
++# WRS
++%patch1 -p1
++
+ # empty files
+ for f in \
+     django/contrib/staticfiles/models.py \
 -- 
-1.8.3.1
+1.9.1
 
