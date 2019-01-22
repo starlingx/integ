@@ -30,7 +30,7 @@ diff --git a/heartbeat/LVM b/heartbeat/LVM
 index 1efb207..bde381c 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -365,6 +365,81 @@ LVM_start() {
+@@ -367,6 +367,81 @@ LVM_start() {
  }
  
  #
@@ -112,7 +112,7 @@ index 1efb207..bde381c 100755
  #	Disable the LVM volume
  #
  LVM_stop() {
-@@ -393,6 +468,7 @@ LVM_stop() {
+@@ -395,6 +470,7 @@ LVM_stop() {
  			break
  		fi
  
