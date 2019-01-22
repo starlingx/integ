@@ -49,31 +49,4 @@ if [ $REINDEX -eq 1 ]; then
     /usr/sbin/helm repo index $REPO_DIR
 fi
 
-if [ ! -f "/etc/platform/simplex" ]; then
-    # We're not a one node system, copy the files to the other
-    # controller if we can
-    if [ $HOSTNAME == "controller-0" ]; then
-        TARGET="controller-1"
-    else
-        TARGET="controller-0"
-    fi
-
-    # We've modified etc/rsyncd.conf to allow access to /www/helm_charts
-    # To avoid races, copy over the index file last.
-    rsync -acv --exclude=index.yaml ${REPO_DIR}/ rsync://${TARGET}/helm_charts
-    if [ $? -ne 0 ]; then
-        echo Problem syncing helm charts to $TARGET
-        RETVAL=1
-    fi
-
-    rsync -acv ${REPO_DIR}/index.yaml rsync://${TARGET}/helm_charts
-    if [ $? -ne 0 ]; then
-        echo Problem syncing helm chart index file to $TARGET
-        RETVAL=1
-    fi
-fi
-
-# We also need to sync the helm charts on node startup
-# in case they were added while the node was down.
-
 exit $RETVAL
