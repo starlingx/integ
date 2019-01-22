@@ -19,7 +19,7 @@ diff --git a/drivers/target/iscsi/iscsi_target.c b/drivers/target/iscsi/iscsi_ta
 index d8f587e..17b08b7 100644
 --- a/drivers/target/iscsi/iscsi_target.c
 +++ b/drivers/target/iscsi/iscsi_target.c
-@@ -3594,8 +3594,8 @@ void iscsit_thread_get_cpumask(struct iscsi_conn *conn)
+@@ -3575,8 +3575,8 @@ void iscsit_thread_get_cpumask(struct iscsi_conn *conn)
  	 * iSCSI connection's RX/TX threads will be scheduled to
  	 * execute upon.
  	 */

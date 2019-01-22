@@ -50,7 +50,7 @@ index d357e7d..f333b29 100644
  obj-$(CONFIG_MODULES) += module.o
  obj-$(CONFIG_MODULE_SIG) += module_signing.o
  obj-$(CONFIG_MODULE_SIG_UEFI) += modsign_uefi.o
-@@ -202,7 +202,45 @@ targets += $(obj)/.x509.list
+@@ -206,7 +206,45 @@ targets += $(obj)/.x509.list
  $(obj)/.x509.list:
  	@echo $(X509_CERTIFICATES) >$@
  

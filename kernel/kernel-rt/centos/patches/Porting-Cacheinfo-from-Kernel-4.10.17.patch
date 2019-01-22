@@ -47,7 +47,7 @@ This helps in:
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  Documentation/ABI/testing/sysfs-devices-system-cpu |  65 ++
- arch/x86/kernel/cpu/intel_cacheinfo.c              | 830 +++++++--------------
+ arch/x86/kernel/cpu/cacheinfo.c                    | 830 +++++++--------------
  drivers/base/Makefile                              |   2 +-
  drivers/base/cacheinfo.c                           | 662 ++++++++++++++++
  drivers/base/cpu.c                                 |  54 ++
@@ -133,10 +133,10 @@ index ff65f15..7521be8 100644
  What:		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats
  		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/turbo_stat
  		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/sub_turbo_stat
-diff --git a/arch/x86/kernel/cpu/intel_cacheinfo.c b/arch/x86/kernel/cpu/intel_cacheinfo.c
+diff --git a/arch/x86/kernel/cpu/cacheinfo.c b/arch/x86/kernel/cpu/cacheinfo.c
 index d529019..bf23bd2 100644
---- a/arch/x86/kernel/cpu/intel_cacheinfo.c
-+++ b/arch/x86/kernel/cpu/intel_cacheinfo.c
+--- a/arch/x86/kernel/cpu/cacheinfo.c
++++ b/arch/x86/kernel/cpu/cacheinfo.c
 @@ -1,5 +1,5 @@
  /*
 - *	Routines to indentify caches on Intel CPU.
@@ -499,7 +499,7 @@ index d529019..bf23bd2 100644
  		return -EIO; /* better error ? */
  
  	this_leaf->eax = eax;
-@@ -576,14 +631,14 @@ static int find_num_cache_leaves(struct cpuinfo_x86 *c)
+@@ -576,7 +631,7 @@ static int find_num_cache_leaves(struct cpuinfo_x86 *c)
  		/* Do cpuid(op) loop to find out num_cache_leaves */
  		cpuid_count(op, i, &eax, &ebx, &ecx, &edx);
  		cache_eax.full = eax;
@@ -508,6 +508,7 @@ index d529019..bf23bd2 100644
  	return i;
  }
  
+@@ -622,7 +677,7 @@ void cacheinfo_amd_init_llc_id(struct cpuinfo_x86 *c, int cpu, u8 node_id)
  void init_amd_cacheinfo(struct cpuinfo_x86 *c)
  {
  
@@ -516,7 +517,7 @@ index d529019..bf23bd2 100644
  		num_cache_leaves = find_num_cache_leaves(c);
  	} else if (c->extended_cpuid_level >= 0x80000006) {
  		if (cpuid_edx(0x80000006) & 0xf000)
-@@ -600,7 +655,7 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
+@@ -639,7 +694,7 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
  	unsigned int new_l1d = 0, new_l1i = 0; /* Cache sizes from cpuid(4) */
  	unsigned int new_l2 = 0, new_l3 = 0, i; /* Cache sizes from cpuid(4) */
  	unsigned int l2_id = 0, l3_id = 0, num_threads_sharing, index_msb;
@@ -525,7 +526,7 @@ index d529019..bf23bd2 100644
  	unsigned int cpu = c->cpu_index;
  #endif
  
-@@ -618,36 +673,34 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
+@@ -657,36 +712,34 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
  		 * parameters cpuid leaf to find the cache details
  		 */
  		for (i = 0; i < num_cache_leaves; i++) {
@@ -587,7 +588,7 @@ index d529019..bf23bd2 100644
  			}
  		}
  	}
-@@ -721,34 +774,40 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
+@@ -760,34 +813,40 @@ unsigned int init_intel_cacheinfo(struct cpuinfo_x86 *c)
  
  	if (new_l2) {
  		l2 = new_l2;
@@ -640,7 +641,7 @@ index d529019..bf23bd2 100644
  	int i, sibling;
  
  	/*
-@@ -757,40 +816,43 @@ static int cache_shared_amd_cpu_map_setup(unsigned int cpu, int index)
+@@ -796,40 +855,43 @@ static int cache_shared_amd_cpu_map_setup(unsigned int cpu, int index)
  	 */
  	if (index == 3) {
  		for_each_cpu(i, cpu_llc_shared_mask(cpu)) {
@@ -697,7 +698,7 @@ index d529019..bf23bd2 100644
  			}
  		}
  	} else
-@@ -799,72 +861,70 @@ static int cache_shared_amd_cpu_map_setup(unsigned int cpu, int index)
+@@ -838,72 +900,70 @@ static int cache_shared_amd_cpu_map_setup(unsigned int cpu, int index)
  	return 1;
  }
  
@@ -814,7 +815,7 @@ index d529019..bf23bd2 100644
  }
  
  /*
-@@ -886,411 +946,37 @@ static void get_cache_id(int cpu, struct _cpuid4_info_regs *id4_regs)
+@@ -925,411 +985,37 @@ static void get_cache_id(int cpu, struct _cpuid4_info_regs *id4_regs)
  int get_cpu_cache_id(int cpu, int level)
  {
  	int i;
@@ -1931,7 +1932,7 @@ diff --git a/drivers/base/cpu.c b/drivers/base/cpu.c
 index 290609b..65e786d 100644
 --- a/drivers/base/cpu.c
 +++ b/drivers/base/cpu.c
-@@ -340,6 +340,60 @@ struct device *get_cpu_device(unsigned cpu)
+@@ -338,6 +338,60 @@ struct device *get_cpu_device(unsigned cpu)
  }
  EXPORT_SYMBOL_GPL(get_cpu_device);
  
