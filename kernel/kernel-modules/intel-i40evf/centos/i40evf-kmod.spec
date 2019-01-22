@@ -8,7 +8,7 @@
 %define kmod_name i40evf
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 3.5.13
+Version: 3.6.15
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2

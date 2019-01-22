@@ -1,4 +1,4 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/i40evf-3.5.13.tar.gz"
+  $STX_BASE/downloads/i40evf-3.6.15.tar.gz"
 TIS_PATCH_VER=1
