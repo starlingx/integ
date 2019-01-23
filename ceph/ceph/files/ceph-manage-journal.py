@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2016 Wind River Systems, Inc.
+# Copyright (c) 2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 
+DEVICE_NAME_NVME = "nvme"
 
 #########
 # Utils #
@@ -85,7 +86,11 @@ def is_partitioning_correct(disk_path, partition_sizes):
     partition_index = 1
     for size in partition_sizes:
         # Check that each partition size matches the one in input
-        partition_node = disk_node + str(partition_index)
+        if DEVICE_NAME_NVME in disk_node:
+            partition_node = '{}p{}'.format(disk_node, str(partition_index))
+        else:
+            partition_node = '{}{}'.format(disk_node, str(partition_index))
+
         output, _, _ = command(["udevadm", "settle", "-E", partition_node])
         cmd = ["parted", "-s", partition_node, "unit", "MiB", "print"]
         output, _, _ = command(cmd)
@@ -118,7 +123,7 @@ def create_partitions(disk_path, partition_sizes):
     # GPT partitions on the storage node so nothing to remove in this case
     links = []
     if os.path.isdir(DISK_BY_PARTUUID):
-    	links = [ os.path.join(DISK_BY_PARTUUID,l) for l in os.listdir(DISK_BY_PARTUUID) 
+    	links = [ os.path.join(DISK_BY_PARTUUID,l) for l in os.listdir(DISK_BY_PARTUUID)
         	        if os.path.islink(os.path.join(DISK_BY_PARTUUID, l)) ]
 
     # Erase all partitions on current node by creating a new GPT table

@@ -11,13 +11,20 @@ Source0:        registry-token-server-%{version}.tar.gz
 Source1:        %{name}.service
 Source2:        token_server.conf
 
+# Go dependencies downloaded as tarballs
+Source10:       Sirupsen-logrus-55eb11d21d2a31a3cc93838241d04800f52e823d.tar.gz
+Source11:       docker-distribution-48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89.tar.gz
+Source12:       docker-libtrust-fa567046d9b14f6aa788882a950d69651d230b21.tar.gz
+Source13:       gophercloud-gophercloud-aa00757ee3ab58e53520b6cb910ca0543116400a.tar.gz
+Source14:       gorilla-context-08b5f424b9271eedf6f9f0ce86cb9396ed337a42.tar.gz
+Source15:       gorilla-mux-456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz
+
 BuildRequires: systemd
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd
 
 BuildRequires:  golang >= 1.6
-BuildRequires:  golang-dep
 ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:%{ix86} x86_64 %{arm}}
 
 %description
@@ -26,13 +33,26 @@ ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:%{ix86} x86_64 %{arm}}
 %prep
 %setup -q -n registry-token-server-%{version}
 
+# Extract other go dependencies
+%setup -T -D -a 10
+%setup -T -D -a 11
+%setup -T -D -a 12
+%setup -T -D -a 13
+%setup -T -D -a 14
+%setup -T -D -a 15
+mkdir -p _build/src/github.com/gorilla/ && mv gorilla-mux _build/src/github.com/gorilla/mux
+mkdir -p _build/src/github.com/docker/ && mv docker-distribution _build/src/github.com/docker/distribution
+mkdir -p _build/src/github.com/docker/ && mv docker-libtrust _build/src/github.com/docker/libtrust
+mkdir -p _build/src/github.com/docker/distribution/ && mv gorilla-context _build/src/github.com/docker/distribution/context
+mkdir -p _build/src/github.com/Sirupsen/ && mv Sirupsen-logrus _build/src/github.com/Sirupsen/logrus
+mkdir -p _build/src/github.com/gophercloud && mv gophercloud-gophercloud _build/src/github.com/gophercloud/gophercloud
+
 %build
 mkdir -p ./_build/src/
 ln -s $(pwd) ./_build/src/registry-token-server
 export GOPATH=$(pwd)/_build:%{gopath}
 
 cd ./_build/src/registry-token-server
-dep ensure
 %gobuild -o bin/registry-token-server registry-token-server
 
 %install

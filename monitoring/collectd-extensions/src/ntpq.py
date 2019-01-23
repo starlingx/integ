@@ -222,15 +222,14 @@ def _raise_alarm(ip=None):
 def _clear_base_alarm():
     """ Clear the NTP base alarm """
 
-    if api.get_fault(PLUGIN_ALARMID, obj.base_eid) is not None:
-        if api.clear_fault(PLUGIN_ALARMID, obj.base_eid) is False:
-            collectd.error("%s failed to clear alarm %s:%s" %
-                           (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
-            return True
-        else:
-            collectd.info("%s cleared alarm %s:%s" %
-                          (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
-            obj.alarm_raised = False
+    if api.clear_fault(PLUGIN_ALARMID, obj.base_eid) is False:
+        collectd.error("%s failed to clear alarm %s:%s" %
+                       (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+        return True
+    else:
+        collectd.info("%s cleared alarm %s:%s" %
+                      (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+        obj.alarm_raised = False
 
     return False
 
@@ -263,23 +262,20 @@ def _remove_ip_from_unreachable_list(ip):
     if ip and ip in obj.unreachable_servers:
         eid = obj.base_eid + '=' + ip
         collectd.debug("%s trying to clear alarm %s" % (PLUGIN, eid))
+
         # clear the alarm if its asserted
-        if api.get_fault(PLUGIN_ALARMID, eid) is not None:
-            if api.clear_fault(PLUGIN_ALARMID, eid) is True:
-                collectd.info("%s cleared %s:%s alarm" %
-                              (PLUGIN, PLUGIN_ALARMID, eid))
-                obj.unreachable_servers.remove(ip)
-            else:
-                # Handle clear failure by not removing the IP from the list.
-                # It will retry on next audit.
-                # Error should only occur if FM is not running at the time
-                # this get or clear is called
-                collectd.error("%s failed alarm clear %s:%s" %
-                               (PLUGIN, PLUGIN_ALARMID, eid))
-                return True
-        else:
+        if api.clear_fault(PLUGIN_ALARMID, eid) is True:
+            collectd.info("%s cleared %s:%s alarm" %
+                          (PLUGIN, PLUGIN_ALARMID, eid))
             obj.unreachable_servers.remove(ip)
-            collectd.info("%s alarm %s not raised" % (PLUGIN, eid))
+        else:
+            # Handle clear failure by not removing the IP from the list.
+            # It will retry on next audit.
+            # Error should only occur if FM is not running at the time
+            # this get or clear is called
+            collectd.error("%s failed alarm clear %s:%s" %
+                           (PLUGIN, PLUGIN_ALARMID, eid))
+            return True
 
     return False
 
