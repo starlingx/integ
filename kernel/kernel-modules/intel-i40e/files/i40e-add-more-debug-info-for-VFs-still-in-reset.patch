@@ -8,26 +8,15 @@ Subject: [PATCH 2/3] i40e add more debug info for VFs still in reset
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- src/i40e_virtchnl_pf.c | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ src/i40e_virtchnl_pf.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
 index 126ec19..da29fc3 100644
 --- a/src/i40e_virtchnl_pf.c
 +++ b/src/i40e_virtchnl_pf.c
-@@ -3077,8 +3077,8 @@ int i40e_ndo_set_vf_mac(struct net_device *netdev, int vf_id, u8 *mac)
- 		msleep(20);
- 	}
- 	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
--		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
--			vf_id);
-+		dev_err(&pf->pdev->dev, "%s: VF %d still in reset. Try again.\n",
-+			__func__, vf_id);
- 		ret = -EAGAIN;
- 		goto error_param;
- 	}
-@@ -3218,8 +3218,8 @@ int i40e_ndo_set_vf_port_vlan(struct net_device *netdev,
- 	vf = &(pf->vf[vf_id]);
+@@ -4650,8 +4650,8 @@ int i40e_ndo_set_vf_port_vlan(struct net_device *netdev,
+ 	vf = &pf->vf[vf_id];
  	vsi = pf->vsi[vf->lan_vsi_idx];
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
 -		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
@@ -37,8 +26,8 @@ index 126ec19..da29fc3 100644
  		ret = -EAGAIN;
  		goto error_pvid;
  	}
-@@ -3350,8 +3350,8 @@ int i40e_ndo_set_vf_bw(struct net_device *netdev, int vf_id, int max_tx_rate)
- 	vf = &(pf->vf[vf_id]);
+@@ -4784,8 +4784,8 @@ int i40e_ndo_set_vf_bw(struct net_device *netdev, int vf_id, int max_tx_rate)
+ 	vf = &pf->vf[vf_id];
  	vsi = pf->vsi[vf->lan_vsi_idx];
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
 -		dev_err(&pf->pdev->dev, "VF %d still in reset. Try again.\n",
@@ -48,7 +37,7 @@ index 126ec19..da29fc3 100644
  		ret = -EAGAIN;
  		goto error;
  	}
-@@ -3443,8 +3443,8 @@ int i40e_ndo_get_vf_config(struct net_device *netdev,
+@@ -4844,8 +4844,8 @@ int i40e_ndo_get_vf_config(struct net_device *netdev,
  	/* first vsi is always the LAN vsi */
  	vsi = pf->vsi[vf->lan_vsi_idx];
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
@@ -59,7 +48,7 @@ index 126ec19..da29fc3 100644
  		ret = -EAGAIN;
  		goto error_param;
  	}
-@@ -3576,8 +3576,8 @@ int i40e_ndo_set_vf_spoofchk(struct net_device *netdev, int vf_id, bool enable)
+@@ -4989,8 +4989,8 @@ int i40e_ndo_set_vf_spoofchk(struct net_device *netdev, int vf_id, bool enable)
  
  	vf = &(pf->vf[vf_id]);
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
