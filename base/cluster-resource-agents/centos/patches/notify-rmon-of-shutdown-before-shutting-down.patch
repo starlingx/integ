@@ -30,7 +30,7 @@ diff --git a/heartbeat/LVM b/heartbeat/LVM
 index 38092f9..893ece8 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
-@@ -599,9 +599,10 @@ case "$1" in
+@@ -601,9 +601,10 @@ case "$1" in
  		fi
  		exit $rc;;
  
