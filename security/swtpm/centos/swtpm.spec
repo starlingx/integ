@@ -2,12 +2,12 @@
 
 %define name      swtpm
 %define version   0.1.0
-#WRS
+#STX
 #%define release   1
 %define release   2%{?_tis_dist}.%{tis_patch_ver}
 
 # Valid crypto subsystems are 'freebl' and 'openssl'
-#WRS
+#STX
 #%if "%{crypto_subsystem}" == ""
 %define crypto_subsystem openssl
 #%endif
@@ -15,7 +15,7 @@
 Summary: TPM Emulator
 Name:           %{name}
 Version:        %{version}
-#WRS
+#STX
 #Release:        %{release}.dev2%{?dist}
 Release:        %{release}
 License:        BSD
@@ -23,9 +23,8 @@ Group:          Applications/Emulators
 Source:         %{name}-%{version}-253eac5.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
-#WRS
-Source1: qemu
-Source2: setup_vtpm
+#STX
+Source1: setup_vtpm
 
 
 # due to gnutls backlevel API:
@@ -49,11 +48,11 @@ BuildRequires:  libtasn1-tools
 BuildRequires:  kernel-modules-extra
 %endif
 
-#WRS
+#STX
 BuildRequires:  openssl-devel
 Requires: openssl
 
-#WRS
+#STX
 Requires: seabios-bin >= 1.10.2-3
 
 Requires:       fuse expect libtpms >= 0.6.0
@@ -94,7 +93,7 @@ Summary:        Tools for the TPM emulator
 License:        BSD
 Group:          Applications/Emulators
 Requires:       swtpm fuse
-#WRS
+#STX
 #Requires:       trousers >= 0.3.9 tpm-tools >= 1.3.8-6 expect bash net-tools gnutls-utils
 Requires:       trousers >= 0.3.9 expect bash net-tools gnutls-utils
 
@@ -106,9 +105,8 @@ Tools for the TPM emulator from the swtpm package
 %attr( 755, root, root) %{_bindir}/swtpm
 %{_mandir}/man8/swtpm.8*
 
-#WRS
+#STX
 /etc/libvirt/setup_vtpm
-/etc/libvirt/hooks/qemu
 
 
 %files cuse
@@ -158,7 +156,7 @@ Tools for the TPM emulator from the swtpm package
 
 %build
 
-#WRS
+#STX
 ./bootstrap.sh
 %configure \
         --prefix=/usr \
@@ -180,13 +178,12 @@ make %{?_smp_mflags} check
 make %{?_smp_mflags} install DESTDIR=${RPM_BUILD_ROOT}
 rm -f ${RPM_BUILD_ROOT}%{_libdir}/*.a ${RPM_BUILD_ROOT}%{_libdir}/*.la
 
-#WRS
-mkdir -p $RPM_BUILD_ROOT/etc/libvirt/hooks
+#STX
+mkdir -p $RPM_BUILD_ROOT/etc/libvirt
 
-install -m 0500 %{SOURCE1} $RPM_BUILD_ROOT/etc/libvirt/hooks/qemu
-install -m 0500 %{SOURCE2} $RPM_BUILD_ROOT/etc/libvirt/setup_vtpm
+install -m 0500 %{SOURCE1} $RPM_BUILD_ROOT/etc/libvirt/setup_vtpm
 
-# WRS: Don't set (or remove on uninstall): SELINUX Policy and contexts
+# STX: Don't set (or remove on uninstall): SELINUX Policy and contexts
 #%post cuse
 #if [ -n "$(type -p semodule)" ]; then
 #  for pp in /usr/share/swtpm/*.pp ; do
