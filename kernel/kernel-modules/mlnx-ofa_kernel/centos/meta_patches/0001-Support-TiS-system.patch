@@ -56,7 +56,7 @@ index 33fe911..7a9253d 100644
  # Select packages to build
  
  # Kernel module packages to be included into kernel-ib
-@@ -62,7 +67,9 @@
+@@ -63,7 +68,9 @@
  
  %{!?KERNEL_SOURCES: %global KERNEL_SOURCES /lib/modules/%{KVERSION}/source}
  
@@ -64,10 +64,10 @@ index 33fe911..7a9253d 100644
 +
 +%define _basename mlnx-ofa_kernel
 +%define _name %{_basename}%{?bt_ext}
- %{!?_version: %global _version 4.3}
- %{!?_release: %global _release OFED.4.3.3.0.2.1.gcf60532}
+ %{!?_version: %global _version 4.5}
+ %{!?_release: %global _release OFED.4.5.1.0.1.1.gb4fdfac}
  %global _kmp_rel %{_release}%{?_kmp_build_num}%{?_dist}
-@@ -74,11 +81,16 @@
+@@ -75,11 +82,16 @@
  Summary: Infiniband HCA Driver
  Name: %{_name}
  Version: %{_version}
@@ -86,7 +86,7 @@ index 33fe911..7a9253d 100644
  BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
  Vendor: Mellanox Technologies
  Obsoletes: kernel-ib
-@@ -133,7 +145,6 @@ EOF)
+@@ -135,7 +147,6 @@ EOF)
  %global kernel_release() %{KVERSION}
  %global flavors_to_build default
  %package -n %{non_kmp_pname}
@@ -94,7 +94,7 @@ index 33fe911..7a9253d 100644
  Requires: coreutils
  Requires: pciutils
  Requires: grep
-@@ -160,7 +171,7 @@ Obsoletes: mlnx-en-doc
+@@ -162,7 +173,7 @@ Obsoletes: mlnx-en-doc
  Obsoletes: mlnx-en-debuginfo
  Obsoletes: mlnx-en-sources
  Version: %{_version}
@@ -103,7 +103,7 @@ index 33fe911..7a9253d 100644
  Summary: Infiniband Driver and ULPs kernel modules
  Group: System Environment/Libraries
  %description -n %{non_kmp_pname}
-@@ -172,7 +183,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -174,7 +185,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  %package -n %{devel_pname}
  Version: %{_version}
  # build KMP rpms?
@@ -112,7 +112,7 @@ index 33fe911..7a9253d 100644
  Obsoletes: kernel-ib-devel
  Obsoletes: compat-rdma-devel
  Obsoletes: kernel-ib
-@@ -209,13 +220,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -212,13 +223,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  	else \
  		echo -n '0'; fi)
  
@@ -127,7 +127,7 @@ index 33fe911..7a9253d 100644
  %global buildsubdir %{_name}-%{version}
  # Disgusting hack alert! We need to ensure we sign modules *after* all
  # invocations of strip occur, which is in __debug_install_post if
-@@ -228,7 +238,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -231,7 +241,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
    %{__modsign_install_post} \
  %{nil}
  
@@ -135,7 +135,7 @@ index 33fe911..7a9253d 100644
  #
  %if "%{_vendor}" == "suse"
  %debug_package
-@@ -259,12 +268,16 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -262,12 +271,16 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  %{!?install_mod_dir: %global install_mod_dir updates}
  
  %prep
@@ -153,7 +153,7 @@ index 33fe911..7a9253d 100644
  %build
  export EXTRA_CFLAGS='-DVERSION=\"%version\"'
  export INSTALL_MOD_DIR=%{install_mod_dir}
-@@ -279,7 +292,6 @@ for flavor in %flavors_to_build; do
+@@ -282,7 +295,6 @@ for flavor in %flavors_to_build; do
  	find compat -type f -exec touch -t 200012201010 '{}' \; || true
  	./configure --build-dummy-mods --prefix=%{_prefix} --kernel-version $KVERSION --kernel-sources $KSRC --modules-dir $LIB_MOD_DIR $CONF_OPTIONS %{?_smp_mflags}
  	make %{?_smp_mflags} kernel
@@ -161,7 +161,7 @@ index 33fe911..7a9253d 100644
  	cd -
  done
  
-@@ -288,9 +300,11 @@ touch ofed-files
+@@ -291,9 +303,11 @@ touch ofed-files
  export RECORD_PY_FILES=1
  export INSTALL_MOD_PATH=%{buildroot}
  export INSTALL_MOD_DIR=%{install_mod_dir}
@@ -174,7 +174,7 @@ index 33fe911..7a9253d 100644
  for flavor in %flavors_to_build; do 
  	export KSRC=%{kernel_source $flavor}
  	export KVERSION=%{kernel_release $KSRC}
-@@ -340,6 +354,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
+@@ -343,6 +357,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
  echo "override ${mod_name} * extra/%{_name}${mod_path}" >> %{buildroot}%{_sysconfdir}/depmod.d/zz01-%{_name}-${mod_name}.conf
  done
  %endif
@@ -183,7 +183,7 @@ index 33fe911..7a9253d 100644
  %endif
  
  # copy sources
-@@ -680,6 +696,7 @@ fi
+@@ -686,6 +702,7 @@ fi
  %config(noreplace) %{_sysconfdir}/depmod.d/zz01-%{_name}-*.conf
  %endif
  %endif
