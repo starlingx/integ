@@ -15,12 +15,14 @@ Source2: collectd.conf.pmon
 # collectd python plugin files - notifiers
 Source3: fm_notifier.py
 Source4: mtce_notifier.py
+Source5: plugin_common.py
 
 # collectd python plugin files - resource plugins
 Source11: cpu.py
 Source12: memory.py
 Source14: example.py
 Source15: ntpq.py
+Source16: interface.py
 
 # collectd plugin conf files into /etc/collectd.d
 Source100: python_plugins.conf
@@ -29,6 +31,7 @@ Source102: memory.conf
 Source103: df.conf
 Source104: example.conf
 Source105: ntpq.conf
+Source106: interface.conf
 
 BuildRequires: systemd-devel
 
@@ -64,12 +67,15 @@ install -m 600 %{SOURCE2} %{buildroot}%{local_config_extensions_dir}
 # collectd python plugin files - notifiers
 install -m 700 %{SOURCE3} %{buildroot}%{local_python_extensions_dir}
 install -m 700 %{SOURCE4} %{buildroot}%{local_python_extensions_dir}
+install -m 700 %{SOURCE5} %{buildroot}%{local_python_extensions_dir}
 
 # collectd python plugin files - resource plugins
 install -m 700 %{SOURCE11} %{buildroot}%{local_python_extensions_dir}
 install -m 700 %{SOURCE12} %{buildroot}%{local_python_extensions_dir}
 install -m 700 %{SOURCE14} %{buildroot}%{local_python_extensions_dir}
 install -m 700 %{SOURCE15} %{buildroot}%{local_python_extensions_dir}
+install -m 700 %{SOURCE16} %{buildroot}%{local_python_extensions_dir}
+
 
 # collectd plugin conf files into /etc/collectd.d
 install -m 600 %{SOURCE100} %{buildroot}%{local_plugin_dir}
@@ -78,6 +84,7 @@ install -m 600 %{SOURCE102} %{buildroot}%{local_plugin_dir}
 install -m 600 %{SOURCE103} %{buildroot}%{local_plugin_dir}
 install -m 600 %{SOURCE104} %{buildroot}%{local_plugin_dir}
 install -m 600 %{SOURCE105} %{buildroot}%{local_plugin_dir}
+install -m 600 %{SOURCE106} %{buildroot}%{local_plugin_dir}
 
 %clean
 rm -rf $RPM_BUILD_ROOT

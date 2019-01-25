@@ -5,6 +5,7 @@ COPY_LIST="$PKG_BASE/src/LICENSE \
   $PKG_BASE/src/collectd.service \
   $PKG_BASE/src/fm_notifier.py \
   $PKG_BASE/src/mtce_notifier.py \
+  $PKG_BASE/src/plugin_common.py \
   $PKG_BASE/src/python_plugins.conf \
   $PKG_BASE/src/cpu.py \
   $PKG_BASE/src/cpu.conf \
@@ -13,7 +14,9 @@ COPY_LIST="$PKG_BASE/src/LICENSE \
   $PKG_BASE/src/df.conf \
   $PKG_BASE/src/ntpq.py \
   $PKG_BASE/src/ntpq.conf \
+  $PKG_BASE/src/interface.py \
+  $PKG_BASE/src/interface.conf \
   $PKG_BASE/src/example.py \
   $PKG_BASE/src/example.conf"
 
-TIS_PATCH_VER=6
+TIS_PATCH_VER=7
