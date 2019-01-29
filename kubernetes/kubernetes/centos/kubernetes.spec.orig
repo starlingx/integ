@@ -23,16 +23,19 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.12.3
+%global commit                  fc32d2f3698e36b93322a3465f63a14e9f0eaead
+%global shortcommit              %(c=%{commit}; echo ${c:0:7})
 
 %global con_provider            github
 %global con_provider_tld        com
 %global con_project             kubernetes
-%global con_repo                kubernetes-contrib
+%global con_repo                contrib
 # https://github.com/kubernetes/contrib
-%global con_commit              1.12.1
+%global con_provider_prefix     %{con_provider}.%{con_provider_tld}/%{con_project}/%{con_repo}
+%global con_commit              5b445f1c53aa8d6457523526340077935f62e691
+%global con_shortcommit         %(c=%{con_commit}; echo ${c:0:7})
 
-%global kube_version            1.12.3
+%global kube_version            1.10.0
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -42,17 +45,26 @@
 ##############################################
 Name:           kubernetes
 Version:        %{kube_version}
-Release:        1%{?_tis_dist}.%{tis_patch_ver}
+Release:        1%{?dist}
 Summary:        Container cluster management
 License:        ASL 2.0
 URL:            https://%{import_path}
 ExclusiveArch:  x86_64 aarch64 ppc64le s390x
-Source0:        %{project}-v%{kube_version}.tar.gz
-Source1:        %{con_repo}-v%{con_commit}.tar.gz
+Source0:        https://%{provider_prefix}/archive/%{commit}/%{repo}-%{shortcommit}.tar.gz
+Source1:        https://%{con_provider_prefix}/archive/%{con_commit}/%{con_repo}-%{con_shortcommit}.tar.gz
 Source3:        kubernetes-accounting.conf
 Source4:        kubeadm.conf
 
 Source33:       genmanpages.sh
+
+Patch3:         build-with-debug-info.patch
+#Patch4:         make-test-cmd-run-over-hyperkube-based-kubectl.patch
+#Patch5:         make-e2e_node-run-over-distro-bins.patch
+
+# ppc64le
+Patch16:        fix-support-for-ppc64le.patch
+
+Patch20:        use_go_build-is-not-fully-propagated-so-make-it-fixe.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -795,13 +807,13 @@ Summary: Kubernetes services for node host
 
 %if 0%{?fedora} >= 27
 Requires: (docker or docker-ce)
-Suggests: docker-ce
+Suggests: docker
 %else
-Requires: docker-ce
+Requires: docker
 %endif
 Requires: conntrack-tools
 
-BuildRequires: golang >=  1.10.2
+BuildRequires: golang >= 1.2-7
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -843,6 +855,12 @@ Kubernetes client tools like kubectl
 %setup -q -n %{con_repo}-%{con_commit} -T -b 1
 %setup -q -n %{repo}-%{commit}
 
+%if 0%{?with_debug}
+%patch3 -p1
+%endif
+
+%patch20 -p1
+
 # copy contrib folder
 mkdir contrib
 cp -r ../%{con_repo}-%{con_commit}/init contrib/.
@@ -862,10 +880,17 @@ done
 mkdir -p src/k8s.io/kubernetes
 mv $(ls | grep -v "^src$") src/k8s.io/kubernetes/.
 
+# Patch tests to be run over distro bins
+#patch4 -p1
+#patch5 -p1
+
+%ifarch ppc64le
+%patch16 -p1
+%endif
+
 ###############
 
 %build
-export PBR_VERSION=%{version}
 pushd src/k8s.io/kubernetes/
 export KUBE_GIT_TREE_STATE="clean"
 export KUBE_GIT_COMMIT=%{commit}
@@ -876,7 +901,7 @@ export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
 %ifarch ppc64le
 export GOLDFLAGS='-linkmode=external'
 %endif
-make WHAT="cmd/hyperkube cmd/kube-apiserver cmd/kubeadm"
+make WHAT="--use_go_build cmd/hyperkube cmd/kube-apiserver cmd/kubeadm"
 
 # convert md to man
 ./hack/generate-docs.sh || true
@@ -890,7 +915,6 @@ popd
 popd
 
 %install
-export PBR_VERSION=%{version}
 pushd src/k8s.io/kubernetes/
 . hack/lib/init.sh
 kube::golang::setup_env
@@ -1046,7 +1070,6 @@ fi
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/config
 %config(noreplace) %{_sysconfdir}/%{name}/kubelet
-%config(noreplace) %{_sysconfdir}/%{name}/kubelet.kubeconfig
 %config(noreplace) %{_sysconfdir}/%{name}/proxy
 %config(noreplace) %{_sysconfdir}/systemd/system.conf.d/kubernetes-accounting.conf
 %{_tmpfilesdir}/kubernetes.conf
