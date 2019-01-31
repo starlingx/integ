@@ -270,17 +270,35 @@ Group:		System/Filesystems
 URL:		http://ceph.com/
 Source0:	%{?_remote_tarball_prefix}ceph-13.2.2.tar.gz
 
-Source1:  ceph.sh
-Source2:  mgr-restful-plugin
-Source3:  ceph.conf.pmon
-Source4:  ceph-init-wrapper.sh
-Source5:  ceph.conf
-Source6:  ceph-manage-journal.py
-Source7:  ceph.service
-Source8:  mgr-restful-plugin.service
-Source9:  stx_git_version
-Source10: ceph-preshutdown.sh
-Source11: starlingx-docker-override.conf
+Source1:	boost_1_67_0.tar.bz2
+Source2:	ceph-object-corpus/ceph-object-corpus-e32bf8ca3dc6151ebe7f205ba187815bc18e1cef.tar.gz
+Source3:	src/civetweb/civetweb-ff2881e2cd5869a71ca91083bad5d12cccd22136.tar.gz
+Source4:	src/erasure-code/jerasure/jerasure/jerasure-96c76b89d661c163f65a014b8042c9354ccf7f31.tar.gz
+Source5:	src/erasure-code/jerasure/gf-complete/gf-complete-7e61b44404f0ed410c83cfd3947a52e88ae044e1.tar.gz
+Source6:	src/rocksdb/rocksdb-f4a857da0b720691effc524469f6db895ad00d8e.tar.gz
+Source7:	ceph-erasure-code-corpus/ceph-erasure-code-corpus-2d7d78b9cc52e8a9529d8cc2d2954c7d375d5dd7.tar.gz
+Source8:	src/spdk/spdk-f474ce6930f0a44360e1cc4ecd606d2348481c4c.tar.gz
+Source9:	src/xxHash/xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz
+Source10:	src/isa-l/isa-l-7e1a337433a340bc0974ed0f04301bdaca374af6.tar.gz
+Source11:	src/lua/lua-1fce39c6397056db645718b8f5821571d97869a4.tar.gz
+Source12:	src/blkin/blkin-f24ceec055ea236a093988237a9821d145f5f7c8.tar.gz
+Source13:	src/rapidjson/rapidjson-f54b0e47a08782a6131cc3d60f94d038fa6e0a51.tar.gz
+Source14:	src/googletest/googletest-fdb850479284e2aae047b87df6beae84236d0135.tar.gz
+Source15:	src/crypto/isa-l/isa-l_crypto/isa-l_crypto-603529a4e06ac8a1662c13d6b31f122e21830352.tar.gz
+Source16:	src/zstd/zstd-f4340f46b2387bc8de7d5320c0b83bb1499933ad.tar.gz
+Source17:	src/spdk/dpdk/dpdk-6ece49ad5a26f5e2f5c4af6c06c30376c0ddc387.tar.gz
+Source18:	src/rapidjson/thirdparty/gtest/googletest-0a439623f75c029912728d80cb7f1b8b48739ca4.tar.gz
+
+Source19:	ceph.sh
+Source20:	mgr-restful-plugin
+Source21:	ceph.conf.pmon
+Source22:	ceph-init-wrapper.sh
+Source23:	ceph.conf
+Source24:	ceph-manage-journal.py
+Source25:	ceph.service
+Source26:	mgr-restful-plugin.service
+Source27:	ceph-preshutdown.sh
+Source28:	starlingx-docker-override.conf
 
 %if 0%{?suse_version}
 # _insert_obs_source_lines_here
@@ -1033,10 +1051,47 @@ python-rbd, python-rgw or python-cephfs instead.
 #################################################################################
 %prep
 %autosetup -p1 -n ceph-13.2.2
-# StarlingX :Copy the .git_version file needed by the build
-#     This commit SHA is from the upstream src rpm which is the base of this repo branch
-#     TODO: Add a commit hook to update to our latest commit SHA
-cp %{SOURCE9} %{_builddir}/%{name}-%{version}/src/.git_version
+mkdir -p src/boost
+BOOST_VERSION=$(basename "%{SOURCE1}" | sed 's/boost_\(.*\)\.tar\.bz2/\1/')
+tar xjf "%{SOURCE1}" -C src/boost \
+    --exclude="$BOOST_VERSION/libs/*/doc" \
+    --exclude="$BOOST_VERSION/libs/*/example" \
+    --exclude="$BOOST_VERSION/libs/*/examples" \
+    --exclude="$BOOST_VERSION/libs/*/meta" \
+    --exclude="$BOOST_VERSION/libs/*/test" \
+    --exclude="$BOOST_VERSION/tools/boostbook" \
+    --exclude="$BOOST_VERSION/tools/quickbook" \
+    --exclude="$BOOST_VERSION/tools/auto_index" \
+    --exclude='doc' \
+    --exclude='more' \
+    --exclude='status' \
+    --strip-components 1
+unpack_submodule() {
+    mkdir -p "$2" && tar xzf "$1" -C "$2" --strip-components 1
+}
+unpack_submodule "%{SOURCE2}" "%(dirname %{SOURCEURL2})"
+unpack_submodule "%{SOURCE3}" "%(dirname %{SOURCEURL3})"
+unpack_submodule "%{SOURCE4}" "%(dirname %{SOURCEURL4})"
+unpack_submodule "%{SOURCE5}" "%(dirname %{SOURCEURL5})"
+unpack_submodule "%{SOURCE6}" "%(dirname %{SOURCEURL6})"
+unpack_submodule "%{SOURCE7}" "%(dirname %{SOURCEURL7})"
+unpack_submodule "%{SOURCE8}" "%(dirname %{SOURCEURL8})"
+unpack_submodule "%{SOURCE9}" "%(dirname %{SOURCEURL9})"
+unpack_submodule "%{SOURCE10}" "%(dirname %{SOURCEURL10})"
+unpack_submodule "%{SOURCE11}" "%(dirname %{SOURCEURL11})"
+unpack_submodule "%{SOURCE12}" "%(dirname %{SOURCEURL12})"
+unpack_submodule "%{SOURCE13}" "%(dirname %{SOURCEURL13})"
+unpack_submodule "%{SOURCE14}" "%(dirname %{SOURCEURL14})"
+unpack_submodule "%{SOURCE15}" "%(dirname %{SOURCEURL15})"
+unpack_submodule "%{SOURCE16}" "%(dirname %{SOURCEURL16})"
+unpack_submodule "%{SOURCE17}" "%(dirname %{SOURCEURL17})"
+unpack_submodule "%{SOURCE18}" "%(dirname %{SOURCEURL18})"
+
+sed -e "s/@VERSION@/%{version}/g" \
+    -e "s/@RPM_RELEASE@/%{release}/g" \
+    -e "s/@TARBALL_BASENAME@/ceph-%{version}/g" \
+    -i alpine/APKBUILD.in
+mv alpine/APKBUILD.in alpine/APKBUILD
 
 %build
 
@@ -1234,18 +1289,18 @@ mkdir -p %{buildroot}%{_initrddir}
 mkdir -p %{buildroot}%{_sysconfdir}/ceph
 mkdir -p %{buildroot}%{_unitdir}
 
-install -m 750 %{SOURCE1} %{buildroot}%{_sysconfdir}/services.d/controller/
-install -m 750 %{SOURCE1} %{buildroot}%{_sysconfdir}/services.d/storage/
-install -m 750 %{SOURCE1} %{buildroot}%{_sysconfdir}/services.d/worker/
-install -m 750 %{SOURCE2} %{buildroot}%{_initrddir}/
-install -m 750 %{SOURCE3} %{buildroot}%{_sysconfdir}/ceph/
-install -m 750 %{SOURCE4} %{buildroot}%{_initrddir}/ceph-init-wrapper
-install -m 640 %{SOURCE5} %{buildroot}%{_sysconfdir}/ceph/
-install -m 700 %{SOURCE6} %{buildroot}%{_sbindir}/ceph-manage-journal
-install -m 644 %{SOURCE7} %{buildroot}%{_unitdir}/ceph.service
-install -m 644 %{SOURCE8} %{buildroot}%{_unitdir}/mgr-restful-plugin.service
-install -m 700 %{SOURCE10} %{buildroot}%{_sbindir}/ceph-preshutdown.sh
-install -D -m 644 %{SOURCE11} %{buildroot}%{_unitdir}/docker.service.d/starlingx-docker-override.conf
+install -m 750 %{SOURCE19} %{buildroot}%{_sysconfdir}/services.d/controller/
+install -m 750 %{SOURCE19} %{buildroot}%{_sysconfdir}/services.d/storage/
+install -m 750 %{SOURCE19} %{buildroot}%{_sysconfdir}/services.d/worker/
+install -m 750 %{SOURCE20} %{buildroot}%{_initrddir}/
+install -m 750 %{SOURCE21} %{buildroot}%{_sysconfdir}/ceph/
+install -m 750 %{SOURCE22} %{buildroot}%{_initrddir}/ceph-init-wrapper
+install -m 640 %{SOURCE23} %{buildroot}%{_sysconfdir}/ceph/
+install -m 700 %{SOURCE24} %{buildroot}%{_sbindir}/ceph-manage-journal
+install -m 644 %{SOURCE25} %{buildroot}%{_unitdir}/ceph.service
+install -m 644 %{SOURCE26} %{buildroot}%{_unitdir}/mgr-restful-plugin.service
+install -m 700 %{SOURCE27} %{buildroot}%{_sbindir}/ceph-preshutdown.sh
+install -D -m 644 %{SOURCE28} %{buildroot}%{_unitdir}/docker.service.d/starlingx-docker-override.conf
 
 install -m 750 src/init-radosgw %{buildroot}/%{_initrddir}/ceph-radosgw
 sed -i '/### END INIT INFO/a SYSTEMCTL_SKIP_REDIRECT=1' %{buildroot}/%{_initrddir}/ceph-radosgw
