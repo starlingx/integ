@@ -1,0 +1,32 @@
+From 1a7e85dafe9cc85daff394af6d30055f5e416d13 Mon Sep 17 00:00:00 2001
+From: Daniel Badea <daniel.badea@windriver.com>
+Date: Fri, 26 Apr 2019 00:24:03 +0000
+Subject: [PATCH] wipe unprepared disks
+
+---
+ SPECS/puppet-ceph.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-ceph.spec b/SPECS/puppet-ceph.spec
+index 6b6cac2..102fccd 100644
+--- a/SPECS/puppet-ceph.spec
++++ b/SPECS/puppet-ceph.spec
+@@ -17,6 +17,7 @@ Patch0006:      0006-ceph-disk-prepare-invalid-data-disk-value.patch
+ Patch0007:      0007-Add-StarlingX-specific-restart-command-for-Ceph-moni.patch
+ Patch0008:      0008-ceph-mimic-prepare-activate-osd.patch
+ Patch0009:      0009-fix-ceph-osd-disk-partition-for-nvme-disks.patch
++Patch0010:      0010-wipe-unprepared-disks.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -41,6 +42,7 @@ Community Developed Ceph Module
+ %patch0007 -p1
+ %patch0008 -p1
+ %patch0009 -p1
++%patch0010 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

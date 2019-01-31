@@ -1,0 +1,32 @@
+From bc377fe17be8f077ac8fb59da9ba7551dcf0bc98 Mon Sep 17 00:00:00 2001
+From: Daniel Badea <daniel.badea@windriver.com>
+Date: Fri, 29 Mar 2019 08:00:12 +0000
+Subject: [PATCH] ceph-mimic-prepare-activate-osd.patch
+
+---
+ SPECS/puppet-ceph.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-ceph.spec b/SPECS/puppet-ceph.spec
+index e5cc64c..891ccfd 100644
+--- a/SPECS/puppet-ceph.spec
++++ b/SPECS/puppet-ceph.spec
+@@ -15,6 +15,7 @@ Patch0004:      0004-US92424-Add-OSD-support-for-persistent-naming.patch
+ Patch0005:      0005-Remove-puppetlabs-apt-as-ceph-requirement.patch
+ Patch0006:      0006-ceph-disk-prepare-invalid-data-disk-value.patch
+ Patch0007:      0007-Add-StarlingX-specific-restart-command-for-Ceph-moni.patch
++Patch0008:      0008-ceph-mimic-prepare-activate-osd.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -37,6 +38,7 @@ Community Developed Ceph Module
+ %patch0005 -p1
+ %patch0006 -p1
+ %patch0007 -p1
++%patch0008 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+
