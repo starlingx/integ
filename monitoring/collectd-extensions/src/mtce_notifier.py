@@ -39,6 +39,7 @@
 import os
 import socket
 import collectd
+import tsconfig.tsconfig as tsc
 
 # This plugin name
 PLUGIN = 'degrade notifier'
@@ -65,6 +66,13 @@ ONE_EVERY = 10
 PLUGIN__DF = 'df'
 PLUGIN__MEM = 'memory'
 PLUGIN__CPU = 'cpu'
+
+PLUGIN__VSWITCH_MEM = 'vswitch_mem'
+PLUGIN__VSWITCH_CPU = 'vswitch_cpu'
+PLUGIN__VSWITCH_PORT = "vswitch_port"
+PLUGIN__VSWITCH_IFACE = "vswitch_iface"
+
+
 PLUGIN_INTERFACE = 'interface'
 PLUGIN__EXAMPLE = 'example'
 
@@ -89,6 +97,10 @@ class collectdMtceNotifierObject:
         self.degrade_list__failure = [PLUGIN__DF,
                                       PLUGIN__MEM,
                                       PLUGIN__CPU,
+                                      PLUGIN__VSWITCH_MEM,
+                                      PLUGIN__VSWITCH_CPU,
+                                      PLUGIN__VSWITCH_PORT,
+                                      PLUGIN__VSWITCH_IFACE,
                                       PLUGIN_INTERFACE,
                                       PLUGIN__EXAMPLE]
         self.degrade_list__warning = []
@@ -172,7 +184,7 @@ def config_func(config):
     Configure the maintenance degrade notifier plugin.
     """
 
-    collectd.info('%s config function' % PLUGIN)
+    collectd.debug('%s config function' % PLUGIN)
     for node in config.children:
         key = node.key.lower()
         val = node.values[0]
@@ -193,6 +205,10 @@ def init_func():
     """
     Collectd Mtce Notifier Initialization Function
     """
+
+    obj.host = os.uname()[1]
+    collectd.info("%s %s:%s sending to mtce port %d" %
+                  (PLUGIN, tsc.nodetype, obj.host, obj.port))
 
     collectd.debug("%s init function" % PLUGIN)
 
@@ -241,8 +257,8 @@ def notifier_func(nObject):
                         path = _df_instance_to_path(resource)
                         add = os.path.ismount(path)
                     if add is True:
-                        collectd.debug("%s %s added to degrade list" %
-                                       (PLUGIN, resource))
+                        collectd.info("%s %s added to degrade list" %
+                                      (PLUGIN, resource))
                         obj.degrade_list.append(resource)
         else:
             # If severity is failure and no failures cause degrade
@@ -264,8 +280,8 @@ def notifier_func(nObject):
                         path = _df_instance_to_path(resource)
                         add = os.path.ismount(path)
                     if add is True:
-                        collectd.debug("%s %s added to degrade list" %
-                                       (PLUGIN, resource))
+                        collectd.info("%s %s added to degrade list" %
+                                      (PLUGIN, resource))
                         obj.degrade_list.append(resource)
         else:
             # If severity is warning and no warnings cause degrade
