@@ -29,7 +29,7 @@ index 5581deb..9ef91d6 100644
  	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
  install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}.unsigned \
  install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3}.unsigned \
-+install -D -m 700 %{2} $RPM_BUILD_ROOT/pxeboot/EFI/%{2}         \
++install -D -m 755 %{2} $RPM_BUILD_ROOT/pxeboot/EFI/%{2}         \
  install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
  install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
  install -D -m 700 unicode.pf2					\\\
