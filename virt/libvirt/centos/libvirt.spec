@@ -16,7 +16,7 @@
 # Always run autoreconf
 %{!?enable_autotools:%global enable_autotools 1}
 
-# WRS: Custom build config.  Based on the R2/bitbake configure line.
+# STX: Custom build config.  Based on the R2/bitbake configure line.
 %define _without_esx 1
 %define _without_hyperv 1
 %define _without_libxl 1
@@ -258,13 +258,14 @@ URL: https://libvirt.org/
 Source0: http://libvirt.org/sources/%{?mainturl}libvirt-%{version}.tar.gz
 #Source1: symlinks
 
-# WRS
+# STX
 Source2: libvirt.logrotate
 Source3: libvirt.lxc
 Source4: libvirt.qemu
 Source5: libvirt.uml
 Source6: gnulib-ffc927e.tar.gz
 Source7: keycodemapdb-16e5b07.tar.gz
+Source8: qemu
 
 Requires: libvirt-daemon = %{version}-%{release}
 Requires: libvirt-daemon-config-network = %{version}-%{release}
@@ -461,9 +462,9 @@ BuildRequires: wireshark-devel >= 1.12.1
 BuildRequires: libssh-devel >= 0.7.0
 %endif
 
-# WRS: For generating configure
+# STX: For generating configure
 BuildRequires: gnulib
-# WRS: Needed by bootstrap
+# STX: Needed by bootstrap
 BuildRequires: perl-XML-XPath
 
 Provides: bundled(gnulib)
@@ -1304,7 +1305,7 @@ rm -rf .git
 
 # place macros above and build commands below this comment
 
-# WRS: Generate configure script.  Default is to do a "git clone" of gnulib.
+# STX: Generate configure script.  Default is to do a "git clone" of gnulib.
 # Use the tar ball gnulib tarball instead.
 tar zxf %{SOURCE6}
 ./bootstrap --no-git --gnulib-srcdir=gnulib-ffc927e --copy
@@ -1379,7 +1380,7 @@ rm -f po/stamp-po
            --without-dtrace \
            %{arg_init_script}
 
-#WRS: Avoid doing a 'config.status --recheck' (./configure executed twice).
+#STX: Avoid doing a 'config.status --recheck' (./configure executed twice).
 touch -r config.status configure
 
 make %{?_smp_mflags}
@@ -1470,7 +1471,7 @@ rm -rf $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/libvirtd.uml
 # Copied into libvirt-docs subpackage eventually
 mv $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-%{version} libvirt-docs
 
-# WRS: Disable dtrace
+# STX: Disable dtrace
 # %ifarch %{power64} s390x x86_64 ia64 alpha sparc64
 # mv $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_probes.stp \
 #    $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_probes-64.stp
@@ -1478,7 +1479,7 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/libvirt-%{version} libvirt-docs
 #    $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/libvirt_qemu_probes-64.stp
 # %endif
 
-# WRS: Begin custom install
+# STX: Begin custom install
 ## Enable syslog for libvirtd ( /var/log/libvirtd.log )
 echo "log_outputs=\"3:syslog:libvirtd\"" >> %{buildroot}/etc/libvirt/libvirtd.conf
 
@@ -1493,12 +1494,15 @@ install -p -D -m 644 %{SOURCE2} %{buildroot}/etc/logrotate.d/libvirtd
 install -p -D -m 644 %{SOURCE3} %{buildroot}/etc/logrotate.d/libvirtd.lxc
 install -p -D -m 644 %{SOURCE4} %{buildroot}/etc/logrotate.d/libvirtd.qemu
 install -p -D -m 644 %{SOURCE5} %{buildroot}/etc/logrotate.d/libvirtd.uml
-# WRS: End custom install
+## Install hooks
+mkdir -p $RPM_BUILD_ROOT/etc/libvirt/hooks
+install -m 0500 %{SOURCE8} $RPM_BUILD_ROOT/etc/libvirt/hooks/qemu
+# STX: End custom install
 
 %clean
 rm -fr %{buildroot}
 
-# WRS: We are not maintaining the unit tests.
+# STX: We are not maintaining the unit tests.
 # %check
 # cd tests
 # # These tests don't current work in a mock build root
@@ -1631,7 +1635,7 @@ if [ $1 -ge 1 ] ; then
 fi
 
 %post daemon-config-network
-# WRS: The 'with_network' flag doesn't work properly.  There are some packaging
+# STX: The 'with_network' flag doesn't work properly.  There are some packaging
 # errors when using it.  Disable default.xml manually ...
 # We don't want 'virbr0' and 'virbr0-nic' interfaces created.
 
@@ -1777,11 +1781,11 @@ exit 0
 
 %files
 
-# WRS: Customization
+# STX: Customization
 %dir /data/images/
 
 %files docs
-# TODO(WRS): NEWS is not present in git source repo.
+# TODO(STX): NEWS is not present in git source repo.
 %doc AUTHORS ChangeLog.gz README
 %doc libvirt-docs/*
 
@@ -1874,8 +1878,9 @@ exit 0
 
 %doc examples/polkit/*.rules
 
-# WRS: Customization
+# STX: Customization
 /etc/logrotate.d/*
+/etc/libvirt/hooks/qemu
 
 %files daemon-config-network
 %dir %{_datadir}/libvirt/networks/
@@ -2061,7 +2066,7 @@ exit 0
 %{_bindir}/virt-pki-validate
 %{_bindir}/virt-host-validate
 
-# WRS: Disable dtrace
+# STX: Disable dtrace
 # %{_datadir}/systemtap/tapset/libvirt_probes*.stp
 # %{_datadir}/systemtap/tapset/libvirt_qemu_probes*.stp
 # %{_datadir}/systemtap/tapset/libvirt_functions.stp
