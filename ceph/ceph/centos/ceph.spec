@@ -241,6 +241,10 @@ Source9: ceph-rest-api.service
 Source10: ceph-radosgw.service
 
 Source11: stx_git_version
+Source12: ceph-preshutdown.sh
+Source13: starlingx-docker-override.conf
+
+Patch0001: 0001-Add-hooks-for-orderly-shutdown-on-controller.patch
 
 %if 0%{?suse_version}
 %if 0%{?is_opensuse}
@@ -797,6 +801,7 @@ python-cephfs instead.
 #################################################################################
 %prep
 %setup -q
+%patch0001 -p1
 # StarlingX: Copy the .git_version file needed by the build
 #     This commit SHA is from the upstream src rpm which is the base of this repo branch
 #     TODO: Add a commit hook to update to our latest commit SHA
@@ -976,6 +981,8 @@ install -m 700 %{SOURCE7} %{buildroot}/usr/sbin/osd-wait-status
 install -m 644 %{SOURCE8} $RPM_BUILD_ROOT/%{_unitdir}/ceph.service
 install -m 644 %{SOURCE9} $RPM_BUILD_ROOT/%{_unitdir}/ceph-rest-api.service
 install -m 644 %{SOURCE10} $RPM_BUILD_ROOT/%{_unitdir}/ceph-radosgw.service
+install -m 700 %{SOURCE12} %{buildroot}%{_sbindir}/ceph-preshutdown.sh
+install -D -m 644 %{SOURCE13} $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/system/docker.service.d/starlingx-docker-override.conf
 
 install -m 750 src/init-ceph %{buildroot}/%{_initrddir}/ceph
 install -m 750 src/init-radosgw %{buildroot}/%{_initrddir}/ceph-radosgw
@@ -1016,6 +1023,8 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/ceph/ceph.conf
 %{_sysconfdir}/services.d/*
 %{_sbindir}/ceph-manage-journal
+%{_sbindir}/ceph-preshutdown.sh
+%{_sysconfdir}/systemd/system/docker.service.d/starlingx-docker-override.conf
 %endif
 %if %{without stx}
 %{_unitdir}/ceph-create-keys@.service
