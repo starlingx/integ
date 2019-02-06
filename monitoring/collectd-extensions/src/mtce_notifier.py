@@ -1,7 +1,9 @@
 #
-# Copyright (c) 2018 Wind River Systems, Inc.
+# Copyright (c) 2018-2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+#############################################################################
 #
 # This file is the collectd 'Maintenance' Notifier.
 #
@@ -49,10 +51,6 @@ PLUGIN = 'degrade notifier'
 NOTIF_FAILURE = 1
 NOTIF_WARNING = 2
 NOTIF_OKAY = 4
-
-# generic return codes
-PASS = 0
-FAIL = 1
 
 # default mtce port.
 # ... with configuration override
@@ -292,7 +290,7 @@ def notifier_func(nObject):
     else:
         collectd.info("%s unsupported severity %d" %
                       (PLUGIN, nObject.severity))
-        return FAIL
+        return 0
 
     # running counter of notifications.
     obj.msg_throttle += 1
@@ -374,7 +372,7 @@ def notifier_func(nObject):
             mtce_socket.close()
         else:
             collectd.error("%s %s failed to open socket (%s)" %
-                          (PLUGIN, resource, obj.addr))
+                           (PLUGIN, resource, obj.addr))
     except socket.error as e:
         if e.args[0] == socket.EAI_ADDRFAMILY:
             # Handle IPV4 to IPV6 switchover:
@@ -383,7 +381,7 @@ def notifier_func(nObject):
                           (PLUGIN, resource, obj.addr))
         else:
             collectd.error("%s %s socket error (%s) ; %s" %
-                          (PLUGIN, resource, obj.addr, str(e)))
+                           (PLUGIN, resource, obj.addr, str(e)))
             # try self correction
             obj.addr = None
             obj.protocol = socket.AF_INET

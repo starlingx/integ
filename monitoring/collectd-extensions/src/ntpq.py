@@ -118,15 +118,15 @@ def _add_unreachable_server(ip=None):
     if ip:
         if ip not in obj.unreachable_servers:
             collectd.debug("%s adding '%s' to unreachable servers list: %s" %
-                          (PLUGIN, ip, obj.unreachable_servers))
+                           (PLUGIN, ip, obj.unreachable_servers))
 
             obj.unreachable_servers.append(ip)
 
             collectd.info("%s added '%s' to unreachable servers list: %s" %
-                         (PLUGIN, ip, obj.unreachable_servers))
+                          (PLUGIN, ip, obj.unreachable_servers))
         else:
             collectd.debug("%s ip '%s' already in unreachable_servers list" %
-                          (PLUGIN, ip))
+                           (PLUGIN, ip))
     else:
         collectd.error("%s _add_unreachable_server called with no IP" % PLUGIN)
 
@@ -323,7 +323,7 @@ def _cleanup_stale_servers():
     """ Cleanup the server IP tracking lists """
 
     collectd.debug("%s CLEANUP   REACHABLE: %s %s" %
-                  (PLUGIN, obj.server_list_ntpq, obj.reachable_servers))
+                   (PLUGIN, obj.server_list_ntpq, obj.reachable_servers))
     for ip in obj.reachable_servers:
         if ip not in obj.server_list_ntpq:
             collectd.info("%s removing missing '%s' server from reachable "
@@ -506,7 +506,7 @@ def init_func():
 
     obj.base_eid = 'host=' + obj.hostname + '.ntp'
     collectd.debug("%s on %s with entity id '%s'" %
-                  (PLUGIN, obj.hostname, obj.base_eid))
+                   (PLUGIN, obj.hostname, obj.base_eid))
 
     # get a list of provisioned ntp servers
     _get_ntp_servers()
@@ -686,7 +686,7 @@ def read_func():
                         # update the selected server list
                         obj.selected_server = ip
                         collectd.debug("%s selected server is '%s'" %
-                                      (PLUGIN, obj.selected_server))
+                                       (PLUGIN, obj.selected_server))
                 else:
                     collectd.debug("%s local controller '%s' marked "
                                    "as selected server ; ignoring" %
