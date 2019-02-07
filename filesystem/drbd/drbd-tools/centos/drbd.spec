@@ -34,7 +34,7 @@ Source: http://oss.linbit.com/%{name}/8.3/%{name}-%{version}.tar.gz
 
 Source1: drbd.service
 
-# WRS
+# StarlingX
 Patch0001: 0001-skip_wait_con_int_on_simplex.patch
 Patch0002: 0002-drbd-conditional-crm-dependency.patch
 Patch0003: 0003-drbd_report_condition.patch
@@ -43,6 +43,7 @@ Patch0005: 0005-drbd_reconnect_standby_standalone.patch
 Patch0006: 0006-avoid-kernel-userspace-version-check.patch
 Patch0007: 0007-Update-OCF-to-attempt-connect-in-certain-states.patch
 Patch0008: 0008-Increase-short-cmd-timeout-to-15-secs.patch
+Patch0009: 0009-Check-for-mounted-device-before-demoting-Primary-DRB.patch
 
 License: GPLv2+
 ExclusiveOS: linux
@@ -271,6 +272,7 @@ management utility.
 %patch0006 -p1
 %patch0007 -p1
 %patch0008 -p1
+%patch0009 -p1
 
 %build
 %configure \
