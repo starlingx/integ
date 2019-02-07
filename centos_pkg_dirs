@@ -115,6 +115,7 @@ config-files/syslog-ng-config
 config-files/rsync-config
 config-files/pam-config
 config-files/util-linux-config
+config-files/docker-config
 tools/collector
 grub/grubby
 utilities/platform-util
