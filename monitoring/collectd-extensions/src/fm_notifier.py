@@ -90,6 +90,7 @@ from threading import RLock as Lock
 from fm_api import constants as fm_constants
 from fm_api import fm_api
 import tsconfig.tsconfig as tsc
+import plugin_common as pc
 
 # only load influxdb on the controller
 if tsc.nodetype == 'controller':
@@ -865,16 +866,19 @@ def _get_base_object(alarm_id):
     return None
 
 
-def is_uuid_like(val):
-    """Returns validation of a value as a UUID.
-
-    For our purposes, a UUID is a canonical form string:
-    aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+def _get_object(alarm_id, eid):
     """
-    try:
-        return str(uuid.UUID(val)) == val
-    except (TypeError, ValueError, AttributeError):
-        return False
+    Get the plugin object for the specified alarm id and eid
+    """
+
+    base_obj = _get_base_object(alarm_id)
+    if len(base_obj.instance_objects):
+        try:
+            return(base_obj.instance_objects[eid])
+        except:
+            collectd.debug("%s %s has no instance objects" %
+                           (PLUGIN, base_obj.plugin))
+    return base_obj
 
 
 def _build_entity_id(plugin, plugin_instance):
@@ -1530,7 +1534,7 @@ def notifier_func(nObject):
             suppression=base_obj.suppression)
 
         alarm_uuid = api.set_fault(fault)
-        if is_uuid_like(alarm_uuid) is False:
+        if pc.is_uuid_like(alarm_uuid) is False:
             collectd.error("%s %s:%s set_fault failed:%s" %
                            (PLUGIN, base_obj.id, obj.entity_id, alarm_uuid))
             return 0
