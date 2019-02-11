@@ -131,6 +131,9 @@ do
        "mtcalarmd")
            pmon_managed_processes=(${pmon_managed_processes[@]} "mtcalarmd:0")
            ;;
+       "lmond")
+           pmon_managed_processes=(${pmon_managed_processes[@]} "lmond:0")
+           ;;
 
        *)
            loginfo "Unknown process:${process}"
