@@ -23,17 +23,17 @@
 # Collects provides information about each event as an object passed to the
 # notification handler ; the notification object.
 #
-#    object.host              - the hostname
+#    object.host              - the hostname.
 #
-#    object.plugin            - the name of the plugin aka resource
+#    object.plugin            - the name of the plugin aka resource.
 #    object.plugin_instance   - plugin instance string i.e. say mountpoint
-#                               for df plugin
-#    object.type,             - the unit i.e. percent or absolute
-#    object.type_instance     - the attribute i.e. free, used, etc
+#                               for df plugin or numa? node for memory.
+#    object.type,             - the unit i.e. percent or absolute.
+#    object.type_instance     - the attribute i.e. free, used, etc.
 #
-#    object.severity          - a integer value 0=OK , 1=warning, 2=failure
+#    object.severity          - a integer value 0=OK , 1=warning, 2=failure.
 #    object.message           - a log-able message containing the above along
-#                               with the value
+#                               with the value.
 #
 # This notifier uses the notification object to manage plugin/instance alarms.
 #
@@ -86,9 +86,11 @@ import os
 import re
 import uuid
 import collectd
+from threading import RLock as Lock
 from fm_api import constants as fm_constants
 from fm_api import fm_api
 import tsconfig.tsconfig as tsc
+import plugin_common as pc
 
 # only load influxdb on the controller
 if tsc.nodetype == 'controller':
@@ -115,6 +117,12 @@ PLUGIN = 'alarm notifier'
 
 # Path to the plugin's drop dir
 PLUGIN_PATH = '/etc/collectd.d/'
+
+# the name of the collectd samples database
+DATABASE_NAME = 'collectd samples'
+
+READING_TYPE__PERCENT_USAGE = '% usage'
+
 
 # collectd severity definitions ;
 # Note: can't seem to pull then in symbolically with a header
@@ -145,6 +153,7 @@ mangled_list = {"dev-shm",
                 "etc-nova-instances",
                 "opt-platform",
                 "opt-cgcs",
+                "opt-etcd",
                 "opt-extension",
                 "opt-backups"}
 
@@ -154,10 +163,20 @@ ALARM_ID__MEM = "100.103"
 ALARM_ID__DF = "100.104"
 ALARM_ID__EXAMPLE = "100.113"
 
+ALARM_ID__VSWITCH_CPU = "100.102"
+ALARM_ID__VSWITCH_MEM = "100.115"
+ALARM_ID__VSWITCH_PORT = "300.001"
+ALARM_ID__VSWITCH_IFACE = "300.002"
+
+
 # ADD_NEW_PLUGIN: add new alarm id to the list
 ALARM_ID_LIST = [ALARM_ID__CPU,
                  ALARM_ID__MEM,
                  ALARM_ID__DF,
+                 ALARM_ID__VSWITCH_CPU,
+                 ALARM_ID__VSWITCH_MEM,
+                 ALARM_ID__VSWITCH_PORT,
+                 ALARM_ID__VSWITCH_IFACE,
                  ALARM_ID__EXAMPLE]
 
 # ADD_NEW_PLUGIN: add plugin name definition
@@ -168,31 +187,21 @@ PLUGIN__CPU = "cpu"
 PLUGIN__MEM = "memory"
 PLUGIN__INTERFACE = "interface"
 PLUGIN__NTP_QUERY = "ntpq"
-PLUGIN__VSWITCH_PORT = "vswitch-port"
-PLUGIN__VSWITCH_CPU = "vswitch-cpu"
-PLUGIN__VSWITCH_MEM = "vswitch-memory"
-PLUGIN__VSWITCH_OVSDB = "vswitch-ovsdb"
-PLUGIN__VSWITCH_OPENFLOW = "vswitch-openflow"
-PLUGIN__VSWITCH_LACP_IFACE = "vswitch-lacp-iface"
-PLUGIN__VSWITCH_IFACE = "vswitch-iface"
-PLUGIN__NOVA_THINPOOL_LVM = "nova-thinpool-lvm"
-PLUGIN__CINDER_THINPOOL_LVM = "cinder-thinpool-lvm"
-PLUGIN__CINDER_THINPOOL_LVM_META = "cinder-thinpool-lvm-meta"
+PLUGIN__VSWITCH_PORT = "vswitch_port"
+PLUGIN__VSWITCH_CPU = "vswitch_cpu"
+PLUGIN__VSWITCH_MEM = "vswitch_mem"
+PLUGIN__VSWITCH_IFACE = "vswitch_iface"
 PLUGIN__EXAMPLE = "example"
 
 # ADD_NEW_PLUGIN: add plugin name to list
 PLUGIN_NAME_LIST = [PLUGIN__CPU,
                     PLUGIN__MEM,
                     PLUGIN__DF,
+                    PLUGIN__VSWITCH_CPU,
+                    PLUGIN__VSWITCH_MEM,
+                    PLUGIN__VSWITCH_PORT,
+                    PLUGIN__VSWITCH_IFACE,
                     PLUGIN__EXAMPLE]
-
-
-# ADD_NEW_PLUGIN: add alarm id and plugin to dictionary
-# ALARM_ID_TO_PLUGIN_DICT = {}
-# ALARM_ID_TO_PLUGIN_DICT[ALARM_ID__CPU] = PLUGIN__CPU
-# ALARM_ID_TO_PLUGIN_DICT[ALARM_ID__MEM] = PLUGIN__MEM
-# ALARM_ID_TO_PLUGIN_DICT[ALARM_ID__DF] = PLUGIN__DF
-# ALARM_ID_TO_PLUGIN_DICT[ALARM_ID__EXAMPLE] = PLUGIN__EXAMPLE
 
 
 # PluginObject Class
@@ -200,6 +209,7 @@ class PluginObject:
 
     dbObj = None                           # shared database connection obj
     host = None                            # saved hostname
+    lock = None                            # global lock for mread_func mutex
     database_setup = False                 # state of database setup
     database_setup_in_progress = False     # connection mutex
 
@@ -213,7 +223,7 @@ class PluginObject:
         self.plugin = plugin       # name of the plugin ; df, cpu, memory ...
         self.plugin_instance = ""  # the instance name for the plugin
         self.resource_name = ""    # The top level name of the resource
-        self.instance_name = ""    # The instanhce name
+        self.instance_name = ""    # The instance name
 
         # Instance specific learned static class members.
         self.entity_id = ""        # fm entity id host=<hostname>.<instance>
@@ -225,11 +235,16 @@ class PluginObject:
         self.value = float(0)      # float value of reading
 
         # Common static class members.
+        self.reason_warning = ""
+        self.reason_failure = ""
         self.repair = ""
-        self.alarm_type = fm_constants.FM_ALARM_TYPE_7
-        self.cause = fm_constants.ALARM_PROBABLE_CAUSE_50
+        self.alarm_type = fm_constants.FM_ALARM_TYPE_7     # OPERATIONAL
+        self.cause = fm_constants.ALARM_PROBABLE_CAUSE_50  # THRESHOLD CROSS
         self.suppression = True
         self.service_affecting = False
+
+        # default most reading types are usage
+        self.reading_type = READING_TYPE__PERCENT_USAGE
 
         # Severity tracking lists.
         # Maintains severity state between notifications.
@@ -329,7 +344,11 @@ class PluginObject:
 
         # filter out messages to ignore ; notifications that have no value
         if "has not been updated for" in nObject.message:
-            collectd.debug("%s NOT UPDATED: %s" % (PLUGIN, self.entity_id))
+            collectd.info("%s %s %s (%s)" %
+                          (PLUGIN,
+                           self.entity_id,
+                           nObject.message,
+                           nObject.severity))
             return "done"
 
         # Get the value from the notification message.
@@ -363,8 +382,8 @@ class PluginObject:
             # validate the reading
             try:
                 self.value = float(self.values[0])
-                # get the threshold if its there
-                if len(self.values) == 2:
+                # get the threshold if its there.
+                if len(self.values) > 1:
                     self.threshold = float(self.values[1])
 
             except ValueError as ex:
@@ -390,6 +409,9 @@ class PluginObject:
         logit = False
         if self.count == 0 or LOG_STEP == 0:
             logit = True
+        elif self.reading_type == "connections":
+            if self.value != last:
+                logit = True
         elif self.value > last:
             if (last + LOG_STEP) < self.value:
                 logit = True
@@ -401,18 +423,40 @@ class PluginObject:
         #
         # Note: only usage type so far
         if logit:
-            reading_type = "% usage"
-            tmp = str(self.value).split('.')
-            if len(tmp[0]) == 1:
-                pre = ':  '
-            else:
-                pre = ': '
-            collectd.info("%s reading%s%2.2f %s - %s" %
-                          (PLUGIN,
-                           pre,
-                           self.value,
-                           reading_type,
-                           self.instance_name))
+            resource = self.resource_name
+
+            # setup resource name for filesystem instance usage log
+            if self.plugin == PLUGIN__DF:
+                resource = self.instance
+
+            # setup resource name for vswitch process instance name
+            elif self.plugin == PLUGIN__VSWITCH_MEM:
+                resource += ' Processor '
+                resource += self.instance_name
+
+            if self.reading_type == READING_TYPE__PERCENT_USAGE:
+                tmp = str(self.value).split('.')
+                if len(tmp[0]) == 1:
+                    pre = ':  '
+                else:
+                    pre = ': '
+                collectd.info("%s reading%s%2.2f %s - %s" %
+                              (PLUGIN,
+                               pre,
+                               self.value,
+                               self.reading_type,
+                               resource))
+
+            elif self.reading_type == "connections" and \
+                    self.instance_objects and \
+                    self.value != self.last_value:
+                if self.instance_objects:
+                    collectd.info("%s monitor: %2d %s - %s" %
+                                  (PLUGIN,
+                                   self.value,
+                                   self.reading_type,
+                                   resource))
+
             self.last_value = float(self.value)
 
     ##########################################################################
@@ -601,10 +645,137 @@ class PluginObject:
 
     ##########################################################################
     #
+    # Name    : _get_instance_object
+    #
+    # Purpose : Safely get an object from the self instance object list
+    #           indexed by eid.
+    #
+    ##########################################################################
+    def _get_instance_object(self, eid):
+        """
+        Safely get an object from the self instance object list indexed
+        by eid while locked.
+        :param eid:
+        :return: object or None
+        """
+
+        try:
+            collectd.debug("%s %s Get   Lock ..." % (PLUGIN, self.plugin))
+            PluginObject.lock.acquire()
+
+            obj = self.instance_objects[eid]
+            return obj
+        except:
+            collectd.error("%s failed to get instance from %s object list" %
+                           (PLUGIN, self.plugin))
+            return None
+
+        finally:
+            collectd.debug("%s %s Get UnLock ..." % (PLUGIN, self.plugin))
+            PluginObject.lock.release()
+
+    ##########################################################################
+    #
+    # Name    : _add_instance_object
+    #
+    # Purpose : Safely add an object to the self instance object list
+    #           indexed by eid while locked. if found locked the instance
+    #           add will be re-attempted on next sample.
+    #
+    ##########################################################################
+    def _add_instance_object(self, obj, eid):
+        """
+        Update self instance_objects list while locked
+        :param obj: the object to add
+        :param eid: indexed by this eid
+        :return: nothing
+        """
+        try:
+            collectd.debug("%s %s Add   Lock ..." % (PLUGIN, self.plugin))
+            PluginObject.lock.acquire()
+
+            self.instance_objects[eid] = obj
+        except:
+            collectd.error("%s failed to add instance to %s object list" %
+                          (PLUGIN, self.plugin))
+
+        finally:
+            collectd.debug("%s %s Add UnLock ..." % (PLUGIN, self.plugin))
+            PluginObject.lock.release()
+
+    ##########################################################################
+    #
+    # Name    : _copy_instance_object
+    #
+    # Purpose : Copy select members of self object to target object.
+    #
+    ##########################################################################
+    def _copy_instance_object(self, object):
+        """
+        Copy select members of self object to target object
+        """
+
+        object.resource_name = self.resource_name
+        object.instance_name = self.instance_name
+        object.reading_type = self.reading_type
+
+        object.reason_warning = self.reason_warning
+        object.reason_failure = self.reason_failure
+        object.repair = self.repair
+
+        object.alarm_type = self.alarm_type
+        object.cause = self.cause
+        object.suppression = self.suppression
+        object.service_affecting = self.service_affecting
+
+    ##########################################################################
+    #
+    # Name    : _create_instance_object
+    #
+    # Purpose : Create a new instance object and tack it on the supplied base
+    #           object's instance object dictionary.
+    #
+    ##########################################################################
+    def _create_instance_object(self, instance):
+
+        try:
+            # create a new plugin object
+            inst_obj = PluginObject(self.id, self.plugin)
+            self._copy_instance_object(inst_obj)
+
+            # initialize the object with instance specific data
+            inst_obj.instance_name = instance
+            inst_obj.entity_id = _build_entity_id(self.plugin,
+                                                  instance)
+
+            self._add_instance_object(inst_obj, inst_obj.entity_id)
+
+            collectd.debug("%s created %s instance (%s) object %s" %
+                          (PLUGIN, inst_obj.resource_name,
+                           inst_obj.entity_id, inst_obj))
+
+            collectd.debug("%s monitoring %s %s %s" %
+                           (PLUGIN,
+                            inst_obj.resource_name,
+                            inst_obj.instance_name,
+                            inst_obj.reading_type))
+
+            return inst_obj
+
+        except:
+            collectd.error("%s %s:%s inst object create failed" %
+                           (PLUGIN, inst_obj.resource_name, instance))
+        return None
+
+    ##########################################################################
+    #
     # Name    : _create_instance_objects
     #
     # Purpose : Create a list of instance objects for 'self' type plugin and
-    #           add those objects to the parnet's instance_objects dictionary.
+    #           add those objects to the parent's instance_objects dictionary.
+    #
+    # Note    : This is currently only used for the DF (filesystem) plugin.
+    #           All other instance creations/allocations are done on-demand.
     #
     ##########################################################################
     def _create_instance_objects(self):
@@ -612,11 +783,7 @@ class PluginObject:
         Create, initialize and add an instance object to this/self plugin
         """
 
-        # ADD_NEW_PLUGIN: for plugins that have instances you need to
-        #                 add support for creating those instances and adding
-        #                 those instances to the parent instance_objects list.
-
-        # Currently only the DF plugin has subordinate instance objects.
+        # Create the File System subordinate instance objects.
         if self.id == ALARM_ID__DF:
 
             # read the df.conf file and return/get a list of mount points
@@ -651,6 +818,7 @@ class PluginObject:
                 # initialize the object with instance specific data
                 inst_obj.resource_name = self.resource_name
                 inst_obj.instance_name = mp
+                inst_obj.instance = mp
                 # build the plugin instance name from the mount point
                 if mp == '/':
                     inst_obj.plugin_instance = 'root'
@@ -662,21 +830,30 @@ class PluginObject:
 
                 # add this subordinate object to the parent's
                 # instance object list
-                self.instance_objects[inst_obj.entity_id] = inst_obj
+                self._add_instance_object(inst_obj, inst_obj.entity_id)
 
                 collectd.info("%s monitoring %s usage" %
-                              (PLUGIN, mp))
+                              (PLUGIN, inst_obj.instance))
 
 
 PluginObject.host = os.uname()[1]
 
 
 # ADD_NEW_PLUGIN: add plugin to this table
-# This instanciates the plugin objects
-PLUGINS = {PLUGIN__CPU: PluginObject(ALARM_ID__CPU, PLUGIN__CPU),
-           PLUGIN__MEM: PluginObject(ALARM_ID__MEM, PLUGIN__MEM),
-           PLUGIN__DF: PluginObject(ALARM_ID__DF, PLUGIN__DF),
-           PLUGIN__EXAMPLE: PluginObject(ALARM_ID__EXAMPLE, PLUGIN__EXAMPLE)}
+# This instantiates the plugin objects
+PLUGINS = {
+    PLUGIN__CPU: PluginObject(ALARM_ID__CPU, PLUGIN__CPU),
+    PLUGIN__MEM: PluginObject(ALARM_ID__MEM, PLUGIN__MEM),
+    PLUGIN__DF: PluginObject(ALARM_ID__DF, PLUGIN__DF),
+    PLUGIN__VSWITCH_CPU: PluginObject(ALARM_ID__VSWITCH_CPU,
+                                      PLUGIN__VSWITCH_CPU),
+    PLUGIN__VSWITCH_MEM: PluginObject(ALARM_ID__VSWITCH_MEM,
+                                      PLUGIN__VSWITCH_MEM),
+    PLUGIN__VSWITCH_PORT: PluginObject(ALARM_ID__VSWITCH_PORT,
+                                       PLUGIN__VSWITCH_PORT),
+    PLUGIN__VSWITCH_IFACE: PluginObject(ALARM_ID__VSWITCH_IFACE,
+                                        PLUGIN__VSWITCH_IFACE),
+    PLUGIN__EXAMPLE: PluginObject(ALARM_ID__EXAMPLE, PLUGIN__EXAMPLE)}
 
 
 def _get_base_object(alarm_id):
@@ -704,27 +881,43 @@ def _get_object(alarm_id, eid):
     return base_obj
 
 
-def is_uuid_like(val):
-    """Returns validation of a value as a UUID.
-
-    For our purposes, a UUID is a canonical form string:
-    aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
-    """
-    try:
-        return str(uuid.UUID(val)) == val
-    except (TypeError, ValueError, AttributeError):
-        return False
-
-
 def _build_entity_id(plugin, plugin_instance):
     """
     Builds an entity id string based on the collectd notification object.
     """
 
+    inst_error = False
+
     entity_id = 'host='
     entity_id += PluginObject.host
 
-    if plugin == PLUGIN__DF:
+    if plugin == PLUGIN__VSWITCH_MEM:
+
+        # host=<hostname>.processor=<socket-id>
+        if plugin_instance:
+            entity_id += '.processor=' + plugin_instance
+        else:
+            inst_error = True
+
+    elif plugin == PLUGIN__VSWITCH_IFACE:
+
+        # host=<hostname>.interface=<if-uuid>
+        if plugin_instance:
+            entity_id += '.interface=' + plugin_instance
+        else:
+            inst_error = True
+
+    elif plugin == PLUGIN__VSWITCH_PORT:
+
+        # host=<hostname>.port=<port-uuid>
+        if plugin_instance:
+            entity_id += '.port=' + plugin_instance
+        else:
+            inst_error = True
+
+    elif plugin == PLUGIN__DF:
+
+        # host=<hostname>.filesystem=<mountpoint>
         if plugin_instance:
             instance = plugin_instance
 
@@ -740,7 +933,18 @@ def _build_entity_id(plugin, plugin_instance):
                     instance = instance.replace('-', '/')
                 entity_id += instance
 
-    # collectd.info("%s entity_id : %s" % (PLUGIN, entity_id))
+    # Will be uncommented when the numa memory monitor is added
+    # to the platform memory plugin.
+    #
+    #elif plugin == PLUGIN__MEM:
+    #    if plugin_instance is not 'platform':
+    #        # host=controller-0.numa=node0
+    #        entity_id += '.numa='
+    #        entity_id += plugin_instance
+
+    if inst_error is True:
+        collectd.error("%s eid build failed ; missing instance" % plugin)
+        return None
 
     return entity_id
 
@@ -773,37 +977,77 @@ def _get_df_mountpoints():
     return(mountpoints)
 
 
+def _print_obj(obj):
+    """
+    Print a single object
+    """
+    base_object = False
+    for plugin in PLUGIN_NAME_LIST:
+        if PLUGINS[plugin] == obj:
+            base_object = True
+            break
+
+    num = len(obj.instance_objects)
+    if num > 0 or base_object is True:
+        prefix = "PLUGIN "
+        if num:
+            prefix += str(num)
+        else:
+            prefix += " "
+    else:
+        prefix = "INSTANCE"
+
+    if obj.plugin_instance:
+        resource = obj.plugin + ":" + obj.plugin_instance
+    else:
+        resource = obj.plugin
+
+    collectd.info("%s %s res: %s name: %s\n" %
+                  (PLUGIN, prefix, resource, obj.resource_name))
+    collectd.info("%s     eid : %s\n" % (PLUGIN, obj.entity_id))
+    collectd.info("%s     inst: %s name: %s\n" %
+                  (PLUGIN, obj.instance, obj.instance_name))
+    collectd.info("%s     value:%2.1f thld:%2.1f cause:%s (%d) type:%s" %
+                  (PLUGIN,
+                   obj.value,
+                   obj.threshold,
+                   obj.cause,
+                   obj.count,
+                   obj.reading_type))
+    collectd.info("%s     warn:%s fail:%s" %
+                  (PLUGIN, obj.warnings, obj.failures))
+    collectd.info("%s     repair:t: %s" %
+                  (PLUGIN, obj.repair))
+    if obj.cause != fm_constants.ALARM_PROBABLE_CAUSE_50:
+        collectd.info("%s     reason:w: %s\n"
+                      "%s     reason:f: %s\n" %
+                      (PLUGIN, obj.reason_warning,
+                       PLUGIN, obj.reason_failure))
+    # collectd.info(" ")
+
+
 def _print_state(obj=None):
     """
     Print the current object state
     """
-    objs = []
-    if obj is None:
-        objs.append(_get_base_object(ALARM_ID__CPU))
-        objs.append(_get_base_object(ALARM_ID__MEM))
-        objs.append(_get_base_object(ALARM_ID__DF))
-    else:
-        objs.append(obj)
-    for o in objs:
-        collectd.info("%s PLUGIN %2d [%6s:%2.2f:%s] [w:%s f:%s] %d" %
-                      (PLUGIN,
-                       len(o.instance_objects),
-                       o.plugin,
-                       o.value,
-                       o.entity_id,
-                       o.warnings,
-                       o.failures,
-                       o.count))
-        if len(o.instance_objects):
-            for inst_obj in o.instance_objects:
-                collectd.info("%s INSTANCE [%6s:%2.2f:%s] [w:%s f:%s] %d" %
-                              (PLUGIN,
-                               inst_obj.plugin,
-                               inst_obj.value,
-                               inst_obj.entity_id,
-                               inst_obj.warnings,
-                               inst_obj.failures,
-                               inst_obj.count))
+    try:
+        objs = []
+        if obj is None:
+            for plugin in PLUGIN_NAME_LIST:
+                objs.append(PLUGINS[plugin])
+        else:
+            objs.append(obj)
+
+        collectd.debug("%s _print_state Lock ..." % PLUGIN)
+        PluginObject.lock.acquire()
+        for o in objs:
+            _print_obj(o)
+            if len(o.instance_objects):
+                for inst_obj in o.instance_objects:
+                    _print_obj(o.instance_objects[inst_obj])
+    finally:
+        collectd.debug("%s _print_state UnLock ..." % PLUGIN)
+        PluginObject.lock.release()
 
 
 def _database_setup(database):
@@ -843,14 +1087,14 @@ def _database_setup(database):
             ############################################################
 
             PluginObject.dbObj.create_retention_policy(
-                'collectd samples', '4w', 1, database, True)
+                DATABASE_NAME, '4w', 1, database, True)
         except Exception as ex:
             if str(ex) == 'database already exists':
                 try:
                     collectd.info("%s influxdb:collectd %s" %
                                   (PLUGIN, str(ex)))
                     PluginObject.dbObj.create_retention_policy(
-                        'collectd samples', '4w', 1, database, True)
+                        DATABASE_NAME, '4w', 1, database, True)
                 except Exception as ex:
                     if str(ex) == 'retention policy already exists':
                         collectd.info("%s influxdb:collectd %s" %
@@ -864,15 +1108,21 @@ def _database_setup(database):
         error_str = "failed to connect to influxdb:" + database
 
     if not error_str:
+            found = False
             retention = \
                 PluginObject.dbObj.get_list_retention_policies(database)
-            collectd.info("%s influxdb:%s samples retention policy: %s" %
-                          (PLUGIN, database, retention))
-            collectd.info("%s influxdb:%s is setup" % (PLUGIN, database))
-            PluginObject.database_setup = True
-    else:
-        collectd.error("%s influxdb:%s setup %s" %
-                       (PLUGIN, database, error_str))
+            for r in range(len(retention)):
+                if retention[r]["name"] == DATABASE_NAME:
+                    collectd.info("%s influxdb:%s samples retention "
+                                  "policy: %s" %
+                                  (PLUGIN, database, retention[r]))
+                    found = True
+            if found is True:
+                collectd.info("%s influxdb:%s is setup" % (PLUGIN, database))
+                PluginObject.database_setup = True
+            else:
+                collectd.error("%s influxdb:%s retention policy NOT setup" %
+                               (PLUGIN, database))
 
 
 def _clear_alarm_for_missing_filesystems():
@@ -892,10 +1142,11 @@ def _clear_alarm_for_missing_filesystems():
     if len(alarm_list):
         for eid in alarm_list:
             # search for any of them that might be alarmed.
-            obj = df_base_obj.instance_objects[eid]
+            obj = df_base_obj._get_instance_object(eid)
 
             # only care about df (file system plugins)
-            if obj.plugin == PLUGIN__DF and \
+            if obj is not None and \
+               obj.plugin == PLUGIN__DF and \
                obj.entity_id == eid and \
                obj.plugin_instance != 'root':
 
@@ -912,7 +1163,6 @@ def _clear_alarm_for_missing_filesystems():
                 else:
                     collectd.debug("%s maintaining alarm for %s" %
                                   (PLUGIN, path))
-    return 0
 
 
 # Collectd calls this function on startup.
@@ -920,6 +1170,8 @@ def _clear_alarm_for_missing_filesystems():
 # Query FM for existing alarms and run with that starting state.
 def init_func():
     """ Collectd FM Notifier Initialization Function """
+
+    PluginObject.lock = Lock()
 
     PluginObject.host = os.uname()[1]
     collectd.info("%s %s:%s init function" %
@@ -933,14 +1185,18 @@ def init_func():
     obj.repair += "contact next level of support."
     collectd.info("%s monitoring %s usage" % (PLUGIN, obj.resource_name))
 
+    ###########################################################################
+
     # Constant Memory Plugin Object settings
     obj = PLUGINS[PLUGIN__MEM]
-    obj.resource_name = "Memory"
+    obj.resource_name = "Platform Memory"
     obj.instance_name = PLUGIN__MEM
     obj.repair = "Monitor and if condition persists, "
     obj.repair += "contact next level of support; "
     obj.repair += "may require additional memory on Host."
     collectd.info("%s monitoring %s usage" % (PLUGIN, obj.resource_name))
+
+    ###########################################################################
 
     # Constant FileSystem Plugin Object settings
     obj = PLUGINS[PLUGIN__DF]
@@ -953,6 +1209,63 @@ def init_func():
     # One instance per file system mount point being monitored.
     # Create one DF instance object per mount point
     obj._create_instance_objects()
+
+    # ntp query is for controllers only
+    if tsc.nodetype == 'worker' or 'worker' in tsc.subfunctions:
+
+        #######################################################################
+
+        # Constant vSwitch CPU Usage Plugin Object settings
+        obj = PLUGINS[PLUGIN__VSWITCH_CPU]
+        obj.resource_name = "vSwitch CPU"
+        obj.instance_name = PLUGIN__VSWITCH_CPU
+        obj.repair = "Monitor and if condition persists, "
+        obj.repair += "contact next level of support."
+        collectd.info("%s monitoring %s usage" % (PLUGIN, obj.resource_name))
+
+        #######################################################################
+
+        # Constant vSwitch Memory Usage Plugin Object settings
+        obj = PLUGINS[PLUGIN__VSWITCH_MEM]
+        obj.resource_name = "vSwitch Memory"
+        obj.instance_name = PLUGIN__VSWITCH_MEM
+        obj.repair = "Monitor and if condition persists, "
+        obj.repair += "contact next level of support."
+        collectd.info("%s monitoring %s usage" % (PLUGIN, obj.resource_name))
+
+        #######################################################################
+
+        # Constant vSwitch Port State Monitor Plugin Object settings
+        obj = PLUGINS[PLUGIN__VSWITCH_PORT]
+        obj.resource_name = "vSwitch Port"
+        obj.instance_name = PLUGIN__VSWITCH_PORT
+        obj.reading_type = "state"
+        obj.reason_failure = "'Data' Port failed."
+        obj.reason_warning = "'Data' Port failed."
+        obj.repair = "Check cabling and far-end port configuration and "
+        obj.repair += "status on adjacent equipment."
+        obj.alarm_type = fm_constants.FM_ALARM_TYPE_4     # EQUIPMENT
+        obj.cause = fm_constants.ALARM_PROBABLE_CAUSE_29  # LOSS_OF_SIGNAL
+        obj.service_affecting = True
+        collectd.info("%s monitoring %s state" % (PLUGIN, obj.resource_name))
+
+        #######################################################################
+
+        # Constant vSwitch Interface State Monitor Plugin Object settings
+        obj = PLUGINS[PLUGIN__VSWITCH_IFACE]
+        obj.resource_name = "vSwitch Interface"
+        obj.instance_name = PLUGIN__VSWITCH_IFACE
+        obj.reading_type = "state"
+        obj.reason_failure = "'Data' Interface failed."
+        obj.reason_warning = "'Data' Interface degraded."
+        obj.repair = "Check cabling and far-end port configuration and "
+        obj.repair += "status on adjacent equipment."
+        obj.alarm_type = fm_constants.FM_ALARM_TYPE_4     # EQUIPMENT
+        obj.cause = fm_constants.ALARM_PROBABLE_CAUSE_29  # LOSS_OF_SIGNAL
+        obj.service_affecting = True
+        collectd.info("%s monitoring %s state" % (PLUGIN, obj.resource_name))
+
+    ###########################################################################
 
     obj = PLUGINS[PLUGIN__EXAMPLE]
     obj.resource_name = "Example"
@@ -981,6 +1294,7 @@ def init_func():
         alarms = api.get_faults_by_id(alarm_id)
         if alarms:
             for alarm in alarms:
+                want_alarm_clear = False
                 eid = alarm.entity_instance_id
                 # ignore alarms not for this host
                 if PluginObject.host not in eid:
@@ -988,28 +1302,31 @@ def init_func():
 
                 base_obj = _get_base_object(alarm_id)
                 if base_obj is None:
-                    # Handle unrecognized alarm by clearing it ;
-                    # should never happen since we are iterating
-                    # over an internal alarm_id list.
+
+                    # might be a plugin instance - clear it
+                    want_alarm_clear = True
+
+                collectd.info('%s found %s %s alarm [%s]' %
+                              (PLUGIN,
+                               alarm.severity,
+                               alarm_id,
+                               eid))
+
+                if want_alarm_clear is True:
+
                     if api.clear_fault(alarm_id, eid) is False:
-                        collectd.error("%s %s:%s not found ; clear failed" %
+                        collectd.error("%s %s:%s clear failed" %
                                        (PLUGIN,
                                         alarm_id,
                                         eid))
                     else:
-                        collectd.error("%s %s:%s not found ; cleared" %
-                                       (PLUGIN,
-                                        alarm_id,
-                                        eid))
+                        collectd.info("%s clear %s %s alarm %s" %
+                                      (PLUGIN,
+                                       alarm.severity,
+                                       alarm_id,
+                                       eid))
                     continue
 
-                collectd.info('%s found %s alarm with %s severity [%s:%s:%s]' %
-                              (PLUGIN,
-                               base_obj.id,
-                               alarm.severity,
-                               base_obj.plugin,
-                               alarm_id,
-                               eid))
                 if alarm.severity == "critical":
                     sev = "failure"
                 elif alarm.severity == "major":
@@ -1019,7 +1336,8 @@ def init_func():
                     continue
 
                 # Load the alarm severity by doing a plugin/instance lookup.
-                base_obj._manage_alarm(eid, sev)
+                if base_obj is not None:
+                    base_obj._manage_alarm(eid, sev)
 
 
 # The notifier function inspects the collectd notification and determines if
@@ -1067,27 +1385,68 @@ def notifier_func(nObject):
         base_obj = obj = PLUGINS[nObject.plugin]
 
         # if this notification is for a plugin instance then get that
-        # instances's object instead. if that object does not yet exists
-        # then create it
+        # instances's object instead.
+        # If that object does not yet exists then create it.
         eid = ''
-        if nObject.plugin_instance:
+
+        # DF instances are statically allocated
+        if nObject.plugin == PLUGIN__DF:
+            eid = _build_entity_id(nObject.plugin, nObject.plugin_instance)
+
+            # get this instances object
+            obj = base_obj._get_instance_object(eid)
+            if obj is None:
+                # path should never be hit since all DF instances
+                # are statically allocated.
+                return 0
+
+        elif nObject.plugin_instance:
+            need_instance_object_create = False
+            # Build the entity_id from the parent object if needed
             # Build the entity_id from the parent object if needed
             eid = _build_entity_id(nObject.plugin, nObject.plugin_instance)
             try:
+                # Need lock when reading/writing any obj.instance_objects list
+                collectd.debug("%s %s lock" % (PLUGIN, nObject.plugin))
+                PluginObject.lock.acquire()
+
+                #collectd.info("%s Object Search eid: %s" %
+                #              (nObject.plugin, eid))
+
+                #for o in base_obj.instance_objects:
+                #    collectd.error("%s %s inst object dict item %s : %s" %
+                #                   (PLUGIN, nObject.plugin, o,
+                #                    base_obj.instance_objects[o]))
+
+                # we will take an exception if this object is not in the list.
+                # the exception handling code below will create and add this
+                # object for success path the next time around.
                 inst_obj = base_obj.instance_objects[eid]
-                if inst_obj is None:
-                    collectd.error("%s %s:%s instance object is None" %
-                                   (PLUGIN,
-                                    nObject.plugin,
-                                    nObject.plugin_instance))
-                    return 0
+
+                collectd.debug("%s %s instance %s already exists %s" %
+                               (PLUGIN, nObject.plugin, eid, inst_obj))
+                # _print_state(inst_obj)
+
             except:
-                # o.k. , not in the list yet, lets create one
-                collectd.error("%s %s:%s instance object not found" %
-                               (PLUGIN,
-                                nObject.plugin,
-                                nObject.plugin_instance))
-                return 0
+                need_instance_object_create = True
+            finally:
+                collectd.debug("%s %s unlock" % (PLUGIN, nObject.plugin))
+                PluginObject.lock.release()
+
+            if need_instance_object_create is True:
+                base_obj._create_instance_object(nObject.plugin_instance)
+                inst_obj = base_obj._get_instance_object(eid)
+                if inst_obj:
+                    collectd.debug("%s %s:%s inst object created" %
+                                  (PLUGIN,
+                                   inst_obj.plugin,
+                                   inst_obj.instance))
+                else:
+                    collectd.error("%s %s:%s inst object create failed" %
+                                  (PLUGIN,
+                                   nObject.plugin,
+                                   nObject.plugin_instance))
+                    return 0
 
             # re-assign the object
             obj = inst_obj
@@ -1096,13 +1455,6 @@ def notifier_func(nObject):
                 # Build the entity_id from the parent object if needed
                 eid = _build_entity_id(nObject.plugin, nObject.plugin_instance)
 
-        # TODO: Needed ?
-        if not len(obj.instance):
-            obj.instance = nObject.plugin
-            if nObject.plugin_instance:
-                obj.instance += '_' + nObject.plugin_instance
-
-        # TODO: Needed ?
         # update the object with the eid if its not already set.
         if not len(obj.entity_id):
             obj.entity_id = eid
@@ -1112,7 +1464,8 @@ def notifier_func(nObject):
                       (PLUGIN, nObject.plugin, nObject.plugin_instance))
         return 0
 
-    # _print_state(obj)
+    # if obj.warnings or obj.failures:
+    #     _print_state(obj)
 
     # If want_state_audit is True then run the audit.
     # Primarily used for debug
@@ -1143,21 +1496,32 @@ def notifier_func(nObject):
         return 0
 
     if _alarm_state == fm_constants.FM_ALARM_STATE_CLEAR:
-        if api.clear_fault(base_obj.id, obj.entity_id) is False:
+        if api.clear_fault(obj.id, obj.entity_id) is False:
             collectd.error("%s %s:%s clear_fault failed" %
                            (PLUGIN, base_obj.id, obj.entity_id))
             return 0
     else:
-        reason = obj.resource_name
-        reason += " threshold exceeded"
-        if obj.threshold:
-            reason += "; {:2.0f}".format(obj.threshold) + "%"
-            # reason += "; {:2.2f}".format(obj.threshold) + "%"
-        if obj.value:
-            reason += ", actual " + "{:2.0f}".format(obj.value) + "%"
 
+        # manage addition of the failure reason text
+        if obj.cause == fm_constants.ALARM_PROBABLE_CAUSE_50:
+            # if this is a threshold alarm then build the reason text that
+            # includes the threahold and the reading that caused the assertion.
+            reason = obj.resource_name
+            reason += " threshold exceeded"
+            if obj.threshold:
+                reason += "; threshold {:2.0f} ".format(obj.threshold) + "%, "
+            if obj.value:
+                reason += "actual {:2.0f}".format(obj.value) + "%"
+
+        elif _severity_num == fm_constants.FM_ALARM_SEVERITY_CRITICAL:
+            reason = obj.reason_failure
+
+        else:
+            reason = obj.reason_warning
+
+        # build the alarm object
         fault = fm_api.Fault(
-            alarm_id=base_obj.id,
+            alarm_id=obj.id,
             alarm_state=_alarm_state,
             entity_type_id=fm_constants.FM_ENTITY_TYPE_HOST,
             entity_instance_id=obj.entity_id,
@@ -1170,7 +1534,7 @@ def notifier_func(nObject):
             suppression=base_obj.suppression)
 
         alarm_uuid = api.set_fault(fault)
-        if is_uuid_like(alarm_uuid) is False:
+        if pc.is_uuid_like(alarm_uuid) is False:
             collectd.error("%s %s:%s set_fault failed:%s" %
                            (PLUGIN, base_obj.id, obj.entity_id, alarm_uuid))
             return 0
@@ -1190,6 +1554,9 @@ def notifier_func(nObject):
 
     # Debug only: comment out for production code.
     # obj._state_audit("change")
+
+    return 0
+
 
 collectd.register_init(init_func)
 collectd.register_notification(notifier_func)

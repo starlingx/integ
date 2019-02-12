@@ -1,0 +1,16 @@
+[Unit]
+Description=Ceph REST API
+After=network.target ceph.target
+
+[Service]
+Type=forking
+Restart=no
+KillMode=process
+RemainAfterExit=yes
+ExecStart=/etc/rc.d/init.d/ceph-rest-api start
+ExecStop=/etc/rc.d/init.d/ceph-rest-api stop
+ExecReload=/etc/rc.d/init.d/ceph-rest-api reload
+
+[Install]
+WantedBy=multi-user.target
+
