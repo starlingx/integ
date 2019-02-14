@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Wind River Systems, Inc.
+# Copyright (c) 2018-2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -102,6 +102,7 @@ api = fm_api.FaultAPIs()
 debug = False
 debug_lists = False
 want_state_audit = False
+want_vswitch = False
 
 # number of notifier loops before the state is object dumped
 DEBUG_AUDIT = 2
@@ -123,6 +124,8 @@ DATABASE_NAME = 'collectd samples'
 
 READING_TYPE__PERCENT_USAGE = '% usage'
 
+# Default invalid threshold value
+INVALID_THRESHOLD = float(-1)
 
 # collectd severity definitions ;
 # Note: can't seem to pull then in symbolically with a header
@@ -231,8 +234,10 @@ class PluginObject:
 
         # [ 'float value string','float threshold string]
         self.values = []
-        self.threshold = float(0)  # float value of threshold
-        self.value = float(0)      # float value of reading
+        self.value = float(0)       # float value of reading
+
+        # float value of threshold
+        self.threshold = float(INVALID_THRESHOLD)
 
         # Common static class members.
         self.reason_warning = ""
@@ -333,7 +338,8 @@ class PluginObject:
     # Purpose : Manage sample value change.
     #
     #           Handle no sample update case.
-    #           Parse the notification log
+    #           Parse the notification log.
+    #           Handle base object instances.
     #           Generate a log entry if the sample value changes more than
     #             step value.
     #
@@ -385,10 +391,22 @@ class PluginObject:
                 # get the threshold if its there.
                 if len(self.values) > 1:
                     self.threshold = float(self.values[1])
+                    if nObject.plugin == PLUGIN__MEM:
+                        if self.reading_type == READING_TYPE__PERCENT_USAGE:
+                            # Note: add one to % usage reading types so that it
+                            #       matches how rmond did it. In collectd an
+                            #       overage is over the specified threshold
+                            #       whereas in rmon an overage is at threshold
+                            #       or above.
+                            self.threshold = float(self.values[1]) + 1
+                        else:
+                            self.threshold = float(self.values[1])
+                else:
+                    self.threshold = float(INVALID_THRESHOLD)  # invalid value
 
             except ValueError as ex:
                 collectd.error("%s %s value not integer or float (%s) (%s)" %
-                              (PLUGIN, self.entity_id, self.value, str(ex)))
+                               (PLUGIN, self.entity_id, self.value, str(ex)))
                 return "done"
             except TypeError as ex:
                 collectd.info("%s %s value has no type (%s)" %
@@ -428,6 +446,11 @@ class PluginObject:
             # setup resource name for filesystem instance usage log
             if self.plugin == PLUGIN__DF:
                 resource = self.instance
+
+            elif self.plugin == PLUGIN__MEM:
+                if self.instance_name:
+                    if self.instance_name != 'platform':
+                        resource += ' ' + self.instance_name
 
             # setup resource name for vswitch process instance name
             elif self.plugin == PLUGIN__VSWITCH_MEM:
@@ -697,7 +720,7 @@ class PluginObject:
             self.instance_objects[eid] = obj
         except:
             collectd.error("%s failed to add instance to %s object list" %
-                          (PLUGIN, self.plugin))
+                           (PLUGIN, self.plugin))
 
         finally:
             collectd.debug("%s %s Add UnLock ..." % (PLUGIN, self.plugin))
@@ -751,14 +774,14 @@ class PluginObject:
             self._add_instance_object(inst_obj, inst_obj.entity_id)
 
             collectd.debug("%s created %s instance (%s) object %s" %
-                          (PLUGIN, inst_obj.resource_name,
-                           inst_obj.entity_id, inst_obj))
+                           (PLUGIN, inst_obj.resource_name,
+                            inst_obj.entity_id, inst_obj))
 
-            collectd.debug("%s monitoring %s %s %s" %
-                           (PLUGIN,
-                            inst_obj.resource_name,
-                            inst_obj.instance_name,
-                            inst_obj.reading_type))
+            collectd.info("%s monitoring %s %s %s" %
+                          (PLUGIN,
+                           inst_obj.resource_name,
+                           inst_obj.instance_name,
+                           inst_obj.reading_type))
 
             return inst_obj
 
@@ -891,7 +914,11 @@ def _build_entity_id(plugin, plugin_instance):
     entity_id = 'host='
     entity_id += PluginObject.host
 
-    if plugin == PLUGIN__VSWITCH_MEM:
+    if plugin == PLUGIN__MEM:
+        if plugin_instance != 'platform':
+            entity_id += '.numa=' + plugin_instance
+
+    elif plugin == PLUGIN__VSWITCH_MEM:
 
         # host=<hostname>.processor=<socket-id>
         if plugin_instance:
@@ -933,15 +960,6 @@ def _build_entity_id(plugin, plugin_instance):
                     instance = instance.replace('-', '/')
                 entity_id += instance
 
-    # Will be uncommented when the numa memory monitor is added
-    # to the platform memory plugin.
-    #
-    #elif plugin == PLUGIN__MEM:
-    #    if plugin_instance is not 'platform':
-    #        # host=controller-0.numa=node0
-    #        entity_id += '.numa='
-    #        entity_id += plugin_instance
-
     if inst_error is True:
         collectd.error("%s eid build failed ; missing instance" % plugin)
         return None
@@ -957,7 +975,7 @@ def _get_df_mountpoints():
     if not os.path.exists(conf_file):
         collectd.error("%s cannot create filesystem "
                        "instance objects ; missing : %s" %
-                      (PLUGIN, conf_file))
+                       (PLUGIN, conf_file))
         return FAIL
 
     mountpoints = []
@@ -1162,7 +1180,7 @@ def _clear_alarm_for_missing_filesystems():
                         df_base_obj._manage_alarm(obj.entity_id, "okay")
                 else:
                     collectd.debug("%s maintaining alarm for %s" %
-                                  (PLUGIN, path))
+                                   (PLUGIN, path))
 
 
 # Collectd calls this function on startup.
@@ -1211,7 +1229,9 @@ def init_func():
     obj._create_instance_objects()
 
     # ntp query is for controllers only
-    if tsc.nodetype == 'worker' or 'worker' in tsc.subfunctions:
+    if want_vswitch is False:
+        collectd.debug("%s vSwitch monitoring disabled" % PLUGIN)
+    elif tsc.nodetype == 'worker' or 'worker' in tsc.subfunctions:
 
         #######################################################################
 
@@ -1410,13 +1430,13 @@ def notifier_func(nObject):
                 collectd.debug("%s %s lock" % (PLUGIN, nObject.plugin))
                 PluginObject.lock.acquire()
 
-                #collectd.info("%s Object Search eid: %s" %
-                #              (nObject.plugin, eid))
+                # collectd.info("%s Object Search eid: %s" %
+                #               (nObject.plugin, eid))
 
-                #for o in base_obj.instance_objects:
-                #    collectd.error("%s %s inst object dict item %s : %s" %
-                #                   (PLUGIN, nObject.plugin, o,
-                #                    base_obj.instance_objects[o]))
+                # for o in base_obj.instance_objects:
+                #     collectd.error("%s %s inst object dict item %s : %s" %
+                #                    (PLUGIN, nObject.plugin, o,
+                #                     base_obj.instance_objects[o]))
 
                 # we will take an exception if this object is not in the list.
                 # the exception handling code below will create and add this
@@ -1438,14 +1458,14 @@ def notifier_func(nObject):
                 inst_obj = base_obj._get_instance_object(eid)
                 if inst_obj:
                     collectd.debug("%s %s:%s inst object created" %
-                                  (PLUGIN,
-                                   inst_obj.plugin,
-                                   inst_obj.instance))
+                                   (PLUGIN,
+                                    inst_obj.plugin,
+                                    inst_obj.instance))
                 else:
                     collectd.error("%s %s:%s inst object create failed" %
-                                  (PLUGIN,
-                                   nObject.plugin,
-                                   nObject.plugin_instance))
+                                   (PLUGIN,
+                                    nObject.plugin,
+                                    nObject.plugin_instance))
                     return 0
 
             # re-assign the object
@@ -1461,7 +1481,7 @@ def notifier_func(nObject):
 
     else:
         collectd.debug("%s notification for unknown plugin: %s %s" %
-                      (PLUGIN, nObject.plugin, nObject.plugin_instance))
+                       (PLUGIN, nObject.plugin, nObject.plugin_instance))
         return 0
 
     # if obj.warnings or obj.failures:
@@ -1507,11 +1527,11 @@ def notifier_func(nObject):
             # if this is a threshold alarm then build the reason text that
             # includes the threahold and the reading that caused the assertion.
             reason = obj.resource_name
-            reason += " threshold exceeded"
-            if obj.threshold:
-                reason += "; threshold {:2.0f} ".format(obj.threshold) + "%, "
+            reason += " threshold exceeded ;"
+            if obj.threshold != INVALID_THRESHOLD:
+                reason += " threshold {:2.0f}".format(obj.threshold) + "%,"
             if obj.value:
-                reason += "actual {:2.0f}".format(obj.value) + "%"
+                reason += " actual {:2.0f}".format(obj.value) + "%"
 
         elif _severity_num == fm_constants.FM_ALARM_SEVERITY_CRITICAL:
             reason = obj.reason_failure
@@ -1542,14 +1562,13 @@ def notifier_func(nObject):
     # update the lists now that
     base_obj._manage_alarm(obj.entity_id, severity_str)
 
-    collectd.info("%s %s alarm %s:%s %s:%s thld:%2.2f value:%2.2f" % (
+    collectd.info("%s %s alarm %s:%s %s:%s value:%2.2f" % (
                   PLUGIN,
                   _alarm_state,
                   base_obj.id,
                   severity_str,
                   obj.instance,
                   obj.entity_id,
-                  obj.threshold,
                   obj.value))
 
     # Debug only: comment out for production code.
