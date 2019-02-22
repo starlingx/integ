@@ -1,13 +1,7 @@
 #!/bin/bash
 #
 # lib/stx-integ
-# Functions to control the configuration and operation of stx-integ
-
-# Dependencies:
 #
-# - ``functions`` file
-# - ``DEST``, ``DATA_DIR``, ``STACK_USER`` must be defined
-
 # ``plugin.sh`` calls the entry points in this order:
 #
 # - install_integ
@@ -27,29 +21,10 @@ STXINTEG_DIR=${GITDIR[$STX_INTEG_NAME]}
 
 PLATFORM_UTIL_DIR=$STXINTEG_DIR/utilities/platform-util
 
-STX_BIN_DIR=$(get_python_exec_prefix)
+# STX_INST_DIR should be a non-root-writable place to install build artifacts
+STX_INST_DIR=${STX_INST_DIR:-$DEST/usr}
+STX_BIN_DIR=$STX_INST_DIR/bin
 PYTHON_SITE_DIR=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
-
-function install_platform_util {
-    pushd $PLATFORM_UTIL_DIR/platform-util
-    sudo python setup.py install --root=/ --install-lib=$PYTHON_SITE_DIR --prefix=/usr --install-data=/usr/share --single-version-externally-managed
-    popd
-
-    local stx_integ_sbindir=/usr/local/sbin/
-    local systemddir=/etc/systemd
-    sudo install -m 755 -d ${stx_integ_sbindir}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-mtce ${stx_integ_sbindir}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-processes ${stx_integ_sbindir}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-haproxy ${stx_integ_sbindir}
-
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/cgcs_tc_setup.sh ${STX_BIN_DIR}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/remotelogging_tc_setup.sh ${STX_BIN_DIR}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/connectivity_test ${STX_BIN_DIR}
-
-    # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/opt-platform.mount ${systemddir}/system
-    # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/opt-platform.service ${systemddir}/system
-    # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/memcached.service ${systemddir}/system
-}
 
 function cleanup_integ {
     # Cleanup the service
@@ -73,13 +48,39 @@ function install_integ {
     fi
 }
 
-function sart_integ {
-    # Shut the service down
+function install_platform_util {
+    pushd $PLATFORM_UTIL_DIR/platform-util
+    sudo python setup.py install \
+        --root=/ \
+        --install-lib=$PYTHON_SITE_DIR \
+        --prefix=/usr \
+        --install-data=/usr/share \
+        --single-version-externally-managed
+    popd
+
+    local stx_integ_sbindir=$STX_INST_DIR/sbin
+    local systemddir=/etc/systemd
+    sudo install -m 755 -d ${stx_integ_sbindir}
+    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-mtce ${stx_integ_sbindir}
+    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-processes ${stx_integ_sbindir}
+    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-haproxy ${stx_integ_sbindir}
+
+    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/cgcs_tc_setup.sh ${STX_BIN_DIR}
+    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/remotelogging_tc_setup.sh ${STX_BIN_DIR}
+    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/connectivity_test ${STX_BIN_DIR}
+
+    # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/opt-platform.mount ${systemddir}/system
+    # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/opt-platform.service ${systemddir}/system
+    # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/memcached.service ${systemddir}/system
+}
+
+function start_integ {
+    # Initialize and start the service
     :
 }
 
 function stop_integ {
-    # Initialize and start the service
+    # Shut the service down
     :
 }
 
