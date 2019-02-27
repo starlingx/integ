@@ -1,0 +1,120 @@
+#! /bin/sh
+#
+# Copyright (c) 2019 StarlingX.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# chkconfig: 2345 75 25
+#
+### BEGIN INIT INFO
+# Provides:          pci-irq-affinity-agent
+### END INIT INFO
+
+source /etc/init.d/functions
+
+PLATFORM_CONF="/etc/platform/platform.conf"
+NODETYPE=""
+DAEMON_NAME="pci-irq-affinity-agent"
+AFFINITYAGENT="/usr/bin/${DAEMON_NAME}"
+
+daemon_pidfile="/var/run/${DAEMON_NAME}.pid"
+
+if [ -f ${PLATFORM_CONF} ] ; then
+    source ${PLATFORM_CONF}
+    NODETYPE=${nodetype}
+else
+    logger "$0: ${PLATFORM_CONF} is missing"
+    exit 1
+fi
+
+if [ ! -f "${AFFINITYAGENT}" ] ; then
+    logger "$0: ${AFFINITYAGENT} is missing"
+    exit 1
+fi
+
+RETVAL=0
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+export PATH
+
+case "$1" in
+    start)
+        # Check for installation failure
+        if [ -f /etc/platform/installation_failed ] ; then
+            logger "$0: /etc/platform/installation_failed flag is set. Aborting."
+            exit 1
+        fi
+
+        if [ ${NODETYPE} = "worker" ] ; then
+            echo -n "Setting up config for pci-irq-affinity-agent: "
+
+            if [ -e ${daemon_pidfile} ] ; then
+                echo "Killing existing process before starting new"
+                pid=`cat ${daemon_pidfile}`
+                kill -TERM $pid
+                rm -f ${daemon_pidfile}
+            fi
+
+            echo -n "Starting pci-irq-affinity-agent: "
+            /bin/sh -c "${AFFINITYAGENT}"' >> /dev/null 2>&1 & echo $!' > ${daemon_pidfile}
+            RETVAL=$?
+            if [ $RETVAL -eq 0 ] ; then
+                echo "OK"
+                touch /var/lock/subsys/${DAEMON_NAME}
+            else
+                echo "FAIL"
+            fi
+        fi
+        ;;
+
+    stop)
+        if [ ${NODETYPE} = "worker" ] ; then
+            echo -n "Stopping pci-irq-affinity-agent: "
+
+            if [ -e ${daemon_pidfile} ] ; then
+                pid=`cat ${daemon_pidfile}`
+                kill -TERM $pid
+                rm -f ${daemon_pidfile}
+                rm -f /var/lock/subsys/${DAEMON_NAME}
+                echo "OK"
+            else
+                echo "FAIL"
+            fi
+        fi
+        ;;
+
+    restart)
+        $0 stop
+        sleep 1
+        $0 start
+        ;;
+
+    status)
+        if [ -e ${daemon_pidfile} ] ; then
+            pid=`cat ${daemon_pidfile}`
+            ps -p $pid | grep -v "PID TTY" >> /dev/null 2>&1
+            if [ $? -eq 0 ] ; then
+               echo "pci-irq-affinity-agent is running"
+               RETVAL=0
+            else
+               echo "pci-irq-affinity-agent is not running"
+               RETVAL=1
+            fi
+        else
+            echo "pci-irq-affinity-agent is not running ; no pidfile"
+            RETVAL=1
+        fi
+        ;;
+
+    condrestart)
+        [ -f /var/lock/subsys/$DAEMON_NAME ] && $0 restart
+        ;;
+
+    *)
+        echo "usage: $0 { start | stop | status | restart | condrestart | status }"
+        ;;
+esac
+
+exit $RETVAL

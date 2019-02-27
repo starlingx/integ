@@ -44,8 +44,8 @@ python-smartpm
 # lldpd
 lldpd
 
-# nova-utils
-nova-utils
+# pci-irq-affinity-agent
+pci-irq-affinity-agent
 
 # mlx4-config
 mlx4-config

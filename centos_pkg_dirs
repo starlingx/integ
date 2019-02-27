@@ -27,7 +27,7 @@ python/python-voluptuous
 networking/lldpd
 logging/logrotate
 logging/logrotate-config
-utilities/nova-utils
+utilities/pci-irq-affinity-agent
 security/shim-unsigned
 security/shim-signed
 base/sudo
