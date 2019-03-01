@@ -1,3 +1,6 @@
-COPY_LIST="files/*"
+COPY_LIST="files/* \
+  $PATCHES_BASE/* \
+  $STX_BASE/downloads/openvswitch-2.11.0.tar.gz \
+  $STX_BASE/downloads/dpdk-18.11.tar.xz"
 TIS_PATCH_VER=1
 BUILD_IS_SLOW=12
