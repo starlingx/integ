@@ -27,6 +27,7 @@
     timeout: 7800
     required-projects:
       - openstack/stx-fault
+      - openstack/stx-update
     vars:
       tox_envlist: functional
       devstack_services:
@@ -62,6 +63,7 @@
       devstack_plugins:
         stx-fault: git://git.starlingx.io/stx-fault
         stx-integ: git://git.starlingx.io/stx-integ
+        stx-update: git://git.starlingx.io/stx-update
       devstack_localrc:
         LIBS_FROM_GIT: keystone
     files:

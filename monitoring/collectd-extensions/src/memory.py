@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Wind River Systems, Inc.
+# Copyright (c) 2018-2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -19,11 +19,9 @@ import collectd
 
 debug = False
 
-# general return codes
-PASS = 0
-FAIL = 1
-
 PLUGIN = 'platform memory usage'
+PLUGIN_NUMA = 'numa memory usage'
+PLUGIN_HUGE = 'hugepage memory usage'
 
 
 # CPU Control class
@@ -41,8 +39,10 @@ class MEM:
     CommitLimit = 0
     Committed_AS = 0
     HugePages_Total = 0
+    HugePages_Free = 0
     Hugepagesize = 0
     AnonPages = 0
+    FilePages = 0
 
     # derived values
     avail = 0
@@ -52,6 +52,27 @@ class MEM:
 
 # Instantiate the class
 obj = MEM()
+
+
+def log_meminfo(plugin, name, meminfo):
+    """ Log the supplied meminfo """
+
+    if debug is False:
+        return
+
+    collectd.info("%s %s" % (plugin, name))
+    collectd.info("%s ---------------------------" % plugin)
+    collectd.info("%s memTotal_kB    : %f" % (plugin, meminfo.memTotal_kB))
+    collectd.info("%s memFree_kB     : %f" % (plugin, meminfo.memFree_kB))
+    collectd.info("%s Buffers        : %f" % (plugin, meminfo.buffers))
+    collectd.info("%s Cached         : %f" % (plugin, meminfo.cached))
+    collectd.info("%s SReclaimable   : %f" % (plugin, meminfo.SReclaimable))
+    collectd.info("%s CommitLimit    : %f" % (plugin, meminfo.CommitLimit))
+    collectd.info("%s Committed_AS   : %f" % (plugin, meminfo.Committed_AS))
+    collectd.info("%s HugePages_Total: %f" % (plugin, meminfo.HugePages_Total))
+    collectd.info("%s HugePages_Free : %f" % (plugin, meminfo.HugePages_Free))
+    collectd.info("%s Hugepagesize   : %f" % (plugin, meminfo.Hugepagesize))
+    collectd.info("%s AnonPages      : %f" % (plugin, meminfo.AnonPages))
 
 
 def config_func(config):
@@ -110,7 +131,12 @@ def read_func():
     except EnvironmentError as e:
         collectd.error("%s unable to read from %s ; str(e)" %
                        (PLUGIN, str(e)))
-        return FAIL
+        return 0
+
+    # setup the sample structure
+    val = collectd.Values(host=obj.hostname)
+    val.type = 'percent'
+    val.type_instance = 'used'
 
     # remove the 'unit' (kB) suffix that might be on some of the lines
     for line in meminfo:
@@ -130,20 +156,11 @@ def read_func():
     obj.CommitLimit = float(meminfo['CommitLimit'])
     obj.Committed_AS = float(meminfo['Committed_AS'])
     obj.HugePages_Total = float(meminfo['HugePages_Total'])
+    obj.HugePages_Free = float(meminfo['HugePages_Free'])
     obj.Hugepagesize = float(meminfo['Hugepagesize'])
     obj.AnonPages = float(meminfo['AnonPages'])
 
-    # collectd.info("%s /proc/meminfo: %s" % (PLUGIN, meminfo))
-    # collectd.info("%s ---------------------------" % PLUGIN)
-    # collectd.info("%s memTotal_kB    : %f" % (PLUGIN, obj.memTotal_kB))
-    # collectd.info("%s memFree_kB     : %f" % (PLUGIN, obj.memFree_kB))
-    # collectd.info("%s Buffers        : %f" % (PLUGIN, obj.buffers))
-    # collectd.info("%s Cached         : %f" % (PLUGIN, obj.cached))
-    # collectd.info("%s SReclaimable   : %f" % (PLUGIN, obj.SReclaimable))
-    # collectd.info("%s CommitLimit    : %f" % (PLUGIN, obj.CommitLimit))
-    # collectd.info("%s Committed_AS   : %f" % (PLUGIN, obj.Committed_AS))
-    # collectd.info("%s HugePages_Total: %f" % (PLUGIN, obj.HugePages_Total))
-    # collectd.info("%s AnonPages      : %f" % (PLUGIN, obj.AnonPages))
+    log_meminfo(PLUGIN, "/proc/meminfo", obj)
 
     obj.avail = float(float(obj.memFree_kB) +
                       float(obj.buffers) +
@@ -152,38 +169,93 @@ def read_func():
     obj.total = float(float(obj.avail) +
                       float(obj.AnonPages))
 
-    # collectd.info("%s ---------------------------" % PLUGIN)
-    # collectd.info("%s memTotal: %d" % (PLUGIN, obj.avail))
-    # collectd.info("%s memAvail: %d" % (PLUGIN, obj.total))
-
     if obj.strict == 1:
         obj.value = float(float(obj.Committed_AS) / float(obj.CommitLimit))
     else:
         obj.value = float(float(obj.AnonPages) / float(obj.total))
-
     obj.value = float(float(obj.value) * 100)
 
-    # get numa node memory
-    # numa_node_files = []
-    # fn = "/sys/devices/system/node/"
-    # files = os.listdir(fn)
-    # for file in files:
-    #    if 'node' in file:
-    #        numa_node_files.append(fn + file)
-    # collectd.info("%s numa node files: %s" %
-    #               (PLUGIN, numa_node_files))
-
-    collectd.debug('%s reports %.2f %% usage' %
-                  (PLUGIN, obj.value))
+    if debug is True:
+        collectd.info("%s ---------------------------" % PLUGIN)
+        collectd.info("%s memAvail: %d" % (PLUGIN, obj.avail))
+        collectd.info("%s memTotal: %d" % (PLUGIN, obj.total))
+        collectd.info('%s reports %.2f %% usage' % (PLUGIN, obj.value))
 
     # Dispatch usage value to collectd
-    val = collectd.Values(host=obj.hostname)
     val.plugin = 'memory'
-    val.type = 'percent'
-    val.type_instance = 'used'
+    val.plugin_instance = 'platform'
     val.dispatch(values=[obj.value])
 
-    return PASS
+    #####################################################################
+    # Now get the Numa Node Memory Usage
+    #####################################################################
+    numa_node_files = []
+    fn = "/sys/devices/system/node/"
+    files = os.listdir(fn)
+    for file in files:
+        if 'node' in file:
+            numa_node_files.append(fn + file + '/meminfo')
+
+    for numa_node in numa_node_files:
+        meminfo = {}
+        try:
+            with open(numa_node) as fd:
+                for line in fd:
+                    meminfo[line.split()[2][0:-1]] = line.split()[3].strip()
+
+            obj.memFree_kB = float(meminfo['MemFree'])
+            obj.FilePages = float(meminfo['FilePages'])
+            obj.SReclaimable = float(meminfo['SReclaimable'])
+            obj.AnonPages = float(meminfo['AnonPages'])
+            obj.HugePages_Total = float(meminfo['HugePages_Total'])
+            obj.HugePages_Free = float(meminfo['HugePages_Free'])
+
+            log_meminfo(PLUGIN, numa_node, obj)
+
+            avail = float(float(obj.memFree_kB) +
+                          float(obj.FilePages) +
+                          float(obj.SReclaimable))
+            total = float(float(avail) +
+                          float(obj.AnonPages))
+            obj.value = float(float(obj.AnonPages)) / float(total)
+            obj.value = float(float(obj.value) * 100)
+
+            # Dispatch usage value to collectd for this numa node
+            val.plugin_instance = numa_node.split('/')[5]
+            val.dispatch(values=[obj.value])
+
+            collectd.debug('%s reports %s at %.2f %% usage (%s)' %
+                           (PLUGIN_NUMA,
+                            val.plugin,
+                            obj.value,
+                            val.plugin_instance))
+
+            # Numa Node Huge Page Memory Monitoring
+            #
+            # Only monitor if there is Huge Page Memory
+            if obj.HugePages_Total > 0:
+                obj.value = \
+                    float(float(obj.HugePages_Total -
+                                obj.HugePages_Free)) / \
+                    float(obj.HugePages_Total)
+                obj.value = float(float(obj.value) * 100)
+
+                # Dispatch huge page memory usage value
+                # to collectd for this numa node.
+                val.plugin_instance = numa_node.split('/')[5] + '_hugepages'
+                val.dispatch(values=[obj.value])
+
+                collectd.debug('%s reports %s at %.2f %% usage (%s)' %
+                               (PLUGIN_HUGE,
+                                val.plugin,
+                                obj.value,
+                                val.plugin_instance))
+
+        except EnvironmentError as e:
+            collectd.error("%s unable to read from %s ; str(e)" %
+                           (PLUGIN_NUMA, str(e)))
+
+    return 0
 
 
 collectd.register_config(config_func)

@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# ``stack.sh`` calls the entry points in this order:
-#
-echo_summary "integ devstack plugin.sh called: $1/$2"
+# devstack/plugin.sh
+# Triggers specific functions to install and configure stx-integ
+
+echo_summary "stx-integ devstack plugin.sh called: $1/$2"
 
 # check for service enabled
 if is_service_enabled stx-integ; then
@@ -18,6 +19,7 @@ if is_service_enabled stx-integ; then
         # Initialize and start the service
         echo_summary "Initialize and start stx-integ"
         init_integ
+        start_integ
     elif [[ "$1" == "stack" && "$2" == "test-config" ]]; then
         # do sanity test
         echo_summary "do test-config"
