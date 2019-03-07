@@ -1,7 +1,7 @@
-From 08bc7eaaa30f2d893ff357376f0d48875f9d1da5 Mon Sep 17 00:00:00 2001
+From 2c51d6f4ccf4a473089c08857262e769f7a8fc3a Mon Sep 17 00:00:00 2001
 From: Al Bailey <Al.Bailey@windriver.com>
-Date: Tue, 9 Jan 2018 13:37:50 -0600
-Subject: [PATCH 2/3] WRS: Patch1:
+Date: Thu, 7 Mar 2019 13:43:40 -0600
+Subject: [PATCH 1/4] WRS: Patch1:
  0001-pike-rebase-squash-titanium-patches.patch
 
 ---
@@ -18,7 +18,7 @@ Subject: [PATCH 2/3] WRS: Patch1:
  create mode 100644 spec/classes/keystone_security_compliance_spec.rb
 
 diff --git a/lib/puppet/provider/keystone.rb b/lib/puppet/provider/keystone.rb
-index 3841418..8eb171d 100644
+index 3841418..0857ac1 100644
 --- a/lib/puppet/provider/keystone.rb
 +++ b/lib/puppet/provider/keystone.rb
 @@ -3,6 +3,7 @@ require 'puppet/provider/openstack'
@@ -72,14 +72,14 @@ index 3841418..8eb171d 100644
  
 +  def self.request_by_admin_credential(service, action, error, properties=nil)
 +    properties ||= []
-+    @credentials.username = hiera_lookup('openstack::client::params::admin_username')
++    @credentials.username = hiera_lookup('platform::client::params::admin_username')
 +    @credentials.password = hiera_lookup('keystone::admin_password')
 +    @credentials.project_name = 'admin'
 +    @credentials.auth_url = service_url
 +    @credentials.identity_api_version = @credentials.version
 +    if @credentials.version == '3'
-+      @credentials.user_domain_name = hiera_lookup('openstack::client::params::admin_user_domain')
-+      @credentials.project_domain_name = hiera_lookup('openstack::client::params::admin_project_domain')
++      @credentials.user_domain_name = hiera_lookup('platform::client::params::admin_user_domain')
++      @credentials.project_domain_name = hiera_lookup('platform::client::params::admin_project_domain')
 +    end
 +    raise error unless @credentials.set?
 +    Puppet::Provider::Openstack.request(service, action, properties, @credentials)
