@@ -8,8 +8,7 @@
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
-        - stx-devstack-integ:
-            voting: false
+        - stx-devstack-integ
     gate:
       jobs:
         - build-openstack-releasenotes

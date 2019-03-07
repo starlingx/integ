@@ -22,8 +22,14 @@ STXINTEG_DIR=${GITDIR[$STX_INTEG_NAME]}
 PLATFORM_UTIL_DIR=$STXINTEG_DIR/utilities/platform-util
 
 # STX_INST_DIR should be a non-root-writable place to install build artifacts
-STX_INST_DIR=${STX_INST_DIR:-$DEST/usr}
-STX_BIN_DIR=$STX_INST_DIR/bin
+STX_INST_DIR=${STX_INST_DIR:-/usr/local}
+STX_BIN_DIR=${STX_BIN_DIR:-$STX_INST_DIR/bin}
+STX_SBIN_DIR=${STX_SBIN_DIR:-$STX_INST_DIR/sbin}
+
+# Set up so we don't use sudo for installs when not necessary
+STX_SUDO="sudo"
+[[ -w $STX_INST_DIR ]] && STX_SUDO="env"
+
 PYTHON_SITE_DIR=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
 
 function cleanup_integ {
@@ -58,16 +64,15 @@ function install_platform_util {
         --single-version-externally-managed
     popd
 
-    local stx_integ_sbindir=$STX_INST_DIR/sbin
     local systemddir=/etc/systemd
-    sudo install -m 755 -d ${stx_integ_sbindir}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-mtce ${stx_integ_sbindir}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-processes ${stx_integ_sbindir}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-haproxy ${stx_integ_sbindir}
+    $STX_SUDO install -m 755 -d ${STX_SBIN_DIR}
+    $STX_SUDO install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-mtce ${STX_SBIN_DIR}
+    $STX_SUDO install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-processes ${STX_SBIN_DIR}
+    $STX_SUDO install -m 755 $PLATFORM_UTIL_DIR/scripts/patch-restart-haproxy ${STX_SBIN_DIR}
 
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/cgcs_tc_setup.sh ${STX_BIN_DIR}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/remotelogging_tc_setup.sh ${STX_BIN_DIR}
-    sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/connectivity_test ${STX_BIN_DIR}
+    $STX_SUDO install -m 755 $PLATFORM_UTIL_DIR/scripts/cgcs_tc_setup.sh ${STX_BIN_DIR}
+    $STX_SUDO install -m 755 $PLATFORM_UTIL_DIR/scripts/remotelogging_tc_setup.sh ${STX_BIN_DIR}
+    $STX_SUDO install -m 755 $PLATFORM_UTIL_DIR/scripts/connectivity_test ${STX_BIN_DIR}
 
     # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/opt-platform.mount ${systemddir}/system
     # sudo install -m 755 $PLATFORM_UTIL_DIR/scripts/opt-platform.service ${systemddir}/system
