@@ -52,7 +52,7 @@ diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-paramete
 index 4eeda61..685554b 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -579,8 +579,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+@@ -580,8 +580,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
  			Also note the kernel might malfunction if you disable
  			some critical bits.
  
@@ -70,7 +70,7 @@ diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
 index 9eca4ac..4e39287 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
-@@ -1283,7 +1283,7 @@ void __init setup_arch(char **cmdline_p)
+@@ -1298,7 +1298,7 @@ void __init setup_arch(char **cmdline_p)
  	setup_real_mode();
  
  	memblock_set_current_limit(get_max_mapped());

@@ -12,7 +12,7 @@ diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
 index 33062ea..fd4e070 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
-@@ -165,8 +165,6 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
+@@ -167,8 +167,6 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
          char header_priority[DECIMAL_STR_MAX(priority) + 3], header_time[64],
               header_pid[sizeof("[]: ")-1 + DECIMAL_STR_MAX(pid_t) + 1];
          int n = 0;

@@ -23,7 +23,7 @@ index 92d6c59..238c90d 100644
  				set_bit(i, inuse);
  		}
  
-+		/* WRS extension, want kernel to start at eth1000 */
++		/* STX extension, want kernel to start at eth1000 */
 +		if (strcmp(name, "eth%d") == 0) {
 +			for (i=0; i < 1000; i++)
 +				set_bit(i, inuse);

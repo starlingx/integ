@@ -13,7 +13,7 @@ diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
 index ad32f19..ace1326 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -4,7 +4,7 @@ Version: 9.49.41
+@@ -4,7 +4,7 @@ Version: 9.49.46
  # ppp-watch is GPLv2+, everything else is GPLv2
  License: GPLv2 and GPLv2+
  Group: System Environment/Base

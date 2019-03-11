@@ -92,7 +92,7 @@ diff --git a/pyanaconda/flags.py b/pyanaconda/flags.py
 index 8a97f95..3d0d2da 100644
 --- a/pyanaconda/flags.py
 +++ b/pyanaconda/flags.py
-@@ -70,6 +70,7 @@ class Flags(object):
+@@ -71,6 +71,7 @@ class Flags(object):
          self.ksprompt = True
          self.rescue_mode = False
          self.kexec = False
@@ -126,16 +126,16 @@ diff --git a/pyanaconda/kickstart.py b/pyanaconda/kickstart.py
 index 50515c8..d95b2df 100644
 --- a/pyanaconda/kickstart.py
 +++ b/pyanaconda/kickstart.py
-@@ -81,6 +81,8 @@ from pykickstart.sections import NullSection, PackageSection, PostScriptSection,
- from pykickstart.sections import Section
+@@ -90,6 +90,8 @@ from pykickstart.sections import NullSection, PackageSection, PostScriptSection,
  from pykickstart.version import returnClassForVersion, RHEL7
+ from pykickstart.options import KSOptionParser
  
 +from pyanaconda.tisnotify import tisnotify
 +
  import logging
  log = logging.getLogger("anaconda")
  stderrLog = logging.getLogger("anaconda.stderr")
-@@ -2342,6 +2344,7 @@ def runPreScripts(scripts):
+@@ -2481,6 +2483,7 @@ def runPreScripts(scripts):
      if len(preScripts) == 0:
          return
  
@@ -164,15 +164,15 @@ index 7cf59d7..8896ba1 100644
              exn = PayloadInstallError("%s %s exited with code %d" % (cmd, argv, rc))
              if errors.errorHandler.cb(exn) == errors.ERROR_RAISE:
                  raise exn
-@@ -170,6 +173,7 @@ class RPMOSTreePayload(ArchivePayload):
-         try:
-             repo.pull(ostreesetup.remote, [ostreesetup.ref], 0, progress, cancellable)
+@@ -183,6 +186,7 @@ class RPMOSTreePayload(ArchivePayload):
+                                    GLib.Variant('a{sv}', pull_opts),
+                                    progress, cancellable)
          except GLib.GError as e:
 +            tisnotify.failed()
              exn = PayloadInstallError("Failed to pull from repository: %s" % e)
              log.error(str(exn))
              if errors.errorHandler.cb(exn) == errors.ERROR_RAISE:
-@@ -213,6 +217,7 @@ class RPMOSTreePayload(ArchivePayload):
+@@ -227,6 +231,7 @@ class RPMOSTreePayload(ArchivePayload):
          try:
              self._copyBootloaderData()
          except (OSError, RuntimeError) as e:
@@ -202,7 +202,7 @@ index c6aa234..a0497e0 100644
          self.reset()
  
      def reset(self, root=None, releasever=None):
-@@ -1338,6 +1342,8 @@ reposdir=%s
+@@ -1347,6 +1351,8 @@ reposdir=%s
          if self.data.packages.handleMissing == KS_MISSING_IGNORE:
              return
  
@@ -211,7 +211,7 @@ index c6aa234..a0497e0 100644
          # If we're doing non-interactive ks install, raise CmdlineError,
          # otherwise the system will just reboot automatically
          if flags.automatedInstall and not flags.ksprompt:
-@@ -1515,6 +1521,7 @@ reposdir=%s
+@@ -1524,6 +1530,7 @@ reposdir=%s
          try:
              self.checkSoftwareSelection()
          except DependencyError as e:
@@ -219,7 +219,7 @@ index c6aa234..a0497e0 100644
              if errorHandler.cb(e) == ERROR_RAISE:
                  progressQ.send_quit(1)
                  while True:
-@@ -1569,6 +1576,10 @@ reposdir=%s
+@@ -1578,6 +1585,10 @@ reposdir=%s
                      key, text = line.split(":", 1)
                      msg = progress_map[key] + text
                      progressQ.send_message(msg)
@@ -230,7 +230,7 @@ index c6aa234..a0497e0 100644
                      log.debug(msg)
                  elif line.startswith("DEBUG:"):
                      log.debug(line[6:])
-@@ -1581,7 +1592,8 @@ reposdir=%s
+@@ -1590,7 +1601,8 @@ reposdir=%s
                      install_errors.append(line[6:])
                  else:
                      log.debug(line)
@@ -240,7 +240,7 @@ index c6aa234..a0497e0 100644
              log.error("Error running anaconda-yum: %s", e)
              exn = PayloadInstallError(str(e))
              if errorHandler.cb(exn) == ERROR_RAISE:
-@@ -1603,6 +1615,7 @@ reposdir=%s
+@@ -1612,6 +1624,7 @@ reposdir=%s
                  shutil.rmtree(iutil.getSysroot()+"/var/tmp/yum.cache")
  
          if install_errors:

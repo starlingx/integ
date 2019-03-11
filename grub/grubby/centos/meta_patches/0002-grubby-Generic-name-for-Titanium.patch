@@ -11,9 +11,9 @@ diff --git a/SPECS/grubby.spec b/SPECS/grubby.spec
 index 22bff31..882339a 100644
 --- a/SPECS/grubby.spec
 +++ b/SPECS/grubby.spec
-@@ -83,6 +83,9 @@ Patch0073: 0073-Fix-info-for-s390x-s390-1285601.patch
- Patch0074: 0074-Add-s390-s390x-set-default-index-test-1285601.patch
+@@ -84,6 +84,9 @@ Patch0074: 0074-Add-s390-s390x-set-default-index-test-1285601.patch
  Patch0075: 0075-Fix-setDefaultImage-for-s390-s390x-1285601.patch
+ Patch0076: 0076-grubby-Make-sure-configure-BOOTLOADER-variables-are-.patch
  
 +# WRS Titanium patches
 +Patch1000: 1000-Generic-name-for-Titanium.patch

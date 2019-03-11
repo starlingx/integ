@@ -35,7 +35,7 @@ diff --git a/net/ipv4/route.c b/net/ipv4/route.c
 index f19aca2..5246096 100644
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -2057,6 +2057,17 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
+@@ -2121,6 +2121,17 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
  		 */
  		if (fi && res->prefixlen < 4)
  			fi = NULL;

@@ -282,10 +282,10 @@ index c05b910..dfbbe1f 100644
    mv $i .config
    Arch=`head -1 .config | cut -b 3-`
 +
-+  # Handle Titanium Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
++  # Handle StarlingX Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
 +  # the make line below so that the one below removes any dependencies of ones that we
 +  # turn off here.  We also want it before "make listnewconfig" so that we can set the
-+  # config option for new configs introduced in the Titanium Cloud patches.
++  # config option for new configs introduced in the StarlingX Cloud patches.
 +  if [ -f ${i}.tis_extra ]; then
 +    scripts/kconfig/merge_config.sh -m -n .config ${i}.tis_extra
 +  fi
@@ -313,9 +313,9 @@ index c05b910..dfbbe1f 100644
      cp signing_key.priv signing_key.priv.sign${Flavour:+.${Flavour}}
      cp signing_key.x509 signing_key.x509.sign${Flavour:+.${Flavour}}
  
-+    # WRS: Copy these keys as part of the devel package
++    # STX: Copy these keys as part of the devel package
 +    # The Module signing keys are to ensure that only Out-of-tree
-+    # built against the Titanium Kernel get signed and loaded sans warnings
++    # built against the StarlingX Kernel get signed and loaded sans warnings
 +    cp signing_key.priv ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
 +    cp signing_key.x509 ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
 +
@@ -443,7 +443,7 @@ index c05b910..dfbbe1f 100644
  %if %{buildheaders}
  # Install kernel headers
  make ARCH=%{hdrarch} INSTALL_HDR_PATH=$RPM_BUILD_ROOT/usr headers_install
-@@ -1153,6 +1367,14 @@ rm -rf $RPM_BUILD_ROOT
+@@ -1165,6 +1379,14 @@ rm -rf $RPM_BUILD_ROOT
  ### scripts
  ###
  
@@ -458,7 +458,7 @@ index c05b910..dfbbe1f 100644
  #
  # This macro defines a %%post script for a kernel*-devel package.
  #	%%kernel_devel_post [<subpackage>]
-@@ -1316,6 +1538,43 @@ fi
+@@ -1328,6 +1550,43 @@ fi
  %endif
  %endif
  
@@ -502,7 +502,7 @@ index c05b910..dfbbe1f 100644
  # This is %{image_install_path} on an arch where that includes ELF files,
  # or empty otherwise.
  %global elf_image_install_path %{?kernel_image_elf:%{image_install_path}}
-@@ -1332,6 +1591,7 @@ fi
+@@ -1344,6 +1603,7 @@ fi
  /%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVERREL}%{?2:.%{2}}\
  /%{image_install_path}/.vmlinuz-%{KVERREL}%{?2:.%{2}}.hmac\
  /boot/System.map-%{KVERREL}%{?2:.%{2}}\
@@ -510,7 +510,7 @@ index c05b910..dfbbe1f 100644
  /boot/config-%{KVERREL}%{?2:.%{2}}\
  %exclude /lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/arch/x86/kvm\
  %exclude /lib/modules/%{KVERREL}%{?2:.%{2}}/kernel/drivers/gpu/drm/i915/gvt\
-@@ -1410,6 +1670,11 @@ fi
+@@ -1422,6 +1682,11 @@ fi
  %kernel_variant_files %{buildvanilla} vanilla
  %endif
  
@@ -520,8 +520,8 @@ index c05b910..dfbbe1f 100644
 +%endif # do_sign
 +
  %changelog
- * Fri Aug 10 2018 Luis Claudio R. Goncalves <lgoncalv@redhat.com> [3.10.0-862.11.6.rt56.819.el7]
- - [rt] Update source tree to match RHEL 7.5 tree [1549768 1462329]
+ * Thu Nov 15 2018 Luis Claudio R. Goncalves <lgoncalv@redhat.com> [3.10.0-957.1.3.rt56.913.el7]
+ - [rt] Update source tree to match RHEL 7.6.z tree [1632386 1642619]
 -- 
 2.7.4
 

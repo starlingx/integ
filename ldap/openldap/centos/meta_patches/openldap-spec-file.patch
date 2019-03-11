@@ -11,7 +11,7 @@ diff --git a/SPECS/openldap.spec b/SPECS/openldap.spec
 index 85abac9..66a1377 100644
 --- a/SPECS/openldap.spec
 +++ b/SPECS/openldap.spec
-@@ -296,7 +296,7 @@ mv check_password.so check_password.so.%{check_password_version}
+@@ -308,7 +308,7 @@ mv check_password.so check_password.so.%{check_password_version}
  ln -s check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/check_password.so
  install -m 755 check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/
  # install -m 644 README %{buildroot}%{_libdir}/openldap
@@ -20,7 +20,7 @@ index 85abac9..66a1377 100644
  cat > %{buildroot}%{_sysconfdir}/openldap/check_password.conf <<EOF
  # OpenLDAP pwdChecker library configuration
  
-@@ -432,6 +432,7 @@ exit 0
+@@ -444,6 +444,7 @@ exit 0
  %post servers
  
  /sbin/ldconfig -n %{_libdir}/openldap
@@ -28,7 +28,7 @@ index 85abac9..66a1377 100644
  
  %systemd_post slapd.service
  
-@@ -442,7 +443,6 @@ exit 0
+@@ -454,7 +455,6 @@ exit 0
  if [ ! -f %{_sysconfdir}/openldap/slapd.d/cn=config.ldif ]; then
  	if [ -f %{_sysconfdir}/openldap/slapd.conf ]; then
  		%{_libexecdir}/openldap/convert-config.sh &>/dev/null
@@ -36,7 +36,7 @@ index 85abac9..66a1377 100644
  	else
  		%{_libexecdir}/openldap/convert-config.sh -f %{_datadir}/openldap-servers/slapd.ldif &>/dev/null
  	fi
-@@ -641,8 +641,8 @@ exit 0
+@@ -653,8 +653,8 @@ exit 0
  %{_mandir}/man5/slapd*.5*
  %{_mandir}/man5/slapo-*.5*
  # obsolete configuration

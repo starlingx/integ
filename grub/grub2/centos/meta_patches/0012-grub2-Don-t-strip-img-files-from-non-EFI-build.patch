@@ -11,7 +11,7 @@ diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
 index 8fcb272..cd2da06 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -471,8 +471,6 @@ cd ..								\
+@@ -488,8 +488,6 @@ cd ..								\
  %defattr(-,root,root)						\
  %dir %{_libdir}/grub/%{2}/					\
  %{_libdir}/grub/%{2}/*						\

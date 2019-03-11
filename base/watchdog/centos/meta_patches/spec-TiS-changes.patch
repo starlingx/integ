@@ -14,7 +14,7 @@ diff --git a/SPECS/watchdog.spec b/SPECS/watchdog.spec
 index 7eeacc9..75ce3dd 100644
 --- a/SPECS/watchdog.spec
 +++ b/SPECS/watchdog.spec
-@@ -18,6 +18,7 @@ Patch1:           0001-watchdog-Clearer-help-output.patch
+@@ -19,6 +19,7 @@ Patch1:           0001-watchdog-Clearer-help-output.patch
  Patch2:           0002-wd_identify-wd_keepalive-Document-c-config-file-in-h.patch
  Patch3:           0003-watchdog-5.13-rhsel.patch
  Patch4:           0004-watchdog-5.13-rhseldoc.patch
@@ -22,7 +22,7 @@ index 7eeacc9..75ce3dd 100644
  
  BuildRequires:    systemd-units
  
-@@ -49,6 +50,7 @@ expiration) initiated by the BMC.
+@@ -50,6 +51,7 @@ expiration) initiated by the BMC.
  %patch2 -p1 -b .keepalive
  %patch3 -p1 -b .rhsel
  %patch4 -p1 -b .rhseldoc

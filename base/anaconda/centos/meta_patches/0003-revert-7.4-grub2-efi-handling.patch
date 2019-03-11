@@ -11,7 +11,7 @@ diff --git a/SPECS/anaconda.spec b/SPECS/anaconda.spec
 index 79e1c55..2e5ece9 100644
 --- a/SPECS/anaconda.spec
 +++ b/SPECS/anaconda.spec
-@@ -25,6 +25,7 @@ Patch1000:	yumpayload-dont-verify-disabled-repos.patch
+@@ -26,6 +26,7 @@ Patch10: anaconda-centos-armhfp-extloader.patch
  
  # WRS
  Patch10001: 0001-TIS-Progress-and-error-handling.patch
@@ -19,7 +19,7 @@ index 79e1c55..2e5ece9 100644
  
  # Versions of required components (done so we make sure the buildrequires
  # match the requires versions of things).
-@@ -248,6 +249,7 @@ runtime on NFS/HTTP/FTP servers or local disks.
+@@ -255,6 +256,7 @@ runtime on NFS/HTTP/FTP servers or local disks.
  
  # WRS
  %patch10001 -p1

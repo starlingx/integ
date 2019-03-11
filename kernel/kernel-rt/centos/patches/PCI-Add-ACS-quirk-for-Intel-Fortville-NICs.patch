@@ -18,7 +18,7 @@ diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
 index 5614e3f..4a0bfed 100644
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -4289,6 +4289,10 @@ static const struct pci_dev_acs_enabled {
+@@ -4401,6 +4401,10 @@ static const struct pci_dev_acs_enabled {
  	/* I219 */
  	{ PCI_VENDOR_ID_INTEL, 0x15b7, pci_quirk_mf_endpoint_acs },
  	{ PCI_VENDOR_ID_INTEL, 0x15b8, pci_quirk_mf_endpoint_acs },

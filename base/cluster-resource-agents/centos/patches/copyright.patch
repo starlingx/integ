@@ -15,7 +15,7 @@ index 27f03d2..af821b2 100755
 +++ b/heartbeat/Filesystem
 @@ -2,6 +2,8 @@
  #
- # Support:      linux-ha@lists.linux-ha.org
+ # Support:      users@clusterlabs.org
  # License:      GNU General Public License (GPL)
 +#
 +# Copyright (c) 2014 Wind River Systems, Inc. All rights reserved.
@@ -27,7 +27,7 @@ index e435e7b..c11fed7 100755
 --- a/heartbeat/LVM
 +++ b/heartbeat/LVM
 @@ -10,6 +10,7 @@
- # Support:	linux-ha@lists.linux-ha.org
+ # Support:	users@clusterlabs.org
  # License:	GNU General Public License (GPL)
  # Copyright:	(C) 2002 - 2005 International Business Machines, Inc.
 +# Copyright (c) 2014 Wind River Systems, Inc. All rights reserved.
@@ -38,7 +38,7 @@ diff --git a/heartbeat/pgsql b/heartbeat/pgsql
 index 794f85e..b176b1d 100755
 --- a/heartbeat/pgsql
 +++ b/heartbeat/pgsql
-@@ -9,6 +9,7 @@
+@@ -10,6 +10,7 @@
  #
  # Copyright:    2006-2012 Serge Dubrouski <sergeyfd@gmail.com>
  #                         and other Linux-HA contributors

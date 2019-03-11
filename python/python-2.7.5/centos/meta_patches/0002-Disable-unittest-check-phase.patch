@@ -11,7 +11,7 @@ diff --git a/SPECS/python.spec b/SPECS/python.spec
 index a9fd32f..1030c57 100644
 --- a/SPECS/python.spec
 +++ b/SPECS/python.spec
-@@ -54,7 +54,7 @@
+@@ -62,7 +62,7 @@
  %global with_gdbm 1
  
  # Turn this to 0 to turn off the "check" phase:

@@ -31,7 +31,7 @@ diff --git a/fs/namei.c b/fs/namei.c
 index 9f90b63..bf91ea0 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -3236,7 +3236,7 @@ opened:
+@@ -3225,7 +3225,7 @@ opened:
  	error = open_check_o_direct(file);
  	if (error)
  		goto exit_fput;
@@ -44,7 +44,7 @@ diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
 index 00e98c3..cb9250e 100644
 --- a/fs/nfsd/vfs.c
 +++ b/fs/nfsd/vfs.c
-@@ -883,7 +883,7 @@ nfsd_open(struct svc_rqst *rqstp, struct svc_fh *fhp, umode_t type,
+@@ -898,7 +898,7 @@ nfsd_open(struct svc_rqst *rqstp, struct svc_fh *fhp, umode_t type,
  		goto out_nfserr;
  	}
  
@@ -80,7 +80,7 @@ index eb6f994..2dbaf80 100644
  	void			*i_private; /* fs or device private pointer */
  };
  
-@@ -2827,7 +2826,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
+@@ -2830,7 +2829,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
  	return atomic_read(&inode->i_writecount) > 0;
  }
  
@@ -88,7 +88,7 @@ index eb6f994..2dbaf80 100644
  static inline void i_readcount_dec(struct inode *inode)
  {
  	BUG_ON(!atomic_read(&inode->i_readcount));
-@@ -2837,16 +2835,7 @@ static inline void i_readcount_inc(struct inode *inode)
+@@ -2840,16 +2838,7 @@ static inline void i_readcount_inc(struct inode *inode)
  {
  	atomic_inc(&inode->i_readcount);
  }
@@ -229,7 +229,7 @@ diff --git a/security/security.c b/security/security.c
 index f069482..646a0e3 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -156,6 +156,110 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
+@@ -157,6 +157,110 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
  
  /* Security operations */
  
@@ -340,7 +340,7 @@ index f069482..646a0e3 100644
  int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
  {
  #ifdef CONFIG_SECURITY_YAMA_STACKED
-@@ -715,8 +819,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
+@@ -716,8 +820,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
  
  void security_inode_getsecid(struct inode *inode, u32 *secid)
  {
@@ -353,7 +353,7 @@ index f069482..646a0e3 100644
  
  int security_inode_copy_up(struct dentry *src, struct cred **new)
  {
-@@ -1525,6 +1632,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
+@@ -1526,6 +1633,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
  {
  	return security_ops->audit_rule_init(field, op, rulestr, lsmrule);
  }
@@ -361,13 +361,14 @@ index f069482..646a0e3 100644
  
  int security_audit_rule_known(struct audit_krule *krule)
  {
-@@ -1541,5 +1649,6 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
+@@ -1542,6 +1650,7 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
  {
  	return security_ops->audit_rule_match(secid, field, op, lsmrule, actx);
  }
 +EXPORT_SYMBOL_GPL(security_audit_rule_match);
  
  #endif /* CONFIG_AUDIT */
+ 
 -- 
 1.8.3.1
 

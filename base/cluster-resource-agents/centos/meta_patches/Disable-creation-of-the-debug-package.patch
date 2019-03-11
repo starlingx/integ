@@ -20,7 +20,7 @@ index 2536cb7..e5fbbeb 100644
 +%define  debug_package  %{nil}
 +
  %global upstream_prefix ClusterLabs-resource-agents
- %global upstream_version 5434e96
+ %global upstream_version e711383f
  
 -- 
 1.8.3.1

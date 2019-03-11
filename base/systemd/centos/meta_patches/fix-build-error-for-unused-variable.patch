@@ -12,8 +12,8 @@ diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
 index ffd0770..3f7cc10 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -655,6 +655,7 @@ Patch0613: 0613-sd-journal-when-picking-up-a-new-file-compare-inode-.patch
-
+@@ -706,6 +706,7 @@ Patch0664: 0664-Make-sure-the-mount-units-pulled-by-RequiresMountsFo.patch
+ 
  #WRS Patches
  Patch0701: 0701-inject-millisec-in-syslog-date.patch
 +Patch0702: 0702-fix-build-error-for-unused-variable.patch

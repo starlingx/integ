@@ -16,8 +16,8 @@ index 39c0c86..b0d5862 100644
  
  Name:           haproxy
  Version:        1.5.18
--Release:        7%{?dist}
-+Release:        7.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:        8%{?dist}
++Release:        8.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        TCP/HTTP proxy and load balancer for high availability environments
  
  Group:          System Environment/Daemons

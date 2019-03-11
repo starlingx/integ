@@ -1,0 +1,25 @@
+From 0816ac70222fec2609ed893c30d55f8c37fba632 Mon Sep 17 00:00:00 2001
+From: Shuicheng Lin <shuicheng.lin@intel.com>
+Date: Tue, 8 Jan 2019 21:06:06 +0800
+Subject: [PATCH] Add patch to fix build failure in CentOS 7.6
+
+Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
+---
+ SPECS/systemd.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
+index f794c3b..8e3715b 100644
+--- a/SPECS/systemd.spec
++++ b/SPECS/systemd.spec
+@@ -707,6 +707,7 @@ Patch0664: 0664-Make-sure-the-mount-units-pulled-by-RequiresMountsFo.patch
+ #WRS Patches
+ Patch0701: 0701-inject-millisec-in-syslog-date.patch
+ Patch0702: 0702-fix-build-error-for-unused-variable.patch
++Patch0703: 0703-fix-build-error-for-CentOS7.6.patch
+ 
+ %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
+ 
+-- 
+2.7.4
+

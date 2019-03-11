@@ -11,12 +11,12 @@ diff --git a/SPECS/python.spec b/SPECS/python.spec
 index 2af363e..c3706be 100644
 --- a/SPECS/python.spec
 +++ b/SPECS/python.spec
-@@ -106,7 +106,7 @@ Summary: An interpreted, interactive, object-oriented programming language
+@@ -114,7 +114,7 @@ Summary: An interpreted, interactive, object-oriented programming language
  Name: %{python}
  # Remember to also rebase python-docs when changing this:
  Version: 2.7.5
--Release: 69%{?dist}
-+Release: 69.el7_5%{?_tis_dist}.%{tis_patch_ver}
+-Release: 76%{?dist}
++Release: 76.el7%{?_tis_dist}.%{tis_patch_ver}
  License: Python
  Group: Development/Languages
  Requires: %{python}-libs%{?_isa} = %{version}-%{release}

@@ -5,27 +5,30 @@ Subject: [PATCH 4/5] Compile issues
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel.spec | 3 +++
- 1 file changed, 3 insertions(+)
+ SPECS/kernel.spec | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
 index 01dd989..d45c419 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -474,6 +474,8 @@ Patch40024: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
+@@ -489,6 +489,10 @@ Patch40024: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
  Patch40025: dpt_i2o-fix-build-warning.patch
  # DRBD was choking on write same
  Patch40026: turn-off-write-same-in-smartqpi-driver.patch
 +# Fix assorted compilation issues
 +Patch40027: fix-compilation-issues.patch
++# Fix CentOS 7.6 upgrade compile error
++Patch40028: fix-CentOS-7.6-upgrade-compile-error.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
-@@ -833,6 +835,7 @@ ApplyOptionalPatch US103091-IMA-System-Configuration.patch
+@@ -859,6 +863,8 @@ ApplyOptionalPatch US103091-IMA-System-Configuration.patch
  ApplyOptionalPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
  ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
  ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
 +ApplyOptionalPatch fix-compilation-issues.patch
++ApplyOptionalPatch fix-CentOS-7.6-upgrade-compile-error.patch
  
  # Any further pre-build tree manipulations happen here.
  

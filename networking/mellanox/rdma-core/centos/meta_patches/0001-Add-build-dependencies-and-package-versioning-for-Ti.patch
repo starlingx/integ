@@ -8,8 +8,8 @@ Subject: [PATCH 1/1] Add build dependencies and package versioning for TiS
 Signed-off-by: eric zhang <eric.zhang@windriver.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/rdma-core.spec | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+ SPECS/rdma-core.spec | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/rdma-core.spec b/SPECS/rdma-core.spec
 index 7f9cd5b..6d81a28 100644
@@ -25,17 +25,16 @@ index 7f9cd5b..6d81a28 100644
  %{!?cmake: %global cmake cmake}
  %{!?_udevrulesdir: %global _udevrulesdir /etc/udev/rules.d}
  
-@@ -8,7 +14,8 @@
+@@ -8,7 +14,7 @@
  
  Name: rdma-core
- Version: 43mlnx1
--Release: 1%{?dist}.43302
-+Release: 1.43302%{?_tis_dist}.%{tis_patch_ver}
-+
+ Version: 45mlnx1
+-Release: 1%{?dist}.45101
++Release: 1.45101%{?_tis_dist}.%{tis_patch_ver}
  Summary: RDMA core userspace libraries and daemons
  Group: System Environment/Libraries
  
-@@ -24,7 +31,9 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+@@ -26,7 +32,9 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
  BuildRequires: binutils
  BuildRequires: gcc
  BuildRequires: python

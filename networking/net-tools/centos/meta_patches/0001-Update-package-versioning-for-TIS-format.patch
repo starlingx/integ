@@ -3,8 +3,6 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:42:22 -0400
 Subject: [PATCH 2/2] WRS: 0001-Update-package-versioning-for-TIS-format.patch
 
-Conflicts:
-	SPECS/net-tools.spec
 ---
  SPECS/net-tools.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -17,8 +15,8 @@ index 2f09372..c8b94cd 100644
  Summary: Basic networking tools
  Name: net-tools
  Version: 2.0
--Release: 0.22.%{checkout}%{?dist}
-+Release: 0.22.20131004git.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 0.24.%{checkout}%{?dist}
++Release: 0.24.20131004git.el7%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2+
  Group: System Environment/Base
  URL: http://sourceforge.net/projects/net-tools/

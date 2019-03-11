@@ -11,8 +11,8 @@ diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
 index 613f2e1..7e11008 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -265,6 +265,8 @@ fi
- 
+@@ -299,6 +299,8 @@ fi
+ %ifarch x86_64
  %files common -f grub.lang
  %dir %{_libdir}/grub/
 +%dir %{_libdir}/grub/%{grubefiarch}/

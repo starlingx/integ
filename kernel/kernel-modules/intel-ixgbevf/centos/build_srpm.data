@@ -1,4 +1,4 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/ixgbevf-4.3.5.tar.gz"
-TIS_PATCH_VER=2
+  $STX_BASE/downloads/ixgbevf-4.5.1.tar.gz"
+TIS_PATCH_VER=1

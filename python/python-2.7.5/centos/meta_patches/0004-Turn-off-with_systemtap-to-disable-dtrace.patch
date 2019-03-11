@@ -11,7 +11,7 @@ diff --git a/SPECS/python.spec b/SPECS/python.spec
 index 2441951..c2edce8 100644
 --- a/SPECS/python.spec
 +++ b/SPECS/python.spec
-@@ -42,7 +42,7 @@
+@@ -43,7 +43,7 @@
  
  %global with_gdb_hooks 1
  

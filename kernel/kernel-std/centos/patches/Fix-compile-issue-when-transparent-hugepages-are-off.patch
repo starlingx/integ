@@ -13,7 +13,7 @@ diff --git a/mm/swap.c b/mm/swap.c
 index 0982a35..6dcf38c 100644
 --- a/mm/swap.c
 +++ b/mm/swap.c
-@@ -998,8 +998,10 @@ void release_pages(struct page **pages, int nr, bool cold)
+@@ -1040,8 +1040,10 @@ void release_pages(struct page **pages, int nr, bool cold)
  		if (!put_page_testzero(page))
  			continue;
  
