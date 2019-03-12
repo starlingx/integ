@@ -15,7 +15,6 @@ virt/qemu
 filesystem/nfscheck
 utilities/update-motd
 python/python-2.7.5
-python/python-django
 python/python-setuptools
 virt/libvirt
 virt/libvirt-python
