@@ -53,15 +53,13 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  arch/x86/kernel/amd_gart_64.c  | 2 +-
  arch/x86/kernel/pci-swiotlb.c  | 9 ++++++---
  arch/x86/pci/sta2x11-fixup.c   | 6 ++----
- include/linux/swiotlb.h        | 2 ++
- lib/swiotlb.c                  | 2 +-
- 7 files changed, 20 insertions(+), 10 deletions(-)
+ 5 files changed, 17 insertions(+), 9 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
 index 48ae099..9e841a5 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -44,7 +44,7 @@ config X86
+@@ -47,7 +47,7 @@ config X86
  	select ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH if SMP
  	select ARCH_WANT_OPTIONAL_GPIOLIB
  	select ARCH_WANT_FRAME_POINTERS
@@ -153,30 +151,6 @@ index 9d8a509..5ceda85 100644
  	.map_page = swiotlb_map_page,
  	.unmap_page = swiotlb_unmap_page,
  	.map_sg = swiotlb_map_sg_attrs,
-diff --git a/include/linux/swiotlb.h b/include/linux/swiotlb.h
-index 16c296a..65c4a7a 100644
---- a/include/linux/swiotlb.h
-+++ b/include/linux/swiotlb.h
-@@ -117,4 +117,6 @@ static inline void swiotlb_free(void) { }
- #endif
- 
- extern void swiotlb_print_info(void);
-+extern int is_swiotlb_buffer(phys_addr_t paddr);
-+
- #endif /* __LINUX_SWIOTLB_H */
-diff --git a/lib/swiotlb.c b/lib/swiotlb.c
-index ffcaff5..d89c82a 100644
---- a/lib/swiotlb.c
-+++ b/lib/swiotlb.c
-@@ -404,7 +404,7 @@ void __init swiotlb_free(void)
- 	io_tlb_nslabs = 0;
- }
- 
--static int is_swiotlb_buffer(phys_addr_t paddr)
-+int is_swiotlb_buffer(phys_addr_t paddr)
- {
- 	return paddr >= io_tlb_start && paddr < io_tlb_end;
- }
 -- 
 1.8.3.1
 

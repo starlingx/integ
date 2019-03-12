@@ -16,7 +16,7 @@ index 2f7b261..2553b27 100644
 @@ -46,7 +46,7 @@
  Summary: Lightning fast webserver with light system requirements
  Name: lighttpd
- Version: 1.4.51
+ Version: 1.4.52
 -Release: 1%{?dist}
 +Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
  License: BSD

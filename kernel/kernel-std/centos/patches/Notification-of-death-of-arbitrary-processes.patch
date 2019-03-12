@@ -65,7 +65,7 @@ diff --git a/include/linux/sched.h b/include/linux/sched.h
 index d184652..ba6ae5c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1631,6 +1631,12 @@ struct task_struct {
+@@ -1649,6 +1649,12 @@ struct task_struct {
  	short il_next;
  	short pref_node_fork;
  #endif
@@ -111,7 +111,7 @@ diff --git a/init/Kconfig b/init/Kconfig
 index 6ec689c..550cea4 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1538,6 +1538,21 @@ config VM_EVENT_COUNTERS
+@@ -1580,6 +1580,21 @@ config VM_EVENT_COUNTERS
  	  on EXPERT systems.  /proc/vmstat will only show page counts
  	  if VM event counters are disabled.
  
@@ -137,10 +137,10 @@ diff --git a/kernel/Makefile b/kernel/Makefile
 index 2fb90fa..44a82c1 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -112,6 +112,7 @@ obj-$(CONFIG_RING_BUFFER) += trace/
- obj-$(CONFIG_TRACEPOINTS) += trace/
+@@ -113,6 +113,7 @@ obj-$(CONFIG_TRACEPOINTS) += trace/
  obj-$(CONFIG_IRQ_WORK) += irq_work.o
  obj-$(CONFIG_CPU_PM) += cpu_pm.o
+ obj-$(CONFIG_BPF) += bpf/
 +obj-$(CONFIG_SIGEXIT) += death_notify.o
  
  obj-$(CONFIG_PERF_EVENTS) += events/
@@ -457,7 +457,7 @@ diff --git a/kernel/fork.c b/kernel/fork.c
 index c75422b..30dee92 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1471,6 +1471,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -1477,6 +1477,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
  	p->sequential_io	= 0;
  	p->sequential_io_avg	= 0;
  #endif
@@ -472,7 +472,7 @@ diff --git a/kernel/signal.c b/kernel/signal.c
 index 35133a7..3f72ac0 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -47,6 +47,9 @@
+@@ -46,6 +46,9 @@
  #include <asm/siginfo.h>
  #include <asm/cacheflush.h>
  #include "audit.h"	/* audit_signal_info() */
@@ -482,7 +482,7 @@ index 35133a7..3f72ac0 100644
  
  /*
   * SLAB caches for signal bits.
-@@ -1744,6 +1747,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+@@ -1740,6 +1743,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
  	__wake_up_parent(tsk, tsk->parent);
  	spin_unlock_irqrestore(&psig->siglock, flags);
  
@@ -493,7 +493,7 @@ index 35133a7..3f72ac0 100644
  	return autoreap;
  }
  
-@@ -1815,6 +1822,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+@@ -1811,6 +1818,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
  	 */
  	__wake_up_parent(tsk, parent);
  	spin_unlock_irqrestore(&sighand->siglock, flags);

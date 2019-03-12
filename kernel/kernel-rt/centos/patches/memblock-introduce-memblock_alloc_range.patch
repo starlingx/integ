@@ -35,7 +35,7 @@ diff --git a/include/linux/memblock.h b/include/linux/memblock.h
 index 5a439c9..d6bcbef 100644
 --- a/include/linux/memblock.h
 +++ b/include/linux/memblock.h
-@@ -304,6 +304,8 @@ static inline bool memblock_bottom_up(void) { return false; }
+@@ -306,6 +306,8 @@ static inline bool memblock_bottom_up(void) { return false; }
  #define MEMBLOCK_ALLOC_ANYWHERE	(~(phys_addr_t)0)
  #define MEMBLOCK_ALLOC_ACCESSIBLE	0
  

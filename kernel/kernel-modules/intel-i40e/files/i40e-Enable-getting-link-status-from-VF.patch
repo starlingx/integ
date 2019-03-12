@@ -19,7 +19,7 @@ diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
 index 020bacb..126ec19 100644
 --- a/src/i40e_virtchnl_pf.c
 +++ b/src/i40e_virtchnl_pf.c
-@@ -1857,6 +1857,81 @@ error_param:
+@@ -2559,6 +2559,81 @@ static int i40e_vc_config_promiscuous_mode_msg(struct i40e_vf *vf, u8 *msg)
  				       aq_ret);
  }
  
@@ -101,24 +101,24 @@ index 020bacb..126ec19 100644
  /**
   * i40e_vc_config_queues_msg
   * @vf: pointer to the VF info
-@@ -2901,6 +2976,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
+@@ -4300,6 +4375,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
  	case VIRTCHNL_OP_REQUEST_QUEUES:
- 		ret = i40e_vc_request_queues_msg(vf, msg, msglen);
+ 		ret = i40e_vc_request_queues_msg(vf, msg);
  		break;
 +	case VIRTCHNL_OP_GET_LINK_STAT:
 +		i40e_vc_get_link_status(vf);
 +		break;
- 
- 	case VIRTCHNL_OP_UNKNOWN:
- 	default:
+ #ifdef __TC_MQPRIO_MODE_MAX
+ 	case VIRTCHNL_OP_ENABLE_CHANNELS:
+ 		ret = i40e_vc_add_qch_msg(vf, msg);
 diff --git a/src/virtchnl.h b/src/virtchnl.h
 index afde603..b9b38c0 100644
 --- a/src/virtchnl.h
 +++ b/src/virtchnl.h
-@@ -133,6 +133,7 @@ enum virtchnl_ops {
- 	VIRTCHNL_OP_ENABLE_VLAN_STRIPPING = 27,
- 	VIRTCHNL_OP_DISABLE_VLAN_STRIPPING = 28,
- 	VIRTCHNL_OP_REQUEST_QUEUES = 29,
+@@ -124,6 +124,7 @@ enum virtchnl_ops {
+ 	VIRTCHNL_OP_DISABLE_CHANNELS = 31,
+ 	VIRTCHNL_OP_ADD_CLOUD_FILTER = 32,
+ 	VIRTCHNL_OP_DEL_CLOUD_FILTER = 33,
 +	VIRTCHNL_OP_GET_LINK_STAT = 0x101,
  
  };

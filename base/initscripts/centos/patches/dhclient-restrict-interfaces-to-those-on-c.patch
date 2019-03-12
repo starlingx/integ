@@ -44,22 +44,22 @@ index 3da5c16..9bcf57f 100755
 +++ b/sysconfig/network-scripts/ifup-eth
 @@ -204,7 +204,7 @@ if [ -n "${DYNCONFIG}" ] && [ -x /sbin/dhclient ]; then
      generate_lease_file_name
- 
+
      # Initialize the dhclient args and obtain the hostname options if needed:
 -    DHCLIENTARGS="${DHCLIENTARGS} ${ONESHOT} -q ${DHCLIENTCONF} -lf ${LEASEFILE} -pf /var/run/dhclient-${DEVICE}.pid"
 +    DHCLIENTARGS="${DHCLIENTARGS} ${ONESHOT} -q ${DHCLIENTCONF} -lf ${LEASEFILE} --restrict-interfaces -pf /var/run/dhclient-${DEVICE}.pid"
      set_hostname_options DHCLIENTARGS
- 
+
      echo
-@@ -354,7 +354,7 @@ if is_true "${DHCPV6C}" && [ -x /sbin/dhclient ]; then
+@@ -355,7 +355,7 @@ if is_true "${DHCPV6C}" && [ -x /sbin/dhclient ]; then
      echo -n $"Determining IPv6 information for ${DEVICE}..."
- 
+
      # Initialize the dhclient args for IPv6 and obtain the hostname options if needed:
 -    DHCLIENTARGS="-6 -1 ${DHCPV6C_OPTIONS} ${DHCLIENTCONF} -lf ${LEASEFILE} -pf /var/run/dhclient6-${DEVICE}.pid ${DEVICE}"
 +    DHCLIENTARGS="-6 -1 ${DHCPV6C_OPTIONS} ${DHCLIENTCONF} -lf ${LEASEFILE} --restrict-interfaces -pf /var/run/dhclient6-${DEVICE}.pid ${DEVICE}"
      set_hostname_options DHCLIENTARGS
- 
+
      if /sbin/dhclient $DHCLIENTARGS; then
--- 
+--
 1.9.1
 

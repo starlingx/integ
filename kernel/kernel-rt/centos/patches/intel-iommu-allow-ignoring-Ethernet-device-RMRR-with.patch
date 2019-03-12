@@ -59,7 +59,7 @@ diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-paramete
 index 685554b..0ca635a 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -1306,6 +1306,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+@@ -1318,6 +1318,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
  			than 32-bit addressing. The default is to look
  			for translation below 32-bit and if not available
  			then look in the higher range.
@@ -75,7 +75,7 @@ diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
 index 05b0971..d6f4723 100644
 --- a/drivers/iommu/intel-iommu.c
 +++ b/drivers/iommu/intel-iommu.c
-@@ -504,6 +504,7 @@ static int dmar_forcedac;
+@@ -480,6 +480,7 @@ static int dmar_forcedac;
  static int intel_iommu_strict;
  static int intel_iommu_superpage = 1;
  static int intel_iommu_ecs = 1;
@@ -83,7 +83,7 @@ index 05b0971..d6f4723 100644
  
  /* We only actually use ECS when PASID support (on the new bit 40)
   * is also advertised. Some early implementations — the ones with
-@@ -563,6 +564,15 @@ static int __init intel_iommu_setup(char *str)
+@@ -539,6 +540,15 @@ static int __init intel_iommu_setup(char *str)
  		} else if (!strncmp(str, "forcedac", 8)) {
  			pr_info("Forcing DAC for PCI devices\n");
  			dmar_forcedac = 1;
@@ -99,7 +99,7 @@ index 05b0971..d6f4723 100644
  		} else if (!strncmp(str, "strict", 6)) {
  			pr_info("Disable batched IOTLB flush\n");
  			intel_iommu_strict = 1;
-@@ -2733,6 +2743,15 @@ static bool device_is_rmrr_locked(struct device *dev)
+@@ -2779,6 +2789,15 @@ static bool device_is_rmrr_locked(struct device *dev)
  
  		if (IS_USB_DEVICE(pdev) || IS_GFX_DEVICE(pdev))
  			return false;

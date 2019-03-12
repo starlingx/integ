@@ -17,29 +17,29 @@ index 1c3a765..f2499b4 100644
  %define dist .el7
  
 -# % define buildid .local
-+# This is the WRS patch release
++# This is the STX patch release
 +%define buildid .%{tis_patch_ver}.tis
  
  # For a kernel released for public testing, released_kernel should be 1.
  # For internal testing builds during development, it should be 0.
 @@ -14,12 +15,14 @@ Summary: The Linux kernel
- %global distro_build 862
+ %global distro_build 957
  
  %define rpmversion 3.10.0
--%define pkgrelease 862.11.6.el7
-+%define _pkgrelease 862.11.6
+-%define pkgrelease 957.1.3.el7
++%define _pkgrelease 957.1.3
 +%define pkgrelease %{_pkgrelease}.el7
 +
  
  # allow pkg_release to have configurable %%{?dist} tag
- %define specrelease 862.11.6%{?dist}
+ %define specrelease 957.1.3%{?dist}
  
 -%define pkg_release %{specrelease}%{?buildid}
 +%define pkg_release %{specrelease}%{buildid}
  
  # The kernel tarball/base version
  %define rheltarball %{rpmversion}-%{pkgrelease}
-@@ -66,7 +69,7 @@ Summary: The Linux kernel
+@@ -68,7 +71,7 @@ Summary: The Linux kernel
  %define with_dbgonly   %{?_with_dbgonly:      1} %{?!_with_dbgonly:      0}
  
  # Control whether we perform a compat. check against published ABI.
@@ -48,7 +48,7 @@ index 1c3a765..f2499b4 100644
  
  # Control whether we perform a compat. check against DUP ABI.
  %define with_kabidupchk 1
-@@ -89,7 +92,7 @@ Summary: The Linux kernel
+@@ -91,7 +94,7 @@ Summary: The Linux kernel
  # Set debugbuildsenabled to 1 for production (build separate debug kernels)
  #  and 0 for rawhide (all kernels are debug kernels).
  # See also 'make debug' and 'make release'. RHEL only ever does 1.
@@ -57,7 +57,7 @@ index 1c3a765..f2499b4 100644
  
  %define with_gcov %{?_with_gcov: 1} %{?!_with_gcov: 0}
  
-@@ -370,6 +373,7 @@ BuildRequires: bison flex
+@@ -385,6 +388,7 @@ BuildRequires: bison flex
  # required for zfcpdump
  BuildRequires: glibc-static
  %endif
@@ -65,11 +65,11 @@ index 1c3a765..f2499b4 100644
  
  Source0: linux-%{rpmversion}-%{pkgrelease}.tar.xz
  
-@@ -435,6 +439,12 @@ Patch1000: debrand-single-cpu.patch
+@@ -450,6 +454,12 @@ Patch1000: debrand-single-cpu.patch
  Patch1001: debrand-rh_taint.patch
  Patch1002: debrand-rh-i686-cpu.patch
  
-+# Titanium Cloud sources here.
++# StarlingX Cloud sources here.
 +# Not sure if we need to worry about numerical collisions between
 +# SourceX and PatchX, so let's not risk it
 +Source30000: kernel-3.10.0-x86_64.config.tis_extra
@@ -78,9 +78,9 @@ index 1c3a765..f2499b4 100644
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -586,6 +596,13 @@ This package provides debug information for package kernel-tools.
+@@ -612,6 +622,13 @@ manipulation of eBPF programs and maps.
  
- %endif # with_tools
+ %endif # with_bpftool
  
 +%ifarch x86_64
 +%package unsigned
@@ -92,7 +92,7 @@ index 1c3a765..f2499b4 100644
  %if %{with_gcov}
  %package gcov
  Summary: gcov graph and source files for coverage data collection.
-@@ -751,6 +768,9 @@ cd linux-%{KVRA}
+@@ -777,6 +794,9 @@ cd linux-%{KVRA}
  # Drop some necessary files from the source dir into the buildroot
  cp $RPM_SOURCE_DIR/kernel-%{version}-*.config .
  
@@ -102,15 +102,15 @@ index 1c3a765..f2499b4 100644
  ApplyOptionalPatch linux-kernel-test.patch
  ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
-@@ -795,6 +815,15 @@ for i in *.config
+@@ -821,6 +841,15 @@ for i in *.config
  do
    mv $i .config
    Arch=`head -1 .config | cut -b 3-`
 +
-+  # Handle Titanium Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
++  # Handle StarlingX Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
 +  # the make line below so that the one below removes any dependencies of ones that we
 +  # turn off here.  We also want it before "make listnewconfig" so that we can set the
-+  # config option for new configs introduced in the Titanium Cloud patches.
++  # config option for new configs introduced in the StarlingX Cloud patches.
 +  if [ -f ${i}.tis_extra ]; then
 +    scripts/kconfig/merge_config.sh -m -n .config ${i}.tis_extra
 +  fi
@@ -118,7 +118,7 @@ index 1c3a765..f2499b4 100644
    make %{?cross_opts} ARCH=$Arch listnewconfig | grep -E '^CONFIG_' >.newoptions || true
  %if %{listnewconfig_fail}
    if [ -s .newoptions ]; then
-@@ -868,12 +897,13 @@ BuildKernel() {
+@@ -894,12 +923,13 @@ BuildKernel() {
  
      # and now to start the build process
  
@@ -133,7 +133,7 @@ index 1c3a765..f2499b4 100644
  
      cp configs/$Config .config
  
-@@ -888,8 +918,8 @@ BuildKernel() {
+@@ -914,8 +944,8 @@ BuildKernel() {
      fi
  %endif
  
@@ -144,25 +144,25 @@ index 1c3a765..f2499b4 100644
  
      if [ "$Flavour" != "kdump" ]; then
          make -s %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" modules %{?sparse_mflags} || exit 1
-@@ -913,6 +943,8 @@ BuildKernel() {
+@@ -939,6 +969,8 @@ BuildKernel() {
      fi
  # EFI SecureBoot signing, x86_64-only
  %ifarch x86_64
 +    cp $KernelImage vmlinuz.unsigned
 +    $CopyKernel vmlinuz.unsigned $RPM_BUILD_ROOT/%{image_install_path}/vmlinuz.unsigned
-     %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE13} -c %{SOURCE13}
+     %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE13} -c %{SOURCE14} -n %{pesign_name}
      mv $KernelImage.signed $KernelImage
  %endif
-@@ -929,7 +961,7 @@ BuildKernel() {
+@@ -955,7 +987,7 @@ BuildKernel() {
      if [ "$Flavour" != "kdump" ]; then
          # Override $(mod-fw) because we don't want it to install any firmware
          # we'll get it from the linux-firmware package and we don't want conflicts
--        make -s %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
-+        make -s  -j"%(nproc)" %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
+-        make -s %{?cross_opts} %{?_smp_mflags} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
++        make -s -j"%(nproc)" %{?cross_opts} %{?_smp_mflags} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
  %if %{with_gcov}
  	# install gcov-needed files to $BUILDROOT/$BUILD/...:
  	#   gcov_info->filename is absolute path
-@@ -939,7 +971,7 @@ BuildKernel() {
+@@ -965,7 +997,7 @@ BuildKernel() {
  %endif
      fi
  %ifarch %{vdso_arches}
@@ -171,20 +171,20 @@ index 1c3a765..f2499b4 100644
      if [ ! -s ldconfig-kernel.conf ]; then
        echo > ldconfig-kernel.conf "\
  # Placeholder file, no vDSO hwcap entries used in this kernel."
-@@ -1148,6 +1180,12 @@ BuildKernel() {
+@@ -1174,6 +1206,12 @@ BuildKernel() {
      cp signing_key.priv signing_key.priv.sign${Flavour:+.${Flavour}}
      cp signing_key.x509 signing_key.x509.sign${Flavour:+.${Flavour}}
  
-+    # WRS: Copy these keys as part of the devel package
++    # STX: Copy these keys as part of the devel package
 +    # The Module signing keys are to ensure that only Out-of-tree
-+    # built against the Titanium Kernel get signed and loaded sans warnings
++    # built against the StarlingX Kernel get signed and loaded sans warnings
 +    cp signing_key.priv ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
 +    cp signing_key.x509 ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
 +
      # remove files that will be auto generated by depmod at rpm -i time
      for i in alias alias.bin builtin.bin ccwmap dep dep.bin ieee1394map inputmap isapnpmap ofmap pcimap seriomap symbols symbols.bin usbmap softdep devname
      do
-@@ -1208,15 +1246,15 @@ make %{?cross_opts} %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
+@@ -1234,15 +1272,15 @@ make %{?cross_opts} %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
  %endif
  %ifarch x86_64
     pushd tools/power/x86/x86_energy_perf_policy/
@@ -203,7 +203,7 @@ index 1c3a765..f2499b4 100644
  popd
  %endif
  
-@@ -1487,6 +1525,10 @@ fi}\
+@@ -1536,6 +1574,10 @@ fi}\
  %{expand:\
  %{_sbindir}/new-kernel-pkg --package kernel%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
  }\
@@ -214,7 +214,7 @@ index 1c3a765..f2499b4 100644
  %{nil}
  
  #
-@@ -1697,6 +1739,11 @@ fi
+@@ -1756,6 +1798,11 @@ fi
  %kernel_variant_files %{with_debug} debug
  %kernel_variant_files %{with_kdump} kdump
  
@@ -224,7 +224,7 @@ index 1c3a765..f2499b4 100644
 +%endif
 +
  %changelog
- * Tue Aug 14 2018 CentOS Sources <bugs@centos.org> - 3.10.0-862.11.6.el7
+ * Mon Nov 26 2018 CentOS Sources <bugs@centos.org> - 3.10.0-957.1.3.el7
  - Apply debranding changes
 -- 
 2.7.4

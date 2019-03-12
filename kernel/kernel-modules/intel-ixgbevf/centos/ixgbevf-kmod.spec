@@ -8,7 +8,7 @@
 %define kmod_name ixgbevf
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 4.3.5
+Version: 4.5.1
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
@@ -22,8 +22,6 @@ ExclusiveArch: x86_64
 Source0:  %{kmod_name}-%{version}.tar.gz
 Source5:  GPL-v2.0.txt
 Source11: modules-load.conf
-
-Patch01: 0001-i40evf-Fix-compile-issue.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 

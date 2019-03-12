@@ -35,6 +35,7 @@ Patch04: UPSTREAM-0002-tpm-reduce-tpm-polling-delay-in-tpm_tis_core.patch
 Patch05: UPSTREAM-0003-tpm-use-tpm_msleep-value-as-max-delay.patch
 Patch06: UPSTREAM-0004-tpm-wait-for-stat-to-specify-variable-polling-time.patch
 Patch07: UPSTREAM-0005-tpm-ignore-burstcount-to-improve-send-performance.patch
+Patch08: UPSTREAM-0006-tpm-use-struct-tpm_chip.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 

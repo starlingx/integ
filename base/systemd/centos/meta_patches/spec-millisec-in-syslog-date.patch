@@ -3,8 +3,6 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
 Subject: [PATCH] WRS: 0005-spec-millisec-in-syslog-date.patch
 
-Conflicts:
-	SPECS/systemd.spec
 ---
  SPECS/systemd.spec | 3 +++
  1 file changed, 3 insertions(+)
@@ -13,10 +11,10 @@ diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
 index 6a04c16..845d1dd 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -653,6 +653,9 @@ Patch0611: 0611-sd-journal-make-sure-it-s-safe-to-call-sd_journal_pr.patch
- Patch0612: 0612-journalctl-Periodically-call-sd_journal_process-in-j.patch
- Patch0613: 0613-sd-journal-when-picking-up-a-new-file-compare-inode-.patch
-
+@@ -704,6 +704,9 @@ Patch0662: 0662-cryptsetup-generator-don-t-return-error-if-target-di.patch
+ Patch0663: 0663-cryptsetup-generator-allow-whitespace-characters-in-.patch
+ Patch0664: 0664-Make-sure-the-mount-units-pulled-by-RequiresMountsFo.patch
+ 
 +#WRS Patches
 +Patch0701: 0701-inject-millisec-in-syslog-date.patch
 +

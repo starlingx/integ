@@ -12,36 +12,36 @@ diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
 index 6e1d7e1..6a04c16 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -1159,6 +1159,7 @@ fi
+@@ -1213,6 +1213,7 @@ fi
  rm -f /etc/sysconfig/i18n >/dev/null 2>&1 || :
  rm -f /etc/sysconfig/keyboard >/dev/null 2>&1 || :
-
+ 
 +if [ $1 -eq 1 ]; then
  # Migrate HOSTNAME= from /etc/sysconfig/network
  if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
      unset HOSTNAME
-@@ -1166,6 +1167,7 @@ if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
+@@ -1220,6 +1221,7 @@ if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
      [ -n "$HOSTNAME" ] && echo $HOSTNAME > /etc/hostname 2>&1 || :
  fi
  sed -i '/^HOSTNAME=/d' /etc/sysconfig/network >/dev/null 2>&1 || :
 +fi
-
+ 
  # Migrate the old systemd-setup-keyboard X11 configuration fragment
  if [ ! -e /etc/X11/xorg.conf.d/00-keyboard.conf ] ; then
-@@ -1174,6 +1176,7 @@ else
+@@ -1228,6 +1230,7 @@ else
      rm -f /etc/X11/xorg.conf.d/00-system-setup-keyboard.conf >/dev/null 2>&1 || :
  fi
-
+ 
 +if [ 1 -eq 0 ] ; then # TIS: Skip this. We don't want myhostname in nsswitch.conf
  # sed-fu to add myhostname to the hosts line of /etc/nsswitch.conf
  # Only do that when installing, not when updating.
  if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
-@@ -1183,6 +1186,7 @@ if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
+@@ -1237,6 +1240,7 @@ if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
  s/[[:blank:]]*$/ myhostname/
  ' /etc/nsswitch.conf >/dev/null 2>&1 || :
  fi
 +fi
-
+ 
  %posttrans
  # Convert old /etc/sysconfig/desktop settings
 --

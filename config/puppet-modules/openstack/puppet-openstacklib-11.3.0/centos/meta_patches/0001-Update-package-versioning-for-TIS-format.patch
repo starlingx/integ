@@ -14,12 +14,12 @@ index 7f3bbd8..8bf2c1b 100644
 @@ -1,7 +1,7 @@
  %{!?upstream_version: %global upstream_version %{version}%{?milestone}}
  Name:           puppet-openstacklib
- Version:        11.3.0
+ Version:        11.5.0
 -Release:        1%{?dist}
 +Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        Puppet OpenStack Libraries
  License:        ASL 2.0
  
 -- 
-1.8.3.1
+2.7.4
 

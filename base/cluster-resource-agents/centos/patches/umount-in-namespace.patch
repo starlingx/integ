@@ -11,7 +11,7 @@ diff --git a/heartbeat/Filesystem b/heartbeat/Filesystem
 index f536298..05e4097 100755
 --- a/heartbeat/Filesystem
 +++ b/heartbeat/Filesystem
-@@ -804,6 +804,10 @@ signal_processes() {
+@@ -503,6 +503,10 @@ signal_processes() {
  }
  try_umount() {
  	local SUB=$1

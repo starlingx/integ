@@ -11,7 +11,7 @@ diff --git a/SPECS/grubby.spec b/SPECS/grubby.spec
 index 071463a..a3bb371 100644
 --- a/SPECS/grubby.spec
 +++ b/SPECS/grubby.spec
-@@ -85,6 +85,7 @@ Patch0075: 0075-Fix-setDefaultImage-for-s390-s390x-1285601.patch
+@@ -86,6 +86,7 @@ Patch0076: 0076-grubby-Make-sure-configure-BOOTLOADER-variables-are-.patch
  
  # WRS Titanium patches
  Patch1000: 1000-Generic-name-for-Titanium.patch
@@ -19,7 +19,7 @@ index 071463a..a3bb371 100644
  
  BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
  BuildRequires: pkgconfig glib2-devel popt-devel 
-@@ -101,6 +102,10 @@ Requires: s390utils-base
+@@ -102,6 +103,10 @@ Requires: s390utils-base
  Requires: uboot-tools
  %endif
  Requires: system-release
@@ -30,7 +30,7 @@ index 071463a..a3bb371 100644
  
  %description
  grubby  is  a command line tool for updating and displaying information about 
-@@ -140,6 +145,11 @@ mkdir -p $RPM_BUILD_ROOT/boot
+@@ -142,6 +147,11 @@ mkdir -p $RPM_BUILD_ROOT/boot
  echo " " >> $RPM_BUILD_ROOT/boot/boot.scr
  %endif
  
@@ -42,7 +42,7 @@ index 071463a..a3bb371 100644
  %clean
  rm -rf $RPM_BUILD_ROOT
  
-@@ -152,6 +162,11 @@ rm -rf $RPM_BUILD_ROOT
+@@ -154,6 +164,11 @@ rm -rf $RPM_BUILD_ROOT
  %{_prefix}/sbin/installkernel
  %{_prefix}/sbin/new-kernel-pkg
  %{_prefix}/sbin/grubby
@@ -53,7 +53,7 @@ index 071463a..a3bb371 100644
 +
  %{_mandir}/man8/*.8*
  /usr/libexec/grubby/prune_debug
- %ghost %config(noreplace) %{_sysconfdir}/sysconfig/kernel
+ %ghost %attr(0644,-,-) %config(noreplace) %{_sysconfdir}/sysconfig/kernel
 -- 
 1.8.3.1
 

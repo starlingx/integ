@@ -12,7 +12,7 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index ec85fc2..bb96485 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -723,14 +723,11 @@ rm -rf %{buildroot}
+@@ -725,14 +725,11 @@ rm -rf %{buildroot}
  %endif
  
  %if %{with linuxha}
@@ -31,7 +31,7 @@ index ec85fc2..bb96485 100644
  %if %{with rgmanager}
  /usr/lib/ocf/resource.d/redhat
  %endif
-@@ -753,8 +750,6 @@ rm -rf %{buildroot}
+@@ -758,8 +755,6 @@ rm -rf %{buildroot}
  
  %{_includedir}/heartbeat
  
@@ -40,7 +40,7 @@ index ec85fc2..bb96485 100644
  %{_mandir}/man7/*.7*
  
  ###
-@@ -864,7 +859,6 @@ rm -rf %{buildroot}
+@@ -912,7 +907,6 @@ rm -rf %{buildroot}
  %exclude %{_mandir}/man8/ldirectord.8.gz
  
  # For compatability with pre-existing agents

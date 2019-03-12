@@ -11,7 +11,7 @@ diff --git a/pyanaconda/bootloader.py b/pyanaconda/bootloader.py
 index 9db9cf3..24e8b56 100644
 --- a/pyanaconda/bootloader.py
 +++ b/pyanaconda/bootloader.py
-@@ -1388,9 +1388,7 @@ class GRUB2(GRUB):
+@@ -1404,9 +1404,7 @@ class GRUB2(GRUB):
  
      """
      name = "GRUB2"
@@ -22,7 +22,7 @@ index 9db9cf3..24e8b56 100644
      _config_file = "grub.cfg"
      _config_dir = "grub2"
      _passwd_file = "user.cfg"
-@@ -1664,28 +1662,12 @@ class GRUB2(GRUB):
+@@ -1680,28 +1678,12 @@ class GRUB2(GRUB):
          return ret
  
  class EFIGRUB(GRUB2):
@@ -53,7 +53,7 @@ index 9db9cf3..24e8b56 100644
  
      @property
      def _config_dir(self):
-@@ -1695,15 +1677,6 @@ class EFIGRUB(GRUB2):
+@@ -1711,15 +1693,6 @@ class EFIGRUB(GRUB2):
          super(EFIGRUB, self).__init__()
          self.efi_dir = 'BOOT'
  
@@ -69,7 +69,7 @@ index 9db9cf3..24e8b56 100644
      def efibootmgr(self, *args, **kwargs):
          if flags.imageInstall or flags.dirInstall:
              log.info("Skipping efibootmgr for image/directory install.")
-@@ -1796,12 +1769,9 @@ class EFIGRUB(GRUB2):
+@@ -1812,12 +1785,9 @@ class EFIGRUB(GRUB2):
          return True
  
  class Aarch64EFIGRUB(EFIGRUB):

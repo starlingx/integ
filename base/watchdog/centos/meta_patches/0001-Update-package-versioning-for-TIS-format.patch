@@ -11,12 +11,12 @@ diff --git a/SPECS/watchdog.spec b/SPECS/watchdog.spec
 index 75ce3dd..88c4245 100644
 --- a/SPECS/watchdog.spec
 +++ b/SPECS/watchdog.spec
-@@ -1,7 +1,7 @@
+@@ -2,7 +2,7 @@
  Summary:          Software and/or Hardware watchdog daemon
  Name:             watchdog
  Version:          5.13
--Release:          11%{?dist}
-+Release:          11.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:          12%{?dist}
++Release:          12.el7%{?_tis_dist}.%{tis_patch_ver}
  License:          GPLv2+
  
  URL:              http://sourceforge.net/projects/watchdog/

@@ -11,7 +11,7 @@ diff --git a/sysconfig/network-scripts/ifup-eth b/sysconfig/network-scripts/ifup
 index 4b8b992..ccb5c75 100755
 --- a/sysconfig/network-scripts/ifup-eth
 +++ b/sysconfig/network-scripts/ifup-eth
-@@ -363,13 +363,14 @@ if is_true "${DHCPV6C}" && [ -x /sbin/dhclient ]; then
+@@ -364,13 +364,14 @@ if is_true "${DHCPV6C}" && [ -x /sbin/dhclient ]; then
      echo -n $"Determining IPv6 information for ${DEVICE}..."
  
      # Initialize the dhclient args for IPv6 and obtain the hostname options if needed:

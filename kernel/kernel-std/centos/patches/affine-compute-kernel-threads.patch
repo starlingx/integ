@@ -42,7 +42,7 @@ diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-paramete
 index 1806170..2f7feb0 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -1539,6 +1539,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+@@ -1551,6 +1551,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
  
  	kpti		[X86-64] Enable kernel page table isolation.
  
@@ -83,7 +83,7 @@ diff --git a/init/main.c b/init/main.c
 index 085c9c5..089f83d 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -956,10 +956,6 @@ static noinline void __init kernel_init_freeable(void)
+@@ -959,10 +959,6 @@ static noinline void __init kernel_init_freeable(void)
  	 * init can allocate pages on any node
  	 */
  	set_mems_allowed(node_states[N_MEMORY]);
@@ -94,7 +94,7 @@ index 085c9c5..089f83d 100644
  
  	cad_pid = task_pid(current);
  
-@@ -975,6 +971,8 @@ static noinline void __init kernel_init_freeable(void)
+@@ -978,6 +974,8 @@ static noinline void __init kernel_init_freeable(void)
  
  	do_basic_setup();
  
@@ -107,7 +107,7 @@ diff --git a/kernel/cpu.c b/kernel/cpu.c
 index 0d9e250..6c156bd 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -756,6 +756,19 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
+@@ -991,6 +991,19 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
  const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
  EXPORT_SYMBOL(cpu_active_mask);
  

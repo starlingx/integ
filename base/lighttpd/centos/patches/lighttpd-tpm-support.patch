@@ -48,9 +48,9 @@ index 2fe60b6..bddcd01 100644
 +        EVP_PKEY *tpm_key;
 +#endif
  	buffer *syslog_facility;
- } server_config;
  
-@@ -384,6 +406,8 @@ struct server {
+ 	unsigned short compat_module_load;
+@@ -386,6 +408,8 @@ struct server {
  	int con_written;
  	int con_closed;
  
@@ -63,7 +63,7 @@ diff --git a/src/configfile.c b/src/configfile.c
 index c3b0f16..dca2a29 100644
 --- a/src/configfile.c
 +++ b/src/configfile.c
-@@ -273,8 +273,10 @@ static int config_insert(server *srv) {
+@@ -277,8 +277,10 @@ static int config_insert(server *srv) {
  		{ "server.syslog-facility",            NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 80 */
  		{ "server.socket-perms",               NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 81 */
  		{ "server.http-parseopts",             NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_SERVER     }, /* 82 */
@@ -75,7 +75,7 @@ index c3b0f16..dca2a29 100644
  	};
  
  	/* all T_CONFIG_SCOPE_SERVER options */
-@@ -315,6 +317,8 @@ static int config_insert(server *srv) {
+@@ -321,6 +323,8 @@ static int config_insert(server *srv) {
  	cv[80].destination = srv->srvconf.syslog_facility;
  	http_parseopts = array_init();
  	cv[82].destination = http_parseopts;
@@ -88,7 +88,7 @@ diff --git a/src/mod_openssl.c b/src/mod_openssl.c
 index 75e0873..4cb0335 100644
 --- a/src/mod_openssl.c
 +++ b/src/mod_openssl.c
-@@ -444,6 +444,29 @@ error:
+@@ -451,6 +451,29 @@ error:
      return NULL;
  }
  
@@ -118,7 +118,7 @@ index 75e0873..4cb0335 100644
  
  static EVP_PKEY *
  evp_pkey_load_pem_file (server *srv, const char *file)
-@@ -498,15 +521,23 @@ network_openssl_load_pemfile (server *srv, plugin_config *s, size_t ndx)
+@@ -505,15 +528,23 @@ network_openssl_load_pemfile (server *srv, plugin_config *s, size_t ndx)
  
      s->ssl_pemfile_x509 = x509_load_pem_file(srv, s->ssl_pemfile->ptr);
      if (NULL == s->ssl_pemfile_x509) return -1;
@@ -151,7 +151,7 @@ index 75e0873..4cb0335 100644
      }
  
      return 0;
-@@ -673,6 +704,43 @@ network_init_ssl (server *srv, void *p_d)
+@@ -680,6 +711,43 @@ network_init_ssl (server *srv, void *p_d)
              force_assert(NULL != local_send_buffer);
          }
  
@@ -195,7 +195,7 @@ index 75e0873..4cb0335 100644
          if (!buffer_string_is_empty(s->ssl_pemfile)) {
            #ifdef OPENSSL_NO_TLSEXT
              data_config *dc = (data_config *)srv->config_context->data[i];
-@@ -935,29 +1003,36 @@ network_init_ssl (server *srv, void *p_d)
+@@ -949,29 +1017,36 @@ network_init_ssl (server *srv, void *p_d)
              }
          }
  
@@ -258,7 +258,7 @@ index f6409bb..2ace3f8 100644
  	CLEAN(tmp_chunk_len);
  #undef CLEAN
  
-@@ -348,6 +353,14 @@ static void server_free(server *srv) {
+@@ -349,6 +354,14 @@ static void server_free(server *srv) {
  	CLEAN(srvconf.xattr_name);
  	CLEAN(srvconf.syslog_facility);
  
@@ -273,7 +273,7 @@ index f6409bb..2ace3f8 100644
  	CLEAN(tmp_chunk_len);
  #undef CLEAN
  
-@@ -782,7 +795,9 @@ static int log_error_open(server *srv) {
+@@ -784,7 +797,9 @@ static int log_error_open(server *srv) {
          if (-1 == (errfd = fdevent_open_devnull())) {
              log_error_write(srv, __FILE__, __LINE__, "ss",
                              "opening /dev/null failed:", strerror(errno));

@@ -1,4 +1,4 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/ixgbe-5.3.7.tar.gz"
+  $STX_BASE/downloads/ixgbe-5.5.3.tar.gz"
 TIS_PATCH_VER=1

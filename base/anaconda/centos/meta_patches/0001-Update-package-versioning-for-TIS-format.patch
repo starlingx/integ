@@ -14,7 +14,7 @@ index e2d706d..00b19c4 100644
 @@ -3,7 +3,7 @@
  Summary: Graphical system installer
  Name:    anaconda
- Version: 21.48.22.121
+ Version: 21.48.22.147
 -Release: 1%{?dist}
 +Release: 1.el7.centos%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2+ and MIT

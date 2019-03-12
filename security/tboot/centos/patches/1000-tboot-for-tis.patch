@@ -94,15 +94,15 @@ diff --git a/tboot/common/policy.c b/tboot/common/policy.c
 index 9678b7c..5a16d81 100644
 --- a/tboot/common/policy.c
 +++ b/tboot/common/policy.c
-@@ -349,6 +349,7 @@ tb_error_t set_policy(void)
+@@ -353,6 +353,7 @@ tb_error_t set_policy(void)
       * type is LCP_POLTYPE_LIST (since we could have been give a policy data
       * file even though the policy was not a LIST */
      printk(TBOOT_INFO"reading Launch Control Policy from TPM NV...\n");
 +
-     if ( read_policy_from_tpm(g_tpm->lcp_own_index,
+     if ( read_policy_from_tpm(tpm->lcp_own_index,
               _policy_index_buf, &policy_index_size) ) {
          printk(TBOOT_DETA"\t:%lu bytes read\n", policy_index_size);
-@@ -408,6 +409,7 @@ bool hash_policy(tb_hash_t *hash, uint16_t hash_alg)
+@@ -412,6 +413,7 @@ bool hash_policy(tb_hash_t *hash, uint16_t hash_alg)
  
  /* generate hash by hashing cmdline and module image */
  static bool hash_module(hash_list_t *hl,
@@ -110,7 +110,7 @@ index 9678b7c..5a16d81 100644
                          const char* cmdline, void *base,
                          size_t size)
  {
-@@ -416,6 +418,7 @@ static bool hash_module(hash_list_t *hl,
+@@ -423,6 +425,7 @@ static bool hash_module(hash_list_t *hl,
          return false;
      }
  
@@ -118,29 +118,29 @@ index 9678b7c..5a16d81 100644
      /* final hash is SHA-1( SHA-1(cmdline) | SHA-1(image) ) */
      /* where cmdline is first stripped of leading spaces, file name, then */
      /* any spaces until the next non-space char */
-@@ -430,16 +433,17 @@ static bool hash_module(hash_list_t *hl,
-     switch (g_tpm->extpol) {
+@@ -437,16 +440,17 @@ static bool hash_module(hash_list_t *hl,
+     switch (tpm->extpol) {
      case TB_EXTPOL_FIXED: 
          hl->count = 1;
--        hl->entries[0].alg = g_tpm->cur_alg;
-+        // hl->entries[0].alg = g_tpm->cur_alg;
+-        hl->entries[0].alg = tpm->cur_alg;
++        // hl->entries[0].alg = tpm->cur_alg;
 +        hl->entries[0].alg = cur_alg;
  
          if ( !hash_buffer((const unsigned char *)cmdline, strlen(cmdline),
--                    &hl->entries[0].hash, g_tpm->cur_alg) )
+-                    &hl->entries[0].hash, tpm->cur_alg) )
 +                    &hl->entries[0].hash, cur_alg) )
              return false;
          /* hash image and extend into cmdline hash */
          tb_hash_t img_hash;
--        if ( !hash_buffer(base, size, &img_hash, g_tpm->cur_alg) )
+-        if ( !hash_buffer(base, size, &img_hash, tpm->cur_alg) )
 +        if ( !hash_buffer(base, size, &img_hash, cur_alg) )
              return false;
--        if ( !extend_hash(&hl->entries[0].hash, &img_hash, g_tpm->cur_alg) )
+-        if ( !extend_hash(&hl->entries[0].hash, &img_hash, tpm->cur_alg) )
 +        if ( !extend_hash(&hl->entries[0].hash, &img_hash, cur_alg) )
              return false;
  
          break;
-@@ -635,7 +639,7 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
+@@ -643,7 +647,7 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
      }
  
      hash_list_t hl;
@@ -149,7 +149,7 @@ index 9678b7c..5a16d81 100644
          printk(TBOOT_ERR"\t hash cannot be generated.\n");
          return TB_ERR_MODULE_VERIFICATION_FAILED;
      }
-@@ -659,6 +663,8 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
+@@ -667,6 +671,8 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
      if ( pol_entry != NULL &&
           !is_hash_in_policy_entry(pol_entry, &hl.entries[0].hash, hash_alg) ) {
          printk(TBOOT_ERR"\t verification failed\n");
@@ -171,7 +171,7 @@ index b9b67c9..b7c5d62 100644
                  index, offset, ret);
          ti->error = ret;
          return false;
-@@ -2505,8 +2505,9 @@ static bool tpm20_init(struct tpm_if *ti)
+@@ -2504,8 +2504,9 @@ static bool tpm20_init(struct tpm_if *ti)
      get_tboot_extpol();
      if (info_list->capabilities.tpm_nv_index_set == 0){
          /* init NV index */

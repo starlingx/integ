@@ -3,8 +3,6 @@ From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:05:36 -0400
 Subject: [PATCH 1/3] WRS: spec-TiS-bash-history.patch
 
-Conflicts:
-	SPECS/bash.spec
 ---
  SPECS/bash.spec | 8 ++++++++
  1 file changed, 8 insertions(+)
@@ -13,9 +11,9 @@ diff --git a/SPECS/bash.spec b/SPECS/bash.spec
 index 4b2ec49..4f16c8c 100644
 --- a/SPECS/bash.spec
 +++ b/SPECS/bash.spec
-@@ -195,6 +195,10 @@ Patch152: bash-4.3-pipefd-leak.patch
- #1487615 - bash fails to execute commands containing multibyte characters
- Patch153: bash-4.3-wshouldquote.patch
+@@ -198,6 +198,10 @@ Patch153: bash-4.3-wshouldquote.patch
+ #1495398 - Append '/' while tab completing directory names
+ Patch154: bash-4.3-dircomp-append-slash.patch
  
 +# Patches from WindRiver
 +Patch500: bash-history-syslog.patch
@@ -24,9 +22,9 @@ index 4b2ec49..4f16c8c 100644
  BuildRequires: texinfo bison
  BuildRequires: ncurses-devel
  BuildRequires: autoconf, gettext
-@@ -327,6 +331,10 @@ This package contains documentation files for %{name}.
- %patch152 -p1 -b .pipefd-leak
+@@ -331,6 +335,10 @@ This package contains documentation files for %{name}.
  %patch153 -p1 -b .wshouldquote
+ %patch154 -p1 -b .append-slash
  
 +# WindRiver patches
 +%patch500 -p1 -b .history-syslog
