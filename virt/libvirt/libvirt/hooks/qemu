@@ -1,23 +1,10 @@
 #!/bin/bash
 #
-# Copyright (c) 2017 Wind River Systems, Inc.
+# Copyright (c) 2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 #  This script logs to user.log
-#
-#  An instance with vTPM enable will have a QEMU config section in its XML file.
-#  e.g.
-#  <qemu:commandline xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
-#    <qemu:arg value="-device"/>
-#    <qemu:arg value="tpm-tis,tpmdev=tpm-tpm0,id=tpm0"/>
-#    <qemu:arg value="-bios"/>
-#    <qemu:arg value="/guest/bios.bin"/>
-#    <qemu:arg value="-tpmdev"/>
-#    <qemu:arg value="cuse-tpm,id=tpm-tpm0,path=/dev/vtpm-instance-000001ad,cancel-path=/dev/null"/>
-#  </qemu:commandline>
-#
-# For more information see the vTPM HLD in /folk/cgts/docs/security/
 #
 # The script is called with the following parameters
 #   e.g. /etc/libvirt/hooks/qemu <guest_name> <operation>
@@ -77,50 +64,6 @@ if [ "${OPERATION}" == "prepare begin -" ] || [ "${OPERATION}" == "stopped end -
          fi
       fi
    fi
-fi
-
-VTPM_OPER=""
-
-if [ "$OPERATION" == "prepare begin -" ]; then
-
-   # Get the instance's uuid
-   UUID=$(echo $XML_DATA | grep -oP '(?<=<uuid>).*?(?=</uuid>)')
-   if [ -z "$UUID" ]; then
-      # This should not happen
-      logger -p err -t $0 "Failed to retrieve uuid for guest $GUEST_NAME"
-      exit 1
-   fi
-
-   # Grab the qemu line "<qemu:arg value='cuse-tpm ... "
-   LINE=$(echo $XML_DATA | grep -oP "(?<=<qemu:arg value=')[^<]+" | grep cuse-tpm )
-   if [ -z "$LINE" ]; then
-      # We do not setup a vTPM but we need to check if this Guest has previous vTPM data
-      # and if so delete it. This can happen when we Resize a Guest with a flavor that
-      # does not contain the vTPM extra spec xml data.
-      VTPM_OPER="clear"
-   else
-       # Extract the device name
-       VTPM=$(echo $LINE | tail -n1 | grep -Po '(?<=,path=)[^ ]+' | cut -d ',' -f1)
-       if [ -z "$VTPM" ]; then
-          # This instance does not require a vTPM. See comment above regarding "clear".
-          VTPM_OPER="clear"
-       else
-          logger -p info -t $0 "Found vTPM configuration for guest $GUEST_NAME"
-          VTPM_OPER="setup"
-       fi
-   fi
-
-   # Setup the vTPM device
-   /etc/libvirt/setup_vtpm "$VTPM_OPER" "/dev/vtpm-$GUEST_NAME" "$UUID" 2>&1 > /dev/null
-   rc=$?
-   if [[ $rc != 0 ]]; then
-       logger -p err -t $0 "setup_vtpm failed with return value $rc for device $VTPM and guest $UUID"
-       # Do not return error if we were just doing a clear
-       if [ "$VTPM_OPER" != "clear" ]; then
-          exit 1;
-       fi
-   fi
-
 fi
 
 exit 0
