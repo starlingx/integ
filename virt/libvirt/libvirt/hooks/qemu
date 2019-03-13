@@ -19,30 +19,30 @@ GUEST_NAME=$1
 shift
 OPERATION=$*
 
-logger -p info -t $0 "hook qemu file guest $GUEST_NAME with operation $OPERATION"
+logger -p info -t ${0} "hook qemu file guest ${GUEST_NAME} with operation ${OPERATION}"
 
 # CPU Low latency setup:
-# 
+#
 # A cpu is set to low latency when:
 # 1) host is set to subfunction=lowlatency in platform.conf and
 # 2) domain has dedicated pinning
 #
 # example of <cputune> section when domain has dedicated pinning:
-# <cputune> 
-#     <vcpupin vcpu='0' cpuset='5'/> 
-#     <vcpupin vcpu='1' cpuset='6'/> 
-#     <vcpupin vcpu='2' cpuset='7'/> 
-#     <emulatorpin cpuset='5'/> 
+# <cputune>
+#     <vcpupin vcpu='0' cpuset='5'/>
+#     <vcpupin vcpu='1' cpuset='6'/>
+#     <vcpupin vcpu='2' cpuset='7'/>
+#     <emulatorpin cpuset='5'/>
 # </cputune>
 #
 # example of <cputune> section when domain has shared pinning:
-# <cputune> 
-#     <shares>4096</shares> 
-#     <vcpupin vcpu='0' cpuset='5-21'/> 
-#     <vcpupin vcpu='1' cpuset='5-21'/> 
-#     <vcpupin vcpu='2' cpuset='5-21'/> 
-#     <vcpupin vcpu='3' cpuset='5-21'/> 
-#     <emulatorpin cpuset='5-21'/> 
+# <cputune>
+#     <shares>4096</shares>
+#     <vcpupin vcpu='0' cpuset='5-21'/>
+#     <vcpupin vcpu='1' cpuset='5-21'/>
+#     <vcpupin vcpu='2' cpuset='5-21'/>
+#     <vcpupin vcpu='3' cpuset='5-21'/>
+#     <emulatorpin cpuset='5-21'/>
 # </cputune>
 
 if [ "${OPERATION}" == "prepare begin -" ] || [ "${OPERATION}" == "stopped end -" ]; then
