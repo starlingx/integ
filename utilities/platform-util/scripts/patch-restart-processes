@@ -325,12 +325,6 @@ do
       "dcorch-sysinv-api-proxy")
          process_list=(${process_list[@]} "sm:dcorch-sysinv-api-proxy:dcorch-sysinv-api-proxy:controller:/var/run/resource-agents/dcorch-sysinv-api-proxy.pid:0")
          ;;
-      "dcorch-nova-api-proxy")
-         process_list=(${process_list[@]} "sm:dcorch-nova-api-proxy:dcorch-nova-api-proxy:controller:/var/run/resource-agents/dcorch-nova-api-proxy.pid:0")
-         ;;
-      "dcorch-neutron-api-proxy")
-         process_list=(${process_list[@]} "sm:dcorch-neutron-api-proxy:dcorch-neutron-api-proxy:controller:/var/run/resource-agents/dcorch-neutron-api-proxy.pid:0")
-         ;;
       "dcorch-patch-api-proxy")
          process_list=(${process_list[@]} "sm:dcorch-patch-api-proxy:dcorch-patch-api-proxy:controller:/var/run/resource-agents/dcorch-patch-api-proxy.pid:0")
          ;;
