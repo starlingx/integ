@@ -15,6 +15,7 @@
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
+        - stx-devstack-integ
     post:
       jobs:
         - publish-stx-tox
