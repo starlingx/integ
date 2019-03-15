@@ -16,7 +16,9 @@ COPY_LIST="$PKG_BASE/src/LICENSE \
   $PKG_BASE/src/ntpq.conf \
   $PKG_BASE/src/interface.py \
   $PKG_BASE/src/interface.conf \
+  $PKG_BASE/src/remotels.py \
+  $PKG_BASE/src/remotels.conf \
   $PKG_BASE/src/example.py \
   $PKG_BASE/src/example.conf"
 
-TIS_PATCH_VER=7
+TIS_PATCH_VER=8

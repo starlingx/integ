@@ -23,6 +23,7 @@ Source12: memory.py
 Source14: example.py
 Source15: ntpq.py
 Source16: interface.py
+Source17: remotels.py
 
 # collectd plugin conf files into /etc/collectd.d
 Source100: python_plugins.conf
@@ -32,6 +33,7 @@ Source103: df.conf
 Source104: example.conf
 Source105: ntpq.conf
 Source106: interface.conf
+Source107: remotels.conf
 
 BuildRequires: systemd-devel
 
@@ -75,6 +77,7 @@ install -m 700 %{SOURCE12} %{buildroot}%{local_python_extensions_dir}
 install -m 700 %{SOURCE14} %{buildroot}%{local_python_extensions_dir}
 install -m 700 %{SOURCE15} %{buildroot}%{local_python_extensions_dir}
 install -m 700 %{SOURCE16} %{buildroot}%{local_python_extensions_dir}
+install -m 700 %{SOURCE17} %{buildroot}%{local_python_extensions_dir}
 
 
 # collectd plugin conf files into /etc/collectd.d
@@ -85,6 +88,7 @@ install -m 600 %{SOURCE103} %{buildroot}%{local_plugin_dir}
 install -m 600 %{SOURCE104} %{buildroot}%{local_plugin_dir}
 install -m 600 %{SOURCE105} %{buildroot}%{local_plugin_dir}
 install -m 600 %{SOURCE106} %{buildroot}%{local_plugin_dir}
+install -m 600 %{SOURCE107} %{buildroot}%{local_plugin_dir}
 
 %clean
 rm -rf $RPM_BUILD_ROOT

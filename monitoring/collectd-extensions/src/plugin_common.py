@@ -33,6 +33,7 @@ class PluginObject(object):
         self.plugin = plugin             # the name of this plugin
         self.hostname = ''               # the name of this host
         self.port = 0                    # the port number for this plugin
+        self.base_eid = ''               # the base entity id host=<hostname>
 
         # dynamic gate variables
         self.config_complete = False     # set to True once config is complete
@@ -42,6 +43,8 @@ class PluginObject(object):
         # dynamic variables set in read_func
         self.usage = float(0)            # last usage value recorded as float
         self.audits = 0                  # number of audit since init
+        self.enabled = False             # tracks a plugin's enabled state
+        self.alarmed = False             # tracks the current alarmed state
 
         # http and json specific variables
         self.url = url                   # target url
