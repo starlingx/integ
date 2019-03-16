@@ -17,7 +17,7 @@ index a16660a..ec85fc2 100644
  Patch1004:	bz1568589-4-aliyun-vpc-move-ip-bundled.patch
  
 +# STX
-+Patch1105:  filesystem_rmon.patch
++
 +Patch1106:  new_ocf_return_codes.patch
 +Patch1107:  ipaddr2_check_if_state.patch
 +Patch1108:  copyright.patch
@@ -26,7 +26,7 @@ index a16660a..ec85fc2 100644
 +Patch1111: pgsql.patch
 +
 +
-+Patch1114: notify-rmon-of-shutdown-before-shutting-down.patch
++
 +Patch1115: Fix-VG-activity-bug-in-heartbeat-LVM-script.patch
 +Patch1116: ocf-shellfuncs_change_logtag.patch
 +Patch1117: lvm_cleanup_refs_on_stop.patch
@@ -42,7 +42,7 @@ index a16660a..ec85fc2 100644
  %endif
  
 +# STX
-+%patch1105 -p1
++
 +%patch1106 -p1
 +%patch1107 -p1
 +%patch1108 -p1
@@ -51,7 +51,7 @@ index a16660a..ec85fc2 100644
 +%patch1111 -p1
 +
 +
-+%patch1114 -p1
++
 +%patch1115 -p1
 +%patch1116 -p1
 +%patch1117 -p1
