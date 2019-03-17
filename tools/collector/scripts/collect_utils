@@ -55,18 +55,6 @@ MIN_PERCENT_SPACE_REQUIRED=75
 COLLECT_LOG=/var/log/collect.log
 COLLECT_ERROR_LOG=/tmp/collect_error.log
 
-# Load up the nova openrc file if its possible
-KEYRING_PATH="/opt/platform/.keyring"
-if [ -e ${KEYRING_PATH} ] ; then
-    CRED=`find /opt/platform/.keyring -name .CREDENTIAL`
-    if [ ! -z "${CRED}" ] ; then
-        NOVAOPENRC="/etc/nova/openrc"
-        if [ -e ${NOVAOPENRC} ] ; then
-            ACTIVE=true
-            source  ${NOVAOPENRC} 2>/dev/null 1>/dev/null
-        fi
-    fi
-fi
 
 # get the node and subfunction types
 nodetype=""
@@ -83,6 +71,19 @@ fi
 
 NODETYPE=$nodetype
 SUBFUNCTION=$subfunction
+
+ACTIVE=false
+if [ "$NODETYPE" == "controller" ] ; then
+    # get local host activity state
+    OPENRC="/etc/platform/openrc"
+    if [ -e "${OPENRC}" ] ; then
+        rc=`source ${OPENRC}`
+        if [ "$rc" == "" ] ; then
+            ACTIVE=true
+        fi
+    fi
+fi
+
 
 # Setup an expect command completion file.
 # This is used to force serialization of expect

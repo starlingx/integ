@@ -13,17 +13,6 @@
 #
 source /usr/local/sbin/collect_utils
 
-KEYRING_PATH="/opt/platform/.keyring"
-if [ -e ${KEYRING_PATH} ] ; then
-    CRED=`find /opt/platform/.keyring -name .CREDENTIAL`
-    if [ ! -z "${CRED}" ] ; then
-        NOVAOPENRC="/etc/nova/openrc"
-        if [ -e ${NOVAOPENRC} ] ; then
-            source  ${NOVAOPENRC} 2>/dev/null 1>/dev/null
-        fi
-    fi
-fi
-
 #
 # parse input parameters
 #
