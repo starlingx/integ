@@ -123,8 +123,8 @@ def create_partitions(disk_path, partition_sizes):
     # GPT partitions on the storage node so nothing to remove in this case
     links = []
     if os.path.isdir(DISK_BY_PARTUUID):
-    	links = [ os.path.join(DISK_BY_PARTUUID,l) for l in os.listdir(DISK_BY_PARTUUID)
-        	        if os.path.islink(os.path.join(DISK_BY_PARTUUID, l)) ]
+        links = [ os.path.join(DISK_BY_PARTUUID,l) for l in os.listdir(DISK_BY_PARTUUID)
+                        if os.path.islink(os.path.join(DISK_BY_PARTUUID, l)) ]
 
     # Erase all partitions on current node by creating a new GPT table
     _, err, ret = command(["parted", "-s", disk_node, "mktable", "gpt"])

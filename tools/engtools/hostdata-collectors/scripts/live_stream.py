@@ -663,13 +663,13 @@ def collectPostgres(influx_info, node, ci):
                                         fields1["dead_tuples"] = int(elements[6])
                                         influx_string1 += "{},'{}'='{}','{}'='{}','{}'='{}','{}'='{}' '{}'='{}','{}'='{}','{}'='{}','{}'='{}','{}'='{}'".format(measurement1, "node", tags["node"], "service", tags["service"], "table_schema", tags["table_schema"], "table", tags["table"], "table_size", fields1["table_size"], "index_size", fields1["index_size"], "total_size", fields1["total_size"], "live_tuples", fields1["live_tuples"], "dead_tuples", fields1["dead_tuples"]) + "\n"
                                         good_string = True
-			    dbcount += 1
-			    if dbcount == BATCH_SIZE and good_string:
-				# Curl will barf if the batch is too large
-				p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string1), shell=True)
-				p.communicate()
-			       	influx_string1 = ""
-				dbcount = 0
+                            dbcount += 1
+                            if dbcount == BATCH_SIZE and good_string:
+                                # Curl will barf if the batch is too large
+                                p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string1), shell=True)
+                                p.communicate()
+                                influx_string1 = ""
+                                dbcount = 0
                         if good_string:
                             # send table data to InfluxDB
                             p = Popen("curl -s -o /dev/null 'http://'{}':'{}'/write?db='{}'' --data-binary '{}'".format(influx_info[0], influx_info[1], influx_info[2], influx_string), shell=True)
