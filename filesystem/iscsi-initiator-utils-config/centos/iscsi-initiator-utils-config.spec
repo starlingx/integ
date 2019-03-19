@@ -1,3 +1,8 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2019 Intel Corporation
+#
 Summary: iscsi-initiator-utils-config
 Name: iscsi-initiator-utils-config
 Version: 1.0

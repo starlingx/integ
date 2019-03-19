@@ -1,3 +1,8 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2019 Intel Corporation
+#
 Summary: rsync-config
 Name: rsync-config
 Version: 1.0

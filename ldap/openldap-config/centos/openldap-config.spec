@@ -1,3 +1,8 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2019 Intel Corporation
+#
 Summary: StarlingX openldap Configuration File
 Name: openldap-config
 Version: 1.0
