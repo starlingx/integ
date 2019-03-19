@@ -27,6 +27,7 @@ Details:
 
 import argparse
 import datetime
+import hashlib
 import copy
 import libvirt
 import logging
@@ -478,10 +479,12 @@ def string_to_cpulist(cpus_str=''):
     return cpulist
 
 
-def list_to_range(L=[]):
+def list_to_range(L=None):
     """ Convert a list into a string of comma separate ranges.
         E.g.,  [1,2,3,8,9,15] is converted to '1-3,8-9,15'
     """
+    if L is None:
+        L = []
     G = (list(x) for _, x in groupby(enumerate(L), lambda i_x: i_x[0] - i_x[1]))
     return ",".join(
         "-".join(map(str, (g[0][1], g[-1][1])[:len(g)])) for g in G)
@@ -686,13 +689,13 @@ def print_debug_info(tenants=None, regions=None,
     pp = pprint.PrettyPrinter(indent=2)
 
     if True in debug.values():
-        print
+        print()
         logger.debug('OPTIONS:')
         logger.debug('debug=\n%s' % (pp.pformat(debug)))
         logger.debug('show=\n%s' % (pp.pformat(show)))
 
     if debug['creds']:
-        print
+        print()
         logger.debug('CREDENTIALS:')
         logger.debug('regions:\n%s' % (pp.pformat(regions)))
         logger.debug('tenants:\n%s' % (pp.pformat(tenants)))
@@ -700,53 +703,53 @@ def print_debug_info(tenants=None, regions=None,
         logger.debug('endpoints:\n%s' % (pp.pformat(endpoints)))
 
     if debug['hypervisors']:
-        print
+        print()
         logger.debug('HYPERVISORS:')
         for H in hypervisors.values():
             logger.debug('hypervisor:\n%s' % (pp.pformat(vars(H))))
 
-        print
+        print()
         logger.debug('HYPERVISORS: numa cells')
         logger.debug('computes_cell:\n%s' % (pp.pformat(computes_cell)))
 
     if debug['statistics']:
-        print
+        print()
         logger.debug('STATISTICS:')
         logger.debug('statistic:\n%s' % (pp.pformat(vars(statistics))))
 
     if debug['images']:
-        print
+        print()
         logger.debug('IMAGES:')
         for I in images.values():
             logger.debug('image: id=%r\n%s' % (I.id, pp.pformat(vars(I))))
 
     if debug['volumes']:
-        print
+        print()
         logger.debug('VOLUMES:')
         for V in volumes.values():
             logger.debug('volume: id=%r\n%s' % (V['volume_id'], pp.pformat(V)))
 
     if debug['servers']:
-        print
+        print()
         logger.debug('SERVERS:')
         for S in servers.values():
             logger.debug('server: id=%r\n%s' % (S.id, pp.pformat(vars(S))))
 
     if debug['server_groups']:
-        print
+        print()
         logger.debug('SERVER GROUPS:')
         for S in server_groups.values():
             logger.debug(
                 'server_group: id=%r\n%s' % (S.id, pp.pformat(vars(S))))
 
     if debug['migrations']:
-        print
+        print()
         logger.debug('MIGRATIONS:')
         for M in migrations.values():
             logger.debug('MIG: id=%r\n%s' % (M.id, pp.pformat(vars(M))))
 
     if debug['flavors']:
-        print
+        print()
         logger.debug('FLAVORS:')
         for F in flavors.values():
             logger.debug(
@@ -754,25 +757,25 @@ def print_debug_info(tenants=None, regions=None,
                 % (F.id, pp.pformat(vars(F)), pp.pformat(extra_specs[F.id])))
 
     if debug['aggregates']:
-        print
+        print()
         logger.debug('AGGREGATES:')
         for A in aggregates.values():
             logger.debug('aggregate: %s' % (pp.pformat(vars(A))))
 
     if debug['libvirt']:
-        print
+        print()
         logger.debug('LIBVIRT:')
         logger.debug('domain:\n%s' % (pp.pformat(domains)))
 
     if debug['topology']:
-        print
+        print()
         logger.debug('TOPOLOGY:')
         logger.debug('topologies:\n%s' % (pp.pformat(topologies)))
         logger.debug('topologies_idx:\n%s' % (pp.pformat(topologies_idx)))
         logger.debug('topologies_sib:\n%s' % (pp.pformat(topologies_sib)))
 
     if debug:
-        print
+        print()
 
 
 def define_debug_flags(debug):
@@ -796,7 +799,7 @@ def define_debug_flags(debug):
     {debug.update({e: False}) for e in opts}
 
 
-def define_options(L_opts=[], L_brief=[], L_details=[], L_other=[]):
+def define_options():
     """ Define several groupings with lists of show options. """
     L_opts = ['brief',
               'all',
@@ -821,10 +824,19 @@ def define_options(L_opts=[], L_brief=[], L_details=[], L_other=[]):
     return (L_opts, L_brief, L_details, L_other)
 
 
-def define_option_flags(show, options=[],
-                        L_opts=[], L_brief=[], L_details=[], L_other=[]):
+def define_option_flags(show, options=None,
+                        L_opts=None, L_brief=None, L_details=None, L_other=None):
     """ Define dictionary of option flags. """
-
+    if options is None:
+        options = []
+    if L_opts is None:
+        L_opts = []
+    if L_brief is None:
+        L_brief = []
+    if L_details is None:
+        L_details = []
+    if L_other is None:
+        L_other = []
     # Set all options to False
     {show.update({e: False}) for e in L_opts + L_brief + L_details + L_other}
 
@@ -856,7 +868,7 @@ def print_all_tables(tenants=None,
     """
     # Print list of aggregates
     if show['aggregates']:
-        print
+        print()
         print("AGGREGATES:")
         pt = PrettyTable(
             ['Name',
@@ -876,7 +888,7 @@ def print_all_tables(tenants=None,
 
     # Print list of compute host hypervisors, showing per numa details
     if show['computes']:
-        print
+        print()
         print('COMPUTE HOSTS:  '
               'Legend: U = Used, A = Avail')
         pt = PrettyTable(
@@ -1015,11 +1027,11 @@ def print_all_tables(tenants=None,
              '-',  # memory_avail_1G
              '-',  # agg
             ])
-        print pt
+        print(pt)
 
     # Print list of compute hosts topology
     if show['topology']:
-        print
+        print()
         print('LOGICAL CPU TOPOLOGY (compute hosts):')
         for host_name, topology in sorted(topologies.items(),
                                           key=lambda k_v2: (natural_keys(k_v2[0]))):
@@ -1079,11 +1091,11 @@ def print_all_tables(tenants=None,
                 str(s) for s in siblings[i]) or '-') for i in cpu_ids}
             pt.add_row(L)
             print(pt)
-            print
+            print()
 
     # Print list of compute hosts topology
     if show['topology-long']:
-        print
+        print()
         print('LOGICAL CPU TOPOLOGY (compute hosts):')
         for host_name, topology in sorted(topologies.items(),
                                           key=lambda k_v3: (natural_keys(k_v3[0]))):
@@ -1135,12 +1147,12 @@ def print_all_tables(tenants=None,
                      '0x%x' % (1 << i)
                     ])
             print(pt)
-            print
+            print()
 
     # Print list of servers
     if show['servers']:
         re_server_group = re.compile(r'^(\S+)\s+\((\S+)\)$')
-        print
+        print()
         print('SERVERS (nova view):')
         pt = PrettyTable(
             ['tenant',
@@ -1234,11 +1246,11 @@ def print_all_tables(tenants=None,
                  S.topology,
                  'yes' if in_libvirt else 'NO',
                 ])
-        print pt
+        print(pt)
 
     # Print each libvirt domain info
     if show['libvirt']:
-        print
+        print()
         print('SERVERS (libvirt view):  '
               'Legend: cpulist = [pcpu[i], ...]')
         pt = PrettyTable(
@@ -1275,11 +1287,11 @@ def print_all_tables(tenants=None,
                      list_to_range(S['cpulist']) or '-',
                      'yes' if in_nova else 'NO',
                     ])
-        print pt
+        print(pt)
 
     # Print list of in-progress migrations
     if show['migrations']:
-        print
+        print()
         print("MIGRATIONS (in progress):  Legend: S=Source, D=Destination")
         pt = PrettyTable(
             ['ID',
@@ -1306,12 +1318,12 @@ def print_all_tables(tenants=None,
                  M.old_instance_type_id,
                  M.created_at,
                 ])
-        print pt
+        print(pt)
 
     # Print flavors for instances currently in use
     pp = pprint.PrettyPrinter(indent=1, width=40)
     if show['flavors']:
-        print
+        print()
         print("FLAVORS (in use):")
         pt = PrettyTable(
             ['id',
@@ -1349,7 +1361,7 @@ def print_all_tables(tenants=None,
     # Print images for instances currently in use
     pp = pprint.PrettyPrinter(indent=1, width=40)
     if show['images']:
-        print
+        print()
         print("IMAGES (in use):")
         pt = PrettyTable(
             ['id',
@@ -1379,7 +1391,7 @@ def print_all_tables(tenants=None,
 
     # Print server groups for instances currently in use (exclude members data)
     if show['server_groups']:
-        print
+        print()
         print("SERVER GROUPS (in use):")
         pt = PrettyTable(
             ['Tenant',
@@ -2109,7 +2121,7 @@ def get_info_and_display(show=None):
 
     # Print out warnings if we detect mismatches between nova and libvirt
     if warnings:
-        print
+        print()
         print("WARNINGS (mismatch):")
         pt = PrettyTable(['Message'])
         pt.align = 'l'
