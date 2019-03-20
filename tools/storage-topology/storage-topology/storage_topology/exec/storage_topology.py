@@ -199,7 +199,7 @@ def print_disk_view(rows=None, extended=False):
          'VG (name:state)']
 
     if len(rows) > 0:
-        print
+        print()
         print("DISKs: (Physical disk view)")
 
         pt = PrettyTable(disk_lables_extended) if extended else  \
@@ -227,7 +227,7 @@ def print_vg_view(rows=None, extended=False):
          'Current PVs', 'PV List (name:state)', 'VG Parameters']
 
     if len(rows) > 0:
-        print
+        print()
         print("VOLUME GROUPS:  (VG view)")
 
         pt = PrettyTable(vg_labels_extended) if extended else  \
