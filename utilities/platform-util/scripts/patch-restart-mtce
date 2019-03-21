@@ -116,9 +116,6 @@ do
        "hbsClient")
            pmon_managed_processes=(${pmon_managed_processes[@]} "hbsClient:0")
            ;;
-       "rmond")
-           pmon_managed_processes=(${pmon_managed_processes[@]} "rmond:0")
-           ;;
        "hostwd")
            pmon_managed_processes=(${pmon_managed_processes[@]} "hostwd:0")
            ;;
