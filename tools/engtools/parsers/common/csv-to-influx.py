@@ -65,7 +65,7 @@ def convertTime(file, node, start, lc, utcTime):
                 epoch = int(time.mktime(time.strptime(utcTime[:23], pattern)))
         return str(epoch)
     except Exception as e:
-        appendToFile("/tmp/csv-to-influx.log", "Error: Issue converting time for {} for {}. Please check the csv and re-parse as some data may be incorrect\n-{}".format(file, node, e.message))
+        appendToFile("/tmp/csv-to-influx.log", "Error: Issue converting time for {} for {}. Please check the csv and re-parse as some data may be incorrect\n-{}".format(file, node, str(e)))
         return None
 
 
@@ -320,7 +320,7 @@ def parse(path, file, node, options, influx_info):
                              "{} lines parsed in {} for {}".format(line_count, file_name, node))
                 break
             except IOError as e:
-                appendToFile("/tmp/csv-to-influx.log", "Error: Issue opening {}\n-{}".format(file_loc, e.message))
+                appendToFile("/tmp/csv-to-influx.log", "Error: Issue opening {}\n-{}".format(file_loc, str(e)))
             except (KeyboardInterrupt, SystemExit):
                 sys.exit(0)
         else:
@@ -363,7 +363,7 @@ def generateString(file, node, meas, tag_n, tag_v, field_n, field_v, lc, date):
                     return None
         return base + '\n'
     except Exception as e:
-        appendToFile("/tmp/csv-to-influx.log", "Error: Issue with http api string with {} for {}\n-{}".format(file, node, e.message))
+        appendToFile("/tmp/csv-to-influx.log", "Error: Issue with http api string with {} for {}\n-{}".format(file, node, str(e)))
         return None
 
 

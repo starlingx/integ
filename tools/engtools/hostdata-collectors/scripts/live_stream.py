@@ -1264,7 +1264,7 @@ def createDB(influx_info, grafana_port, grafana_api_key):
         if p is not None:
             p.kill()
     except Exception as e:
-        print(e.message)
+        print(str(e))
         sys.exit(0)
 
 
@@ -1308,7 +1308,7 @@ def deleteDB(influx_info, grafana_port, grafana_api_key):
             if p is not None:
                 p.kill()
         except Exception as e:
-            print(e.message)
+            print(str(e))
         sys.exit(0)
 
 

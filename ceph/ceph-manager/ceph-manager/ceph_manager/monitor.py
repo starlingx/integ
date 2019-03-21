@@ -60,7 +60,7 @@ class HandleUpgradesMixin(object):
         except IOError as e:
             raise exception.CephApiFailure(
                 call="osd_set_key",
-                reason=e.message)
+                reason=str(e))
         else:
             if not response.ok:
                 raise exception.CephSetKeyFailure(
@@ -299,7 +299,7 @@ class Monitor(HandleUpgradesMixin):
             response, fsid = self.service.ceph_api.fsid(
                 body='text', timeout=30)
         except IOError as e:
-            LOG.warning(_LW("ceph_api.fsid failed: %s") % str(e.message))
+            LOG.warning(_LW("ceph_api.fsid failed: %s") % str(e))
             self.cluster_is_up = False
             return None
 
@@ -317,7 +317,7 @@ class Monitor(HandleUpgradesMixin):
             response, body = self.service.ceph_api.health(
                 body='text', timeout=30)
         except IOError as e:
-            LOG.warning(_LW("ceph_api.health failed: %s") % str(e.message))
+            LOG.warning(_LW("ceph_api.health failed: %s") % str(e))
             self.cluster_is_up = False
             return {'health': constants.CEPH_HEALTH_DOWN,
                     'detail': 'Ceph cluster is down.'}
