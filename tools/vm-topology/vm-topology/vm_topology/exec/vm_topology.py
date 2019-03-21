@@ -1510,7 +1510,7 @@ def get_info_and_display(show=None):
     q = select([S.name,
                 S.region_name,
                 S.deleted_at]
-              ).where(S.deleted_at == None)
+              ).where(S.deleted_at is None)
     result = conn.execute(q)
     for row in result:
         field = 'region_name'
@@ -1527,7 +1527,7 @@ def get_info_and_display(show=None):
     q = select([S.name,
                 S.region_name,
                 S.deleted_at]
-              ).where(S.deleted_at == None)
+              ).where(S.deleted_at is None)
     result = conn.execute(q)
     for row in result:
         name = str(row['name'])

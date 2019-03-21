@@ -1429,7 +1429,7 @@ if __name__ == "__main__":
         SERVICES_INFO = tuple(config.get("ApiStatsServices", "API_STATS_STRUCTURE").split('|'))
         for service_string in SERVICES_INFO:
             service_tuple = tuple(service_string.split(';'))
-            if service_tuple[2] != "" and service_tuple[2] != None:
+            if service_tuple[2] != "" and service_tuple[2] is not None:
                 SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'api-port': service_tuple[2]}
             else:
                 SERVICES[service_tuple[0]] = {'name': service_tuple[1], 'api-port': None}
