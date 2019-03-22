@@ -264,9 +264,6 @@ python-perf
 # puppet
 puppet
 
-# puppet-gnocchi
-puppet-gnocchi
-
 # systemd
 systemd
 systemd-config
