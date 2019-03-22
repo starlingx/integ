@@ -1,3 +1,8 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (C) 2019 Intel Corporation
+#
 Summary: pam-config
 Name: pam-config
 Version: 1.0
