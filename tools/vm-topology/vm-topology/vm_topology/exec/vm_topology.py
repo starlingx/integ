@@ -569,7 +569,6 @@ def do_libvirt_domain_info(tuple_hosts):
     topology = {}
     cells = doc.findall('./host/topology/cells/cell')
     for cell in cells:
-        cell_id = int(cell.get('id'))
         for cpu in cell.findall('./cpus/cpu'):
             # obtain core_id, cpu_id, and socket_id; ignore 'siblings' since
             # that can be inferred by enumeration of thread_id.
@@ -1184,13 +1183,10 @@ def print_all_tables(tenants=None,
                 match = re_server_group.search(S.server_group)
                 if match:
                     server_group = match.group(1)
-                    sgid = match.group(2)
                 else:
                     server_group = '-'
-                    sgid = None
             else:
                 server_group = '-'
-                sgid = None
 
             # Determine image name based on glance image id if it exists,
             # or deduce from attached volume metadata.
@@ -1438,7 +1434,6 @@ def get_info_and_display(show=None):
         - nova view of volumes and images in-use
         - nova view of server-groups in-use
     """
-    t0 = time.time()
 
     # Keep track of mismatches found when validating data sources
     warnings = []
@@ -1755,7 +1750,6 @@ def get_info_and_display(show=None):
         if S.server_group is not None and S.server_group:
             match = re_server_group.search(S.server_group)
             if match:
-                server_group = match.group(1)
                 server_group_id = match.group(2)
                 server_groups_in_use[server_group_id] = True
 
