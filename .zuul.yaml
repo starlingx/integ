@@ -5,31 +5,68 @@
     check:
       jobs:
         - build-openstack-releasenotes
+        - flock-devstack-integ
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
-        - stx-devstack-integ
     gate:
       jobs:
         - build-openstack-releasenotes
+        - flock-devstack-integ
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
-        - stx-devstack-integ
     post:
       jobs:
         - publish-stx-tox
         - publish-stx-releasenotes
 
+
+# This is the common base job definition for StarlingX flock services
 - job:
-    name: stx-devstack-integ
-    parent: stx-devstack-base
-    timeout: 7800
+    name: flock-devstack-base
+    parent: devstack
+    description: |
+      Base job for StarlingX Flock components DevStack tests
+    nodeset: openstack-single-node-bionic
+    roles:
+      - zuul: openstack-infra/devstack
+    timeout: 9000
     required-projects:
-      - openstack/stx-fault
-      - openstack/stx-update
+      - name: openstack-dev/devstack
+      - name: openstack/keystone
+      - name: openstack/requirements
     vars:
-      tox_envlist: functional
+      devstack_services:
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        horizon: false
+        # Swift services
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+        tempest: false
+        # Database
+        mysql: false
+        postgresql: true
+      devstack_localrc:
+        # LIBS_FROM_GIT: keystone
+        FORCE: yes
+
+# A minimal base job that eliminates most OpenStack services
+# Leave Celiometer, Horizon and Swift in the base since none
+# of our jobs need them.
+- job:
+    name: flock-devstack-base-min
+    parent: flock-devstack-base
+    timeout: 7800
+    vars:
       devstack_services:
         # Cinder services
         c-api: false
@@ -57,17 +94,21 @@
         q-meta: false
         q-metering: false
         q-svc: false
-        horizon: false
+
+- job:
+    name: flock-devstack-integ
+    parent: flock-devstack-base-min
+    timeout: 7800
+    required-projects:
+      - openstack/stx-update
+    vars:
+      tox_envlist: functional
+      devstack_services:
         # StarlingX services
         platform-util: true
       devstack_plugins:
-        stx-fault: git://git.starlingx.io/stx-fault
-        stx-integ: git://git.starlingx.io/stx-integ
-        stx-update: git://git.starlingx.io/stx-update
-      devstack_localrc:
-        LIBS_FROM_GIT: keystone
-    files:
-      - ^devstack/.*
+        stx-integ: https://git.starlingx.io/stx-integ
+        stx-update: https://git.starlingx.io/stx-update
 
 - job:
     name: stx-integ-pylint
