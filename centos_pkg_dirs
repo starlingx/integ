@@ -90,7 +90,6 @@ kubernetes/helm
 kubernetes/registry-token-server
 logging/logmgmt
 filesystem/filesystem-scripts
-utilities/branding
 config-files/io-scheduler
 config-files/iptables-config
 config-files/sudo-config
