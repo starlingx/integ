@@ -416,7 +416,7 @@ def get_timestamp(lmon_time):
 
     if lmon_time:
         try:
-            return(float(float(lmon_time)/1000000))
+            return(float(float(lmon_time) / 1000000))
         except:
             collectd.error("%s failed to parse timestamp ;"
                            " using current time" % PLUGIN)

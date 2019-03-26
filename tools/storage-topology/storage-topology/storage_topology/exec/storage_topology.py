@@ -183,7 +183,7 @@ def convert_to_readable_size(size, orig_unit='B'):
     if unitIndex > 5:
         unitIndex = 5
     sizer = math.pow(1024, unitIndex)
-    newsize = round(size/sizer, 2)
+    newsize = round(size / sizer, 2)
     return "%s %s" % (newsize, units[unitIndex])
 
 

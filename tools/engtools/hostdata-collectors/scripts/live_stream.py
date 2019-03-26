@@ -172,7 +172,7 @@ def collectMemstats(influx_info, node, ci, services, syseng_services, openstack_
                                 fields[gsvc]["vsz"] += vsz
 
                         elif svc == "postgres":
-                            if (len(line) <= i+2):
+                            if (len(line) <= i + 2):
                                 # Command line could be "sudo su postgres", skip it
                                 break
 
@@ -293,7 +293,7 @@ def collectSchedtop(influx_info, node, ci, services, syseng_services, openstack_
                                     fields[gsvc] += occ
 
                             elif svc == "postgres":
-                                if (len(line) <= i+2):
+                                if (len(line) <= i + 2):
                                     # Command line could be "sudo su postgres", skip it
                                     break
 

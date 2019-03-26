@@ -268,7 +268,7 @@ def read_func():
             UPPER_HEX_IP += val
         UPPER_HEX_IP += ':'
         tmp = hex(int(port)).split('x')[-1].upper()
-        for i in range(4-len(tmp)):
+        for i in range(4 - len(tmp)):
             UPPER_HEX_IP += '0'
         UPPER_HEX_IP += tmp
 

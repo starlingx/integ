@@ -51,7 +51,7 @@ VERSION_LICENSE_ERR = "License file does not support this version"
 # License limits
 LICENSE_DATE_TEXT_MAX_CHAR = 32
 LICENSE_ERR_MSG_MAX_CHAR = 512
-LICENSE_VENDOR_MAX_CHAR =128
+LICENSE_VENDOR_MAX_CHAR = 128
 
 # Package name prefix
 PACKAGE_PREFIX = "NL_TS"
