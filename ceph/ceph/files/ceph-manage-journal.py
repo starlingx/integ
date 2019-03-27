@@ -66,7 +66,7 @@ def device_path_to_device_node(device_path):
 ###########################################
 
 DISK_BY_PARTUUID = "/dev/disk/by-partuuid/"
-JOURNAL_UUID='45b0969e-9b03-4f30-b4c6-b4b80ceff106'  # Type of a journal partition
+JOURNAL_UUID = '45b0969e-9b03-4f30-b4c6-b4b80ceff106'  # Type of a journal partition
 
 
 def is_partitioning_correct(disk_path, partition_sizes):
@@ -123,8 +123,8 @@ def create_partitions(disk_path, partition_sizes):
     # GPT partitions on the storage node so nothing to remove in this case
     links = []
     if os.path.isdir(DISK_BY_PARTUUID):
-        links = [ os.path.join(DISK_BY_PARTUUID,l) for l in os.listdir(DISK_BY_PARTUUID)
-                        if os.path.islink(os.path.join(DISK_BY_PARTUUID, l)) ]
+        links = [os.path.join(DISK_BY_PARTUUID, l) for l in os.listdir(DISK_BY_PARTUUID)
+                        if os.path.islink(os.path.join(DISK_BY_PARTUUID, l))]
 
     # Erase all partitions on current node by creating a new GPT table
     _, err, ret = command(["parted", "-s", disk_node, "mktable", "gpt"])

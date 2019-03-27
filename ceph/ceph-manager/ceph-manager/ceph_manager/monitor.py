@@ -238,7 +238,7 @@ class Monitor(HandleUpgradesMixin):
         self.tiers_size = self._get_tiers_size()
 
         # Make sure any removed tiers have the alarms cleared
-        for t in (set(previous_tiers_size)-set(self.tiers_size)):
+        for t in (set(previous_tiers_size) - set(self.tiers_size)):
             self._clear_fault(fm_constants.FM_ALARM_ID_STORAGE_CEPH_FREE_SPACE,
                               "{0}.tier={1}".format(
                                   self.service.entity_instance_id,
@@ -378,7 +378,7 @@ class Monitor(HandleUpgradesMixin):
             return 0
         else:
             try:
-                quota_gib = int(quota["output"]["quota_max_bytes"])/(1024**3)
+                quota_gib = int(quota["output"]["quota_max_bytes"]) / (1024**3)
                 return quota_gib
             except IOError:
                 return 0
@@ -467,7 +467,7 @@ class Monitor(HandleUpgradesMixin):
                     if (chassis_size == 0 or
                             chassis_size > host['kb']):
                         chassis_size = host['kb']
-                tier_size += chassis_size/(1024 ** 2)
+                tier_size += chassis_size / (1024**2)
             tier_sizes[tier['name']] = tier_size
 
         return tier_sizes
@@ -705,7 +705,7 @@ class Monitor(HandleUpgradesMixin):
 
         return (
             msg['head'] +
-            (health['health'] + lbracket + parsed_reasons_text)[:max_size-1] +
+            (health['health'] + lbracket + parsed_reasons_text)[:max_size - 1] +
             rbracket + msg['tail'])
 
     def _report_fault(self, health, alarm_id):
@@ -834,7 +834,7 @@ class Monitor(HandleUpgradesMixin):
                         alarm_list[alarm].entity_instance_id.find("group-"))
                     group_instance_name = (
                         "group-" +
-                        alarm_list[alarm].entity_instance_id[group_id+6])
+                        alarm_list[alarm].entity_instance_id[group_id + 6])
                     if group_name == group_instance_name:
                         self.service.fm_api.clear_fault(
                             fm_constants.FM_ALARM_ID_STORAGE_CEPH_MAJOR,

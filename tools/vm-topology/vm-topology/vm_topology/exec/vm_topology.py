@@ -91,7 +91,7 @@ show = {}
 
 # Constants
 Ki = 1024
-Mi = Ki*Ki
+Mi = Ki * Ki
 
 # Active worker pids
 active_pids = multiprocessing.Manager().dict()
@@ -605,8 +605,8 @@ def do_libvirt_domain_info(tuple_hosts):
             with suppress_stdout_stderr():
                 d_vcpus = dom.vcpus()
         except Exception as e:
-            d_vcpus = tuple([d_nrVirtCpu*[],
-                             d_nrVirtCpu*[tuple(total_cpus * [False])]])
+            d_vcpus = tuple([d_nrVirtCpu * [],
+                             d_nrVirtCpu * [tuple(total_cpus * [False])]])
 
         # Obtain cpulist of pcpus in the order of vcpus. This applies to either
         # pinned or floating vcpus,  Note that the cpuinfo pcpu value can be
@@ -1379,7 +1379,7 @@ def print_all_tables(tenants=None,
                      I.name,
                      I.min_disk,
                      I.min_ram,
-                     '%.2f' % (I.size/1024.0/1024.0),
+                     '%.2f' % (I.size / 1024.0 / 1024.0),
                      I.status,
                      I.properties,
                     ])

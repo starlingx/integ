@@ -55,17 +55,17 @@ class BuddyInfo(object):
         buddyhash = defaultdict(list)
         buddyinfo = open("/proc/buddyinfo").readlines()
         for line in map(self.parse_line, buddyinfo):
-            numa_node =  int(line["numa_node"])
+            numa_node = int(line["numa_node"])
             zone = line["zone"]
             free_fragments = [int(nr) for nr in line["nr_free"].split()]
             max_order = len(free_fragments)
             fragment_sizes = self.get_order_sizes(max_order)
-            usage_in_bytes =  [block[0] * block[1] for block in zip(free_fragments, fragment_sizes)]
+            usage_in_bytes = [block[0] * block[1] for block in zip(free_fragments, fragment_sizes)]
             buddyhash[numa_node].append({
                 "zone": zone,
                 "nr_free": free_fragments,
                 "sz_fragment": fragment_sizes,
-                "usage": usage_in_bytes })
+                "usage": usage_in_bytes})
         return buddyhash
 
     def load_buddyinfo(self):
@@ -95,9 +95,9 @@ class BuddyInfo(object):
                     ret_string += '\t{order:{align}{width}} {nr:{align}{width}} {usage:{align}{width}}\n'.format(
                         width=width,
                         align="<",
-                        order = zoneinfo.get("sz_fragment")[idx],
-                        nr = zoneinfo.get("nr_free")[idx],
-                        usage = zoneinfo.get("usage")[idx] / 1024.0)
+                        order=zoneinfo.get("sz_fragment")[idx],
+                        nr=zoneinfo.get("nr_free")[idx],
+                        usage=zoneinfo.get("usage")[idx] / 1024.0)
 
         return ret_string
 
@@ -105,7 +105,7 @@ def main():
     """Main function. Called when this file is a shell script"""
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage)
-    parser.add_option("-s", "--size", dest="size", choices=["B","K","M"],
+    parser.add_option("-s", "--size", dest="size", choices=["B", "K", "M"],
                       action="store", type="choice", help="Return results in bytes, kib, mib")
 
     (options, args) = parser.parse_args()

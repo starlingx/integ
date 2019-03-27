@@ -25,16 +25,16 @@ from logmgmt import prepostrotate
 ###################
 # CONSTANTS
 ###################
-LOG_DIR  = '/var/lib/logmgmt'
+LOG_DIR = '/var/lib/logmgmt'
 LOG_FILE = LOG_DIR + '/logmgmt.log'
 PID_FILE = '/var/run/logmgmt.pid'
-LOG_FILE_MAX_BYTES = 1024*1024
+LOG_FILE_MAX_BYTES = 1024 * 1024
 LOG_FILE_BACKUP_COUNT = 5
 
 PERCENT_FREE_CRITICAL = 10
 PERCENT_FREE_MAJOR = 20
 
-LOGROTATE_PERIOD = 600 # Every ten minutes
+LOGROTATE_PERIOD = 600  # Every ten minutes
 
 ###################
 # METHODS

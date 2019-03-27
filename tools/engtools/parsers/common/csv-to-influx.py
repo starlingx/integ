@@ -333,13 +333,13 @@ def generateString(file, node, meas, tag_n, tag_v, field_n, field_v, lc, date):
     try:
         if file.startswith("diskstats"):
             for i in range(len(tag_n)):
-                if i == len(tag_n)-1:
+                if i == len(tag_n) - 1:
                     base = base + "'{}'='{}' ".format(tag_n[i], str(tag_v[i]))
                 else:
                     base = base + "'{}'='{}',".format(tag_n[i], str(tag_v[i]))
             for i in range(len(field_v)):
                 if str(field_v[i]).replace(".", "").isdigit():
-                    if i == len(field_v)-1:
+                    if i == len(field_v) - 1:
                         base = base + "'{}'='{}' {}".format(field_n[i], str(field_v[i]), date)
                     else:
                         base = base + "'{}'='{}',".format(field_n[i], str(field_v[i]))
@@ -348,13 +348,13 @@ def generateString(file, node, meas, tag_n, tag_v, field_n, field_v, lc, date):
                     return None
         else:
             for i in range(len(tag_n)):
-                if i == len(tag_n)-1:
+                if i == len(tag_n) - 1:
                     base = base + "'{}'='{}' ".format(tag_n[i], str(tag_v[i]))
                 else:
                     base = base + "'{}'='{}',".format(tag_n[i], str(tag_v[i]))
             for i in range(1, len(field_v)):
                 if str(field_v[i]).replace(".", "").isdigit():
-                    if i == len(field_v)-1:
+                    if i == len(field_v) - 1:
                         base = base + "'{}'='{}' {}".format(field_n[i], str(field_v[i]), date)
                     else:
                         base = base + "'{}'='{}',".format(field_n[i], str(field_v[i]))

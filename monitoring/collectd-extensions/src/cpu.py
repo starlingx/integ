@@ -217,7 +217,7 @@ def read_func():
             else:
                 _delta = (c.cpu_time[_cpu_count] - c.cpu_time_last[_cpu_count])
                 _delta = _delta / 1000000 / _time_delta
-                cpu_occupancy.append(float((100*(_delta))/1000))
+                cpu_occupancy.append(float((100 * (_delta)) / 1000))
                 c.total_avg_cpu += cpu_occupancy[_cpu_count]
                 if debug:
                     collectd.info('%s cpu %d - count:%d [%s]' %

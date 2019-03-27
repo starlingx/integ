@@ -75,8 +75,8 @@ def get_osd_tree():
                'osd', 'tree', '--format', 'json']
     try:
         p = subprocess.Popen(command,
-                  stdout = subprocess.PIPE,
-                  stderr = subprocess.PIPE)
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
         output, error = p.communicate()
         if p.returncode != 0:
             raise OsdException(

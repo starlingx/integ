@@ -191,7 +191,7 @@ def verify_license(license_file):
 
 
 def main():
-    if len(sys.argv) == 2 :
+    if len(sys.argv) == 2:
         licensefile = sys.argv[1]
     else:
         print("Usage: verify-license <license file>")
