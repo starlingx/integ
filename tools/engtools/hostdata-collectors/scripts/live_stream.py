@@ -1195,20 +1195,20 @@ def getPlatformCores(node, cpe):
 def isActiveController():
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     try:
-        o = Popen("sm-dump", shell=True, stdout=PIPE)
-        o.stdout.readline()
-        o.stdout.readline()
+        p = Popen("sm-dump", shell=True, stdout=PIPE)
+        p.stdout.readline()
+        p.stdout.readline()
         # read line for active/standby
-        l = o.stdout.readline().strip("\n").split()
-        per = l[1]
-        o.kill()
+        line = p.stdout.readline().strip("\n").split()
+        per = line[1]
+        p.kill()
         if per == "active":
             return True
         else:
             return False
     except Exception:
-        if o is not None:
-            o.kill()
+        if p is not None:
+            p.kill()
         logging.error("sm-dump command could not be called properly. This is usually caused by a swact. Trying again on next call: {}".format(sys.exc_info()))
         return False
 
@@ -1456,18 +1456,18 @@ if __name__ == "__main__":
     influx_info.append(influx_db)
 
     # add config options to log
-    with open("/tmp/livestream.log", "w") as e:
-        e.write("Configuration for {}:\n".format(node))
-        e.write("-InfluxDB address: {}:{}\n".format(influx_ip, influx_port))
-        e.write("-InfluxDB name: {}\n".format(influx_db))
-        e.write("-CPE lab: {}\n".format(str(cpe_lab)))
-        e.write(("-Collect API requests: {}\n".format(str(collect_api_requests))))
-        e.write(("-Collect all services: {}\n".format(str(collect_all_services))))
-        e.write(("-Fast postgres connections: {}\n".format(str(fast_postgres_connections))))
-        e.write(("-Automatic database removal: {}\n".format(str(auto_delete_db))))
+    with open("/tmp/livestream.log", "w") as log_file:
+        log_file.write("Configuration for {}:\n".format(node))
+        log_file.write("-InfluxDB address: {}:{}\n".format(influx_ip, influx_port))
+        log_file.write("-InfluxDB name: {}\n".format(influx_db))
+        log_file.write("-CPE lab: {}\n".format(str(cpe_lab)))
+        log_file.write(("-Collect API requests: {}\n".format(str(collect_api_requests))))
+        log_file.write(("-Collect all services: {}\n".format(str(collect_all_services))))
+        log_file.write(("-Fast postgres connections: {}\n".format(str(fast_postgres_connections))))
+        log_file.write(("-Automatic database removal: {}\n".format(str(auto_delete_db))))
         if duration is not None:
-            e.write("-Live stream duration: {}\n".format(unconverted_duration))
-        e.close()
+            log_file.write("-Live stream duration: {}\n".format(unconverted_duration))
+        log_file.close()
 
     # add POSTROUTING entry to NAT table
     if cpe_lab is False:
@@ -1483,14 +1483,12 @@ if __name__ == "__main__":
             p = Popen("sysctl -w net.ipv4.ip_forward=1 > /dev/null", shell=True)
             p.communicate()
             p = Popen("iptables -t nat -L --line-numbers", shell=True, stdout=PIPE)
-            tmp = []
+            tmp = [line.strip("\n") for line in p.stdout.readlines()]
             # entries need to be removed in reverse order
-            for line in p.stdout:
-                tmp.append(line.strip("\n"))
             for line in reversed(tmp):
-                l = " ".join(line.strip("\n").split()[1:])
+                formatted_line = " ".join(line.strip("\n").split()[1:])
                 # if an entry already exists, remove it
-                if l.startswith("MASQUERADE tcp -- anywhere"):
+                if formatted_line.startswith("MASQUERADE tcp -- anywhere"):
                     line_number = line.strip("\n").split()[0]
                     p1 = Popen("iptables -t nat -D POSTROUTING {}".format(line_number), shell=True)
                     p1.communicate()

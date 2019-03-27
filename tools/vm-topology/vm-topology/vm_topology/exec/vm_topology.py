@@ -280,29 +280,29 @@ def parse_arguments(debug, show):
     (L_opts, L_brief, L_details, L_other) = define_options()
 
     # Select potentially multiple values from the following options
-    O = set([])
-    O.update(L_brief)
-    O.update(L_details)
-    O.update(L_other)
-    S = sorted(O)
-    S[0:0] = L_opts
+    options = set([])
+    options.update(L_brief)
+    options.update(L_details)
+    options.update(L_other)
+    sorted_options = sorted(options)
+    sorted_options[0:0] = L_opts
 
     # Enable debug option, but its usage/help is hidden.
-    D = list(debug.keys())
-    D.sort()
-    D.insert(0, 'all')
+    debug_options = list(debug.keys())
+    debug_options.sort()
+    debug_options.insert(0, 'all')
 
     # Parse arguments
     cli_opts = [
         ChoiceOpt('show',
                   default=['brief'],
-                  choices=sorted(list(set(S))),
-                  metavar='<' + ','.join(str(x) for x in S) + '>',
+                  choices=sorted(list(set(sorted_options))),
+                  metavar='<' + ','.join(str(x) for x in sorted_options) + '>',
                   help='Show summary of selected tables'),
         ChoiceOpt('dbg',
                   default=[],
-                  choices=sorted(list(set(D))),
-                  metavar='<' + ','.join(str(x) for x in D) + '>',
+                  choices=sorted(list(set(debug_options))),
+                  metavar='<' + ','.join(str(x) for x in debug_options) + '>',
                   help='Print debugging information for selected tables'),
     ]
 
