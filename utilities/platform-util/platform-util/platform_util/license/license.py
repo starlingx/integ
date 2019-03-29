@@ -38,7 +38,7 @@ def get_licenses_info():
     features = sm_common.flex_lm_license_get_feature_list()
     if features.value:
         feature_list = [feature for feature in features.value.split(',')
-            if feature.startswith(constants.FEATURE_PREFIX)]
+                        if feature.startswith(constants.FEATURE_PREFIX)]
     sm_common.flex_lm_license_free(features)
 
     lc_attrs_list = []
@@ -66,14 +66,14 @@ def get_licenses_info():
             name = constants.LICENSE_MAP.get(feature)
             if process_license and name:
                 lc_attrs = dict(name=name, status=status,
-                    expiry_date=expiry_date)
+                                expiry_date=expiry_date)
             else:
                 lc_attrs = dict()
 
         if lc_attrs:
             license_name = lc_attrs.get('name')
             if (not any(lc.get('name') == license_name
-                 for lc in lc_attrs_list)):
+                        for lc in lc_attrs_list)):
                 # Get the list of license attributes for all valid
                 # licenses and installed expired/invalid licenses
                 lc_attrs_list.append(lc_attrs)
@@ -85,8 +85,8 @@ def get_licenses_info():
     # not-installed licenses
     for license_name in licenses:
         lc_attrs = dict(name=license_name,
-            status=constants.NOT_INSTALLED,
-            expiry_date='-')
+                        status=constants.NOT_INSTALLED,
+                        expiry_date='-')
         lc_attrs_list.append(lc_attrs)
 
     # Return the list of license attributes
@@ -145,7 +145,7 @@ def verify_feature_license(feature_name, feature_version=None):
 
     # Return license attributes of a valid license
     lc_attrs = dict(name=license_name, status=constants.INSTALLED,
-        expiry_date=expire_date_text.value)
+                    expiry_date=expire_date_text.value)
 
     return lc_attrs
 
@@ -162,7 +162,7 @@ def verify_license(license_file):
     features = sm_common.flex_lm_license_get_feature_list()
     if features.value:
         feature_list = [feature for feature in features.value.split(',')
-            if feature.startswith(constants.FEATURE_PREFIX)]
+                        if feature.startswith(constants.FEATURE_PREFIX)]
     sm_common.flex_lm_license_free(features)
 
     # Validate license of each feature in the license file
@@ -173,7 +173,7 @@ def verify_license(license_file):
         if system_mode == sysinv_constants.SYSTEM_MODE_SIMPLEX:
             product_license = constants.AIO_SIMPLEX_SYSTEM_LICENSES
         elif (system_mode == sysinv_constants.SYSTEM_MODE_DUPLEX or
-             system_mode == sysinv_constants.SYSTEM_MODE_DUPLEX_DIRECT):
+              system_mode == sysinv_constants.SYSTEM_MODE_DUPLEX_DIRECT):
             product_license = constants.AIO_SYSTEM_LICENSES
     elif system_type == sysinv_constants.TIS_STD_BUILD:
         product_license = constants.STD_SYSTEM_LICENSES

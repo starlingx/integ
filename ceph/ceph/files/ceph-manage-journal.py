@@ -99,7 +99,7 @@ def is_partitioning_correct(disk_path, partition_sizes):
                  str(size) + "[\\.0]*MiB")
         if not re.search(regex, output, re.MULTILINE):
             print("Journal partition %(node)s size is not %(size)s, "
-                   "zapping disk" % {"node": partition_node, "size": size})
+                  "zapping disk" % {"node": partition_node, "size": size})
             return False
 
         partition_index += 1
@@ -124,14 +124,14 @@ def create_partitions(disk_path, partition_sizes):
     links = []
     if os.path.isdir(DISK_BY_PARTUUID):
         links = [os.path.join(DISK_BY_PARTUUID, l) for l in os.listdir(DISK_BY_PARTUUID)
-                        if os.path.islink(os.path.join(DISK_BY_PARTUUID, l))]
+                 if os.path.islink(os.path.join(DISK_BY_PARTUUID, l))]
 
     # Erase all partitions on current node by creating a new GPT table
     _, err, ret = command(["parted", "-s", disk_node, "mktable", "gpt"])
     if ret:
         print("Error erasing partition table of %(node)s\n"
-               "Return code: %(ret)s reason: %(reason)s" %
-               {"node": disk_node, "ret": ret, "reason": err})
+              "Return code: %(ret)s reason: %(reason)s" %
+              {"node": disk_node, "ret": ret, "reason": err})
         exit(1)
 
     # Erase old symlinks
@@ -152,20 +152,20 @@ def create_partitions(disk_path, partition_sizes):
                  "end": used_space_mib + size,
                  "reason": err}
         print("Created partition from start=%(start)s MiB to end=%(end)s MiB"
-               " on %(disk_node)s" % parms)
+              " on %(disk_node)s" % parms)
         if ret:
             print("Failed to create partition with "
-                   "start=%(start)s, end=%(end)s "
-                   "on %(disk_node)s reason: %(reason)s" % parms)
+                  "start=%(start)s, end=%(end)s "
+                  "on %(disk_node)s reason: %(reason)s" % parms)
             exit(1)
         # Set partition type to ceph journal
         # noncritical operation, it makes 'ceph-disk list' output correct info
         cmd = ['sgdisk',
                '--change-name={num}:ceph journal'.format(num=num),
                '--typecode={num}:{uuid}'.format(
-                  num=num,
-                  uuid=JOURNAL_UUID,
-                  ),
+                   num=num,
+                   uuid=JOURNAL_UUID,
+               ),
                disk_node]
         _, err, ret = command(cmd)
         if ret:
@@ -263,11 +263,11 @@ def fix_location(mount_point, journal_path, osdid):
               "reason": err}
     if not ret:
         print("Prepared new journal partition: %(journal_node)s "
-               "for osd id: %(osdid)s" % params)
+              "for osd id: %(osdid)s" % params)
     else:
         print("Error initializing journal node: "
-               "%(journal_node)s for osd id: %(osdid)s "
-               "ceph-osd return code: %(ret)s reason: %(reason)s" % params)
+              "%(journal_node)s for osd id: %(osdid)s "
+              "ceph-osd return code: %(ret)s reason: %(reason)s" % params)
 
 
 ########
@@ -308,8 +308,8 @@ def main(argv):
             create_partitions(partitions['disk_path'], partitions['journals'])
         else:
             print("Partition table for %s is correct, "
-                   "no need to repartition" %
-                   device_path_to_device_node(partitions['disk_path']))
+                  "no need to repartition" %
+                  device_path_to_device_node(partitions['disk_path']))
     elif location:
         # we need to have the data partition mounted & we can let it mounted
         mount_point = mount_data_partition(location['data_path'],
@@ -319,13 +319,13 @@ def main(argv):
                                    location['journal_path'],
                                    location['osdid']):
             print("Fixing journal location for "
-                   "OSD id: %(id)s" % {"node": location['data_path'],
-                                       "id": location['osdid']})
+                  "OSD id: %(id)s" % {"node": location['data_path'],
+                                      "id": location['osdid']})
             fix_location(mount_point,
                          location['journal_path'],
                          location['osdid'])
         else:
             print("Journal location for %s is correct,"
-                   "no need to change it" % location['data_path'])
+                  "no need to change it" % location['data_path'])
 
 main(sys.argv[1:])

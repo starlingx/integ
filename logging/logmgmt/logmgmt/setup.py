@@ -10,10 +10,9 @@ SPDX-License-Identifier: Apache-2.0
 import setuptools
 
 setuptools.setup(name='logmgmt',
-      version='1.0.0',
-      description='logmgmt',
-      license='Apache-2.0',
-      packages=['logmgmt'],
-      entry_points={
-      }
-)
+                 version='1.0.0',
+                 description='logmgmt',
+                 license='Apache-2.0',
+                 packages=['logmgmt'],
+                 entry_points={}
+                 )

@@ -140,9 +140,9 @@ class HandleUpgradesMixin(object):
             # unsurpress require_jewel_osds in case upgrade
             # is aborting
             if (state in [
-                       constants.UPGRADE_ABORTING,
-                       constants.UPGRADE_ABORT_COMPLETING,
-                       constants.UPGRADE_ABORTING_ROLLBACK]):
+                    constants.UPGRADE_ABORTING,
+                    constants.UPGRADE_ABORT_COMPLETING,
+                    constants.UPGRADE_ABORTING_ROLLBACK]):
                 self.wait_for_upgrade_complete = False
         return health
 
