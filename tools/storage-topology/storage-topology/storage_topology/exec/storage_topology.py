@@ -410,7 +410,7 @@ def main():
         ts = datetime.datetime.now()
         if show['debug']:
             print("%s: %s  options: view:%s System api version: %s"
-                % (prog, ts.isoformat(), show, api_version))
+                  % (prog, ts.isoformat(), show, api_version))
 
         cgts_client_creds = get_system_creds()
         if not cgts_client_creds['os_username']:

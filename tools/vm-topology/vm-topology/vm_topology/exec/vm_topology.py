@@ -312,14 +312,14 @@ def parse_arguments(debug, show):
          default_config_files=[NOVACONF],
          prog=os.path.basename(sys.argv[0]),
          description=(
-            'Tool to summarize server resouce usage and vcpu placement'
-            'related attributes for nova and libvirt.'),
+             'Tool to summarize server resouce usage and vcpu placement'
+             'related attributes for nova and libvirt.'),
          # NOTE: oslo_config implementation of _CachedArgumentParser does not
          # configure argparse formatter_class. The resulting epilog text is
          # automatically text-wrapped which is not desired. Manually adding
          # newlines does not work either. The epilog text is disabled for now.
          #epilog=help_text_epilog(),
-        )
+         )
 
     # Configure logging to appropriate level
     level = logging.INFO
@@ -496,7 +496,7 @@ def range_to_list(csv_range=None):
     if not csv_range:
         return []
     ranges = [(lambda L: range(L[0], L[-1] + 1))([int(x) for x in r.split('-')])
-               for r in csv_range.split(',')]
+              for r in csv_range.split(',')]
     return [y for x in ranges for y in x]
 
 
@@ -874,7 +874,7 @@ def print_all_tables(tenants=None,
              'Avail Zone',
              'Hosts',
              'Metadata',
-            ], caching=False)
+             ], caching=False)
         pt.align = 'l'
         for name, A in sorted(aggregates.items()):
             pt.add_row(
@@ -882,7 +882,7 @@ def print_all_tables(tenants=None,
                  str(A.availability_zone),
                  ", ".join([str(x) for x in A.hosts]),
                  str(A.metadata)
-                ])
+                 ])
         print(pt)
 
     # Print list of compute host hypervisors, showing per numa details
@@ -906,7 +906,7 @@ def print_all_tables(tenants=None,
              'A:mem_2M',
              'A:mem_1G',
              'Aggregate',
-            ])
+             ])
         pt.align = 'l'
         for C in ['servers', 'pcpus', 'U:dedicated', 'U:shared',
                   'memory', 'U:memory', 'A:mem_4K', 'A:mem_2M', 'A:mem_1G']:
@@ -965,7 +965,7 @@ def print_all_tables(tenants=None,
                          cell['memory_avail_1G'],
                          textwrap.fill(", ".join([str(x) for x in A]),
                                        width=75),
-                        ])
+                         ])
                 else:
                     pt.add_row(
                         ['',  # host
@@ -983,7 +983,7 @@ def print_all_tables(tenants=None,
                          cell['memory_avail_2M'],
                          cell['memory_avail_1G'],
                          '',  # agg
-                        ])
+                         ])
 
                 first = False
             if len(computes_cell[host_name]) < 1:
@@ -1005,7 +1005,7 @@ def print_all_tables(tenants=None,
                      '-',  # memory_avail_2M
                      '-',  # memory_avail_1G
                      ", ".join([str(x) for x in A]),
-                    ])
+                     ])
 
         # Add row with statistics
         Y = statistics
@@ -1025,7 +1025,7 @@ def print_all_tables(tenants=None,
              '-',  # memory_avail_2M
              '-',  # memory_avail_1G
              '-',  # agg
-            ])
+             ])
         print(pt)
 
     # Print list of compute hosts topology
@@ -1133,7 +1133,7 @@ def print_all_tables(tenants=None,
                  'thread_id',
                  'sibling_id',
                  'affinity'
-                ])
+                 ])
             pt.align = 'r'
             pt.align['affinity'] = 'l'
             for i in cpu_ids:
@@ -1144,7 +1144,7 @@ def print_all_tables(tenants=None,
                      topology_idx[i]['t'],
                      list_to_range(siblings[i]) or '-',
                      '0x%x' % (1 << i)
-                    ])
+                     ])
             print(pt)
             print()
 
@@ -1167,7 +1167,7 @@ def print_all_tables(tenants=None,
              'memory',
              'instance_topology',
              'in_libvirt',
-            ])
+             ])
         pt.align = 'l'
         for C in ['vcpus', 'memory']:
             pt.align[C] = 'r'
@@ -1175,10 +1175,10 @@ def print_all_tables(tenants=None,
             pt.align[C] = 'c'
         for _, S in sorted(servers.items(),
                            key=lambda k_v4: (natural_keys(k_v4[1].host),
-                                               k_v4[1].server_group,
-                                               k_v4[1].instance_name)
+                                             k_v4[1].server_group,
+                                             k_v4[1].instance_name)
                            if (k_v4[1].host is not None) else 'None'
-        ):
+                           ):
             if S.server_group is not None and S.server_group:
                 match = re_server_group.search(S.server_group)
                 if match:
@@ -1241,7 +1241,7 @@ def print_all_tables(tenants=None,
                  flavor_ram,
                  S.topology,
                  'yes' if in_libvirt else 'NO',
-                ])
+                 ])
         print(pt)
 
     # Print each libvirt domain info
@@ -1260,7 +1260,7 @@ def print_all_tables(tenants=None,
              'nodelist',
              'cpulist',
              'in_nova',
-            ])
+             ])
         pt.align = 'l'
         for C in ['id', 'vcpus', 'memory', 'nodelist']:
             pt.align[C] = 'r'
@@ -1282,7 +1282,7 @@ def print_all_tables(tenants=None,
                      list_to_range(S['nodelist']) or '-',
                      list_to_range(S['cpulist']) or '-',
                      'yes' if in_nova else 'NO',
-                    ])
+                     ])
         print(pt)
 
     # Print list of in-progress migrations
@@ -1299,7 +1299,7 @@ def print_all_tables(tenants=None,
              'S:flavor[PKey]',
              'D:flavor[PKey]',
              'created_at',
-            ])
+             ])
         pt.align = 'l'
         for _, M in sorted(migrations.items(),
                            key=lambda k_v6: (k_v6[0])):
@@ -1313,7 +1313,7 @@ def print_all_tables(tenants=None,
                  M.new_instance_type_id,
                  M.old_instance_type_id,
                  M.created_at,
-                ])
+                 ])
         print(pt)
 
     # Print flavors for instances currently in use
@@ -1332,7 +1332,7 @@ def print_all_tables(tenants=None,
              'rxtx_factor',
              'is_public',
              'extra_specs',
-            ])
+             ])
         pt.align = 'l'
         for C in ['id', 'vcpus', 'ram', 'disk', 'ephemeral', 'swap',
                   'rxtx_factor']:
@@ -1351,7 +1351,7 @@ def print_all_tables(tenants=None,
                      F.rxtx_factor,
                      F.is_public,
                      pp.pformat(extra_specs[F.id]),
-                    ])
+                     ])
         print(pt)
 
     # Print images for instances currently in use
@@ -1367,7 +1367,7 @@ def print_all_tables(tenants=None,
              'size(MB)',
              'status',
              'properties',
-            ])
+             ])
         pt.align = 'l'
         for C in ['id', 'min_disk', 'min_ram', 'status']:
             pt.align[C] = 'r'
@@ -1382,7 +1382,7 @@ def print_all_tables(tenants=None,
                      '%.2f' % (I.size / 1024.0 / 1024.0),
                      I.status,
                      I.properties,
-                    ])
+                     ])
         print(pt)
 
     # Print server groups for instances currently in use (exclude members data)
@@ -1395,7 +1395,7 @@ def print_all_tables(tenants=None,
              'Name',
              'Policies',
              'Metadata',
-            ])
+             ])
         pt.align = 'l'
         for _, S in sorted(server_groups.items(),
                            key=lambda k_v9: (k_v9[0])):
@@ -1407,7 +1407,7 @@ def print_all_tables(tenants=None,
                      S.name,
                      str(S.policies),
                      str(S.metadata),
-                    ])
+                     ])
         print(pt)
 
 
@@ -1420,7 +1420,7 @@ def _get_host_id(tenant_id=None, host_name=None):
 
 def start_process():
     logger.debug('Starting: %s, %d'
-        % (multiprocessing.current_process().name, os.getpid()))
+                 % (multiprocessing.current_process().name, os.getpid()))
 
 
 def get_info_and_display(show=None):
@@ -1505,7 +1505,7 @@ def get_info_and_display(show=None):
     q = select([S.name,
                 S.region_name,
                 S.deleted_at]
-              ).where(S.deleted_at is None)
+               ).where(S.deleted_at is None)
     result = conn.execute(q)
     for row in result:
         field = 'region_name'
@@ -1522,7 +1522,7 @@ def get_info_and_display(show=None):
     q = select([S.name,
                 S.region_name,
                 S.deleted_at]
-              ).where(S.deleted_at is None)
+               ).where(S.deleted_at is None)
     result = conn.execute(q)
     for row in result:
         name = str(row['name'])
@@ -1680,7 +1680,7 @@ def get_info_and_display(show=None):
                                   'image_id': image_id,
                                   'image_name': image_name,
                                   'vars': vars(V),
-                                 }
+                                  }
     del volumes_
 
     # Get list of migrations, sort-by id which puts them in time order.
@@ -1828,12 +1828,12 @@ def get_info_and_display(show=None):
                 max(1,
                     min(multiprocessing.cpu_count(),
                         int(0.6 * (avail_MiB - 100.0) / process_MiB)
+                        )
                     )
                 )
             )
-        )
     logger.debug('WORKERS: avail=%.2f MiB, process=%.2f MiB, pool_size=%d'
-        % (avail_MiB, process_MiB, pool_size))
+                 % (avail_MiB, process_MiB, pool_size))
 
     # Create pool of workers that connect to libvirt hypervisor.
     try:
@@ -1956,7 +1956,7 @@ def get_info_and_display(show=None):
     q = select([CN.hypervisor_hostname,
                 CN.numa_topology,
                 CN.deleted]
-              ).where(CN.deleted == 0)
+               ).where(CN.deleted == 0)
     result = conn.execute(q)
     for row in result:
         host = row['hypervisor_hostname']

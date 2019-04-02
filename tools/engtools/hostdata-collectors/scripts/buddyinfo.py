@@ -88,9 +88,9 @@ class BuddyInfo(object):
                 ret_string += " Zone: %s\n" % zoneinfo.get("zone")
                 ret_string += " Free KiB in zone: %.2f\n" % (sum(zoneinfo.get("usage")) / (1024.0))
                 ret_string += '\t{0:{align}{width}} {1:{align}{width}} {2:{align}{width}}\n'.format(
-                        "Fragment size", "Free fragments", "Total available KiB",
-                        width=width,
-                        align="<")
+                    "Fragment size", "Free fragments", "Total available KiB",
+                    width=width,
+                    align="<")
                 for idx in range(len(zoneinfo.get("sz_fragment"))):
                     ret_string += '\t{order:{align}{width}} {nr:{align}{width}} {usage:{align}{width}}\n'.format(
                         width=width,

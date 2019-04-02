@@ -90,9 +90,9 @@ class LogMgmtDaemon():
 
         # Use python's log rotation, rather than logrotate
         handler = logging.handlers.RotatingFileHandler(
-                            LOG_FILE,
-                            maxBytes=LOG_FILE_MAX_BYTES,
-                            backupCount=LOG_FILE_BACKUP_COUNT)
+            LOG_FILE,
+            maxBytes=LOG_FILE_MAX_BYTES,
+            backupCount=LOG_FILE_BACKUP_COUNT)
 
         my_logger = logging.getLogger()
         my_logger.setLevel(level)
@@ -147,10 +147,10 @@ class LogMgmtDaemon():
                     continue
 
                 # Ignore some files
-                if '/var/log/puppet' in fname \
-                    or '/var/log/dmesg' in fname \
-                    or '/var/log/rabbitmq' in fname \
-                    or '/var/log/lastlog' in fname:
+                if ('/var/log/puppet' in fname
+                        or '/var/log/dmesg' in fname
+                        or '/var/log/rabbitmq' in fname
+                        or '/var/log/lastlog' in fname):
                     continue
 
                 if os.path.exists(fname):

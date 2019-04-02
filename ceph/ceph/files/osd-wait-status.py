@@ -75,8 +75,8 @@ def get_osd_tree():
                'osd', 'tree', '--format', 'json']
     try:
         p = subprocess.Popen(command,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
         output, error = p.communicate()
         if p.returncode != 0:
             raise OsdException(
@@ -100,7 +100,7 @@ def get_osd_tree():
 
 
 def osd_match_status(target_osd, target_status,
-                    reverse_logic):
+                     reverse_logic):
     LOG.info(('Match status: '
               'target_osd={}, '
               'target status={}, '
@@ -237,7 +237,7 @@ if __name__ == "__main__":
         LOG.warn(
             ('Retry error: {}. '
              'Elapsed time: {:.02f} seconds'.format(
-                e, time.time() - start)))
+                 e, time.time() - start)))
     except OsdException as e:
         LOG.warn(
             ('OSD wait error: {}. '
