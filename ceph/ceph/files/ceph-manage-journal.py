@@ -18,6 +18,7 @@ DEVICE_NAME_NVME = "nvme"
 # Utils #
 #########
 
+
 def command(arguments, **kwargs):
     """ Execute e command and capture stdout, stderr & return code """
     process = subprocess.Popen(
@@ -173,6 +174,7 @@ def create_partitions(disk_path, partition_sizes):
         used_space_mib += size
         num += 1
 
+
 ###########################
 # Manage Journal Location #
 ###########################
@@ -327,5 +329,6 @@ def main(argv):
         else:
             print("Journal location for %s is correct,"
                   "no need to change it" % location['data_path'])
+
 
 main(sys.argv[1:])

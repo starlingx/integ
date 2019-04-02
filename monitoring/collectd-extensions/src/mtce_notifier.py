@@ -388,6 +388,7 @@ def notifier_func(nObject):
 
     return 0
 
+
 collectd.register_config(config_func)
 collectd.register_init(init_func)
 collectd.register_notification(notifier_func)

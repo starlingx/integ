@@ -36,6 +36,7 @@ PERCENT_FREE_MAJOR = 20
 
 LOGROTATE_PERIOD = 600  # Every ten minutes
 
+
 ###################
 # METHODS
 ###################
@@ -44,6 +45,7 @@ def start_polling():
     logmgmt_runner = runner.DaemonRunner(logmgmt_daemon)
     logmgmt_runner.daemon_context.umask = 0o022
     logmgmt_runner.do_action()
+
 
 def handle_exception(exc_type, exc_value, exc_traceback):
     """

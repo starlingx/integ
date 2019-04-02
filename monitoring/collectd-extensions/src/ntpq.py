@@ -97,6 +97,7 @@ class NtpqObject:
     repair = "Monitor and if condition persists, "
     repair += "contact next level of support."
 
+
 # This plugin's class object - persists over read calls
 obj = NtpqObject()
 

@@ -24,8 +24,8 @@ from collections import OrderedDict
 from six.moves import input
 
 
-# generates the required string for the areas where fields are not static
 def generateString(meas, tag_n, tag_v, field_n, field_v):
+    """generates the required string for the areas where fields are not static"""
     base = "{},".format(meas)
     try:
         for i in range(len(tag_n)):
@@ -46,8 +46,8 @@ def generateString(meas, tag_n, tag_v, field_n, field_v):
         return None
 
 
-# collects system memory information
 def collectMemtop(influx_info, node, ci):
+    """collects system memory information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("memtop data starting collection with a collection interval of {}s".format(ci["memtop"]))
     measurement = "memtop"
@@ -125,8 +125,8 @@ def collectMemtop(influx_info, node, ci):
             time.sleep(3)
 
 
-# collects rss and vsz information
 def collectMemstats(influx_info, node, ci, services, syseng_services, openstack_services, exclude_list, skip_list, collect_all):
+    """collects rss and vsz information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("memstats data starting collection with a collection interval of {}s".format(ci["memstats"]))
     measurement = "memstats"
@@ -239,8 +239,8 @@ def collectMemstats(influx_info, node, ci, services, syseng_services, openstack_
             time.sleep(3)
 
 
-# collects task cpu information
 def collectSchedtop(influx_info, node, ci, services, syseng_services, openstack_services, exclude_list, skip_list, collect_all):
+    """collects task cpu information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("schedtop data starting collection with a collection interval of {}s".format(ci["schedtop"]))
     measurement = "schedtop"
@@ -351,8 +351,8 @@ def collectSchedtop(influx_info, node, ci, services, syseng_services, openstack_
             time.sleep(3)
 
 
-# collects disk utilization information
 def collectDiskstats(influx_info, node, ci):
+    """collects disk utilization information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("diskstats data starting collection with a collection interval of {}s".format(ci["diskstats"]))
     measurement = "diskstats"
@@ -390,8 +390,8 @@ def collectDiskstats(influx_info, node, ci):
             time.sleep(3)
 
 
-# collect device I/O information
 def collectIostat(influx_info, node, ci):
+    """collect device I/O information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("iostat data starting collection with a collection interval of {}s".format(ci["iostat"]))
     measurement = "iostat"
@@ -473,8 +473,8 @@ def collectIostat(influx_info, node, ci):
             time.sleep(3)
 
 
-# collects cpu load average information
 def collectLoadavg(influx_info, node, ci):
+    """collects cpu load average information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("load_avg data starting collection with a collection interval of {}s".format(ci["load_avg"]))
     measurement = "load_avg"
@@ -493,8 +493,8 @@ def collectLoadavg(influx_info, node, ci):
             time.sleep(3)
 
 
-# collects cpu utilization information
 def collectOcctop(influx_info, node, ci, pc):
+    """collects cpu utilization information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("occtop data starting collection with a collection interval of {}s".format(ci["occtop"]))
     measurement = "occtop"
@@ -539,8 +539,8 @@ def collectOcctop(influx_info, node, ci, pc):
             time.sleep(3)
 
 
-# collects network interface information
 def collectNetstats(influx_info, node, ci):
+    """collects network interface information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("netstats data starting collection with a collection interval of {}s".format(ci["netstats"]))
     measurement = "netstats"
@@ -590,8 +590,8 @@ def collectNetstats(influx_info, node, ci):
             time.sleep(3)
 
 
-# collects postgres db size and postgres service size information
 def collectPostgres(influx_info, node, ci):
+    """collects postgres db size and postgres service size information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("postgres data starting collection with a collection interval of {}s".format(ci["postgres"]))
     measurement = "postgres_db_size"
@@ -694,8 +694,8 @@ def collectPostgres(influx_info, node, ci):
             time.sleep(3)
 
 
-# collect postgres connections information
 def collectPostgresConnections(influx_info, node, ci, fast):
+    """collect postgres connections information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     if fast:
         logging.info("postgres_connections data starting collection with a constant collection interval")
@@ -762,8 +762,8 @@ def collectPostgresConnections(influx_info, node, ci, fast):
             time.sleep(3)
 
 
-# collects rabbitmq information
 def collectRabbitMq(influx_info, node, ci):
+    """collects rabbitmq information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("rabbitmq data starting collection with a collection interval of {}s".format(ci["rabbitmq"]))
     measurement = "rabbitmq"
@@ -822,8 +822,8 @@ def collectRabbitMq(influx_info, node, ci):
             time.sleep(3)
 
 
-# collects rabbitmq messaging information
 def collectRabbitMqSvc(influx_info, node, ci, services):
+    """collects rabbitmq messaging information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("rabbitmq_svc data starting collection with a collection interval of {}s".format(ci["rabbitmq"]))
     measurement = "rabbitmq_svc"
@@ -880,8 +880,8 @@ def collectRabbitMqSvc(influx_info, node, ci, services):
             time.sleep(3)
 
 
-# collects open file information
 def collectFilestats(influx_info, node, ci, services, syseng_services, exclude_list, skip_list, collect_all):
+    """collects open file information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("filestats data starting collection with a collection interval of {}s".format(ci["filestats"]))
     measurement = "filestats"
@@ -1009,8 +1009,8 @@ def collectFilestats(influx_info, node, ci, services, syseng_services, exclude_l
             time.sleep(3)
 
 
-# collects vshell information
 def collectVswitch(influx_info, node, ci):
+    """collects vshell information"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("vswitch data starting collection with a collection interval of {}s".format(ci["vswitch"]))
     measurement = "vswitch"
@@ -1102,8 +1102,8 @@ def collectVswitch(influx_info, node, ci):
             time.sleep(3)
 
 
-# collects the number of cores
 def collectCpuCount(influx_info, node, ci):
+    """collects the number of cores"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     logging.info("cpu_count data starting collection with a collection interval of {}s".format(ci["cpu_count"]))
     measurement = "cpu_count"
@@ -1118,6 +1118,7 @@ def collectCpuCount(influx_info, node, ci):
             break
         except Exception:
             logging.error("cpu_count collection stopped unexpectedly with error: {}. Restarting process...".format(sys.exc_info()))
+
 
 def collectApiStats(influx_info, node, ci, services, db_port, rabbit_port):
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
@@ -1172,8 +1173,9 @@ def collectApiStats(influx_info, node, ci, services, db_port, rabbit_port):
             logging.error("api_request collection stopped unexpectedly with error: {}. Restarting process...".format(sys.exc_info()))
             time.sleep(3)
 
-# returns the cores dedicated to platform use
+
 def getPlatformCores(node, cpe):
+    """returns the cores dedicated to platform use"""
     if cpe is True or node.startswith("compute"):
         logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
         core_list = list()
@@ -1191,8 +1193,8 @@ def getPlatformCores(node, cpe):
         return []
 
 
-# determine if controller is active/standby
 def isActiveController():
+    """determine if controller is active/standby"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     try:
         p = Popen("sm-dump", shell=True, stdout=PIPE)
@@ -1213,8 +1215,8 @@ def isActiveController():
         return False
 
 
-# checks whether the duration param has been set. If set, sleep; then kill processes upon waking up
 def checkDuration(duration):
+    """checks whether the duration param has been set. If set, sleep; then kill processes upon waking up"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     if duration is None:
         return None
@@ -1225,8 +1227,8 @@ def checkDuration(duration):
         raise KeyboardInterrupt
 
 
-# kill all processes and log each death
 def killProcesses(tasks):
+    """kill all processes and log each death"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     for t in tasks:
         try:
@@ -1236,8 +1238,8 @@ def killProcesses(tasks):
             continue
 
 
-# create database in InfluxDB and add it to Grafana
 def createDB(influx_info, grafana_port, grafana_api_key):
+    """create database in InfluxDB and add it to Grafana"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     p = None
     try:
@@ -1268,8 +1270,8 @@ def createDB(influx_info, grafana_port, grafana_api_key):
         sys.exit(0)
 
 
-# delete database from InfluxDB and remove it from Grafana
 def deleteDB(influx_info, grafana_port, grafana_api_key):
+    """delete database from InfluxDB and remove it from Grafana"""
     logging.basicConfig(filename="/tmp/livestream.log", filemode="a", format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
     p = None
     try:
@@ -1312,8 +1314,8 @@ def deleteDB(influx_info, grafana_port, grafana_api_key):
         sys.exit(0)
 
 
-# used for output log
 def appendToFile(file, content):
+    """used for output log"""
     with open(file, "a") as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         f.write(content + '\n')

@@ -45,6 +45,7 @@ class CPU:
 
         collectd.error("%s %s" % (PLUGIN, err_str))
 
+
 # Instantiate the class
 c = CPU()
 

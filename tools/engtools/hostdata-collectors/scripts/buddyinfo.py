@@ -101,6 +101,7 @@ class BuddyInfo(object):
 
         return ret_string
 
+
 def main():
     """Main function. Called when this file is a shell script"""
     usage = "usage: %prog [options]"
@@ -115,6 +116,7 @@ def main():
     print(logger)
     buddy = BuddyInfo(logger)
     print(buddy)
+
 
 if __name__ == '__main__':
     main()

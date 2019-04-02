@@ -489,6 +489,7 @@ def list_to_range(L=None):
     return ",".join(
         "-".join(map(str, (g[0][1], g[-1][1])[:len(g)])) for g in G)
 
+
 def range_to_list(csv_range=None):
     """ Convert a string of comma separate ranges into an expanded list of
         integers.  E.g., '1-3,8-9,15' is converted to [1,2,3,8,9,15]
@@ -1469,7 +1470,6 @@ def get_info_and_display(show=None):
         # error
         'error'
     ]
-
 
     # Get keystone credentials from nova.conf
     auth = keystone.load_auth_from_conf_options(CONF, AUTHTOKEN_GROUP)
