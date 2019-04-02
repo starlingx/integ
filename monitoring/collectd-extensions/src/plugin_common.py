@@ -15,6 +15,7 @@ import uuid
 import httplib2
 import socket
 import os
+from oslo_concurrency import processutils
 from fm_api import constants as fm_constants
 import tsconfig.tsconfig as tsc
 
@@ -34,28 +35,42 @@ class PluginObject(object):
         self.hostname = ''               # the name of this host
         self.port = 0                    # the port number for this plugin
         self.base_eid = ''               # the base entity id host=<hostname>
+        self.controller = False          # set true if node is controller
 
         # dynamic gate variables
+        self.virtual = False             # set to True if host is virtual
         self.config_complete = False     # set to True once config is complete
         self.config_done = False         # set true if config_func completed ok
         self.init_done = False           # set true if init_func completed ok
+        self.fm_connectivity = False     # set true when fm connectivity ok
+
+        self.alarm_type = fm_constants.FM_ALARM_TYPE_7     # OPERATIONAL
+        self.cause = fm_constants.ALARM_PROBABLE_CAUSE_50  # THRESHOLD CROSS
+        self.suppression = True
+        self.service_affecting = False
 
         # dynamic variables set in read_func
         self.usage = float(0)            # last usage value recorded as float
+        self.value = float(0)            # last read value
         self.audits = 0                  # number of audit since init
         self.enabled = False             # tracks a plugin's enabled state
         self.alarmed = False             # tracks the current alarmed state
+        self.mode = ''                   # mode specific to plugin
 
         # http and json specific variables
         self.url = url                   # target url
         self.jresp = None                # used to store the json response
         self.resp = ''
 
+        self.objects = []                # list of plugin specific objects
+        self.cmd = ''                    # plugin specific command string
+
         # Log controls
         self.config_logged = False       # used to log once the plugin config
         self.error_logged = False        # used to prevent log flooding
         self.log_throttle_count = 0      # used to count throttle logs
         self.INIT_LOG_THROTTLE = 10      # the init log throttle threshold
+        self.phase = 0                   # tracks current phase; init, sampling
 
         collectd.debug("%s Common PluginObject constructor [%s]" %
                        (plugin, url))
@@ -113,6 +128,39 @@ class PluginObject(object):
             collectd.error("%s failed to get hostname" % self.plugin)
 
         return None
+
+    ###########################################################################
+    #
+    # Name       : is_virtual
+    #
+    # Description: Execute facter command with output filter on 'is_virtual'
+    #
+    # Parameters : None
+    #
+    # Returns    :  True if current host is virtual.
+    #              False if current host is NOT virtual
+    #
+    ###########################################################################
+    def is_virtual(self):
+        """ Check for virtual host """
+
+        try:
+            cmd = '/usr/bin/facter is_virtual'
+            res, err = processutils.execute(cmd, shell=True)
+            if err:
+                return False
+            elif res:
+                # remove the trailing '\n' with strip()
+                if res.strip() == 'true':
+                    collectd.info("%s %s is virtual" %
+                                  (self.plugin, self.hostname))
+                    return True
+
+        except Exception as ex:
+            collectd.info("%s failed to execute '/usr/bin/facter' ; %s" %
+                          self.plugin, ex)
+
+        return False
 
     ###########################################################################
     #
