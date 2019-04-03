@@ -1,2 +1,0 @@
-virt/libvirt
-database/mariadb

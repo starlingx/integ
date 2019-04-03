@@ -1,3 +1,0 @@
-BUILDER=docker
-LABEL=stx-mariadb
-
