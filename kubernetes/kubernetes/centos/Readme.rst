@@ -5,3 +5,5 @@ assist with future upversioning.
 
 The contrib tarball does not have the same versioning as kubernetes and
 there is little activity in that repo.
+
+The version for the contrib tarball is arbitrary.

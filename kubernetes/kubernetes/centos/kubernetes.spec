@@ -23,16 +23,16 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.12.3
+%global commit                  1.13.5
 
 %global con_provider            github
 %global con_provider_tld        com
 %global con_project             kubernetes
 %global con_repo                kubernetes-contrib
 # https://github.com/kubernetes/contrib
-%global con_commit              1.12.1
+%global con_commit              1.13.5
 
-%global kube_version            1.12.3
+%global kube_version            1.13.5
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
