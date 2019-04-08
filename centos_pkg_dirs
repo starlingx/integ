@@ -86,6 +86,7 @@ monitoring/collectd-extensions
 monitoring/influxdb-extensions
 kubernetes/kubernetes
 kubernetes/docker-distribution
+kubernetes/etcd
 kubernetes/helm
 kubernetes/registry-token-server
 logging/logmgmt

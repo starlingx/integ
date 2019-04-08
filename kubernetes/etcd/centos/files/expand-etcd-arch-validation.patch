@@ -1,0 +1,30 @@
+From b3e78645c1ffa84bcde511c90df4e3dde652c3fa Mon Sep 17 00:00:00 2001
+From: Jan Chaloupka <jchaloup@redhat.com>
+Date: Tue, 8 Aug 2017 15:01:04 +0200
+Subject: [PATCH] expand etcd arch validation
+
+---
+ etcdmain/etcd.go | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/etcdmain/etcd.go b/etcdmain/etcd.go
+index 2f7f00d..61553d4 100644
+--- a/etcdmain/etcd.go
++++ b/etcdmain/etcd.go
+@@ -396,6 +396,13 @@ func checkSupportArch() {
+ 	if runtime.GOARCH == "amd64" || runtime.GOARCH == "ppc64le" {
+ 		return
+ 	}
++
++	if runtime.GOARCH == "arm64" || runtime.GOARCH == "s390x" {
++		plog.Warningf("Running etcd on %s architecture is experimental.", runtime.GOARCH)
++		plog.Warningf("Please report any bugs you encounter: https://bugzilla.redhat.com/")
++		return
++	}
++
+ 	if env, ok := os.LookupEnv("ETCD_UNSUPPORTED_ARCH"); ok && env == runtime.GOARCH {
+ 		plog.Warningf("running etcd on unsupported architecture %q since ETCD_UNSUPPORTED_ARCH is set", env)
+ 		return
+-- 
+2.7.5
+
