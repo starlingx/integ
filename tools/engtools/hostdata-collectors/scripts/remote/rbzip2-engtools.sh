@@ -11,7 +11,7 @@ if [ $UID -eq 0 ]; then
 fi
 
 # environment for system commands
-source /etc/nova/openrc
+source /etc/platform/openrc
 
 declare -a CONTROLLER
 declare -a COMPUTE

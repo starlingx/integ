@@ -143,11 +143,11 @@ def parse_arguments(show):
 
 def get_system_creds():
 
-    """ Return keystone credentials by sourcing /etc/nova/openrc. """
+    """ Return keystone credentials by sourcing /etc/platform/openrc. """
     d = {}
 
     proc = subprocess.Popen(['bash', '-c',
-                             'source /etc/nova/openrc && env'],
+                             'source /etc/platform/openrc && env'],
                             stdout=subprocess.PIPE)
 
     for line in proc.stdout:

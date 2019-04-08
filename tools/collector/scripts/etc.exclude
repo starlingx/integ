@@ -1,5 +1,3 @@
-/etc/cinder/volumes
-/etc/nova/instances
 /etc/postgresql
 /etc/alternatives
 /etc/terminfo
