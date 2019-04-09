@@ -48,7 +48,8 @@ class HandleUpgradesMixin(object):
                 and state != constants.UPGRADE_COMPLETED
                 and from_version == constants.TITANIUM_SERVER_VERSION_18_03):
 
-            LOG.info(_LI("Wait for ceph upgrade to complete before monitoring cluster."))
+            LOG.info(_LI("Wait for ceph upgrade to complete "
+                         "before monitoring cluster."))
             self.wait_for_upgrade_complete = True
 
     def set_flag_require_jewel_osds(self):
@@ -90,7 +91,8 @@ class HandleUpgradesMixin(object):
             reason = reason.strip()
             if len(reason) == 0:
                 continue
-            if constants.CEPH_HEALTH_WARN_REQUIRE_JEWEL_OSDS_NOT_SET in reason:
+            if constants.CEPH_HEALTH_WARN_REQUIRE_JEWEL_OSDS_NOT_SET \
+                    in reason:
                 continue
             reasons_list.append(reason)
         if len(reasons_list) == 0:
@@ -168,8 +170,9 @@ class Monitor(HandleUpgradesMixin):
             try:
                 self.ceph_get_fsid()
             except Exception:
-                LOG.exception("Error getting fsid, "
-                              "will retry in %ss" % constants.CEPH_HEALTH_CHECK_INTERVAL)
+                LOG.exception(
+                    "Error getting fsid, will retry in %ss"
+                    % constants.CEPH_HEALTH_CHECK_INTERVAL)
             if self.service.entity_instance_id:
                 break
             time.sleep(constants.CEPH_HEALTH_CHECK_INTERVAL)
@@ -180,8 +183,10 @@ class Monitor(HandleUpgradesMixin):
                 self.ceph_poll_status()
                 self.ceph_poll_quotas()
             except Exception:
-                LOG.exception("Error running periodic monitoring of ceph status, "
-                              "will retry in %ss" % constants.CEPH_HEALTH_CHECK_INTERVAL)
+                LOG.exception(
+                    "Error running periodic monitoring of ceph status, "
+                    "will retry in %ss"
+                    % constants.CEPH_HEALTH_CHECK_INTERVAL)
             time.sleep(constants.CEPH_HEALTH_CHECK_INTERVAL)
 
     def ceph_get_fsid(self):
@@ -705,7 +710,8 @@ class Monitor(HandleUpgradesMixin):
 
         return (
             msg['head'] +
-            (health['health'] + lbracket + parsed_reasons_text)[:max_size - 1] +
+            (health['health'] + lbracket
+             + parsed_reasons_text)[:max_size - 1] +
             rbracket + msg['tail'])
 
     def _report_fault(self, health, alarm_id):
