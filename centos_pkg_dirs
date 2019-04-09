@@ -88,6 +88,7 @@ kubernetes/kubernetes
 kubernetes/docker-distribution
 kubernetes/helm
 kubernetes/registry-token-server
+kubernetes/cloud-provider-openstack
 logging/logmgmt
 filesystem/filesystem-scripts
 config-files/io-scheduler
