@@ -15,8 +15,8 @@ index 6bdbb74..3b2aa7f 100644
  Name:           systemd
  Url:            http://www.freedesktop.org/wiki/Software/systemd
  Version:        219
--Release:        62%{?dist}
-+Release:        62.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release:        62%{?dist}.5
++Release:        62.el7_6.5%{?_tis_dist}.%{tis_patch_ver}
  # For a breakdown of the licensing, see README
  License:        LGPLv2+ and MIT and GPLv2+
  Summary:        A System and Service Manager
