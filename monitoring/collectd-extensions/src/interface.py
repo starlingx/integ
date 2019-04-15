@@ -7,12 +7,12 @@
 #
 # This is the Host Interface Monitor plugin for collectd.
 #
-# Only mgmt, infra and oam interfaces are supported with the following
+# Only mgmt, cluster-host and oam interfaces are supported with the following
 # mapping specified in /etc/platform/platform.conf
 #
 #   oam - oam_interface            | controller | mandatory
 # mgmnt - management_interface     | all hosts  | mandatory
-# infa  - infrastructure_interface | any host   | optional
+# clstr - cluster_host_interface   | any host   | optional
 #
 # This plugin queries the maintenance Link Monitor daemon 'lmon'
 # for a link status summary of that hosts configured networks.
@@ -31,7 +31,7 @@
 #              { "name":"enp0s8.1", "state":"Up", "time":"5674323454567" },
 #              { "name":"enp0s8.2", "state":"Up", "time":"5674323454567" }]
 #      },
-#      { "network":"infra",
+#      { "network":"clstr",
 #        "type":"bond",
 #        "bond":"bond0",
 #        "links": [
@@ -107,20 +107,20 @@ PLUGIN_OAM_IFACE_ALARMID = '100.107'    # OAM Network Interface
 PLUGIN_MGMT_PORT_ALARMID = '100.108'    # Management Network Port
 PLUGIN_MGMT_IFACE_ALARMID = '100.109'   # Management Network Interface
 
-PLUGIN_INFRA_PORT_ALARMID = '100.110'   # Infrastructure Network Port
-PLUGIN_INFRA_IFACE_ALARMID = '100.111'  # Infrastructure Nwk Interface
+PLUGIN_CLSTR_PORT_ALARMID = '100.110'   # Cluster-host Network Port
+PLUGIN_CLSTR_IFACE_ALARMID = '100.111'  # Cluster-host Nwk Interface
 
 # List of all alarm identifiers.
 ALARM_ID_LIST = [PLUGIN_OAM_PORT_ALARMID,
                  PLUGIN_OAM_IFACE_ALARMID,
                  PLUGIN_MGMT_PORT_ALARMID,
                  PLUGIN_MGMT_IFACE_ALARMID,
-                 PLUGIN_INFRA_PORT_ALARMID,
-                 PLUGIN_INFRA_IFACE_ALARMID]
+                 PLUGIN_CLSTR_PORT_ALARMID,
+                 PLUGIN_CLSTR_IFACE_ALARMID]
 
 # Monitored Network Name Strings
 NETWORK_MGMT = 'mgmt'
-NETWORK_INFRA = 'infra'
+NETWORK_CLSTR = 'cluster-host'
 NETWORK_OAM = 'oam'
 
 # Port / Interface State strings
@@ -242,9 +242,9 @@ class NetworkObject:
         elif name == NETWORK_MGMT:
             alarm_id = PLUGIN_MGMT_PORT_ALARMID
             self.alarm_id = PLUGIN_MGMT_IFACE_ALARMID
-        elif name == NETWORK_INFRA:
-            alarm_id = PLUGIN_INFRA_PORT_ALARMID
-            self.alarm_id = PLUGIN_INFRA_IFACE_ALARMID
+        elif name == NETWORK_CLSTR:
+            alarm_id = PLUGIN_CLSTR_PORT_ALARMID
+            self.alarm_id = PLUGIN_CLSTR_IFACE_ALARMID
         else:
             self.alarm_id = ""
             collectd.error("%s unexpected network (%s)" % (PLUGIN, name))
@@ -392,7 +392,7 @@ obj = pc.PluginObject(PLUGIN, PLUGIN_HTTP_URL_PREFIX)
 # Network Object List - Primary Network/Link Control Object
 NETWORKS = [NetworkObject(NETWORK_MGMT),
             NetworkObject(NETWORK_OAM),
-            NetworkObject(NETWORK_INFRA)]
+            NetworkObject(NETWORK_CLSTR)]
 
 
 ##########################################################################
@@ -542,8 +542,8 @@ def clear_alarms(alarm_id_list):
                         alarm_id == PLUGIN_OAM_IFACE_ALARMID or \
                         alarm_id == PLUGIN_MGMT_PORT_ALARMID or \
                         alarm_id == PLUGIN_MGMT_IFACE_ALARMID or \
-                        alarm_id == PLUGIN_INFRA_PORT_ALARMID or \
-                        alarm_id == PLUGIN_INFRA_IFACE_ALARMID:
+                        alarm_id == PLUGIN_CLSTR_PORT_ALARMID or \
+                        alarm_id == PLUGIN_CLSTR_IFACE_ALARMID:
                     eid = alarm.entity_instance_id
                     if api.clear_fault(alarm_id, eid) is False:
                         collectd.error("%s %s:%s clear_fault failed" %
@@ -553,7 +553,7 @@ def clear_alarms(alarm_id_list):
                         found = True
                         collectd.info("%s %s clearing %s alarm %s:%s" %
                                       (PLUGIN,
-                                       NETWORK_INFRA,
+                                       NETWORK_CLSTR,
                                        alarm.severity,
                                        alarm_id,
                                        alarm.entity_instance_id))
@@ -882,7 +882,7 @@ def read_func():
         val.type = 'percent'
         val.type_instance = 'used'
 
-        # For each interface [ mgmt, oam, infra ]
+        # For each interface [ mgmt, oam, cluster-host ]
         #   calculate the percentage used sample
         #      sample = 100 % when all its links are up
         #      sample =   0 % when all its links are down
