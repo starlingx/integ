@@ -1,7 +1,7 @@
 From b99292ef32fdde60d2ec4181ee5963b93a97cdf2 Mon Sep 17 00:00:00 2001
 From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 13 Dec 2017 09:02:40 -0500
-Subject: [PATCH 2/2] include patch for CGTS-2869
+Subject: [PATCH 2/2] include patch for error handling
 
 ---
  SPECS/python-requests.spec | 2 ++
@@ -12,10 +12,10 @@ index 111bab7..8aab964 100644
 --- a/SPECS/python-requests.spec
 +++ b/SPECS/python-requests.spec
 @@ -39,6 +39,8 @@ Patch2:         python-requests-urllib3-at-%{urllib3_unbundled_version}.patch
- # a pretty odd one so this is a niche requirement.
- Patch3:         requests-2.12.4-tests_nonet.patch
- 
-+Patch4:         0001-CGTS-2869-close-connection-on-HTTP-413-Request-Entit.patch
+ # https://bugzilla.redhat.com/show_bug.cgi?id=1653223
+ Patch5:         requests-2.20.0-no-py2-httpbin.patch
+
++Patch6:         0001-close-connection-on-HTTP-413-Request-Entit.patch
 +
  BuildArch:      noarch
  

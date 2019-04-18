@@ -1,7 +1,7 @@
 From 268a1f179e554027637bd2951b24ad44ecb4a1ee Mon Sep 17 00:00:00 2001
 From: Daniel Badea <daniel.badea@windriver.com>
 Date: Wed, 7 Sep 2016 09:10:10 +0000
-Subject: [PATCH] CGTS-2869 close connection on HTTP 413 Request Entity Too
+Subject: [PATCH] close connection on HTTP 413 Request Entity Too
  Large
 
 Allow low_conn to retrieve/handle unread response data buffers
@@ -15,7 +15,7 @@ diff --git a/requests/adapters.py b/requests/adapters.py
 index fd46325..087258a 100644
 --- a/requests/adapters.py
 +++ b/requests/adapters.py
-@@ -455,12 +455,18 @@ class HTTPAdapter(BaseAdapter):
+@@ -466,12 +466,18 @@ class HTTPAdapter(BaseAdapter):
 
                      low_conn.endheaders()
 
