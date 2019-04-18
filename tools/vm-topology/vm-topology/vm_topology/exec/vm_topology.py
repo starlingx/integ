@@ -107,14 +107,15 @@ LIBVIRT_REAP_SEC = LIBVIRT_TIMEOUT_SEC + 2.0
 
 # Define a context manager to suppress stdout and stderr.
 class suppress_stdout_stderr(object):
-    '''
-    A context manager for doing a "deep suppression" of stdout and stderr in
-    Python, i.e. will suppress all print, even if the print originates in a
+    """Context manager for doing a "deep suppression" of stdout and stderr
+
+     i.e. will suppress all print, even if the print originates in a
     compiled C/Fortran sub-function.
-       This will not suppress raised exceptions, since exceptions are printed
+
+    This will not suppress raised exceptions, since exceptions are printed
     to stderr just before a script exits, and after the context manager has
     exited (at least, I think that is why it lets exceptions through).
-    '''
+    """
     def __init__(self):
         # Open a pair of null files
         self.null_fds = [os.open(os.devnull, os.O_RDWR) for x in range(2)]
@@ -140,9 +141,7 @@ def atoi(text):
 
 
 def natural_keys(text):
-    '''
-    alist.sort(key=natural_keys) sorts in human order
-    '''
+    """alist.sort(key=natural_keys) sorts in human order"""
     return [atoi(c) for c in re.split('(\d+)', text)]
 
 
@@ -253,6 +252,7 @@ def help_text_epilog():
 
 class ChoiceOpt(cfg.Opt):
     r"""Option with List(String) type
+
     Option with ``type`` :class:`oslo_config.types.List`
     :param name: the option's name
     :param choices: Optional sequence of either valid values or tuples of valid
@@ -269,9 +269,7 @@ class ChoiceOpt(cfg.Opt):
 
 
 def parse_arguments(debug, show):
-    """
-    Parse command line arguments.
-    """
+    """Parse command line arguments"""
 
     # Initialize all debug flags to False
     define_debug_flags(debug)
@@ -357,7 +355,7 @@ def parse_arguments(debug, show):
 
 
 def configure_logging(logger, level=logging.DEBUG):
-    """ Configure logger streams and format. """
+    """Configure logger streams and format"""
     logger.setLevel(level)
     ch = logging.StreamHandler(sys.stdout)
     ch.setLevel(level)
@@ -368,8 +366,10 @@ def configure_logging(logger, level=logging.DEBUG):
 
 
 def _translate_keys(collection, convert):
-    """ For a collection of elements, translate _info field names
-    into human-readable names based on a list of conversion tuples.
+    """translate elements _info field names into human-readable names
+
+    :param collection: dictionary containing the elements to be translated
+    :param convert: list of conversion tuples
     """
     for k, item in collection.items():
         keys = list(item.__dict__.keys())
@@ -384,7 +384,7 @@ def _translate_keys(collection, convert):
 
 
 def _translate_extended_states(collection):
-    """ Return human readable power-state string. """
+    """Return human readable power-state string"""
     power_states = [
         'NOSTATE',   # 0x00
         'Running',   # 0x01
@@ -408,7 +408,7 @@ def _translate_extended_states(collection):
 
 
 def _translate_virDomainState(state):
-    """ Return human readable virtual domain state string. """
+    """Return human readable virtual domain state string"""
     states = {}
     states[0] = 'NOSTATE'
     states[1] = 'Running'
@@ -423,7 +423,7 @@ def _translate_virDomainState(state):
 
 
 def _translate_virVcpuState(state):
-    """ Return human readable virtual vpu state string. """
+    """Return human readable virtual vpu state string"""
     states = {}
     states[0] = 'Offline'
     states[1] = 'Running'
@@ -433,7 +433,7 @@ def _translate_virVcpuState(state):
 
 
 def _mask_to_cpulist(mask=0):
-    """ Create cpulist from mask, list in socket-core-thread enumerated order.
+    """Create cpulist from mask, list in socket-core-thread enumerated order
 
     :param extended: extended info
     :param mask: cpuset mask
@@ -452,11 +452,11 @@ def _mask_to_cpulist(mask=0):
 
 
 def string_to_cpulist(cpus_str=''):
-    ''' Convert a string representation to cpulist
+    """Convert a string representation to cpulist
 
     :param cpus_str: string containing list cpus, eg., 1,2,6-7
     :returns cpulist
-    '''
+    """
 
     # Create list of excluded cpus by parsing excluded_cpulist_str,
     # example: 1,2,6-7
@@ -480,8 +480,9 @@ def string_to_cpulist(cpus_str=''):
 
 
 def list_to_range(L=None):
-    """ Convert a list into a string of comma separate ranges.
-        E.g.,  [1,2,3,8,9,15] is converted to '1-3,8-9,15'
+    """Convert a list into a string of comma separate ranges
+
+    E.g.,  [1,2,3,8,9,15] is converted to '1-3,8-9,15'
     """
     if L is None:
         L = []
@@ -491,8 +492,9 @@ def list_to_range(L=None):
 
 
 def range_to_list(csv_range=None):
-    """ Convert a string of comma separate ranges into an expanded list of
-        integers.  E.g., '1-3,8-9,15' is converted to [1,2,3,8,9,15]
+    """Convert a string of comma separate ranges into an expanded list of ints
+
+    E.g., '1-3,8-9,15' is converted to [1,2,3,8,9,15]
     """
     if not csv_range:
         return []
@@ -525,9 +527,9 @@ def libvirt_domain_info_worker(tuple_hosts):
 
 
 def do_libvirt_domain_info(tuple_hosts):
-    """
-    Connect to libvirt for specified host, and retrieve per-domain information
-    including cpu affinity per vcpu.
+    """Connect to libvirt for specified host, and retrieve per-domain information
+
+    The information includes cpu affinity per vcpu.
     """
     (host) = tuple_hosts
     domains = {}
@@ -683,9 +685,7 @@ def print_debug_info(tenants=None, regions=None,
                      topologies=None, topologies_idx=None, topologies_sib=None,
                      computes_cell=None,
                      debug=None, show=None):
-    """
-    Print debug information - pretty formatting of various data structures
-    """
+    """Print debug information - pretty formatting of various data structures"""
     pp = pprint.PrettyPrinter(indent=2)
 
     if True in debug.values():
@@ -779,7 +779,7 @@ def print_debug_info(tenants=None, regions=None,
 
 
 def define_debug_flags(debug):
-    """ Define dictionary of debug flags. """
+    """Define dictionary of debug flags"""
     opts = ['all',
             'creds',
             'hypervisors',
@@ -800,7 +800,7 @@ def define_debug_flags(debug):
 
 
 def define_options():
-    """ Define several groupings with lists of show options. """
+    """Define several groupings with lists of show options"""
     L_opts = ['brief',
               'all',
               ]
@@ -826,7 +826,7 @@ def define_options():
 
 def define_option_flags(show, options=None,
                         L_opts=None, L_brief=None, L_details=None, L_other=None):
-    """ Define dictionary of option flags. """
+    """Define dictionary of option flags"""
     if options is None:
         options = []
     if L_opts is None:
@@ -864,8 +864,7 @@ def print_all_tables(tenants=None,
                      images_in_use=None,
                      server_groups_in_use=None,
                      debug=None, show=None):
-    """ Print all summary tables using PrettyTable.
-    """
+    """Print all summary tables using PrettyTable"""
     # Print list of aggregates
     if show['aggregates']:
         print()
@@ -1413,8 +1412,7 @@ def print_all_tables(tenants=None,
 
 
 def _get_host_id(tenant_id=None, host_name=None):
-    """ Routine defined in nova/api/openstack/compute/views/servers.py .
-    """
+    """Routine defined in nova/api/openstack/compute/views/servers.py"""
     sha_hash = hashlib.sha224(tenant_id + host_name)
     return sha_hash.hexdigest()
 
@@ -1425,15 +1423,15 @@ def start_process():
 
 
 def get_info_and_display(show=None):
-    """ Get information from various sources (keystone, nova, libvirt).
+    """Get information from various sources (keystone, nova, libvirt)
 
-        Display the following information in table format.
-        - nova view of hypervisors and servers
-        - libvirt view of servers
-        - nova view of in-progress migrations
-        - nova view of flavors in-use
-        - nova view of volumes and images in-use
-        - nova view of server-groups in-use
+    Display the following information in table format.
+    - nova view of hypervisors and servers
+    - libvirt view of servers
+    - nova view of in-progress migrations
+    - nova view of flavors in-use
+    - nova view of volumes and images in-use
+    - nova view of server-groups in-use
     """
 
     # Keep track of mismatches found when validating data sources

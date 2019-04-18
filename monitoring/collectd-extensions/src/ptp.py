@@ -236,7 +236,7 @@ TIMESTAMP_MODE__LEGACY = 'legacy'
 #
 #####################################################################
 def _get_supported_modes(interface):
-    """ Get the supported modes for the specified interface """
+    """Get the supported modes for the specified interface"""
 
     hw_tx = hw_rx = sw_tx = sw_rx = False
     modes = []
@@ -299,7 +299,7 @@ def _get_supported_modes(interface):
 #
 #####################################################################
 def get_alarm_object(alarm, interface=None):
-    """ Alarm object lookup """
+    """Alarm object lookup"""
 
     for o in ALARM_OBJ_LIST:
         # print_alarm_object(o)
@@ -329,7 +329,7 @@ def get_alarm_object(alarm, interface=None):
 #
 #####################################################################
 def clear_alarm(eid):
-    """ Clear the ptp alarm with the specified entity ID """
+    """Clear the ptp alarm with the specified entity ID"""
 
     try:
         if api.clear_fault(PLUGIN_ALARMID, eid) is True:
@@ -364,7 +364,7 @@ def clear_alarm(eid):
 #
 #####################################################################
 def raise_alarm(alarm_cause, interface=None, data=0):
-    """ Assert a cause based PTP alarm """
+    """Assert a cause based PTP alarm"""
 
     collectd.debug("%s Raising Alarm %d" % (PLUGIN, alarm_cause))
 
@@ -461,7 +461,7 @@ def raise_alarm(alarm_cause, interface=None, data=0):
 #
 #####################################################################
 def create_interface_alarm_objects(interface=None):
-    """ Create alarm objects """
+    """Create alarm objects"""
 
     collectd.debug("%s Alarm Object Create: Interface:%s " %
                    (PLUGIN, interface))
@@ -548,7 +548,7 @@ def create_interface_alarm_objects(interface=None):
 #
 #####################################################################
 def read_timestamp_mode():
-    """ Load timestamping mode """
+    """Load timestamping mode"""
 
     if os.path.exists(PLUGIN_CONF_FILE):
         current_mode = obj.mode

@@ -114,7 +114,7 @@ obj = NtpqObject()
 ###############################################################################
 
 def _add_unreachable_server(ip=None):
-    """ Add ip to unreachable_servers list """
+    """Add ip to unreachable_servers list"""
 
     if ip:
         if ip not in obj.unreachable_servers:
@@ -153,7 +153,7 @@ def _add_unreachable_server(ip=None):
 ###############################################################################
 
 def _raise_alarm(ip=None):
-    """ Assert an NTP alarm """
+    """Assert an NTP alarm"""
 
     if not ip:
         # Don't re-raise the alarm if its already raised
@@ -221,7 +221,7 @@ def _raise_alarm(ip=None):
 ###############################################################################
 
 def _clear_base_alarm():
-    """ Clear the NTP base alarm """
+    """Clear the NTP base alarm"""
 
     if api.clear_fault(PLUGIN_ALARMID, obj.base_eid) is False:
         collectd.error("%s failed to clear alarm %s:%s" %
@@ -254,10 +254,7 @@ def _clear_base_alarm():
 ###############################################################################
 
 def _remove_ip_from_unreachable_list(ip):
-    """
-    Remove an IP address from the unreachable list and
-    clear any NTP alarm that might be asserted for it.
-    """
+    """Remove an IP address from the unreachable list and clear its NTP alarms"""
 
     # remove from unreachable list if its there
     if ip and ip in obj.unreachable_servers:
@@ -299,7 +296,7 @@ def _remove_ip_from_unreachable_list(ip):
 ###############################################################################
 
 def _add_ip_to_ntpq_server_list(ip):
-    """ Add this IP to the list of servers that ntpq reports against. """
+    """Add this IP to the list of servers that ntpq reports against"""
 
     if ip not in obj.server_list_ntpq:
         obj.server_list_ntpq.append(ip)
@@ -321,7 +318,7 @@ def _add_ip_to_ntpq_server_list(ip):
 ###############################################################################
 
 def _cleanup_stale_servers():
-    """ Cleanup the server IP tracking lists """
+    """Cleanup the server IP tracking lists"""
 
     collectd.debug("%s CLEANUP   REACHABLE: %s %s" %
                    (PLUGIN, obj.server_list_ntpq, obj.reachable_servers))
@@ -356,7 +353,7 @@ def _cleanup_stale_servers():
 ###############################################################################
 
 def _get_ntp_servers():
-    """  Read the provisioned servers from the ntp conf file """
+    """Read the provisioned servers from the ntp conf file"""
 
     with open(PLUGIN_CONF, 'r') as infile:
         for line in infile:
@@ -401,7 +398,7 @@ def _get_ntp_servers():
 ###############################################################################
 
 def _is_controller(ip):
-    """ Returns True if this IP corresponds to one of the controllers """
+    """Returns True if this IP corresponds to one of the controllers"""
 
     collectd.debug("%s check if '%s' is a controller ip" % (PLUGIN, ip))
     with open('/etc/hosts', 'r') as infile:
@@ -433,7 +430,7 @@ def _is_controller(ip):
 ###############################################################################
 
 def _is_uuid_like(val):
-    """Returns validation of a value as a UUID."""
+    """Returns validation of a value as a UUID"""
     try:
         return str(uuid.UUID(val)) == val
     except (TypeError, ValueError, AttributeError):
@@ -459,7 +456,7 @@ def _is_uuid_like(val):
 ###############################################################################
 
 def config_func(config):
-    """ Configure the plugin """
+    """Configure the plugin"""
 
     collectd.debug('%s config function' % PLUGIN)
     return 0

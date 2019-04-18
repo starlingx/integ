@@ -24,9 +24,7 @@ obj = ExampleObject()
 
 # The config function - called once on collectd process startup
 def config_func(config):
-    """
-    Configure the plugin
-    """
+    """Configure the plugin"""
 
     for node in config.children:
         key = node.key.lower()

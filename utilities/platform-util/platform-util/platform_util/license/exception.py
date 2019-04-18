@@ -6,7 +6,7 @@
 
 
 class ValidateError(Exception):
-    """Base class for license validation exceptions."""
+    """Base class for license validation exceptions"""
 
     def __init__(self, message=None):
         self.message = message

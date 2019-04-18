@@ -665,7 +665,7 @@ class Monitor(HandleUpgradesMixin):
 
     @staticmethod
     def _parse_reason(health):
-        """ Parse reason strings received from Ceph """
+        """Parse reason strings received from Ceph"""
         if health['health'] in constants.CEPH_STATUS_CUSTOM:
             # Don't parse reason messages that we added
             return "Storage Alarm Condition: %(health)s. %(detail)s" % health
@@ -864,7 +864,7 @@ class Monitor(HandleUpgradesMixin):
                         alarm_list[alarm].entity_instance_id)
 
     def _get_current_alarms(self):
-        """ Retrieve currently raised alarm """
+        """Retrieve currently raised alarm"""
         self.current_health_alarm = self.service.fm_api.get_fault(
             fm_constants.FM_ALARM_ID_STORAGE_CEPH,
             self.service.entity_instance_id)

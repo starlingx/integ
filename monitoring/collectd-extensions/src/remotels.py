@@ -70,7 +70,7 @@ obj = pc.PluginObject(PLUGIN, "")
 
 # Raise Remote Logging Server Alarm
 def raise_alarm():
-    """ Raise Remote Logging Server Alarm. """
+    """Raise Remote Logging Server Alarm"""
 
     repair = 'Ensure Remote Log Server IP is reachable from '
     repair += 'Controller through OAM interface; otherwise '
@@ -110,7 +110,7 @@ def raise_alarm():
 
 # Clear remote logging server alarm
 def clear_alarm():
-    """ Clear remote logging server alarm """
+    """Clear remote logging server alarm"""
 
     try:
         if api.clear_fault(PLUGIN_ALARMID, obj.base_eid) is True:
@@ -126,7 +126,7 @@ def clear_alarm():
 
 # The config function - called once on collectd process startup
 def config_func(config):
-    """ Configure the plugin """
+    """Configure the plugin"""
 
     # all configuration is learned during normal monitoring
     obj.config_done = True
@@ -135,7 +135,7 @@ def config_func(config):
 
 # The init function - called once on collectd process startup
 def init_func():
-    """ Init the plugin """
+    """Init the plugin"""
 
     # remote logging server monitoring is for controllers only
     if tsc.nodetype != 'controller':
@@ -155,7 +155,7 @@ def init_func():
 
 # The sample read function - called on every audit interval
 def read_func():
-    """ Remote logging server connectivity plugin read function """
+    """Remote logging server connectivity plugin read function"""
 
     # remote logging server monitoring is for controllers only
     if tsc.nodetype != 'controller':

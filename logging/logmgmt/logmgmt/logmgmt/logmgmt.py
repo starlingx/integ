@@ -48,9 +48,7 @@ def start_polling():
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
-    """
-    Exception handler to log any uncaught exceptions
-    """
+    """Exception handler to log any uncaught exceptions"""
     logging.error("Uncaught exception",
                   exc_info=(exc_type, exc_value, exc_traceback))
     sys.__excepthook__(exc_type, exc_value, exc_traceback)
@@ -60,9 +58,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 # CLASSES
 ###################
 class LogMgmtDaemon():
-    """ Daemon process representation of
-        the /var/log monitoring program
-    """
+    """Daemon process representation of the /var/log monitoring program"""
     def __init__(self):
         # Daemon-specific init
         self.stdin_path = '/dev/null'

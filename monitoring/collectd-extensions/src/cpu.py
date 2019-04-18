@@ -41,7 +41,7 @@ class CPU:
     time_last = float(0.0)   # float of the time the last sample was taken
 
     def log_error(self, err_str):
-        """ Print an error log with plugin name prefixing the log """
+        """Print an error log with plugin name prefixing the log"""
 
         collectd.error("%s %s" % (PLUGIN, err_str))
 

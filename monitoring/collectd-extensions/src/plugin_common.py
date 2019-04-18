@@ -89,7 +89,7 @@ class PluginObject(object):
     ###########################################################################
 
     def init_ready(self):
-        """ Test for system init ready state """
+        """Test for system init ready state"""
 
         if os.path.exists(tsc.INITIAL_CONFIG_COMPLETE_FLAG) is False:
             self.log_throttle_count += 1
@@ -117,7 +117,7 @@ class PluginObject(object):
     #
     ###########################################################################
     def gethostname(self):
-        """ Fetch the hostname """
+        """Fetch the hostname"""
 
         # get current hostname
         try:
@@ -142,7 +142,7 @@ class PluginObject(object):
     #
     ###########################################################################
     def is_virtual(self):
-        """ Check for virtual host """
+        """Check for virtual host"""
 
         try:
             cmd = '/usr/bin/facter is_virtual'
@@ -185,7 +185,7 @@ class PluginObject(object):
     #
     ###########################################################################
     def check_for_fit(self, name, unit):
-        """ Load FIT data into usage if it exists """
+        """Load FIT data into usage if it exists"""
 
         fit_file = '/var/run/fit/' + name + '_data'
 
@@ -241,7 +241,7 @@ class PluginObject(object):
     #
     ###########################################################################
     def make_http_request(self, url=None, to=None, hdrs=None):
-        """ Make a blocking HTTP Request and return result """
+        """Make a blocking HTTP Request and return result"""
 
         try:
 
@@ -280,7 +280,7 @@ class PluginObject(object):
 
 
 def is_uuid_like(val):
-    """Returns validation of a value as a UUID.
+    """Returns validation of a value as a UUID
 
     For our purposes, a UUID is a canonical form string:
     aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
@@ -292,7 +292,7 @@ def is_uuid_like(val):
 
 
 def get_severity_str(severity):
-    """ get string that represents the specified severity """
+    """get string that represents the specified severity"""
 
     if severity == fm_constants.FM_ALARM_SEVERITY_CLEAR:
         return "clear"
