@@ -1,0 +1,32 @@
+From 1950a583743a3e5e8a1b3c83a55c2b8a307b7f14 Mon Sep 17 00:00:00 2001
+From: Tyler Smith <tyler.smith@windriver.com>
+Date: Wed, 10 Apr 2019 15:41:03 -0400
+Subject: [PATCH 1/1] Add support for fernet receipts
+
+---
+ SPECS/puppet-keystone.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-keystone.spec b/SPECS/puppet-keystone.spec
+index 301002a..5b5e255 100644
+--- a/SPECS/puppet-keystone.spec
++++ b/SPECS/puppet-keystone.spec
+@@ -14,6 +14,7 @@ Patch0001:      0001-pike-rebase-squash-titanium-patches.patch
+ Patch0002:      0002-remove-the-Keystone-admin-app.patch
+ Patch0003:      0003-remove-eventlet_bindhost-from-Keystoneconf.patch
+ Patch0004:      0004-escape-special-characters-in-bootstrap.patch
++Patch0005:      0005-Add-support-for-fernet-receipts.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -35,6 +36,7 @@ Puppet module for OpenStack Keystone
+ %patch0002 -p1
+ %patch0003 -p1
+ %patch0004 -p1
++%patch0005 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+1.8.3.1
+

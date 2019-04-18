@@ -3,3 +3,4 @@
 0003-remove-the-keystone-admin-app.patch
 0004-remove-eventlet_and_bindhost-from-keystoneconf.patch
 0005-escape-special-characters-in-bootstrap.patch
+0006-Add-support-for-fernet-receipts.patch
