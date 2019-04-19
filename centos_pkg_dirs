@@ -75,7 +75,6 @@ python/python-eventlet
 python/python-requests
 base/systemd
 base/systemd-config
-python/python-gunicorn
 storage-drivers/python-3parclient
 storage-drivers/python-lefthandclient
 security/tboot
