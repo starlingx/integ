@@ -26,8 +26,8 @@
     parent: stx-devstack-base
     timeout: 7800
     required-projects:
-      - openstack/stx-fault
-      - openstack/stx-update
+      - starlingx/fault
+      - starlingx/update
     vars:
       tox_envlist: functional
       devstack_services:
@@ -73,6 +73,6 @@
     name: stx-integ-pylint
     parent: openstack-tox-pylint
     required-projects:
-      - openstack/stx-config
-      - openstack/stx-fault
-      - openstack/stx-update
+      - starlingx/config
+      - starlingx/fault
+      - starlingx/update
