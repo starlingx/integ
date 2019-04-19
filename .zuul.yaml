@@ -33,7 +33,7 @@
       - zuul: openstack-infra/devstack
     timeout: 9000
     required-projects:
-      - name: openstack-dev/devstack
+      - name: openstack/devstack
       - name: openstack/keystone
       - name: openstack/requirements
     vars:
@@ -100,7 +100,7 @@
     parent: flock-devstack-base-min
     timeout: 7800
     required-projects:
-      - openstack/stx-update
+      - starlingx/update
     vars:
       tox_envlist: functional
       devstack_services:
@@ -114,6 +114,6 @@
     name: stx-integ-pylint
     parent: openstack-tox-pylint
     required-projects:
-      - openstack/stx-config
-      - openstack/stx-fault
-      - openstack/stx-update
+      - starlingx/config
+      - starlingx/fault
+      - starlingx/update
