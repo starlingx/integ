@@ -30,7 +30,7 @@
       Base job for StarlingX Flock components DevStack tests
     nodeset: openstack-single-node-bionic
     roles:
-      - zuul: openstack-infra/devstack
+      - zuul: openstack/devstack
     timeout: 9000
     required-projects:
       - name: openstack/devstack
@@ -107,8 +107,8 @@
         # StarlingX services
         platform-util: true
       devstack_plugins:
-        stx-integ: https://git.starlingx.io/stx-integ
-        stx-update: https://git.starlingx.io/stx-update
+        integ: https://opendev.org/starlingx/integ
+        update: https://opendev.org/starlingx/update
 
 - job:
     name: stx-integ-pylint

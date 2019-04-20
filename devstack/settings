@@ -1,7 +1,7 @@
 #!/bin/bash
 # Devstack settings
 
-# This plugin enables StarlingX stx-integ services and follows the
+# This plugin enables StarlingX integ services and follows the
 # DevStack plugin contract:
 # https://docs.openstack.org/devstack/latest/plugins.html#plugin-sh-contract
 
@@ -11,15 +11,15 @@
 # Defaults
 # --------
 
-STX_INTEG_NAME=stx-integ
+STX_INTEG_NAME=integ
 
 ######### Plugin Specific ##########
 enable_service $STX_INTEG_NAME
 
 # This must not use any variables to work properly in OpenStack's DevStack playbook
-define_plugin stx-integ
+define_plugin integ
 # This works for Zuul jobs using OpenStack's DevStack roles
-plugin_requires stx-integ stx-update
+plugin_requires integ update
 
 # Initial source of lib script
-source $DEST/stx-integ/devstack/lib/stx-integ
+source $DEST/integ/devstack/lib/integ
