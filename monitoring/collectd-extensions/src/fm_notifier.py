@@ -217,9 +217,7 @@ class PluginObject:
     database_setup_in_progress = False     # connection mutex
 
     def __init__(self, id, plugin):
-        """
-        PluginObject Class constructor
-        """
+        """PluginObject Class constructor"""
 
         # plugin specific static class members.
         self.id = id               # alarm id ; 100.1??
@@ -272,27 +270,20 @@ class PluginObject:
 
         # For plugins that have multiple instances like df (filesystem plugin)
         # we need to create an instance of this object for each one.
-        # This dictionary is used to associate a instance with its object.
+        # This dictionary is used to associate an instance with its object.
         self.instance_objects = {}
 
     def _ilog(self, string):
-        """
-        Create a collectd notifier info log with the specified string.
-        """
+        """Create a collectd notifier info log with the string param"""
         collectd.info('%s %s : %s' % (PLUGIN, self.plugin, string))
 
     def _llog(self, string):
-        """
-        Create a collectd notifier info log with the specified string
-        if debug_lists is True.
-        """
+        """Create a collectd notifier info log with the string param if debug_lists"""
         if debug_lists:
             collectd.info('%s %s : %s' % (PLUGIN, self.plugin, string))
 
     def _elog(self, string):
-        """
-        Create a collectd notifier error log with the specified string.
-        """
+        """Create a collectd notifier error log with the string param"""
         collectd.error('%s %s : %s' % (PLUGIN, self.plugin, string))
 
     ##########################################################################
@@ -310,7 +301,7 @@ class PluginObject:
     ##########################################################################
 
     def _state_audit(self, location):
-        """ Log the state of the specified object. """
+        """Log the state of the specified object"""
 
         if self.id == ALARM_ID__CPU:
             _print_state()
@@ -346,7 +337,7 @@ class PluginObject:
     ##########################################################################
 
     def _manage_change(self, nObject):
-        """ Log resource instance value on step state change. """
+        """Log resource instance value on step state change"""
 
         # filter out messages to ignore ; notifications that have no value
         if "has not been updated for" in nObject.message:
@@ -495,9 +486,7 @@ class PluginObject:
     ##########################################################################
 
     def _severity_change(self, entity_id, severity):
-        """
-        Check for a severity change
-        """
+        """Check for a severity change"""
 
         if entity_id in self.warnings:
             self._llog(entity_id + " is already in warnings list")
@@ -561,9 +550,7 @@ class PluginObject:
     #########################################################################
 
     def _manage_alarm(self, entity_id, severity):
-        """
-        Manage the alarm severity lists and report state change.
-        """
+        """Manage the alarm severity lists and report state change"""
 
         collectd.debug("%s manage alarm %s %s %s" %
                        (PLUGIN,
@@ -675,10 +662,9 @@ class PluginObject:
     #
     ##########################################################################
     def _get_instance_object(self, eid):
-        """
-        Safely get an object from the self instance object list indexed
-        by eid while locked.
-        :param eid:
+        """Safely get an object from the self instance object dict while locked
+
+        :param eid: the index for the instance object dictionary
         :return: object or None
         """
 
@@ -707,10 +693,10 @@ class PluginObject:
     #
     ##########################################################################
     def _add_instance_object(self, obj, eid):
-        """
-        Update self instance_objects list while locked
+        """Update self instance_objects list while locked
+
         :param obj: the object to add
-        :param eid: indexed by this eid
+        :param eid: index for instance_objects
         :return: nothing
         """
         try:
@@ -734,9 +720,7 @@ class PluginObject:
     #
     ##########################################################################
     def _copy_instance_object(self, object):
-        """
-        Copy select members of self object to target object
-        """
+        """Copy select members of self object to target object"""
 
         object.resource_name = self.resource_name
         object.instance_name = self.instance_name
@@ -802,9 +786,7 @@ class PluginObject:
     #
     ##########################################################################
     def _create_instance_objects(self):
-        """
-        Create, initialize and add an instance object to this/self plugin
-        """
+        """Create, initialize and add an instance object to this/self plugin"""
 
         # Create the File System subordinate instance objects.
         if self.id == ALARM_ID__DF:
@@ -880,9 +862,7 @@ PLUGINS = {
 
 
 def _get_base_object(alarm_id):
-    """
-    Get the alarm object for the specified alarm id.
-    """
+    """Get the alarm object for the specified alarm id"""
     for plugin in PLUGIN_NAME_LIST:
         if PLUGINS[plugin].id == alarm_id:
             return PLUGINS[plugin]
@@ -890,9 +870,7 @@ def _get_base_object(alarm_id):
 
 
 def _get_object(alarm_id, eid):
-    """
-    Get the plugin object for the specified alarm id and eid
-    """
+    """Get the plugin object for the specified alarm id and eid"""
 
     base_obj = _get_base_object(alarm_id)
     if len(base_obj.instance_objects):
@@ -905,9 +883,7 @@ def _get_object(alarm_id, eid):
 
 
 def _build_entity_id(plugin, plugin_instance):
-    """
-    Builds an entity id string based on the collectd notification object.
-    """
+    """Builds an entity id string based on the collectd notification object"""
 
     inst_error = False
 
@@ -968,8 +944,6 @@ def _build_entity_id(plugin, plugin_instance):
 
 
 def _get_df_mountpoints():
-    """
-    """
 
     conf_file = PLUGIN_PATH + 'df.conf'
     if not os.path.exists(conf_file):
@@ -996,9 +970,7 @@ def _get_df_mountpoints():
 
 
 def _print_obj(obj):
-    """
-    Print a single object
-    """
+    """Print a single object"""
     base_object = False
     for plugin in PLUGIN_NAME_LIST:
         if PLUGINS[plugin] == obj:
@@ -1045,9 +1017,7 @@ def _print_obj(obj):
 
 
 def _print_state(obj=None):
-    """
-    Print the current object state
-    """
+    """Print the current object state"""
     try:
         objs = []
         if obj is None:
@@ -1069,9 +1039,7 @@ def _print_state(obj=None):
 
 
 def _database_setup(database):
-    """
-    Setup the influx database for collectd resource samples
-    """
+    """Setup the influx database for collectd resource samples"""
 
     collectd.info("%s setting up influxdb:%s database" %
                   (PLUGIN, database))
@@ -1144,9 +1112,7 @@ def _database_setup(database):
 
 
 def _clear_alarm_for_missing_filesystems():
-    """
-    Clear alarmed file systems that are no longer mounted or present
-    """
+    """Clear alarmed file systems that are no longer mounted or present"""
 
     # get the DF (filesystem plugin) base object.
     df_base_obj = PLUGINS[PLUGIN__DF]
@@ -1187,7 +1153,7 @@ def _clear_alarm_for_missing_filesystems():
 # Initialize each plugin object with plugin specific data.
 # Query FM for existing alarms and run with that starting state.
 def init_func():
-    """ Collectd FM Notifier Initialization Function """
+    """Collectd FM Notifier Initialization Function"""
 
     PluginObject.lock = Lock()
 

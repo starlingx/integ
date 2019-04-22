@@ -55,7 +55,7 @@ obj = MEM()
 
 
 def log_meminfo(plugin, name, meminfo):
-    """ Log the supplied meminfo """
+    """Log the supplied meminfo"""
 
     if debug is False:
         return
@@ -76,9 +76,7 @@ def log_meminfo(plugin, name, meminfo):
 
 
 def config_func(config):
-    """
-    Configure the memory usage plugin
-    """
+    """Configure the memory usage plugin"""
 
     for node in config.children:
         key = node.key.lower()

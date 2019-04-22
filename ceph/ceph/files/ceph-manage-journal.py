@@ -20,7 +20,7 @@ DEVICE_NAME_NVME = "nvme"
 
 
 def command(arguments, **kwargs):
-    """ Execute e command and capture stdout, stderr & return code """
+    """Execute e command and capture stdout, stderr & return code"""
     process = subprocess.Popen(
         arguments,
         stdout=subprocess.PIPE,
@@ -71,7 +71,7 @@ JOURNAL_UUID = '45b0969e-9b03-4f30-b4c6-b4b80ceff106'  # Type of a journal parti
 
 
 def is_partitioning_correct(disk_path, partition_sizes):
-    """ Validate the existence and size of journal partitions"""
+    """Validate the existence and size of journal partitions"""
 
     # Obtain the device node from the device path.
     disk_node = device_path_to_device_node(disk_path)
@@ -110,7 +110,7 @@ def is_partitioning_correct(disk_path, partition_sizes):
 
 
 def create_partitions(disk_path, partition_sizes):
-    """ Recreate partitions """
+    """Recreate partitions"""
 
     # Obtain the device node from the device path.
     disk_node = device_path_to_device_node(disk_path)
@@ -183,7 +183,7 @@ OSD_PATH = "/var/lib/ceph/osd/"
 
 
 def mount_data_partition(data_path, osdid):
-    """ Mount an OSD data partition and return the mounted path """
+    """Mount an OSD data partition and return the mounted path"""
 
     # Obtain the device node from the device path.
     data_node = device_path_to_device_node(data_path)
@@ -204,7 +204,7 @@ def mount_data_partition(data_path, osdid):
 
 
 def is_location_correct(path, journal_path, osdid):
-    """ Check if location points to the correct device """
+    """Check if location points to the correct device"""
 
     # Obtain the device node from the device path.
     journal_node = device_path_to_device_node(journal_path)
@@ -217,7 +217,7 @@ def is_location_correct(path, journal_path, osdid):
 
 
 def fix_location(mount_point, journal_path, osdid):
-    """ Move the journal to the new partition """
+    """Move the journal to the new partition"""
 
     # Obtain the device node from the device path.
     journal_node = device_path_to_device_node(journal_path)

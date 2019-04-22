@@ -15,6 +15,7 @@ LOG = logging.getLogger(__name__)
 
 def osd_pool_set_quota(ceph_api, pool_name, max_bytes=0, max_objects=0):
     """Set the quota for an OSD pool_name
+
     Setting max_bytes or max_objects to 0 will disable that quota param
     :param pool_name:         OSD pool_name
     :param max_bytes:    maximum bytes for OSD pool_name
@@ -112,6 +113,7 @@ def osd_pool_create(ceph_api, pool_name, pg_num, pgp_num):
 
 def osd_pool_delete(ceph_api, pool_name):
     """Delete an osd pool
+
     :param pool_name:  pool name
     """
     response, body = ceph_api.osd_pool_delete(

@@ -57,9 +57,7 @@ def configure_debuggubg(debug):
 
 
 def parse_arguments(show):
-    """
-    Parse command line arguments.
-    """
+    """Parse command line arguments"""
 
     parser = argparse.ArgumentParser(
         prog=os.path.basename(sys.argv[0]),
@@ -142,8 +140,7 @@ def parse_arguments(show):
 
 
 def get_system_creds():
-
-    """ Return keystone credentials by sourcing /etc/platform/openrc. """
+    """Return keystone credentials by sourcing /etc/platform/openrc"""
     d = {}
 
     proc = subprocess.Popen(['bash', '-c',
@@ -168,7 +165,7 @@ def get_system_creds():
 
 
 def convert_to_readable_size(size, orig_unit='B'):
-    """ Converts size to human readable unit """
+    """Converts size to human readable unit"""
     units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
 
     # convert original size to bytes
@@ -188,8 +185,7 @@ def convert_to_readable_size(size, orig_unit='B'):
 
 
 def print_disk_view(rows=None, extended=False):
-
-    """ Print all summary Disk views using PrettyTable. """
+    """Print all summary Disk views using PrettyTable"""
 
     disk_lables_extended = \
         ['Host', 'Device Node', 'Device Type', 'UUID', 'Size',
@@ -216,8 +212,7 @@ def print_disk_view(rows=None, extended=False):
 
 
 def print_vg_view(rows=None, extended=False):
-
-    """ Print all summary VG views using PrettyTable. """
+    """Print all summary VG views using PrettyTable"""
     vg_labels_extended = \
         ['Host', 'VG Name', 'UUID', 'VG State', 'VG Size', 'Current LVs',
          'Current PVs', 'PV List (name:state:uuid)', 'VG Parameters']
@@ -246,11 +241,11 @@ def print_vg_view(rows=None, extended=False):
 
 
 def get_info_and_display(cc, show=None):
-    """ Get storage information from server nodes.
+    """Get storage information from server nodes
 
-        Display the following information in table format.
-        - disk data of all server nodes
-        - VG data of all servers nodes
+    Display the following information in table format:
+    - disk data of all server nodes
+    - VG data of all servers nodes
     """
     # get list of server hosts and for each host retrieve
     # the disk, lvg. pv list objects.

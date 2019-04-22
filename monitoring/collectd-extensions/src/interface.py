@@ -167,7 +167,7 @@ class LinkObject:
     #
     ##################################################################
     def raise_port_alarm(self, network):
-        """ Raise a port alarm """
+        """Raise a port alarm"""
 
         if self.severity != fm_constants.FM_ALARM_SEVERITY_MAJOR:
 
@@ -201,7 +201,7 @@ class LinkObject:
     #
     ##################################################################
     def clear_port_alarm(self, network):
-        """ Clear a port alarm """
+        """Clear a port alarm"""
 
         if self.severity != fm_constants.FM_ALARM_SEVERITY_CLEAR:
             if manage_alarm(self.name,
@@ -269,7 +269,7 @@ class NetworkObject:
     #
     ##################################################################
     def raise_iface_alarm(self, severity):
-        """ Raise an interface  alarm """
+        """Raise an interface alarm"""
 
         if severity == fm_constants.FM_ALARM_SEVERITY_CLEAR:
             collectd.error("%s %s raise alarm called with clear severity" %
@@ -310,7 +310,7 @@ class NetworkObject:
     #
     ##################################################################
     def clear_iface_alarm(self):
-        """ Clear an interface alarm """
+        """Clear an interface alarm"""
 
         if self.severity != fm_constants.FM_ALARM_SEVERITY_CLEAR:
             if manage_alarm(self.name,
@@ -343,7 +343,6 @@ class NetworkObject:
     #
     ######################################################################
     def manage_iface_alarm(self):
-        """ """
         # Single Link Config
         if self.link_two.name is None:
             if self.link_one.state == LINK_DOWN:
@@ -412,7 +411,7 @@ NETWORKS = [NetworkObject(NETWORK_MGMT),
 #
 ##########################################################################
 def get_timestamp(lmon_time):
-    """ Convert lmon time to fm timestamp time """
+    """Convert lmon time to fm timestamp time"""
 
     if lmon_time:
         try:
@@ -428,7 +427,7 @@ def get_timestamp(lmon_time):
 
 
 def dump_network_info(network):
-    """ Log the specified network info """
+    """Log the specified network info"""
 
     link_one_event_time = datetime.datetime.fromtimestamp(
         float(network.link_one.timestamp)).strftime('%Y-%m-%d %H:%M:%S')
@@ -479,7 +478,7 @@ def dump_network_info(network):
 #
 ##########################################################################
 def this_hosts_alarm(hostname, eid):
-    """ Check if the specified eid is for this host """
+    """Check if the specified eid is for this host"""
 
     if hostname:
         if eid:
@@ -527,7 +526,7 @@ def this_hosts_alarm(hostname, eid):
 #
 ##########################################################################
 def clear_alarms(alarm_id_list):
-    """ Clear alarm state of all plugin alarms. """
+    """Clear alarm state of all plugin alarms"""
     found = False
     for alarm_id in alarm_id_list:
         alarms = api.get_faults_by_id(alarm_id)
@@ -575,7 +574,7 @@ def clear_alarms(alarm_id_list):
 #
 ##########################################################################
 def manage_alarm(name, network, level, action, severity, alarm_id, timestamp):
-    """ Manage raise and clear of port and interface alarms """
+    """Manage raise and clear of port and interface alarms"""
 
     ts = datetime.datetime.fromtimestamp(
         float(timestamp)).strftime('%Y-%m-%d %H:%M:%S')
@@ -638,7 +637,7 @@ def manage_alarm(name, network, level, action, severity, alarm_id, timestamp):
 
 # The config function - called once on collectd process startup
 def config_func(config):
-    """ Configure the plugin """
+    """Configure the plugin"""
 
     # Need to update the Link Status Query URL with the port number.
     url_updated = False
@@ -696,7 +695,7 @@ def config_func(config):
 
 # The init function - called once on collectd process startup
 def init_func():
-    """ Init the plugin """
+    """Init the plugin"""
 
     if obj.config_done is False:
         collectd.info("%s configuration failed" % PLUGIN)
@@ -716,7 +715,7 @@ def init_func():
 
 # The sample read function - called on every audit interval
 def read_func():
-    """ collectd interface monitor plugin read function """
+    """collectd interface monitor plugin read function"""
 
     if obj.init_done is False:
         init_func()

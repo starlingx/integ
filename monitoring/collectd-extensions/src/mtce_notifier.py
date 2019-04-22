@@ -79,9 +79,7 @@ PLUGIN__EXAMPLE = 'example'
 class collectdMtceNotifierObject:
 
     def __init__(self, port):
-        """
-        collectdMtceNotifierObject Class constructor
-        """
+        """collectdMtceNotifierObject Class constructor"""
         # default maintenance port
         self.port = port
         self.addr = None
@@ -119,9 +117,7 @@ obj = collectdMtceNotifierObject(MTCE_CMD_RX_PORT)
 
 
 def _get_active_controller_ip():
-    """
-    Get the active controller host IP
-    """
+    """Get the active controller host IP"""
 
     try:
         obj.addr = socket.getaddrinfo('controller', None)[0][4][0]
@@ -134,9 +130,7 @@ def _get_active_controller_ip():
 
 
 def _df_instance_to_path(df_inst):
-    """
-    Convert a df instance name to a mountpoint
-    """
+    """Convert a df instance name to a mountpoint"""
 
     # df_root is not a dynamic file system. Ignore that one.
     if df_inst == 'df_root':
@@ -148,9 +142,7 @@ def _df_instance_to_path(df_inst):
 
 # This function removes degraded file systems that are no longer present.
 def _clear_degrade_for_missing_filesystems():
-    """
-    Remove degraded file systems that are no longer mounted or present.
-    """
+    """Remove degraded file systems that are no longer mounted or present"""
 
     for df_inst in obj.degrade_list:
 
@@ -178,9 +170,7 @@ def _clear_degrade_for_missing_filesystems():
 #    val = port number
 #
 def config_func(config):
-    """
-    Configure the maintenance degrade notifier plugin.
-    """
+    """Configure the maintenance degrade notifier plugin"""
 
     collectd.debug('%s config function' % PLUGIN)
     for node in config.children:
@@ -200,9 +190,7 @@ def config_func(config):
 
 # Collectd calls this function on startup.
 def init_func():
-    """
-    Collectd Mtce Notifier Initialization Function
-    """
+    """Collectd Mtce Notifier Initialization Function"""
 
     obj.host = os.uname()[1]
     collectd.info("%s %s:%s sending to mtce port %d" %
@@ -221,9 +209,7 @@ def init_func():
 #  4. send mtcAgent the degrade state message.
 #
 def notifier_func(nObject):
-    """
-    Collectd Mtce Notifier Handler Function
-    """
+    """Collectd Mtce Notifier Handler Function"""
 
     # Create the resource name from the notifier object.
     # format: <plugin name>_<plugin_instance_name>
