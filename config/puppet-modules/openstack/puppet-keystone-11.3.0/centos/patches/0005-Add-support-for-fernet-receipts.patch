@@ -1,0 +1,43 @@
+From 65de0c6615e2e94a4fd234fc1826e3eb403bb575 Mon Sep 17 00:00:00 2001
+From: Tyler Smith <tyler.smith@windriver.com>
+Date: Wed, 10 Apr 2019 15:37:25 -0400
+Subject: [PATCH 1/1] Add support for fernet receipts
+
+---
+ manifests/init.pp | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 89af303..a6d5cc3 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -1247,18 +1247,21 @@ running as a standalone service, or httpd for being run by a httpd server")
+ 
+   if $fernet_key_repository {
+     keystone_config {
+-      'fernet_tokens/key_repository': value => $fernet_key_repository;
++      'fernet_tokens/key_repository':   value => $fernet_key_repository;
++      'fernet_receipts/key_repository': value => $fernet_key_repository;
+     }
+   } else {
+     keystone_config {
+-      'fernet_tokens/key_repository': ensure => absent;
++      'fernet_tokens/key_repository':   ensure => absent;
++      'fernet_receipts/key_repository': ensure => absent;
+     }
+   }
+ 
+   keystone_config {
+-    'token/revoke_by_id':            value => $revoke_by_id;
+-    'fernet_tokens/max_active_keys': value => $fernet_max_active_keys;
+-    'credential/key_repository':     value => $credential_key_repository;
++    'token/revoke_by_id':              value => $revoke_by_id;
++    'fernet_tokens/max_active_keys':   value => $fernet_max_active_keys;
++    'fernet_receipts/max_active_keys': value => $fernet_max_active_keys;
++    'credential/key_repository':       value => $credential_key_repository;
+   }
+ 
+   # Update this code when https://bugs.launchpad.net/keystone/+bug/1472285 is addressed.
+-- 
+1.8.3.1
+
