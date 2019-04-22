@@ -11,12 +11,12 @@ diff --git a/SPECS/python-requests.spec b/SPECS/python-requests.spec
 index efe0966..111bab7 100644
 --- a/SPECS/python-requests.spec
 +++ b/SPECS/python-requests.spec
-@@ -11,7 +11,7 @@
+@@ -13,7 +13,7 @@
  
  Name:           python-requests
- Version:        2.14.2
--Release:        1%{?dist}
-+Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
+ Version:        2.21.0
+-Release:        2%{?dist}
++Release:        2.el7%{?_tis_dist}.%{tis_patch_ver}
  Summary:        HTTP library, written in Python, for human beings
  
  License:        ASL 2.0
