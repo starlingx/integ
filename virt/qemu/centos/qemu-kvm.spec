@@ -570,7 +570,7 @@ rm $RPM_BUILD_ROOT%{_bindir}/qemu-system-%{kvm_target}
 # install -m 0644 -t $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool/format scripts/tracetool/format/*.py
 
 mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
-install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README README.systemtap COPYING COPYING.LIB LICENSE %{SOURCE19} docs/interop/qmp-spec.txt
+install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE %{SOURCE19} docs/interop/qmp-spec.txt
 mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-doc.html $RPM_BUILD_ROOT%{qemudocdir}
 mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-doc.txt $RPM_BUILD_ROOT%{qemudocdir}
 mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-qmp-ref.html $RPM_BUILD_ROOT%{qemudocdir}
@@ -751,13 +751,7 @@ exit 0
 %{_udevdir}/80-kvm.rules
 
 %global qemu_kvm_files \
-%{_libexecdir}/qemu-kvm \
-%{_datadir}/%{pkgname}/systemtap/conf.d/qemu_kvm.conf \
-%{_datadir}/%{pkgname}/systemtap/script.d/qemu_kvm.stp
-
-# WRS: Disable traces
-# %{_datadir}/systemtap/tapset/qemu-kvm.stp
-# %{_datadir}/systemtap/tapset/qemu-kvm-simpletrace.stp
+%{_libexecdir}/qemu-kvm
 
 %files -n qemu-kvm-common%{?pkgsuffix}
 %defattr(-,root,root)
@@ -770,14 +764,13 @@ exit 0
 %doc %{qemudocdir}/COPYING.LIB
 %doc %{qemudocdir}/LICENSE
 %doc %{qemudocdir}/README.rhel6-gpxe-source
-%doc %{qemudocdir}/README.systemtap
 %doc %{qemudocdir}/qmp-spec.txt
 %doc %{qemudocdir}/qemu-qmp-ref.html
 %doc %{qemudocdir}/qemu-qmp-ref.txt
 
 %dir %{_datadir}/%{pkgname}/
 %{_datadir}/%{pkgname}/keymaps/
-%{_mandir}/man1/%{pkgname}.1*
+%{_mandir}/man1/qemu.1*
 %{_mandir}/man7/qemu-qmp-ref*
 %attr(4755, -, -) %{_libexecdir}/qemu-bridge-helper
 %config(noreplace) %{_sysconfdir}/sasl2/%{pkgname}.conf
