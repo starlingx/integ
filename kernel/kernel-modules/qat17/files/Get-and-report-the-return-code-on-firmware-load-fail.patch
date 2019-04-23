@@ -10,18 +10,18 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c
-index 6d96fd6..522cbf0 100644
+index 5a5d42b..9c109e3 100755
 --- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c
 +++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_accel_engine.c
-@@ -57,6 +57,7 @@ int adf_ae_fw_load(struct adf_accel_dev *accel_dev)
+@@ -64,6 +64,7 @@ int adf_ae_fw_load(struct adf_accel_dev *accel_dev)
  	struct adf_hw_device_data *hw_device = accel_dev->hw_device;
  	void *uof_addr, *mmp_addr;
  	u32 uof_size, mmp_size;
 +	int rc;
- #ifdef QAT_UIO
+ 	char uofname[ADF_CFG_MAX_VAL_LEN_IN_BYTES];
  	struct adf_accel_pci *pci_info = &accel_dev->accel_pci_dev;
- 	unsigned long storage_enabled = 0;
-@@ -72,10 +73,11 @@ int adf_ae_fw_load(struct adf_accel_dev *accel_dev)
+ 	struct adf_mmp_version_s mmp_ver = { {0} };
+@@ -77,10 +78,11 @@ int adf_ae_fw_load(struct adf_accel_dev *accel_dev)
  	if (!hw_device->fw_name)
  		return 0;
  
@@ -38,5 +38,5 @@ index 6d96fd6..522cbf0 100644
  	}
  	if (request_firmware(&loader_data->uof_fw, hw_device->fw_name,
 -- 
-1.8.3.1
+2.7.4
 

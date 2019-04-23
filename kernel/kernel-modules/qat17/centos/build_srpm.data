@@ -1,6 +1,6 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/qat1.7.upstream.l.1.0.3-42.tar.gz \
+  $STX_BASE/downloads/qat1.7.l.4.5.0-00034.tar.gz \
 "
-TIS_PATCH_VER=4
+TIS_PATCH_VER=1
 BUILD_IS_SLOW=3

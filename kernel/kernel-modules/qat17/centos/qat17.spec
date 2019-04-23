@@ -7,8 +7,8 @@
 Summary: Intel(r) QuickAssist Technology API
 %define pkgname qat17
 Name: %{pkgname}%{?bt_ext}
-Version: 1.0.3
-%define upstream_release 42
+Version: 4.5.0
+%define upstream_release 00034
 Release: %{upstream_release}%{?_tis_dist}.%{tis_patch_ver}
 License: GPLv2
 Group: base
@@ -30,12 +30,12 @@ BuildRequires: openssl
 %define qat_unpack_dir %{_builddir}/%{name}-%{version}
 %define qat_src_dir %{qat_unpack_dir}
 
-Source: qat1.7.upstream.l.%{version}-%{upstream_release}.tar.gz
+Source: qat1.7.l.%{version}-%{upstream_release}.tar.gz
 Source1: qat
 # Use our own service script rather than massively patching theirs
 Source2: qat_service
 
-Patch1: 0001-Install-config-file-for-each-VF.patch
+#Patch1: 0001-Install-config-file-for-each-VF.patch
 Patch2: Get-and-report-the-return-code-on-firmware-load-fail.patch
 
 %description
@@ -46,12 +46,12 @@ rm -rf %{qat_unpack_dir}
 mkdir -p %{qat_unpack_dir}
 cd %{qat_unpack_dir}
 
-gzip -dc %{_sourcedir}/qat1.7.upstream.l.%{version}-%{upstream_release}.tar.gz | tar -xvvf -
+gzip -dc %{_sourcedir}/qat1.7.l.%{version}-%{upstream_release}.tar.gz | tar -xvvf -
 if [ $? -ne 0 ]; then
   exit $?
 fi
 
-%patch1 -p1
+#%patch1 -p1
 %patch2 -p1
 
 %build
@@ -63,7 +63,7 @@ ICP_BUILD_OUTPUT=%{qat_src_dir}/build
 export ICP_ROOT KERNEL_SOURCE_ROOT ICP_BUILD_OUTPUT
 
 cd %{qat_src_dir}
-%configure
+%configure --enable-icp-sriov=host
 
 make -C %{qat_src_dir}/
 
