@@ -96,7 +96,7 @@ import plugin_common as pc
 if tsc.nodetype == 'controller':
     from influxdb import InfluxDBClient
 
-api = fm_api.FaultAPIs()
+api = fm_api.FaultAPIsV2()
 
 # Debug control
 debug = False
@@ -135,6 +135,7 @@ NOTIF_OKAY = 4
 
 PASS = 0
 FAIL = 1
+
 
 # Some plugin_instances are mangled by collectd.
 # The filesystem plugin is especially bad for this.
@@ -216,6 +217,10 @@ class PluginObject:
     database_setup = False                 # state of database setup
     database_setup_in_progress = False     # connection mutex
 
+    # Set to True once FM connectivity is verified
+    # Used to ensure alarms are queried on startup
+    fm_connectivity = False
+
     def __init__(self, id, plugin):
         """PluginObject Class constructor"""
 
@@ -233,6 +238,10 @@ class PluginObject:
         # [ 'float value string','float threshold string]
         self.values = []
         self.value = float(0)       # float value of reading
+
+        # This member is used to help log change values using the
+        # LOG_STEP threshold consant
+        self.last_value = float(0)
 
         # float value of threshold
         self.threshold = float(INVALID_THRESHOLD)
@@ -263,10 +272,6 @@ class PluginObject:
         # Debug: state audit controls
         self.audit_threshold = 0
         self.audit_count = 0
-
-        # This member is used to help log change values using the
-        # LOG_STEP threshold consant
-        self.last_value = ""
 
         # For plugins that have multiple instances like df (filesystem plugin)
         # we need to create an instance of this object for each one.
@@ -378,20 +383,10 @@ class PluginObject:
         if len(self.values):
             # validate the reading
             try:
-                self.value = float(self.values[0])
+                self.value = round(float(self.values[0]), 2)
                 # get the threshold if its there.
                 if len(self.values) > 1:
                     self.threshold = float(self.values[1])
-                    if nObject.plugin == PLUGIN__MEM:
-                        if self.reading_type == READING_TYPE__PERCENT_USAGE:
-                            # Note: add one to % usage reading types so that it
-                            #       matches how rmond did it. In collectd an
-                            #       overage is over the specified threshold
-                            #       whereas in rmon an overage is at threshold
-                            #       or above.
-                            self.threshold = float(self.values[1]) + 1
-                        else:
-                            self.threshold = float(self.values[1])
                 else:
                     self.threshold = float(INVALID_THRESHOLD)  # invalid value
 
@@ -471,22 +466,21 @@ class PluginObject:
                                    self.reading_type,
                                    resource))
 
-            self.last_value = float(self.value)
-
     ##########################################################################
     #
-    # Name    : _severity_change
+    # Name       : _update_alarm
     #
-    # Purpose : Compare current severity to instance severity lists to
-    #           facilitate early 'do nothing' exit from a notification.
+    # Purpose    : Compare current severity to instance severity lists to
+    #              facilitate early 'do nothing' exit from a notification.
     #
-    # Returns : True if the severity changed
-    #           False if severity is the same
+    # Description: Avoid clearing an already cleared alarm.
+    #              Refresh asserted alarm data for usage reading type alarms
+    #
+    # Returns    : True if the alarm needs refresh, otherwise false.
     #
     ##########################################################################
-
-    def _severity_change(self, entity_id, severity):
-        """Check for a severity change"""
+    def _update_alarm(self, entity_id, severity, this_value, last_value):
+        """Check for need to update alarm data"""
 
         if entity_id in self.warnings:
             self._llog(entity_id + " is already in warnings list")
@@ -501,9 +495,13 @@ class PluginObject:
         # Compare to current state to previous state.
         # If they are the same then return done.
         if severity == current_severity_str:
-            return False
-        else:
-            return True
+            if severity == "okay":
+                return False
+            if self.reading_type != READING_TYPE__PERCENT_USAGE:
+                return False
+            elif round(last_value, 2) == round(this_value, 2):
+                return False
+        return True
 
     ########################################################################
     #
@@ -670,18 +668,13 @@ class PluginObject:
 
         try:
             collectd.debug("%s %s Get   Lock ..." % (PLUGIN, self.plugin))
-            PluginObject.lock.acquire()
-
-            obj = self.instance_objects[eid]
-            return obj
+            with PluginObject.lock:
+                obj = self.instance_objects[eid]
+                return obj
         except:
             collectd.error("%s failed to get instance from %s object list" %
                            (PLUGIN, self.plugin))
             return None
-
-        finally:
-            collectd.debug("%s %s Get UnLock ..." % (PLUGIN, self.plugin))
-            PluginObject.lock.release()
 
     ##########################################################################
     #
@@ -701,16 +694,11 @@ class PluginObject:
         """
         try:
             collectd.debug("%s %s Add   Lock ..." % (PLUGIN, self.plugin))
-            PluginObject.lock.acquire()
-
-            self.instance_objects[eid] = obj
+            with PluginObject.lock:
+                self.instance_objects[eid] = obj
         except:
             collectd.error("%s failed to add instance to %s object list" %
                            (PLUGIN, self.plugin))
-
-        finally:
-            collectd.debug("%s %s Add UnLock ..." % (PLUGIN, self.plugin))
-            PluginObject.lock.release()
 
     ##########################################################################
     #
@@ -859,6 +847,36 @@ PLUGINS = {
     PLUGIN__VSWITCH_IFACE: PluginObject(ALARM_ID__VSWITCH_IFACE,
                                         PLUGIN__VSWITCH_IFACE),
     PLUGIN__EXAMPLE: PluginObject(ALARM_ID__EXAMPLE, PLUGIN__EXAMPLE)}
+
+
+#####################################################################
+#
+# Name       : clear_alarm
+#
+# Description: Clear the specified alarm with the specified entity ID.
+#
+# Returns    : True if operation succeeded
+#              False if there was an error exception.
+#
+# Assumptions: Caller can decide to retry based on return status.
+#
+#####################################################################
+def clear_alarm(alarm_id, eid):
+    """Clear the specified alarm:eid"""
+
+    try:
+        if api.clear_fault(alarm_id, eid) is True:
+            collectd.info("%s %s:%s alarm cleared" %
+                          (PLUGIN, alarm_id, eid))
+        else:
+            collectd.info("%s %s:%s alarm already cleared" %
+                          (PLUGIN, alarm_id, eid))
+        return True
+
+    except Exception as ex:
+        collectd.error("%s 'clear_fault' exception ; %s:%s ; %s" %
+                       (PLUGIN, alarm_id, eid, ex))
+        return False
 
 
 def _get_base_object(alarm_id):
@@ -1027,15 +1045,16 @@ def _print_state(obj=None):
             objs.append(obj)
 
         collectd.debug("%s _print_state Lock ..." % PLUGIN)
-        PluginObject.lock.acquire()
-        for o in objs:
-            _print_obj(o)
-            if len(o.instance_objects):
-                for inst_obj in o.instance_objects:
-                    _print_obj(o.instance_objects[inst_obj])
-    finally:
-        collectd.debug("%s _print_state UnLock ..." % PLUGIN)
-        PluginObject.lock.release()
+        with PluginObject.lock:
+            for o in objs:
+                _print_obj(o)
+                if len(o.instance_objects):
+                    for inst_obj in o.instance_objects:
+                        _print_obj(o.instance_objects[inst_obj])
+
+    except Exception as ex:
+        collectd.error("%s _print_state exception ; %s" %
+                       (PLUGIN, ex))
 
 
 def _database_setup(database):
@@ -1137,10 +1156,7 @@ def _clear_alarm_for_missing_filesystems():
                 # For all others replace all '-' with '/'
                 path = '/' + obj.plugin_instance.replace('-', '/')
                 if os.path.ismount(path) is False:
-                    if api.clear_fault(df_base_obj.id, obj.entity_id) is False:
-                        collectd.error("%s %s:%s clear failed ; will retry" %
-                                       (PLUGIN, df_base_obj.id, obj.entity_id))
-                    else:
+                    if clear_alarm(df_base_obj.id, obj.entity_id) is True:
                         collectd.info("%s cleared alarm for missing %s" %
                                       (PLUGIN, path))
                         df_base_obj._manage_alarm(obj.entity_id, "okay")
@@ -1259,76 +1275,91 @@ def init_func():
     obj.repair = "Not Applicable"
     collectd.info("%s monitoring %s usage" % (PLUGIN, obj.resource_name))
 
+    # ...
+    # ADD_NEW_PLUGIN: Add new plugin object initialization here ...
+    # ...
+
     if tsc.nodetype == 'controller':
         PluginObject.database_setup_in_progress = True
         _database_setup('collectd')
         PluginObject.database_setup_in_progress = False
 
-    # ...
-    # ADD_NEW_PLUGIN: Add new plugin object initialization here ...
-    # ...
-
-    ######################################################################
-    #
-    # With plugin objects initialized ...
-    # Query FM for any resource alarms that may already be raised
-    # Load the queries severity state into the appropriate
-    # severity list for those that are.
-    for alarm_id in ALARM_ID_LIST:
-        collectd.debug("%s searching for all '%s' alarms " %
-                       (PLUGIN, alarm_id))
-        alarms = api.get_faults_by_id(alarm_id)
-        if alarms:
-            for alarm in alarms:
-                want_alarm_clear = False
-                eid = alarm.entity_instance_id
-                # ignore alarms not for this host
-                if PluginObject.host not in eid:
-                    continue
-
-                base_obj = _get_base_object(alarm_id)
-                if base_obj is None:
-
-                    # might be a plugin instance - clear it
-                    want_alarm_clear = True
-
-                collectd.info('%s found %s %s alarm [%s]' %
-                              (PLUGIN,
-                               alarm.severity,
-                               alarm_id,
-                               eid))
-
-                if want_alarm_clear is True:
-
-                    if api.clear_fault(alarm_id, eid) is False:
-                        collectd.error("%s %s:%s clear failed" %
-                                       (PLUGIN,
-                                        alarm_id,
-                                        eid))
-                    else:
-                        collectd.info("%s clear %s %s alarm %s" %
-                                      (PLUGIN,
-                                       alarm.severity,
-                                       alarm_id,
-                                       eid))
-                    continue
-
-                if alarm.severity == "critical":
-                    sev = "failure"
-                elif alarm.severity == "major":
-                    sev = "warning"
-                else:
-                    sev = "okay"
-                    continue
-
-                # Load the alarm severity by doing a plugin/instance lookup.
-                if base_obj is not None:
-                    base_obj._manage_alarm(eid, sev)
-
 
 # The notifier function inspects the collectd notification and determines if
 # the representative alarm needs to be asserted, severity changed, or cleared.
 def notifier_func(nObject):
+
+    if PluginObject.fm_connectivity is False:
+
+        # handle multi threading startup
+        with PluginObject.lock:
+            if PluginObject.fm_connectivity is True:
+                return 0
+
+            ##################################################################
+            #
+            # With plugin objects initialized ...
+            # Query FM for any resource alarms that may already be raised
+            # Load the queries severity state into the appropriate
+            # severity list for those that are.
+            for alarm_id in ALARM_ID_LIST:
+                collectd.debug("%s searching for all '%s' alarms " %
+                               (PLUGIN, alarm_id))
+                try:
+                    alarms = api.get_faults_by_id(alarm_id)
+                except Exception as ex:
+                    collectd.error("%s 'get_faults_by_id' exception ; %s" %
+                                   (PLUGIN, ex))
+                    return 0
+
+                if alarms:
+                    for alarm in alarms:
+                        want_alarm_clear = False
+                        eid = alarm.entity_instance_id
+                        # ignore alarms not for this host
+                        if PluginObject.host not in eid:
+                            continue
+
+                        base_obj = _get_base_object(alarm_id)
+                        if base_obj is None:
+                            # might be a plugin instance - clear it
+                            want_alarm_clear = True
+
+                        collectd.info('%s found %s %s alarm [%s]' %
+                                      (PLUGIN,
+                                       alarm.severity,
+                                       alarm_id,
+                                       eid))
+
+                        if want_alarm_clear is True:
+
+                            if clear_alarm(alarm_id, eid) is False:
+                                collectd.error("%s %s:%s clear failed" %
+                                               (PLUGIN,
+                                                alarm_id,
+                                                eid))
+                            else:
+                                collectd.info("%s clear %s %s alarm %s" %
+                                              (PLUGIN,
+                                               alarm.severity,
+                                               alarm_id,
+                                               eid))
+                            continue
+
+                        if alarm.severity == "critical":
+                            sev = "failure"
+                        elif alarm.severity == "major":
+                            sev = "warning"
+                        else:
+                            sev = "okay"
+                            continue
+
+                        # Load the alarm severity by plugin/instance lookup.
+                        if base_obj is not None:
+                            base_obj._manage_alarm(eid, sev)
+
+        PluginObject.fm_connectivity = True
+        collectd.info("%s initialization complete" % PLUGIN)
 
     collectd.debug('%s notification: %s %s:%s - %s %s %s [%s]' % (
         PLUGIN,
@@ -1393,31 +1424,20 @@ def notifier_func(nObject):
             eid = _build_entity_id(nObject.plugin, nObject.plugin_instance)
             try:
                 # Need lock when reading/writing any obj.instance_objects list
-                collectd.debug("%s %s lock" % (PLUGIN, nObject.plugin))
-                PluginObject.lock.acquire()
+                with PluginObject.lock:
 
-                # collectd.info("%s Object Search eid: %s" %
-                #               (nObject.plugin, eid))
+                    # we will take an exception if this object is not
+                    # in the list. The exception handling code below will
+                    # create and add this object for success path the next
+                    # time around.
+                    inst_obj = base_obj.instance_objects[eid]
 
-                # for o in base_obj.instance_objects:
-                #     collectd.error("%s %s inst object dict item %s : %s" %
-                #                    (PLUGIN, nObject.plugin, o,
-                #                     base_obj.instance_objects[o]))
-
-                # we will take an exception if this object is not in the list.
-                # the exception handling code below will create and add this
-                # object for success path the next time around.
-                inst_obj = base_obj.instance_objects[eid]
-
-                collectd.debug("%s %s instance %s already exists %s" %
-                               (PLUGIN, nObject.plugin, eid, inst_obj))
-                # _print_state(inst_obj)
+                    collectd.debug("%s %s instance %s already exists %s" %
+                                   (PLUGIN, nObject.plugin, eid, inst_obj))
+                    # _print_state(inst_obj)
 
             except:
                 need_instance_object_create = True
-            finally:
-                collectd.debug("%s %s unlock" % (PLUGIN, nObject.plugin))
-                PluginObject.lock.release()
 
             if need_instance_object_create is True:
                 base_obj._create_instance_object(nObject.plugin_instance)
@@ -1474,30 +1494,33 @@ def notifier_func(nObject):
     # audit file system presence every time we get the
     # notification for the root file system ; which will
     # always be there.
-    if obj.instance == 'df_root':
+    if obj.instance == '/':
         _clear_alarm_for_missing_filesystems()
 
-    # exit early if there is no severity change
-    if base_obj._severity_change(obj.entity_id, severity_str) is False:
+    # exit early if there is no alarm update to be made
+    if base_obj._update_alarm(obj.entity_id,
+                              severity_str,
+                              obj.value,
+                              obj.last_value) is False:
         return 0
 
+    obj.last_value = round(obj.value, 2)
+
     if _alarm_state == fm_constants.FM_ALARM_STATE_CLEAR:
-        if api.clear_fault(obj.id, obj.entity_id) is False:
-            collectd.error("%s %s:%s clear_fault failed" %
-                           (PLUGIN, base_obj.id, obj.entity_id))
+        if clear_alarm(obj.id, obj.entity_id) is False:
             return 0
     else:
 
         # manage addition of the failure reason text
         if obj.cause == fm_constants.ALARM_PROBABLE_CAUSE_50:
             # if this is a threshold alarm then build the reason text that
-            # includes the threahold and the reading that caused the assertion.
+            # includes the threshold and the reading that caused the assertion.
             reason = obj.resource_name
             reason += " threshold exceeded ;"
             if obj.threshold != INVALID_THRESHOLD:
-                reason += " threshold {:2.0f}".format(obj.threshold) + "%,"
+                reason += " threshold {:2.2f}".format(obj.threshold) + "%,"
             if obj.value:
-                reason += " actual {:2.0f}".format(obj.value) + "%"
+                reason += " actual {:2.2f}".format(obj.value) + "%"
 
         elif _severity_num == fm_constants.FM_ALARM_SEVERITY_CRITICAL:
             reason = obj.reason_failure
@@ -1519,10 +1542,23 @@ def notifier_func(nObject):
             service_affecting=base_obj.service_affecting,
             suppression=base_obj.suppression)
 
-        alarm_uuid = api.set_fault(fault)
-        if pc.is_uuid_like(alarm_uuid) is False:
-            collectd.error("%s %s:%s set_fault failed:%s" %
-                           (PLUGIN, base_obj.id, obj.entity_id, alarm_uuid))
+        try:
+            alarm_uuid = api.set_fault(fault)
+            if pc.is_uuid_like(alarm_uuid) is False:
+                collectd.error("%s 'set_fault' failed ; %s:%s ; %s" %
+                               (PLUGIN,
+                                base_obj.id,
+                                obj.entity_id,
+                                alarm_uuid))
+                return 0
+
+        except Exception as ex:
+            collectd.error("%s 'set_fault' exception ; %s:%s:%s ; %s" %
+                           (PLUGIN,
+                            obj.id,
+                            obj.entity_id,
+                            _severity_num,
+                            ex))
             return 0
 
     # update the lists now that

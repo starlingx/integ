@@ -136,6 +136,15 @@ def read_func():
     val.type = 'percent'
     val.type_instance = 'used'
 
+    # fit_value = 0
+    # if os.path.exists('/var/run/fit/mem_data'):
+    #     with open('/var/run/fit/mem_data', 'r') as infile:
+    #         for line in infile:
+    #             fit_value = float(line)
+    #             collectd.info("%s using FIT data:%.2f" %
+    #                           (PLUGIN, fit_value))
+    #             break
+
     # remove the 'unit' (kB) suffix that might be on some of the lines
     for line in meminfo:
         # remove the units from the value read
@@ -172,6 +181,9 @@ def read_func():
     else:
         obj.value = float(float(obj.AnonPages) / float(obj.total))
     obj.value = float(float(obj.value) * 100)
+
+    # if fit_value != 0:
+    #     obj.value = fit_value
 
     if debug is True:
         collectd.info("%s ---------------------------" % PLUGIN)
@@ -218,6 +230,9 @@ def read_func():
             obj.value = float(float(obj.AnonPages)) / float(total)
             obj.value = float(float(obj.value) * 100)
 
+            # if fit_value != 0:
+            #     obj.value = fit_value
+
             # Dispatch usage value to collectd for this numa node
             val.plugin_instance = numa_node.split('/')[5]
             val.dispatch(values=[obj.value])
@@ -237,6 +252,9 @@ def read_func():
                                 obj.HugePages_Free)) / \
                     float(obj.HugePages_Total)
                 obj.value = float(float(obj.value) * 100)
+
+                # if fit_value != 0:
+                #     obj.value = fit_value
 
                 # Dispatch huge page memory usage value
                 # to collectd for this numa node.

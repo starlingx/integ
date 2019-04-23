@@ -239,6 +239,14 @@ def read_func():
     c.cpu_time_last = c.cpu_time
     c.time_last = _time_this
 
+    # if os.path.exists('/var/run/fit/cpu_data'):
+    #     with open('/var/run/fit/cpu_data', 'r') as infile:
+    #         for line in infile:
+    #             c.usage = float(line)
+    #             collectd.info("%s using FIT data:%.2f" %
+    #                           (PLUGIN, c.usage))
+    #             break
+
     # Dispatch usage value to collectd
     val = collectd.Values(host=c.hostname)
     val.plugin = 'cpu'

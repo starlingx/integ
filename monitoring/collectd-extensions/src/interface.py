@@ -78,7 +78,7 @@ from fm_api import constants as fm_constants
 from fm_api import fm_api
 
 # Fault manager API Object
-api = fm_api.FaultAPIs()
+api = fm_api.FaultAPIsV2()
 
 # name of the plugin - all logs produced by this plugin are prefixed with this
 PLUGIN = 'interface plugin'
@@ -137,6 +137,11 @@ ALARM_ACTION_CLEAR = 'clear'
 LEVEL_PORT = 'port'
 LEVEL_IFACE = 'interface'
 
+# Run phases
+RUN_PHASE__INIT = 0
+RUN_PHASE__ALARMS_CLEARED = 1
+RUN_PHASE__HTTP_REQUEST_PASS = 2
+
 
 # Link Object (aka Port or Physical interface) Structure
 # and member functions.
@@ -163,7 +168,8 @@ class LinkObject:
     #
     # Parameters : Network the link is part of.
     #
-    # Returns    : True on failure and False on success.
+    # Returns    : False on failure
+    #              True on success
     #
     ##################################################################
     def raise_port_alarm(self, network):
@@ -177,16 +183,16 @@ class LinkObject:
                             ALARM_ACTION_RAISE,
                             fm_constants.FM_ALARM_SEVERITY_MAJOR,
                             self.alarm_id,
-                            self.timestamp) is False:
+                            self.timestamp) is True:
 
                 self.severity = fm_constants.FM_ALARM_SEVERITY_MAJOR
                 collectd.info("%s %s %s port alarm raised" %
                               (PLUGIN, self.name, self.alarm_id))
-                return False
-            else:
                 return True
+            else:
+                return False
         else:
-            return False
+            return True
 
     ##################################################################
     #
@@ -197,7 +203,8 @@ class LinkObject:
     #
     # Parameters : Network the link is part of.
     #
-    # Returns    : True on failure and False on success.
+    # Returns    : False on failure
+    #              True on success.
     #
     ##################################################################
     def clear_port_alarm(self, network):
@@ -210,16 +217,16 @@ class LinkObject:
                             ALARM_ACTION_CLEAR,
                             fm_constants.FM_ALARM_SEVERITY_CLEAR,
                             self.alarm_id,
-                            self.timestamp) is False:
+                            self.timestamp) is True:
 
                 collectd.info("%s %s %s port alarm cleared" %
                               (PLUGIN, self.name, self.alarm_id))
                 self.severity = fm_constants.FM_ALARM_SEVERITY_CLEAR
-                return False
-            else:
                 return True
+            else:
+                return False
         else:
-            return False
+            return True
 
 
 # Interface (aka Network) Level Object Structure and member functions
@@ -265,7 +272,8 @@ class NetworkObject:
     #
     # Parameters : None
     #
-    # Returns    : True on failure and False on success.
+    # Returns    : False on failure
+    #              True on success
     #
     ##################################################################
     def raise_iface_alarm(self, severity):
@@ -283,7 +291,7 @@ class NetworkObject:
                             ALARM_ACTION_RAISE,
                             severity,
                             self.alarm_id,
-                            self.timestamp) is False:
+                            self.timestamp) is True:
 
                 self.severity = severity
                 collectd.info("%s %s %s %s interface alarm raised" %
@@ -291,11 +299,11 @@ class NetworkObject:
                                self.name,
                                self.alarm_id,
                                pc.get_severity_str(severity)))
-                return False
-            else:
                 return True
+            else:
+                return False
         else:
-            return False
+            return True
 
     ##################################################################
     #
@@ -306,7 +314,8 @@ class NetworkObject:
     #
     # Parameters : None
     #
-    # Returns    : True on failure and False on success.
+    # Returns    : False on failure
+    #              True on success.
     #
     ##################################################################
     def clear_iface_alarm(self):
@@ -319,7 +328,7 @@ class NetworkObject:
                             ALARM_ACTION_CLEAR,
                             fm_constants.FM_ALARM_SEVERITY_CLEAR,
                             self.alarm_id,
-                            self.timestamp) is False:
+                            self.timestamp) is True:
 
                 collectd.info("%s %s %s %s interface alarm cleared" %
                               (PLUGIN,
@@ -327,11 +336,11 @@ class NetworkObject:
                                self.alarm_id,
                                pc.get_severity_str(self.severity)))
                 self.severity = fm_constants.FM_ALARM_SEVERITY_CLEAR
-                return False
-            else:
                 return True
+            else:
+                return False
         else:
-            return False
+            return True
 
     ######################################################################
     #
@@ -522,14 +531,23 @@ def this_hosts_alarm(hostname, eid):
 #
 # Parameters : A list of this plugin's alarm ids
 #
-# Returns    : True on failure and False on success
+# Returns    : True on Success
+#              False on Failure
 #
 ##########################################################################
 def clear_alarms(alarm_id_list):
     """Clear alarm state of all plugin alarms"""
     found = False
     for alarm_id in alarm_id_list:
-        alarms = api.get_faults_by_id(alarm_id)
+
+        try:
+            alarms = api.get_faults_by_id(alarm_id)
+        except Exception as ex:
+            collectd.error("%s 'get_faults_by_id' exception ;"
+                           " %s ; %s" %
+                           (PLUGIN, alarm_id, ex))
+            return False
+
         if alarms:
             for alarm in alarms:
                 eid = alarm.entity_instance_id
@@ -543,24 +561,30 @@ def clear_alarms(alarm_id_list):
                         alarm_id == PLUGIN_MGMT_IFACE_ALARMID or \
                         alarm_id == PLUGIN_CLSTR_PORT_ALARMID or \
                         alarm_id == PLUGIN_CLSTR_IFACE_ALARMID:
-                    eid = alarm.entity_instance_id
-                    if api.clear_fault(alarm_id, eid) is False:
-                        collectd.error("%s %s:%s clear_fault failed" %
-                                       (PLUGIN, alarm_id, eid))
-                        return True
-                    else:
-                        found = True
-                        collectd.info("%s %s clearing %s alarm %s:%s" %
-                                      (PLUGIN,
-                                       NETWORK_CLSTR,
-                                       alarm.severity,
-                                       alarm_id,
-                                       alarm.entity_instance_id))
 
+                    try:
+                        if api.clear_fault(alarm_id, eid) is False:
+                            collectd.info("%s %s:%s:%s alarm already cleared" %
+                                          (PLUGIN,
+                                           alarm.severity,
+                                           alarm_id,
+                                           eid))
+                        else:
+                            found = True
+                            collectd.info("%s %s:%s:%s alarm cleared" %
+                                          (PLUGIN,
+                                           alarm.severity,
+                                           alarm_id,
+                                           eid))
+                    except Exception as ex:
+                        collectd.error("%s 'clear_fault' exception ; "
+                                       "%s:%s ; %s" %
+                                       (PLUGIN, alarm_id, eid, ex))
+                        return False
     if found is False:
         collectd.info("%s found no startup alarms" % PLUGIN)
 
-    return False
+    return True
 
 
 ##########################################################################
@@ -570,7 +594,8 @@ def clear_alarms(alarm_id_list):
 # Purpose    : Raises or clears port and interface alarms based on
 #              calling parameters.
 #
-# Returns    : True on failure and False on success
+# Returns    : True on success
+#              False on failure
 #
 ##########################################################################
 def manage_alarm(name, network, level, action, severity, alarm_id, timestamp):
@@ -604,12 +629,20 @@ def manage_alarm(name, network, level, action, severity, alarm_id, timestamp):
             reason += " failed"
 
     if alarm_state == fm_constants.FM_ALARM_STATE_CLEAR:
-        if api.clear_fault(alarm_id, eid) is False:
-            collectd.error("%s %s:%s clear_fault failed" %
-                           (PLUGIN, alarm_id, eid))
+        try:
+            if api.clear_fault(alarm_id, eid) is False:
+                collectd.info("%s %s:%s alarm already cleared" %
+                              (PLUGIN, alarm_id, eid))
+            else:
+                collectd.info("%s %s:%s alarm cleared" %
+                              (PLUGIN, alarm_id, eid))
             return True
-        else:
+
+        except Exception as ex:
+            collectd.error("%s 'clear_fault' failed ; %s:%s ; %s" %
+                           (PLUGIN, alarm_id, eid, ex))
             return False
+
     else:
         fault = fm_api.Fault(
             uuid="",
@@ -626,13 +659,19 @@ def manage_alarm(name, network, level, action, severity, alarm_id, timestamp):
             timestamp=ts,
             suppression=True)
 
-        alarm_uuid = api.set_fault(fault)
-        if pc.is_uuid_like(alarm_uuid) is False:
-            collectd.error("%s %s:%s set_fault failed:%s" %
-                           (PLUGIN, alarm_id, eid, alarm_uuid))
-            return True
-        else:
+        try:
+            alarm_uuid = api.set_fault(fault)
+        except Exception as ex:
+            collectd.error("%s 'set_fault' exception ; %s:%s ; %s" %
+                           (PLUGIN, alarm_id, eid, ex))
             return False
+
+        if pc.is_uuid_like(alarm_uuid) is False:
+            collectd.error("%s 'set_fault' failed ; %s:%s ; %s" %
+                           (PLUGIN, alarm_id, eid, alarm_uuid))
+            return False
+        else:
+            return True
 
 
 # The config function - called once on collectd process startup
@@ -704,13 +743,13 @@ def init_func():
 
     if obj.init_done is False:
         if obj.init_ready() is False:
-            return False
+            return 0
 
     obj.hostname = obj.gethostname()
     obj.init_done = True
     collectd.info("%s initialization complete" % PLUGIN)
 
-    return True
+    return 0
 
 
 # The sample read function - called on every audit interval
@@ -721,208 +760,217 @@ def read_func():
         init_func()
         return 0
 
-    if obj.audits == 0:
+    if obj.phase < RUN_PHASE__ALARMS_CLEARED:
 
         # clear all alarms on first audit
-
+        #
         # block on fm availability
-
-        # If existing raised the alarms are still valid then
+        #
+        # If the existing raised alarms are still valid then
         # they will be re-raised with the same timestamp the
         # original event occurred at once auditing resumes.
-        if clear_alarms(ALARM_ID_LIST) is True:
+        if clear_alarms(ALARM_ID_LIST) is False:
             collectd.error("%s failed to clear existing alarms ; "
                            "retry next audit" % PLUGIN)
 
             # Don't proceed till we can communicate with FM and
             # clear all existing interface and port alarms.
             return 0
+        else:
+            obj.phase = RUN_PHASE__ALARMS_CLEARED
 
+    # Throttle HTTP request error retries
+    if obj.http_retry_count != 0:
+        obj.http_retry_count += 1
+        if obj.http_retry_count > obj.HTTP_RETRY_THROTTLE:
+            obj.http_retry_count = 0
+        return 0
+
+    # Issue query and construct the monitoring object
+    success = obj.make_http_request(to=PLUGIN_HTTP_TIMEOUT)
+
+    if success is False:
+        obj.http_retry_count += 1
+        return 0
+
+    if len(obj.jresp) == 0:
+        collectd.error("%s no json response from http request" % PLUGIN)
+        obj.http_retry_count += 1
+        return 0
+
+    # Check query status
     try:
-        # Issue query and construct the monitoring object
-        error = obj.make_http_request(to=PLUGIN_HTTP_TIMEOUT)
-
-        if len(obj.jresp) == 0:
-            collectd.error("%s no json response from http request" % PLUGIN)
-            return 1
-
-        if error:
-            return 1
-
-        # Check query status
-        try:
-            if obj.jresp['status'] != 'pass':
-                collectd.error("%s link monitor query %s" %
-                               (PLUGIN, obj.jresp['status']))
-                return 0
-
-        except Exception as ex:
-            collectd.error("%s http request get reason failed ; %s" %
-                           (PLUGIN, str(ex)))
-            collectd.info("%s  resp:%d:%s" %
-                          (PLUGIN, len(obj.jresp), obj.jresp))
-            return 1
-
-        # log the first query response
-        if obj.audits == 0:
-            collectd.info("%s Link Status Query Response:%d:\n%s" %
-                          (PLUGIN, len(obj.jresp), obj.jresp))
-
-            # uncomment below for debug purposes
-            #
-            # for network in NETWORKS:
-            #    dump_network_info(network)
-
-        try:
-            link_info = obj.jresp['link_info']
-            for network_link_info in link_info:
-                collectd.debug("%s parse link info:%s" %
-                               (PLUGIN, network_link_info))
-                for network in NETWORKS:
-                    if network.name == network_link_info['network']:
-                        links = network_link_info['links']
-                        nname = network.name
-                        if len(links) > 0:
-                            link_one = links[0]
-
-                            # get initial link one name
-                            if network.link_one.name is None:
-                                network.link_one.name = link_one['name']
-
-                            network.link_one.timestamp =\
-                                float(get_timestamp(link_one['time']))
-
-                            # load link one state
-                            if link_one['state'] == LINK_UP:
-                                collectd.debug("%s %s IS Up [%s]" %
-                                               (PLUGIN, network.link_one.name,
-                                                network.link_one.state))
-                                if network.link_one.state != LINK_UP:
-                                    network.link_one.state_change = True
-                                    network.link_one.clear_port_alarm(nname)
-                                network.link_one.state = LINK_UP
-                            else:
-                                collectd.debug("%s %s IS Down [%s]" %
-                                               (PLUGIN, network.link_one.name,
-                                                network.link_one.state))
-                                if network.link_one.state == LINK_UP:
-                                    network.link_one.state_change = True
-                                    network.link_one.raise_port_alarm(nname)
-                                network.link_one.state = LINK_DOWN
-
-                        if len(links) > 1:
-                            link_two = links[1]
-
-                            # get initial link two name
-                            if network.link_two.name is None:
-                                network.link_two.name = link_two['name']
-
-                            network.link_two.timestamp =\
-                                float(get_timestamp(link_two['time']))
-
-                            # load link two state
-                            if link_two['state'] == LINK_UP:
-                                collectd.debug("%s %s IS Up [%s]" %
-                                               (PLUGIN, network.link_two.name,
-                                                network.link_two.state))
-                                if network.link_two.state != LINK_UP:
-                                    network.link_two.state_change = True
-                                    network.link_two.clear_port_alarm(nname)
-                                    network.link_two.state = LINK_UP
-                            else:
-                                collectd.debug("%s %s IS Down [%s]" %
-                                               (PLUGIN, network.link_two.name,
-                                                network.link_two.state))
-                                if network.link_two.state == LINK_UP:
-                                    network.link_two.state_change = True
-                                    network.link_two.raise_port_alarm(nname)
-                                network.link_two.state = LINK_DOWN
-
-                        # manage interface alarms
-                        network.manage_iface_alarm()
-
-        except Exception as ex:
-            collectd.error("%s link monitor query parse error: %s " %
-                           (PLUGIN, obj.resp))
-
-        # handle state changes
-        for network in NETWORKS:
-            if network.link_two.name is not None and \
-                    network.link_one.state_change is True:
-
-                if network.link_one.state == LINK_UP:
-                    collectd.info("%s %s link one '%s' is Up" %
-                                  (PLUGIN,
-                                   network.name,
-                                   network.link_one.name))
-                else:
-                    collectd.info("%s %s link one '%s' is Down" %
-                                  (PLUGIN,
-                                   network.name,
-                                   network.link_one.name))
-
-            if network.link_two.name is not None and \
-                    network.link_two.state_change is True:
-
-                if network.link_two.state == LINK_UP:
-                    collectd.info("%s %s link two '%s' is Up" %
-                                  (PLUGIN,
-                                   network.name,
-                                   network.link_two.name))
-                else:
-                    collectd.info("%s %s link two %s 'is' Down" %
-                                  (PLUGIN,
-                                   network.name,
-                                   network.link_two.name))
-
-        # Dispatch usage value to collectd
-        val = collectd.Values(host=obj.hostname)
-        val.plugin = 'interface'
-        val.type = 'percent'
-        val.type_instance = 'used'
-
-        # For each interface [ mgmt, oam, cluster-host ]
-        #   calculate the percentage used sample
-        #      sample = 100 % when all its links are up
-        #      sample =   0 % when all its links are down
-        #      sample =  50 % when one of a lagged group is down
-        for network in NETWORKS:
-
-            if network.link_one.name is not None:
-
-                val.plugin_instance = network.name
-
-                network.sample = 0
-
-                if network.link_two.name is not None:
-                    # lagged
-
-                    if network.link_one.state == LINK_UP:
-                        network.sample = 50
-                    if network.link_two.state == LINK_UP:
-                        network.sample += 50
-                else:
-                    if network.link_one.state == LINK_UP:
-                        network.sample = 100
-                val.dispatch(values=[network.sample])
-
-                if network.link_one.state_change is True or \
-                        network.link_two.state_change is True:
-
-                    dump_network_info(network)
-
-                    network.link_one.state_change = False
-                    network.link_two.state_change = False
-
-                network.sample_last = network.sample
-
-            else:
-                collectd.debug("%s %s network not provisioned" %
-                               (PLUGIN, network.name))
-        obj.audits += 1
+        if obj.jresp['status'] != 'pass':
+            collectd.error("%s link monitor query %s" %
+                           (PLUGIN, obj.jresp['status']))
+            obj.http_retry_count += 1
+            return 0
 
     except Exception as ex:
-        collectd.info("%s http request failed: %s" % (PLUGIN, str(ex)))
+        collectd.error("%s http request get reason failed ; %s" %
+                       (PLUGIN, str(ex)))
+        collectd.info("%s  resp:%d:%s" %
+                      (PLUGIN, len(obj.jresp), obj.jresp))
+        obj.http_retry_count += 1
+        return 0
+
+    # log the first query response
+    if obj.audits == 0:
+        collectd.info("%s Link Status Query Response:%d:\n%s" %
+                      (PLUGIN, len(obj.jresp), obj.jresp))
+
+    # uncomment below for debug purposes
+    #
+    # for network in NETWORKS:
+    #    dump_network_info(network)
+
+    try:
+        link_info = obj.jresp['link_info']
+        for network_link_info in link_info:
+            collectd.debug("%s parse link info:%s" %
+                           (PLUGIN, network_link_info))
+            for network in NETWORKS:
+                if network.name == network_link_info['network']:
+                    links = network_link_info['links']
+                    nname = network.name
+                    if len(links) > 0:
+                        link_one = links[0]
+
+                        # get initial link one name
+                        if network.link_one.name is None:
+                            network.link_one.name = link_one['name']
+
+                        network.link_one.timestamp =\
+                            float(get_timestamp(link_one['time']))
+
+                        # load link one state
+                        if link_one['state'] == LINK_UP:
+                            collectd.debug("%s %s IS Up [%s]" %
+                                           (PLUGIN, network.link_one.name,
+                                            network.link_one.state))
+                            if network.link_one.state != LINK_UP:
+                                network.link_one.state_change = True
+                                network.link_one.clear_port_alarm(nname)
+                            network.link_one.state = LINK_UP
+                        else:
+                            collectd.debug("%s %s IS Down [%s]" %
+                                           (PLUGIN, network.link_one.name,
+                                            network.link_one.state))
+                            if network.link_one.state == LINK_UP:
+                                network.link_one.state_change = True
+                                network.link_one.raise_port_alarm(nname)
+                            network.link_one.state = LINK_DOWN
+
+                    if len(links) > 1:
+                        link_two = links[1]
+
+                        # get initial link two name
+                        if network.link_two.name is None:
+                            network.link_two.name = link_two['name']
+
+                        network.link_two.timestamp =\
+                            float(get_timestamp(link_two['time']))
+
+                        # load link two state
+                        if link_two['state'] == LINK_UP:
+                            collectd.debug("%s %s IS Up [%s]" %
+                                           (PLUGIN, network.link_two.name,
+                                            network.link_two.state))
+                            if network.link_two.state != LINK_UP:
+                                network.link_two.state_change = True
+                                network.link_two.clear_port_alarm(nname)
+                                network.link_two.state = LINK_UP
+                        else:
+                            collectd.debug("%s %s IS Down [%s]" %
+                                           (PLUGIN, network.link_two.name,
+                                            network.link_two.state))
+                            if network.link_two.state == LINK_UP:
+                                network.link_two.state_change = True
+                                network.link_two.raise_port_alarm(nname)
+                            network.link_two.state = LINK_DOWN
+
+                    # manage interface alarms
+                    network.manage_iface_alarm()
+
+    except Exception as ex:
+        collectd.error("%s link monitor query parse exception ; %s " %
+                       (PLUGIN, obj.resp))
+
+    # handle state changes
+    for network in NETWORKS:
+        if network.link_two.name is not None and \
+                network.link_one.state_change is True:
+
+            if network.link_one.state == LINK_UP:
+                collectd.info("%s %s link one '%s' is Up" %
+                              (PLUGIN,
+                               network.name,
+                               network.link_one.name))
+            else:
+                collectd.info("%s %s link one '%s' is Down" %
+                              (PLUGIN,
+                               network.name,
+                               network.link_one.name))
+
+        if network.link_two.name is not None and \
+                network.link_two.state_change is True:
+
+            if network.link_two.state == LINK_UP:
+                collectd.info("%s %s link two '%s' is Up" %
+                              (PLUGIN,
+                               network.name,
+                               network.link_two.name))
+            else:
+                collectd.info("%s %s link two %s 'is' Down" %
+                              (PLUGIN,
+                               network.name,
+                               network.link_two.name))
+
+    # Dispatch usage value to collectd
+    val = collectd.Values(host=obj.hostname)
+    val.plugin = 'interface'
+    val.type = 'percent'
+    val.type_instance = 'used'
+
+    # For each interface [ mgmt, oam, infra ]
+    #   calculate the percentage used sample
+    #      sample = 100 % when all its links are up
+    #      sample =   0 % when all its links are down
+    #      sample =  50 % when one of a lagged group is down
+    for network in NETWORKS:
+
+        if network.link_one.name is not None:
+
+            val.plugin_instance = network.name
+
+            network.sample = 0
+
+            if network.link_two.name is not None:
+                # lagged
+
+                if network.link_one.state == LINK_UP:
+                    network.sample = 50
+                if network.link_two.state == LINK_UP:
+                    network.sample += 50
+            else:
+                if network.link_one.state == LINK_UP:
+                    network.sample = 100
+            val.dispatch(values=[network.sample])
+
+            if network.link_one.state_change is True or \
+                    network.link_two.state_change is True:
+
+                dump_network_info(network)
+
+                network.link_one.state_change = False
+                network.link_two.state_change = False
+
+            network.sample_last = network.sample
+
+        else:
+            collectd.debug("%s %s network not provisioned" %
+                           (PLUGIN, network.name))
+    obj.audits += 1
 
     return 0
 

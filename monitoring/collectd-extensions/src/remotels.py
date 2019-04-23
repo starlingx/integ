@@ -43,7 +43,7 @@ from oslo_concurrency import processutils
 from fm_api import fm_api
 
 # Fault manager API Object
-api = fm_api.FaultAPIs()
+api = fm_api.FaultAPIsV2()
 
 # name of the plugin
 PLUGIN_NAME = 'remotels'
@@ -95,7 +95,7 @@ def raise_alarm():
 
         alarm_uuid = api.set_fault(fault)
         if pc.is_uuid_like(alarm_uuid) is False:
-            collectd.error("%s %s:%s set_fault failed:%s" %
+            collectd.error("%s 'set_fault' failed ; %s:%s ; %s" %
                            (PLUGIN, PLUGIN_ALARMID,
                             obj.base_eid, alarm_uuid))
         else:
@@ -103,9 +103,9 @@ def raise_alarm():
                           (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
             obj.alarmed = True
 
-    except:
-        collectd.error("%s %s:%s set_fault exception" %
-                       (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+    except Exception as ex:
+        collectd.error("%s 'set_fault' exception ; %s:%s ; %s " %
+                       (PLUGIN, PLUGIN_ALARMID, obj.base_eid, ex))
 
 
 # Clear remote logging server alarm
@@ -114,13 +114,18 @@ def clear_alarm():
 
     try:
         if api.clear_fault(PLUGIN_ALARMID, obj.base_eid) is True:
-            collectd.info("%s alarm cleared" % PLUGIN)
+            collectd.info("%s %s:%s alarm cleared" %
+                          (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+        else:
+            collectd.info("%s %s:%s alarm clear" %
+                          (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+
         obj.alarmed = False
         return True
 
-    except:
-        collectd.error("%s %s:%s clear failed ; will retry" %
-                       (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+    except Exception as ex:
+        collectd.error("%s 'clear_fault' exception ; %s:%s ; %s" %
+                       (PLUGIN, PLUGIN_ALARMID, obj.base_eid, ex))
         return False
 
 

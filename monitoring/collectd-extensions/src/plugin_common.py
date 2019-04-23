@@ -70,6 +70,8 @@ class PluginObject(object):
         self.error_logged = False        # used to prevent log flooding
         self.log_throttle_count = 0      # used to count throttle logs
         self.INIT_LOG_THROTTLE = 10      # the init log throttle threshold
+        self.http_retry_count = 0        # track http error cases
+        self.HTTP_RETRY_THROTTLE = 6     # http retry threshold
         self.phase = 0                   # tracks current phase; init, sampling
 
         collectd.debug("%s Common PluginObject constructor [%s]" %
@@ -236,8 +238,8 @@ class PluginObject(object):
     # Updates    : self.jresp with the json string response from the request.
     #
     # Returns    : Error indication (True/False)
-    #              True on error
-    #              False on success
+    #              True on success
+    #              False on error
     #
     ###########################################################################
     def make_http_request(self, url=None, to=None, hdrs=None):
@@ -261,9 +263,9 @@ class PluginObject(object):
             resp = http.request(url, headers=hdrs)
 
         except Exception as ex:
-            collectd.info("%s http request failure (%s)" %
+            collectd.info("%s http request exception ; %s" %
                           (self.plugin, str(ex)))
-            return True
+            return False
 
         try:
             collectd.debug("%s Resp: %s" %
@@ -273,10 +275,13 @@ class PluginObject(object):
             self.jresp = json.loads(resp[1])
 
         except Exception as ex:
-            collectd.info("%s http request parse failure (%s) (%s)" %
-                          (self.plugin, str(ex), resp))
-            return True
-        return False
+            collectd.error("%s http response parse exception ; %s" %
+                           (self.plugin, str(ex)))
+            if len(self.resp):
+                collectd.error("%s response: %s" %
+                               (self.plugin, self.resp))
+            return False
+        return True
 
 
 def is_uuid_like(val):

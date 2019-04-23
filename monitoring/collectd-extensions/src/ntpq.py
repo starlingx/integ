@@ -62,7 +62,7 @@ from fm_api import constants as fm_constants
 from fm_api import fm_api
 import tsconfig.tsconfig as tsc
 
-api = fm_api.FaultAPIs()
+api = fm_api.FaultAPIsV2()
 
 PLUGIN = 'NTP query plugin'
 PLUGIN_INTERVAL = 600          # audit interval in secs
@@ -78,7 +78,7 @@ class NtpqObject:
     # static variables set in init
     hostname = ''                   # the name of this host
     base_eid = ''                   # the eid for the major alarm
-    config_complete = False         # set to true once config is complete
+    init_complete = False         # set to true once config is complete
     alarm_raised = False            # True when the major alarm is asserted
 
     server_list_conf = []           # list of servers in the /etc/ntp.conf file
@@ -172,35 +172,46 @@ def _raise_alarm(ip=None):
         eid = obj.base_eid + '=' + ip
         fm_severity = fm_constants.FM_ALARM_SEVERITY_MINOR
 
-    fault = fm_api.Fault(
-        alarm_id=PLUGIN_ALARMID,
-        alarm_state=fm_constants.FM_ALARM_STATE_SET,
-        entity_type_id=fm_constants.FM_ENTITY_TYPE_HOST,
-        entity_instance_id=eid,
-        severity=fm_severity,
-        reason_text=reason,
-        alarm_type=obj.alarm_type,
-        probable_cause=obj.cause,
-        proposed_repair_action=obj.repair,
-        service_affecting=obj.service_affecting,
-        suppression=obj.suppression)
+    try:
+        fault = fm_api.Fault(
+            alarm_id=PLUGIN_ALARMID,
+            alarm_state=fm_constants.FM_ALARM_STATE_SET,
+            entity_type_id=fm_constants.FM_ENTITY_TYPE_HOST,
+            entity_instance_id=eid,
+            severity=fm_severity,
+            reason_text=reason,
+            alarm_type=obj.alarm_type,
+            probable_cause=obj.cause,
+            proposed_repair_action=obj.repair,
+            service_affecting=obj.service_affecting,
+            suppression=obj.suppression)
 
-    alarm_uuid = api.set_fault(fault)
-    if _is_uuid_like(alarm_uuid) is False:
+        alarm_uuid = api.set_fault(fault)
+        if _is_uuid_like(alarm_uuid) is False:
 
-        # Don't _add_unreachable_server list if the fm call failed.
-        # That way it will be retried at a later time.
-        collectd.error("%s %s:%s set_fault failed:%s" %
-                       (PLUGIN, PLUGIN_ALARMID, eid, alarm_uuid))
-        return True
-    else:
-        collectd.info("%s raised alarm %s:%s" % (PLUGIN, PLUGIN_ALARMID, eid))
-        if ip:
-            _add_unreachable_server(ip)
+            # Don't _add_unreachable_server list if the fm call failed.
+            # That way it will be retried at a later time.
+            collectd.error("%s 'set_fault' failed ; %s:%s ; %s" %
+                           (PLUGIN, PLUGIN_ALARMID, eid, alarm_uuid))
+            return 0
         else:
-            obj.alarm_raised = True
+            collectd.info("%s raised alarm %s:%s" %
+                          (PLUGIN,
+                           PLUGIN_ALARMID,
+                           eid))
+            if ip:
+                _add_unreachable_server(ip)
+            else:
+                obj.alarm_raised = True
 
-    return False
+    except Exception as ex:
+        collectd.error("%s 'set_fault' exception ; %s:%s:%s ; %s" %
+                       (PLUGIN,
+                        PLUGIN_ALARMID,
+                        eid,
+                        fm_severity,
+                        ex))
+    return 0
 
 
 ###############################################################################
@@ -213,26 +224,33 @@ def _raise_alarm(ip=None):
 #
 # Returns    : Error indication.
 #
-#              True : is error. FM call failed to clear the
+#              False: is error. FM call failed to clear the
 #                     alarm and needs to be retried.
 #
-#              False: no error. FM call succeeds
+#              True : no error. FM call succeeds
 #
 ###############################################################################
 
 def _clear_base_alarm():
     """Clear the NTP base alarm"""
 
-    if api.clear_fault(PLUGIN_ALARMID, obj.base_eid) is False:
-        collectd.error("%s failed to clear alarm %s:%s" %
-                       (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
-        return True
-    else:
-        collectd.info("%s cleared alarm %s:%s" %
-                      (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+    try:
+        if api.clear_fault(PLUGIN_ALARMID, obj.base_eid) is False:
+            collectd.info("%s %s:%s alarm already cleared" %
+                          (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
+        else:
+            collectd.info("%s %s:%s alarm cleared" %
+                          (PLUGIN, PLUGIN_ALARMID, obj.base_eid))
         obj.alarm_raised = False
+        return True
 
-    return False
+    except Exception as ex:
+        collectd.error("%s 'clear_fault' exception ; %s:%s ; %s" %
+                       (PLUGIN,
+                        PLUGIN_ALARMID,
+                        obj.base_eid,
+                        ex))
+        return False
 
 
 ###############################################################################
@@ -244,13 +262,6 @@ def _clear_base_alarm():
 #
 # Parameters : IP address
 #
-# Returns     : Error indication.
-#
-#               True : is error. FM call failed to clear the
-#                      alarm and needs to be retried.
-#
-#               False: no error. FM call succeeds
-#
 ###############################################################################
 
 def _remove_ip_from_unreachable_list(ip):
@@ -258,24 +269,28 @@ def _remove_ip_from_unreachable_list(ip):
 
     # remove from unreachable list if its there
     if ip and ip in obj.unreachable_servers:
+
         eid = obj.base_eid + '=' + ip
         collectd.debug("%s trying to clear alarm %s" % (PLUGIN, eid))
 
-        # clear the alarm if its asserted
-        if api.clear_fault(PLUGIN_ALARMID, eid) is True:
-            collectd.info("%s cleared %s:%s alarm" %
-                          (PLUGIN, PLUGIN_ALARMID, eid))
-            obj.unreachable_servers.remove(ip)
-        else:
-            # Handle clear failure by not removing the IP from the list.
-            # It will retry on next audit.
-            # Error should only occur if FM is not running at the time
-            # this get or clear is called
-            collectd.error("%s failed alarm clear %s:%s" %
-                           (PLUGIN, PLUGIN_ALARMID, eid))
-            return True
+        try:
+            # clear the alarm if its asserted
+            if api.clear_fault(PLUGIN_ALARMID, eid) is True:
+                collectd.info("%s %s:%s alarm cleared " %
+                              (PLUGIN, PLUGIN_ALARMID, eid))
+            else:
+                # alarm does not exist
+                collectd.info("%s %s:%s alarm clear" %
+                              (PLUGIN, PLUGIN_ALARMID, eid))
 
-    return False
+            obj.unreachable_servers.remove(ip)
+
+        except Exception as ex:
+            collectd.error("%s 'clear_fault' exception ; %s:%s ; %s" %
+                           (PLUGIN,
+                            PLUGIN_ALARMID,
+                            eid,
+                            ex))
 
 
 ###############################################################################
@@ -373,7 +388,8 @@ def _get_ntp_servers():
             # Clear any that may have been raised.
             #
             ##################################################################
-            collectd.info("%s No NTP servers are provisioned" % PLUGIN)
+            collectd.info("%s NTP Service Disabled ; no provisioned servers" %
+                          PLUGIN)
 
             # clear all alarms
             if obj.alarm_raised:
@@ -510,7 +526,14 @@ def init_func():
     _get_ntp_servers()
 
     # manage existing alarms.
-    alarms = api.get_faults_by_id(PLUGIN_ALARMID)
+    try:
+        alarms = api.get_faults_by_id(PLUGIN_ALARMID)
+
+    except Exception as ex:
+        collectd.error("%s 'get_faults_by_id' exception ; %s ; %s" %
+                       (PLUGIN, PLUGIN_ALARMID, ex))
+        return 0
+
     if alarms:
         for alarm in alarms:
             eid = alarm.entity_instance_id
@@ -524,18 +547,16 @@ def init_func():
                 # this is done to avoid the potential for stuck ntp ip alarms
                 collectd.info("%s clearing found startup alarm '%s'" %
                               (PLUGIN, alarm.entity_instance_id))
-                rc = api.clear_fault(PLUGIN_ALARMID, alarm.entity_instance_id)
-                if rc is False:
-                    # if we can't clear the alarm now then lets load it and
-                    # manage it like it just happened. When the server starts
-                    # responding then the alarm will get cleared at that time.
-                    collectd.error("%s failed to clear alarm %s:%s" %
-                                   (PLUGIN, PLUGIN_ALARMID,
-                                    alarm.entity_instance_id))
+                try:
+                    api.clear_fault(PLUGIN_ALARMID, alarm.entity_instance_id)
+                except Exception as ex:
+                    collectd.error("%s 'clear_fault' exception ; %s:%s ; %s" %
+                                   (PLUGIN,
+                                    PLUGIN_ALARMID,
+                                    alarm.entity_instance_id,
+                                    ex))
+                    return 0
 
-                    ip = alarm.entity_instance_id.split('=')[2]
-                    if ip and ip not in obj.unreachable_servers:
-                        _add_unreachable_server(ip)
             else:
                 obj.alarm_raised = True
                 collectd.info("%s found alarm %s:%s" %
@@ -551,7 +572,7 @@ def init_func():
     else:
         collectd.info("%s no major startup alarms found" % PLUGIN)
 
-    obj.config_complete = True
+    obj.init_complete = True
 
     return 0
 
@@ -583,14 +604,11 @@ def read_func():
     if tsc.nodetype != 'controller':
         return 0
 
-    if obj.config_complete is False:
-        if os.path.exists(tsc.VOLATILE_CONTROLLER_CONFIG_COMPLETE) is False:
-            return 0
-        else:
-            collectd.info("%s controller config complete ; "
-                          "invoking init_func" % PLUGIN)
-            if init_func() != 0:
-                return 1
+    if obj.init_complete is False:
+        if os.path.exists(tsc.VOLATILE_CONTROLLER_CONFIG_COMPLETE) is True:
+            collectd.info("%s re-running init" % PLUGIN)
+            init_func()
+        return 0
 
     # get a list if provisioned ntp servers
     _get_ntp_servers()
@@ -613,7 +631,7 @@ def read_func():
 
     if not data:
         collectd.error("%s no data from query" % PLUGIN)
-        return 1
+        return 0
 
     # Get the ntp query output into a list of lines
     obj.ntpq = data.split('\n')

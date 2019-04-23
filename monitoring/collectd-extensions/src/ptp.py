@@ -336,7 +336,7 @@ def clear_alarm(eid):
             collectd.info("%s %s:%s alarm cleared" %
                           (PLUGIN, PLUGIN_ALARMID, eid))
         else:
-            collectd.info("%s %s:%s alarm clear ; None found" %
+            collectd.info("%s %s:%s alarm already cleared" %
                           (PLUGIN, PLUGIN_ALARMID, eid))
         return True
 
@@ -433,7 +433,7 @@ def raise_alarm(alarm_cause, interface=None, data=0):
 
             # Don't _add_unreachable_server list if the fm call failed.
             # That way it will be retried at a later time.
-            collectd.error("%s %s:%s set_fault failed:%s" %
+            collectd.error("%s 'set_fault' failed ; %s:%s ; %s" %
                            (PLUGIN, PLUGIN_ALARMID, alarm.eid, alarm_uuid))
             return False
 
@@ -671,8 +671,9 @@ def read_func():
             # query FM for existing alarms.
             alarms = api.get_faults_by_id(PLUGIN_ALARMID)
         except Exception as ex:
-            collectd.error("%s 'get_faults_by_id' exception ; %s" %
-                           (PLUGIN, ex))
+            collectd.error("%s 'get_faults_by_id' exception ;"
+                           " %s ; %s" %
+                           (PLUGIN, PLUGIN_ALARMID, ex))
             return 0
 
         if alarms:
