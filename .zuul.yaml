@@ -95,9 +95,81 @@
         q-metering: false
         q-svc: false
 
+# An equivalent tox-based functional test job to flock-devstack-base
+- job:
+    name: flock-devstack-tox-base
+    parent: devstack-tox-functional
+    description: |
+      Base job for StarlingX Flock components DevStack tests that use tox
+    nodeset: openstack-single-node-bionic
+    roles:
+      - zuul: openstack/devstack
+    timeout: 9000
+    required-projects:
+      - name: openstack/devstack
+      - name: openstack/keystone
+      - name: openstack/requirements
+    vars:
+      devstack_services:
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        horizon: false
+        # Swift services
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+        tempest: false
+        # Database
+        mysql: false
+        postgresql: true
+      devstack_localrc:
+        # LIBS_FROM_GIT: keystone
+        FORCE: yes
+
+# And the tox version of the base-min job
+- job:
+    name: flock-devstack-tox-base-min
+    parent: flock-devstack-tox-base
+    timeout: 7800
+    vars:
+      devstack_services:
+        # Cinder services
+        c-api: false
+        c-bak: false
+        c-sch: false
+        c-vol: false
+        cinder: false
+        # Glance services
+        g-api: false
+        g-reg: false
+        # Nova services
+        n-api: false
+        n-api-meta: false
+        n-cauth: false
+        n-cond: false
+        n-cpu: false
+        n-novnc: false
+        n-obj: false
+        n-sch: false
+        placement-api: false
+        # Neutron services
+        q-agt: true
+        q-dhcp: false
+        q-l3: false
+        q-meta: false
+        q-metering: false
+        q-svc: false
+
+# Try this as a tox-based job with a minimal functional target in tox.ini
 - job:
     name: flock-devstack-integ
-    parent: flock-devstack-base-min
+    parent: flock-devstack-tox-base-min
     timeout: 7800
     required-projects:
       - starlingx/update
