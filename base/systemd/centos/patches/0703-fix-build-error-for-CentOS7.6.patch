@@ -1,6 +1,6 @@
-From 424bb6c3f56f6c445b7bd3d06150ab2993f1b611 Mon Sep 17 00:00:00 2001
+From bcfe2b0e50fed2a445f4e0dd43f33aee45d9ac5f Mon Sep 17 00:00:00 2001
 From: Shuicheng Lin <shuicheng.lin@intel.com>
-Date: Tue, 8 Jan 2019 20:59:43 +0800
+Date: Tue, 2 Apr 2019 16:43:03 +0000
 Subject: [PATCH] Fix compile failure due to deprecated value
 
 Issue occur after upgrade build tool chain. Fix it per tool chain's
@@ -14,6 +14,7 @@ use MHD_HTTP_NOT_ACCEPTABLE [-Werror]
 "
 
 Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
+Signed-off-by: Mawrer Ramirez <mawrer.a.ramirez.martinez@intel.com>
 ---
  src/journal-remote/journal-gatewayd.c | 4 ++--
  src/journal-remote/journal-remote.c   | 4 ++--
@@ -42,19 +43,26 @@ index d1f0ce3..8364044 100644
  
  
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index a455fb6..1d7df07 100644
+index e65daf6..9780ecb 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
-@@ -526,7 +526,7 @@ static int process_http_upload(
+@@ -526,13 +526,13 @@ static int process_http_upload(
                          log_warning("Failed to process data for connection %p", connection);
-                         if (r == -E2BIG)
+                         if (r == -ENOBUFS)
                                  return mhd_respondf(connection,
 -                                                    MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
 +                                                    MHD_HTTP_PAYLOAD_TOO_LARGE,
                                                      "Entry is too large, maximum is %u bytes.\n",
                                                      DATA_SIZE_MAX);
-                         else
-@@ -579,7 +579,7 @@ static int request_handler(
+
+                         else if (r == -E2BIG)
+                                 return mhd_respondf(connection,
+-                                                    MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
++                                                    MHD_HTTP_PAYLOAD_TOO_LARGE,
+                                                     "Entry with more fields than the maximum of %u\n",
+                                                     ENTRY_FIELD_COUNT_MAX);
+
+@@ -586,7 +586,7 @@ static int request_handler(
                                             *connection_cls);
  
          if (!streq(method, "POST"))
@@ -64,5 +72,4 @@ index a455fb6..1d7df07 100644
  
          if (!streq(url, "/upload"))
 -- 
-2.7.4
-
+1.8.3.1
