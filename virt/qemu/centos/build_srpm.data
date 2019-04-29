@@ -6,5 +6,5 @@ COPY_LIST="$CGCS_BASE/downloads/kvm-unit-tests.git-4ea7633.tar.bz2 \
            $PKG_BASE/qemu/qemu_clean.service \
            $PKG_BASE/qemu/qemu-system-x86.conf"
 TIS_BASE_SRCREV=38441756b70eec5807b5f60dad11a93a91199866
-TIS_PATCH_VER=GITREVCOUNT
+TIS_PATCH_VER=100
 
