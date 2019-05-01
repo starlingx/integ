@@ -120,6 +120,9 @@ kmod-e1000e-rt
 kmod-i40e
 kmod-i40e-rt
 
+# i40evf-kmod
+kmod-i40evf
+
 # ixgbevf-kmod
 kmod-ixgbevf
 
