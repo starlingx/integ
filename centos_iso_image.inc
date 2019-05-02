@@ -87,6 +87,9 @@ influxdb-extensions
 docker-distribution
 registry-token-server
 
+# kubernetes keystone authentication
+cloud-provider-openstack
+
 # helm
 helm
 
