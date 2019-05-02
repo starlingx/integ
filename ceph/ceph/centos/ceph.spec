@@ -290,7 +290,7 @@ Source17:	src/spdk/dpdk/dpdk-6ece49ad5a26f5e2f5c4af6c06c30376c0ddc387.tar.gz
 Source18:	src/rapidjson/thirdparty/gtest/googletest-0a439623f75c029912728d80cb7f1b8b48739ca4.tar.gz
 
 Source19:	ceph.sh
-Source20:	mgr-restful-plugin
+Source20:	mgr-restful-plugin.py
 Source21:	ceph.conf.pmon
 Source22:	ceph-init-wrapper.sh
 Source23:	ceph.conf
@@ -1292,7 +1292,7 @@ mkdir -p %{buildroot}%{_unitdir}
 install -m 750 %{SOURCE19} %{buildroot}%{_sysconfdir}/services.d/controller/
 install -m 750 %{SOURCE19} %{buildroot}%{_sysconfdir}/services.d/storage/
 install -m 750 %{SOURCE19} %{buildroot}%{_sysconfdir}/services.d/worker/
-install -m 750 %{SOURCE20} %{buildroot}%{_initrddir}/
+install -m 750 %{SOURCE20} %{buildroot}%{_initrddir}/mgr-restful-plugin
 install -m 750 %{SOURCE21} %{buildroot}%{_sysconfdir}/ceph/
 install -m 750 %{SOURCE22} %{buildroot}%{_initrddir}/ceph-init-wrapper
 install -m 640 %{SOURCE23} %{buildroot}%{_sysconfdir}/ceph/

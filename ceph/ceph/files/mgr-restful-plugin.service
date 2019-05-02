@@ -1,0 +1,15 @@
+[Unit]
+Description=Ceph MGR RESTful API Plugin
+After=network-online.target sw-patch.service
+
+[Service]
+Type=forking
+Restart=no
+KillMode=process
+RemainAfterExit=yes
+ExecStart=/etc/rc.d/init.d/mgr-restful-plugin start
+ExecStop=/etc/rc.d/init.d/mgr-restul-plugin stop
+ExecReload=/etc/rc.d/init.d/mgr-restful-plugin reload
+
+[Install]
+WantedBy=multi-user.target
