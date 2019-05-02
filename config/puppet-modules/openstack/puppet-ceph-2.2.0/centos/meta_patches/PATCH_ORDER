@@ -5,3 +5,6 @@
 0005-meta-patch-for-patch5.patch
 0006-add-ceph-disk-prepare-invalid-data-disk-value-patch.patch
 0007-Add-StarlingX-specific-restart-command-for-Ceph-moni.patch
+0008-ceph-mimic-prepare-activate-osd.patch
+0009-fix-ceph-osd-disk-partition-for-nvme-disks.patch
+0010-wipe-unprepared-disks.patch

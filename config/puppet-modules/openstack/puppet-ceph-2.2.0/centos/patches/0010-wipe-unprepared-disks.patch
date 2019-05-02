@@ -1,0 +1,25 @@
+From 828af5dec53192207637d15397887e058d6ea0fb Mon Sep 17 00:00:00 2001
+From: Daniel Badea <daniel.badea@windriver.com>
+Date: Fri, 26 Apr 2019 00:22:12 +0000
+Subject: [PATCH] wipe unprepared disks
+
+---
+ manifests/osd.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index 5bd30c5..ab65924 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -158,7 +158,7 @@ umount /var/lib/ceph/osd/ceph-${osdid}
+         # 2. The uuid for the OSD we are configuring matches the uuid for the
+         #    OSD on the disk. We don't want to attempt to re-use an OSD that
+         #    had previously been deleted.
+-        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep \" *$(readlink -f ${data}).*ceph data\" | grep 'osd uuid ${uuid}'",
++        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep \" *$(readlink -f ${data}).*ceph data\" | grep -v unprepared | grep 'osd uuid ${uuid}'",
+ 
+         logoutput => true,
+         timeout   => $exec_timeout,
+-- 
+1.8.3.1
+

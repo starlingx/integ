@@ -1,0 +1,64 @@
+From 4c2e2a196cb5a6890e35098c8499688fc1c26f5c Mon Sep 17 00:00:00 2001
+From: Daniel Badea <daniel.badea@windriver.com>
+Date: Thu, 4 Apr 2019 16:52:12 +0000
+Subject: [PATCH] ceph-mimic-prepare-activate-osd
+
+Prepare and activate disk using filestore
+and given OSD id.
+---
+ manifests/osd.pp | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index 889d28a..c51a445 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -54,6 +54,7 @@ define ceph::osd (
+   $cluster = undef,
+   $cluster_uuid = undef,
+   $uuid = undef,
++  $osdid = undef,
+   $exec_timeout = $::ceph::params::exec_timeout,
+   $selinux_file_context = 'ceph_var_lib_t',
+   $fsid = undef,
+@@ -78,6 +79,10 @@ define ceph::osd (
+       $uuid_option = "--osd-uuid ${uuid}"
+     }
+ 
++    if $osdid {
++      $osdid_option = "--osd-id ${osdid}"
++    }
++
+     if $ensure == present {
+ 
+       $ceph_check_udev = "ceph-osd-check-udev-${name}"
+@@ -131,7 +136,16 @@ test -z $(ceph-disk list $(readlink -f ${data}) | egrep -o '[0-9a-f]{8}-([0-9a-f
+       # ceph-disk: prepare should be idempotent http://tracker.ceph.com/issues/7475
+       exec { $ceph_prepare:
+ 
+-        command   => "/usr/sbin/ceph-disk --verbose --log-stdout prepare ${cluster_option} ${cluster_uuid_option} ${uuid_option} --fs-type xfs --zap-disk $(readlink -f ${data}) $(readlink -f ${journal})",
++        command   => "/bin/true # comment to satisfy puppet syntax requirements
++set -ex
++ceph-disk --verbose --log-stdout prepare --filestore  ${cluster_uuid_option} ${uuid_option} ${osdid_option} --fs-type xfs --zap-disk $(readlink -f ${data}) $(readlink -f ${journal})
++mkdir -p /var/lib/ceph/osd/ceph-${osdid}
++ceph auth del osd.${osdid} || true
++mount $(readlink -f ${data})1 /var/lib/ceph/osd/ceph-${osdid}
++ceph-osd --id ${osdid} --mkfs --mkkey --mkjournal
++ceph auth add osd.${osdid} osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-${osdid}/keyring
++umount /var/lib/ceph/osd/ceph-${osdid}
++",
+         # We don't want to erase the disk if:
+         # 1. There is already ceph data on the disk for our cluster AND
+         # 2. The uuid for the OSD we are configuring matches the uuid for the
+@@ -171,7 +185,7 @@ if ! test -b \$disk ; then
+ fi
+ # activate happens via udev when using the entire device
+ if ! test -b \$disk || ! test -b \${disk}1 || ! test -b \${disk}p1 ; then
+-  ceph-disk activate \$disk || true
++  ceph-disk activate \${disk}1 || true
+ fi
+ if test -f ${udev_rules_file}.disabled && ( test -b \${disk}1 || test -b \${disk}p1 ); then
+   ceph-disk activate \${disk}1 || true
+-- 
+1.8.3.1
+
