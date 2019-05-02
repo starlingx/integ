@@ -24,14 +24,11 @@ from oslo_log import log as logging
 from oslo_service import service
 # noinspection PyUnresolvedReferences
 from oslo_service.periodic_task import PeriodicTasks
-# noinspection PyUnresolvedReferences
-from oslo_service import loopingcall
 
 # noinspection PyUnresolvedReferences
 from cephclient import wrapper
 
 from ceph_manager.monitor import Monitor
-from ceph_manager import exception
 from ceph_manager import constants
 
 from ceph_manager.i18n import _LI
