@@ -1,6 +1,0 @@
-0001-update-package-versioning-for-TIS-format.patch
-0002-dpdk-usertools.patch
-0003-run-services-as-root-user.patch
-0004-rpm-check-with-condition.patch
-0006-iommu-width-fix.patch
-0007-net-mlx5-fix-memory-region-cache-lookup.patch
