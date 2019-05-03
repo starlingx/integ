@@ -20,8 +20,9 @@ PIDFILE=$RUNDIR/$DESC.pid
 start() 
 {
     if [ -e $PIDFILE ]; then
-        PIDDIR=/prod/$(cat $PIDFILE)
-        if [ -d ${PIDFILE} ]; then
+        PID=$(cat $PIDFILE)
+        PIDDIR=/proc/${PID}
+        if [ -n "${PID}" -a -d ${PIDDIR} ]; then
             echo "$DESC already running."
             exit 0
         else
