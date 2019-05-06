@@ -2,7 +2,7 @@ Summary: Titanuim Server influxdb Extensions Package
 Name: influxdb-extensions
 Version: 1.0
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
-License: windriver
+License: ASL 2.0
 Group: base
 Packager: Wind River <info@windriver.com>
 URL: unknown
