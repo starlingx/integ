@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2019 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+#
+
+# copytruncate: Truncate the original log file in place after creating a copy,
+# instead of moving the old log file and optionally creating a new one. It is
+# used when some program can not be told to close its logfile and thus might
+# continue writing (appending) to the previous log file forever. This prevents
+# having to possibly reset the file handle of the log file.
+
+/var/lib/docker/containers/*/*-json.log
+{
+        nodateext
+        size 50M
+        start 1
+        rotate 20
+        missingok
+        notifempty
+        compress
+        delaycompress
+        copytruncate
+}
+
+/var/lib/docker/overlay2/*/diff/var/log/apt/history.log
+/var/lib/docker/overlay2/*/diff/var/log/bootstrap.log
+/var/lib/docker/overlay2/*/diff/var/log/apt/term.log
+/var/lib/docker/overlay2/*/diff/var/log/dpkg.log
+/var/lib/docker/overlay2/*/diff/var/log/alternatives.log
+{
+        nodateext
+        size 10M
+        start 1
+        rotate 20
+        missingok
+        notifempty
+        compress
+        delaycompress
+        copytruncate
+}
