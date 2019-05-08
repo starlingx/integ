@@ -22,14 +22,7 @@
 /var/log/nfv-vim-api.log
 /var/log/nfv-vim-webserver.log
 /var/log/keystone/*.log
-/var/log/aodh/*.log
-/var/log/murano/*.log
-/var/log/magnum/*.log
 /var/log/horizon.log
-/var/log/ceilometer/*.log
-/var/log/panko/*.log
-/var/log/gnocchi/*.log
-/var/log/ironic/*.log
 /var/log/snmp-api.log
 /var/log/dcmanager/*.log
 /var/log/dcorch/*.log
@@ -60,67 +53,6 @@
         sharedscripts
         postrotate
                  systemctl reload syslog-ng > /dev/null 2>&1 || true
-        endscript
-}
-
-/var/log/cinder/*.log
-{
-        nodateext
-        size 10M
-        start 1
-        rotate 20
-        missingok
-        notifempty
-        compress
-        sharedscripts
-        postrotate
-		 systemctl reload syslog-ng > /dev/null 2>&1 || true
-        endscript
-}
-
-/var/log/glance/*.log
-{
-        nodateext
-        size 10M
-        start 1
-        rotate 20
-        missingok
-        notifempty
-        compress
-        sharedscripts
-        postrotate
-		 systemctl reload syslog-ng > /dev/null 2>&1 || true
-        endscript
-}
-
-/var/log/heat/*.log
-{
-        nodateext
-        size 10M
-        start 1
-        rotate 20
-        missingok
-        notifempty
-        compress
-        sharedscripts
-        postrotate
-		 systemctl reload syslog-ng > /dev/null 2>&1 || true
-        endscript
-}
-
-/var/log/neutron/*.log
-/var/log/nova/*.log
-{
-        nodateext
-        size 50M
-        start 1
-        rotate 20
-        missingok
-        notifempty
-        compress
-        sharedscripts
-        postrotate
-		 systemctl reload syslog-ng > /dev/null 2>&1 || true
         endscript
 }
 

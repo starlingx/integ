@@ -189,34 +189,9 @@ do
       "sysinv-agent")
          process_list=(${process_list[@]} "pmon:sysinv-agent:sysinv-agent:all:/var/run/sysinv-agent.pid:0")
          ;;
-
-      "ceilometer-polling")
-         process_list=(${process_list[@]} "pmon:ceilometer-polling:ceilometer-polling:all:/var/run/ceilometer-polling.pid:0")
-         ;;
-      "ceilometer-agent-notification")
-         process_list=(${process_list[@]} "sm:ceilometer-agent-notification:ceilometer-agent-notification:controller:/var/run/resource-agents/ceilometer-agent-notification.pid:0")
-         ;;
-      "ceilometer-collector")
-         process_list=(${process_list[@]} "sm:ceilometer-collector:ceilometer-collector:controller:/var/run/resource-agents/ceilometer-collector.pid:0")
-         ;;
-      "ceilometer-api")
-         process_list=(${process_list[@]} "sm:ceilometer-api:ceilometer-api:controller:/var/run/resource-agents/ceilometer-api.pid:0")
-         ;;
+      # Keystone processes
       "keystone")
          process_list=(${process_list[@]} "sm:keystone:keystone:controller:/var/run/openstack-keystone.pid:0")
-         ;;
-      # AODH processes
-      "aodh-api")
-         process_list=(${process_list[@]} "sm:aodh-api:aodh-api:controller:/var/run/resource-agents/aodh-api.pid:0")
-         ;;
-      "aodh-evaluator")
-         process_list=(${process_list[@]} "sm:aodh-evaluator:aodh-evaluator:controller:/var/run/resource-agents/aodh-evaluator.pid:0")
-         ;;
-      "aodh-listener")
-         process_list=(${process_list[@]} "sm:aodh-listener:aodh-listener:controller:/var/run/resource-agents/aodh-listener.pid:0")
-         ;;
-      "aodh-notifier")
-         process_list=(${process_list[@]} "sm:aodh-notifier:aodh-notifier:controller:/var/run/resource-agents/aodh-notifier.pid:0")
          ;;
       # Barbican processes
       "barbican-api")
@@ -228,47 +203,9 @@ do
       "barbican-worker")
          process_list=(${process_list[@]} "sm:barbican-worker:barbican-worker:controller:/var/run/resource-agents/barbican-worker.pid:0")
          ;;
-      # Panko process
-      "panko-api")
-         process_list=(${process_list[@]} "sm:panko-api:panko-api:controller:/var/run/resource-agents/panko-api.pid:0")
-         ;;
-      # Murano processes
-      "murano-engine")
-         process_list=(${process_list[@]} "sm:murano-engine:murano-engine:controller:/var/run/resource-agents/murano-engine.pid:0")
-         ;;
-      "murano-api")
-         process_list=(${process_list[@]} "sm:murano-api:murano-api:controller:/var/run/resource-agents/murano-api.pid:0")
-         ;;
-      # Magnum processes
-      "magnum-conductor")
-         process_list=(${process_list[@]} "sm:magnum-conductor:magnum-conductor:controller:/var/run/resource-agent/magnum-conductor.pid:0")
-         ;;
-      "magnum-api")
-         process_list=(${process_list[@]} "sm:magnum-api:magnum-api:controller:/var/run/resource-agents/magnum-api.pid:0")
-         ;;
-      # Ironic processes
-      "ironic-conductor")
-         process_list=(${process_list[@]} "sm:ironic-conductor:ironic-conductor:controller:/var/run/resource-agents/ironic-conductor.pid:0")
-         ;;
-      "ironic-api")
-         process_list=(${process_list[@]} "sm:ironic-api:ironic-api:controller:/var/run/resource-agents/ironic-api.pid:0")
-         ;;
       # IO-Monitor process
       "io-monitor-manager")
          process_list=(${process_list[@]} "pmon:io-monitor-manager:io-monitor-manager:controller:/var/run/io-monitor/io-monitor-manager.pid:0")
-         ;;
-      # HEAT processes
-      "heat-engine")
-         process_list=(${process_list[@]} "sm:heat-engine:heat-engine:controller:/var/run/resource-agents/heat-engine.pid:0")
-         ;;
-      "heat-api")
-         process_list=(${process_list[@]} "sm:heat-api:heat-api:controller:/var/run/resource-agents/heat-api.pid:0")
-         ;;
-      "heat-api-cfn")
-         process_list=(${process_list[@]} "sm:heat-api-cfn:heat-api-cfn:controller:/var/run/resource-agents/heat-api-cfn.pid:0")
-         ;;
-      "heat-api-cloudwatch")
-         process_list=(${process_list[@]} "sm:heat-api-cloudwatch:heat-api-cloudwatch:controller:/var/run/resource-agents/heat-api-cloudwatch.pid:0")
          ;;
       # Vim processes
       "nfv-vim")
@@ -279,35 +216,6 @@ do
          ;;
       "nfv-vim-webserver")
          process_list=(${process_list[@]} "sm:nfv-vim-webserver:vim-webserver:controller:/var/run/nfv-vim-webserver.pid:0")
-         ;;
-      # NOVA processes
-      "nova-api")
-         process_list=(${process_list[@]} "sm:nova-api:nova-api:controller:/var/run/resource-agents/nova-api.pid:0")
-         ;;
-      "nova-placement-api")
-         process_list=(${process_list[@]} "sm:nova-placement-api:nova-placement-api:controller:/var/run/resource-agents/nova-placement-api.pid:0")
-         ;;
-      "nova-conductor")
-         process_list=(${process_list[@]} "sm:nova-conductor:nova-conductor:controller:/var/run/resource-agents/nova-conductor.pid:0")
-         ;;
-      "nova-console-auth")
-         process_list=(${process_list[@]} "sm:nova-console-auth:nova-console-auth:controller:/var/run/resource-agents/nova-console-auth.pid:0")
-         ;;
-      "nova-novnc")
-         process_list=(${process_list[@]} "sm:nova-novnc:nova-novnc:controller:/var/run/resource-agents/nova-novnc.pid:0")
-         ;;
-      "nova-scheduler")
-         process_list=(${process_list[@]} "sm:nova-scheduler:nova-scheduler:controller:/var/run/resource-agents/nova-scheduler.pid:0")
-         ;;
-      "nova-compute")
-         process_list=(${process_list[@]} "pmon:nova-compute:nova-compute:compute:/var/run/nova/nova-compute.pid:0" "sm:nova-compute:nova-compute:controller:/var/run/resource-agents/nova-compute.pid:0")
-         ;;
-      "nova-serialproxy")
-         process_list=(${process_list[@]} "sm:nova-serialproxy:nova-serialproxy:controller:/var/run/resource-agents/nova-serialproxy.pid:0")
-         ;;
-      # NOVA proxy
-      "nova-api-proxy")
-         process_list=(${process_list[@]} "sm:nova-api-proxy:nova-api-proxy:controller:/var/run/nova-api-proxy.pid:0")
          ;;
       # Distributed Cloud processes
       "dcmanager-manager")
