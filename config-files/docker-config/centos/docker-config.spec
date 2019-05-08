@@ -29,3 +29,4 @@ make DATADIR=%{buildroot}%{_datadir} SYSCONFDIR=%{buildroot}%{_sysconfdir} insta
 %dir %{_sysconfdir}/systemd/system/docker.service.d
 %{_sysconfdir}/pmon.d/docker.conf
 %{_sysconfdir}/systemd/system/docker.service.d/docker-stx-override.conf
+%{_sysconfdir}/logrotate.d/docker.logrotate
