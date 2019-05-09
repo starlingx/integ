@@ -28,7 +28,7 @@
 # Generally, individual commands that display output have that output
 # redirected to the appropriate info file in /scratch/var/extra
 #
-# wrsroot@controller-0:/scratch# sudo collect
+# sysadmin@controller-0:/scratch# sudo collect
 # nodetype : controller
 # Collector: /scratch
 # Extra Dir: /scratch/var/extra
@@ -76,7 +76,7 @@ TOOL_NAME=collect
 TOOL_VER=2
 TOOL_REV=0
 
-# collect must be run as wrsroot
+# collect must be run as sysadmin
 if [ ${UID} -eq 0 ]; then
   echo "Error: Cannot run collect as 'root' user"
   exit 1
@@ -149,8 +149,8 @@ function print_help()
     echo ""
     echo "Optionally specify a --name prefix of the collected tar file."
     echo ""
-    echo "With the command set specified, simply run collect as wrsroot and when"
-    echo "prompted provide the wrsroot sudo password and let collect handle the rest."
+    echo "With the command set specified, simply run collect as sysadmin and when"
+    echo "prompted provide the sysadmin sudo password and let collect handle the rest."
     echo ""
     echo "Scope Options:"
     echo ""
@@ -563,7 +563,7 @@ function clean_scratch_dir_remote()
     spawn bash -i
     expect -re $
     set timeout 60
-    send "${SSH_CMD} wrsroot@${this_hostname}\n"
+    send "${SSH_CMD} sysadmin@${this_hostname}\n"
     expect {
         "assword:" {
             send "${pw}\r"
@@ -621,7 +621,7 @@ function delete_remote_dir_or_file()
     spawn bash -i
     expect -re $
     set timeout 60
-    send "${SSH_CMD} wrsroot@${this_hostname}\n"
+    send "${SSH_CMD} sysadmin@${this_hostname}\n"
     expect {
         "assword:" {
             send "${pw}\r"
@@ -683,7 +683,7 @@ function get_file_from_host()
     spawn bash -i
     set timeout ${SCP_TIMEOUT}
     expect -re $
-    send "${SCP_CMD} wrsroot@${this_hostname}:${remote_src} ${local_dest} 2>>${HOST_COLLECT_ERROR_LOG}\n"
+    send "${SCP_CMD} sysadmin@${this_hostname}:${remote_src} ${local_dest} 2>>${HOST_COLLECT_ERROR_LOG}\n"
     expect {
         "assword:" {
             send "${pw}\r"
@@ -1083,7 +1083,7 @@ EOF
             spawn bash -i
             set timeout 30
             expect -re $
-            send "${SSH_CMD} wrsroot@${host}\n"
+            send "${SSH_CMD} sysadmin@${host}\n"
             expect {
                 "assword:" {
                     send "${pw}\r"
@@ -1131,7 +1131,7 @@ EOF
                     exit ${FAIL_UNREACHABLE}
                 }
                 "Host key verification failed" {
-                    send "rm -f /home/wrsroot/.ssh/known_hosts\n"
+                    send "rm -f /home/sysadmin/.ssh/known_hosts\n"
                     exit ${FAIL}
                 }
                 timeout { exit ${FAIL_TIMEOUT} }

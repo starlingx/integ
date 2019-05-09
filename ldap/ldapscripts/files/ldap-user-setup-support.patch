@@ -49,7 +49,7 @@ index 0000000..27d12dc
 +. "$_RUNTIMEFILE"
 +
 +# runtime defaults
-+_DEFAULTGRP2="wrs_protected"
++_DEFAULTGRP2="sys_protected"
 +_BASHSHELL="/bin/bash"
 +_DEFAULTSHADOWMAX="90"
 +_DEFAULTSHADOWWARNING="2"

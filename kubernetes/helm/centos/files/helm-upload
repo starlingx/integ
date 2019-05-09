@@ -12,7 +12,7 @@
 
 
 # We want to run as the "www" user and scripts can't be setuid.  The
-# sudoers permissions are set up to allow wrsroot to run this script
+# sudoers permissions are set up to allow sysadmin to run this script
 # as the "www" user without a password.
 if [ $USER != "www" ]; then
     exec sudo -u www $0 $@

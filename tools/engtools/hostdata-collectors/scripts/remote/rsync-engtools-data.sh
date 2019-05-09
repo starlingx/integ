@@ -32,7 +32,7 @@ fi
 sudo mkdir -p ${DEST}
 
 # rsync options
-USER=wrsroot
+USER=sysadmin
 RSYNC_OPT="-r -l --safe-links -h -P --stats --exclude=*.pyc"
 
 # Rsync data from multiple locations

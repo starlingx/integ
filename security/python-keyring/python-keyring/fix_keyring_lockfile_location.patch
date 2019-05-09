@@ -82,7 +82,7 @@ Index: keyring-5.3/keyring/backends/file.py
 -        if os.geteuid() == 0 and (not os.path.exists(lockfile)):
 -             from pwd import getpwnam
 -             import stat
--             nonrootuser = "wrsroot"
+-             nonrootuser = "sysadmin"
 -             with open(lockfile, 'w'):
 -                 pass
 -             # must have the lock file with the correct group permissisions g+rw

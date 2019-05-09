@@ -332,8 +332,8 @@ function collect_extra()
     echo    "${hostname}: Bash History ......: ${LOGFILE}"
 
     # history
-    delimiter ${LOGFILE} "cat /home/wrsroot/.bash_history"
-    cat /home/wrsroot/.bash_history >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
+    delimiter ${LOGFILE} "cat /home/sysadmin/.bash_history"
+    cat /home/sysadmin/.bash_history >> ${LOGFILE} 2>>${COLLECT_ERROR_LOG}
 
     LOGFILE="${EXTRA_DIR}/interrupt.info"
     echo    "${hostname}: Interrupt Info ....: ${LOGFILE}"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-username="wrsroot"
+username="sysadmin"
 password="Li69nux*"
 test_duration="30"
 wait_duration="5"

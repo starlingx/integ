@@ -30,7 +30,7 @@ Index: keyring-5.3/keyring/backends/file.py
 +            if oct(stat.S_IMODE(os.stat(lockdir + "/" + lockfile).st_mode)) != '0770':
 +                # Must have the lock file with the correct group and permissisions g+rw
 +                os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
-+                groupinfo = grp.getgrnam('wrs_protected')
++                groupinfo = grp.getgrnam('sys_protected')
 +                os.chown(lockdir + "/" + lockfile,-1,groupinfo.gr_gid)
  
  

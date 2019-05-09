@@ -25,18 +25,18 @@ d /run/log 0755 root root -
 z /run/log/journal 2755 root systemd-journal - -
 Z /run/log/journal/%m ~2750 root systemd-journal - -
 
-a+ /run/log/journal/%m - - - - d:group:wrs_protected:r-x,d:group:wheel:r-x
-A+ /run/log/journal/%m - - - - group:wrs_protected:r-x,group:wheel:r-x
+a+ /run/log/journal/%m - - - - d:group:sys_protected:r-x,d:group:wheel:r-x
+A+ /run/log/journal/%m - - - - group:sys_protected:r-x,group:wheel:r-x
 
 z /var/log/journal 2755 root systemd-journal - -
 z /var/log/journal/%m 2755 root systemd-journal - -
 z /var/log/journal/%m/system.journal 0640 root systemd-journal - -
 
-a+ /var/log/journal    - - - - d:group:wrs_protected:r-x,d:group:wheel:r-x
-a+ /var/log/journal    - - - - group:wrs_protected:r-x,group:wheel:r-x
-a+ /var/log/journal/%m - - - - d:group:wrs_protected:r-x,d:group:wheel:r-x
-a+ /var/log/journal/%m - - - - group:wrs_protected:r-x,group:wheel:r-x
-a+ /var/log/journal/%m/system.journal - - - - group:wrs_protected:r--,group:wheel:r--
+a+ /var/log/journal    - - - - d:group:sys_protected:r-x,d:group:wheel:r-x
+a+ /var/log/journal    - - - - group:sys_protected:r-x,group:wheel:r-x
+a+ /var/log/journal/%m - - - - d:group:sys_protected:r-x,d:group:wheel:r-x
+a+ /var/log/journal/%m - - - - group:sys_protected:r-x,group:wheel:r-x
+a+ /var/log/journal/%m/system.journal - - - - group:sys_protected:r--,group:wheel:r--
 
 d /var/lib/systemd 0755 root root -
 d /var/lib/systemd/coredump 0755 root root 3d

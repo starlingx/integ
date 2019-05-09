@@ -21,11 +21,11 @@ fi
 
 source ./lab.conf
 
-rsync -azvh wrsroot@${CONTROLLER0_IP}:/scratch/syseng_data/* .
-rsync -azvh wrsroot@${CONTROLLER1_IP}:/scratch/syseng_data/* .
+rsync -azvh sysadmin@${CONTROLLER0_IP}:/scratch/syseng_data/* .
+rsync -azvh sysadmin@${CONTROLLER1_IP}:/scratch/syseng_data/* .
 
-rsync -azvh wrsroot@${CONTROLLER0_IP}:/opt/backups/tmp/syseng-data/* .
-rsync -azvh wrsroot@${CONTROLLER1_IP}:/opt/backups/tmp/syseng-data/* .
+rsync -azvh sysadmin@${CONTROLLER0_IP}:/opt/backups/tmp/syseng-data/* .
+rsync -azvh sysadmin@${CONTROLLER1_IP}:/opt/backups/tmp/syseng-data/* .
 
 # Compress the newly download data files if they have not been compressed
 CURDIR=$(pwd)

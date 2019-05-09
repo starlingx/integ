@@ -1,0 +1,12 @@
+##
+## User privilege specification
+##
+sysadmin ALL=(ALL) ALL
+sysadmin ALL=(root) NOPASSWD: /usr/bin/config_controller
+sysadmin ALL=(root) NOPASSWD: /usr/bin/config_region
+sysadmin ALL=(root) NOPASSWD: /usr/bin/config_subcloud
+sysadmin ALL=(root) NOPASSWD: /usr/bin/config_management
+sysadmin ALL=(root) NOPASSWD: /usr/local/sbin/collect
+
+Defaults lecture=never, secure_path=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+Defaults passprompt="Password: "
