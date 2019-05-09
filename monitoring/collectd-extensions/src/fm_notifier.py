@@ -283,7 +283,7 @@ class PluginObject:
         collectd.info('%s %s : %s' % (PLUGIN, self.plugin, string))
 
     def _llog(self, string):
-        """Create a collectd notifier info log with the string param if debug_lists"""
+        """Create a collectd notifier info log when debug_lists not empty"""
         if debug_lists:
             collectd.info('%s %s : %s' % (PLUGIN, self.plugin, string))
 
@@ -1077,7 +1077,7 @@ def _database_setup(database):
             # TODO: Read current retention period from service parameter
             #       Make it a puppet implementation.
             #
-            # Create a 1 month samples retention policy
+            # Create a '1 week' samples retention policy
             # -----------------------------------------
             # name     = 'collectd samples'
             # duration = set retention period in time
@@ -1092,14 +1092,14 @@ def _database_setup(database):
             ############################################################
 
             PluginObject.dbObj.create_retention_policy(
-                DATABASE_NAME, '4w', 1, database, True)
+                DATABASE_NAME, '1w', 1, database, True)
         except Exception as ex:
             if str(ex) == 'database already exists':
                 try:
                     collectd.info("%s influxdb:collectd %s" %
                                   (PLUGIN, str(ex)))
                     PluginObject.dbObj.create_retention_policy(
-                        DATABASE_NAME, '4w', 1, database, True)
+                        DATABASE_NAME, '1w', 1, database, True)
                 except Exception as ex:
                     if str(ex) == 'retention policy already exists':
                         collectd.info("%s influxdb:collectd %s" %
