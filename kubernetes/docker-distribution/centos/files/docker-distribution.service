@@ -3,6 +3,7 @@ Description=v2 Registry server for Docker
 
 [Service]
 Type=simple
+Environment=REGISTRY_STORAGE_DELETE_ENABLED=true
 ExecStart=/usr/bin/registry serve /etc/docker-distribution/registry/config.yml
 Restart=on-failure
 ExecStartPost=/bin/bash -c 'echo $MAINPID > /var/run/docker-distribution.pid'
