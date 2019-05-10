@@ -22,7 +22,22 @@ fi
 RETVAL=0
 REINDEX=0
 
-REPO_DIR='/www/pages/helm_charts'
+REPO_BASE='/www/pages/helm_charts'
+
+# First argument is always the repo where the charts need to be placed
+if [ $# -lt 2 ]; then
+    echo "Usage: helm-upload <repo name> <chart 1> .. <chart N>"
+    exit 1
+fi
+
+# Make sure the repo directory exists
+REPO_DIR="${REPO_BASE}/$1"
+if [ ! -e $REPO_DIR ]; then
+    echo "$REPO_DIR doesn't exist."
+    exit 1
+fi
+
+shift 1
 
 for FILE in "$@"; do
     if [ -r $FILE ]; then
