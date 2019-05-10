@@ -190,7 +190,10 @@ class CephClient(object):
                     verify=self.check_certificate,
                     timeout=timeout).json()
                 LOG.info('Result: {}'.format(result))
-                if 'is_finished' not in result:
+                if 'is_finished' in result:
+                    self.session.delete(
+                        self.service_url + 'request?id=' + result['id'])
+                else:
                     assert('message' in result)
                     if 'auth: No such user' in result['message']:
                         raise CephClientNoSuchUser(user=self.username)
