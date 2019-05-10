@@ -1,0 +1,14 @@
+[Unit]
+Description=StarlingX PCI Interrupt Affinity Agent
+After=sysinv-agent.service
+Before=pmon.service
+
+[Service]
+Type=forking
+RemainAfterExit=yes
+ExecStart=/etc/init.d/pci-irq-affinity-agent start
+ExecStop=/etc/init.d/pci-irq-affinity-agent stop
+PIDFile=/var/run/pci-irq-affinity-agent.pid
+
+[Install]
+WantedBy=multi-user.target

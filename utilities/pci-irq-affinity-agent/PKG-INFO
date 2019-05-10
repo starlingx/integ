@@ -1,0 +1,7 @@
+Metadata-Version: 1.2
+Name: PCIInterruptAffinityAgent
+Version: 1.0
+Summary: PCI Interrupt Affinity Agent Package
+Author: StarlingX
+License: Apache-2.0
+Platform: UNKNOWN
