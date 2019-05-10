@@ -51,6 +51,7 @@ Source0:        %{project}-v%{kube_version}.tar.gz
 Source1:        %{con_repo}-v%{con_commit}.tar.gz
 Source3:        kubernetes-accounting.conf
 Source4:        kubeadm.conf
+Source5:        kubelet-cgroup-setup.sh
 
 Source33:       genmanpages.sh
 
@@ -914,6 +915,9 @@ install -p -m 755 -t %{buildroot}%{_bindir} ${output_path}/kubeadm
 install -d -m 0755 %{buildroot}/%{_sysconfdir}/systemd/system/kubelet.service.d
 install -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system/kubelet.service.d %{SOURCE4}
 
+echo "+++ INSTALLING kubelet-cgroup-setup.sh"
+install -p -m 0700 -t %{buildroot}/%{_bindir} %{SOURCE5}
+
 binaries=(kube-controller-manager kube-scheduler kube-proxy kubelet kubectl)
 for bin in "${binaries[@]}"; do
   echo "+++ HARDLINKING ${bin} to hyperkube"
@@ -1038,6 +1042,7 @@ fi
 %{_mandir}/man1/kubelet.1*
 %{_mandir}/man1/kube-proxy.1*
 %{_bindir}/kubelet
+%{_bindir}/kubelet-cgroup-setup.sh
 %{_bindir}/kube-proxy
 %{_bindir}/hyperkube
 %{_unitdir}/kube-proxy.service
