@@ -122,9 +122,11 @@ kmod-i40e-rt
 
 # i40evf-kmod
 kmod-i40evf
+kmod-i40evf-rt
 
 # ixgbevf-kmod
 kmod-ixgbevf
+kmod-ixgbevf-rt
 
 # ixgbe-kmod
 kmod-ixgbe
