@@ -1,0 +1,5 @@
+BUILDER=docker
+LABEL=k8s-plugins-sriov-network-device
+DOCKER_REPO=https://github.com/intel/sriov-network-device-plugin.git
+DOCKER_REF=9a20829008f224eba14a1eac41380f0c84491f28
+
