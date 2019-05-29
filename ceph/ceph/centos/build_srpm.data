@@ -1,6 +1,26 @@
-SRC_DIR="$CGCS_BASE/git/ceph"
-DOWNLOADS_DIR="$CGCS_BASE/downloads"
+SRC_DIR="$STX_BASE/git/ceph"
+DOWNLOADS_DIR="$STX_BASE/downloads"
 COPY_LIST="files/* $DISTRO/patches/*"
+
+# Add to COPY_LIST any tarballs listed in spec
+CEPH_SPEC_PATH="$PKG_BASE/$DISTRO/ceph.spec"
+
+BOOST_TAR=$(sed -n 's/^Source.*:\s*\(boost_.*\.tar\.bz2\)/\1/p' "$CEPH_SPEC_PATH")
+echo "ceph COPY_LIST, adding ${DOWNLOADS_DIR}/$BOOST_TAR"
+COPY_LIST+=" ${DOWNLOADS_DIR}/$BOOST_TAR"
+for submodule in $(grep 'Source[0-9]*:.*[.]tar[.]gz' "$CEPH_SPEC_PATH" | \
+                   grep -v Source0: | \
+                   sed 's/^Source.*:\s*\(.*\.tar\.gz\)/\1/'); do
+    echo "ceph COPY_LIST, adding ${DOWNLOADS_DIR}/$(basename ${submodule})"
+    COPY_LIST+=" ${DOWNLOADS_DIR}/$(basename ${submodule})"
+done
+
+# Before we exit, remove the .git_version file that is created by the build,
+# and might be left behind by a prior aborted build.
+if [ -f ${SRC_DIR}/src/.git_version ]; then
+    \rm  ${SRC_DIR}/src/.git_version
+fi
+
 TIS_BASE_SRCREV=02899bfda814146b021136e9d8e80eba494e1126
 TIS_PATCH_VER=GITREVCOUNT+1
 BUILD_IS_BIG=40
