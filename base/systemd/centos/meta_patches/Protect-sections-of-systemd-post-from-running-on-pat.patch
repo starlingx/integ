@@ -1,7 +1,7 @@
 From e54be64fa16349c94826b17a4dc206a7513f0d9c Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:53:00 -0400
-Subject: [PATCH] [PATCH 03/10] WRS:
+Subject: [PATCH] WRS:
  0004-Protect-sections-of-systemd-post-from-running-on-pat.patch
 
 ---
@@ -12,7 +12,7 @@ diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
 index 6e1d7e1..6a04c16 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -1213,6 +1213,7 @@ fi
+@@ -1221,6 +1221,7 @@ fi
  rm -f /etc/sysconfig/i18n >/dev/null 2>&1 || :
  rm -f /etc/sysconfig/keyboard >/dev/null 2>&1 || :
  
@@ -20,7 +20,7 @@ index 6e1d7e1..6a04c16 100644
  # Migrate HOSTNAME= from /etc/sysconfig/network
  if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
      unset HOSTNAME
-@@ -1220,6 +1221,7 @@ if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
+@@ -1228,6 +1229,7 @@ if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
      [ -n "$HOSTNAME" ] && echo $HOSTNAME > /etc/hostname 2>&1 || :
  fi
  sed -i '/^HOSTNAME=/d' /etc/sysconfig/network >/dev/null 2>&1 || :
@@ -28,7 +28,7 @@ index 6e1d7e1..6a04c16 100644
  
  # Migrate the old systemd-setup-keyboard X11 configuration fragment
  if [ ! -e /etc/X11/xorg.conf.d/00-keyboard.conf ] ; then
-@@ -1228,6 +1230,7 @@ else
+@@ -1236,6 +1238,7 @@ else
      rm -f /etc/X11/xorg.conf.d/00-system-setup-keyboard.conf >/dev/null 2>&1 || :
  fi
  
@@ -36,7 +36,7 @@ index 6e1d7e1..6a04c16 100644
  # sed-fu to add myhostname to the hosts line of /etc/nsswitch.conf
  # Only do that when installing, not when updating.
  if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
-@@ -1237,6 +1240,7 @@ if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
+@@ -1245,6 +1248,7 @@ if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
  s/[[:blank:]]*$/ myhostname/
  ' /etc/nsswitch.conf >/dev/null 2>&1 || :
  fi
@@ -44,6 +44,6 @@ index 6e1d7e1..6a04c16 100644
  
  %posttrans
  # Convert old /etc/sysconfig/desktop settings
---
+-- 
 2.7.4
 

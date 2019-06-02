@@ -12,7 +12,7 @@ diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
 index f794c3b..8e3715b 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -707,6 +707,7 @@ Patch0664: 0664-Make-sure-the-mount-units-pulled-by-RequiresMountsFo.patch
+@@ -715,6 +715,7 @@ Patch0672: 0672-sd-bus-if-we-receive-an-invalid-dbus-message-ignore-.patch
  #WRS Patches
  Patch0701: 0701-inject-millisec-in-syslog-date.patch
  Patch0702: 0702-fix-build-error-for-unused-variable.patch
