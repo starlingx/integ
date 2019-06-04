@@ -26,13 +26,13 @@ index 1c3a765..f2499b4 100644
  %global distro_build 957
  
  %define rpmversion 3.10.0
--%define pkgrelease 957.1.3.el7
-+%define _pkgrelease 957.1.3
+-%define pkgrelease 957.12.2.el7
++%define _pkgrelease 957.12.2
 +%define pkgrelease %{_pkgrelease}.el7
 +
  
  # allow pkg_release to have configurable %%{?dist} tag
- %define specrelease 957.1.3%{?dist}
+ %define specrelease 957.12.2%{?dist}
  
 -%define pkg_release %{specrelease}%{?buildid}
 +%define pkg_release %{specrelease}%{buildid}
@@ -224,7 +224,7 @@ index 1c3a765..f2499b4 100644
 +%endif
 +
  %changelog
- * Mon Nov 26 2018 CentOS Sources <bugs@centos.org> - 3.10.0-957.1.3.el7
+ * Tue May 14 2019 CentOS Sources <bugs@centos.org> - 3.10.0-957.12.2.el7
  - Apply debranding changes
 -- 
 2.7.4

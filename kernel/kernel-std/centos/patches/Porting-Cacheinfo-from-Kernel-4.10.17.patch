@@ -47,13 +47,13 @@ This helps in:
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  Documentation/ABI/testing/sysfs-devices-system-cpu |  65 ++
- arch/x86/kernel/cpu/cacheinfo.c                    | 830 +++++++--------------
+ arch/x86/kernel/cpu/cacheinfo.c                    | 833 +++++++--------------
  drivers/base/Makefile                              |   2 +-
  drivers/base/cacheinfo.c                           | 662 ++++++++++++++++
  drivers/base/cpu.c                                 |  54 ++
  include/linux/cacheinfo.h                          | 104 +++
  include/linux/cpu.h                                |   3 +
- 7 files changed, 1147 insertions(+), 573 deletions(-)
+ 7 files changed, 1147 insertions(+), 576 deletions(-)
  create mode 100644 drivers/base/cacheinfo.c
  create mode 100644 include/linux/cacheinfo.h
 
@@ -461,7 +461,7 @@ index d529019..bf23bd2 100644
 +
 +	if (nb && nb->l3_cache.indices)
 +		init_amd_l3_attrs();
-+
+ 
 +	return &cache_private_group;
 +}
 +
@@ -472,7 +472,7 @@ index d529019..bf23bd2 100644
 +	/* only for L3, and not in virtualized environments */
 +	if (index < 3)
 +		return;
- 
++
 +	node = amd_get_nb_id(smp_processor_id());
 +	this_leaf->nb = node_to_amd_nb(node);
 +	if (this_leaf->nb && !this_leaf->nb->l3_cache.indices)
@@ -798,11 +798,11 @@ index d529019..bf23bd2 100644
 +static int __init_cache_level(unsigned int cpu)
  {
 -	int i;
--
--	for (i = 0; i < num_cache_leaves; i++)
--		cache_remove_shared_cpu_map(cpu, i);
 +	struct cpu_cacheinfo *this_cpu_ci = get_cpu_cacheinfo(cpu);
  
+-	for (i = 0; i < num_cache_leaves; i++)
+-		cache_remove_shared_cpu_map(cpu, i);
+-
 -	kfree(per_cpu(ici_cpuid4_info, cpu));
 -	per_cpu(ici_cpuid4_info, cpu) = NULL;
 +	if (!num_cache_leaves)
@@ -815,17 +815,20 @@ index d529019..bf23bd2 100644
  }
  
  /*
-@@ -925,411 +985,37 @@ static void get_cache_id(int cpu, struct _cpuid4_info_regs *id4_regs)
+@@ -925,414 +985,37 @@ static void get_cache_id(int cpu, struct _cpuid4_info_regs *id4_regs)
  int get_cpu_cache_id(int cpu, int level)
  {
  	int i;
 +	struct cpu_cacheinfo *this_cpu_ci = get_cpu_cacheinfo(cpu);
  
--	for (i = 0; i < num_cache_leaves; i++) {
--		struct _cpuid4_info *this_leaf = CPUID4_INFO_IDX(cpu, i);
+-	if (!per_cpu(ici_cpuid4_info, cpu))
+-		return -1;
 +	for (i = 0; i < this_cpu_ci->num_leaves; i++) {
 +		struct cacheinfo *this_leaf = this_cpu_ci->info_list + i;
  
+-	for (i = 0; i < num_cache_leaves; i++) {
+-		struct _cpuid4_info *this_leaf = CPUID4_INFO_IDX(cpu, i);
+-
 -		if (this_leaf->base.eax.split.level == level)
 -			return this_leaf->base.id;
 +		if (this_leaf->level == level)
@@ -836,13 +839,18 @@ index d529019..bf23bd2 100644
  }
  
 -static void get_cpu_leaves(void *_retval)
--{
++static int __populate_cache_leaves(unsigned int cpu)
+ {
 -	int j, *retval = _retval, cpu = smp_processor_id();
 -
 -	/* Do cpuid and store the results */
 -	for (j = 0; j < num_cache_leaves; j++) {
 -		struct _cpuid4_info *this_leaf = CPUID4_INFO_IDX(cpu, j);
--
++	unsigned int idx, ret;
++	struct cpu_cacheinfo *this_cpu_ci = get_cpu_cacheinfo(cpu);
++	struct cacheinfo *this_leaf = this_cpu_ci->info_list;
++	struct _cpuid4_info_regs id4_regs = {};
+ 
 -		*retval = cpuid4_cache_lookup_regs(j, &this_leaf->base);
 -		if (unlikely(*retval < 0)) {
 -			int i;
@@ -853,13 +861,21 @@ index d529019..bf23bd2 100644
 -		}
 -		cache_shared_cpu_map_setup(cpu, j);
 -		get_cache_id(cpu, &this_leaf->base);
--	}
++	for (idx = 0; idx < this_cpu_ci->num_leaves; idx++) {
++		ret = cpuid4_cache_lookup_regs(idx, &id4_regs);
++		if (ret)
++			return ret;
++		get_cache_id(cpu, &id4_regs);
++		ci_leaf_init(this_leaf++, &id4_regs);
++		__cache_cpumap_setup(cpu, idx, &id4_regs);
+ 	}
 -}
 -
 -static int detect_cache_attributes(unsigned int cpu)
 -{
 -	int			retval;
--
++	this_cpu_ci->cpu_map_populated = true;
+ 
 -	if (num_cache_leaves == 0)
 -		return -ENOENT;
 -
@@ -1116,8 +1132,7 @@ index d529019..bf23bd2 100644
 -
 -/* Add/Remove cache interface for CPU device */
 -static int cache_add_dev(struct device *dev)
-+static int __populate_cache_leaves(unsigned int cpu)
- {
+-{
 -	unsigned int cpu = dev->id;
 -	unsigned long i, j;
 -	struct _index_kobject *this_object;
@@ -1140,11 +1155,7 @@ index d529019..bf23bd2 100644
 -		this_object = INDEX_KOBJECT_PTR(cpu, i);
 -		this_object->cpu = cpu;
 -		this_object->index = i;
-+	unsigned int idx, ret;
-+	struct cpu_cacheinfo *this_cpu_ci = get_cpu_cacheinfo(cpu);
-+	struct cacheinfo *this_leaf = this_cpu_ci->info_list;
-+	struct _cpuid4_info_regs id4_regs = {};
- 
+-
 -		this_leaf = CPUID4_INFO_IDX(cpu, i);
 -
 -		ktype_cache.default_attrs = default_attrs;
@@ -1164,17 +1175,9 @@ index d529019..bf23bd2 100644
 -			return retval;
 -		}
 -		kobject_uevent(&(this_object->kobj), KOBJ_ADD);
-+	for (idx = 0; idx < this_cpu_ci->num_leaves; idx++) {
-+		ret = cpuid4_cache_lookup_regs(idx, &id4_regs);
-+		if (ret)
-+			return ret;
-+		get_cache_id(cpu, &id4_regs);
-+		ci_leaf_init(this_leaf++, &id4_regs);
-+		__cache_cpumap_setup(cpu, idx, &id4_regs);
- 	}
+-	}
 -	cpumask_set_cpu(cpu, to_cpumask(cache_dev_map));
-+	this_cpu_ci->cpu_map_populated = true;
- 
+-
 -	kobject_uevent(per_cpu(ici_cache_kobject, cpu), KOBJ_ADD);
  	return 0;
  }
@@ -2107,9 +2110,9 @@ diff --git a/include/linux/cpu.h b/include/linux/cpu.h
 index 82180fe..434d92c 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
-@@ -49,6 +49,9 @@ extern ssize_t cpu_show_spec_store_bypass(struct device *dev,
- extern ssize_t cpu_show_l1tf(struct device *dev,
- 			     struct device_attribute *attr, char *buf);
+@@ -51,6 +51,9 @@ extern ssize_t cpu_show_l1tf(struct device *dev,
+ extern ssize_t cpu_show_mds(struct device *dev,
+ 			    struct device_attribute *attr, char *buf);
  
 +extern struct device *cpu_device_create(struct device *parent, void *drvdata,
 +					const struct attribute_group **groups,

@@ -65,7 +65,7 @@ diff --git a/include/linux/sched.h b/include/linux/sched.h
 index d184652..ba6ae5c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1649,6 +1649,12 @@ struct task_struct {
+@@ -1653,6 +1653,12 @@ struct task_struct {
  	short il_next;
  	short pref_node_fork;
  #endif

@@ -82,7 +82,7 @@ diff --git a/include/linux/huge_mm.h b/include/linux/huge_mm.h
 index 26ec982..45af11b 100644
 --- a/include/linux/huge_mm.h
 +++ b/include/linux/huge_mm.h
-@@ -362,7 +362,7 @@ static inline int pud_trans_huge_lock(pud_t *pud, struct vm_area_struct *vma,
+@@ -365,7 +365,7 @@ static inline int pud_trans_huge_lock(pud_t *pud, struct vm_area_struct *vma,
  	return 0;
  }
  
