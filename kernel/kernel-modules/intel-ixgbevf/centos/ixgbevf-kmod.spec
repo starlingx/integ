@@ -8,7 +8,7 @@
 %define kmod_name ixgbevf
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 4.5.1
+Version: 4.5.3
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2

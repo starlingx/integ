@@ -8,7 +8,7 @@
 %define kmod_name ixgbe
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 5.5.3
+Version: 5.5.5
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
