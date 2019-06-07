@@ -41,6 +41,11 @@ BuildRequires: systemd-devel
 
 Requires: systemd
 Requires: collectd
+Requires: fm-api
+Requires: python-httplib2
+Requires: python-influxdb
+Requires: python-oslo-concurrency
+Requires: tsconfig
 Requires: /bin/systemctl
 
 %description
