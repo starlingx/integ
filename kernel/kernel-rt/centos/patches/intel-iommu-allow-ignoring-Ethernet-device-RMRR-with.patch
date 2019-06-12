@@ -99,7 +99,7 @@ index 05b0971..d6f4723 100644
  		} else if (!strncmp(str, "strict", 6)) {
  			pr_info("Disable batched IOTLB flush\n");
  			intel_iommu_strict = 1;
-@@ -2779,6 +2789,15 @@ static bool device_is_rmrr_locked(struct device *dev)
+@@ -2820,6 +2830,15 @@ static bool device_is_rmrr_locked(struct device *dev)
  
  		if (IS_USB_DEVICE(pdev) || IS_GFX_DEVICE(pdev))
  			return false;
