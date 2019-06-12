@@ -229,7 +229,7 @@ diff --git a/security/security.c b/security/security.c
 index f069482..646a0e3 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -157,6 +157,110 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
+@@ -161,6 +161,110 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
  
  /* Security operations */
  
@@ -340,7 +340,7 @@ index f069482..646a0e3 100644
  int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
  {
  #ifdef CONFIG_SECURITY_YAMA_STACKED
-@@ -716,8 +820,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
+@@ -720,8 +824,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
  
  void security_inode_getsecid(struct inode *inode, u32 *secid)
  {
@@ -353,7 +353,7 @@ index f069482..646a0e3 100644
  
  int security_inode_copy_up(struct dentry *src, struct cred **new)
  {
-@@ -1526,6 +1633,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
+@@ -1530,6 +1637,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
  {
  	return security_ops->audit_rule_init(field, op, rulestr, lsmrule);
  }
@@ -361,7 +361,7 @@ index f069482..646a0e3 100644
  
  int security_audit_rule_known(struct audit_krule *krule)
  {
-@@ -1542,6 +1650,7 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
+@@ -1546,6 +1654,7 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
  {
  	return security_ops->audit_rule_match(secid, field, op, lsmrule, actx);
  }
