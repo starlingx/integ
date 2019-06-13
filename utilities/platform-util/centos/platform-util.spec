@@ -28,7 +28,8 @@ Platform utilities that don't get packaged on controller hosts
 %define local_bindir %{local_dir}/bin
 %define local_sbindir %{local_dir}/sbin
 %define pythonroot /usr/lib64/python2.7/site-packages
-%define local_etc_initd %{_sysconfdir}/init.d
+%define system_initd %{_sysconfdir}/init.d
+%define system_profiled %{_sysconfdir}/profile.d
 
 %prep
 %setup
@@ -53,9 +54,11 @@ install -d %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/cgcs_tc_setup.sh %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/remotelogging_tc_setup.sh %{buildroot}%{local_bindir}
 install %{_buildsubdir}/scripts/connectivity_test %{buildroot}%{local_bindir}
+install %{_buildsubdir}/scripts/openstack-pod-exec.sh %{buildroot}%{local_bindir}
+install %{_buildsubdir}/scripts/openstack-pod-cp.sh %{buildroot}%{local_bindir}
 
-install -d %{buildroot}%{local_etc_initd}
-install %{_buildsubdir}/scripts/log_functions.sh %{buildroot}%{local_etc_initd}
+install -d %{buildroot}%{system_initd}
+install %{_buildsubdir}/scripts/log_functions.sh %{buildroot}%{system_initd}
 
 install -d %{buildroot}%{local_sbindir}
 install -m 700 -P -D %{_buildsubdir}/scripts/patch-restart-mtce %{buildroot}%{local_sbindir}
@@ -65,6 +68,9 @@ install -m 700 -p -D %{_buildsubdir}/scripts/patch-restart-haproxy %{buildroot}%
 install -d %{buildroot}/etc/systemd/system
 install -m 644 -p -D %{_buildsubdir}/scripts/opt-platform.mount %{buildroot}/etc/systemd/system
 install -m 644 -p -D %{_buildsubdir}/scripts/opt-platform.service %{buildroot}/etc/systemd/system
+
+install -d %{buildroot}%{system_profiled}
+install -m 644 %{_buildsubdir}/scripts/osc-profile.sh %{buildroot}%{system_profiled}
 
 # Mask the systemd ctrl-alt-delete.target, to disable reboot on ctrl-alt-del
 ln -sf /dev/null %{buildroot}/etc/systemd/system/ctrl-alt-del.target
@@ -83,15 +89,18 @@ systemctl enable opt-platform.service
 %{local_bindir}/cgcs_tc_setup.sh
 %{local_bindir}/remotelogging_tc_setup.sh
 %{local_bindir}/connectivity_test
+%{local_bindir}/openstack-pod-exec.sh
+%{local_bindir}/openstack-pod-cp.sh
 %{local_sbindir}/patch-restart-mtce
 %{local_sbindir}/patch-restart-processes
 %{local_sbindir}/patch-restart-haproxy
+%{system_profiled}/osc-profile.sh
 /etc/systemd/system/ctrl-alt-del.target
 %dir %{pythonroot}/platform_util
 %{pythonroot}/platform_util/*
 %dir %{pythonroot}/platform_util-%{version}.0-py2.7.egg-info
 %{pythonroot}/platform_util-%{version}.0-py2.7.egg-info/*
-%{local_etc_initd}/log_functions.sh
+%{system_initd}/log_functions.sh
 
 %files -n platform-util-noncontroller
 %defattr(-,root,root,-)
