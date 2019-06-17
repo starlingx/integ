@@ -44,7 +44,7 @@ index 2753bd8..101a7a0 100644
 +rabbitmq:x:121:
 +glance:x:161:glance
 +nova:x:162:nova
-+keystone:x:163:keystone
++keystone:x:42424:keystone
 +neutron:x:164:neutron
 +cinder:x:165:cinder
 +ceilometer:x:166:ceilometer
@@ -89,7 +89,7 @@ index 6c6a8eb..bfd8ee0 100644
 +fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
 +ceilometer:x:991:166::/home/ceilometer:/bin/sh
 +heat:x:992:187::/home/heat:/bin/sh
-+keystone:x:993:163::/home/keystone:/bin/sh
++keystone:x:42424:42424::/home/keystone:/bin/sh
 +nova:x:994:162::/var/lib/nova:/bin/false
 +panko:x:995:989:OpenStack panko Daemons:/var/lib/panko:/sbin/nologin
 +gnocchi:x:996:990:gnocchi Daemons:/var/lib/gnocchi:/sbin/nologin
