@@ -1,0 +1,6 @@
+COPY_LIST=" \
+  $STX_BASE/downloads/Redfishtool-1.0.8.tar.gz \
+  $PKG_BASE/files/* \
+"
+TIS_PATCH_VER=0
+

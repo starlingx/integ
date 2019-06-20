@@ -342,3 +342,6 @@ python2-ruamel-yaml
 
 # util-linux-config
 util-linux-config
+
+# redfish tool
+Redfishtool

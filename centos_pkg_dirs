@@ -140,3 +140,4 @@ grub/grub2
 utilities/build-info
 ceph/ceph
 ceph/ceph-manager
+bmc/Redfishtool

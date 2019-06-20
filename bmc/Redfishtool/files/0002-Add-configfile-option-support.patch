@@ -1,0 +1,35 @@
+From d0c3cc759545a82138329e292e99f310ec74047f Mon Sep 17 00:00:00 2001
+From: zhipengl <zhipengs.liu@intel.com>
+Date: Sat, 22 Jun 2019 02:06:54 +0800
+Subject: [PATCH] Add configfile option support
+
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+---
+ redfishtool/redfishtoolMain.py | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/redfishtool/redfishtoolMain.py b/redfishtool/redfishtoolMain.py
+index cd3dd6f..ea2e44f 100644
+--- a/redfishtool/redfishtoolMain.py
++++ b/redfishtool/redfishtoolMain.py
+@@ -156,6 +156,17 @@ def main(argv):
+             rft.authToken=rft.token
+         elif opt in ("-c", "--config"):         #read additional options from a file
+             rft.configFile=arg
++            try:
++                with open(arg, 'r') as f:
++                    configdata = json.load(f)
++                if 'username' in configdata and 'password' in configdata:
++                    rft.user = configdata['username']
++                    rft.password = configdata['password']
++                    rft.printVerbose(1,"Main: get pw from configfile, usr:{}, pw:{}".format(rft.user, rft.password))
++                else:
++                    rft.printErr("Invalid --config= filedata: {}".format(configdata))
++            except IOError:
++                rft.printErr("Invalid: Could not open configfile")
+         elif opt in ("-T", "--Timeout"):        #Specify http timeout in  seconds
+             timePattern="^([1-9][0-9]*)$"
+             timeMatch=re.search(timePattern,arg)
+-- 
+2.7.4
+

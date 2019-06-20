@@ -1,0 +1,640 @@
+From ecaf5c44da357e2ee5279a3f84a060f7af2c9dd1 Mon Sep 17 00:00:00 2001
+From: zhipengl <zhipengs.liu@intel.com>
+Date: Fri, 21 Jun 2019 01:50:14 +0800
+Subject: [PATCH] Adapt-redfishtool-to-python2
+
+Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+---
+ redfishtool/AccountService.py       | 18 +++++++++---------
+ redfishtool/Chassis.py              | 22 +++++++++++-----------
+ redfishtool/Managers.py             | 29 ++++++++++++++---------------
+ redfishtool/ServiceRoot.py          |  2 +-
+ redfishtool/SessionService.py       | 10 +++++-----
+ redfishtool/Systems.py              | 36 ++++++++++++++++++------------------
+ redfishtool/raw.py                  |  2 +-
+ redfishtool/redfishtoolTransport.py | 29 ++++++++++++++---------------
+ setup.py                            |  1 +
+ 9 files changed, 74 insertions(+), 75 deletions(-)
+
+diff --git a/redfishtool/AccountService.py b/redfishtool/AccountService.py
+index e0ec106..bfb17f8 100644
+--- a/redfishtool/AccountService.py
++++ b/redfishtool/AccountService.py
+@@ -34,7 +34,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urllib.parse import urljoin
++from   urlparse import urljoin
+ 
+ class RfAccountServiceMain():
+     def __init__(self):
+@@ -259,13 +259,13 @@ class RfAccountServiceOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="UserName")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, UserName".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, UserName".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no account was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=accountsLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the session specific by -i or -m or -l
+         # search collection to find path using getPath2 
+@@ -287,14 +287,14 @@ class RfAccountServiceOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the Accounts members
+         else:
+             rft.printVerbose(4,"getting expanded Accounts Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=accountsLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+@@ -324,13 +324,13 @@ class RfAccountServiceOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="IsPredefined")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, IsPredefined".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, IsPredefined".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no account was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=rolesLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the session specific by -i or -m or -l
+         # search collection to find path using getPath2 
+@@ -352,14 +352,14 @@ class RfAccountServiceOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the Accounts members
+         else:
+             rft.printVerbose(4,"getting expanded Roles Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=rolesLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+diff --git a/redfishtool/Chassis.py b/redfishtool/Chassis.py
+index d8f0bf5..0494bd9 100644
+--- a/redfishtool/Chassis.py
++++ b/redfishtool/Chassis.py
+@@ -37,7 +37,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urllib.parse import urljoin
++from   urlparse import urljoin
+ 
+ class RfChassisMain():
+     def __init__(self):
+@@ -208,7 +208,7 @@ class RfChassisOperations():
+             rft.printVerbose(4,"Expand Chassis collection to return ALL Chassis collection members fully expanded in response")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=systemsLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # otherwise, just return the collection
+         # now read the /Chassis collection
+@@ -217,7 +217,7 @@ class RfChassisOperations():
+             if cmdTop is True:   prop=rft.prop
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=systemsLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," Chassis Collection:",skip1=True, printV12=cmdTop)
++                rft.printVerbose(1," Chassis Collection:", skip1=True, printV12=cmdTop)
+                 
+         return(rc,r,j,d)
+ 
+@@ -262,7 +262,7 @@ class RfChassisOperations():
+         #loop through the members and create the list sub-operation response
+         rc,r,j,d=rft.listCollection(rft, r, d, prop="AssetTag")
+         if(rc==0):
+-            rft.printVerbose(1," list {} Collection member info: Id, URI, AssetTag".format(collName,skip1=True, printV12=cmdTop))
++            rft.printVerbose(1," list {} Collection member info: Id, URI, AssetTag".format(collName), skip1=True, printV12=cmdTop)
+         return(rc,r,j,d)
+ 
+ 
+@@ -439,7 +439,7 @@ class RfChassisOperations():
+ 
+         rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=resLink, prop=prop)
+         if(rc==0):
+-            rft.printVerbose(1," {} Resource ".format(resName,skip1=True, printV12=cmdTop))
++            rft.printVerbose(1," {} Resource ".format(resName), skip1=True, printV12=cmdTop)
+ 
+         return(rc,r,j,d)
+ 
+@@ -464,7 +464,7 @@ class RfChassisOperations():
+         
+         rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=resLink, prop=prop)
+         if(rc==0):
+-            rft.printVerbose(1," {} Resource ".format(resName,skip1=True, printV12=cmdTop))
++            rft.printVerbose(1," {} Resource ".format(resName), skip1=True, printV12=cmdTop)
+             
+         return(rc,r,j,d)
+ 
+@@ -521,13 +521,13 @@ class RfChassisOperations():
+             if( prop in powerControl[indx] ):
+                 respDataVal=powerControl[indx][prop]
+                 respData={prop: respDataVal}
+-                rft.printVerbose(1," Get Current Power consumption (PowerConsumedWatts) of PowerControl[{}] resource".format(indx,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get Current Power consumption (PowerConsumedWatts) of PowerControl[{}] resource".format(indx), skip1=True, printV12=cmdTop)
+             else:
+                 rft.printErr("Error: Property {} not not returned in PowerControl[{}] resource".format(prop,indx))
+                 return(4,r,j,d)
+         else:
+             respData=powerControl[indx]  #return the full powerControl array
+-            rft.printVerbose(1," Chassis PowerControl[{}] array:".format(indx,skip1=True, printV12=cmdTop))
++            rft.printVerbose(1," Chassis PowerControl[{}] array:".format(indx), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,respData)
+ 
+@@ -684,13 +684,13 @@ class RfChassisOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Name")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no Log was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=logLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -712,7 +712,7 @@ class RfChassisOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+             # If '--Entries' specified, get "Entries" nav link and read it
+             if rc == 0 and rft.gotEntriesOptn:
+diff --git a/redfishtool/Managers.py b/redfishtool/Managers.py
+index 586a871..400dad7 100644
+--- a/redfishtool/Managers.py
++++ b/redfishtool/Managers.py
+@@ -37,7 +37,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urllib.parse import urljoin
++from   urlparse import urljoin
+ 
+ class RfManagersMain():
+     def __init__(self):
+@@ -211,7 +211,7 @@ class RfManagersOperations():
+             rft.printVerbose(4,"Expand Managers collection to return ALL Managers collection members fully expanded in response")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=systemsLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # otherwise, just return the collection
+         # now read the /Managers collection
+@@ -467,7 +467,7 @@ class RfManagersOperations():
+ 
+         rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=resLink, prop=prop)
+         if(rc==0):
+-            rft.printVerbose(1," {} Resource ".format(resName,skip1=True, printV12=cmdTop))
++            rft.printVerbose(1," {} Resource ".format(resName), skip1=True, printV12=cmdTop)
+ 
+         return(rc,r,j,d)
+ 
+@@ -503,13 +503,13 @@ class RfManagersOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Name")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no NIC was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=nicLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -531,14 +531,14 @@ class RfManagersOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the EthernetInterfaces members
+         else:
+             rft.printVerbose(4,"getting expanded EthernetInterfaces Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=nicLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+@@ -568,13 +568,13 @@ class RfManagersOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Name" )
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no SerialInterfaces controller was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=cntlrLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -596,14 +596,14 @@ class RfManagersOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the SerialInterfaces members
+         else:
+             rft.printVerbose(4,"getting expanded SerialInterfaces Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=cntlrLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+@@ -633,13 +633,12 @@ class RfManagersOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Name")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName,skip1=True, printV12=cmdTop))
+-
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName), skip1=True, printV12=cmdTop)
+         # else: check if no Log was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=logLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -661,7 +660,7 @@ class RfManagersOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+             # If '--Entries' specified, get "Entries" nav link and read it
+             if rc == 0 and rft.gotEntriesOptn:
+diff --git a/redfishtool/ServiceRoot.py b/redfishtool/ServiceRoot.py
+index 5d85b5d..9395b83 100644
+--- a/redfishtool/ServiceRoot.py
++++ b/redfishtool/ServiceRoot.py
+@@ -12,7 +12,7 @@
+ #
+ import requests
+ import json
+-from urllib.parse import urljoin, urlparse, urlunparse
++from urlparse import urljoin, urlparse, urlunparse
+ 
+ class RfServiceRoot:
+     def __init__(self):
+diff --git a/redfishtool/SessionService.py b/redfishtool/SessionService.py
+index 7a07811..c7a1624 100644
+--- a/redfishtool/SessionService.py
++++ b/redfishtool/SessionService.py
+@@ -30,7 +30,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urllib.parse import urljoin
++from   urlparse import urljoin
+ 
+ class RfSessionServiceMain():
+     def __init__(self):
+@@ -267,13 +267,13 @@ class RfSessionServiceOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="UserName")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Socket".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Socket".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no session was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=sessionsLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the session specific by -i or -m or -l
+         # search collection to find path using getPath2 
+@@ -295,14 +295,14 @@ class RfSessionServiceOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the Sessions members
+         else:
+             rft.printVerbose(4,"getting expanded Sessions Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=sessionsLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+diff --git a/redfishtool/Systems.py b/redfishtool/Systems.py
+index 9a7dfbe..9a9148a 100644
+--- a/redfishtool/Systems.py
++++ b/redfishtool/Systems.py
+@@ -39,7 +39,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urllib.parse import urljoin
++from   urlparse import urljoin
+ 
+ class RfSystemsMain():
+     def __init__(self):
+@@ -216,7 +216,7 @@ class RfSystemsOperations():
+             rft.printVerbose(4,"Expand Systems collection to return ALL Systems collection members fully expanded in response")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=systemsLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # otherwise, just return the collection
+         # now read the /Systems collection
+@@ -419,7 +419,7 @@ class RfSystemsOperations():
+                                          reqData=reqPostData)
+                    
+         if(rc==0):
+-            rft.printVerbose(1," Systems reset: ", resetType, skip1=True, printV12=cmdTop)
++            rft.printVerbose(1,(" Systems reset: {}").format(resetType), skip1=True, printV12=cmdTop)
+             resetd=None
+             return(rc,r,False,resetd)
+         else: return(rc,r,False,None)
+@@ -623,13 +623,13 @@ class RfSystemsOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Socket")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Socket".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Socket".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no proc was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=procsLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -651,14 +651,14 @@ class RfSystemsOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the processor members
+         else:
+             rft.printVerbose(4,"getting expanded Processor Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=procsLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+@@ -688,13 +688,13 @@ class RfSystemsOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Name")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no NIC was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=nicLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -716,14 +716,14 @@ class RfSystemsOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the EthernetInterfaces members
+         else:
+             rft.printVerbose(4,"getting expanded EthernetInterfaces Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=nicLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+@@ -753,13 +753,13 @@ class RfSystemsOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Name" )
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no SimpleStorage controller was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=cntlrLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -781,14 +781,14 @@ class RfSystemsOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else, return ALL of the SimpleStorage members
+         else:
+             rft.printVerbose(4,"getting expanded SimpleStorage Collection")
+             rc,r,j,d=rft.getAllCollectionMembers(rft, r.url, relPath=cntlrLink)
+             if(rc==0):
+-                rft.printVerbose(1," Get ALL {} Collection Members".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," Get ALL {} Collection Members".format(collName), skip1=True, printV12=cmdTop)
+         
+         return(rc,r,j,d)
+ 
+@@ -818,13 +818,13 @@ class RfSystemsOperations():
+             #loop through the members and create the list sub-operation response
+             rc,r,j,d=rft.listCollection(rft, r, d, prop="Name")
+             if(rc==0):
+-                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," list {} Collection member info: Id, URI, Name".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else: check if no Log was specified.  If not, return the collection
+         elif(rft.IdLevel2OptnCount==0):
+             rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', r.url, relPath=logLink, prop=prop)
+             if(rc==0):
+-                rft.printVerbose(1," {} Collection ".format(collName,skip1=True, printV12=cmdTop))
++                rft.printVerbose(1," {} Collection ".format(collName), skip1=True, printV12=cmdTop)
+ 
+         # else:  check if the -a (all) option is set. If not, return the proc specific by -i or -m
+         # search collection to find path using getPath2 
+@@ -846,7 +846,7 @@ class RfSystemsOperations():
+             elif( r is None ):
+                 rc,r,j,d=rft.rftSendRecvRequest(rft.AUTHENTICATED_API, 'GET', collUrl, relPath=path2, prop=prop)
+                 if(rc==0):
+-                    rft.printVerbose(1," {} Collection Member ".format(collName,skip1=True, printV12=cmdTop))
++                    rft.printVerbose(1," {} Collection Member ".format(collName), skip1=True, printV12=cmdTop)
+ 
+             # If '--Entries' specified, get "Entries" nav link and read it
+             if rc == 0 and rft.gotEntriesOptn:
+diff --git a/redfishtool/raw.py b/redfishtool/raw.py
+index bfb617c..1b32d0b 100644
+--- a/redfishtool/raw.py
++++ b/redfishtool/raw.py
+@@ -30,7 +30,7 @@ import getopt
+ import re
+ import sys
+ #from    .ServiceRoot import RfServiceRoot
+-from   urllib.parse import urljoin, urlparse, urlunparse
++from   urlparse import urljoin, urlparse, urlunparse
+ 
+ class RfRawMain():
+     def __init__(self):
+diff --git a/redfishtool/redfishtoolTransport.py b/redfishtool/redfishtoolTransport.py
+index 017fa11..f157eff 100644
+--- a/redfishtool/redfishtoolTransport.py
++++ b/redfishtool/redfishtoolTransport.py
+@@ -39,7 +39,7 @@ import json
+ import sys
+ import socket
+ import time
+-from urllib.parse import urljoin, urlparse, urlunparse
++from urlparse import urljoin, urlparse, urlunparse
+ from requests.auth import HTTPBasicAuth, AuthBase
+ from .ServiceRoot import RfServiceRoot
+ 
+@@ -730,31 +730,32 @@ class RfTransport():
+          return(0)
+ 
+ 
+-    def printVerbose(self,v,*argv, skip1=False, printV12=True,**kwargs): 
++    def printVerbose(self,v, argv, skip1=False, printV12=True):
+         if(self.quiet):
+             return(0)
+         if( (v==1 or v==2) and (printV12 is True) and (self.verbose >= v )):
+             if(skip1 is True):  print("#")
+-            print("#",*argv, **kwargs)
++            print("#", argv)
+         elif( (v==1 or v==2) and (self.verbose >4 )):
+             if(skip1 is True):  print("#")
+-            print("#",*argv, **kwargs)            
++            print("#", argv)
+         elif((v==3 ) and (printV12 is True) and (self.verbose >=v)):
+             if(skip1 is True):  print("#")
+-            print("#REQUEST:",*argv,file=sys.stdout,**kwargs)
++            sys.stdout.write("#REQUEST:",argv)
++            # print("#REQUEST:",argv,file=sys.stdout)
+         elif((v==4 or v==5) and (self.verbose >=v)):
+             if(skip1 is True):  print("#")
+-            print("#DB{}:".format(v),*argv,file=sys.stdout,**kwargs)
++            sys.stdout.write("#DB{}:".format(v),argv)
++            # print("#DB{}:".format(v),argv,file=sys.stdout)
+         elif( v==0):  #print no mater value of verbose, but not if quiet=1
+             if(skip1 is True):  print("")
+-            print(*argv, **kwargs)
++            print(argv)
+         else:
+             pass
+ 
+         sys.stdout.flush()
+         #if you set v= anything except 0,1,2,3,4,5 it is ignored
+ 
+-
+     def printStatus(self, s, r=None, hdrs=None, authMsg=None, addSessionLoginInfo=False): 
+         if(self.quiet):
+             return(0)
+@@ -785,22 +786,20 @@ class RfTransport():
+         sys.stdout.flush()
+         
+ 
+-
+-
+-    def printErr(self,*argv,noprog=False,prepend="",**kwargs):
++    def printErr(self,argv,noprog=False,prepend=""):
+         if( self.quiet == False):
+             if(noprog is True):
+-                print(prepend,*argv, file=sys.stderr, **kwargs)
++                sys.stderr.write("{}{}".format(prepend,argv))
+             else:
+-                print(prepend,"  {}:".format(self.program),*argv, file=sys.stderr, **kwargs)
++                sys.stderr.write("{}  {}:{}".format(prepend, self.program, argv))
+         else:
+             pass
+-        
++
+         sys.stderr.flush()
+         return(0)
+ 
+ 
+-    def printStatusErr4xx(self, status_code,*argv,noprog=False, prepend="",**kwargs):
++    def printStatusErr4xx(self, status_code):
+         if(self.quiet):
+             return(0)
+         if( status_code < 400 ):
+diff --git a/setup.py b/setup.py
+index d37d099..481f429 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,5 +1,6 @@
+ from setuptools import setup
+ from os import path
++from io import open
+ 
+ this_directory = path.abspath(path.dirname(__file__))
+ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+-- 
+2.7.4
+
