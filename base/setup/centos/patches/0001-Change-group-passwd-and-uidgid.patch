@@ -1,20 +1,20 @@
-From ea7244550eb6369536f0f0484f5091a77a1c0aaf Mon Sep 17 00:00:00 2001
-From: zhipengl <zhipengs.liu@intel.com>
-Date: Sun, 18 Nov 2018 10:26:34 +0000
-Subject: [PATCH] Change group,passwd,and uidgid
+From 114203f428e479e6ec15b01ffc361eaafa194d2e Mon Sep 17 00:00:00 2001
+From: Angie Wang <angie.wang@windriver.com>
+Date: Thu, 27 Jun 2019 16:09:32 -0400
+Subject: [PATCH 1/1] Change group,passwd,and uidgid
 
-Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+Signed-off-by: Angie Wang <angie.wang@windriver.com>
 ---
- group  | 30 ++++++++++++++++++++----------
- passwd | 27 +++++++++++++++++++--------
- uidgid |  3 +++
- 3 files changed, 42 insertions(+), 18 deletions(-)
+ group  | 31 +++++++++++++++++++++----------
+ passwd | 28 ++++++++++++++++++++--------
+ uidgid |  4 ++++
+ 3 files changed, 45 insertions(+), 18 deletions(-)
 
 diff --git a/group b/group
-index 2753bd8..101a7a0 100644
+index 2753bd8..55bae9c 100644
 --- a/group
 +++ b/group
-@@ -1,24 +1,34 @@
+@@ -1,24 +1,35 @@
  root::0:
 -bin::1:
 -daemon::2:
@@ -59,11 +59,12 @@ index 2753bd8..101a7a0 100644
 +aodh:x:992:aodh
 +magnum:x:1870:magnum
 +ironic:x:1874:ironic
++www:x:1877:www
 diff --git a/passwd b/passwd
-index 6c6a8eb..bfd8ee0 100644
+index 6c6a8eb..fd36369 100644
 --- a/passwd
 +++ b/passwd
-@@ -1,13 +1,24 @@
+@@ -1,13 +1,25 @@
  root:*:0:0:root:/root:/bin/bash
 -bin:*:1:1:bin:/bin:/sbin/nologin
 -daemon:*:2:2:daemon:/sbin:/sbin/nologin
@@ -96,8 +97,9 @@ index 6c6a8eb..bfd8ee0 100644
 +aodh:x:997:992:OpenStack aodh Daemons:/var/lib/aodh:/sbin/nologin
 +magnum:x:1870:1870:OpenStack Magnum Daemons:/var/lib/magnum:/sbin/nologin
 +ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
++www:x:1877:1877:www:/home/www:/sbin/nologin
 diff --git a/uidgid b/uidgid
-index c6bbd4b..f779665 100644
+index c6bbd4b..20e1e1c 100644
 --- a/uidgid
 +++ b/uidgid
 @@ -134,6 +134,8 @@ quantum	164	164	/var/lib/quantum		/sbin/nologin	openstack-quantum
@@ -109,14 +111,15 @@ index c6bbd4b..f779665 100644
  avahi-autoipd	170	170	/var/lib/avahi-autoipd		/sbin/nologin	avahi
  pulse	171	171	/var/run/pulse		/sbin/nologin	pulseaudio
  rtkit	172	172	/proc		/sbin/nologin	rtkit
-@@ -163,6 +165,7 @@ systemd-network	192	192	/		/sbin/nologin	systemd
+@@ -163,6 +165,8 @@ systemd-network	192	192	/		/sbin/nologin	systemd
  systemd-resolve	193	193	/		/sbin/nologin	systemd
  gnats	?	?	?		?	gnats, gnats-db
  listar	?	?	?		?	listar
 +fm      195 195 /var/lib/fm             /sbin/nologin   fm-mgr
  nfsnobody	65534	65534	/var/lib/nfs		/sbin/nologin	nfs-utils
-
++www     1877    1877    /home/www       /sbin/nologin   setup
+ 
  # Note: nfsnobody is 4294967294 on 64-bit platforms (-2)
---
+-- 
 1.8.3.1
 
