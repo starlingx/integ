@@ -19,6 +19,6 @@ Links
 * Code Review: `Gerrit`_
 * Bugs: `Storyboard`_
 
-.. _stx-integ: https://git.starlingx.io/cgit/stx-integ/
-.. _Gerrit: https://review.openstack.org/#/q/project:openstack/stx-integ
-.. _Storyboard: https://storyboard.openstack.org/#!/project/openstack/stx-integ
+.. _stx-integ: https://opendev.org/starlingx/integ
+.. _Gerrit: https://review.opendev.org/#/q/project:starlingx/integ
+.. _Storyboard: https://storyboard.openstack.org/#!/project/starlingx/integ
