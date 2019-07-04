@@ -1,0 +1,4 @@
+libvirt-dev [platform:dpkg]
+libvirt-devel [platform:redhat]
+pkg-config [platform:dpkg]
+pkgconfig [platform:redhat]
