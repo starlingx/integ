@@ -14,7 +14,7 @@ usage() {
     exit 1
 }
 
-if [ -z $@ ]; then
+if [ ${#@} -eq 0 ]; then
     usage
 fi
 
@@ -65,7 +65,7 @@ for spec in $@; do
     (cd $(dirname $spec); HOME=$tmpdir rpmspec -q --qf "%{VERSION}\n" $specname) >/dev/null || {
             echo "$spec does not parse properly. Please check your syntax."
             failed=1
-        }
+    }
 
     echo "spec-cleaner checking $specname"
     # Make a copy to do some fix-ups required by spec-cleaner
@@ -84,10 +84,9 @@ for spec in $@; do
 done
 
 # check if some diffs are available
-failed=0
-for specdiff in $tmpdir/*; do
+for specdiff in $tmpdir/*.cleaner.diff; do
     if [ -s "$specdiff" ]; then
-        echo "##### `basename ${specdiff}` ##### "
+        echo "##### `basename ${specdiff} .cleaner.diff` ##### "
         cat $specdiff
         failed=1
     fi
