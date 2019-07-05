@@ -30,6 +30,7 @@ package StarlingX configuration files of pam to system folder.
 %install
 %{__install}  -d  %{buildroot}%{_pamconfdir}
 %{__install}  -d  %{buildroot}%{_datadir}/starlingx
+%{__install}  -m 644 sshd.pam        %{buildroot}%{_datadir}/starlingx/sshd.pam
 %{__install}  -m 644 common-account  %{buildroot}%{_pamconfdir}/common-account
 %{__install}  -m 644 common-auth     %{buildroot}%{_pamconfdir}/common-auth
 %{__install}  -m 644 common-password %{buildroot}%{_pamconfdir}/common-password
@@ -41,10 +42,12 @@ package StarlingX configuration files of pam to system folder.
 if [ $1 -eq 1 ] ; then
     # Initial installation
     cp -f %{_datadir}/starlingx/stx.system-auth %{_pamconfdir}/system-auth
+    cp -f %{_datadir}/starlingx/sshd.pam    %{_pamconfdir}/sshd
 fi
 
 %files
 %{_datadir}/starlingx/stx.system-auth
+%{_datadir}/starlingx/sshd.pam
 %config(noreplace) %{_pamconfdir}/common-account
 %config(noreplace) %{_pamconfdir}/common-auth
 %config(noreplace) %{_pamconfdir}/common-password
