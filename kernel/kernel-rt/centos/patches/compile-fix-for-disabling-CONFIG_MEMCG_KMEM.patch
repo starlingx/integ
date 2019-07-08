@@ -1,0 +1,35 @@
+From a209e9637eacb353adb97f29dd059e63084d30df Mon Sep 17 00:00:00 2001
+From: Bart Wensley <barton.wensley@windriver.com>
+Date: Tue, 9 Jul 2019 07:25:32 -0500
+Subject: [PATCH 1/1] compile fix for disabling CONFIG_MEMCG_KMEM
+
+Signed-off-by: Bart Wensley <barton.wensley@windriver.com>
+---
+ mm/memcontrol.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index da97e2c..68fd46b 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -3010,6 +3010,8 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *memcg,
+ 	memcg_check_events(memcg, page);
+ }
+ 
++static DEFINE_MUTEX(memcg_limit_mutex);
++
+ #ifdef CONFIG_MEMCG_KMEM
+ static inline bool memcg_can_account_kmem(struct mem_cgroup *memcg)
+ {
+@@ -3510,8 +3512,6 @@ out:
+ 	return new_cachep;
+ }
+ 
+-static DEFINE_MUTEX(memcg_limit_mutex);
+-
+ int __kmem_cache_destroy_memcg_children(struct kmem_cache *s)
+ {
+ 	struct kmem_cache *c;
+-- 
+1.8.3.1
+
