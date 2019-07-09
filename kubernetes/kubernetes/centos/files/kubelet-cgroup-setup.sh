@@ -27,13 +27,14 @@ function ERROR {
 }
 
 # Create minimal cgroup directories and configure cpuset attributes
+# pids should be first in the list, since it appears to get auto deleted
 function create_cgroup {
     local cg_name=$1
     local cg_nodeset=$2
     local cg_cpuset=$3
 
     local CGROUP=/sys/fs/cgroup
-    local CONTROLLERS=("cpuset" "memory" "cpu,cpuacct" "systemd")
+    local CONTROLLERS=("pids" "cpuset" "memory" "cpu,cpuacct" "systemd")
     local cnt=''
     local CGDIR=''
     local RC=0

@@ -23,16 +23,16 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.13.5
+%global commit                  1.15.3
 
 %global con_provider            github
 %global con_provider_tld        com
 %global con_project             kubernetes
 %global con_repo                kubernetes-contrib
 # https://github.com/kubernetes/contrib
-%global con_commit              1.13.5
+%global con_commit              1.15.3
 
-%global kube_version            1.13.5
+%global kube_version            1.15.3
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -761,7 +761,7 @@ building other packages which use %{project}/%{repo}.
 Summary: %{summary} - for running unit tests
 
 # below Rs used for testing
-Requires: golang >= 1.2-7
+Requires: golang >= 1.12.9
 Requires: etcd >= 2.0.9
 Requires: hostname
 Requires: rsync
@@ -774,7 +774,7 @@ Requires: NetworkManager
 %package master
 Summary: Kubernetes services for master host
 
-BuildRequires: golang >= 1.2-7
+BuildRequires: golang >= 1.12.9
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
