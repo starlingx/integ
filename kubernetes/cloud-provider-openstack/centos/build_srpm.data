@@ -1,5 +1,0 @@
-TAR_NAME="cloud-provider-openstack"
-COPY_LIST=" \
-  $STX_BASE/downloads/cloud-provider-openstack-1.13.1-linux-amd64.tar.gz \
-"
-TIS_PATCH_VER=0
