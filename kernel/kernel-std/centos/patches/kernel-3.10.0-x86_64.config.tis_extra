@@ -811,3 +811,6 @@ CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS=n
 # Make performance default governor
 CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=n
 CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
+
+# Disable kernel memory accounting, which is broken
+CONFIG_MEMCG_KMEM=n

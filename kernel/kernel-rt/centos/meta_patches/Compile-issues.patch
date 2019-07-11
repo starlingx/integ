@@ -1,34 +1,36 @@
-From 72f81cd0693c1abfdb5d86bf207cfcd3201646d7 Mon Sep 17 00:00:00 2001
-Message-Id: <72f81cd0693c1abfdb5d86bf207cfcd3201646d7.1528231893.git.Jim.Somerville@windriver.com>
-From: Jim Somerville <Jim.Somerville@windriver.com>
-Date: Tue, 5 Jun 2018 16:51:28 -0400
+From 8fbd0edbcf6ed51b9e58d267d0ce7b40f00118a1 Mon Sep 17 00:00:00 2001
+From: Bart Wensley <barton.wensley@windriver.com>
+Date: Tue, 9 Jul 2019 07:18:00 -0500
 Subject: [PATCH 1/1] Compile issues
 
-Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Bart Wensley <barton.wensley@windriver.com>
 ---
- SPECS/kernel-rt.spec | 5 +++++
- 1 file changed, 5 insertions(+)
+ SPECS/kernel-rt.spec | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index ab6daf3..3c0e4b4 100644
+index 3b7985c..5025db7 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -418,6 +418,9 @@ Patch1027: dpt_i2o-fix-build-warning.patch
+@@ -418,6 +418,11 @@ Patch1027: dpt_i2o-fix-build-warning.patch
  # DRBD was choking on write same
  Patch1028: turn-off-write-same-in-smartqpi-driver.patch
  Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
 +Patch1030: fix-compilation-issues.patch
 +# Fix CentOS 7.6 upgrade compile error
 +Patch1031: fix-CentOS-7.6-upgrade-compile-error.patch
++# Compile fix for disabling CONFIG_MEMCG_KMEM
++Patch1032: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -780,6 +783,8 @@ ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
+@@ -780,6 +785,9 @@ ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
  ApplyPatch dpt_i2o-fix-build-warning.patch
  ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
  ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
 +ApplyPatch fix-compilation-issues.patch
 +ApplyPatch fix-CentOS-7.6-upgrade-compile-error.patch
++ApplyPatch compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
  
  # move off upstream version mechanism
  if [ -e localversion-rt ]; then

@@ -956,3 +956,6 @@ CONFIG_TORTURE_TEST=n
 CONFIG_RCU_TORTURE_TEST=n
 CONFIG_LOCK_TORTURE_TEST=n
 
+# Disable kernel memory accounting, which is broken
+CONFIG_MEMCG_KMEM=n
+
