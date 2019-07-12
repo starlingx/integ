@@ -101,7 +101,7 @@ class CephWrapper(CephClient):
     def _osd_crush_tree_populate_tree(self, node, node_map):
         children = node.get('children')
         node = self._osd_crush_tree_convert_node(node)
-        if children:
+        if node['type'] != 'osd':
             node['items'] = []
             for _id in children:
                 node['items'].append(
