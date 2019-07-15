@@ -5,6 +5,6 @@ Summary: collectd-extensions
 Home-page:
 Author: Windriver
 Author-email: info@windriver.com
-License: windriver
+License: ASL 2.0
 Description: Titanium Cloud collectd extensions
 Platform: UNKNOWN
