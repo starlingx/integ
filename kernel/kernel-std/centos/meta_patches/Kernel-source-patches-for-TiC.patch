@@ -1,15 +1,15 @@
-From 7191a6f784f12e295e508f105da4cfde518a64e7 Mon Sep 17 00:00:00 2001
-From: Bin Yang <bin.yang@intel.com>
-Date: Wed, 31 Jul 2019 10:49:20 +0800
-Subject: [PATCH 2/3] Kernel source patches for TiC
+From e9f7eeea6002b26912b6434c324ac19c2987afe8 Mon Sep 17 00:00:00 2001
+From: "zhao.shuai" <zhaos@neusoft.com>
+Date: Mon, 5 Aug 2019 17:55:01 +0800
+Subject: [PATCH 2/3] Kernel-source-patches-for-TiC
 
-Signed-off-by: Bin Yang <bin.yang@intel.com>
+Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 ---
  SPECS/kernel.spec | 61 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 61 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 5b93a98..9149019 100644
+index e42177e..418cdd0 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -460,6 +460,38 @@ Patch1002: debrand-rh-i686-cpu.patch
@@ -88,5 +88,5 @@ index 5b93a98..9149019 100644
  
  chmod +x scripts/checkpatch.pl
 -- 
-2.7.4
+1.8.3.1
 
