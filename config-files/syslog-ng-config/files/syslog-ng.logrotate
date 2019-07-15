@@ -26,7 +26,8 @@
 /var/log/snmp-api.log
 /var/log/dcmanager/*.log
 /var/log/dcorch/*.log
-/var/log/barbican/*.log
+/var/log/barbican/barbican-keystone-listener.log
+/var/log/barbican/barbican-worker.log
 {
         nodateext
         size 10M
