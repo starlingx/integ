@@ -1,15 +1,15 @@
-From e49a8758922e1f23c4e77dd19cf4eb1f80263763 Mon Sep 17 00:00:00 2001
-From: Bin Yang <bin.yang@intel.com>
-Date: Wed, 31 Jul 2019 10:50:03 +0800
+From a38da63c3677f78c33b3896699788bd5eb77116e Mon Sep 17 00:00:00 2001
+From: "zhao.shuai" <zhaos@neusoft.com>
+Date: Tue, 6 Aug 2019 16:18:04 +0800
 Subject: [PATCH 3/3] Compile issues
 
-Signed-off-by: Bin Yang <bin.yang@intel.com>
+Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 ---
  SPECS/kernel.spec | 9 +++++++++
  1 file changed, 9 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 9149019..b8fb9f9 100644
+index 418cdd0..a5de0aa 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -491,6 +491,12 @@ Patch40025: dpt_i2o-fix-build-warning.patch
@@ -36,5 +36,5 @@ index 9149019..b8fb9f9 100644
  # Any further pre-build tree manipulations happen here.
  
 -- 
-2.7.4
+1.8.3.1
 

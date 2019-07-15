@@ -4,12 +4,13 @@ Date: Fri, 20 Apr 2018 14:51:56 -0400
 Subject: [PATCH] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 ---
  SPECS/kernel.spec | 73 +++++++++++++++++++++++++++++++++++++++++++++----------
  1 file changed, 60 insertions(+), 13 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 1c3a765..f2499b4 100644
+index 852fd10..e42177e 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -5,7 +5,8 @@ Summary: The Linux kernel
@@ -26,13 +27,13 @@ index 1c3a765..f2499b4 100644
  %global distro_build 957
  
  %define rpmversion 3.10.0
--%define pkgrelease 957.12.2.el7
-+%define _pkgrelease 957.12.2
+-%define pkgrelease 957.21.3.el7
++%define _pkgrelease 957.21.3
 +%define pkgrelease %{_pkgrelease}.el7
 +
  
  # allow pkg_release to have configurable %%{?dist} tag
- %define specrelease 957.12.2%{?dist}
+ %define specrelease 957.21.3%{?dist}
  
 -%define pkg_release %{specrelease}%{?buildid}
 +%define pkg_release %{specrelease}%{buildid}
@@ -224,8 +225,8 @@ index 1c3a765..f2499b4 100644
 +%endif
 +
  %changelog
- * Tue May 14 2019 CentOS Sources <bugs@centos.org> - 3.10.0-957.12.2.el7
+ * Mon Jun 17 2019 CentOS Sources <bugs@centos.org> - 3.10.0-957.21.3.el7
  - Apply debranding changes
 -- 
-2.7.4
+1.8.3.1
 
