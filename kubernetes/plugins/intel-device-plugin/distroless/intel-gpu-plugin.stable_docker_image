@@ -1,0 +1,6 @@
+BUILDER=script
+LABEL=intel-gpu-plugin
+SOURCE_REPO=https://github.com/intel/intel-device-plugins-for-kubernetes.git
+SOURCE_REF=156970adcaa6d4db42532110f370505d6777135b
+COMMAND=bash
+SCRIPT=build-intel-gpu-plugin-image.sh
