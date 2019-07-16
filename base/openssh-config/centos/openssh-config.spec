@@ -15,7 +15,6 @@ BuildArch: noarch
 Source: %name-%version.tar.gz
 
 Requires: %{_bindir}/systemctl
-Requires: pam-config
 Requires: openssh
 Summary: package StarlingX configuration files of openssh to system folder.
 
