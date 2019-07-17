@@ -51,7 +51,7 @@ PLUGIN = 'ptp plugin'
 PTP = 'Precision Time Protocol (PTP)'
 
 # Interface Monitoring Interval in seconds
-PLUGIN_AUDIT_INTERVAL = 60
+PLUGIN_AUDIT_INTERVAL = 300
 
 # Sample Data 'type' and 'instance' database field values.
 PLUGIN_TYPE = 'time_offset'
