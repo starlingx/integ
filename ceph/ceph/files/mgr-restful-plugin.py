@@ -488,6 +488,7 @@ class ServiceMonitor(object):
         try:
             pid_file = open(CONFIG.service_pid_file, 'w')
             pid_file.write(str(os.getpid()))
+            pid_file.flush()
         except OSError as err:
             raise ServiceNoPidFile(
                 path=CONFIG.service_pid_file, reason=str(err))
