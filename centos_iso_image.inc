@@ -342,3 +342,6 @@ util-linux-config
 
 # redfish tool
 Redfishtool
+
+# kvm-timer-advance (AIO and worker nodes only)
+kvm-timer-advance
