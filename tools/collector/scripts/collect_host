@@ -12,6 +12,7 @@
 # all collectors ; common and user defined.
 #
 source /usr/local/sbin/collect_utils
+source_openrc_if_needed
 
 #
 # parse input parameters

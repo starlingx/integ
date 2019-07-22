@@ -55,34 +55,37 @@ MIN_PERCENT_SPACE_REQUIRED=75
 COLLECT_LOG=/var/log/collect.log
 COLLECT_ERROR_LOG=/tmp/collect_error.log
 
+function source_openrc_if_needed
+{
+    # get the node and subfunction types
+    nodetype=""
+    subfunction=""
+    PLATFORM_CONF=/etc/platform/platform.conf
+    if [ -e ${PLATFORM_CONF} ] ; then
+        source ${PLATFORM_CONF}
+    fi
 
-# get the node and subfunction types
-nodetype=""
-subfunction=""
-PLATFORM_CONF=/etc/platform/platform.conf
-if [ -e ${PLATFORM_CONF} ] ; then
-    source ${PLATFORM_CONF}
-fi
+    if [ "${nodetype}" != "controller" -a "${nodetype}" != "worker" -a "${nodetype}" != "storage" ] ; then
+        logger -t ${COLLECT_TAG} "could not identify nodetype ($nodetype)"
+        exit $FAIL_NODETYPE
+    fi
 
-if [ "${nodetype}" != "controller" -a "${nodetype}" != "worker" -a "${nodetype}" != "storage" ] ; then
-    logger -t ${COLLECT_TAG} "could not identify nodetype ($nodetype)"
-    exit $FAIL_NODETYPE
-fi
+    NODETYPE=$nodetype
+    SUBFUNCTION=$subfunction
 
-NODETYPE=$nodetype
-SUBFUNCTION=$subfunction
-
-ACTIVE=false
-if [ "$NODETYPE" == "controller" ] ; then
-    # get local host activity state
-    OPENRC="/etc/platform/openrc"
-    if [ -e "${OPENRC}" ] ; then
-        rc=`source ${OPENRC}`
-        if [ "$rc" == "" ] ; then
-            ACTIVE=true
+    ACTIVE=false
+    if [ "$NODETYPE" == "controller" ] ; then
+        # get local host activity state
+        OPENRC="/etc/platform/openrc"
+        if [ -e "${OPENRC}" ] ; then
+            OS_USERNAME=""
+            source ${OPENRC}
+            if [ "${OS_USERNAME}" != "" ] ; then
+                ACTIVE=true
+            fi
         fi
     fi
-fi
+}
 
 
 # Setup an expect command completion file.
