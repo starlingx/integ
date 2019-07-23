@@ -84,6 +84,7 @@ fi
 
 # pull in common utils and environment
 source /usr/local/sbin/collect_utils
+source_openrc_if_needed
 
 function clean_up()
 {
