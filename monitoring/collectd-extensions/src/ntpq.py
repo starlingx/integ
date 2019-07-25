@@ -61,6 +61,7 @@ import collectd
 from fm_api import constants as fm_constants
 from fm_api import fm_api
 import tsconfig.tsconfig as tsc
+import socket
 
 api = fm_api.FaultAPIsV2()
 
@@ -434,6 +435,38 @@ def _is_controller(ip):
 
 ###############################################################################
 #
+# Name       : _is_ip_address
+#
+# Description: This private interface returns:
+#               AF_INET if val is ipv4
+#               AF_INET6 if val is ipv6
+#               False if val is not a valid ip address
+#
+# Parameters : val is a uuid string
+#
+# Returns    : socket.AF_INET for ipv4, socket.AF_INET6 for ipv6
+#              or False for invalid
+#
+###############################################################################
+
+def _is_ip_address(val):
+    try:
+        socket.inet_pton(socket.AF_INET, val)
+        return socket.AF_INET
+    except socket.error:
+        pass
+
+    try:
+        socket.inet_pton(socket.AF_INET6, val)
+        return socket.AF_INET6
+    except socket.error:
+        pass
+
+    return False
+
+
+###############################################################################
+#
 # Name       : is_uuid_like
 #
 # Description: This private interface returns a True if the specified value is
@@ -688,8 +721,9 @@ def read_func():
             ip = obj.ntpq[i].split(' ')[0][1:]
 
         elif obj.ntpq[i][0] == '*':
-            # remove the '+' and get the ip
-            ip = obj.ntpq[i].split(' ')[0][1:]
+            # remove the '*' and get the ip
+            cols = obj.ntpq[i].split(' ')
+            ip = cols[0][1:]
             if ip:
                 if _is_controller(ip) is False:
                     if obj.selected_server:
@@ -704,9 +738,24 @@ def read_func():
                         collectd.debug("%s selected server is '%s'" %
                                        (PLUGIN, obj.selected_server))
                 else:
-                    collectd.debug("%s local controller '%s' marked "
-                                   "as selected server ; ignoring" %
-                                   (PLUGIN, ip))
+                    # refer to peer
+                    refid = ''
+                    for i in range(1, len(cols)):
+                        if cols[i] != '':
+                            refid = cols[i]
+                            break
+
+                    if refid not in ('', '127.0.0.1') and \
+                            not _is_controller(refid) and \
+                            socket.AF_INET == _is_ip_address(ip):
+                        # ipv4, peer controller refer to a time source is not
+                        # itself or a controller (this node)
+                        obj.selected_server = ip
+                        collectd.debug("peer controller has a reliable "
+                                       "source")
+                    else:
+                        collectd.debug("peer controller does not have a "
+                                       "reliable source")
 
         # anything else is unreachable
         else:
