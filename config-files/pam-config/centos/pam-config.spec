@@ -15,6 +15,7 @@ BuildArch: noarch
 Source: %name-%version.tar.gz
 
 Requires: pam
+Requires: openssh
 Summary: package StarlingX configuration files of pam to system folder.
 
 %description
