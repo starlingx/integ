@@ -1,0 +1,166 @@
+From c0ad4aa4d8416a39ad262a2bd68b30acd951bf0e Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Mon, 7 Jan 2019 13:52:31 +0100
+Subject: sched/fair: Robustify CFS-bandwidth timer locking
+
+Traditionally hrtimer callbacks were run with IRQs disabled, but with
+the introduction of HRTIMER_MODE_SOFT it is possible they run from
+SoftIRQ context, which does _NOT_ have IRQs disabled.
+
+Allow for the CFS bandwidth timers (period_timer and slack_timer) to
+be ran from SoftIRQ context; this entails removing the assumption that
+IRQs are already disabled from the locking.
+
+While mainline doesn't strictly need this, -RT forces all timers not
+explicitly marked with MODE_HARD into MODE_SOFT and trips over this.
+And marking these timers as MODE_HARD doesn't make sense as they're
+not required for RT operation and can potentially be quite expensive.
+
+Reported-by: Tom Putzeys <tom.putzeys@be.atlascopco.com>
+Tested-by: Mike Galbraith <efault@gmx.de>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lkml.kernel.org/r/20190107125231.GE14122@hirez.programming.kicks-ass.net
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
+
+---
+ kernel/sched/fair.c | 33 ++++++++++++++++++---------------
+ 1 file changed, 18 insertions(+), 15 deletions(-)
+
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index d3d746b..e9a8d95 100644
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -3488,13 +3488,14 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
+ 	struct cfs_rq *cfs_rq;
+ 	u64 runtime;
+ 	u64 starting_runtime = remaining;
++	unsigned long flags;
+ 
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(cfs_rq, &cfs_b->throttled_cfs_rq,
+ 				throttled_list) {
+ 		struct rq *rq = rq_of(cfs_rq);
+ 
+-		raw_spin_lock(&rq->lock);
++		raw_spin_lock_irqsave(&rq->lock, flags);
+ 		if (!cfs_rq_throttled(cfs_rq))
+ 			goto next;
+ 
+@@ -3511,7 +3512,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
+ 			unthrottle_cfs_rq(cfs_rq);
+ 
+ next:
+-		raw_spin_unlock(&rq->lock);
++		raw_spin_unlock_irqrestore(&rq->lock, flags);
+ 
+ 		if (!remaining)
+ 			break;
+@@ -3527,7 +3528,7 @@ next:
+  * period the timer is deactivated until scheduling resumes; cfs_b->idle is
+  * used to track this state.
+  */
+-static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
++static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun, unsigned long flags)
+ {
+ 	u64 runtime, runtime_expires;
+ 	int throttled;
+@@ -3576,11 +3577,11 @@ static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
+ 	while (throttled && cfs_b->runtime > 0 && !cfs_b->distribute_running) {
+ 		runtime = cfs_b->runtime;
+ 		cfs_b->distribute_running = 1;
+-		raw_spin_unlock(&cfs_b->lock);
++		raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
+ 		/* we can't nest cfs_b->lock while distributing bandwidth */
+ 		runtime = distribute_cfs_runtime(cfs_b, runtime,
+ 						 runtime_expires);
+-		raw_spin_lock(&cfs_b->lock);
++		raw_spin_lock_irqsave(&cfs_b->lock, flags);
+ 
+ 		cfs_b->distribute_running = 0;
+ 		throttled = !list_empty(&cfs_b->throttled_cfs_rq);
+@@ -3689,17 +3690,18 @@ static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
+ {
+ 	u64 runtime = 0, slice = sched_cfs_bandwidth_slice();
++	unsigned long flags;
+ 	u64 expires;
+ 
+ 	/* confirm we're still not at a refresh boundary */
+-	raw_spin_lock(&cfs_b->lock);
++	raw_spin_lock_irqsave(&cfs_b->lock, flags);
+ 	if (cfs_b->distribute_running) {
+-		raw_spin_unlock(&cfs_b->lock);
++		raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
+ 		return;
+ 	}
+ 
+ 	if (runtime_refresh_within(cfs_b, min_bandwidth_expiration)) {
+-		raw_spin_unlock(&cfs_b->lock);
++		raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
+ 		return;
+ 	}
+ 
+@@ -3710,18 +3712,18 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
+ 	if (runtime)
+ 		cfs_b->distribute_running = 1;
+ 
+-	raw_spin_unlock(&cfs_b->lock);
++	raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
+ 
+ 	if (!runtime)
+ 		return;
+ 
+ 	runtime = distribute_cfs_runtime(cfs_b, runtime, expires);
+ 
+-	raw_spin_lock(&cfs_b->lock);
++	raw_spin_lock_irqsave(&cfs_b->lock, flags);
+ 	if (expires == cfs_b->runtime_expires)
+ 		cfs_b->runtime -= min(runtime, cfs_b->runtime);
+ 	cfs_b->distribute_running = 0;
+-	raw_spin_unlock(&cfs_b->lock);
++	raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
+ }
+ 
+ /*
+@@ -3785,7 +3787,7 @@ static void check_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+ }
+ 
+ static inline u64 default_cfs_period(void);
+-static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun);
++static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrunn, unsigned long flags);
+ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b);
+ 
+ static enum hrtimer_restart sched_cfs_slack_timer(struct hrtimer *timer)
+@@ -3802,10 +3804,11 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
+ 	struct cfs_bandwidth *cfs_b =
+ 		container_of(timer, struct cfs_bandwidth, period_timer);
+ 	ktime_t now;
++	unsigned long flags;
+ 	int overrun;
+ 	int idle = 0;
+ 
+-	raw_spin_lock(&cfs_b->lock);
++	raw_spin_lock_irqsave(&cfs_b->lock, flags);
+ 	for (;;) {
+ 		now = hrtimer_cb_get_time(timer);
+ 		overrun = hrtimer_forward(timer, now, cfs_b->period);
+@@ -3813,9 +3816,9 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
+ 		if (!overrun)
+ 			break;
+ 
+-		idle = do_sched_cfs_period_timer(cfs_b, overrun);
++		idle = do_sched_cfs_period_timer(cfs_b, overrun, flags);
+ 	}
+-	raw_spin_unlock(&cfs_b->lock);
++	raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
+ 
+ 	return idle ? HRTIMER_NORESTART : HRTIMER_RESTART;
+ }
+-- 
+1.8.3.1
+

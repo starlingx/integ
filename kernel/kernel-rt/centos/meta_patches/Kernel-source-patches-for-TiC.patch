@@ -1,21 +1,18 @@
-From 4412b4d092c2f38feed1d0f8ea1a69c799315663 Mon Sep 17 00:00:00 2001
-Message-Id: <4412b4d092c2f38feed1d0f8ea1a69c799315663.1528227675.git.Jim.Somerville@windriver.com>
-In-Reply-To: <dc53b79fa7cf0faa28e58d72ef4b34d405b469c0.1528227674.git.Jim.Somerville@windriver.com>
-References: <dc53b79fa7cf0faa28e58d72ef4b34d405b469c0.1528227674.git.Jim.Somerville@windriver.com>
-From: Jim Somerville <Jim.Somerville@windriver.com>
-Date: Mon, 23 Apr 2018 15:19:36 -0400
+From 6a04eb3881ccb3c592b4b47d36bde90f1e33c598 Mon Sep 17 00:00:00 2001
+From: Alex Kozyrev <alex.kozyrev@windriver.com>
+Date: Mon, 29 Jul 2019 11:48:49 -0400
 Subject: [PATCH 2/3] Kernel source patches for TiC
 
-Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
 ---
- SPECS/kernel-rt.spec | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 62 insertions(+)
+ SPECS/kernel-rt.spec | 64 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index 905ae52..15114e6 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -386,6 +386,38 @@ Source1000: modprobe-dccp-blacklist.conf
+@@ -386,6 +386,39 @@ Source1000: modprobe-dccp-blacklist.conf
  
  # Empty final patch file to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
@@ -51,10 +48,11 @@ index 905ae52..15114e6 100644
 +# DRBD was choking on write same
 +Patch1028: turn-off-write-same-in-smartqpi-driver.patch
 +Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
++Patch1030: robustify-CFS-bandwidth-timer-locking.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -718,6 +750,36 @@ cp %{SOURCE38} .
+@@ -718,6 +751,37 @@ cp %{SOURCE38} .
  
  ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
@@ -88,6 +86,7 @@ index 905ae52..15114e6 100644
 +ApplyPatch dpt_i2o-fix-build-warning.patch
 +ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
 +ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
++ApplyPatch robustify-CFS-bandwidth-timer-locking.patch
  
  # move off upstream version mechanism
  if [ -e localversion-rt ]; then

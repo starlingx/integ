@@ -1,9 +1,9 @@
-From 8fbd0edbcf6ed51b9e58d267d0ce7b40f00118a1 Mon Sep 17 00:00:00 2001
-From: Bart Wensley <barton.wensley@windriver.com>
-Date: Tue, 9 Jul 2019 07:18:00 -0500
+From 6fe892d415b3d728d223069eacb6f291fc38d86d Mon Sep 17 00:00:00 2001
+From: Alex Kozyrev <alex.kozyrev@windriver.com>
+Date: Mon, 29 Jul 2019 11:48:51 -0400
 Subject: [PATCH 1/1] Compile issues
 
-Signed-off-by: Bart Wensley <barton.wensley@windriver.com>
+Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
 ---
  SPECS/kernel-rt.spec | 8 ++++++++
  1 file changed, 8 insertions(+)
@@ -12,22 +12,22 @@ diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index 3b7985c..5025db7 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -418,6 +418,11 @@ Patch1027: dpt_i2o-fix-build-warning.patch
- # DRBD was choking on write same
+@@ -418,6 +418,11 @@ # DRBD was choking on write same
  Patch1028: turn-off-write-same-in-smartqpi-driver.patch
  Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
-+Patch1030: fix-compilation-issues.patch
+ Patch1030: robustify-CFS-bandwidth-timer-locking.patch
++Patch1031: fix-compilation-issues.patch
 +# Fix CentOS 7.6 upgrade compile error
-+Patch1031: fix-CentOS-7.6-upgrade-compile-error.patch
++Patch1032: fix-CentOS-7.6-upgrade-compile-error.patch
 +# Compile fix for disabling CONFIG_MEMCG_KMEM
-+Patch1032: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++Patch1033: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -780,6 +785,9 @@ ApplyPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
- ApplyPatch dpt_i2o-fix-build-warning.patch
+@@ -781,6 +786,9 @@ ApplyPatch dpt_i2o-fix-build-warning.patch
  ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
  ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
+ ApplyPatch robustify-CFS-bandwidth-timer-locking.patch
 +ApplyPatch fix-compilation-issues.patch
 +ApplyPatch fix-CentOS-7.6-upgrade-compile-error.patch
 +ApplyPatch compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
