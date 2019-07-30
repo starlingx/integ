@@ -1,20 +1,20 @@
-From 114203f428e479e6ec15b01ffc361eaafa194d2e Mon Sep 17 00:00:00 2001
-From: Angie Wang <angie.wang@windriver.com>
-Date: Thu, 27 Jun 2019 16:09:32 -0400
-Subject: [PATCH 1/1] Change group,passwd,and uidgid
+From b214efb6da29931971e09112cd70981b3105c96a Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Fri, 26 Jul 2019 17:28:29 -0400
+Subject: [PATCH] Change group,passwd,and uidgid
 
-Signed-off-by: Angie Wang <angie.wang@windriver.com>
+Signed-off-by: Andy Ning <andy.ning@windriver.com>
 ---
- group  | 31 +++++++++++++++++++++----------
- passwd | 28 ++++++++++++++++++++--------
- uidgid |  4 ++++
- 3 files changed, 45 insertions(+), 18 deletions(-)
+ group  | 21 +++++++++++----------
+ passwd | 18 ++++++++++--------
+ uidgid |  9 +++++----
+ 3 files changed, 26 insertions(+), 22 deletions(-)
 
 diff --git a/group b/group
-index 2753bd8..55bae9c 100644
+index 2753bd8..7cebae9 100644
 --- a/group
 +++ b/group
-@@ -1,24 +1,35 @@
+@@ -1,24 +1,25 @@
  root::0:
 -bin::1:
 -daemon::2:
@@ -39,32 +39,22 @@ index 2753bd8..55bae9c 100644
 -audio::63:
  nobody::99:
  users::100:
-+murano:x:105:murano
 +postgres:x:120:
-+rabbitmq:x:121:
-+glance:x:161:glance
 +nova:x:162:nova
 +keystone:x:42424:keystone
 +neutron:x:164:neutron
-+cinder:x:165:cinder
 +ceilometer:x:166:ceilometer
 +sysinv:x:168:sysinv
 +snmpd:x:169:snmpd,fm
-+nfv:x:172:nfv
-+heat:x:187:heat
 +fm:x:195:fm
-+panko:x:989:panko,ceilometer
-+gnocchi:x:990:gnocchi
 +libvirt:x:991:nova
-+aodh:x:992:aodh
-+magnum:x:1870:magnum
 +ironic:x:1874:ironic
 +www:x:1877:www
 diff --git a/passwd b/passwd
-index 6c6a8eb..fd36369 100644
+index 6c6a8eb..23014d9 100644
 --- a/passwd
 +++ b/passwd
-@@ -1,13 +1,25 @@
+@@ -1,13 +1,15 @@
  root:*:0:0:root:/root:/bin/bash
 -bin:*:1:1:bin:/bin:/sbin/nologin
 -daemon:*:2:2:daemon:/sbin:/sbin/nologin
@@ -78,32 +68,30 @@ index 6c6a8eb..fd36369 100644
 -games:*:12:100:games:/usr/games:/sbin/nologin
 -ftp:*:14:50:FTP User:/var/ftp:/sbin/nologin
  nobody:*:99:99:Nobody:/:/sbin/nologin
-+murano:x:105:105:OpenStack Murano Daemons:/home/murano:/sbin/nologin
 +postgres:x:120:120:PostgreSQL Server:/var/lib/pgsql:/bin/sh
-+rabbitmq:x:121:121::/var/lib/rabbitmq:/bin/sh
-+glance:x:161:161:OpenStack Glance Daemons:/opt/cgcs/glance:/sbin/nologin
 +neutron:x:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
-+cinder:x:165:165:OpenStack Cinder Daemons:/var/lib/cinder:/sbin/nologin
 +sysinv:x:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
 +snmpd:x:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
-+nfv:x:172:172:nfvi:/var/lib/nfv:/sbin/nologin
 +fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
-+ceilometer:x:991:166::/home/ceilometer:/bin/sh
-+heat:x:992:187::/home/heat:/bin/sh
-+keystone:x:42424:42424::/home/keystone:/bin/sh
-+nova:x:994:162::/var/lib/nova:/bin/false
-+panko:x:995:989:OpenStack panko Daemons:/var/lib/panko:/sbin/nologin
-+gnocchi:x:996:990:gnocchi Daemons:/var/lib/gnocchi:/sbin/nologin
-+aodh:x:997:992:OpenStack aodh Daemons:/var/lib/aodh:/sbin/nologin
-+magnum:x:1870:1870:OpenStack Magnum Daemons:/var/lib/magnum:/sbin/nologin
++ceilometer:x:991:166:OpenStack ceilometer Daemons:/var/lib/ceilometer:/sbin/nologin
++keystone:x:42424:42424:OpenStack Keystone Daemons:/var/lib/keystone:/sbin/nologin
++nova:x:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
 +ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
 +www:x:1877:1877:www:/home/www:/sbin/nologin
 diff --git a/uidgid b/uidgid
-index c6bbd4b..20e1e1c 100644
+index c6bbd4b..20433a7 100644
 --- a/uidgid
 +++ b/uidgid
-@@ -134,6 +134,8 @@ quantum	164	164	/var/lib/quantum		/sbin/nologin	openstack-quantum
- cinder	165	165	/var/lib/cinder		/sbin/nologin	openstack-cinder
+@@ -127,13 +127,13 @@ stapusr	-	156	/		-	systemtap-runtime
+ stapsys	-	157	/		-	systemtap-runtime
+ stapdev	-	158	/		-	systemtap-runtime
+ swift	160	160	/var/lib/swift		/sbin/nologin	openstack-swift
+-glance	161	161	/var/lib/glance		/sbin/nologin	openstack-glance
+ nova	162	162	/var/lib/nova		/sbin/nologin	openstack-nova
+-keystone	163	163	/var/lib/keystone		/sbin/nologin	openstack-keystone
++keystone	42424	42424	/var/lib/keystone		/sbin/nologin	openstack-keystone
+ quantum	164	164	/var/lib/quantum		/sbin/nologin	openstack-quantum
+-cinder	165	165	/var/lib/cinder		/sbin/nologin	openstack-cinder
  ceilometer	166	166	/var/lib/ceilometer		/sbin/nologin	openstack-ceilometer
  ceph	167	167	/var/lib/ceph		/sbin/nologin	ceph-common
 +sysinv  168 168 /var/lib/sysinv     /sbin/nologin   sysinv
@@ -111,7 +99,15 @@ index c6bbd4b..20e1e1c 100644
  avahi-autoipd	170	170	/var/lib/avahi-autoipd		/sbin/nologin	avahi
  pulse	171	171	/var/run/pulse		/sbin/nologin	pulseaudio
  rtkit	172	172	/proc		/sbin/nologin	rtkit
-@@ -163,6 +165,8 @@ systemd-network	192	192	/		/sbin/nologin	systemd
+@@ -152,7 +152,6 @@ mongodb	184	184	/var/lib/mongodb		/sbin/nologin	mongodb
+ jboss	185	185	/var/lib/jbossas		/sbin/nologin	jbossas-core	#was jboss-as and wildfly
+ jbosson-agent	186	-	/		/sbin/nologin	jboss-on-agent
+ jbosson	-	186	-		-	jboss-on-agent
+-heat	187	187	/var/lib/heat		/sbin/nologin	heat
+ haproxy	188	188	/var/lib/haproxy		/sbin/nologin	haproxy
+ hacluster	189	-	/		/sbin/nologin	pacemaker
+ haclient	-	189	-		-	pacemaker
+@@ -163,6 +162,8 @@ systemd-network	192	192	/		/sbin/nologin	systemd
  systemd-resolve	193	193	/		/sbin/nologin	systemd
  gnats	?	?	?		?	gnats, gnats-db
  listar	?	?	?		?	listar
