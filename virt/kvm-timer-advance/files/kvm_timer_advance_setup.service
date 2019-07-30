@@ -1,0 +1,14 @@
+[Unit]
+Description=KVM Timer Advance Setup
+After=syslog.target sw-patch.service
+Before=kubelet.service
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+User=root
+ExecStart=/usr/bin/setup_kvm_timer_advance.sh
+
+[Install]
+WantedBy=multi-user.target
+
