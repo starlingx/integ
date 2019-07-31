@@ -40,7 +40,8 @@ source /etc/platform/platform.conf
 CEPH_SCRIPT="/etc/init.d/ceph"
 CEPH_FILE="$VOLATILE_PATH/.ceph_started"
 CEPH_RESTARTING_FILE="$VOLATILE_PATH/.ceph_restarting"
-CEPH_GET_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_status"
+CEPH_GET_MON_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_mon_status"
+CEPH_GET_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_osd_status"
 CEPH_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_status_failure.txt"
 
 BINDIR=/usr/bin
@@ -59,10 +60,13 @@ mkdir -p $DATA_PATH                   # make sure folder exists
 
 MONITORING_INTERVAL=15
 TRACE_LOOP_INTERVAL=5
-GET_STATUS_TIMEOUT=120
+GET_OSD_STATUS_TIMEOUT=120
+GET_MONITOR_STATUS_TIMEOUT=30
 CEPH_STATUS_TIMEOUT=20
 
 WAIT_FOR_CMD=1
+MONITOR_COMMAND=0
+OSD_COMMAND=0
 
 RC=0
 
@@ -73,24 +77,65 @@ if [ ! -z $ARGS ]; then
     args+=("${new_args[@]}")
 fi
 
+check_command_type ()
+{
+    if [[ $# -eq 0 ]]; then
+        MONITOR_COMMAND=1
+        OSD_COMMAND=1
+    elif [[ "$1" == "osd"* ]]; then
+        OSD_COMMAND=1
+    elif [[ "$1" == "mon"* ]]; then
+        MONITOR_COMMAND=1
+    else
+        exit 1
+    fi
+
+}
+
 wait_for_status ()
 {
-    timeout=$GET_STATUS_TIMEOUT  # wait for status no more than $timeout seconds
-    while [ -f ${CEPH_GET_STATUS_FILE} ] && [ $timeout -gt 0 ]; do
+    local STATUS_TIMEOUT=0
+
+    # For a general "ceph status" command which includes checks
+    # for both monitors and OSDS, we use the OSD timeout.
+    if [[ $OSD_COMMAND == 1 ]]; then
+        STATUS_TIMEOUT=$GET_OSD_STATUS_TIMEOUT
+    elif [[ $MONITOR_COMMAND == 1 ]]; then
+        STATUS_TIMEOUT=$GET_MONITOR_STATUS_TIMEOUT
+    fi
+
+    timeout_expiry=$((${SECONDS} + ${STATUS_TIMEOUT}))
+    while [ ${SECONDS} -le ${timeout_expiry} ]; do
+        if [[ $MONITOR_COMMAND == 1 ]] && [[ ! -f ${CEPH_GET_MON_STATUS_FILE} ]]; then
+            break
+        fi
+
+        if [[ $OSD_COMMAND == 1 ]] && [[ ! -f ${CEPH_GET_OSD_STATUS_FILE} ]]; then
+            break
+        fi
+
         sleep 1
-        let timeout-=1
     done
+
     if [ $timeout -eq 0 ]; then
-        wlog "-" "WARN" "Getting status takes more than ${GET_STATUS_TIMEOUT}s, continuing"
-        rm -f $CEPH_GET_STATUS_FILE
+        wlog "-" "WARN" "Getting status takes more than ${STATUS_TIMEOUT}s, continuing"
+        if [[ $MONITOR_COMMAND == 1 ]]; then
+            rm -f $CEPH_GET_MON_STATUS_FILE
+        fi
+
+        if [[ $OSD_COMMAND == 1 ]]; then
+            rm -f $CEPH_GET_OSD_STATUS_FILE
+        fi
     fi
 }
 
 start ()
 {
     if [ -f ${CEPH_FILE} ]; then
+        wlog "-" INFO "Ceph START $1 command received"
         wait_for_status
         ${CEPH_SCRIPT} start $1
+        wlog "-" INFO "Ceph START $1 command finished."
         RC=$?
     else
         # Ceph is not running on this node, return success
@@ -100,17 +145,21 @@ start ()
 
 stop ()
 {
+    wlog "-" INFO "Ceph STOP $1 command received."
     wait_for_status
     ${CEPH_SCRIPT} stop $1
+    wlog "-" INFO "Ceph STOP $1 command finished."
 }
 
 restart ()
 {
     if [ -f ${CEPH_FILE} ]; then
+        wlog "-" INFO "Ceph RESTART $1 command received."
         wait_for_status
         touch $CEPH_RESTARTING_FILE
         ${CEPH_SCRIPT} restart $1
         rm -f $CEPH_RESTARTING_FILE
+        wlog "-" INFO "Ceph RESTART $1 command finished."
     else
         # Ceph is not running on this node, return success
         exit 0
@@ -170,14 +219,13 @@ log_and_kill_hung_procs ()
     done
 }
 
-
 status ()
 {
     if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]] && [[ "$1" == "osd" ]]; then
         timeout $CEPH_STATUS_TIMEOUT ceph -s
         if [ "$?" -ne 0 ]; then
             # Ceph cluster is not accessible. Don't panic, controller swact
-	        # may be in progress.
+            # may be in progress.
             wlog "-" INFO "Ceph is down, ignoring OSD status."
             exit 0
         fi
@@ -191,7 +239,14 @@ status ()
     if [ -f ${CEPH_FILE} ]; then
         # Make sure the script does not 'exit' between here and the 'rm -f' below
         # or the checkpoint file will be left behind
-        touch -f ${CEPH_GET_STATUS_FILE}
+        if [[ $MONITOR_COMMAND == 1 ]]; then
+            touch -f ${CEPH_GET_MON_STATUS_FILE}
+        fi
+
+        if [[ $OSD_COMMAND == 1 ]]; then
+            touch -f ${CEPH_GET_OSD_STATUS_FILE}
+        fi
+
         result=`${CEPH_SCRIPT} status $1`
         RC=$?
         if [ "$RC" -ne 0 ]; then
@@ -236,7 +291,13 @@ status ()
             fi
         fi
 
-        rm -f ${CEPH_GET_STATUS_FILE}
+        if [[ $MONITOR_COMMAND == 1 ]]; then
+            rm -f ${CEPH_GET_MON_STATUS_FILE}
+        fi
+
+        if [[ $OSD_COMMAND == 1 ]]; then
+            rm -f ${CEPH_GET_OSD_STATUS_FILE}
+        fi
 
         if [[ $RC == 0 ]] && [[ "$1" == "mon" ]] && [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
             # SM needs exit code != 0 from 'status mon' argument of the init script on
@@ -262,15 +323,19 @@ status ()
 
 case "${args[0]}" in
     start)
+        check_command_type ${args[1]}
         start ${args[1]}
         ;;
     stop)
+        check_command_type ${args[1]}
         stop ${args[1]}
         ;;
     restart)
+        check_command_type ${args[1]}
         restart ${args[1]}
         ;;
     status)
+        check_command_type ${args[1]}
         status ${args[1]}
         ;;
     *)
