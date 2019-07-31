@@ -25,10 +25,12 @@ import json
 import logging
 import multiprocessing
 import os
+import shutil
 import signal
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 
 import daemon
@@ -73,6 +75,7 @@ class Config(object):
         self.ceph_mgr_service = '/usr/bin/ceph-mgr'
         self.ceph_mgr_cluster = 'ceph'
         self.ceph_mgr_rundir = '/var/run/ceph/mgr'
+        self.ceph_mgr_confdir = '/var/lib/ceph/mgr'
         self.ceph_mgr_identity = socket.gethostname()
 
         self.service_name = 'mgr-restful-plugin'
@@ -555,10 +558,10 @@ class ServiceMonitor(object):
                 # steps to configure/start ceph-mgr and restful plugin
                 self.ceph_fsid_get()
                 self.ceph_mgr_auth_create()
-                self.ceph_mgr_start()
                 self.restful_plugin_set_server_port()
-                self.restful_plugin_enable()
                 self.restful_plugin_create_certificate()
+                self.ceph_mgr_start()
+                self.restful_plugin_enable()
                 self.restful_plugin_create_admin_key()
                 self.restful_plugin_get_url()
                 self.restful_plugin_get_certificate()
@@ -651,7 +654,7 @@ class ServiceMonitor(object):
 
     def ceph_mgr_has_auth(self):
         path = '{}/ceph-{}'.format(
-            CONFIG.ceph_mgr_rundir, CONFIG.ceph_mgr_identity)
+            CONFIG.ceph_mgr_confdir, CONFIG.ceph_mgr_identity)
         try:
             os.makedirs(path)
         except OSError as err:
@@ -718,7 +721,7 @@ class ServiceMonitor(object):
             with open(os.devnull, 'wb') as null:
                 out = self.run_with_timeout(
                     ['/usr/bin/ceph', 'config-key', 'get',
-                     'config/mgr/mgr/restful/server_port'],
+                     'mgr/restful/server_port'],
                     CONFIG.ceph_cli_timeout_sec, stderr=null)
             if out == str(CONFIG.restful_plugin_port):
                 return True
@@ -735,7 +738,7 @@ class ServiceMonitor(object):
             return
         LOG.info('Set restful plugin port=%d', CONFIG.restful_plugin_port)
         self.run_with_timeout(
-            ['/usr/bin/ceph', 'config', 'set', 'mgr',
+            ['/usr/bin/ceph', 'config-key', 'set',
              'mgr/restful/server_port', str(CONFIG.restful_plugin_port)],
             CONFIG.ceph_cli_timeout_sec)
 
@@ -763,7 +766,19 @@ class ServiceMonitor(object):
         try:
             self.run_with_timeout(
                 ['/usr/bin/ceph', 'config-key', 'get',
+                 'config/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity)],
+                CONFIG.ceph_cli_timeout_sec)
+            self.run_with_timeout(
+                ['/usr/bin/ceph', 'config-key', 'get',
                  'mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity)],
+                CONFIG.ceph_cli_timeout_sec)
+            self.run_with_timeout(
+                ['/usr/bin/ceph', 'config-key', 'get',
+                 'config/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity)],
+                CONFIG.ceph_cli_timeout_sec)
+            self.run_with_timeout(
+                ['/usr/bin/ceph', 'config-key', 'get',
+                 '/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity)],
                 CONFIG.ceph_cli_timeout_sec)
             return True
         except CommandFailed:
@@ -774,10 +789,42 @@ class ServiceMonitor(object):
         if self.restful_plugin_has_certificate():
             return
         LOG.info('Create restful plugin self signed certificate')
-        self.run_with_timeout(
-            ['/usr/bin/ceph', 'restful',
-             'create-self-signed-cert'],
-            CONFIG.ceph_cli_timeout_sec)
+        path = tempfile.mkdtemp()
+        try:
+            try:
+                subprocess.check_call([
+                    '/usr/bin/openssl', 'req', '-new', '-nodes', '-x509',
+                    '-subj', '/O=IT/CN=ceph-restful', '-days', '3650',
+                    '-out', os.path.join(path, 'crt'),
+                    '-keyout', os.path.join(path, 'key'),
+                    '-extensions', 'v3_ca'])
+            except subprocess.CalledProcessError as err:
+                raise CommandFailed(
+                    command=' '.join(err.cmd),
+                    reason='failed to generate self-signed certificate: {}'.format(str(err)),
+                    out=err.output)
+            self.run_with_timeout(
+                ['/usr/bin/ceph', 'config-key', 'set',
+                 'config/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity),
+                 '-i', os.path.join(path, 'crt')],
+                CONFIG.ceph_cli_timeout_sec)
+            self.run_with_timeout(
+                ['/usr/bin/ceph', 'config-key', 'set',
+                 'mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity),
+                 '-i', os.path.join(path, 'crt')],
+                CONFIG.ceph_cli_timeout_sec)
+            self.run_with_timeout(
+                ['/usr/bin/ceph', 'config-key', 'set',
+                 'config/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity),
+                 '-i', os.path.join(path, 'key')],
+                CONFIG.ceph_cli_timeout_sec)
+            self.run_with_timeout(
+                ['/usr/bin/ceph', 'config-key', 'set',
+                 'mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity),
+                 '-i', os.path.join(path, 'key')],
+                CONFIG.ceph_cli_timeout_sec)
+        finally:
+            shutil.rmtree(path)
 
     def restful_plugin_is_enabled(self):
         command = ['/usr/bin/ceph', 'mgr', 'module', 'ls',
@@ -825,7 +872,7 @@ class ServiceMonitor(object):
 
     def restful_plugin_get_certificate(self):
         command = ['/usr/bin/ceph', 'config-key', 'get',
-                   'mgr/restful/controller-0/crt']
+                   'config/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity)]
         with open(os.devnull, 'wb') as null:
             certificate = self.run_with_timeout(
                 command, CONFIG.ceph_cli_timeout_sec, stderr=null)
