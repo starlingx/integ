@@ -1,18 +1,18 @@
-From d9d90b72c19c1d063272d2b84bd76c52514bf6ac Mon Sep 17 00:00:00 2001
-From: Jim Somerville <Jim.Somerville@windriver.com>
-Date: Fri, 20 Apr 2018 16:13:47 -0400
-Subject: [PATCH 2/5] Kernel source patches for TiC
+From 7191a6f784f12e295e508f105da4cfde518a64e7 Mon Sep 17 00:00:00 2001
+From: Bin Yang <bin.yang@intel.com>
+Date: Wed, 31 Jul 2019 10:49:20 +0800
+Subject: [PATCH 2/3] Kernel source patches for TiC
 
-Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Bin Yang <bin.yang@intel.com>
 ---
- SPECS/kernel.spec | 58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 58 insertions(+)
+ SPECS/kernel.spec | 61 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index eef356a..f1a0092 100644
+index 5b93a98..9149019 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -460,6 +460,36 @@ Patch1002: debrand-rh-i686-cpu.patch
+@@ -460,6 +460,38 @@ Patch1002: debrand-rh-i686-cpu.patch
  Source30000: kernel-3.10.0-x86_64.config.tis_extra
  Source30001: ima_signing_key.pub
  
@@ -45,11 +45,13 @@ index eef356a..f1a0092 100644
 +Patch40025: dpt_i2o-fix-build-warning.patch
 +# DRBD was choking on write same
 +Patch40026: turn-off-write-same-in-smartqpi-driver.patch
++# Fix use-after-free in eventpoll_release_file
++Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
 +
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -802,6 +832,34 @@ ApplyOptionalPatch debrand-single-cpu.patch
+@@ -802,6 +834,35 @@ ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
  ApplyOptionalPatch debrand-rh-i686-cpu.patch
  
@@ -80,6 +82,7 @@ index eef356a..f1a0092 100644
 +ApplyOptionalPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
 +ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
 +ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
++ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
 +
  # Any further pre-build tree manipulations happen here.
  

@@ -1,33 +1,33 @@
-From 6fe892d415b3d728d223069eacb6f291fc38d86d Mon Sep 17 00:00:00 2001
-From: Alex Kozyrev <alex.kozyrev@windriver.com>
-Date: Mon, 29 Jul 2019 11:48:51 -0400
-Subject: [PATCH 1/1] Compile issues
+From d83caf51542ff89ffc70377d8a04d697d8fe09e3 Mon Sep 17 00:00:00 2001
+From: Bin Yang <bin.yang@intel.com>
+Date: Wed, 31 Jul 2019 14:23:20 +0800
+Subject: [PATCH 3/3] Compile issues
 
-Signed-off-by: Alex Kozyrev <alex.kozyrev@windriver.com>
+Signed-off-by: Bin Yang <bin.yang@intel.com>
 ---
  SPECS/kernel-rt.spec | 8 ++++++++
  1 file changed, 8 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 3b7985c..5025db7 100644
+index e94ec2f..e6e71e4 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -418,6 +418,11 @@ # DRBD was choking on write same
- Patch1028: turn-off-write-same-in-smartqpi-driver.patch
+@@ -420,6 +420,11 @@ Patch1028: turn-off-write-same-in-smartqpi-driver.patch
  Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
  Patch1030: robustify-CFS-bandwidth-timer-locking.patch
-+Patch1031: fix-compilation-issues.patch
+ Patch1031: epoll-fix-use-after-free-in-eventpoll_release_file.patch
++Patch1032: fix-compilation-issues.patch
 +# Fix CentOS 7.6 upgrade compile error
-+Patch1032: fix-CentOS-7.6-upgrade-compile-error.patch
++Patch1033: fix-CentOS-7.6-upgrade-compile-error.patch
 +# Compile fix for disabling CONFIG_MEMCG_KMEM
-+Patch1033: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++Patch1034: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -781,6 +786,9 @@ ApplyPatch dpt_i2o-fix-build-warning.patch
- ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
+@@ -784,6 +789,9 @@ ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
  ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
  ApplyPatch robustify-CFS-bandwidth-timer-locking.patch
+ ApplyPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
 +ApplyPatch fix-compilation-issues.patch
 +ApplyPatch fix-CentOS-7.6-upgrade-compile-error.patch
 +ApplyPatch compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
@@ -35,5 +35,5 @@ index 3b7985c..5025db7 100644
  # move off upstream version mechanism
  if [ -e localversion-rt ]; then
 -- 
-1.8.3.1
+2.7.4
 
