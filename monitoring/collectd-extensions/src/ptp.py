@@ -809,6 +809,22 @@ def read_func():
         obj.phase = RUN_PHASE__SAMPLING
         obj.log_throttle_count = 0
 
+    # Let's read the port status information
+    #
+    # sudo /usr/sbin/pmc -u -b 0 'GET PORT_DATA_SET'
+    #
+    data = subprocess.check_output([PLUGIN_STATUS_QUERY_EXEC,
+                                    '-u', '-b', '0', 'GET PORT_DATA_SET'])
+
+    port_locked = False
+    obj.resp = data.split('\n')
+    for line in obj.resp:
+        if 'portState' in line:
+            collectd.debug("%s portState : %s" % (PLUGIN, line.split()[1]))
+            port_state = line.split()[1]
+            if port_state == 'SLAVE':
+                port_locked = True
+
     # Let's read the clock info, Grand Master sig and skew
     #
     # sudo /usr/sbin/pmc -u -b 0 'GET TIME_STATUS_NP'
@@ -840,7 +856,7 @@ def read_func():
 
     # Handle case where this host is the Grand Master
     #   ... or assumes it is.
-    if my_identity == gm_identity:
+    if my_identity == gm_identity or port_locked is False:
 
         if obj.controller is False:
 
