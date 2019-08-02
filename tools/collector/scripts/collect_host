@@ -401,7 +401,7 @@ else
 fi
 
 # Add VM console.log
-for i in /etc/nova/instances/*/console.log; do
+for i in /var/lib/nova/instances/*/console.log; do
     if [ -e "$i" ]; then
         tmp=`dirname $i`
         mkdir -p ${COLLECT_NAME_DIR}/$tmp
