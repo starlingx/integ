@@ -41,11 +41,6 @@ TIS Extensions to thirdparty pkgs on controller
 %build
 
 %install
-install -d -m 755 %{buildroot}%{local_etc_initd}
-install -p -D -m 555 target %{buildroot}%{local_etc_initd}/target
-
-install -d -m 755 %{buildroot}%{local_etc_systemd}
-install -p -D -m 444 target.service %{buildroot}%{local_etc_systemd}/target.service
 
 install -d -m 755 %{buildroot}%{local_etc_sysctl}
 install -p -D -m 644 coredump-sysctl.conf %{buildroot}%{local_etc_sysctl}/50-coredump.conf
@@ -63,7 +58,3 @@ install -p -D -m 644 modules-load-vfio.conf %{buildroot}%{local_etc_modload}/vfi
 %{local_etc_modload}/vfio.conf
 %doc LICENSE
 
-%files -n %{name}-controller
-%defattr(-,root,root,-)
-%{local_etc_initd}/target
-%{local_etc_systemd}/target.service

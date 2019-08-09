@@ -69,7 +69,6 @@ swtpm-tools
 
 # tis-extensions
 tis-extensions
-tis-extensions-controller
 
 # python-3parclient
 python-3parclient
