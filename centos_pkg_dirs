@@ -83,6 +83,7 @@ kernel/kernel-modules/mlnx-ofa_kernel
 networking/mellanox/rdma-core
 monitoring/collectd-extensions
 monitoring/influxdb-extensions
+docker/python-docker
 kubernetes/kubernetes
 kubernetes/docker-distribution
 kubernetes/etcd

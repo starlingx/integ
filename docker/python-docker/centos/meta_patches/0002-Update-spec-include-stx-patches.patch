@@ -1,0 +1,35 @@
+From a0c3f898cabd79b07cc6cc52245de712ee7b46bd Mon Sep 17 00:00:00 2001
+From: John Kung <john.kung@windriver.com>
+Date: Wed, 7 Aug 2019 15:01:11 -0400
+Subject: [PATCH 1/1] Update-spec-include-stx-patches
+
+---
+ SPECS/python-docker.spec | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/python-docker.spec b/SPECS/python-docker.spec
+index 92420e3..9a05819 100644
+--- a/SPECS/python-docker.spec
++++ b/SPECS/python-docker.spec
+@@ -29,6 +29,7 @@ Source0:        https://files.pythonhosted.org/packages/source/d/%{srcname}/%{sr
+ # work in RHEL.  This patch converts those environment markers into simple if
+ # statements.
+ Patch1: remove-environment-markers.patch
++Patch2: 0001-Update-client-close-socket.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -138,7 +139,9 @@ run containers, manage containers, manage Swarms, etc.
+ %endif # with_python3
+ 
+ %prep
+-%autosetup -n %{srcname}-%{version} -p 1
++%setup -q -n %{srcname}-%{version}
++%patch2 -p1
++
+ rm -fr docker.egg-info
+ 
+ %build
+-- 
+1.8.3.1
+
