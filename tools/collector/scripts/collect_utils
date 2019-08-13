@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# Copyright (c) 2013-2014 Wind River Systems, Inc.
+# Copyright (c) 2013-2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -70,11 +70,8 @@ function source_openrc_if_needed
         exit $FAIL_NODETYPE
     fi
 
-    NODETYPE=$nodetype
-    SUBFUNCTION=$subfunction
-
     ACTIVE=false
-    if [ "$NODETYPE" == "controller" ] ; then
+    if [ "$nodetype" == "controller" ] ; then
         # get local host activity state
         OPENRC="/etc/platform/openrc"
         if [ -e "${OPENRC}" ] ; then
