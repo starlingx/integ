@@ -6,7 +6,7 @@
 
 Summary: Redfish Tool Package
 Name: Redfishtool
-Version: 1.0.8
+Version: 1.1.0
 Release: %{?_tis_dist}.%{tis_patch_ver}
 #For full text see link: https://github.com/DMTF/Redfishtool/blob/master/LICENSE.md
 License: BSD-3-Clause.
@@ -19,7 +19,6 @@ Source0: %{name}-%{version}.tar.gz
 BuildArch: noarch
 
 Patch01: 0001-Adapt-redfishtool-to-python2.patch
-Patch02: 0002-Add-configfile-option-support.patch
 
 BuildRequires: python-setuptools
 
@@ -34,7 +33,6 @@ Redfish Tool Package
 %prep
 %setup
 %patch01 -p1
-%patch02 -p1
 
 # Remove bundled egg-info
 rm -rf *.egg-info
