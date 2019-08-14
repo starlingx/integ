@@ -88,6 +88,7 @@ class NtpqObject:
     reachable_servers = []          # list of reachable servers
     selected_server = 'None'        # the ip address of the selected server
     selected_server_save = 'None'   # the last selected server ; note change
+    peer_selected = False           # true when peer is selected
 
     # variables used to raise alarms to FM
     suppression = True
@@ -161,10 +162,16 @@ def _raise_alarm(ip=None):
         if obj.alarm_raised is True:
             return False
 
-        reason = "NTP configuration does not contain any valid "
-        reason += "or reachable NTP servers."
+        if obj.peer_selected:
+            reason = "NTP cannot reach external time source; " \
+                     "syncing with peer controller only"
+            fm_severity = fm_constants.FM_ALARM_SEVERITY_MINOR
+        else:
+            reason = "NTP configuration does not contain any valid "
+            reason += "or reachable NTP servers."
+            fm_severity = fm_constants.FM_ALARM_SEVERITY_MAJOR
+
         eid = obj.base_eid
-        fm_severity = fm_constants.FM_ALARM_SEVERITY_MAJOR
 
     else:
         reason = "NTP address "
@@ -725,7 +732,14 @@ def read_func():
             cols = obj.ntpq[i].split(' ')
             ip = cols[0][1:]
             if ip:
-                if _is_controller(ip) is False:
+                ip_family = _is_ip_address(ip)
+                obj.peer_selected = _is_controller(ip)
+                if ip != obj.selected_server and obj.alarm_raised is True:
+                    # a new ntp server is selected, old alarm may not be
+                    # valid
+                    _clear_base_alarm()
+                    obj.alarm_raised = False
+                if obj.peer_selected is False:
                     if obj.selected_server:
                         # done update the selected server if more selections
                         # are found. go with the first one found.
@@ -747,15 +761,12 @@ def read_func():
 
                     if refid not in ('', '127.0.0.1') and \
                             not _is_controller(refid) and \
-                            socket.AF_INET == _is_ip_address(ip):
+                            socket.AF_INET == ip_family:
                         # ipv4, peer controller refer to a time source is not
                         # itself or a controller (this node)
                         obj.selected_server = ip
                         collectd.debug("peer controller has a reliable "
                                        "source")
-                    else:
-                        collectd.debug("peer controller does not have a "
-                                       "reliable source")
 
         # anything else is unreachable
         else:
@@ -796,7 +807,10 @@ def read_func():
             _clear_base_alarm()
 
     elif obj.alarm_raised is False:
-        collectd.error("%s no selected server" % PLUGIN)
+        if obj.peer_selected:
+            collectd.info("%s peer is selected" % PLUGIN)
+        else:
+            collectd.error("%s no selected server" % PLUGIN)
         if _raise_alarm() is False:
             obj.selected_server_save = 'None'
 
