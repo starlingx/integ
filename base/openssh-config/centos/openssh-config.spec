@@ -15,7 +15,9 @@ BuildArch: noarch
 Source: %name-%version.tar.gz
 
 Requires: %{_bindir}/systemctl
-Requires: openssh
+Requires: openssh-clients
+Requires: openssh-server
+
 Summary: package StarlingX configuration files of openssh to system folder.
 
 %description
@@ -34,7 +36,6 @@ package StarlingX configuration files of openssh to system folder.
 %{__install} -m 600 sshd_config   %{buildroot}%{_datadir}/starlingx/sshd_config
 
 %post
-%define _pamconfdir %{_sysconfdir}/pam.d
 if [ $1 -eq 1 ] ; then
         # Initial installation
         cp -f %{_datadir}/starlingx/ssh_config  %{_sysconfdir}/ssh/ssh_config
