@@ -1,11 +1,26 @@
 #! /bin/bash
 ########################################################################
 #
-# Copyright (c) 2016 Wind River Systems, Inc.
+# Copyright (c) 2016-2019 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 ########################################################################
+
+# make these platform.conf variables global.
+# values are loaded in source_openrc_if_needed.
+export nodetype=""
+export subfunction=""
+export system_type=""
+export security_profile=""
+export sdn_enabled=""
+export region_config=""
+export vswitch_type=""
+export system_mode=""
+export sw_version=""
+
+# assume this is not the active controller until learned
+export ACTIVE=false
 
 #
 # Import commands, variables and convenience functions available to
