@@ -133,6 +133,7 @@ database/mariadb
 database/python-psycopg2
 base/dnsmasq
 base/dnsmasq-config
+base/golang
 base/golang-dep
 filesystem/parted
 security/python-keyring

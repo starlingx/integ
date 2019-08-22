@@ -1,0 +1,8 @@
+VERSION=1.12.9
+TAR_NAME=go
+TAR="$TAR_NAME$VERSION.src.tar.gz"
+CONTRIB="$TAR_NAME-contrib-v$CON_VERSION.tar.gz"
+
+COPY_LIST="${CGCS_BASE}/downloads/$TAR $FILES_BASE/*"
+
+TIS_PATCH_VER=1
