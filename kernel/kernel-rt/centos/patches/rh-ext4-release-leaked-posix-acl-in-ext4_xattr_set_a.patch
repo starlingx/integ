@@ -1,0 +1,79 @@
+From 916c45d11310d03a4a76bd80a40f0c6a767ba39e Mon Sep 17 00:00:00 2001
+Message-Id: <916c45d11310d03a4a76bd80a40f0c6a767ba39e.1566590430.git.Jim.Somerville@windriver.com>
+In-Reply-To: <fdb837fb87ff4907436dfab16709b64d6c3488fd.1566590430.git.Jim.Somerville@windriver.com>
+References: <fdb837fb87ff4907436dfab16709b64d6c3488fd.1566590430.git.Jim.Somerville@windriver.com>
+From: Stanislav Kinsburskiy <skinsbursky@virtuozzo.com>
+Date: Fri, 9 Feb 2018 11:52:15 +0300
+Subject: [PATCH 3/3] rh/ext4: release leaked posix acl in ext4_xattr_set_acl
+
+[ commit b762d904ada70f239f1c2d2d70c4a64cd04c8ade in OpenVZ's vzkernel repo ]
+
+Note: only rh7-3.10.0-693.17.1.el7-based kernels are affcted.
+I.e. starting from rh7-3.10.0-693.17.1.vz7.43.1.
+
+Posix acl is used to convert of an extended attribute, provided by user to ext4
+attributes. In particular to i_mode in case of ACL_TYPE_ACCESS request.
+
+IOW, this object is allocated, used for convertion, not stored anywhere and
+must be freed.
+
+However posix_acl_update_mode() can zerofy the pointer to support
+ext4_set_acl() logic, but then the object is leaked. So, fix it by releasing
+new temporary pointer with the same value instead of acl pointer.
+
+https://jira.sw.ru/browse/PSBM-81384
+
+RHEL bug URL: https://bugzilla.redhat.com/show_bug.cgi?id=1543020
+
+v2: Added affected kernel version + RHEL bug URL
+
+Signed-off-by: Stanislav Kinsburskiy <skinsbursky@virtuozzo.com>
+Acked-by: Dmitry Monakhov <dmonakhov@openvz.org>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ fs/ext4/acl.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/fs/ext4/acl.c b/fs/ext4/acl.c
+index fce029f..046b338 100644
+--- a/fs/ext4/acl.c
++++ b/fs/ext4/acl.c
+@@ -405,7 +405,7 @@ ext4_xattr_set_acl(struct dentry *dentry, const char *name, const void *value,
+ {
+ 	struct inode *inode = dentry->d_inode;
+ 	handle_t *handle;
+-	struct posix_acl *acl;
++	struct posix_acl *acl, *real_acl;
+ 	int error, retries = 0;
+ 	int update_mode = 0;
+ 	umode_t mode = inode->i_mode;
+@@ -418,7 +418,7 @@ ext4_xattr_set_acl(struct dentry *dentry, const char *name, const void *value,
+ 		return -EPERM;
+ 
+ 	if (value) {
+-		acl = posix_acl_from_xattr(&init_user_ns, value, size);
++		acl = real_acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 		else if (acl) {
+@@ -427,7 +427,7 @@ ext4_xattr_set_acl(struct dentry *dentry, const char *name, const void *value,
+ 				goto release_and_out;
+ 		}
+ 	} else
+-		acl = NULL;
++		acl = real_acl = NULL;
+ 
+ retry:
+ 	handle = ext4_journal_start(inode, EXT4_HT_XATTR,
+@@ -454,7 +454,7 @@ out_stop:
+ 		goto retry;
+ 
+ release_and_out:
+-	posix_acl_release(acl);
++	posix_acl_release(real_acl);
+ 	return error;
+ }
+ 
+-- 
+1.8.3.1
+

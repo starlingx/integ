@@ -1,33 +1,37 @@
-From d83caf51542ff89ffc70377d8a04d697d8fe09e3 Mon Sep 17 00:00:00 2001
+From d85ae09a0e333ba2c0b2630a1d4768655cacf481 Mon Sep 17 00:00:00 2001
+Message-Id: <d85ae09a0e333ba2c0b2630a1d4768655cacf481.1566591106.git.Jim.Somerville@windriver.com>
+In-Reply-To: <5d869ea9407975726a95d046391cd640b726ca93.1566591106.git.Jim.Somerville@windriver.com>
+References: <5d869ea9407975726a95d046391cd640b726ca93.1566591106.git.Jim.Somerville@windriver.com>
 From: Bin Yang <bin.yang@intel.com>
 Date: Wed, 31 Jul 2019 14:23:20 +0800
-Subject: [PATCH 3/3] Compile issues
+Subject: [PATCH 2/2] Compile issues
 
 Signed-off-by: Bin Yang <bin.yang@intel.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/kernel-rt.spec | 8 ++++++++
  1 file changed, 8 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index e94ec2f..e6e71e4 100644
+index f7aad95..29d3878 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -420,6 +420,11 @@ Patch1028: turn-off-write-same-in-smartqpi-driver.patch
- Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
- Patch1030: robustify-CFS-bandwidth-timer-locking.patch
- Patch1031: epoll-fix-use-after-free-in-eventpoll_release_file.patch
-+Patch1032: fix-compilation-issues.patch
+@@ -424,6 +424,11 @@ Patch1031: epoll-fix-use-after-free-in-eventpoll_release_file.patch
+ Patch1032: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
+ Patch1033: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
+ Patch1034: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
++Patch1035: fix-compilation-issues.patch
 +# Fix CentOS 7.6 upgrade compile error
-+Patch1033: fix-CentOS-7.6-upgrade-compile-error.patch
++Patch1036: fix-CentOS-7.6-upgrade-compile-error.patch
 +# Compile fix for disabling CONFIG_MEMCG_KMEM
-+Patch1034: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++Patch1037: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -784,6 +789,9 @@ ApplyPatch turn-off-write-same-in-smartqpi-driver.patch
- ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
- ApplyPatch robustify-CFS-bandwidth-timer-locking.patch
- ApplyPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
+@@ -791,6 +796,9 @@ ApplyPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
+ ApplyPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
+ ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
+ ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +ApplyPatch fix-compilation-issues.patch
 +ApplyPatch fix-CentOS-7.6-upgrade-compile-error.patch
 +ApplyPatch compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
@@ -35,5 +39,5 @@ index e94ec2f..e6e71e4 100644
  # move off upstream version mechanism
  if [ -e localversion-rt ]; then
 -- 
-2.7.4
+1.8.3.1
 

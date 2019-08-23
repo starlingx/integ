@@ -1,18 +1,20 @@
-From 2c23df3f032c68046a309e5b9f1d321438905e85 Mon Sep 17 00:00:00 2001
+From 5d869ea9407975726a95d046391cd640b726ca93 Mon Sep 17 00:00:00 2001
+Message-Id: <5d869ea9407975726a95d046391cd640b726ca93.1566591106.git.Jim.Somerville@windriver.com>
 From: Bin Yang <bin.yang@intel.com>
 Date: Mon, 29 Jul 2019 11:48:49 -0400
-Subject: [PATCH 2/3] Kernel source patches for TiC
+Subject: [PATCH 1/2] Kernel source patches for TiC
 
 Signed-off-by: Bin Yang <bin.yang@intel.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
+ SPECS/kernel-rt.spec | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index efc89cd..e94ec2f 100644
+index adffde2..f7aad95 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -386,6 +386,40 @@ Source1000: modprobe-dccp-blacklist.conf
+@@ -386,6 +386,44 @@ Source1000: modprobe-dccp-blacklist.conf
  
  # Empty final patch file to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
@@ -50,10 +52,14 @@ index efc89cd..e94ec2f 100644
 +Patch1029: restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
 +Patch1030: robustify-CFS-bandwidth-timer-locking.patch
 +Patch1031: epoll-fix-use-after-free-in-eventpoll_release_file.patch
++# Fix three potential kernel memory leaks
++Patch1032: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
++Patch1033: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
++Patch1034: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -718,6 +752,38 @@ cp %{SOURCE38} .
+@@ -718,6 +756,41 @@ cp %{SOURCE38} .
  
  ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
@@ -89,9 +95,12 @@ index efc89cd..e94ec2f 100644
 +ApplyPatch restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
 +ApplyPatch robustify-CFS-bandwidth-timer-locking.patch
 +ApplyPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
++ApplyPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
++ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
++ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
  
  # move off upstream version mechanism
  if [ -e localversion-rt ]; then
 -- 
-2.7.4
+1.8.3.1
 
