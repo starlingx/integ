@@ -1,26 +1,20 @@
 ---
 - project:
     templates:
-      - build-openstack-docs-pti
+      - publish-stx-docs
+      - stx-release-notes-jobs
     check:
       jobs:
-        - build-openstack-releasenotes
         - flock-devstack-integ
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
     gate:
       jobs:
-        - build-openstack-releasenotes
         - flock-devstack-integ
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
-    post:
-      jobs:
-        - publish-stx-tox
-        - publish-stx-releasenotes
-
 
 # This is the common base job definition for StarlingX flock services
 - job:
