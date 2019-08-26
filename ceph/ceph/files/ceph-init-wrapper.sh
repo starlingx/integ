@@ -39,7 +39,6 @@ source /etc/platform/platform.conf
 
 CEPH_SCRIPT="/etc/init.d/ceph"
 CEPH_FILE="$VOLATILE_PATH/.ceph_started"
-CEPH_RESTARTING_FILE="$VOLATILE_PATH/.ceph_restarting"
 CEPH_GET_MON_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_mon_status"
 CEPH_GET_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_osd_status"
 CEPH_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_status_failure.txt"
@@ -60,111 +59,97 @@ mkdir -p $DATA_PATH                   # make sure folder exists
 
 MONITORING_INTERVAL=15
 TRACE_LOOP_INTERVAL=5
-GET_OSD_STATUS_TIMEOUT=120
-GET_MONITOR_STATUS_TIMEOUT=30
 CEPH_STATUS_TIMEOUT=20
 
-WAIT_FOR_CMD=1
-MONITOR_COMMAND=0
-OSD_COMMAND=0
+LOCK_CEPH_MON_SERVICE_FILE="$VOLATILE_PATH/.ceph_mon_status"
+LOCK_CEPH_OSD_SERVICE_FILE="$VOLATILE_PATH/.ceph_osd_status"
+LOCK_CEPH_MON_STATUS_FILE="$VOLATILE_PATH/.ceph_mon_service"
+LOCK_CEPH_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_osd_service"
+
+# Seconds to wait for ceph status to finish before
+# continuing to execute a service action
+MONITOR_STATUS_TIMEOUT=30
+MAX_STATUS_TIMEOUT=120
 
 RC=0
 
+# SM can only pass arguments through environment variable
+# when ARGS is not empty use it to extend command line arguments
 args=("$@")
-
 if [ ! -z $ARGS ]; then
     IFS=";" read -r -a new_args <<< "$ARGS"
     args+=("${new_args[@]}")
 fi
 
-check_command_type ()
+with_service_lock ()
 {
-    if [[ $# -eq 0 ]]; then
-        MONITOR_COMMAND=1
-        OSD_COMMAND=1
-    elif [[ "$1" == "osd"* ]]; then
-        OSD_COMMAND=1
-    elif [[ "$1" == "mon"* ]]; then
-        MONITOR_COMMAND=1
-    else
-        exit 1
-    fi
+    local target="$1"; shift
+    [ -z "${target}" ] && target="mon osd"
 
-}
+    # Run in sub-shell so we don't leak file descriptors
+    # used for locking service actions
+    (
+        # Grab service locks
+        wlog "-" INFO "Grab service locks"
+        [[ "${target}" == *"mon"* ]] && flock ${LOCK_CEPH_MON_SERVICE_FD}
+        [[ "${target}" == *"osd"* ]] && flock ${LOCK_CEPH_OSD_SERVICE_FD}
 
-wait_for_status ()
-{
-    local STATUS_TIMEOUT=0
-
-    # For a general "ceph status" command which includes checks
-    # for both monitors and OSDS, we use the OSD timeout.
-    if [[ $OSD_COMMAND == 1 ]]; then
-        STATUS_TIMEOUT=$GET_OSD_STATUS_TIMEOUT
-    elif [[ $MONITOR_COMMAND == 1 ]]; then
-        STATUS_TIMEOUT=$GET_MONITOR_STATUS_TIMEOUT
-    fi
-
-    timeout_expiry=$((${SECONDS} + ${STATUS_TIMEOUT}))
-    while [ ${SECONDS} -le ${timeout_expiry} ]; do
-        if [[ $MONITOR_COMMAND == 1 ]] && [[ ! -f ${CEPH_GET_MON_STATUS_FILE} ]]; then
-            break
+        # Try to lock status with a timeout in case status is stuck
+        wlog "-" INFO "Lock service status"
+        deadline=$((SECONDS + MAX_STATUS_TIMEOUT + 1))
+        if [[ "${target}" == *"mon"* ]]; then
+            flock --exclusive --timeout ${MONITOR_STATUS_TIMEOUT} ${LOCK_CEPH_MON_STATUS_FD}
+        fi
+        if [[ "${target}" == *"osd"* ]]; then
+            timeout=$((deadline - SECONDS))
+            if [[ $timeout -gt 0 ]]; then
+                flock --exclusive --timeout ${timeout} ${LOCK_CEPH_OSD_STATUS_FD}
+            fi
         fi
 
-        if [[ $OSD_COMMAND == 1 ]] && [[ ! -f ${CEPH_GET_OSD_STATUS_FILE} ]]; then
-            break
-        fi
+        # Close lock file descriptors so they are
+        # not inherited by the spawned process then
+        # run service action
+        wlog "-" INFO "Run service action: $@"
+        "$@" {LOCK_CEPH_MON_SERVICE_FD}>&- \
+             {LOCK_CEPH_MON_STATUS_FD}>&- \
+             {LOCK_CEPH_OSD_SERVICE_FD}>&- \
+             {LOCK_CEPH_OSD_STATUS_FD}>&-
 
-        sleep 1
-    done
-
-    if [ $timeout -eq 0 ]; then
-        wlog "-" "WARN" "Getting status takes more than ${STATUS_TIMEOUT}s, continuing"
-        if [[ $MONITOR_COMMAND == 1 ]]; then
-            rm -f $CEPH_GET_MON_STATUS_FILE
-        fi
-
-        if [[ $OSD_COMMAND == 1 ]]; then
-            rm -f $CEPH_GET_OSD_STATUS_FILE
-        fi
-    fi
+    ) {LOCK_CEPH_MON_SERVICE_FD}>${LOCK_CEPH_MON_SERVICE_FILE} \
+      {LOCK_CEPH_MON_STATUS_FD}>${LOCK_CEPH_MON_STATUS_FILE} \
+      {LOCK_CEPH_OSD_SERVICE_FD}>${LOCK_CEPH_OSD_SERVICE_FILE} \
+      {LOCK_CEPH_OSD_STATUS_FD}>${LOCK_CEPH_OSD_STATUS_FILE}
+    RC=$?
 }
 
 start ()
 {
-    if [ -f ${CEPH_FILE} ]; then
-        wlog "-" INFO "Ceph START $1 command received"
-        wait_for_status
-        ${CEPH_SCRIPT} start $1
-        wlog "-" INFO "Ceph START $1 command finished."
-        RC=$?
-    else
+    if [ ! -f ${CEPH_FILE} ]; then
         # Ceph is not running on this node, return success
         exit 0
     fi
+    wlog "-" INFO "Ceph START $1 command received"
+    with_service_lock "$1" ${CEPH_SCRIPT} start $1
+    wlog "-" INFO "Ceph START $1 command finished."
 }
 
 stop ()
 {
     wlog "-" INFO "Ceph STOP $1 command received."
-    wait_for_status
-    ${CEPH_SCRIPT} stop $1
+    with_service_lock "$1" ${CEPH_SCRIPT} stop $1
     wlog "-" INFO "Ceph STOP $1 command finished."
 }
 
 restart ()
 {
-    if [ -f ${CEPH_FILE} ]; then
-        wlog "-" INFO "Ceph RESTART $1 command received."
-        wait_for_status
-        touch $CEPH_RESTARTING_FILE
-        ${CEPH_SCRIPT} restart $1
-        rm -f $CEPH_RESTARTING_FILE
-        wlog "-" INFO "Ceph RESTART $1 command finished."
-    else
+    if [ ! -f ${CEPH_FILE} ]; then
         # Ceph is not running on this node, return success
         exit 0
     fi
-
+    wlog "-" INFO "Ceph RESTART $1 command received."
+    with_service_lock "$1" ${CEPH_SCRIPT} restart $1
+    wlog "-" INFO "Ceph RESTART $1 command finished."
 }
 
 log_and_restart_blocked_osds ()
@@ -221,6 +206,14 @@ log_and_kill_hung_procs ()
 
 status ()
 {
+    local target="$1"  # no shift here
+    [ -z "${target}" ] && target="mon osd"
+
+    if [ ! -f ${CEPH_FILE} ]; then
+        # Ceph is not running on this node, return success
+        exit 0
+    fi
+
     if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]] && [[ "$1" == "osd" ]]; then
         timeout $CEPH_STATUS_TIMEOUT ceph -s
         if [ "$?" -ne 0 ]; then
@@ -231,111 +224,102 @@ status ()
         fi
     fi
 
-    if [ -f ${CEPH_RESTARTING_FILE} ]; then
-        # Ceph is restarting, we don't report state changes on the first pass
-        rm -f ${CEPH_RESTARTING_FILE}
-        exit 0
+    # Report success while ceph mon is running a service action
+    # otherwise mark ceph mon status is in progress
+    exec {LOCK_CEPH_MON_STATUS_FD}>${LOCK_CEPH_MON_STATUS_FILE}
+    if [[ "${target}" == *"mon"* ]]; then
+        flock --shared --nonblock ${LOCK_CEPH_MON_SERVICE_FILE} true
+        if [[ $? -ne 0 ]]; then
+            exit 0
+        fi
+        # Lock will be released when script exits
+        flock --shared ${LOCK_CEPH_MON_STATUS_FD}
     fi
-    if [ -f ${CEPH_FILE} ]; then
-        # Make sure the script does not 'exit' between here and the 'rm -f' below
-        # or the checkpoint file will be left behind
-        if [[ $MONITOR_COMMAND == 1 ]]; then
-            touch -f ${CEPH_GET_MON_STATUS_FILE}
+    # Report success while ceph mon is running a service action
+    # otherwise mark ceph osd status is in progress
+    exec {LOCK_CEPH_OSD_STATUS_FD}>${LOCK_CEPH_OSD_STATUS_FILE}
+    if [[ "${target}" == *"osd"* ]]; then
+        flock --shared --nonblock ${LOCK_CEPH_OSD_SERVICE_FILE} true
+        if [[ $? -ne 0 ]]; then
+            exit 0
         fi
+        # Lock will be released when script exits
+        flock --shared ${LOCK_CEPH_OSD_STATUS_FD}
+    fi
 
-        if [[ $OSD_COMMAND == 1 ]]; then
-            touch -f ${CEPH_GET_OSD_STATUS_FILE}
+    result=`${CEPH_SCRIPT} status $1 {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-`
+    RC=$?
+    if [ "$RC" -ne 0 ]; then
+        erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        invalid=0
+        host=`hostname`
+        if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
+            # On 2 node configuration we have a floating monitor
+            host="controller"
         fi
-
-        result=`${CEPH_SCRIPT} status $1`
-        RC=$?
-        if [ "$RC" -ne 0 ]; then
-            erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
-            hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
-            blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
-            invalid=0
-            host=`hostname`
-            if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
-                # On 2 node configuration we have a floating monitor
-                host="controller"
-            fi
-            for i in $(echo $erred_procs $hung_procs); do
-                if [[ "$i" =~ osd.?[0-9]?[0-9]|mon.$host ]]; then
-                    continue
-                else
-                    invalid=1
-                fi
-            done
-
-            log_and_restart_blocked_osds $blocked_ops_procs
-            log_and_kill_hung_procs $hung_procs
-
-            hung_procs_text=""
-            for i in $(echo $hung_procs); do
-                hung_procs_text+="$i(process hung) "
-            done
-
-            rm -f $CEPH_STATUS_FAILURE_TEXT_FILE
-            if [ $invalid -eq 0 ]; then
-                text=""
-                for i in $erred_procs; do
-                    text+="$i, "
-                done
-                for i in $hung_procs; do
-                    text+="$i (process hang), "
-                done
-                echo "$text" | tr -d '\n' > $CEPH_STATUS_FAILURE_TEXT_FILE
+        for i in $(echo $erred_procs $hung_procs); do
+            if [[ "$i" =~ osd.?[0-9]?[0-9]|mon.$host ]]; then
+                continue
             else
-                echo "$host: '${CEPH_SCRIPT} status $1' result contains invalid process names: $erred_procs"
-                echo "Undetermined osd or monitor id" > $CEPH_STATUS_FAILURE_TEXT_FILE
+                invalid=1
             fi
-        fi
+        done
 
-        if [[ $MONITOR_COMMAND == 1 ]]; then
-            rm -f ${CEPH_GET_MON_STATUS_FILE}
-        fi
+        log_and_restart_blocked_osds $blocked_ops_procs
+        log_and_kill_hung_procs $hung_procs
 
-        if [[ $OSD_COMMAND == 1 ]]; then
-            rm -f ${CEPH_GET_OSD_STATUS_FILE}
-        fi
+        hung_procs_text=""
+        for i in $(echo $hung_procs); do
+            hung_procs_text+="$i(process hung) "
+        done
 
-        if [[ $RC == 0 ]] && [[ "$1" == "mon" ]] && [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
-            # SM needs exit code != 0 from 'status mon' argument of the init script on
-            # standby controller otherwise it thinks that the monitor is running and
-            # tries to stop it.
-            # '/etc/init.d/ceph status mon' checks the status of monitors configured in
-            # /etc/ceph/ceph.conf and if it should be running on current host.
-            # If it should not be running it just exits with code 0. This is what
-            # happens on the standby controller.
-            # When floating monitor is running on active controller /var/lib/ceph/mon of
-            # standby is not mounted (Ceph monitor partition is DRBD synced).
-            test -e "/var/lib/ceph/mon/ceph-controller"
-            if [ "$?" -ne 0 ]; then
-                exit 3
-            fi
+        rm -f $CEPH_STATUS_FAILURE_TEXT_FILE
+        if [ $invalid -eq 0 ]; then
+            text=""
+            for i in $erred_procs; do
+                text+="$i, "
+            done
+            for i in $hung_procs; do
+                text+="$i (process hang), "
+            done
+            echo "$text" | tr -d '\n' > $CEPH_STATUS_FAILURE_TEXT_FILE
+        else
+            echo "$host: '${CEPH_SCRIPT} status $1' result contains invalid process names: $erred_procs"
+            echo "Undetermined osd or monitor id" > $CEPH_STATUS_FAILURE_TEXT_FILE
         fi
-    else
-        # Ceph is not running on this node, return success
-        exit 0
+    fi
+
+    if [[ $RC == 0 ]] && [[ "$1" == "mon" ]] && [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
+        # SM needs exit code != 0 from 'status mon' argument of the init script on
+        # standby controller otherwise it thinks that the monitor is running and
+        # tries to stop it.
+        # '/etc/init.d/ceph status mon' checks the status of monitors configured in
+        # /etc/ceph/ceph.conf and if it should be running on current host.
+        # If it should not be running it just exits with code 0. This is what
+        # happens on the standby controller.
+        # When floating monitor is running on active controller /var/lib/ceph/mon of
+        # standby is not mounted (Ceph monitor partition is DRBD synced).
+        test -e "/var/lib/ceph/mon/ceph-controller"
+        if [ "$?" -ne 0 ]; then
+            exit 3
+        fi
     fi
 }
 
 
 case "${args[0]}" in
     start)
-        check_command_type ${args[1]}
         start ${args[1]}
         ;;
     stop)
-        check_command_type ${args[1]}
         stop ${args[1]}
         ;;
     restart)
-        check_command_type ${args[1]}
         restart ${args[1]}
         ;;
     status)
-        check_command_type ${args[1]}
         status ${args[1]}
         ;;
     *)
