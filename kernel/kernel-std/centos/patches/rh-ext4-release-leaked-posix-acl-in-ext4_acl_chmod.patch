@@ -1,0 +1,67 @@
+From 598c88638d4f46a38bf3d0669bc042c1ea1e4605 Mon Sep 17 00:00:00 2001
+Message-Id: <598c88638d4f46a38bf3d0669bc042c1ea1e4605.1566585829.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e3887b1e84e274be02f992e034e0dba1f53925b6.1566585829.git.Jim.Somerville@windriver.com>
+References: <e3887b1e84e274be02f992e034e0dba1f53925b6.1566585829.git.Jim.Somerville@windriver.com>
+From: Stanislav Kinsburskiy <skinsbursky@virtuozzo.com>
+Date: Fri, 9 Feb 2018 11:52:14 +0300
+Subject: [PATCH 2/3] rh/ext4: release leaked posix acl in ext4_acl_chmod
+
+[ commit b85d6be0b743a1768b8456d36b52960858fbaa67 in OpenVZ's vzkernel repo ]
+
+Note: only rh7-3.10.0-693.17.1.el7-based kernels are affected.
+I.e. starting from rh7-3.10.0-693.17.1.vz7.43.1.
+
+Posix acl is used to convert of an extended attribute, provided by user to ext4
+attributes. In particular to i_mode in case of ACL_TYPE_ACCESS request.
+IOW, this object is allocated, used for convertion, not stored anywhere and
+must be freed.
+
+However posix_acl_update_mode() can zerofy the pointer to support
+ext4_set_acl() logic, but then the object is leaked.  So, fix it by releasing
+new temporary pointer with the same value instead of acl pointer.
+
+In scope of https://jira.sw.ru/browse/PSBM-81384
+
+RHEL bug URL: https://bugzilla.redhat.com/show_bug.cgi?id=1543020
+
+Signed-off-by: Stanislav Kinsburskiy <skinsbursky@virtuozzo.com>
+Acked-by: Dmitry Monakhov <dmonakhov@openvz.org>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ fs/ext4/acl.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/fs/ext4/acl.c b/fs/ext4/acl.c
+index 917e819..fce029f 100644
+--- a/fs/ext4/acl.c
++++ b/fs/ext4/acl.c
+@@ -297,7 +297,7 @@ cleanup:
+ int
+ ext4_acl_chmod(struct inode *inode)
+ {
+-	struct posix_acl *acl;
++	struct posix_acl *acl, *real_acl;
+ 	handle_t *handle;
+ 	int retries = 0;
+ 	int error;
+@@ -315,6 +315,8 @@ ext4_acl_chmod(struct inode *inode)
+ 	error = posix_acl_chmod(&acl, GFP_KERNEL, inode->i_mode);
+ 	if (error)
+ 		return error;
++
++	real_acl = acl;
+ retry:
+ 	handle = ext4_journal_start(inode, EXT4_HT_XATTR,
+ 				    ext4_jbd2_credits_xattr(inode));
+@@ -341,7 +343,7 @@ out_stop:
+ 	    ext4_should_retry_alloc(inode->i_sb, &retries))
+ 		goto retry;
+ out:
+-	posix_acl_release(acl);
++	posix_acl_release(real_acl);
+ 	return error;
+ }
+ 
+-- 
+1.8.3.1
+

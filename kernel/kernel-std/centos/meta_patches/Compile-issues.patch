@@ -1,34 +1,38 @@
-From a38da63c3677f78c33b3896699788bd5eb77116e Mon Sep 17 00:00:00 2001
+From f9a5a49c9daac827d94cd562c0c6f100388fd798 Mon Sep 17 00:00:00 2001
+Message-Id: <f9a5a49c9daac827d94cd562c0c6f100388fd798.1566587341.git.Jim.Somerville@windriver.com>
+In-Reply-To: <ac67546ccbecd3ee18145be31d87d7253048adda.1566587341.git.Jim.Somerville@windriver.com>
+References: <ac67546ccbecd3ee18145be31d87d7253048adda.1566587341.git.Jim.Somerville@windriver.com>
 From: "zhao.shuai" <zhaos@neusoft.com>
 Date: Tue, 6 Aug 2019 16:18:04 +0800
-Subject: [PATCH 3/3] Compile issues
+Subject: [PATCH 2/2] Compile issues
 
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/kernel.spec | 9 +++++++++
  1 file changed, 9 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 418cdd0..a5de0aa 100644
+index d5df4a4..1d765ed 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -491,6 +491,12 @@ Patch40025: dpt_i2o-fix-build-warning.patch
- Patch40026: turn-off-write-same-in-smartqpi-driver.patch
- # Fix use-after-free in eventpoll_release_file
- Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
+@@ -495,6 +495,12 @@ Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
+ Patch40028: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
+ Patch40029: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
+ Patch40030: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +# Fix assorted compilation issues
-+Patch40028: fix-compilation-issues.patch
++Patch40031: fix-compilation-issues.patch
 +# Fix CentOS 7.6 upgrade compile error
-+Patch40029: fix-CentOS-7.6-upgrade-compile-error.patch
++Patch40032: fix-CentOS-7.6-upgrade-compile-error.patch
 +# Compile fix for disabling CONFIG_MEMCG_KMEM
-+Patch40030: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++Patch40033: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
-@@ -862,6 +868,9 @@ ApplyOptionalPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
- ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
- ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
- ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
+@@ -869,6 +875,9 @@ ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
+ ApplyOptionalPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
+ ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
+ ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +ApplyOptionalPatch fix-compilation-issues.patch
 +ApplyOptionalPatch fix-CentOS-7.6-upgrade-compile-error.patch
 +ApplyOptionalPatch compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
