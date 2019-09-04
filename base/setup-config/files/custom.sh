@@ -1,1 +1,0 @@
-export TMOUT=900

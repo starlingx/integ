@@ -1,3 +1,0 @@
-SRC_DIR="filesystem-scripts-1.0"
-COPY_LIST="$PKG_BASE/LICENSE"
-TIS_PATCH_VER=2

@@ -1,8 +1,0 @@
-# system default rules
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
-:INPUT-custom-pre - [0:0]
-:INPUT-custom-post - [0:0]
-COMMIT

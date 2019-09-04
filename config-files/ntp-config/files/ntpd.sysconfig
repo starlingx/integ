@@ -1,2 +1,0 @@
-# Command line options for ntpd
-OPTIONS="-p /var/run/ntp.pid"
