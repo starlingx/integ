@@ -1,0 +1,37 @@
+From 44c7f5aa4df30c2ac8eae5a956dc503d7e62e1fd Mon Sep 17 00:00:00 2001
+From: Kristine Bujold <kristine.bujold@windriver.com>
+Date: Tue, 3 Sep 2019 16:18:58 -0400
+Subject: [PATCH] Include patch Fix-ntpq-truncates-IPV6-addresses.patch.
+
+Signed-off-by: Kristine Bujold <kristine.bujold@windriver.com>
+---
+ SPECS/ntp.spec | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/SPECS/ntp.spec b/SPECS/ntp.spec
+index a9ebf30..330d5b0 100644
+--- a/SPECS/ntp.spec
++++ b/SPECS/ntp.spec
+@@ -207,6 +207,9 @@ Patch104: ntpstat-0.2-errorbit.patch
+ # improve man page
+ Patch105: ntpstat-0.2-manual.patch
+ 
++# STX IPV6 ntpq patch
++Patch500: Fix-ntpq-truncates-IPV6-addresses.patch
++
+ URL: http://www.ntp.org
+ Requires(post): systemd-units
+ Requires(preun): systemd-units
+@@ -366,6 +369,9 @@ This package contains NTP documentation in HTML format.
+ %patch104 -p1 -b .errorbit
+ %patch105 -p1 -b .manual
+ 
++%patch500 -p1 -b .ntpq-truncates-IPV6-addresses
++
++
+ # set default path to sntp KoD database
+ sed -i 's|/var/db/ntp-kod|%{_localstatedir}/lib/sntp/kod|' sntp/{sntp.1,main.c}
+ 
+-- 
+1.8.3.1
+

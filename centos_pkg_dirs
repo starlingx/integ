@@ -78,6 +78,7 @@ base/cgcs-users
 base/cluster-resource-agents
 base/libfdt
 base/haproxy
+base/ntp
 ldap/ldapscripts
 networking/net-tools
 filesystem/drbd/drbd-tools
