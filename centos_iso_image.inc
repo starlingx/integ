@@ -2,8 +2,6 @@
 # If these have dependencies, they will be pulled in automatically
 #
 
-# vm-topology
-vm-topology
 
 
 # qemu-kvm-ev
@@ -62,11 +60,7 @@ python-3parclient
 # python-lefthandclient
 python-lefthandclient
 
-# collectd-extensions
-collectd-extensions
 
-# influxdb-extensions
-influxdb-extensions
 
 # docker-distribution
 docker-distribution
@@ -83,8 +77,6 @@ io-scheduler
 
 
 
-# monitor-tools
-monitor-tools
 
 # e1000e-kmod
 kmod-e1000e
