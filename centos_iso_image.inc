@@ -84,7 +84,6 @@ influxdb-extensions
 
 # docker-distribution
 docker-distribution
-registry-token-server
 
 # helm
 helm

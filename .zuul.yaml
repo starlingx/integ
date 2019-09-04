@@ -5,13 +5,11 @@
       - stx-release-notes-jobs
     check:
       jobs:
-        - flock-devstack-integ
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
     gate:
       jobs:
-        - flock-devstack-integ
         - openstack-tox-pep8
         - openstack-tox-linters
         - stx-integ-pylint
