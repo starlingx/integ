@@ -1,5 +1,0 @@
-TAR_NAME=rpm
-VERSION=4.14.0
-TIS_PATCH_VER=1
-
-COPY_LIST="$CGCS_BASE/downloads/$TAR_NAME-$VERSION.tar.bz2 patches/*"

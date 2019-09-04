@@ -1,3 +1,0 @@
-The src rpm version  indicates that we are patching python 2.7.5, however there are at least 58 patches
-added by Centos to fix issues fixed in the later python 2.7 releases.
-
