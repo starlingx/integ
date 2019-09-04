@@ -5,16 +5,12 @@
 # vm-topology
 vm-topology
 
-# namespace-utils
-namespace-utils
 
 # qemu-kvm-ev
 qemu-kvm-ev
 qemu-img-ev
 qemu-kvm-tools-ev
 
-# nfscheck
-nfscheck
 
 # libvirt
 libvirt
@@ -31,8 +27,6 @@ libvirt-daemon-driver-qemu
 libvirt-daemon-driver-lxc
 libvirt-client
 
-# python-cephclient
-python-cephclient
 
 # python-ryu
 python2-ryu
@@ -44,20 +38,14 @@ python-smartpm
 # lldpd
 lldpd
 
-# pci-irq-affinity-agent
-pci-irq-affinity-agent
 
 # mlx4-config
 mlx4-config
 
-# wrs-ssl
-wrs-ssl
 
 # tss2
 tss2
 
-# tpm2-openssl-engine
-tpm2-openssl-engine
 
 # libtpms
 libtpms
@@ -67,8 +55,6 @@ swtpm
 swtpm-cuse
 swtpm-tools
 
-# tis-extensions
-tis-extensions
 
 # python-3parclient
 python-3parclient
@@ -88,8 +74,6 @@ docker-distribution
 # helm
 helm
 
-# logmgmt
-logmgmt
 
 # filesystem-scripts
 filesystem-scripts
@@ -97,12 +81,7 @@ filesystem-scripts
 # io-scheduler
 io-scheduler
 
-# collector
-collector
 
-# platform-util
-platform-util
-platform-util-noncontroller
 
 # monitor-tools
 monitor-tools
@@ -163,8 +142,6 @@ drbd-pacemaker
 drbd-heartbeat
 drbd-bash-completion
 
-# build-info
-build-info
 
 # initscripts
 initscripts
@@ -327,8 +304,6 @@ rdma-core
 mlnx-ofa_kernel-modules
 mlnx-ofa_kernel-rt-modules
 
-# update-motd
-update-motd
 
 # python2-ruamel-yaml
 python2-ruamel-yaml
