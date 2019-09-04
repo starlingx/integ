@@ -37,8 +37,6 @@ python-smartpm
 lldpd
 
 
-# mlx4-config
-mlx4-config
 
 
 # tss2
@@ -69,11 +67,7 @@ docker-distribution
 helm
 
 
-# filesystem-scripts
-filesystem-scripts
 
-# io-scheduler
-io-scheduler
 
 
 
@@ -137,31 +131,24 @@ drbd-bash-completion
 
 # initscripts
 initscripts
-initscripts-config
 
 # setup
 setup
-setup-config
 
 # nss-pam-ldapd
 nss-pam-ldapd
 
-# centos-release-config
-centos-release-config
 
 # nfs-utils series package
-nfs-utils-config
 
 # dhcp
 dhcp
 dhclient
-dhcp-config
 
 # openssh
 openssh
 openssh-clients
 openssh-server
-openssh-config
 
 # facter
 facter
@@ -177,14 +164,12 @@ python2-libvirt
 
 # lighttpd
 lighttpd
-lighttpd-config
 lighttpd-fastcgi
 lighttpd-mod_geoip
 lighttpd-mod_mysql_vhost
 
 # logrotate
 logrotate
-logrotate-config
 
 # novnc
 novnc
@@ -193,29 +178,19 @@ novnc
 sudo
 
 # config files
-sudo-config
-shadow-utils-config
-ntp-config
-syslog-ng-config
-rsync-config
-pam-config
-docker-config
 
 # net-snmp
 net-snmp-utils
 net-snmp-libs
 net-snmp-python
-net-snmp-config
 
 # openldap
 openldap
-openldap-config
 openldap-servers
 openldap-clients
 
 # openvswitch
 openvswitch
-openvswitch-config
 
 # libevent
 libevent
@@ -224,7 +199,6 @@ libevent
 tpm2-tools
 
 # audit
-audit-config
 
 # kernel
 kernel
@@ -238,14 +212,12 @@ puppet
 
 # systemd
 systemd
-systemd-config
 
 # tboot
 tboot
 
 # memcached
 memcached
-memcached-custom
 
 # kubernetes
 kubernetes
@@ -260,13 +232,9 @@ resource-agents
 
 # haproxy
 haproxy
-haproxy-config
 
-# iscsi-initiator-utils-config
-iscsi-initiator-utils-config
 
 # iptables
-iptables-config
 
 # python-psycopg2
 python-psycopg2
@@ -274,7 +242,6 @@ python-psycopg2
 # dnsmasq
 dnsmasq
 dnsmasq-utils
-dnsmasq-config
 
 # parted
 parted
@@ -300,8 +267,6 @@ mlnx-ofa_kernel-rt-modules
 # python2-ruamel-yaml
 python2-ruamel-yaml
 
-# util-linux-config
-util-linux-config
 
 # redfish tool
 Redfishtool
