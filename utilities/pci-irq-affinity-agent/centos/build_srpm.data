@@ -1,3 +1,0 @@
-SRC_DIR="pci_irq_affinity"
-COPY_LIST_TO_TAR="files/*"
-TIS_PATCH_VER=1

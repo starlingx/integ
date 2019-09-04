@@ -1,2 +1,0 @@
-COPY_LIST="$PKG_BASE/files/* $PKG_BASE/LICENSE $PKG_BASE/server-csr.conf"
-TIS_PATCH_VER=13

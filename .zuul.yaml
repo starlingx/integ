@@ -160,21 +160,6 @@
 
 # Try this as a tox-based job with a minimal functional target in tox.ini
 - job:
-    name: flock-devstack-integ
-    parent: flock-devstack-tox-base-min
-    timeout: 7800
-    required-projects:
-      - starlingx/update
-    vars:
-      tox_envlist: functional
-      devstack_services:
-        # StarlingX services
-        platform-util: true
-      devstack_plugins:
-        integ: https://opendev.org/starlingx/integ
-        update: https://opendev.org/starlingx/update
-
-- job:
     name: stx-integ-pylint
     parent: openstack-tox-pylint
     required-projects:

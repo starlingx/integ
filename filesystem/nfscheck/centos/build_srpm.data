@@ -1,2 +1,0 @@
-COPY_LIST="LICENSE files/*"
-TIS_PATCH_VER=0
