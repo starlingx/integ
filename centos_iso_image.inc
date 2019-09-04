@@ -288,8 +288,6 @@ kubernetes-client
 # resource-agents
 resource-agents
 
-# bash
-bash
 
 # haproxy
 haproxy

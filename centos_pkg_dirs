@@ -14,7 +14,6 @@ config/facter
 virt/qemu
 filesystem/nfscheck
 utilities/update-motd
-python/python-2.7.5
 python/python-setuptools
 virt/libvirt
 virt/libvirt-python
@@ -116,12 +115,10 @@ kernel/kernel-modules/qat17
 kernel/kernel-modules/tpmdd
 kernel/kernel-modules/integrity
 kernel/kernel-modules/drbd
-base/rpm
 base/dpkg
 base/cgcs-users
 base/cluster-resource-agents
 base/libfdt
-base/bash
 base/haproxy
 base/haproxy-config
 filesystem/iscsi-initiator-utils-config
@@ -132,8 +129,6 @@ database/mariadb
 database/python-psycopg2
 base/dnsmasq
 base/dnsmasq-config
-base/golang
-base/golang-dep
 filesystem/parted
 security/python-keyring
 grub/grub2
