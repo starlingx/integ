@@ -1,6 +1,6 @@
 Summary: A utility belt for advanced users of python-requests
 Name: requests-toolbelt
-Version: 0.5.1
+Version: 0.9.1
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 License: Apache-2.0
 Group: base
