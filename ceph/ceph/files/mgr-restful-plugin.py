@@ -792,12 +792,27 @@ class ServiceMonitor(object):
         path = tempfile.mkdtemp()
         try:
             try:
-                subprocess.check_call([
-                    '/usr/bin/openssl', 'req', '-new', '-nodes', '-x509',
-                    '-subj', '/O=IT/CN=ceph-restful', '-days', '3650',
-                    '-out', os.path.join(path, 'crt'),
-                    '-keyout', os.path.join(path, 'key'),
-                    '-extensions', 'v3_ca'])
+                with tempfile.NamedTemporaryFile() as restful_cnf:
+                    restful_cnf.write((
+                        '[req]\n'
+                        'req_extensions = v3_ca\n'
+                        'distinguished_name = req_distinguished_name\n'
+                        '[v3_ca]\n'
+                        'subjectAltName=DNS:{}\n'
+                        'basicConstraints = CA:true\n'
+                        '[ req_distinguished_name ]\n'
+                        '0.organizationName = IT\n'
+                        'commonName = ceph-restful\n').format(
+                            CONFIG.ceph_mgr_identity))
+                    restful_cnf.flush()
+                    subprocess.check_call([
+                        '/usr/bin/openssl', 'req', '-new', '-nodes', '-x509',
+                        '-subj', '/O=IT/CN=' + CONFIG.ceph_mgr_identity,
+                        '-days', '3650',
+                        '-config', restful_cnf.name,
+                        '-out', os.path.join(path, 'crt'),
+                        '-keyout', os.path.join(path, 'key'),
+                        '-extensions', 'v3_ca'])
             except subprocess.CalledProcessError as err:
                 raise CommandFailed(
                     command=' '.join(err.cmd),
