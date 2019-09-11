@@ -73,6 +73,7 @@ class Config(object):
         self.log_dir = '/var/log'
 
         self.ceph_mgr_service = '/usr/bin/ceph-mgr'
+        self.ceph_mgr_config = '/etc/ceph/ceph.conf'
         self.ceph_mgr_cluster = 'ceph'
         self.ceph_mgr_rundir = '/var/run/ceph/mgr'
         self.ceph_mgr_confdir = '/var/lib/ceph/mgr'
@@ -700,6 +701,7 @@ class ServiceMonitor(object):
                 self.ceph_mgr = psutil.Popen(
                     [CONFIG.ceph_mgr_service,
                      '--cluster', CONFIG.ceph_mgr_cluster,
+                     '--conf', CONFIG.ceph_mgr_config,
                      '--id', CONFIG.ceph_mgr_identity,
                      '-f'],
                     close_fds=True,
