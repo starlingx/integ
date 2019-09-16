@@ -108,6 +108,10 @@ kmod-integrity-rt
 kmod-drbd
 kmod-drbd-rt
 
+# opae-intel-fpga-driver
+kmod-opae-fpga-driver
+kmod-opae-fpga-driver-rt
+
 # rpm
 rpm-plugin-systemd-inhibit
 

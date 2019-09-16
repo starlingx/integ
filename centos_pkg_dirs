@@ -73,6 +73,7 @@ kernel/kernel-modules/qat17
 kernel/kernel-modules/tpmdd
 kernel/kernel-modules/integrity
 kernel/kernel-modules/drbd
+kernel/kernel-modules/intel-opae-fpga
 base/dpkg
 base/cgcs-users
 base/cluster-resource-agents
