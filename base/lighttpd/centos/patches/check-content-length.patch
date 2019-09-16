@@ -5,24 +5,22 @@ Subject: [PATCH] check-length
 
 Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
- src/request.c | 47 ++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 46 insertions(+), 1 deletion(-)
+ src/request.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
 
 diff --git a/src/request.c b/src/request.c
-index 213a87e..8c97f45 100644
+index d25e1e7..fe541a5 100644
 --- a/src/request.c
 +++ b/src/request.c
-@@ -9,11 +9,40 @@
+@@ -8,9 +8,38 @@
+ #include "log.h"
  #include "sock_addr.h"
  
- #include <sys/stat.h>
--
-+#include <sys/statvfs.h>
++#include <errno.h>
  #include <limits.h>
  #include <stdlib.h>
  #include <string.h>
- #include <sys-strings.h>
-+#include <errno.h>
++#include <sys/statvfs.h>
 +
 +static size_t get_tempdirs_free_space(server *srv)
 +{
@@ -43,20 +41,19 @@ index 213a87e..8c97f45 100644
 +		}
 +		else {
 +			log_error_write(srv, __FILE__, __LINE__, "ssss",
-+					"dir:", name,
-+					"error:", strerror(errno));
++						"dir:", name,
++						"error:", strerror(errno));
 +		}
 +	}
 +
 +	return (valid) ? total : SSIZE_MAX;
 +}
-+
  
  static int request_check_hostname(buffer *host) {
  	enum { DOMAINLABEL, TOPLABEL } stage = TOPLABEL;
-@@ -1176,6 +1205,22 @@ int http_request_parse(server *srv, connection *con) {
- 			con->http_status = 411;
- 			goto failure;
+@@ -901,6 +930,22 @@ int http_request_parse(server *srv, connection *con, buffer *hdrs) {
+ 		if (!state.con_length_set) {
+ 			return http_request_header_line_invalid(srv, 411, "POST-request, but content-length missing -> 411");
  		}
 +		/* content-length is larger than 64k */
 +		if (con->request.content_length > 64*1024) {
@@ -66,17 +63,17 @@ index 213a87e..8c97f45 100644
 +				con->keep_alive = 0;
 +
 +				log_error_write(srv, __FILE__, __LINE__, "ssosos",
-+                                        "not enough free space in tempdirs:",
-+                                        "length =", (off_t) con->request.content_length,
-+                                        "free =", (off_t) disk_free,
-+                                        "-> 413");
-+                                return 0;
-+                        }
-+                }
++						"not enough free space in tempdirs:",
++						"length =", (off_t) con->request.content_length,
++						"free =", (off_t) disk_free,
++						"-> 413");
++				return 0;
++			}
++		}
 +
  		break;
  	default:
  		break;
 -- 
-2.7.4
+2.21.0
 
