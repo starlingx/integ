@@ -23,16 +23,16 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.15.3
+%global commit                  1.16.0
 
 %global con_provider            github
 %global con_provider_tld        com
 %global con_project             kubernetes
 %global con_repo                kubernetes-contrib
 # https://github.com/kubernetes/contrib
-%global con_commit              1.15.3
+%global con_commit              1.16.0
 
-%global kube_version            1.15.3
+%global kube_version            1.16.0
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -939,7 +939,7 @@ install -m 0644 -t %{buildroot}%{_unitdir} contrib/init/systemd/*.service
 # install manpages
 install -d %{buildroot}%{_mandir}/man1
 install -p -m 644 docs/man/man1/* %{buildroot}%{_mandir}/man1
-rm %{buildroot}%{_mandir}/man1/cloud-controller-manager.*
+rm -Rf %{buildroot}%{_mandir}/man1/cloud-controller-manager.*
 # from k8s tarball copied docs/man/man1/*.1
 
 # install the place the kubelet defaults to put volumes
