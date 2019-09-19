@@ -273,3 +273,8 @@ Redfishtool
 
 # kvm-timer-advance (AIO and worker nodes only)
 kvm-timer-advance
+
+# aws packages for interacting with amazon aws registry
+# botocore is an unspecified requirement of boto3
+python2-botocore
+python-boto3
