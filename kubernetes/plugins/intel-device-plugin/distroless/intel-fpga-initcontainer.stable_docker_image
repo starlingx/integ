@@ -1,7 +1,7 @@
 BUILDER=script
-LABEL=intel-gpu-plugin
+LABEL=intel-fpga-initcontainer
 SOURCE_REPO=https://github.com/intel/intel-device-plugins-for-kubernetes.git
 SOURCE_REF=4f28657b6b4a37a7ed2e8398808c150eb4f1bdd1
 COMMAND=bash
 SCRIPT=build-intel-device-plugins-image.sh
-ARGS=intel-gpu-plugin
+ARGS=intel-fpga-initcontainer
