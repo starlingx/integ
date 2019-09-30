@@ -1,0 +1,25 @@
+From a45766732beaa475d48907824666e501bacc69db Mon Sep 17 00:00:00 2001
+From: Teresa Ho <teresa.ho@windriver.com>
+Date: Wed, 25 Sep 2019 15:56:36 -0400
+Subject: [PATCH 1/1] Patch14: ifup-alias-check-ipaddr
+
+---
+ sysconfig/network-scripts/ifup-aliases | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sysconfig/network-scripts/ifup-aliases b/sysconfig/network-scripts/ifup-aliases
+index 9086763..40454ed 100755
+--- a/sysconfig/network-scripts/ifup-aliases
++++ b/sysconfig/network-scripts/ifup-aliases
+@@ -175,7 +175,7 @@ function new_interface ()
+         ipseen_${IPGLOP}=$FILE; devseen_${DEVNUM}=$FILE;
+     ";
+ 
+-    if [ -n "$ipseen" ]; then
++    if [ -n "$IPADDR" -a -n "$ipseen" ]; then
+         net_log $"error in $FILE: already seen ipaddr $IPADDR in $ipseen"
+         return 1
+     fi
+-- 
+1.8.3.1
+
