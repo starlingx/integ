@@ -23,7 +23,7 @@
 %global system_name     etcd
 
 Name:		etcd
-Version:	3.2.24
+Version:	3.3.15
 Release:        1%{?_tis_dist}.%{tis_patch_ver}
 Summary:	A highly-available key value store for shared configuration
 License:	ASL 2.0
@@ -31,8 +31,6 @@ URL:		https://%{provider_prefix}
 Source0:        %{name}-v%{version}.tar.gz
 Source1:	%{system_name}.service
 Source2:	%{system_name}.conf
-Patch3:         bz1350875-disaster-recovery-with-copies.patch
-Patch4:         expand-etcd-arch-validation.patch
 
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
 ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:x86_64 aarch64 ppc64le s390x}
@@ -59,10 +57,7 @@ A highly-available key value store for shared configuration.
 
 # move content of vendor under Godeps as has been so far
 mkdir -p Godeps/_workspace/src
-mv cmd/vendor/* Godeps/_workspace/src/.
-
-%patch3 -p1
-%patch4 -p1
+mv vendor/* Godeps/_workspace/src/.
 
 %build
 mkdir -p src/github.com/coreos
