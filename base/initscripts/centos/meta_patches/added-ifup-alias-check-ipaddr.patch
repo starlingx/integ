@@ -1,0 +1,32 @@
+From 7f65521a9cee14ecd136f4caf44409b2acc86bdd Mon Sep 17 00:00:00 2001
+From: Teresa Ho <teresa.ho@windriver.com>
+Date: Wed, 25 Sep 2019 16:19:26 -0400
+Subject: [PATCH 1/1] Added ifup-alias-check-ipaddr.patch
+
+---
+ SPECS/initscripts.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
+index fc7115c..9309d03 100644
+--- a/SPECS/initscripts.spec
++++ b/SPECS/initscripts.spec
+@@ -49,6 +49,7 @@ Patch10: ipv6-static-route-support.patch
+ Patch11: ifup-eth-stop-waiting-if-link-is-up.patch
+ Patch12: run-dhclient-as-daemon-for-ipv6.patch
+ Patch13: ifup-alias-scope.patch
++Patch14: ifup-alias-check-ipaddr.patch
+ 
+ %description
+ The initscripts package contains basic system scripts used
+@@ -82,6 +83,7 @@ Currently, this consists of various memory checking code.
+ %patch11 -p1
+ %patch12 -p1
+ %patch13 -p1
++%patch14 -p1
+ 
+ %build
+ make
+-- 
+1.8.3.1
+
