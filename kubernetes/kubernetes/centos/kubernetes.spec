@@ -60,8 +60,8 @@ Obsoletes:      cadvisor
 
 # kubernetes is decomposed into master and node subpackages
 # require both of them for updates
-Requires: kubernetes-master = %{version}-%{release}
-Requires: kubernetes-node = %{version}-%{release}
+Requires: kubernetes-master
+Requires: kubernetes-node
 
 %description
 %{summary}
@@ -781,11 +781,7 @@ BuildRequires: go-md2man
 BuildRequires: go-bindata
 
 Requires(pre): shadow-utils
-Requires: kubernetes-client = %{version}-%{release}
-
-# if node is installed with node, version and release must be the same
-Conflicts: kubernetes-node < %{version}-%{release}
-Conflicts: kubernetes-node > %{version}-%{release}
+Requires: kubernetes-client
 
 %description master
 Kubernetes services for master host
@@ -810,11 +806,7 @@ BuildRequires: go-bindata
 
 Requires(pre): shadow-utils
 Requires:      socat
-Requires:      kubernetes-client = %{version}-%{release}
-
-# if master is installed with node, version and release must be the same
-Conflicts: kubernetes-master < %{version}-%{release}
-Conflicts: kubernetes-master > %{version}-%{release}
+Requires:      kubernetes-client
 
 %description node
 Kubernetes services for node host
@@ -822,7 +814,7 @@ Kubernetes services for node host
 ##############################################
 %package  kubeadm
 Summary:  Kubernetes tool for standing up clusters
-Requires: kubernetes-node = %{version}-%{release}
+Requires: kubernetes-client
 Requires: containernetworking-cni
 
 %description kubeadm
@@ -1023,7 +1015,6 @@ fi
 %attr(754, -, kube) %caps(cap_net_bind_service=ep) %{_bindir}/kube-apiserver
 %{_bindir}/kube-controller-manager
 %{_bindir}/kube-scheduler
-%{_bindir}/hyperkube
 %{_unitdir}/kube-apiserver.service
 %{_unitdir}/kube-controller-manager.service
 %{_unitdir}/kube-scheduler.service
@@ -1044,7 +1035,6 @@ fi
 %{_bindir}/kubelet
 %{_bindir}/kubelet-cgroup-setup.sh
 %{_bindir}/kube-proxy
-%{_bindir}/hyperkube
 %{_unitdir}/kube-proxy.service
 %{_unitdir}/kubelet.service
 %dir %{_sharedstatedir}/kubelet
