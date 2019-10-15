@@ -1,0 +1,7 @@
+BUILDER=script
+LABEL=intel-qat-plugin
+SOURCE_REPO=https://github.com/intel/intel-device-plugins-for-kubernetes.git
+SOURCE_REF=c48c502d002ee5e03bbd8fa02884730da3cdff11
+COMMAND=bash
+SCRIPT=build-intel-device-plugins-image.sh
+ARGS=intel-qat-plugin
