@@ -23,16 +23,16 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.16.0
+%global commit                  1.16.2
 
 %global con_provider            github
 %global con_provider_tld        com
 %global con_project             kubernetes
 %global con_repo                kubernetes-contrib
 # https://github.com/kubernetes/contrib
-%global con_commit              1.16.0
+%global con_commit              1.16.2
 
-%global kube_version            1.16.0
+%global kube_version            1.16.2
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -761,7 +761,7 @@ building other packages which use %{project}/%{repo}.
 Summary: %{summary} - for running unit tests
 
 # below Rs used for testing
-Requires: golang >= 1.12.9
+Requires: golang >= 1.12.10
 Requires: etcd >= 2.0.9
 Requires: hostname
 Requires: rsync
@@ -774,7 +774,7 @@ Requires: NetworkManager
 %package master
 Summary: Kubernetes services for master host
 
-BuildRequires: golang >= 1.12.9
+BuildRequires: golang >= 1.12.10
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -798,7 +798,7 @@ Requires: docker-ce
 %endif
 Requires: conntrack-tools
 
-BuildRequires: golang >=  1.10.2
+BuildRequires: golang >=  1.12.10
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -824,7 +824,7 @@ Kubernetes tool for standing up clusters
 %package client
 Summary: Kubernetes client tools
 
-BuildRequires: golang >= 1.2-7
+BuildRequires: golang >= 1.12.10
 BuildRequires: go-bindata
 
 %description client
