@@ -1,20 +1,21 @@
-From b214efb6da29931971e09112cd70981b3105c96a Mon Sep 17 00:00:00 2001
-From: Andy Ning <andy.ning@windriver.com>
-Date: Fri, 26 Jul 2019 17:28:29 -0400
+From ac1266693665ff6a266e1123109c23a6adbb399b Mon Sep 17 00:00:00 2001
+From: Al Bailey <Al.Bailey@windriver.com>
+Date: Thu, 24 Oct 2019 11:53:01 -0500
 Subject: [PATCH] Change group,passwd,and uidgid
 
 Signed-off-by: Andy Ning <andy.ning@windriver.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
 ---
- group  | 21 +++++++++++----------
- passwd | 18 ++++++++++--------
- uidgid |  9 +++++----
- 3 files changed, 26 insertions(+), 22 deletions(-)
+ group  | 22 ++++++++++++----------
+ passwd | 19 +++++++++++--------
+ uidgid | 10 ++++++----
+ 3 files changed, 29 insertions(+), 22 deletions(-)
 
 diff --git a/group b/group
-index 2753bd8..7cebae9 100644
+index 2753bd8..74174c3 100644
 --- a/group
 +++ b/group
-@@ -1,24 +1,25 @@
+@@ -1,24 +1,26 @@
  root::0:
 -bin::1:
 -daemon::2:
@@ -41,6 +42,7 @@ index 2753bd8..7cebae9 100644
  users::100:
 +postgres:x:120:
 +nova:x:162:nova
++barbican:x:978:barbican
 +keystone:x:42424:keystone
 +neutron:x:164:neutron
 +ceilometer:x:166:ceilometer
@@ -51,10 +53,10 @@ index 2753bd8..7cebae9 100644
 +ironic:x:1874:ironic
 +www:x:1877:www
 diff --git a/passwd b/passwd
-index 6c6a8eb..23014d9 100644
+index 6c6a8eb..b478fc3 100644
 --- a/passwd
 +++ b/passwd
-@@ -1,13 +1,15 @@
+@@ -1,13 +1,16 @@
  root:*:0:0:root:/root:/bin/bash
 -bin:*:1:1:bin:/bin:/sbin/nologin
 -daemon:*:2:2:daemon:/sbin:/sbin/nologin
@@ -73,22 +75,24 @@ index 6c6a8eb..23014d9 100644
 +sysinv:x:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
 +snmpd:x:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
 +fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
++barbican:x:982:978:Barbican Key Manager user account.:/var/lib/barbican:/sbin/nologin
 +ceilometer:x:991:166:OpenStack ceilometer Daemons:/var/lib/ceilometer:/sbin/nologin
 +keystone:x:42424:42424:OpenStack Keystone Daemons:/var/lib/keystone:/sbin/nologin
 +nova:x:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
 +ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
 +www:x:1877:1877:www:/home/www:/sbin/nologin
 diff --git a/uidgid b/uidgid
-index c6bbd4b..20433a7 100644
+index c6bbd4b..714ba2a 100644
 --- a/uidgid
 +++ b/uidgid
-@@ -127,13 +127,13 @@ stapusr	-	156	/		-	systemtap-runtime
+@@ -127,13 +127,14 @@ stapusr	-	156	/		-	systemtap-runtime
  stapsys	-	157	/		-	systemtap-runtime
  stapdev	-	158	/		-	systemtap-runtime
  swift	160	160	/var/lib/swift		/sbin/nologin	openstack-swift
 -glance	161	161	/var/lib/glance		/sbin/nologin	openstack-glance
  nova	162	162	/var/lib/nova		/sbin/nologin	openstack-nova
 -keystone	163	163	/var/lib/keystone		/sbin/nologin	openstack-keystone
++barbican	982	978	/var/lib/barbican		/sbin/nologin	openstack-barbican
 +keystone	42424	42424	/var/lib/keystone		/sbin/nologin	openstack-keystone
  quantum	164	164	/var/lib/quantum		/sbin/nologin	openstack-quantum
 -cinder	165	165	/var/lib/cinder		/sbin/nologin	openstack-cinder
@@ -99,7 +103,7 @@ index c6bbd4b..20433a7 100644
  avahi-autoipd	170	170	/var/lib/avahi-autoipd		/sbin/nologin	avahi
  pulse	171	171	/var/run/pulse		/sbin/nologin	pulseaudio
  rtkit	172	172	/proc		/sbin/nologin	rtkit
-@@ -152,7 +152,6 @@ mongodb	184	184	/var/lib/mongodb		/sbin/nologin	mongodb
+@@ -152,7 +153,6 @@ mongodb	184	184	/var/lib/mongodb		/sbin/nologin	mongodb
  jboss	185	185	/var/lib/jbossas		/sbin/nologin	jbossas-core	#was jboss-as and wildfly
  jbosson-agent	186	-	/		/sbin/nologin	jboss-on-agent
  jbosson	-	186	-		-	jboss-on-agent
@@ -107,7 +111,7 @@ index c6bbd4b..20433a7 100644
  haproxy	188	188	/var/lib/haproxy		/sbin/nologin	haproxy
  hacluster	189	-	/		/sbin/nologin	pacemaker
  haclient	-	189	-		-	pacemaker
-@@ -163,6 +162,8 @@ systemd-network	192	192	/		/sbin/nologin	systemd
+@@ -163,6 +163,8 @@ systemd-network	192	192	/		/sbin/nologin	systemd
  systemd-resolve	193	193	/		/sbin/nologin	systemd
  gnats	?	?	?		?	gnats, gnats-db
  listar	?	?	?		?	listar
