@@ -8,7 +8,7 @@
 %define kmod_name i40e
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 2.7.29
+Version: 2.10.19.30
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
@@ -25,7 +25,6 @@ Source11: modules-load.conf
 
 Patch01: i40e-Enable-getting-link-status-from-VF.patch
 Patch02: i40e-add-more-debug-info-for-VFs-still-in-reset.patch
-Patch03: ndo_get_vf_config-poll-for-out-of-vf-reset.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
