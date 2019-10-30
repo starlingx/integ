@@ -1,4 +1,4 @@
 COPY_LIST="$CGCS_BASE/downloads/lldpd-0.9.0.tar.gz \
            $PKG_BASE/lldpd-0.9.0/* \
            $PKG_BASE/centos/files/*"
-TIS_PATCH_VER=4
+TIS_PATCH_VER=5

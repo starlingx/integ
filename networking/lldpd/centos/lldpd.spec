@@ -311,7 +311,7 @@ rm -rf $RPM_BUILD_ROOT
 %else
 %{_unitdir}/lldpd.service
 %endif
-%{_sysconfdir}/default/lldpd
+%config(noreplace) %{_sysconfdir}/default/lldpd
 %config(noreplace) %{_sysconfdir}/lldpd.conf
 %{_initrddir}/i40e-lldp-configure.sh
 
