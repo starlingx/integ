@@ -1,8 +1,9 @@
 From c2edea1ff347242a70075808652fa1ad4c86037a Mon Sep 17 00:00:00 2001
 From: Bin Qian <bin.qian@windriver.com>
 Date: Mon, 27 Nov 2017 08:35:11 -0500
-Subject: [PATCH 1/1] WRS: Patch1: 9000-tboot-for-tis.patch
+Subject: [PATCH 1/1] Patch1: 9000-tboot-for-tis.patch
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  tboot/20_linux_tboot     | 21 ++++++++++++---------
  tboot/20_linux_xen_tboot |  2 +-
@@ -19,11 +20,11 @@ index 816d50a..eed512d 100644
  libdir=${exec_prefix}/lib
  sysconfdir=/etc
 +
-+
 +tboot=`cat /proc/cmdline | xargs -n1 | grep '^tboot=true$'` || true
 +if [ -z "$tboot"  ]; then
 +  exit 0
 +fi
++
 +
  if test -e /usr/share/grub/grub-mkconfig_lib; then
    . /usr/share/grub/grub-mkconfig_lib
@@ -65,7 +66,7 @@ index 816d50a..eed512d 100644
 @@ -202,7 +207,6 @@ while [ "x${tboot_list}" != "x" ] && [ "x$linux_list" != "x" ] ; do
      rel_tboot_dirname=`make_system_path_relative_to_its_root $tboot_dirname`
  #    tboot_version=`echo $tboot_basename | sed -e "s,.gz$,,g;s,^tboot-,,g"`
-     tboot_version="1.9.6"
+     tboot_version="1.9.7"
 -    echo "submenu \"tboot ${tboot_version}\" {"
      while [ "x$list" != "x" ] ; do
  	linux=`version_find_latest $list`
@@ -140,7 +141,7 @@ index 9678b7c..5a16d81 100644
              return false;
  
          break;
-@@ -643,7 +647,7 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
+@@ -644,7 +648,7 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
      }
  
      hash_list_t hl;
@@ -149,7 +150,7 @@ index 9678b7c..5a16d81 100644
          printk(TBOOT_ERR"\t hash cannot be generated.\n");
          return TB_ERR_MODULE_VERIFICATION_FAILED;
      }
-@@ -667,6 +671,8 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
+@@ -668,6 +672,8 @@ static tb_error_t verify_module(module_t *module, tb_policy_entry_t *pol_entry,
      if ( pol_entry != NULL &&
           !is_hash_in_policy_entry(pol_entry, &hl.entries[0].hash, hash_alg) ) {
          printk(TBOOT_ERR"\t verification failed\n");
@@ -162,7 +163,7 @@ diff --git a/tboot/common/tpm_20.c b/tboot/common/tpm_20.c
 index b9b67c9..b7c5d62 100644
 --- a/tboot/common/tpm_20.c
 +++ b/tboot/common/tpm_20.c
-@@ -2096,7 +2096,7 @@ static bool tpm20_nv_read(struct tpm_if *ti, uint32_t locality,
+@@ -2299,7 +2299,7 @@ static bool tpm20_nv_read(struct tpm_if *ti, uint32_t locality,
  
      ret = _tpm20_nv_read(locality, &read_in, &read_out);
      if ( ret != TPM_RC_SUCCESS ) {
@@ -171,7 +172,7 @@ index b9b67c9..b7c5d62 100644
                  index, offset, ret);
          ti->error = ret;
          return false;
-@@ -2504,8 +2504,9 @@ static bool tpm20_init(struct tpm_if *ti)
+@@ -2712,8 +2712,9 @@ static bool tpm20_init(struct tpm_if *ti)
      get_tboot_extpol();
      if (info_list->capabilities.tpm_nv_index_set == 0){
          /* init NV index */
@@ -184,5 +185,5 @@ index b9b67c9..b7c5d62 100644
          ti->sgx_svn_index = 0x01800004;
      }
 -- 
-2.7.4
+1.8.3.1
 
