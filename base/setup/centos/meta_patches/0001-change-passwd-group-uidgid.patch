@@ -1,0 +1,37 @@
+From e3aba238a88f73392d832b5ae366466f783adce4 Mon Sep 17 00:00:00 2001
+From: zhipengl <zhipengs.liu@intel.com>
+Date: Sun, 18 Nov 2018 10:06:23 +0000
+Subject: [PATCH] 0001-patch-passwd-group.patch
+
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ SPECS/setup.spec | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/SPECS/setup.spec b/SPECS/setup.spec
+index 0bd1e98..a173b95 100644
+--- a/SPECS/setup.spec
++++ b/SPECS/setup.spec
+@@ -6,6 +6,9 @@ License: Public Domain
+ Group: System Environment/Base
+ URL: https://pagure.io/setup/
+ Source0: http://releases.pagure.org/%{name}/%{name}-%{version}.tar.bz2
++
++Patch1001: 0001-Change-group-passwd-and-uidgid.patch
++
+ BuildArch: noarch
+ BuildRequires: bash tcsh perl-interpreter
+ #require system release for saner dependency order
+@@ -19,6 +22,9 @@ setup files, such as passwd, group, and profile.
+ 
+ %prep
+ %setup -q
++
++%patch1001 -p1
++
+ ./shadowconvert.sh
+ 
+ %build
+-- 
+2.7.4
+
