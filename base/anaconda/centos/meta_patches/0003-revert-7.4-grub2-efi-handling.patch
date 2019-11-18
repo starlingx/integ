@@ -4,29 +4,21 @@ Date: Fri, 17 Nov 2017 12:08:27 -0500
 Subject: [PATCH] revert 7.4 grub2 efi handling
 
 ---
- SPECS/anaconda.spec | 2 ++
- 1 file changed, 2 insertions(+)
+ SPECS/anaconda.spec | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/anaconda.spec b/SPECS/anaconda.spec
-index 79e1c55..2e5ece9 100644
+index 41de025..0c22aa0 100644
 --- a/SPECS/anaconda.spec
 +++ b/SPECS/anaconda.spec
-@@ -26,6 +26,7 @@ Patch10: anaconda-centos-armhfp-extloader.patch
+@@ -17,6 +17,7 @@ Patch101: 0001-branding-syspurpose-doesn-t-make-sense-for-CentOS.patch
+ Patch102: 0002-add-centos-background-color.patch
  
- # WRS
  Patch10001: 0001-TIS-Progress-and-error-handling.patch
 +Patch10002: 0002-revert-7.4-grub2-efi-handling.patch
  
- # Versions of required components (done so we make sure the buildrequires
- # match the requires versions of things).
-@@ -255,6 +256,7 @@ runtime on NFS/HTTP/FTP servers or local disks.
- 
- # WRS
- %patch10001 -p1
-+%patch10002 -p1
- 
- %build
- %configure --disable-static \
+ # To generate Source0 do:
+ # git clone https://github.com/rhinstaller/anaconda
 -- 
-1.8.3.1
+2.7.4
 

@@ -21,7 +21,7 @@ index a80c6bb..8966258 100644
  ExecStart=/usr/bin/tmux -u -f /usr/share/anaconda/tmux.conf start
 diff --git a/scripts/anaconda-preexec b/scripts/anaconda-preexec
 new file mode 100644
-index 0000000..e3f79a4
+index 0000000..d491173
 --- /dev/null
 +++ b/scripts/anaconda-preexec
 @@ -0,0 +1,50 @@
@@ -76,5 +76,5 @@ index 0000000..e3f79a4
 +
 +exit 0
 -- 
-1.8.3.1
+2.7.4
 
