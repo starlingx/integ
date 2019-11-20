@@ -20,17 +20,19 @@ Signed-off-by: Nam Ninh <nam.ninh@windriver.com>
 
 Signed-off-by: Nam Ninh <nam.ninh@windriver.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+
 ---
- Documentation/Intel-IOMMU.txt       | 18 ++++++++++++++++++
- Documentation/kernel-parameters.txt |  5 +++++
- drivers/iommu/intel-iommu.c         | 19 +++++++++++++++++++
+ Documentation/Intel-IOMMU.txt                 | 18 ++++++++++++++++++
+ .../admin-guide/kernel-parameters.txt         |  5 +++++
+ drivers/iommu/intel-iommu.c                   | 19 +++++++++++++++++++
  3 files changed, 42 insertions(+)
 
 diff --git a/Documentation/Intel-IOMMU.txt b/Documentation/Intel-IOMMU.txt
-index cf9431d..1dcc349 100644
+index 9dae6b4..1080fcb 100644
 --- a/Documentation/Intel-IOMMU.txt
 +++ b/Documentation/Intel-IOMMU.txt
-@@ -32,6 +32,24 @@ regions will fail. Hence BIOS uses RMRR to specify these regions along with
+@@ -33,6 +33,24 @@ regions will fail. Hence BIOS uses RMRR to specify these regions along with
  devices that need to access these regions. OS is expected to setup
  unity mappings for these regions for these devices to access these regions.
  
@@ -39,7 +41,7 @@ index cf9431d..1dcc349 100644
 +
 +There are reports of BIOS out there that indicate RMRR regions for things
 +like ethernet devices.  As per mainline commit c875d2c1b8083 ("iommu/vt-d:
-+ Exclude devices using RMRRs from IOMMU API domains") such a device is
++Exclude devices using RMRRs from IOMMU API domains") such a device is
 +"fundamentally incompatible" with the IOMMU API and "we must prevent such
 +devices from being used by the IOMMU API."  However, in the event that
 +the RMRR indicated by the BIOS is assumed to be just a reporting error,
@@ -53,13 +55,13 @@ index cf9431d..1dcc349 100644
 +may result.
 +
  How is IOVA generated?
- ---------------------
+ ----------------------
  
-diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 2f7feb0..590c8c2 100644
---- a/Documentation/kernel-parameters.txt
-+++ b/Documentation/kernel-parameters.txt
-@@ -1315,6 +1315,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index 2f4a7ad..c11ebc3 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -1651,6 +1651,11 @@
  			than 32-bit addressing. The default is to look
  			for translation below 32-bit and if not available
  			then look in the higher range.
@@ -72,18 +74,18 @@ index 2f7feb0..590c8c2 100644
  			With this option on every unmap_single operation will
  			result in a hardware IOTLB flush operation as opposed
 diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index 260597e..6c16b68 100644
+index 7e9f1db..a28bafe 100644
 --- a/drivers/iommu/intel-iommu.c
 +++ b/drivers/iommu/intel-iommu.c
-@@ -480,6 +480,7 @@ static int dmar_forcedac;
+@@ -485,6 +485,7 @@ static int dmar_forcedac;
  static int intel_iommu_strict;
  static int intel_iommu_superpage = 1;
  static int intel_iommu_ecs = 1;
 +static int intel_iommu_ethrmrr = 1;
+ static int intel_iommu_pasid28;
+ static int iommu_identity_mapping;
  
- /* We only actually use ECS when PASID support (on the new bit 40)
-  * is also advertised. Some early implementations — the ones with
-@@ -539,6 +540,15 @@ static int __init intel_iommu_setup(char *str)
+@@ -569,6 +570,15 @@ static int __init intel_iommu_setup(char *str)
  		} else if (!strncmp(str, "forcedac", 8)) {
  			pr_info("Forcing DAC for PCI devices\n");
  			dmar_forcedac = 1;
@@ -99,7 +101,7 @@ index 260597e..6c16b68 100644
  		} else if (!strncmp(str, "strict", 6)) {
  			pr_info("Disable batched IOTLB flush\n");
  			intel_iommu_strict = 1;
-@@ -2820,6 +2830,15 @@ static bool device_is_rmrr_locked(struct device *dev)
+@@ -2917,6 +2927,15 @@ static bool device_is_rmrr_locked(struct device *dev)
  
  		if (IS_USB_DEVICE(pdev) || IS_GFX_DEVICE(pdev))
  			return false;
@@ -116,5 +118,5 @@ index 260597e..6c16b68 100644
  
  	return true;
 -- 
-1.8.3.1
+2.18.1
 

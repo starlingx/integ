@@ -10,12 +10,14 @@ Use quirks to determine isolation for now until a later kernel can
 properly read the Fortville ACS capabilities.
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+
 ---
  drivers/pci/quirks.c | 4 ++++
  1 file changed, 4 insertions(+)
 
 diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
-index 5614e3f..4a0bfed 100644
+index 3db73ce..45c4e4d 100644
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
 @@ -4401,6 +4401,10 @@ static const struct pci_dev_acs_enabled {
@@ -26,9 +28,9 @@ index 5614e3f..4a0bfed 100644
 +	{ PCI_VENDOR_ID_INTEL, 0x1572, pci_quirk_mf_endpoint_acs },
 +	{ PCI_VENDOR_ID_INTEL, 0x1586, pci_quirk_mf_endpoint_acs },
 +	{ PCI_VENDOR_ID_INTEL, 0x1583, pci_quirk_mf_endpoint_acs },
- 	/* Intel PCH root ports */
- 	{ PCI_VENDOR_ID_INTEL, PCI_ANY_ID, pci_quirk_intel_pch_acs },
- 	{ PCI_VENDOR_ID_INTEL, PCI_ANY_ID, pci_quirk_intel_spt_pch_acs },
+ 	/* QCOM QDF2xxx root ports */
+ 	{ PCI_VENDOR_ID_QCOM, 0x0400, pci_quirk_qcom_rp_acs },
+ 	{ PCI_VENDOR_ID_QCOM, 0x0401, pci_quirk_qcom_rp_acs },
 -- 
-1.8.3.1
+2.18.1
 

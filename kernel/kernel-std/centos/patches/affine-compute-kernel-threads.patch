@@ -29,23 +29,25 @@ Signed-off-by: Chris Friesen <chris.friesen@windriver.com>
 Signed-off-by: Vu Tran <vu.tran@windriver.com>
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
----
- Documentation/kernel-parameters.txt | 10 ++++++++++
- include/linux/cpumask.h             |  2 ++
- init/main.c                         |  6 ++----
- kernel/cpu.c                        | 13 +++++++++++++
- kernel/kmod.c                       |  3 +++
- kernel/kthread.c                    |  4 ++--
- 6 files changed, 32 insertions(+), 6 deletions(-)
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
 
-diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 1806170..2f7feb0 100644
---- a/Documentation/kernel-parameters.txt
-+++ b/Documentation/kernel-parameters.txt
-@@ -1551,6 +1551,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
- 
- 	kpti		[X86-64] Enable kernel page table isolation.
- 
+---
+ Documentation/admin-guide/kernel-parameters.txt |  9 +++++++++
+ include/linux/cpumask.h                         |  3 +++
+ init/main.c                                     |  2 ++
+ kernel/cpu.c                                    | 14 ++++++++++++++
+ kernel/kthread.c                                |  4 ++--
+ kernel/umh.c                                    |  3 +++
+ 6 files changed, 33 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index 3ff6f8d..2f4a7ad 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -1944,6 +1944,15 @@
+ 			Default: on
+ 			Built with CONFIG_DEBUG_KMEMLEAK_DEFAULT_OFF=y,
+ 			the default is off.
 +	kthread_cpus=	[KNL, SMP] Only run kernel threads on the specified
 +			list of processors. The kernel will start threads
 +			on the indicated processors only (unless there
@@ -55,15 +57,14 @@ index 1806170..2f7feb0 100644
 +			control where kmod and other user space threads
 +			are being spawned. Allows to keep kernel threads
 +			away from certain cores unless absoluteluy necessary.
-+
- 	kvm.ignore_msrs=[KVM] Ignore guest accesses to unhandled MSRs.
- 			Default is 0 (don't ignore, but inject #GP)
  
+	kpti=		[ARM64] Control page table isolation of user
+			and kernel address spaces.
 diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
-index 14b4972..37a6adf 100644
+index 57f20a0..4526034 100644
 --- a/include/linux/cpumask.h
 +++ b/include/linux/cpumask.h
-@@ -52,6 +52,7 @@ extern int nr_cpu_ids;
+@@ -54,6 +54,7 @@ extern unsigned int nr_cpu_ids;
   *     cpu_present_mask - has bit 'cpu' set iff cpu is populated
   *     cpu_online_mask  - has bit 'cpu' set iff cpu available to scheduler
   *     cpu_active_mask  - has bit 'cpu' set iff cpu available to migration
@@ -71,50 +72,52 @@ index 14b4972..37a6adf 100644
   *
   *  If !CONFIG_HOTPLUG_CPU, present == possible, and active == online.
   *
-@@ -88,6 +89,7 @@ extern const struct cpumask *const cpu_possible_mask;
- extern const struct cpumask *const cpu_online_mask;
- extern const struct cpumask *const cpu_present_mask;
- extern const struct cpumask *const cpu_active_mask;
-+extern const struct cpumask *const cpu_kthread_mask;
+@@ -90,10 +91,12 @@ extern struct cpumask __cpu_possible_mask;
+ extern struct cpumask __cpu_online_mask;
+ extern struct cpumask __cpu_present_mask;
+ extern struct cpumask __cpu_active_mask;
++extern struct cpumask __cpu_kthread_mask;
+ #define cpu_possible_mask ((const struct cpumask *)&__cpu_possible_mask)
+ #define cpu_online_mask   ((const struct cpumask *)&__cpu_online_mask)
+ #define cpu_present_mask  ((const struct cpumask *)&__cpu_present_mask)
+ #define cpu_active_mask   ((const struct cpumask *)&__cpu_active_mask)
++#define cpu_kthread_mask  ((const struct cpumask *)&__cpu_kthread_mask)
  
  #if NR_CPUS > 1
  #define num_online_cpus()	cpumask_weight(cpu_online_mask)
 diff --git a/init/main.c b/init/main.c
-index 085c9c5..089f83d 100644
+index 8cce5b1..0c5457a 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -959,10 +959,6 @@ static noinline void __init kernel_init_freeable(void)
- 	 * init can allocate pages on any node
- 	 */
- 	set_mems_allowed(node_states[N_MEMORY]);
--	/*
--	 * init can run on any cpu.
--	 */
--	set_cpus_allowed_ptr(current, cpu_all_mask);
- 
- 	cad_pid = task_pid(current);
- 
-@@ -978,6 +974,8 @@ static noinline void __init kernel_init_freeable(void)
+@@ -1135,6 +1135,8 @@ static noinline void __init kernel_init_freeable(void)
  
  	do_basic_setup();
  
 +	set_cpus_allowed_ptr(current, cpu_kthread_mask);
 +
  	/* Open the /dev/console on the rootfs, this should never fail */
- 	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
+ 	if (ksys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
  		pr_err("Warning: unable to open an initial console.\n");
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 0d9e250..6c156bd 100644
+index fb61ee6..4c7b343 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1012,6 +1012,19 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
- const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
- EXPORT_SYMBOL(cpu_active_mask);
+@@ -2218,6 +2218,9 @@ EXPORT_SYMBOL_GPL(cpu_bit_bitmap);
+ const DECLARE_BITMAP(cpu_all_bits, NR_CPUS) = CPU_BITS_ALL;
+ EXPORT_SYMBOL(cpu_all_bits);
  
-+static DECLARE_BITMAP(cpu_kthread_bits, CONFIG_NR_CPUS) __read_mostly
-+	= CPU_BITS_ALL;
-+const struct cpumask *const cpu_kthread_mask = to_cpumask(cpu_kthread_bits);
-+EXPORT_SYMBOL(cpu_kthread_mask);
++const DECLARE_BITMAP(cpu_kthread_bits, NR_CPUS) = CPU_BITS_ALL;
++EXPORT_SYMBOL(cpu_kthread_bits);
++
+ #ifdef CONFIG_INIT_ALL_POSSIBLE
+ struct cpumask __cpu_possible_mask __read_mostly
+ 	= {CPU_BITS_ALL};
+@@ -2235,6 +2238,17 @@ EXPORT_SYMBOL(__cpu_present_mask);
+ struct cpumask __cpu_active_mask __read_mostly;
+ EXPORT_SYMBOL(__cpu_active_mask);
+ 
++struct cpumask __cpu_kthread_mask __read_mostly;
++EXPORT_SYMBOL(__cpu_kthread_mask);
 +
 +static int __init kthread_setup(char *str)
 +{
@@ -124,37 +127,23 @@ index 0d9e250..6c156bd 100644
 +__setup("kthread_cpus=", kthread_setup);
 +
 +
- void set_cpu_possible(unsigned int cpu, bool possible)
+ void init_cpu_present(const struct cpumask *src)
  {
- 	if (possible)
-diff --git a/kernel/kmod.c b/kernel/kmod.c
-index 86ab754..4bf584b 100644
---- a/kernel/kmod.c
-+++ b/kernel/kmod.c
-@@ -204,6 +204,9 @@ static int ____call_usermodehelper(void *data)
- 	flush_signal_handlers(current, 1);
- 	spin_unlock_irq(&current->sighand->siglock);
- 
-+	/* We can run only where init is allowed to run. */
-+	set_cpus_allowed_ptr(current, cpu_kthread_mask);
-+
- 	/*
- 	 * Our parent is keventd, which runs with elevated scheduling priority.
- 	 * Avoid propagating that into the userspace child.
+ 	cpumask_copy(&__cpu_present_mask, src);
 diff --git a/kernel/kthread.c b/kernel/kthread.c
-index 703d910..7ea32eb 100644
+index 486dedb..697ec70 100644
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
-@@ -284,7 +284,7 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
+@@ -338,7 +338,7 @@ struct task_struct *__kthread_create_on_node(int (*threadfn)(void *data),
  		 * The kernel thread should not inherit these properties.
  		 */
- 		sched_setscheduler_nocheck(create.result, SCHED_NORMAL, &param);
--		set_cpus_allowed_ptr(create.result, cpu_all_mask);
-+		set_cpus_allowed_ptr(create.result, cpu_kthread_mask);
+ 		sched_setscheduler_nocheck(task, SCHED_NORMAL, &param);
+-		set_cpus_allowed_ptr(task, cpu_all_mask);
++		set_cpus_allowed_ptr(task, cpu_kthread_mask);
  	}
- 	return create.result;
- }
-@@ -454,7 +454,7 @@ int kthreadd(void *unused)
+ 	kfree(create);
+ 	return task;
+@@ -561,7 +561,7 @@ int kthreadd(void *unused)
  	/* Setup a clean context for our children to inherit. */
  	set_task_comm(tsk, "kthreadd");
  	ignore_signals(tsk);
@@ -163,6 +152,20 @@ index 703d910..7ea32eb 100644
  	set_mems_allowed(node_states[N_MEMORY]);
  
  	current->flags |= PF_NOFREEZE;
+diff --git a/kernel/umh.c b/kernel/umh.c
+index c449858..90c3a60 100644
+--- a/kernel/umh.c
++++ b/kernel/umh.c
+@@ -72,6 +72,9 @@ static int call_usermodehelper_exec_async(void *data)
+ 	flush_signal_handlers(current, 1);
+ 	spin_unlock_irq(&current->sighand->siglock);
+ 
++	/* We can run only where init is allowed to run. */
++	set_cpus_allowed_ptr(current, cpu_kthread_mask);
++
+ 	/*
+ 	 * Our parent (unbound workqueue) runs with elevated scheduling
+ 	 * priority. Avoid propagating that into the userspace child.
 -- 
-1.8.3.1
+2.18.1
 

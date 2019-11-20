@@ -17,70 +17,42 @@ definitions on module deinit
 - modification to ima_file_check to pass in file OPEN status
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
----
- fs/namei.c                |   2 +-
- fs/nfsd/vfs.c             |   2 +-
- fs/xattr.c                |   1 +
- include/linux/fs.h        |  15 +------
- include/linux/ima.h       |  77 +++++++-------------------------
- include/linux/integrity.h |  22 ++++-----
- security/security.c       | 111 +++++++++++++++++++++++++++++++++++++++++++++-
- 7 files changed, 140 insertions(+), 90 deletions(-)
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 9f90b63..bf91ea0 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -3225,7 +3225,7 @@ opened:
- 	error = open_check_o_direct(file);
- 	if (error)
- 		goto exit_fput;
--	error = ima_file_check(file, op->acc_mode);
-+	error = ima_file_check(file, op->acc_mode, *opened);
- 	if (error)
- 		goto exit_fput;
- 
-diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
-index 00e98c3..cb9250e 100644
---- a/fs/nfsd/vfs.c
-+++ b/fs/nfsd/vfs.c
-@@ -898,7 +898,7 @@ nfsd_open(struct svc_rqst *rqstp, struct svc_fh *fhp, umode_t type,
- 		goto out_nfserr;
- 	}
- 
--	host_err = ima_file_check(file, may_flags);
-+	host_err = ima_file_check(file, may_flags, 0);
- 	if (host_err) {
- 		fput(file);
- 		goto out_nfserr;
+---
+ fs/xattr.c          |   1 +
+ include/linux/fs.h  |  15 +----
+ security/security.c | 137 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 140 insertions(+), 13 deletions(-)
+
 diff --git a/fs/xattr.c b/fs/xattr.c
-index e540aca..cc307ec 100644
+index 0d6a6a4..7ce4701 100644
 --- a/fs/xattr.c
 +++ b/fs/xattr.c
-@@ -207,6 +207,7 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
+@@ -295,6 +295,7 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
  	*xattr_value = value;
  	return error;
  }
 +EXPORT_SYMBOL_GPL(vfs_getxattr_alloc);
  
- /* Compare an extended attribute value with the given value */
- int vfs_xattr_cmp(struct dentry *dentry, const char *xattr_name,
+ ssize_t
+ __vfs_getxattr(struct dentry *dentry, struct inode *inode, const char *name,
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index eb6f994..2dbaf80 100644
+index c603897..118e7cd 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -677,9 +677,8 @@ struct inode {
- 			struct fsnotify_mark_connector __rcu *i_fsnotify_marks)
- #endif
- 
+@@ -669,9 +669,8 @@ struct inode {
+ 	atomic_t		i_count;
+ 	atomic_t		i_dio_count;
+ 	atomic_t		i_writecount;
 -#ifdef CONFIG_IMA
  	atomic_t		i_readcount; /* struct files open RO */
 -#endif
 +
- 	void			*i_private; /* fs or device private pointer */
- };
- 
-@@ -2830,7 +2829,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
+ 	const struct file_operations	*i_fop;	/* former ->i_op->default_file_ops */
+ 	struct file_lock_context	*i_flctx;
+ 	struct address_space	i_data;
+@@ -2867,7 +2866,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
  	return atomic_read(&inode->i_writecount) > 0;
  }
  
@@ -88,7 +60,7 @@ index eb6f994..2dbaf80 100644
  static inline void i_readcount_dec(struct inode *inode)
  {
  	BUG_ON(!atomic_read(&inode->i_readcount));
-@@ -2840,16 +2838,7 @@ static inline void i_readcount_inc(struct inode *inode)
+@@ -2877,16 +2875,7 @@ static inline void i_readcount_inc(struct inode *inode)
  {
  	atomic_inc(&inode->i_readcount);
  }
@@ -105,131 +77,12 @@ index eb6f994..2dbaf80 100644
 +
  extern int do_pipe_flags(int *, int);
  
- extern int kernel_read(struct file *, loff_t, char *, unsigned long);
-diff --git a/include/linux/ima.h b/include/linux/ima.h
-index 1b7f268..9fee45c 100644
---- a/include/linux/ima.h
-+++ b/include/linux/ima.h
-@@ -13,64 +13,21 @@
- #include <linux/fs.h>
- struct linux_binprm;
- 
--#ifdef CONFIG_IMA
--extern int ima_bprm_check(struct linux_binprm *bprm);
--extern int ima_file_check(struct file *file, int mask);
--extern void ima_file_free(struct file *file);
--extern int ima_file_mmap(struct file *file, unsigned long prot);
--extern int ima_module_check(struct file *file);
--
--#else
--static inline int ima_bprm_check(struct linux_binprm *bprm)
--{
--	return 0;
--}
--
--static inline int ima_file_check(struct file *file, int mask)
--{
--	return 0;
--}
--
--static inline void ima_file_free(struct file *file)
--{
--	return;
--}
--
--static inline int ima_file_mmap(struct file *file, unsigned long prot)
--{
--	return 0;
--}
--
--static inline int ima_module_check(struct file *file)
--{
--	return 0;
--}
--
--#endif /* CONFIG_IMA */
--
--#ifdef CONFIG_IMA_APPRAISE
--extern void ima_inode_post_setattr(struct dentry *dentry);
--extern int ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
-+/*
-+ * The IMA Kernel module has to redefine these symbols so that
-+ * the kernel module can link a dynamic function, as a hook into
-+ * the Kernel FS calls (which use these)
-+ */
-+/* ifdef CONFIG_IMA */
-+extern int (*ima_bprm_check)(struct linux_binprm *bprm);
-+extern int (*ima_file_check)(struct file *file, int mask, int opened);
-+extern void (*ima_file_free)(struct file *file);
-+extern int (*ima_file_mmap)(struct file *file, unsigned long prot);
-+extern int (*ima_module_check)(struct file *file);
-+
-+/* ifdef CONFIG_IMA_APPRAISE */
-+extern void (*ima_inode_post_setattr)(struct dentry *dentry);
-+extern int (*ima_inode_setxattr)(struct dentry *dentry, const char *xattr_name,
- 		       const void *xattr_value, size_t xattr_value_len);
--extern int ima_inode_removexattr(struct dentry *dentry, const char *xattr_name);
--#else
--static inline void ima_inode_post_setattr(struct dentry *dentry)
--{
--	return;
--}
--
--static inline int ima_inode_setxattr(struct dentry *dentry,
--				     const char *xattr_name,
--				     const void *xattr_value,
--				     size_t xattr_value_len)
--{
--	return 0;
--}
--
--static inline int ima_inode_removexattr(struct dentry *dentry,
--					const char *xattr_name)
--{
--	return 0;
--}
--#endif /* CONFIG_IMA_APPRAISE */
--#endif /* _LINUX_IMA_H */
-+extern int (*ima_inode_removexattr)(struct dentry *dentry, const char *xattr_name);
-+#endif
-diff --git a/include/linux/integrity.h b/include/linux/integrity.h
-index 83222ce..a5040b6 100644
---- a/include/linux/integrity.h
-+++ b/include/linux/integrity.h
-@@ -21,20 +21,14 @@ enum integrity_status {
- };
- 
- /* List of EVM protected security xattrs */
--#ifdef CONFIG_INTEGRITY
--extern struct integrity_iint_cache *integrity_inode_get(struct inode *inode);
--extern void integrity_inode_free(struct inode *inode);
-+/*
-+ * The Integrity Kernel module has to redefine these symbols so that
-+ * the kernel module can link a dynamic function, as a hook into
-+ * the Kernel Security subsystem (which use these)
-+ */
- 
--#else
--static inline struct integrity_iint_cache *
--				integrity_inode_get(struct inode *inode)
--{
--	return NULL;
--}
-+/* #ifdef CONFIG_INTEGRITY */
-+extern struct integrity_iint_cache *(*integrity_inode_get)(struct inode *inode);
-+extern void (*integrity_inode_free)(struct inode *inode);
- 
--static inline void integrity_inode_free(struct inode *inode)
--{
--	return;
--}
--#endif /* CONFIG_INTEGRITY */
- #endif /* _LINUX_INTEGRITY_H */
+ #define __kernel_read_file_id(id) \
 diff --git a/security/security.c b/security/security.c
-index f069482..646a0e3 100644
+index 5dce670..838a9ef 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -161,6 +161,110 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
+@@ -227,6 +227,143 @@ EXPORT_SYMBOL(unregister_lsm_notifier);
  
  /* Security operations */
  
@@ -250,13 +103,20 @@ index f069482..646a0e3 100644
 +    return;
 +}
 +
++static inline void integrity_load_keys_kmod(void)
++{
++}
++
 +struct integrity_iint_cache *
 +    (*integrity_inode_get)(struct inode *) = &integrity_inode_get_kmod;
 +void
 +    (*integrity_inode_free)(struct inode*) = &integrity_inode_free_kmod;
++void
++    (*integrity_load_keys)(void) = &integrity_load_keys_kmod;
 +
 +EXPORT_SYMBOL_GPL(integrity_inode_get);
 +EXPORT_SYMBOL_GPL(integrity_inode_free);
++EXPORT_SYMBOL_GPL(integrity_load_keys);
 +#endif
 +
 +#ifndef CONFIG_IMA
@@ -280,9 +140,20 @@ index f069482..646a0e3 100644
 +    return 0;
 +}
 +
-+static int ima_module_check_kmod(struct file *file)
++static int ima_read_file_kmod(struct file *file, enum kernel_read_file_id id)
 +{
 +    return 0;
++}
++
++static int ima_post_read_file_kmod(struct file *file, void *buf, loff_t size,
++				     enum kernel_read_file_id id)
++{
++    return 0;
++}
++
++static void ima_post_path_mknod_kmod(struct dentry *dentry)
++{
++    return;
 +}
 +
 +int
@@ -294,16 +165,28 @@ index f069482..646a0e3 100644
 +int
 +    (*ima_file_mmap)(struct file*, unsigned long) = &ima_file_mmap_kmod;
 +int
-+    (*ima_module_check)(struct file *) = &ima_module_check_kmod;
++    (*ima_read_file)(struct file *file, enum kernel_read_file_id id) = &ima_read_file_kmod;
++int
++    (*ima_post_read_file)(struct file *file, void *buf, loff_t size,
++			      enum kernel_read_file_id id) = &ima_post_read_file_kmod;
++void
++    (*ima_post_path_mknod)(struct dentry *dentry) = &ima_post_path_mknod_kmod;
 +
 +EXPORT_SYMBOL_GPL(ima_bprm_check);
 +EXPORT_SYMBOL_GPL(ima_file_check);
 +EXPORT_SYMBOL_GPL(ima_file_free);
 +EXPORT_SYMBOL_GPL(ima_file_mmap);
-+EXPORT_SYMBOL_GPL(ima_module_check);
++EXPORT_SYMBOL_GPL(ima_read_file);
++EXPORT_SYMBOL_GPL(ima_post_read_file);
++EXPORT_SYMBOL_GPL(ima_post_path_mknod);
 +#endif
 +
 +#ifndef CONFIG_IMA_APPRAISE
++static bool is_ima_appraise_enabled_kmod(void)
++{
++	return 0;
++}
++
 +static void ima_inode_post_setattr_kmod(struct dentry *dentry)
 +{
 +    return;
@@ -323,6 +206,8 @@ index f069482..646a0e3 100644
 +    return 0;
 +}
 +
++bool
++    (*is_ima_appraise_enabled)(void) = &is_ima_appraise_enabled_kmod;
 +void
 +    (*ima_inode_post_setattr)(struct dentry *) = &ima_inode_post_setattr_kmod;
 +int
@@ -332,43 +217,15 @@ index f069482..646a0e3 100644
 +    (*ima_inode_removexattr)(struct dentry *,
 +        const char *) = &ima_inode_removexattr_kmod;
 +
++EXPORT_SYMBOL_GPL(is_ima_appraise_enabled);
 +EXPORT_SYMBOL_GPL(ima_inode_post_setattr);
 +EXPORT_SYMBOL_GPL(ima_inode_setxattr);
 +EXPORT_SYMBOL_GPL(ima_inode_removexattr);
 +#endif
 +
- int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
+ int security_binder_set_context_mgr(struct task_struct *mgr)
  {
- #ifdef CONFIG_SECURITY_YAMA_STACKED
-@@ -720,8 +824,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
- 
- void security_inode_getsecid(struct inode *inode, u32 *secid)
- {
--	security_ops->inode_getsecid(inode, secid);
-+    if (unlikely(IS_PRIVATE(inode)))
-+        return;
-+    security_ops->inode_getsecid(inode, secid);
- }
-+EXPORT_SYMBOL_GPL(security_inode_getsecid);
- 
- int security_inode_copy_up(struct dentry *src, struct cred **new)
- {
-@@ -1530,6 +1637,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
- {
- 	return security_ops->audit_rule_init(field, op, rulestr, lsmrule);
- }
-+EXPORT_SYMBOL_GPL(security_audit_rule_init);
- 
- int security_audit_rule_known(struct audit_krule *krule)
- {
-@@ -1546,6 +1654,7 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
- {
- 	return security_ops->audit_rule_match(secid, field, op, lsmrule, actx);
- }
-+EXPORT_SYMBOL_GPL(security_audit_rule_match);
- 
- #endif /* CONFIG_AUDIT */
- 
+ 	return call_int_hook(binder_set_context_mgr, 0, mgr);
 -- 
-1.8.3.1
+2.18.1
 
