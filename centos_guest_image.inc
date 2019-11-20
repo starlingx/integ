@@ -10,8 +10,8 @@ perf
 # Network Drivers
 #
 
-# i40evf-kmod
-kmod-i40evf
+# iavf-kmod
+kmod-iavf
 
 # i40e-kmod
 kmod-i40e
