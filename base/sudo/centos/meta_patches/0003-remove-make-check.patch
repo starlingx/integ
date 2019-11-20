@@ -1,8 +1,13 @@
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ SPECS/sudo.spec | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
 diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index 8c3f395..17531f7 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
-@@ -135,7 +135,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
+@@ -127,7 +127,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
  make
  
  %check
@@ -11,7 +16,7 @@ index 8c3f395..17531f7 100644
 +# make check
  
  %install
- rm -rf %{buildroot}
+ rm -rf $RPM_BUILD_ROOT
 -- 
-2.7.4
+1.8.3.1
 
