@@ -8,10 +8,10 @@ Subject: add pxeboot package
  1 file changed, 12 insertions(+)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 5581deb..9ef91d6 100644
+index 0cbfa4e..60bb1b3 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -242,6 +242,13 @@ Summary:    Unsigned versions of GRUB EFI binaries                      \
+@@ -285,6 +285,13 @@ Summary:    Unsigned versions of GRUB EFI binaries                      \
  %description %{1}-unsigned                                              \
  This package contains unsigned version of GRUB EFI binaries.            \
                                                                          \
@@ -25,18 +25,18 @@ index 5581deb..9ef91d6 100644
  %{nil}
  
  %global do_common_setup()					\
-@@ -414,6 +421,7 @@ ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
+@@ -455,6 +462,7 @@ ln -sf ..%{efi_esp_dir}/grub.cfg				\\\
  	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
- install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}.unsigned \
- install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3}.unsigned \
+ install -m 700 %{2} $RPM_BUILD_ROOT%{efi_esp_dir}/%{2}.unsigned \
+ install -m 700 %{3} $RPM_BUILD_ROOT%{efi_esp_dir}/%{3}.unsigned \
 +install -D -m 755 %{2} $RPM_BUILD_ROOT/pxeboot/EFI/%{2}         \
- install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
- install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
+ install -m 700 %{2} $RPM_BUILD_ROOT%{efi_esp_dir}/%{2}		\
+ install -m 700 %{3} $RPM_BUILD_ROOT%{efi_esp_dir}/%{3}		\
  install -D -m 700 unicode.pf2					\\\
-@@ -505,4 +513,8 @@ cd ..								\
+@@ -561,4 +569,8 @@ touch ${RPM_BUILD_ROOT}/boot/%{name}/grub.cfg			\
  %{expand:%%files %{1}-unsigned}                                 \
- /boot/efi/EFI/%{efidir}/%{grubefiname}.unsigned                 \
- /boot/efi/EFI/%{efidir}/%{grubeficdname}.unsigned               \
+ %{efi_esp_dir}/%{grubefiname}.unsigned                          \
+ %{efi_esp_dir}/%{grubeficdname}.unsigned                        \
 +								\
 +%{expand:%%files %{1}-pxeboot}                                  \
 +/pxeboot/EFI/%{grubefiname}                                     \

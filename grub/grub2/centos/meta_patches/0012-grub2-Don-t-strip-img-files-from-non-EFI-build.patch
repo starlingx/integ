@@ -8,18 +8,18 @@ Subject: Don't strip files from non-EFI build of grub
  1 file changed, 2 deletions(-)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 8fcb272..cd2da06 100644
+index d410247..6e0e18e 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -488,8 +488,6 @@ cd ..								\
+@@ -535,8 +535,6 @@ touch ${RPM_BUILD_ROOT}/boot/%{name}/grub.cfg			\
  %defattr(-,root,root)						\
  %dir %{_libdir}/grub/%{2}/					\
  %{_libdir}/grub/%{2}/*						\
 -%exclude %{_libdir}/grub/%{2}/*.module				\
--%exclude %{_libdir}/grub/%{2}/{boot,boot_hybrid,cdboot,diskboot,lzma_decompress,pxeboot}.{image,img}						\
+-%exclude %{_libdir}/grub/%{2}/{boot,boot_hybrid,cdboot,diskboot,lzma_decompress,pxeboot}.image \
  %exclude %{_libdir}/grub/%{2}/*.o				\
- %{nil}
- 
+ %else								\
+ %%exclude %%{_libdir}/grub/%%{grublegacyarch}/*			\
 -- 
 2.7.4
 

@@ -1,7 +1,4 @@
 0001-grub2-Update-package-versioning-for-TIS-format.patch
-0002-grub2-fix-cflags.patch
-0003-grub2-remove-debug-pkgs.patch
-0004-grub2-remove-32b-requirements.patch
 0005-grub2-remove-32b-build.patch
 0006-grub2-ship-lst-files.patch
 0007-1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
@@ -10,3 +7,4 @@
 0010-grub2-add-tboot.patch
 0011-grub2-fix-str-for-6B-macs.patch
 0012-grub2-Don-t-strip-img-files-from-non-EFI-build.patch
+0013-grub2-fix-build-grub2-pc-modules-pkgs.patch
