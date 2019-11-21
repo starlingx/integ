@@ -1,5 +1,3 @@
-update-package-versioning-for-TIS-format.patch
+update-package-versioning-for-STX.patch
 Protect-sections-of-systemd-post-from-running-on-pat.patch
-spec-millisec-in-syslog-date.patch
-fix-build-error-for-unused-variable.patch
-fix-build-error-for-CentOS76.patch
+Add-STX-patches.patch
