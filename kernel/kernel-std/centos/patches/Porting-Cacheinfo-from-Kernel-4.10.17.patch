@@ -1258,8 +1258,8 @@ index 53c3fe1..527d291 100644
  			   driver.o class.o platform.o \
  			   cpu.o firmware.o init.o map.o devres.o \
  			   attribute_container.o transport_class.o \
--			   topology.o container.o property.o
-+			   topology.o container.o property.o cacheinfo.o
+-			   topology.o container.o property.o devcon.o
++			   topology.o container.o property.o devcon.o cacheinfo.o
  obj-$(CONFIG_DEVTMPFS)	+= devtmpfs.o
  obj-$(CONFIG_DMA_CMA) += dma-contiguous.o
  obj-y			+= power/
