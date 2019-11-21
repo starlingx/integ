@@ -12,17 +12,17 @@ diff --git a/mm/memcontrol.c b/mm/memcontrol.c
 index 175fef9..e475427 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -3007,6 +3007,8 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *memcg,
+@@ -2995,6 +2995,8 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *memcg,
  	memcg_check_events(memcg, page);
  }
  
 +static DEFINE_MUTEX(memcg_limit_mutex);
 +
  #ifdef CONFIG_MEMCG_KMEM
- static inline bool memcg_can_account_kmem(struct mem_cgroup *memcg)
- {
-@@ -3507,8 +3509,6 @@ out:
- 	return new_cachep;
+ /*
+  * The memcg_slab_mutex is held whenever a per memcg kmem cache is created or
+@@ -3375,8 +3377,6 @@ static inline void memcg_resume_kmem_account(void)
+ 	current->memcg_kmem_skip_account--;
  }
  
 -static DEFINE_MUTEX(memcg_limit_mutex);

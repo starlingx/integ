@@ -5,8 +5,9 @@ Subject: [PATCH] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
+Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
- SPECS/kernel.spec | 73 +++++++++++++++++++++++++++++++++++++++++++++----------
+ SPECS/kernel.spec | 73 ++++++++++++++++++++++++++++++++++++++---------
  1 file changed, 60 insertions(+), 13 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
@@ -24,23 +25,23 @@ index 852fd10..e42177e 100644
  # For a kernel released for public testing, released_kernel should be 1.
  # For internal testing builds during development, it should be 0.
 @@ -14,12 +15,14 @@ Summary: The Linux kernel
- %global distro_build 957
+ %global distro_build 1062
  
  %define rpmversion 3.10.0
--%define pkgrelease 957.21.3.el7
-+%define _pkgrelease 957.21.3
+-%define pkgrelease 1062.1.2.el7
++%define _pkgrelease 1062.1.2
 +%define pkgrelease %{_pkgrelease}.el7
 +
  
  # allow pkg_release to have configurable %%{?dist} tag
- %define specrelease 957.21.3%{?dist}
+ %define specrelease 1062.1.2%{?dist}
  
 -%define pkg_release %{specrelease}%{?buildid}
 +%define pkg_release %{specrelease}%{buildid}
  
  # The kernel tarball/base version
  %define rheltarball %{rpmversion}-%{pkgrelease}
-@@ -68,7 +71,7 @@ Summary: The Linux kernel
+@@ -69,7 +72,7 @@ Summary: The Linux kernel
  %define with_dbgonly   %{?_with_dbgonly:      1} %{?!_with_dbgonly:      0}
  
  # Control whether we perform a compat. check against published ABI.
@@ -48,8 +49,8 @@ index 852fd10..e42177e 100644
 +%define with_kabichk  0
  
  # Control whether we perform a compat. check against DUP ABI.
- %define with_kabidupchk 1
-@@ -91,7 +94,7 @@ Summary: The Linux kernel
+ %define with_kabidupchk %{?_with_kabidupchk: 1} %{?!_with_kabidupchk: 0}
+@@ -92,7 +95,7 @@ Summary: The Linux kernel
  # Set debugbuildsenabled to 1 for production (build separate debug kernels)
  #  and 0 for rawhide (all kernels are debug kernels).
  # See also 'make debug' and 'make release'. RHEL only ever does 1.
@@ -58,7 +59,7 @@ index 852fd10..e42177e 100644
  
  %define with_gcov %{?_with_gcov: 1} %{?!_with_gcov: 0}
  
-@@ -385,6 +388,7 @@ BuildRequires: bison flex
+@@ -386,6 +389,7 @@ BuildRequires: bison flex
  # required for zfcpdump
  BuildRequires: glibc-static
  %endif
@@ -66,7 +67,7 @@ index 852fd10..e42177e 100644
  
  Source0: linux-%{rpmversion}-%{pkgrelease}.tar.xz
  
-@@ -450,6 +454,12 @@ Patch1000: debrand-single-cpu.patch
+@@ -453,6 +457,12 @@ Patch1000: debrand-single-cpu.patch
  Patch1001: debrand-rh_taint.patch
  Patch1002: debrand-rh-i686-cpu.patch
  
@@ -79,7 +80,7 @@ index 852fd10..e42177e 100644
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -612,6 +622,13 @@ manipulation of eBPF programs and maps.
+@@ -626,6 +636,13 @@ This package provides debug information for the bpftool package.
  
  %endif # with_bpftool
  
@@ -93,7 +94,7 @@ index 852fd10..e42177e 100644
  %if %{with_gcov}
  %package gcov
  Summary: gcov graph and source files for coverage data collection.
-@@ -777,6 +794,9 @@ cd linux-%{KVRA}
+@@ -791,6 +808,9 @@ cd linux-%{KVRA}
  # Drop some necessary files from the source dir into the buildroot
  cp $RPM_SOURCE_DIR/kernel-%{version}-*.config .
  
@@ -103,7 +104,7 @@ index 852fd10..e42177e 100644
  ApplyOptionalPatch linux-kernel-test.patch
  ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
-@@ -821,6 +841,15 @@ for i in *.config
+@@ -835,6 +855,15 @@ for i in *.config
  do
    mv $i .config
    Arch=`head -1 .config | cut -b 3-`
@@ -119,7 +120,7 @@ index 852fd10..e42177e 100644
    make %{?cross_opts} ARCH=$Arch listnewconfig | grep -E '^CONFIG_' >.newoptions || true
  %if %{listnewconfig_fail}
    if [ -s .newoptions ]; then
-@@ -894,12 +923,13 @@ BuildKernel() {
+@@ -908,12 +937,13 @@ BuildKernel() {
  
      # and now to start the build process
  
@@ -134,7 +135,7 @@ index 852fd10..e42177e 100644
  
      cp configs/$Config .config
  
-@@ -914,8 +944,8 @@ BuildKernel() {
+@@ -928,8 +958,8 @@ BuildKernel() {
      fi
  %endif
  
@@ -145,7 +146,7 @@ index 852fd10..e42177e 100644
  
      if [ "$Flavour" != "kdump" ]; then
          make -s %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" modules %{?sparse_mflags} || exit 1
-@@ -939,6 +969,8 @@ BuildKernel() {
+@@ -953,6 +983,8 @@ BuildKernel() {
      fi
  # EFI SecureBoot signing, x86_64-only
  %ifarch x86_64
@@ -154,7 +155,7 @@ index 852fd10..e42177e 100644
      %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE13} -c %{SOURCE14} -n %{pesign_name}
      mv $KernelImage.signed $KernelImage
  %endif
-@@ -955,7 +987,7 @@ BuildKernel() {
+@@ -969,7 +1001,7 @@ BuildKernel() {
      if [ "$Flavour" != "kdump" ]; then
          # Override $(mod-fw) because we don't want it to install any firmware
          # we'll get it from the linux-firmware package and we don't want conflicts
@@ -163,7 +164,7 @@ index 852fd10..e42177e 100644
  %if %{with_gcov}
  	# install gcov-needed files to $BUILDROOT/$BUILD/...:
  	#   gcov_info->filename is absolute path
-@@ -965,7 +997,7 @@ BuildKernel() {
+@@ -979,7 +1011,7 @@ BuildKernel() {
  %endif
      fi
  %ifarch %{vdso_arches}
@@ -172,7 +173,7 @@ index 852fd10..e42177e 100644
      if [ ! -s ldconfig-kernel.conf ]; then
        echo > ldconfig-kernel.conf "\
  # Placeholder file, no vDSO hwcap entries used in this kernel."
-@@ -1174,6 +1206,12 @@ BuildKernel() {
+@@ -1188,6 +1220,12 @@ BuildKernel() {
      cp signing_key.priv signing_key.priv.sign${Flavour:+.${Flavour}}
      cp signing_key.x509 signing_key.x509.sign${Flavour:+.${Flavour}}
  
@@ -185,7 +186,7 @@ index 852fd10..e42177e 100644
      # remove files that will be auto generated by depmod at rpm -i time
      for i in alias alias.bin builtin.bin ccwmap dep dep.bin ieee1394map inputmap isapnpmap ofmap pcimap seriomap symbols symbols.bin usbmap softdep devname
      do
-@@ -1234,15 +1272,15 @@ make %{?cross_opts} %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
+@@ -1248,15 +1286,15 @@ make %{?cross_opts} %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
  %endif
  %ifarch x86_64
     pushd tools/power/x86/x86_energy_perf_policy/
@@ -204,7 +205,7 @@ index 852fd10..e42177e 100644
  popd
  %endif
  
-@@ -1536,6 +1574,10 @@ fi}\
+@@ -1550,6 +1588,10 @@ fi}\
  %{expand:\
  %{_sbindir}/new-kernel-pkg --package kernel%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
  }\
@@ -215,7 +216,7 @@ index 852fd10..e42177e 100644
  %{nil}
  
  #
-@@ -1756,6 +1798,11 @@ fi
+@@ -1775,6 +1817,11 @@ fi
  %kernel_variant_files %{with_debug} debug
  %kernel_variant_files %{with_kdump} kdump
  
@@ -225,7 +226,7 @@ index 852fd10..e42177e 100644
 +%endif
 +
  %changelog
- * Mon Jun 17 2019 CentOS Sources <bugs@centos.org> - 3.10.0-957.21.3.el7
+ * Fri Sep 20 2019 CentOS Sources <bugs@centos.org> - 3.10.0-1062.1.2.el7
  - Apply debranding changes
 -- 
 1.8.3.1
