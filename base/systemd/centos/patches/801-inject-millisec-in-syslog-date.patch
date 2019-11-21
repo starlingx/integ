@@ -1,14 +1,16 @@
-From 08353c7cc596d2d09fd7f22a9bfde4d83bd9ebda Mon Sep 17 00:00:00 2001
+From 8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7 Mon Sep 17 00:00:00 2001
+Message-Id: <8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7.1574264572.git.Jim.Somerville@windriver.com>
 From: systemd team <systemd-maint@redhat.com>
 Date: Tue, 8 Nov 2016 17:06:01 -0500
-Subject: [PATCH 1/1] inject millisec in syslog date
+Subject: [PATCH 1/3] inject millisec in syslog date
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  src/journal/journald-syslog.c | 48 +++++++++++++++++++++++++++++++++++++------
  1 file changed, 42 insertions(+), 6 deletions(-)
 
 diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
-index 4e118aa..85cdeb9 100644
+index 1a9db59..36288cb 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
 @@ -35,6 +35,44 @@
@@ -75,5 +77,5 @@ index 4e118aa..85cdeb9 100644
  
          /* Third: identifier and PID */
 -- 
-1.9.1
+1.8.3.1
 
