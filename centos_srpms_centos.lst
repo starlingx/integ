@@ -15,7 +15,7 @@ logrotate-3.8.6-17.el7.src.rpm
 # mlnx-ofa_kernel-4.5-OFED.4.5.1.0.1.1.gb4fdfac.src.rpm
 net-snmp-5.7.2-37.el7.src.rpm
 net-tools-2.0-0.24.20131004git.el7.src.rpm
-ntp-4.2.6p5-28.el7.centos.src.rpm
+ntp-4.2.6p5-29.el7.centos.src.rpm
 openldap-2.4.44-20.el7.src.rpm
 openssh-7.4p1-16.el7.src.rpm
 parted-3.1-29.el7.src.rpm
@@ -41,7 +41,7 @@ setup-2.8.71-10.el7.src.rpm
 shim-15-1.el7.centos.src.rpm
 shim-signed-15-1.el7.centos.src.rpm
 sudo-1.8.23-4.el7_7.1.src.rpm
-systemd-219-62.el7_6.5.src.rpm
+systemd-219-67.el7.src.rpm
 tboot-1.9.6-3.el7.src.rpm
 tpm2-tools-3.0.4-2.el7.src.rpm
 watchdog-5.13-12.el7.src.rpm
