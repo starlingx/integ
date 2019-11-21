@@ -1,7 +1,10 @@
-From bcfe2b0e50fed2a445f4e0dd43f33aee45d9ac5f Mon Sep 17 00:00:00 2001
+From 339ea8b005c037eaad217dfd3cc10b2b110bdd28 Mon Sep 17 00:00:00 2001
+Message-Id: <339ea8b005c037eaad217dfd3cc10b2b110bdd28.1574264572.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7.1574264572.git.Jim.Somerville@windriver.com>
+References: <8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7.1574264572.git.Jim.Somerville@windriver.com>
 From: Shuicheng Lin <shuicheng.lin@intel.com>
 Date: Tue, 2 Apr 2019 16:43:03 +0000
-Subject: [PATCH] Fix compile failure due to deprecated value
+Subject: [PATCH 3/3] Fix compile failure due to deprecated value
 
 Issue occur after upgrade build tool chain. Fix it per tool chain's
 suggestion.
@@ -15,10 +18,11 @@ use MHD_HTTP_NOT_ACCEPTABLE [-Werror]
 
 Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 Signed-off-by: Mawrer Ramirez <mawrer.a.ramirez.martinez@intel.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  src/journal-remote/journal-gatewayd.c | 4 ++--
- src/journal-remote/journal-remote.c   | 4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+ src/journal-remote/journal-remote.c   | 6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/src/journal-remote/journal-gatewayd.c b/src/journal-remote/journal-gatewayd.c
 index d1f0ce3..8364044 100644
@@ -43,7 +47,7 @@ index d1f0ce3..8364044 100644
  
  
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index e65daf6..9780ecb 100644
+index 431e283..476c826 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
 @@ -526,13 +526,13 @@ static int process_http_upload(
@@ -54,14 +58,14 @@ index e65daf6..9780ecb 100644
 +                                                    MHD_HTTP_PAYLOAD_TOO_LARGE,
                                                      "Entry is too large, maximum is %u bytes.\n",
                                                      DATA_SIZE_MAX);
-
+ 
                          else if (r == -E2BIG)
                                  return mhd_respondf(connection,
 -                                                    MHD_HTTP_REQUEST_ENTITY_TOO_LARGE,
 +                                                    MHD_HTTP_PAYLOAD_TOO_LARGE,
                                                      "Entry with more fields than the maximum of %u\n",
                                                      ENTRY_FIELD_COUNT_MAX);
-
+ 
 @@ -586,7 +586,7 @@ static int request_handler(
                                             *connection_cls);
  
@@ -73,3 +77,4 @@ index e65daf6..9780ecb 100644
          if (!streq(url, "/upload"))
 -- 
 1.8.3.1
+
