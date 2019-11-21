@@ -1,7 +1,9 @@
 From 1a91b72146893dab1cca1354dd3b0a8fa74d6b55 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Tue, 18 Oct 2016 13:07:56 -0400
-Subject: WRS: Patch22: dnsmasq-update-ipv6-leases-from-config.patch
+Subject: dnsmasq-update-ipv6-leases-from-config.patch
+
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
 
 ---
  src/lease.c | 53 +++++++++++++++++++++++++++++++++++++++++++----------
@@ -76,7 +78,7 @@ index 69e698c..bc56c47 100644
 +       lease_set_hostname(lease, name, 1, get_domain(lease->addr), NULL); /* updates auth flag only */
 +  }
  }
-  
+ 
  static void ourprintf(int *errp, char *format, ...)
 -- 
 2.7.4

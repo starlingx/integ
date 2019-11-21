@@ -3,6 +3,7 @@ From: Don Penney <don.penney@windriver.com>
 Date: Thu, 15 Sep 2016 13:32:03 -0400
 Subject: [PATCH 1/1] Close tftp sockets immediately
 
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
 ---
  src/tftp.c | 2 ++
  1 file changed, 2 insertions(+)
@@ -11,7 +12,7 @@ diff --git a/src/tftp.c b/src/tftp.c
 index d7d050f..ecc6ce8 100644
 --- a/src/tftp.c
 +++ b/src/tftp.c
-@@ -768,9 +768,11 @@ int do_tftp_script_run(void)
+@@ -807,9 +807,11 @@ int do_tftp_script_run(void)
    if ((transfer = daemon->tftp_done_trans))
      {
        daemon->tftp_done_trans = transfer->next;
@@ -24,5 +25,5 @@ index d7d050f..ecc6ce8 100644
        return 1;
      }
 -- 
-1.9.1
+2.7.4
 
