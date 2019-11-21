@@ -7,7 +7,7 @@ grub2-2.02-0.76.el7.centos.src.rpm
 grubby-8.28-25.el7.src.rpm
 haproxy-1.5.18-8.el7.src.rpm
 initscripts-9.49.46-1.el7.src.rpm
-kernel-3.10.0-957.21.3.el7.src.rpm
+kernel-3.10.0-1062.1.2.el7.src.rpm
 libevent-2.0.21-4.el7.src.rpm
 # libibverbs-41mlnx1-OFED.4.5.0.1.0.45101.src.rpm
 lighttpd-1.4.54-1.el7.src.rpm

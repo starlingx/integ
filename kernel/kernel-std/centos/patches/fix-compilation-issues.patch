@@ -16,12 +16,12 @@ diff --git a/arch/x86/mm/kaiser.c b/arch/x86/mm/kaiser.c
 index e233c88..5564c8d 100644
 --- a/arch/x86/mm/kaiser.c
 +++ b/arch/x86/mm/kaiser.c
-@@ -620,7 +620,7 @@ static const struct file_operations fops_kaiser_enabled = {
+@@ -621,7 +621,7 @@ static const struct file_operations fops_kaiser_enabled = {
  
  static int __init create_kpti_enabled(void)
  {
--	if (!xen_pv_domain())
-+	if (!is_xen_pv_domain())
+-	if (!xen_pv_domain() && !sme_active())
++	if (!is_xen_pv_domain() && !sme_active())
  		debugfs_create_file("pti_enabled", S_IRUSR | S_IWUSR,
  				    arch_debugfs_dir, NULL, &fops_kaiser_enabled);
  	return 0;
@@ -29,7 +29,7 @@ diff --git a/drivers/base/dma-contiguous.c b/drivers/base/dma-contiguous.c
 index a7d5bda..403101d 100644
 --- a/drivers/base/dma-contiguous.c
 +++ b/drivers/base/dma-contiguous.c
-@@ -309,7 +309,7 @@ struct page *dma_alloc_from_contiguous(struct device *dev, size_t count,
+@@ -287,7 +287,7 @@ struct page *dma_alloc_from_contiguous(struct device *dev, size_t count,
  	if (align > CONFIG_CMA_ALIGNMENT)
  		align = CONFIG_CMA_ALIGNMENT;
  
@@ -82,7 +82,7 @@ diff --git a/include/linux/huge_mm.h b/include/linux/huge_mm.h
 index 26ec982..45af11b 100644
 --- a/include/linux/huge_mm.h
 +++ b/include/linux/huge_mm.h
-@@ -365,7 +365,7 @@ static inline int pud_trans_huge_lock(pud_t *pud, struct vm_area_struct *vma,
+@@ -362,7 +362,7 @@ static inline int pud_trans_huge_lock(pud_t *pud, struct vm_area_struct *vma,
  	return 0;
  }
  
