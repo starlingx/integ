@@ -17,6 +17,7 @@ definitions on module deinit
 - modification to ima_file_check to pass in file OPEN status
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
  fs/namei.c                |   2 +-
  fs/nfsd/vfs.c             |   2 +-
@@ -31,7 +32,7 @@ diff --git a/fs/namei.c b/fs/namei.c
 index 9f90b63..bf91ea0 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -3225,7 +3225,7 @@ opened:
+@@ -3243,7 +3243,7 @@ opened:
  	error = open_check_o_direct(file);
  	if (error)
  		goto exit_fput;
@@ -57,7 +58,7 @@ diff --git a/fs/xattr.c b/fs/xattr.c
 index e540aca..cc307ec 100644
 --- a/fs/xattr.c
 +++ b/fs/xattr.c
-@@ -207,6 +207,7 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
+@@ -208,6 +208,7 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
  	*xattr_value = value;
  	return error;
  }
@@ -69,18 +70,18 @@ diff --git a/include/linux/fs.h b/include/linux/fs.h
 index eb6f994..2dbaf80 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -677,9 +677,8 @@ struct inode {
+@@ -681,9 +681,8 @@ struct inode {
  			struct fsnotify_mark_connector __rcu *i_fsnotify_marks)
  #endif
  
--#ifdef CONFIG_IMA
+-#if defined(CONFIG_IMA) && defined(CONFIG_X86_64)
  	atomic_t		i_readcount; /* struct files open RO */
 -#endif
 +
  	void			*i_private; /* fs or device private pointer */
  };
  
-@@ -2830,7 +2829,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
+@@ -2852,7 +2851,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
  	return atomic_read(&inode->i_writecount) > 0;
  }
  
@@ -88,7 +89,7 @@ index eb6f994..2dbaf80 100644
  static inline void i_readcount_dec(struct inode *inode)
  {
  	BUG_ON(!atomic_read(&inode->i_readcount));
-@@ -2840,16 +2838,7 @@ static inline void i_readcount_inc(struct inode *inode)
+@@ -2862,16 +2860,7 @@ static inline void i_readcount_inc(struct inode *inode)
  {
  	atomic_inc(&inode->i_readcount);
  }
@@ -340,7 +341,7 @@ index f069482..646a0e3 100644
  int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
  {
  #ifdef CONFIG_SECURITY_YAMA_STACKED
-@@ -720,8 +824,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
+@@ -718,8 +822,11 @@ EXPORT_SYMBOL(security_inode_listsecurity);
  
  void security_inode_getsecid(struct inode *inode, u32 *secid)
  {
@@ -353,7 +354,7 @@ index f069482..646a0e3 100644
  
  int security_inode_copy_up(struct dentry *src, struct cred **new)
  {
-@@ -1530,6 +1637,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
+@@ -1528,6 +1635,7 @@ int security_audit_rule_init(u32 field, u32 op, char *rulestr, void **lsmrule)
  {
  	return security_ops->audit_rule_init(field, op, rulestr, lsmrule);
  }
@@ -361,7 +362,7 @@ index f069482..646a0e3 100644
  
  int security_audit_rule_known(struct audit_krule *krule)
  {
-@@ -1546,6 +1654,7 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
+@@ -1544,6 +1652,7 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
  {
  	return security_ops->audit_rule_match(secid, field, op, lsmrule, actx);
  }
