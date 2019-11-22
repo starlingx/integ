@@ -1,10 +1,12 @@
 From 935686ff5e53cec008f129cc5d17146bd9365eb0 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:11:22 -0400
-Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/openldap.spec
+
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  SPECS/openldap.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -16,12 +18,12 @@ index c38f1bd..d35d73f 100644
 @@ -5,7 +5,7 @@
  
  Name: openldap
- Version: 2.4.44
--Release: 20%{?dist}
-+Release: 20.el7%{?_tis_dist}.%{tis_patch_ver}
+ Version: 2.4.46
+-Release: 9%{?dist}
++Release: 9.el8%{?_tis_dist}.%{tis_patch_ver}
  Summary: LDAP support libraries
- Group: System Environment/Daemons
  License: OpenLDAP
+ URL: http://www.openldap.org/
 -- 
-2.7.4
+1.8.3.1
 
