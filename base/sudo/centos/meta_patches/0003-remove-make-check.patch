@@ -1,8 +1,17 @@
+From 212a705e651920c44dd34780bbfbfb78fd581f73 Mon Sep 17 00:00:00 2001
+From: ec <ec@starlingx.com>
+Date: Thu, 19 Dec 2019 05:21:41 +0000
+Subject: [PATCH] remove make check
+
+---
+ SPECS/sudo.spec | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
 diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index 8c3f395..17531f7 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
-@@ -120,7 +120,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
+@@ -135,7 +135,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
  make
  
  %check
