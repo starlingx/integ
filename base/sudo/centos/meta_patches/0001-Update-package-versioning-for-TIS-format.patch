@@ -15,8 +15,8 @@ index c8d2f64..b6402bb 100644
  Summary: Allows restricted root access for specified users
  Name: sudo
  Version: 1.8.23
--Release: 3%{?dist}
-+Release: 3.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 4%{?dist}.1
++Release: 4.el7_7.1%{?_tis_dist}.%{tis_patch_ver}
  License: ISC
  Group: Applications/System
  URL: http://www.courtesan.com/sudo/

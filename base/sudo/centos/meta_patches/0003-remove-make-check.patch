@@ -2,7 +2,7 @@ diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index 8c3f395..17531f7 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
-@@ -120,7 +120,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
+@@ -135,7 +135,8 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
  make
  
  %check

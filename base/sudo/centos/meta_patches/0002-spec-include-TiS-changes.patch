@@ -11,7 +11,7 @@ diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index b6402bb..acbcb26 100644
 --- a/SPECS/sudo.spec
 +++ b/SPECS/sudo.spec
-@@ -111,7 +111,7 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
+@@ -126,7 +126,7 @@ export CFLAGS="$RPM_OPT_FLAGS $F_PIE" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SHL
          --with-ignore-dot \
          --with-tty-tickets \
          --with-ldap \
@@ -20,7 +20,7 @@ index b6402bb..acbcb26 100644
          --with-selinux \
          --with-passprompt="[sudo] password for %p: " \
          --with-linux-audit \
-@@ -138,6 +138,9 @@ install -p -c -m 0440 %{SOURCE1} %{buildroot}%{_sysconfdir}/sudoers
+@@ -153,6 +153,9 @@ install -p -c -m 0440 %{SOURCE1} %{buildroot}%{_sysconfdir}/sudoers
  install -p -c -m 0640 %{SOURCE3} %{buildroot}%{_sysconfdir}/sudo.conf
  install -p -c -m 0640 %{SOURCE2} %{buildroot}%{_sysconfdir}/sudo-ldap.conf
  
@@ -30,7 +30,7 @@ index b6402bb..acbcb26 100644
  # Remove upstream sudoers file
  rm -f %{buildroot}%{_sysconfdir}/sudoers.dist
  
-@@ -210,6 +213,7 @@ rm -rf %{buildroot}
+@@ -225,6 +228,7 @@ rm -rf %{buildroot}
  %{_mandir}/man5/sudoers_timestamp.5.gz
  %dir %{_docdir}/sudo-%{version}
  %{_docdir}/sudo-%{version}/*
