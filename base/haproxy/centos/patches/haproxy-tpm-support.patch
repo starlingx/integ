@@ -1,22 +1,22 @@
-From a2a25214f6f4913b774bdd6c0b80d3ea424d3a1b Mon Sep 17 00:00:00 2001
-From: Kam Nasim <kam.nasim@windriver.com>
-Date: Wed, 22 Mar 2017 12:07:24 -0400
-Subject: [PATCH] haproxy tpm support
+From 9ec23c9ac2ba1a0379bf96359e0741c07b4d190e Mon Sep 17 00:00:00 2001
+From: Long Li <lilong-neu@neusoft.com>
+Date: Tue, 5 Nov 2019 10:29:32 +0800
+Subject: [PATCH] haproxy-tpm-support
 
 ---
- include/types/global.h |  13 +++++
+ include/types/global.h |  12 ++++
  src/cfgparse.c         |  28 ++++++++++
- src/haproxy.c          |  26 ++++++++-
+ src/haproxy.c          |  24 ++++++++
  src/ssl_sock.c         | 147 +++++++++++++++++++++++++++++++++++++++++++------
- 4 files changed, 197 insertions(+), 17 deletions(-)
+ 4 files changed, 194 insertions(+), 17 deletions(-)
 
 diff --git a/include/types/global.h b/include/types/global.h
-index f1525ae..2e9c077 100644
+index bd7761c..ff750ea 100644
 --- a/include/types/global.h
 +++ b/include/types/global.h
-@@ -30,6 +30,10 @@
- #include <types/proxy.h>
+@@ -34,6 +34,10 @@
  #include <types/task.h>
+ #include <types/vars.h>
  
 +#ifdef USE_OPENSSL
 +#include <openssl/engine.h>
@@ -25,11 +25,10 @@ index f1525ae..2e9c077 100644
  #ifndef UNIX_MAX_PATH
  #define UNIX_MAX_PATH 108
  #endif
-@@ -71,6 +75,14 @@ enum {
+@@ -83,6 +87,13 @@ enum {
  	SSL_SERVER_VERIFY_REQUIRED = 1,
  };
  
-+// WRS: Define a new TPM configuration structure
 +struct tpm_conf {
 +    char *tpm_object;
 +    char *tpm_engine;
@@ -39,22 +38,22 @@ index f1525ae..2e9c077 100644
 +
  /* FIXME : this will have to be redefined correctly */
  struct global {
- #ifdef USE_OPENSSL
-@@ -87,6 +99,7 @@ struct global {
- 	char *connect_default_ciphers;
- 	int listen_default_ssloptions;
- 	int connect_default_ssloptions;
-+	struct tpm_conf tpm; // tpm configuration
- #endif
+ 	int uid;
+@@ -98,6 +109,7 @@ struct global {
+ 	int ssl_used_frontend;      /* non-zero if SSL is used in a frontend */
+ 	int ssl_used_backend;       /* non-zero if SSL is used in a backend */
+ 	int ssl_used_async_engines; /* number of used async engines */
++	struct tpm_conf tpm;	    /* tpm configuration*/
  	unsigned int ssl_server_verify; /* default verify mode on servers side */
  	struct freq_ctr conn_per_sec;
+ 	struct freq_ctr sess_per_sec;
 diff --git a/src/cfgparse.c b/src/cfgparse.c
-index 6a7f80c..3bc6e79 100644
+index 94f2963..198cdbf 100644
 --- a/src/cfgparse.c
 +++ b/src/cfgparse.c
-@@ -1541,6 +1541,34 @@ int cfg_parse_global(const char *file, int linenum, char **args, int kwm)
- 		goto out;
- #endif
+@@ -1865,6 +1865,34 @@ int cfg_parse_global(const char *file, int linenum, char **args, int kwm)
+ 				env++;
+ 		}
  	}
 +	else if (!strcmp(args[0], "tpm-object")) {
 +		if (global.tpm.tpm_object) {
@@ -88,10 +87,10 @@ index 6a7f80c..3bc6e79 100644
  		struct cfg_kw_list *kwl;
  		int index;
 diff --git a/src/haproxy.c b/src/haproxy.c
-index 862697d..2a1a0dc 100644
+index 8100f27..6983444 100644
 --- a/src/haproxy.c
 +++ b/src/haproxy.c
-@@ -959,6 +959,24 @@ static void deinit_stick_rules(struct list *rules)
+@@ -1994,6 +1994,24 @@ static void deinit_stick_rules(struct list *rules)
  	}
  }
  
@@ -115,13 +114,11 @@ index 862697d..2a1a0dc 100644
 +
  void deinit(void)
  {
- 	struct proxy *p = proxy, *p0;
-@@ -1218,7 +1236,13 @@ void deinit(void)
- 
+ 	struct proxy *p = proxies_list, *p0;
+@@ -2282,6 +2300,12 @@ void deinit(void)
  		free(uap);
  	}
--
-+    
+ 
 +	/* if HAProxy was in TPM mode then deinit
 +	 * that configuration as well.
 +	 */
@@ -130,20 +127,12 @@ index 862697d..2a1a0dc 100644
 +    
  	userlist_free(userlist);
  
- 	protocol_unbind_all();
+ 	cfg_unregister_sections();
 diff --git a/src/ssl_sock.c b/src/ssl_sock.c
-index ead4c7b..4e16026 100644
+index 24ccc4b..da88025 100644
 --- a/src/ssl_sock.c
 +++ b/src/ssl_sock.c
-@@ -50,6 +50,7 @@
- #ifndef OPENSSL_NO_DH
- #include <openssl/dh.h>
- #endif
-+#include <openssl/engine.h>
- 
- #include <common/buffer.h>
- #include <common/compat.h>
-@@ -1115,6 +1116,80 @@ end:
+@@ -3322,6 +3322,80 @@ end:
  	return ret;
  }
  
@@ -221,10 +210,10 @@ index ead4c7b..4e16026 100644
 +	return 1;
 +}
 +
- static int ssl_sock_load_cert_file(const char *path, struct bind_conf *bind_conf, struct proxy *curproxy, char **sni_filter, int fcount, char **err)
+ static int ssl_sock_load_cert_file(const char *path, struct bind_conf *bind_conf, struct ssl_bind_conf *ssl_conf,
+ 				   char **sni_filter, int fcount, char **err)
  {
- 	int ret;
-@@ -1127,26 +1202,54 @@ static int ssl_sock_load_cert_file(const char *path, struct bind_conf *bind_conf
+@@ -3335,26 +3409,54 @@ static int ssl_sock_load_cert_file(const char *path, struct bind_conf *bind_conf
  		return 1;
  	}
  
@@ -233,7 +222,14 @@ index ead4c7b..4e16026 100644
 -		          err && *err ? *err : "", path);
 -		SSL_CTX_free(ctx);
 -		return 1;
-+	/* NOTE (knasim-wrs): US93721: TPM support
+-	}
+-
+-	ret = ssl_sock_load_cert_chain_file(ctx, path, bind_conf, ssl_conf, sni_filter, fcount);
+-	if (ret <= 0) {
+-		memprintf(err, "%sunable to load SSL certificate from PEM file '%s'.\n",
+-		          err && *err ? *err : "", path);
+-		if (ret < 0) /* serious error, must do that ourselves */
++	/* NOTE: TPM support
 +	 * This SSL context applies to SSL frontends only.
 +	 * If the TPM option is set then the Private key 
 +	 * is stored in TPM.
@@ -247,25 +243,19 @@ index ead4c7b..4e16026 100644
 +		ret = ssl_sock_load_tpm_key(ctx, err);
 +		if (ret > 0) {
 +			/* tpm configuration failed */
-+			SSL_CTX_free(ctx);
-+			return 1;
-+		}
- 	}
--
--	ret = ssl_sock_load_cert_chain_file(ctx, path, bind_conf, sni_filter, fcount);
--	if (ret <= 0) {
--		memprintf(err, "%sunable to load SSL certificate from PEM file '%s'.\n",
--		          err && *err ? *err : "", path);
--		if (ret < 0) /* serious error, must do that ourselves */
-+	else { /* non TPM mode */
-+		if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
-+			memprintf(err, "%sunable to load SSL private key from PEM file '%s'.\n",
-+			          err && *err ? *err : "", path);
  			SSL_CTX_free(ctx);
 -		return 1;
 +			return 1;
 +		}
  	}
++	else { /* non TPM mode */
++		if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
++			memprintf(err, "%sunable to load SSL private key from PEM file '%s'.\n",
++			          err && *err ? *err : "", path);
++ 			SSL_CTX_free(ctx);
++			return 1;
++		}
++ 	}
  
 -	if (SSL_CTX_check_private_key(ctx) <= 0) {
 -		memprintf(err, "%sinconsistencies between private key and certificate loaded from PEM file '%s'.\n",
@@ -295,12 +285,11 @@ index ead4c7b..4e16026 100644
  	}
  
  	/* we must not free the SSL_CTX anymore below, since it's already in
-@@ -1725,6 +1828,18 @@ int ssl_sock_prepare_srv_ctx(struct server *srv, struct proxy *curproxy)
- 		cfgerr++;
- 		return cfgerr;
- 	}
-+
-+	/* NOTE (knasim-wrs): US93721: TPM support
+@@ -4597,6 +4699,17 @@ int ssl_sock_prepare_srv_ctx(struct server *srv)
+ 	SSL_CTX_set_mode(ctx, mode);
+ 	srv->ssl_ctx.ctx = ctx;
+ 
++	/* NOTE: TPM support
 +	 * This SSL context applies to SSL backends only.
 +	 * Since Titanium backends don't support SSL, there
 +	 * is no need to offload these keys in TPM or reuse the
@@ -313,7 +302,7 @@ index ead4c7b..4e16026 100644
 +	 */
  	if (srv->ssl_ctx.client_crt) {
  		if (SSL_CTX_use_PrivateKey_file(srv->ssl_ctx.ctx, srv->ssl_ctx.client_crt, SSL_FILETYPE_PEM) <= 0) {
- 			Alert("config : %s '%s', server '%s': unable to load SSL private key from PEM file '%s'.\n",
+ 			ha_alert("config : %s '%s', server '%s': unable to load SSL private key from PEM file '%s'.\n",
 -- 
-1.8.3.1
+2.7.4
 
