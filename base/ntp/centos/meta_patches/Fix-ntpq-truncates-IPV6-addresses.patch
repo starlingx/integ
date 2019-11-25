@@ -1,0 +1,41 @@
+From fbfbbc827d080370f71a76284dde4dc3dd1d16da Mon Sep 17 00:00:00 2001
+Message-Id: <fbfbbc827d080370f71a76284dde4dc3dd1d16da.1574708120.git.Jim.Somerville@windriver.com>
+In-Reply-To: <536afc9500d65768db35f6ca07c21c490b19bda7.1574708120.git.Jim.Somerville@windriver.com>
+References: <536afc9500d65768db35f6ca07c21c490b19bda7.1574708120.git.Jim.Somerville@windriver.com>
+From: Kristine Bujold <kristine.bujold@windriver.com>
+Date: Tue, 3 Sep 2019 16:18:58 -0400
+Subject: [PATCH 2/2] Fix ntpq truncates IPV6 addresses
+
+Signed-off-by: Kristine Bujold <kristine.bujold@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/ntp.spec | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/SPECS/ntp.spec b/SPECS/ntp.spec
+index 84aa1ac..4d32d8c 100644
+--- a/SPECS/ntp.spec
++++ b/SPECS/ntp.spec
+@@ -204,6 +204,9 @@ Patch78: ntp-4.2.6p5-netlinknobuf.patch
+ # add bugs for compatibility with original EL7 ntpstat
+ Patch100: ntpstat-compat.patch
+ 
++# STX IPV6 ntpq patch
++Patch500: Fix-ntpq-truncates-IPV6-addresses.patch
++
+ URL: http://www.ntp.org
+ Requires(post): systemd-units
+ Requires(preun): systemd-units
+@@ -361,6 +364,9 @@ This package contains NTP documentation in HTML format.
+ 
+ %patch100 -p1 -b .compat
+ 
++%patch500 -p1 -b .ntpq-truncates-IPV6-addresses
++
++
+ # set default path to sntp KoD database
+ sed -i 's|/var/db/ntp-kod|%{_localstatedir}/lib/sntp/kod|' sntp/{sntp.1,main.c}
+ 
+-- 
+1.8.3.1
+
