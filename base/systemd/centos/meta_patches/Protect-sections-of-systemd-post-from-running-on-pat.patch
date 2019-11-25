@@ -7,46 +7,31 @@ Date: Mon, 2 Oct 2017 17:53:00 -0400
 Subject: [PATCH 2/3] Protect sections of systemd post from running on patch
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
 ---
- SPECS/systemd.spec | 4 ++++
- 1 file changed, 4 insertions(+)
+ SPECS/systemd.spec | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 16262fb..4c83150 100644
+index fbb016f..34d7c59 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -1297,6 +1297,7 @@ fi
- rm -f /etc/sysconfig/i18n >/dev/null 2>&1 || :
- rm -f /etc/sysconfig/keyboard >/dev/null 2>&1 || :
- 
-+if [ $1 -eq 1 ]; then
- # Migrate HOSTNAME= from /etc/sysconfig/network
- if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
-     unset HOSTNAME
-@@ -1304,6 +1305,7 @@ if [ -e /etc/sysconfig/network -a ! -e /etc/hostname ]; then
-     [ -n "$HOSTNAME" ] && echo $HOSTNAME > /etc/hostname 2>&1 || :
- fi
- sed -i '/^HOSTNAME=/d' /etc/sysconfig/network >/dev/null 2>&1 || :
-+fi
- 
- # Migrate the old systemd-setup-keyboard X11 configuration fragment
- if [ ! -e /etc/X11/xorg.conf.d/00-keyboard.conf ] ; then
-@@ -1312,6 +1314,7 @@ else
-     rm -f /etc/X11/xorg.conf.d/00-system-setup-keyboard.conf >/dev/null 2>&1 || :
- fi
+@@ -648,6 +648,7 @@ function mod_nss() {
+     fi
+ }
  
 +if [ 1 -eq 0 ] ; then # TIS: Skip this. We don't want myhostname in nsswitch.conf
- # sed-fu to add myhostname to the hosts line of /etc/nsswitch.conf
- # Only do that when installing, not when updating.
- if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
-@@ -1321,6 +1324,7 @@ if [ $1 -eq 1 -a -f /etc/nsswitch.conf ] ; then
- s/[[:blank:]]*$/ myhostname/
- ' /etc/nsswitch.conf >/dev/null 2>&1 || :
+ FILE="$(readlink /etc/nsswitch.conf || echo /etc/nsswitch.conf)"
+ mod_nss "$FILE"
+ 
+@@ -658,6 +659,7 @@ else
+         # possible future authselect configuration
+ 	mod_nss "/etc/authselect/user-nsswitch.conf"
  fi
 +fi
  
- %posttrans
- # Convert old /etc/sysconfig/desktop settings
+ # check if nobody or nfsnobody is defined
+ export SYSTEMD_NSS_BYPASS_SYNTHETIC=1
 -- 
-1.8.3.1
+2.7.4
 
