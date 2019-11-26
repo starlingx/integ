@@ -9,26 +9,27 @@ commit, and then the new meta-patch created from the output of
 git format-patch HEAD~
 
 Signed-off-by: Joseph Richard <joseph.richard@windriver.com>
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- SPECS/initscripts.spec | 38 ++++++++++++++++++++++++++++++--------
- 1 file changed, 30 insertions(+), 8 deletions(-)
+ SPECS/initscripts.spec | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
 
 diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
 index fb0bd96..a446775 100644
 --- a/SPECS/initscripts.spec
 +++ b/SPECS/initscripts.spec
-@@ -4,7 +4,7 @@ Version: 9.49.46
- # ppp-watch is GPLv2+, everything else is GPLv2
- License: GPLv2 and GPLv2+
- Group: System Environment/Base
--Release: 1%{?dist}
-+Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
- URL: https://github.com/fedora-sysv/initscripts
- Source: https://github.com/fedora-sysv/initscripts/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
- BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-@@ -36,6 +36,20 @@ Requires(preun): /sbin/chkconfig
- BuildRequires: glib2-devel popt-devel gettext pkgconfig systemd
- Provides: /sbin/service
+@@ -19,7 +19,7 @@ Requires:         gawk                       \
+ Name:             initscripts
+ Summary:          Basic support for legacy System V init scripts
+ Version:          10.00.1
+-Release:          1%{?dist}.1
++Release:          1.el8_0.1%{?_tis_dist}.%{tis_patch_ver}
+ 
+ License:          GPLv2
+ 
+@@ -67,6 +67,20 @@ Obsoletes:        %{name}            < 9.82-2
+ Patch000:   patch000-fix_escape_sequence_being_output_under_systemd_service_units.patch
+ Patch001:   patch001-fix_missing_python3_during_build_phase.patch
  
 +Patch1: support-interface-scriptlets.patch
 +Patch2: relocate-dhclient-leases-to-var-run.patch
@@ -44,67 +45,19 @@ index fb0bd96..a446775 100644
 +Patch12: ifup-alias-scope.patch
 +Patch13: ifup-alias-check-ipaddr.patch
 +
- %description
- The initscripts package contains basic system scripts used
- during a boot of the system. It also contains scripts which
-@@ -55,6 +69,20 @@ Currently, this consists of various memory checking code.
- %prep
- %setup -q
+ # Downstream patches -- these should be always included when doing rebase:
+ # ------------------
+ #Patch100: example100.patch
+@@ -266,9 +280,6 @@ fi
  
-+%patch1 -p1
-+%patch2 -p1
-+%patch3 -p1
-+%patch4 -p1
-+%patch5 -p1
-+%patch6 -p1
-+%patch7 -p1
-+%patch8 -p1
-+%patch9 -p1
-+%patch10 -p1
-+%patch11 -p1
-+%patch12 -p1
-+%patch13 -p1
-+
- %build
- make
- 
-@@ -163,10 +191,7 @@ rm -rf $RPM_BUILD_ROOT
- /usr/lib/systemd/rhel-*
- /usr/lib/systemd/system/*
- /etc/inittab
--%dir /etc/rc.d
--%dir /etc/rc.d/rc[0-9].d
- /etc/rc[0-9].d
--%dir /etc/rc.d/init.d
- /etc/rc.d/init.d/*
- %config(noreplace) /etc/sysctl.conf
- /usr/lib/sysctl.d/00-system.conf
-@@ -188,7 +213,6 @@ rm -rf $RPM_BUILD_ROOT
- /usr/sbin/ppp-watch
- %{_mandir}/man*/*
- %dir %attr(775,root,root) /var/run/netreport
--%dir /etc/ppp
- %dir /etc/ppp/peers
- /etc/ppp/ip-up
- /etc/ppp/ip-down
-@@ -196,8 +220,6 @@ rm -rf $RPM_BUILD_ROOT
- /etc/ppp/ip-down.ipv6to4
- /etc/ppp/ipv6-up
- /etc/ppp/ipv6-down
--%dir /etc/NetworkManager
--%dir /etc/NetworkManager/dispatcher.d
- /etc/NetworkManager/dispatcher.d/00-netreport
- %doc sysconfig.txt sysvinitfiles static-routes-ipv6 ipv6-tunnel.howto ipv6-6to4.howto changes.ipv6 COPYING
- %doc examples
-@@ -207,7 +229,7 @@ rm -rf $RPM_BUILD_ROOT
- %ghost %attr(0664,root,utmp) /var/run/utmp
- %ghost %attr(0644,root,root) /etc/sysconfig/kvm
- %ghost %verify(not md5 size mtime) %config(noreplace,missingok) /etc/crypttab
--%dir /usr/lib/tmpfiles.d
-+%dir %attr(0755,root,root) /usr/lib/tmpfiles.d
- /usr/lib/tmpfiles.d/initscripts.conf
- %dir /usr/libexec/initscripts
- %dir /usr/libexec/initscripts/legacy-actions
+ # NOTE: /etc/profile.d/ is owned by setup package.
+ #       /etc/sysconfig/ is owned by filesystem package.
+-%dir %{_sysconfdir}/rc.d
+-%dir %{_sysconfdir}/rc.d/init.d
+-%dir %{_sysconfdir}/rc.d/rc[0-6].d
+ %dir %{_sysconfdir}/sysconfig/console
+ %dir %{_sysconfdir}/sysconfig/modules
+ %dir %{_libexecdir}/%{name}
 -- 
-1.8.3.1
+2.7.4
 

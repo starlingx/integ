@@ -1,17 +1,18 @@
 From 59e30a344df4b661f30c0a5c629dbd13e9d88e8f Mon Sep 17 00:00:00 2001
 From: Teresa Ho <teresa.ho@windriver.com>
 Date: Mon, 17 Dec 2018 17:47:18 -0500
-Subject: [PATCH 1/1] WRS: Patch13: ifup-alias-scope.patch
+Subject: [PATCH 1/1] ifup-alias-scope.patch
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- sysconfig/network-scripts/ifup-aliases | 8 +++++++-
+ network-scripts/ifup-aliases | 8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/sysconfig/network-scripts/ifup-aliases b/sysconfig/network-scripts/ifup-aliases
+diff --git a/network-scripts/ifup-aliases b/network-scripts/ifup-aliases
 index 52d43ea..9086763 100755
---- a/sysconfig/network-scripts/ifup-aliases
-+++ b/sysconfig/network-scripts/ifup-aliases
-@@ -277,8 +277,14 @@ function new_interface ()
+--- a/network-scripts/ifup-aliases
++++ b/network-scripts/ifup-aliases
+@@ -275,8 +275,14 @@ function new_interface ()
              fi
          fi
  
