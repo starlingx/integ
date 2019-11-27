@@ -1,7 +1,7 @@
 From 1f6128eb7bf5287db6def45f278acf771a711a42 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:58 -0400
-Subject: [PATCH] WRS: spec-include-TiS-patches.patch
+Subject: [PATCH] spec-include-TiS-patches.patch
 
 Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---
