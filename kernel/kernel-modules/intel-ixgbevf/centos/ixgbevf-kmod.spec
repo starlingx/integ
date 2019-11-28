@@ -8,7 +8,7 @@
 %define kmod_name ixgbevf
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 4.5.3
+Version: 4.6.1
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
@@ -106,10 +106,10 @@ find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
 
 # Always Sign the modules(s).
 # If the module signing keys are not defined, define them here.
-%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.priv}
+%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.pem}
 %{!?pubkey: %define pubkey /usr/src/kernels/%{kversion}/signing_key.x509}
 for module in $(find %{buildroot} -type f -name \*.ko);
-do %{__perl} /usr/src/kernels/%{kversion}/scripts/sign-file \
+do /usr/src/kernels/%{kversion}/scripts/sign-file \
     sha256 %{privkey} %{pubkey} $module;
 done
 
