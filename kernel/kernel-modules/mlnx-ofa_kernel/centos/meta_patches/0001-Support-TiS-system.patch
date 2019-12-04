@@ -17,33 +17,34 @@ Signed-off-by: Allain Legacy <allain.legacy@windriver.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Kam Nasim <kam.nasim@windriver.com>
 Signed-off-by: eric zhang <eric.zhang@windriver.com>
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+
 ---
- SPECS/mlnx-ofa_kernel.spec | 49 +++++++++++++++++++++++++++++++---------------
- 1 file changed, 33 insertions(+), 16 deletions(-)
+ SPECS/mlnx-ofa_kernel.spec | 47 +++++++++++++++++++++++++++++++-------------
+ 1 file changed, 33 insertions(+), 14 deletions(-)
 
 diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
-index 33fe911..7a9253d 100644
+index 22564a5..b8adb35 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
-@@ -27,8 +27,14 @@
+@@ -27,7 +27,14 @@
  #
  
  # KMP is disabled by default
--%{!?KMP: %global KMP 0}
 +%if "%{_tis_build_type}" == "rt"
 +%define bt_ext -rt
 +%else
 +%undefine bt_ext
 +%endif
++
+ %{!?KMP: %global KMP 0}
++BuildRequires: kernel%{?bt_ext}-devel, openssl, elfutils-libelf-devel, python3
  
-+%{!?KMP: %global KMP 0}
-+BuildRequires: kernel%{?bt_ext}-devel, openssl
  %global WITH_SYSTEMD %(if ( test -d "%{_unitdir}" > /dev/null); then echo -n '1'; else echo -n '0'; fi)
  
- %{!?configure_options: %global configure_options --with-core-mod --with-user_mad-mod --with-user_access-mod --with-addr_trans-mod --with-mlx4-mod --with-mlx4_en-mod --with-mlx5-mod --with-mlxfw-mod --with-ipoib-mod}
-@@ -41,12 +47,11 @@
- %global BLUENIX %(if (grep -qiE "Bluenix" /etc/issue /etc/*release* 2>/dev/null); then echo -n '1'; else echo -n '0'; fi)
+@@ -42,12 +49,11 @@
  %global XENSERVER65 %(if (grep -qiE "XenServer.*6\.5" /etc/issue /etc/*release* 2>/dev/null); then echo -n '1'; else echo -n '0'; fi)
+ %global RHEL8 %(if test `grep -E '^(ID="rhel"|VERSION="8)' /etc/os-release 2>/dev/null | wc -l` -eq 2; then echo -n '1'; else echo -n '0'; fi)
  
 -%{!?KVERSION: %global KVERSION %(uname -r)}
 +%{!?KVERSION: %global KVERSION %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')}
@@ -56,7 +57,7 @@ index 33fe911..7a9253d 100644
  # Select packages to build
  
  # Kernel module packages to be included into kernel-ib
-@@ -63,7 +68,9 @@
+@@ -63,7 +69,9 @@
  
  %{!?KERNEL_SOURCES: %global KERNEL_SOURCES /lib/modules/%{KVERSION}/source}
  
@@ -64,10 +65,10 @@ index 33fe911..7a9253d 100644
 +
 +%define _basename mlnx-ofa_kernel
 +%define _name %{_basename}%{?bt_ext}
- %{!?_version: %global _version 4.5}
- %{!?_release: %global _release OFED.4.5.1.0.1.1.gb4fdfac}
+ %{!?_version: %global _version 4.7}
+ %{!?_release: %global _release OFED.4.7.1.0.0.1.g1c4bf42}
  %global _kmp_rel %{_release}%{?_kmp_build_num}%{?_dist}
-@@ -75,11 +82,16 @@
+@@ -81,11 +89,16 @@
  Summary: Infiniband HCA Driver
  Name: %{_name}
  Version: %{_version}
@@ -86,15 +87,7 @@ index 33fe911..7a9253d 100644
  BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
  Vendor: Mellanox Technologies
  Obsoletes: kernel-ib
-@@ -135,7 +147,6 @@ EOF)
- %global kernel_release() %{KVERSION}
- %global flavors_to_build default
- %package -n %{non_kmp_pname}
--Requires: %{utils_pname}
- Requires: coreutils
- Requires: pciutils
- Requires: grep
-@@ -162,7 +173,7 @@ Obsoletes: mlnx-en-doc
+@@ -168,7 +181,7 @@ Obsoletes: mlnx-en-doc
  Obsoletes: mlnx-en-debuginfo
  Obsoletes: mlnx-en-sources
  Version: %{_version}
@@ -103,7 +96,7 @@ index 33fe911..7a9253d 100644
  Summary: Infiniband Driver and ULPs kernel modules
  Group: System Environment/Libraries
  %description -n %{non_kmp_pname}
-@@ -174,7 +185,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -180,7 +193,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  %package -n %{devel_pname}
  Version: %{_version}
  # build KMP rpms?
@@ -112,7 +105,7 @@ index 33fe911..7a9253d 100644
  Obsoletes: kernel-ib-devel
  Obsoletes: compat-rdma-devel
  Obsoletes: kernel-ib
-@@ -212,13 +223,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -218,13 +231,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  	else \
  		echo -n '0'; fi)
  
@@ -127,7 +120,7 @@ index 33fe911..7a9253d 100644
  %global buildsubdir %{_name}-%{version}
  # Disgusting hack alert! We need to ensure we sign modules *after* all
  # invocations of strip occur, which is in __debug_install_post if
-@@ -231,7 +241,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -237,7 +249,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
    %{__modsign_install_post} \
  %{nil}
  
@@ -135,7 +128,7 @@ index 33fe911..7a9253d 100644
  #
  %if "%{_vendor}" == "suse"
  %debug_package
-@@ -262,12 +271,16 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -268,7 +279,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  %{!?install_mod_dir: %global install_mod_dir updates}
  
  %prep
@@ -144,6 +137,8 @@ index 33fe911..7a9253d 100644
  set -- *
  mkdir source
  mv "$@" source/
+@@ -277,6 +288,10 @@ sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
+ %endif
  mkdir obj
  
 +%patch01 -p1
@@ -153,7 +148,7 @@ index 33fe911..7a9253d 100644
  %build
  export EXTRA_CFLAGS='-DVERSION=\"%version\"'
  export INSTALL_MOD_DIR=%{install_mod_dir}
-@@ -282,7 +295,6 @@ for flavor in %flavors_to_build; do
+@@ -292,7 +307,6 @@ for flavor in %flavors_to_build; do
  	find compat -type f -exec touch -t 200012201010 '{}' \; || true
  	./configure --build-dummy-mods --prefix=%{_prefix} --kernel-version $KVERSION --kernel-sources $KSRC --modules-dir $LIB_MOD_DIR $CONF_OPTIONS %{?_smp_mflags}
  	make %{?_smp_mflags} kernel
@@ -161,7 +156,7 @@ index 33fe911..7a9253d 100644
  	cd -
  done
  
-@@ -291,9 +303,11 @@ touch ofed-files
+@@ -301,9 +315,11 @@ touch ofed-files
  export RECORD_PY_FILES=1
  export INSTALL_MOD_PATH=%{buildroot}
  export INSTALL_MOD_DIR=%{install_mod_dir}
@@ -169,12 +164,12 @@ index 33fe911..7a9253d 100644
 +export NAME=%{_basename}
  export VERSION=%{version}
  export PREFIX=%{_prefix}
-+export MODULE_SIGN_PRIV_KEY=/usr/src/kernels/%{KVERSION}/signing_key.priv
++export MODULE_SIGN_PRIV_KEY=/usr/src/kernels/%{KVERSION}/signing_key.pem
 +export MODULE_SIGN_PUB_KEY=/usr/src/kernels/%{KVERSION}/signing_key.x509
+ %{mlnx_python_env}
  for flavor in %flavors_to_build; do 
  	export KSRC=%{kernel_source $flavor}
- 	export KVERSION=%{kernel_release $KSRC}
-@@ -343,6 +357,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
+@@ -354,6 +370,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
  echo "override ${mod_name} * extra/%{_name}${mod_path}" >> %{buildroot}%{_sysconfdir}/depmod.d/zz01-%{_name}-${mod_name}.conf
  done
  %endif
@@ -183,7 +178,7 @@ index 33fe911..7a9253d 100644
  %endif
  
  # copy sources
-@@ -686,6 +702,7 @@ fi
+@@ -700,6 +718,7 @@ fi
  %config(noreplace) %{_sysconfdir}/depmod.d/zz01-%{_name}-*.conf
  %endif
  %endif
@@ -192,5 +187,5 @@ index 33fe911..7a9253d 100644
  
  %files -n %{devel_pname}
 -- 
-1.8.3.1
+2.17.1
 
