@@ -25,14 +25,14 @@ Reviewed-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
 Tested-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
 Signed-off-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
 ---
- tpm_tis_core.c | 42 +++++++++++++++---------------------------
- 1 file changed, 15 insertions(+), 27 deletions(-)
+ tpm_tis_core.c | 43 +++++++++++++++---------------------------
+ 1 file changed, 15 insertions(+), 28 deletions(-)
 
 diff --git a/tpm_tis_core.c b/tpm_tis_core.c
 index a338701..a6b4149 100644
 --- a/tpm_tis_core.c
 +++ b/tpm_tis_core.c
-@@ -256,7 +256,6 @@ static int tpm_tis_send_data(struct tpm_chip *chip, u8 *buf, size_t len)
+@@ -367,7 +367,6 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  {
  	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
  	int rc, status, burstcnt;
@@ -40,10 +40,11 @@ index a338701..a6b4149 100644
  	bool itpm = priv->flags & TPM_TIS_ITPM_WORKAROUND;
  
  	status = tpm_tis_status(chip);
-@@ -270,36 +269,25 @@ static int tpm_tis_send_data(struct tpm_chip *chip, u8 *buf, size_t len)
+@@ -380,36 +379,24 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+ 			goto out_err;
  		}
  	}
- 
+-
 -	while (count < len - 1) {
 -		burstcnt = get_burstcount(chip);
 -		if (burstcnt < 0) {
@@ -56,11 +57,10 @@ index a338701..a6b4149 100644
 -					 burstcnt, buf + count);
 -		if (rc < 0)
 -			goto out_err;
- 
+-
 -		count += burstcnt;
 -
--		if (__wait_for_tpm_stat(chip, TPM_STS_VALID,
--                    chip->timeout_c, 1,
+-		if (wait_for_tpm_stat(chip, TPM_STS_VALID, chip->timeout_c,
 -					&priv->int_queue, false) < 0) {
 -			rc = -ETIME;
 -			goto out_err;
