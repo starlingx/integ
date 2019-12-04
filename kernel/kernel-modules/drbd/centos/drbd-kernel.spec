@@ -9,7 +9,7 @@
 
 Name: drbd-kernel%{?bt_ext}
 Summary: Kernel driver for DRBD
-Version: 8.4.11
+Version: 9.0.21
 %define upstream_release 1
 Release: %{upstream_release}%{?_tis_dist}.%{tis_patch_ver}
 %global tarball_version %(echo "%{version}-%{?upstream_release}" | sed -e "s,%{?dist}$,,")
@@ -17,14 +17,11 @@ Group: System Environment/Kernel
 License: GPLv2+
 Summary: %{kmod_name} kernel module(s)
 
-BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
+BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl, elfutils-libelf-devel
 ExclusiveArch: x86_64
 
 # Sources.
 Source0: http://oss.linbit.com/drbd/drbd-%{tarball_version}.tar.gz
-
-# WRS
-Patch0001: 0001-remove_bind_before_connect_error.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -84,7 +81,6 @@ echo "Done."
 
 %prep
 %setup -q -n drbd-%{tarball_version}
-%patch0001 -p1
 
 %build
 rm -rf obj
@@ -111,10 +107,10 @@ find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
 
 # Always Sign the modules(s).
 # If the module signing keys are not defined, define them here.
-%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.priv}
+%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.pem}
 %{!?pubkey: %define pubkey /usr/src/kernels/%{kversion}/signing_key.x509}
 for module in $(find %{buildroot} -type f -name \*.ko);
-do %{__perl} /usr/src/kernels/%{kversion}/scripts/sign-file \
+do /usr/src/kernels/%{kversion}/scripts/sign-file \
     sha256 %{privkey} %{pubkey} $module;
 done
 
