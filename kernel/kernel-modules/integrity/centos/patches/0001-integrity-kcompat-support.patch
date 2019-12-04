@@ -30,7 +30,7 @@ diff --git a/Makefile b/Makefile
 index 8d1f4bf..022a1b7 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1,3 +1,7 @@
+@@ -2,3 +2,7 @@
 +
 +ifneq ($(KERNELRELEASE),)
 +# kbuild part of makefile
@@ -497,7 +497,7 @@ index 106e855..f850ef7 100644
  #endif
  
  #ifdef CONFIG_IMA_KEYRINGS_PERMIT_SIGNED_BY_BUILTIN_OR_SECONDARY
-@@ -77,39 +77,43 @@ int integrity_digsig_verify(const unsigned int id, const char *sig, int siglen,
+@@ -78,39 +78,43 @@ int integrity_digsig_verify(const unsigned int id, const char *sig, int siglen,
  
  	return -EOPNOTSUPP;
  }
@@ -534,10 +534,10 @@ index 106e855..f850ef7 100644
 -				    KEY_ALLOC_NOT_IN_QUOTA,
 -				    restriction, NULL);
 -	if (IS_ERR(keyring[id])) {
-+				    KEY_ALLOC_NOT_IN_QUOTA, NULL);
++				    KEY_ALLOC_NOT_IN_QUOTA, NULL, NULL);
 +
 +	if (!IS_ERR(keyring[id])) {
-+		set_bit(KEY_FLAG_TRUSTED_ONLY, &keyring[id]->flags);
++		set_bit(KEY_FLAG_KEEP, &keyring[id]->flags);
 +	} else {
  		err = PTR_ERR(keyring[id]);
  		pr_info("Can't allocate %s keyring (%d)\n",
@@ -553,7 +553,7 @@ index 106e855..f850ef7 100644
 +int integrity_load_x509(const unsigned int id, const char *path)
  {
  	key_ref_t key;
- 	char *data;
+ 	void *data;
 diff --git a/digsig_asymmetric.c b/digsig_asymmetric.c
 index 80052ed..1753b60 100644
 --- a/digsig_asymmetric.c
@@ -574,8 +574,8 @@ index 80052ed..1753b60 100644
  
  	if (keyring) {
  		/* search in specific keyring */
-@@ -95,7 +97,11 @@ int asymmetric_verify(struct key *keyring, const char *sig,
- 	if (siglen != __be16_to_cpu(hdr->sig_size))
+@@ -97,7 +99,11 @@ int asymmetric_verify(struct key *keyring, const char *sig,
+ 	if (siglen != be16_to_cpu(hdr->sig_size))
  		return -EBADMSG;
  
 +#if ( LINUX_VERSION_CODE <= KERNEL_VERSION(3,10,0) )
@@ -585,7 +585,7 @@ index 80052ed..1753b60 100644
 +#endif
  		return -ENOPKG;
  
- 	key = request_asymmetric_key(keyring, __be32_to_cpu(hdr->keyid));
+	key = request_asymmetric_key(keyring, be32_to_cpu(hdr->keyid));
 @@ -103,14 +109,24 @@ int asymmetric_verify(struct key *keyring, const char *sig,
  		return PTR_ERR(key);
  
@@ -689,14 +689,14 @@ index c710d22..83405a1 100644
 +	integrity_inode_get_kernel = integrity_inode_get;
 +	integrity_inode_free_kernel = integrity_inode_free;
 +
-+	integrity_inode_get = &__integrity_inode_get;
-+	integrity_inode_free = &__integrity_inode_free;
++	struct integrity_iint_cache *(*integrity_inode_get)(struct inode *)  = &__integrity_inode_get;
++	void (*integrity_inode_free)(struct inode*)  = &__integrity_inode_free;
 +	pr_info("Initializing Integrity Base Module\n");
 +
  	return 0;
  }
  security_initcall(integrity_iintcache_init);
-@@ -186,18 +203,22 @@ int integrity_kernel_read(struct file *file, loff_t offset,
+@@ -203,18 +220,22 @@ int integrity_kernel_read(struct file *file, loff_t offset,
  {
  	mm_segment_t old_fs;
  	char __user *buf = (char __user *)addr;
@@ -711,8 +711,8 @@ index c710d22..83405a1 100644
 -	ret = __vfs_read(file, buf, count, &offset);
 +	if (file->f_op->read)
 +		ret = file->f_op->read(file, buf, count, &offset);
-+	else if (file->f_op->aio_read)
-+		ret = do_sync_read(file, buf, count, &offset);
++	else if (file->f_op->read_iter)
++		ret = vfs_read(file, buf, count, &offset);
  	set_fs(old_fs);
  
  	return ret;
@@ -720,7 +720,7 @@ index c710d22..83405a1 100644
 +EXPORT_SYMBOL_GPL(integrity_kernel_read);
  
  /*
-  * integrity_read_file - read entire file content into the buffer
+  * integrity_load_keys - load integrity keys hook
 @@ -259,3 +280,18 @@ void __init integrity_load_keys(void)
  	ima_load_x509();
  	evm_load_x509();
@@ -732,8 +732,8 @@ index c710d22..83405a1 100644
 +	 * assign back to default kernel definations
 +	 * for these dynamic functions
 +	 */
-+	integrity_inode_get = integrity_inode_get_kernel;
-+	integrity_inode_free = integrity_inode_free_kernel;
++	struct integrity_iint_cache *(*integrity_inode_get)(struct inode *) = integrity_inode_get_kernel;
++	void (*integrity_inode_free)(struct inode*) = integrity_inode_free_kernel;
 +}
 +
 +module_exit(cleanup_integrity);
@@ -794,21 +794,28 @@ diff --git a/ima/ima_api.c b/ima/ima_api.c
 index c2edba8..e14e9d0 100644
 --- a/ima/ima_api.c
 +++ b/ima/ima_api.c
-@@ -307,11 +307,9 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
+@@ -313,6 +313,7 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
+ 	struct audit_buffer *ab;
+ 	char *hash;
+ 	const char *algo_name = hash_algo_name[iint->ima_hash->algo];
++       char algo_hash[sizeof(hash) + strlen(algo_name) + 2];
+ 	int i;
+ 
+ 	if (iint->flags & IMA_AUDITED)
+@@ -331,9 +332,9 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
  	if (!ab)
- 		return;
+ 		goto out;
  
 -	audit_log_format(ab, "file=");
 -	audit_log_untrustedstring(ab, filename);
--	audit_log_format(ab, " hash=");
+-	audit_log_format(ab, " hash=\"%s:%s\"", algo_name, hash);
 +	audit_log_format(ab, "file=%s", filename);
- 	snprintf(algo_hash, sizeof(algo_hash), "%s:%s", algo_name, hash);
--	audit_log_untrustedstring(ab, algo_hash);
++	snprintf(algo_hash, sizeof(algo_hash), "%s:%s", algo_name, hash);
 +	audit_log_format(ab, " hash=%s", algo_hash);
  
  	audit_log_task_info(ab, current);
  	audit_log_end(ab);
-@@ -332,12 +330,12 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
+@@ -357,12 +358,12 @@ out:
  const char *ima_d_path(const struct path *path, char **pathbuf, char *namebuf)
  {
  	char *pathname = NULL;
@@ -839,7 +846,7 @@ index 1fd9539..b0d4286 100644
  #include <linux/module.h>
  #include <linux/file.h>
  #include <linux/fs.h>
-@@ -58,10 +61,10 @@ static int ima_fix_xattr(struct dentry *dentry,
+@@ -74,10 +77,10 @@ static int ima_fix_xattr(struct dentry *dentry,
  		iint->ima_hash->xattr.ng.type = IMA_XATTR_DIGEST_NG;
  		iint->ima_hash->xattr.ng.algo = algo;
  	}
@@ -854,13 +861,13 @@ index 1fd9539..b0d4286 100644
  	return rc;
  }
  
-@@ -168,14 +171,14 @@ enum hash_algo ima_get_hash_algo(struct evm_ima_xattr_data *xattr_value,
+@@ -191,14 +194,14 @@ enum hash_algo ima_get_hash_algo(struct evm_ima_xattr_data *xattr_value,
  int ima_read_xattr(struct dentry *dentry,
  		   struct evm_ima_xattr_data **xattr_value)
  {
 -	ssize_t ret;
-+	struct inode *inode = d_backing_inode(dentry);
-+	if (!inode->i_op->getxattr)
++	ssize_t ret = vfs_getxattr(dentry, XATTR_NAME_IMA, (char **)xattr_value, 0);
++	if (!ret)
 +		return 0;
  
 -	ret = vfs_getxattr_alloc(dentry, XATTR_NAME_IMA, (char **)xattr_value,
@@ -875,28 +882,37 @@ index 1fd9539..b0d4286 100644
  
  /*
   * ima_appraise_measurement - appraise file measurement
-@@ -198,7 +201,7 @@ int ima_appraise_measurement(enum ima_hooks func,
+@@ -221,7 +224,7 @@ int ima_appraise_measurement(enum ima_hooks func,
  	enum integrity_status status = INTEGRITY_UNKNOWN;
  	int rc = xattr_len, hash_start = 0;
  
 -	if (!(inode->i_opflags & IOP_XATTR))
-+	if (!inode->i_op->getxattr)
++	if (!vfs_getxattr(dentry, XATTR_NAME_IMA, (char **)xattr_value, 0))
  		return INTEGRITY_UNKNOWN;
  
  	if (rc <= 0) {
-@@ -214,7 +217,11 @@ int ima_appraise_measurement(enum ima_hooks func,
+@@ -240,7 +243,11 @@ int ima_appraise_measurement(enum ima_hooks func,
  		goto out;
  	}
  
 +#ifdef CONFIG_EVM
  	status = evm_verifyxattr(dentry, XATTR_NAME_IMA, xattr_value, rc, iint);
 +#else
-+    status = INTEGRITY_UNKNOWN; /* CONFIG_INTEGRITY */
++	status = INTEGRITY_UNKNOWN; /* CONFIG_INTEGRITY */
 +#endif
- 	if ((status != INTEGRITY_PASS) && (status != INTEGRITY_UNKNOWN)) {
- 		if ((status == INTEGRITY_NOLABEL)
- 		    || (status == INTEGRITY_NOXATTRS))
-@@ -321,14 +328,14 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
+ 	switch (status) {
+ 	case INTEGRITY_PASS:
+ 	case INTEGRITY_PASS_IMMUTABLE:
+@@ -372,7 +379,7 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
+ }
+ 
+ /**
+- * ima_inode_post_setattr - reflect file metadata changes
++ * __ima_inode_post_setattr - reflect file metadata changes
+  * @dentry: pointer to the affected dentry
+  *
+  * Changes to a dentry's metadata might result in needing to appraise.
+@@ -380,19 +387,19 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
   * This function is called from notify_change(), which expects the caller
   * to lock the inode's i_mutex.
   */
@@ -905,27 +921,23 @@ index 1fd9539..b0d4286 100644
  {
  	struct inode *inode = d_backing_inode(dentry);
  	struct integrity_iint_cache *iint;
--	int must_appraise;
-+	int must_appraise, rc;
+-	int action;
++	int action, rc;
  
  	if (!(ima_policy_flag & IMA_APPRAISE) || !S_ISREG(inode->i_mode)
 -	    || !(inode->i_opflags & IOP_XATTR))
-+	    || !inode->i_op->removexattr)
++	    || !vfs_removexattr(dentry, XATTR_NAME_IMA))
  		return;
  
- 	must_appraise = ima_must_appraise(inode, MAY_ACCESS, POST_SETATTR);
-@@ -341,7 +348,8 @@ void ima_inode_post_setattr(struct dentry *dentry)
- 			iint->flags |= IMA_APPRAISE;
- 	}
- 	if (!must_appraise)
+ 	action = ima_must_appraise(inode, MAY_ACCESS, POST_SETATTR);
+ 	if (!action)
 -		__vfs_removexattr(dentry, XATTR_NAME_IMA);
-+		rc = inode->i_op->removexattr(dentry, XATTR_NAME_IMA);
-+	return;
- }
- 
- /*
-@@ -378,7 +386,7 @@ static void ima_reset_appraise_flags(struct inode *inode, int digsig)
- 	return;
++		rc = vfs_removexattr(dentry, XATTR_NAME_IMA);
+ 	iint = integrity_iint_find(inode);
+ 	if (iint) {
+ 		set_bit(IMA_CHANGE_ATTR, &iint->atomic_flags);
+@@ -435,7 +442,7 @@ static void ima_reset_appraise_flags(struct inode *inode, int digsig)
+ 		clear_bit(IMA_DIGSIG, &iint->atomic_flags);
  }
  
 -int ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
@@ -933,7 +945,7 @@ index 1fd9539..b0d4286 100644
  		       const void *xattr_value, size_t xattr_value_len)
  {
  	const struct evm_ima_xattr_data *xvalue = xattr_value;
-@@ -396,7 +404,7 @@ int ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
+@@ -453,7 +460,7 @@ int ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
  	return result;
  }
  
@@ -983,18 +995,17 @@ diff --git a/ima/ima_main.c b/ima/ima_main.c
 index 2aebb79..5d6ba23 100644
 --- a/ima/ima_main.c
 +++ b/ima/ima_main.c
-@@ -16,6 +16,10 @@
-  *	implements the IMA hooks: ima_bprm_check, ima_file_mmap,
-  *	and ima_file_check.
-  */
-+
+@@ -19,6 +19,9 @@
+ 
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
 +// include kcompat layer
 +#include "../kcompat.h"
 +
  #include <linux/module.h>
  #include <linux/file.h>
  #include <linux/binfmts.h>
-@@ -30,7 +34,10 @@
+@@ -35,7 +38,10 @@
  int ima_initialized;
  
  #ifdef CONFIG_IMA_APPRAISE
@@ -1006,7 +1017,7 @@ index 2aebb79..5d6ba23 100644
  #else
  int ima_appraise;
  #endif
-@@ -140,7 +147,7 @@ static void ima_check_last_writer(struct integrity_iint_cache *iint,
+@@ -156,7 +162,7 @@ static void ima_check_last_writer(struct integrity_iint_cache *iint,
   *
   * Flag files that changed, based on i_version
   */
@@ -1015,42 +1026,44 @@ index 2aebb79..5d6ba23 100644
  {
  	struct inode *inode = file_inode(file);
  	struct integrity_iint_cache *iint;
-@@ -259,8 +266,7 @@ out_digsig:
- 		rc = -EACCES;
+@@ -314,8 +320,7 @@ out_locked:
+ 	mutex_unlock(&iint->mutex);
  	kfree(xattr_value);
- out_free:
+ out:
 -	if (pathbuf)
 -		__putname(pathbuf);
-+	kfree(pathbuf);
- out:
- 	inode_unlock(inode);
- 	if ((rc && must_appraise) && (ima_appraise & IMA_APPRAISE_ENFORCE))
-@@ -279,7 +285,7 @@ out:
++        kfree(pathbuf);
+ 	if (must_appraise) {
+ 		if (rc && (ima_appraise & IMA_APPRAISE_ENFORCE))
+ 			return -EACCES;
+@@ -336,7 +341,7 @@ out:
   * On success return 0.  On integrity appraisal error, assuming the file
   * is in policy and IMA-appraisal is in enforcing mode, return -EACCES.
   */
 -int ima_file_mmap(struct file *file, unsigned long prot)
 +static int __ima_file_mmap(struct file *file, unsigned long prot)
  {
- 	if (file && (prot & PROT_EXEC))
- 		return process_measurement(file, NULL, 0, MAY_EXEC,
-@@ -300,7 +306,7 @@ int ima_file_mmap(struct file *file, unsigned long prot)
+ 	u32 secid;
+ 
+@@ -362,7 +367,7 @@ int ima_file_mmap(struct file *file, unsigned long prot)
   * On success return 0.  On integrity appraisal error, assuming the file
   * is in policy and IMA-appraisal is in enforcing mode, return -EACCES.
   */
 -int ima_bprm_check(struct linux_binprm *bprm)
 +static int __ima_bprm_check(struct linux_binprm *bprm)
  {
- 	return process_measurement(bprm->file, NULL, 0, MAY_EXEC,
- 				   BPRM_CHECK, 0);
-@@ -316,13 +322,12 @@ int ima_bprm_check(struct linux_binprm *bprm)
+ 	int ret;
+ 	u32 secid;
+@@ -388,7 +393,7 @@ int ima_bprm_check(struct linux_binprm *bprm)
   * On success return 0.  On integrity appraisal error, assuming the file
   * is in policy and IMA-appraisal is in enforcing mode, return -EACCES.
   */
 -int ima_file_check(struct file *file, int mask, int opened)
 +static int __ima_file_check(struct file *file, int mask, int opened)
  {
- 	return process_measurement(file, NULL, 0,
+ 	u32 secid;
+ 
+@@ -397,7 +402,6 @@ int ima_file_check(struct file *file, int mask, int opened)
  				   mask & (MAY_READ | MAY_WRITE | MAY_EXEC |
  					   MAY_APPEND), FILE_CHECK, opened);
  }
@@ -1058,43 +1071,44 @@ index 2aebb79..5d6ba23 100644
  
  /**
   * ima_post_path_mknod - mark as a new inode
-@@ -346,6 +351,7 @@ void ima_post_path_mknod(struct dentry *dentry)
- 		iint->flags |= IMA_NEW_FILE;
- }
+@@ -455,6 +459,7 @@ static int read_idmap[READING_MAX_ID] = {
+ 	[READING_POLICY] = POLICY_CHECK
+ };
  
 +#if ( LINUX_VERSION_CODE > KERNEL_VERSION(3,10,0) )
  /**
-  * ima_read_file - pre-measure/appraise hook decision based on policy
+  * ima_post_read_file - in memory collect/appraise/audit measurement
   * @file: pointer to the file to be measured/appraised/audit
-@@ -415,10 +421,28 @@ int ima_post_read_file(struct file *file, void *buf, loff_t size,
- 	func = read_idmap[read_id] ?: FILE_CHECK;
- 	return process_measurement(file, buf, size, MAY_READ, func, 0);
+@@ -499,11 +504,29 @@ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 	return process_measurement(file, current_cred(), secid, buf, size,
+ 				   MAY_READ, func, 0);
  }
-+#endif 
++#endif
  
  static int __init init_ima(void)
  {
  	int error;
-+	
+ 
 +	/*
 +	 * On loading the module, map the kernel inline
-+	 * function calls (used by the FS layer) to 
++	 * function calls (used by the FS layer) to
 +	 * function definations within the module.
 +	 *
 +	 * N.B: No specific unmapping (to Kernel default)
 +	 * required as IMA module cannot be removed (even forcebly),
 +	 * once it binds to the Kernel VFS layer
-+	 */	
-+	ima_bprm_check = &__ima_bprm_check;
-+	ima_file_check = &__ima_file_check;
-+	ima_file_free = &__ima_file_free;
-+	ima_file_mmap = &__ima_file_mmap;
-+	ima_inode_post_setattr = &__ima_inode_post_setattr;
-+	ima_inode_setxattr = &__ima_inode_setxattr;
-+	ima_inode_removexattr = &__ima_inode_removexattr;
- 
++	 */
++	int  (*ima_bprm_check)(struct linux_binprm *) = &__ima_bprm_check;
++	int  (*ima_file_check)(struct file *, int, int) = &__ima_file_check;
++	void (*ima_file_free)(struct file *) = &__ima_file_free;
++	int  (*ima_file_mmap)(struct file *, unsigned long) = &__ima_file_mmap;
++	void (*ima_inode_post_setattr)(struct dentry *) = &__ima_inode_post_setattr;
++	int  (*ima_inode_setxattr)(struct dentry *, const char *, const void *, size_t) = &__ima_inode_setxattr;
++	int  (*ima_inode_removexattr)(struct dentry *, const char *) = &__ima_inode_removexattr;
++
  	ima_init_template_list();
  	hash_setup(CONFIG_IMA_DEFAULT_HASH);
+ 	error = ima_init();
 diff --git a/ima/ima_policy.c b/ima/ima_policy.c
 index aed47b7..dd52d98 100644
 --- a/ima/ima_policy.c
@@ -1109,9 +1123,9 @@ index aed47b7..dd52d98 100644
  	{.action = DONT_MEASURE, .fsmagic = SYSFS_MAGIC, .flags = IMA_FSMAGIC},
  	{.action = DONT_MEASURE, .fsmagic = DEBUGFS_MAGIC, .flags = IMA_FSMAGIC},
 @@ -96,10 +96,12 @@ static struct ima_rule_entry dont_measure_rules[] __ro_after_init = {
- 	{.action = DONT_MEASURE, .fsmagic = SELINUX_MAGIC, .flags = IMA_FSMAGIC},
- 	{.action = DONT_MEASURE, .fsmagic = CGROUP_SUPER_MAGIC,
- 	 .flags = IMA_FSMAGIC},
+	 .flags = IMA_FSMAGIC},
+	{.action = DONT_MEASURE, .fsmagic = CGROUP2_SUPER_MAGIC,
+	 .flags = IMA_FSMAGIC},
 +#if ( LINUX_VERSION_CODE > KERNEL_VERSION(3,10,0) )
  	{.action = DONT_MEASURE, .fsmagic = NSFS_MAGIC, .flags = IMA_FSMAGIC}
 +#endif
@@ -1141,15 +1155,15 @@ index aed47b7..dd52d98 100644
  	{.action = DONT_APPRAISE, .fsmagic = SYSFS_MAGIC, .flags = IMA_FSMAGIC},
  	{.action = DONT_APPRAISE, .fsmagic = DEBUGFS_MAGIC, .flags = IMA_FSMAGIC},
 @@ -137,7 +139,9 @@ static struct ima_rule_entry default_appraise_rules[] __ro_after_init = {
- 	{.action = DONT_APPRAISE, .fsmagic = BINFMTFS_MAGIC, .flags = IMA_FSMAGIC},
- 	{.action = DONT_APPRAISE, .fsmagic = SECURITYFS_MAGIC, .flags = IMA_FSMAGIC},
- 	{.action = DONT_APPRAISE, .fsmagic = SELINUX_MAGIC, .flags = IMA_FSMAGIC},
+	{.action = DONT_APPRAISE, .fsmagic = SECURITYFS_MAGIC, .flags = IMA_FSMAGIC},
+	{.action = DONT_APPRAISE, .fsmagic = SELINUX_MAGIC, .flags = IMA_FSMAGIC},
+	{.action = DONT_APPRAISE, .fsmagic = SMACK_MAGIC, .flags = IMA_FSMAGIC},
 +#if ( LINUX_VERSION_CODE > KERNEL_VERSION(3,10,0) )
  	{.action = DONT_APPRAISE, .fsmagic = NSFS_MAGIC, .flags = IMA_FSMAGIC},
 +#endif
- 	{.action = DONT_APPRAISE, .fsmagic = CGROUP_SUPER_MAGIC, .flags = IMA_FSMAGIC},
+	{.action = DONT_APPRAISE, .fsmagic = CGROUP_SUPER_MAGIC, .flags = IMA_FSMAGIC},
+	{.action = DONT_APPRAISE, .fsmagic = CGROUP2_SUPER_MAGIC, .flags = IMA_FSMAGIC},
  #ifdef CONFIG_IMA_WRITE_POLICY
- 	{.action = APPRAISE, .func = POLICY_CHECK,
 @@ -249,7 +253,11 @@ static bool ima_match_rules(struct ima_rule_entry *rule, struct inode *inode,
  	if ((rule->flags & IMA_UID) && !rule->uid_op(cred->uid, rule->uid))
  		return false;
@@ -1223,9 +1237,9 @@ index 24520b4..c13e61d 100644
  	uint8_t version;	/* signature format version */
 -	uint8_t	hash_algo;	/* Digest algorithm [enum hash_algo] */
 +	uint8_t	hash_algo;	/* Digest algorithm [enum pkey_hash_algo] */
- 	uint32_t keyid;		/* IMA key identifier - not X509/PGP specific */
- 	uint16_t sig_size;	/* signature size */
- 	uint8_t sig[0];		/* signature payload */
+	__be32 keyid;		/* IMA key identifier - not X509/PGP specific */
+	__be16 sig_size;	/* signature size */
+	uint8_t sig[0];		/* signature payload */
 @@ -131,8 +133,8 @@ int __init integrity_read_file(const char *path, char **data);
  int integrity_digsig_verify(const unsigned int id, const char *sig, int siglen,
  			    const char *digest, int digestlen);

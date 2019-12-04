@@ -22,7 +22,7 @@ diff --git a/ima/ima_appraise.c b/ima/ima_appraise.c
 index b0d4286..88b5091 100644
 --- a/ima/ima_appraise.c
 +++ b/ima/ima_appraise.c
-@@ -21,7 +21,21 @@
+@@ -18,7 +18,21 @@
  
  #include "ima.h"
  
@@ -43,49 +43,48 @@ index b0d4286..88b5091 100644
 +
 +static int default_appraise_setup(char *str)
  {
+ #ifdef CONFIG_IMA_APPRAISE_BOOTPARAM
  	if (strncmp(str, "off", 3) == 0)
- 		ima_appraise = 0;
-@@ -29,11 +43,40 @@ static int __init default_appraise_setup(char *str)
+@@ -27,12 +41,40 @@ static int __init default_appraise_setup(char *str)
  		ima_appraise = IMA_APPRAISE_LOG;
  	else if (strncmp(str, "fix", 3) == 0)
  		ima_appraise = IMA_APPRAISE_FIX;
--	return 1;
-+    else if (strncmp(str, "enforce", 7) == 0) 
++	else if (strncmp(str, "enforce", 7) == 0) 
 +		ima_appraise = IMA_APPRAISE_ENFORCE;
-+    else {
-+	    return -1;
-+    }
-+    return 1;
++	else {
++		return -1;
++	}
+ #endif
+ 	return 1;
  }
  
  __setup("ima_appraise=", default_appraise_setup);
  
-+
 +static int ima_appraise_param_set(const char *val, 
 +        const struct kernel_param *kp)
 +{
-+    char *ima_appraise_type = strstrip((char *)val);
++	char *ima_appraise_type = strstrip((char *)val);
 +
-+    /* no change required */
-+    if (!strcmp(ima_appraise_type, *(char **)kp->arg))
-+        return 0;
++	/* no change required */
++	if (!strcmp(ima_appraise_type, *(char **)kp->arg))
++		return 0;
 +    
-+    /* set the ima_appraise mode and only 
-+     * update the kernel parameter if the parameter
-+     * was successfully set */
-+    int ret;
-+    ret = default_appraise_setup(ima_appraise_type);
-+    if (ret == -1) {
-+        pr_err("Undefined value for ima_appraise_param: %s\n",
-+               ima_appraise_type);
-+        return -EINVAL;
-+    }
++	/* set the ima_appraise mode and only 
++	* update the kernel parameter if the parameter
++	* was successfully set */
++	int ret;
++	ret = default_appraise_setup(ima_appraise_type);
++	if (ret == -1) {
++		pr_err("Undefined value for ima_appraise_param: %s\n",
++			ima_appraise_type);
++		return -EINVAL;
++	}
 +
-+    return param_set_charp(ima_appraise_type, kp);
++	return param_set_charp(ima_appraise_type, kp);
 +}
-+                                  
++
  /*
-  * ima_must_appraise - set appraise flag
+  * is_ima_appraise_enabled - return appraise status
   *
 diff --git a/ima/ima_init.c b/ima/ima_init.c
 index 0759c8c..a7362e8 100644
@@ -104,19 +103,17 @@ index 0759c8c..a7362e8 100644
  
  /* Add the boot aggregate to the IMA measurement list and extend
   * the PCR register.
-@@ -108,11 +112,13 @@ int __init ima_init(void)
- {
+@@ -109,10 +113,12 @@ int __init ima_init(void)
  	u8 pcr_i[TPM_DIGEST_SIZE];
  	int rc;
--
+ 
 -	ima_used_chip = 0;
--	rc = tpm_pcr_read(TPM_ANY_NUM, 0, pcr_i);
+-	rc = tpm_pcr_read(NULL, 0, pcr_i);
 -	if (rc == 0)
 -		ima_used_chip = 1;
-+	
 +	if (ima_used_chip != 0) {
 +		ima_used_chip = 0;
-+		rc = tpm_pcr_read(TPM_ANY_NUM, 0, pcr_i);
++		rc = tpm_pcr_read(NULL, 0, pcr_i);
 +		if (rc == 0)
 +			ima_used_chip = 1;
 +	}
@@ -127,7 +124,11 @@ diff --git a/integrity_audit.c b/integrity_audit.c
 index ba5e532..da29f91 100644
 --- a/integrity_audit.c
 +++ b/integrity_audit.c
-@@ -17,6 +17,8 @@
+@@ -13,9 +13,12 @@
+ #include <linux/fs.h>
+ #include <linux/gfp.h>
+ #include <linux/audit.h>
++#include <linux/module.h>
  #include "integrity.h"
  
  static int integrity_audit_info;
