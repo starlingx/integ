@@ -7,8 +7,8 @@
 # Network Drivers
 #
 
-# i40evf-kmod
-kmod-i40evf-rt
+# iavf-kmod
+kmod-iavf-rt
 
 # i40e-kmod
 kmod-i40e-rt

@@ -1,0 +1,110 @@
+From 764ce9e69477b47577fc0231f4a0190b119937f7 Mon Sep 17 00:00:00 2001
+From: Joseph Richard <joseph.richard@windriver.com>
+Date: Tue, 19 Nov 2019 13:06:43 -0500
+Subject: [PATCH] Include starlingx initscripts changes
+
+This is build with build-pkgs --edit initscripts, and then rebased with
+git rebase -i --root, with all existing meta-patches squashed into this
+commit, and then the new meta-patch created from the output of
+git format-patch HEAD~
+
+Signed-off-by: Joseph Richard <joseph.richard@windriver.com>
+---
+ SPECS/initscripts.spec | 38 ++++++++++++++++++++++++++++++--------
+ 1 file changed, 30 insertions(+), 8 deletions(-)
+
+diff --git a/SPECS/initscripts.spec b/SPECS/initscripts.spec
+index fb0bd96..a446775 100644
+--- a/SPECS/initscripts.spec
++++ b/SPECS/initscripts.spec
+@@ -4,7 +4,7 @@ Version: 9.49.46
+ # ppp-watch is GPLv2+, everything else is GPLv2
+ License: GPLv2 and GPLv2+
+ Group: System Environment/Base
+-Release: 1%{?dist}
++Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
+ URL: https://github.com/fedora-sysv/initscripts
+ Source: https://github.com/fedora-sysv/initscripts/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
+ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+@@ -36,6 +36,20 @@ Requires(preun): /sbin/chkconfig
+ BuildRequires: glib2-devel popt-devel gettext pkgconfig systemd
+ Provides: /sbin/service
+ 
++Patch1: support-interface-scriptlets.patch
++Patch2: relocate-dhclient-leases-to-var-run.patch
++Patch3: dhclient-restrict-interfaces-to-those-on-c.patch
++Patch4: support-interface-promisc.patch
++Patch5: 0001-dhclient-remove-1-arg.patch
++Patch6: 0001-force-delay-check-link-down.patch
++Patch7: run-ifdown-on-all-interfaces.patch
++Patch8: sysconfig-affirmative-check-for-link-carrier.patch
++Patch9: sysconfig-unsafe-usage-of-linkdelay-variable.patch
++Patch10: ipv6-static-route-support.patch
++Patch11: ifup-eth-stop-waiting-if-link-is-up.patch
++Patch12: ifup-alias-scope.patch
++Patch13: ifup-alias-check-ipaddr.patch
++
+ %description
+ The initscripts package contains basic system scripts used
+ during a boot of the system. It also contains scripts which
+@@ -55,6 +69,20 @@ Currently, this consists of various memory checking code.
+ %prep
+ %setup -q
+ 
++%patch1 -p1
++%patch2 -p1
++%patch3 -p1
++%patch4 -p1
++%patch5 -p1
++%patch6 -p1
++%patch7 -p1
++%patch8 -p1
++%patch9 -p1
++%patch10 -p1
++%patch11 -p1
++%patch12 -p1
++%patch13 -p1
++
+ %build
+ make
+ 
+@@ -163,10 +191,7 @@ rm -rf $RPM_BUILD_ROOT
+ /usr/lib/systemd/rhel-*
+ /usr/lib/systemd/system/*
+ /etc/inittab
+-%dir /etc/rc.d
+-%dir /etc/rc.d/rc[0-9].d
+ /etc/rc[0-9].d
+-%dir /etc/rc.d/init.d
+ /etc/rc.d/init.d/*
+ %config(noreplace) /etc/sysctl.conf
+ /usr/lib/sysctl.d/00-system.conf
+@@ -188,7 +213,6 @@ rm -rf $RPM_BUILD_ROOT
+ /usr/sbin/ppp-watch
+ %{_mandir}/man*/*
+ %dir %attr(775,root,root) /var/run/netreport
+-%dir /etc/ppp
+ %dir /etc/ppp/peers
+ /etc/ppp/ip-up
+ /etc/ppp/ip-down
+@@ -196,8 +220,6 @@ rm -rf $RPM_BUILD_ROOT
+ /etc/ppp/ip-down.ipv6to4
+ /etc/ppp/ipv6-up
+ /etc/ppp/ipv6-down
+-%dir /etc/NetworkManager
+-%dir /etc/NetworkManager/dispatcher.d
+ /etc/NetworkManager/dispatcher.d/00-netreport
+ %doc sysconfig.txt sysvinitfiles static-routes-ipv6 ipv6-tunnel.howto ipv6-6to4.howto changes.ipv6 COPYING
+ %doc examples
+@@ -207,7 +229,7 @@ rm -rf $RPM_BUILD_ROOT
+ %ghost %attr(0664,root,utmp) /var/run/utmp
+ %ghost %attr(0644,root,root) /etc/sysconfig/kvm
+ %ghost %verify(not md5 size mtime) %config(noreplace,missingok) /etc/crypttab
+-%dir /usr/lib/tmpfiles.d
++%dir %attr(0755,root,root) /usr/lib/tmpfiles.d
+ /usr/lib/tmpfiles.d/initscripts.conf
+ %dir /usr/libexec/initscripts
+ %dir /usr/libexec/initscripts/legacy-actions
+-- 
+1.8.3.1
+

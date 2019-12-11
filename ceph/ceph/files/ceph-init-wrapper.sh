@@ -156,8 +156,9 @@ log_and_restart_blocked_osds ()
 {
     # Log info about the blocked osd daemons and then restart it
     local names=$1
+    local message=$2
     for name in $names; do
-        wlog $name "INFO" "Restarting OSD with blocked operations"
+        wlog $name "INFO" "$message"
         ${CEPH_SCRIPT} restart $name
     done
 }
@@ -253,6 +254,7 @@ status ()
         erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
         hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
         blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
         invalid=0
         host=`hostname`
         if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
@@ -267,13 +269,11 @@ status ()
             fi
         done
 
-        log_and_restart_blocked_osds $blocked_ops_procs
+        log_and_restart_blocked_osds "$blocked_ops_procs"\
+            "Restarting OSD with blocked operations"
+        log_and_restart_blocked_osds "$stuck_peering_procs"\
+            "Restarting OSD stuck peering"
         log_and_kill_hung_procs $hung_procs
-
-        hung_procs_text=""
-        for i in $(echo $hung_procs); do
-            hung_procs_text+="$i(process hung) "
-        done
 
         rm -f $CEPH_STATUS_FAILURE_TEXT_FILE
         if [ $invalid -eq 0 ]; then

@@ -80,9 +80,9 @@ kmod-e1000e-rt
 kmod-i40e
 kmod-i40e-rt
 
-# i40evf-kmod
-kmod-i40evf
-kmod-i40evf-rt
+# iavf-kmod
+kmod-iavf
+kmod-iavf-rt
 
 # ixgbevf-kmod
 kmod-ixgbevf

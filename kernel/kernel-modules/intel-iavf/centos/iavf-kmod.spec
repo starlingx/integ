@@ -5,10 +5,10 @@
 %endif
 
 # Define the kmod package name here.
-%define kmod_name i40evf
+%define kmod_name iavf
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 3.6.15
+Version: 3.7.61.20
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
@@ -25,52 +25,52 @@ Source11: modules-load.conf
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
-%package       -n kmod-i40evf%{?bt_ext}
-Summary:          i40evf kernel module(s)
+%package       -n kmod-iavf%{?bt_ext}
+Summary:          iavf kernel module(s)
 Group:            System Environment/Kernel
 %global _use_internal_dependency_generator 0
 Provides:         kernel-modules >= %{kversion}
-Provides:         i40evf-kmod = %{?epoch:%{epoch}:}%{version}-%{release}
+Provides:         iavf-kmod = %{?epoch:%{epoch}:}%{version}-%{release}
 Requires(post):   /usr/sbin/depmod
 Requires(postun): /usr/sbin/depmod
 
-%description   -n kmod-i40evf%{?bt_ext}
-This package provides the i40evf kernel module(s) built
+%description   -n kmod-iavf%{?bt_ext}
+This package provides the iavf kernel module(s) built
 for the Linux kernel using the %{_target_cpu} family of processors.
 
-%post          -n kmod-i40evf%{?bt_ext}
+%post          -n kmod-iavf%{?bt_ext}
 echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(find /lib/modules/%{kversion}/extra/i40evf | grep '\.ko$') )
+modules=( $(find /lib/modules/%{kversion}/extra/iavf | grep '\.ko$') )
 if [ -x "/sbin/weak-modules" ]; then
     printf '%s\n' "${modules[@]}" | /sbin/weak-modules --add-modules
 fi
 echo "Done."
 
-%preun         -n kmod-i40evf%{?bt_ext}
-rpm -ql kmod-i40evf%{?bt_ext}-%{version}-%{release}.x86_64 | grep '\.ko$' > /var/run/rpm-kmod-i40evf%{?bt_ext}-modules
+%preun         -n kmod-iavf%{?bt_ext}
+rpm -ql kmod-iavf%{?bt_ext}-%{version}-%{release}.x86_64 | grep '\.ko$' > /var/run/rpm-kmod-iavf%{?bt_ext}-modules
 
-%postun        -n kmod-i40evf%{?bt_ext}
+%postun        -n kmod-iavf%{?bt_ext}
 echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(cat /var/run/rpm-kmod-i40evf%{?bt_ext}-modules) )
-rm /var/run/rpm-kmod-i40evf%{?bt_ext}-modules
+modules=( $(cat /var/run/rpm-kmod-iavf%{?bt_ext}-modules) )
+rm /var/run/rpm-kmod-iavf%{?bt_ext}-modules
 if [ -x "/sbin/weak-modules" ]; then
     printf '%s\n' "${modules[@]}" | /sbin/weak-modules --remove-modules
 fi
 echo "Done."
 
-%files         -n kmod-i40evf%{?bt_ext}
+%files         -n kmod-iavf%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
-%config(noreplace)/etc/depmod.d/kmod-i40evf.conf
-%doc /usr/share/doc/kmod-i40evf-%{version}/
+%config(noreplace)/etc/depmod.d/kmod-iavf.conf
+%doc /usr/share/doc/kmod-iavf-%{version}/
 %doc /usr/share/man/man7/
-%{_sysconfdir}/modules-load.d/i40evf.conf
+%{_sysconfdir}/modules-load.d/iavf.conf
 
 # Disable the building of the debug package(s).
 %define debug_package %{nil}
@@ -102,7 +102,7 @@ popd >/dev/null
 %{__install} -d %{buildroot}%{_mandir}/man7/
 %{__install} %{kmod_name}.7.gz %{buildroot}%{_mandir}/man7/
 %{__install} -d %{buildroot}%{_sysconfdir}/modules-load.d
-%{__install} -m 644 %{SOURCE11} %{buildroot}%{_sysconfdir}/modules-load.d/i40evf.conf
+%{__install} -m 644 %{SOURCE11} %{buildroot}%{_sysconfdir}/modules-load.d/iavf.conf
 
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;

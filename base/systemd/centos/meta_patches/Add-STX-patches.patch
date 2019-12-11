@@ -1,0 +1,32 @@
+From 3c0e59a677c921f60f27002a27eb5f4776475e44 Mon Sep 17 00:00:00 2001
+Message-Id: <3c0e59a677c921f60f27002a27eb5f4776475e44.1574265913.git.Jim.Somerville@windriver.com>
+In-Reply-To: <eeb3e979288cb8c14d8546d12a27da4c88fbb0e4.1574265913.git.Jim.Somerville@windriver.com>
+References: <eeb3e979288cb8c14d8546d12a27da4c88fbb0e4.1574265913.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Wed, 20 Nov 2019 10:59:45 -0500
+Subject: [PATCH 3/3] Add STX patches
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/systemd.spec | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
+index 4c83150..e1e98bb 100644
+--- a/SPECS/systemd.spec
++++ b/SPECS/systemd.spec
+@@ -786,6 +786,11 @@ Patch0744: 0744-selinux-don-t-log-SELINUX_INFO-and-SELINUX_WARNING-m.patch
+ Patch0745: 0745-fix-mis-merge.patch
+ Patch0746: 0746-fs-util-chase_symlinks-prevent-double-free.patch
+ 
++# STX Patches
++Patch0801: 801-inject-millisec-in-syslog-date.patch
++Patch0802: 802-fix-build-error-for-unused-variable.patch
++Patch0803: 803-Fix-compile-failure-due-to-deprecated-value.patch
++
+ Patch9999: 9999-Update-kernel-install-script-by-backporting-fedora-p.patch
+ 
+ %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
+-- 
+1.8.3.1
+
