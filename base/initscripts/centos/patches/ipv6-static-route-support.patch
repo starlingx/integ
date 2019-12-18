@@ -3,14 +3,15 @@ From: Kevin Smith <kevin.smith@windriver.com>
 Date: Tue, 17 Oct 2017 10:46:00 -0500
 Subject: [PATCH 1/1] ipv6 static route support
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- sysconfig/network-scripts/ifup-routes | 4 +++-
+ network-scripts/ifup-routes | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/sysconfig/network-scripts/ifup-routes b/sysconfig/network-scripts/ifup-routes
+diff --git a/network-scripts/ifup-routes b/network-scripts/ifup-routes
 index ff8d5b5..a82d053 100755
---- a/sysconfig/network-scripts/ifup-routes
-+++ b/sysconfig/network-scripts/ifup-routes
+--- a/network-scripts/ifup-routes
++++ b/network-scripts/ifup-routes
 @@ -32,9 +32,11 @@ handle_ip_file() {
      if [ "$type" != "$t" ]; then
          proto="-6"

@@ -3,15 +3,16 @@ From: Ludovic Beliveau <ludovic.beliveau@windriver.com>
 Date: Thu, 9 Jun 2016 23:05:17 -0400
 Subject: [PATCH 1/1] force-delay-check-link-down
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- sysconfig/network-scripts/network-functions | 2 +-
+ network-scripts/network-functions | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/sysconfig/network-scripts/network-functions b/sysconfig/network-scripts/network-functions
+diff --git a/network-scripts/network-functions b/network-scripts/network-functions
 index 080101b..798f28a 100644
---- a/sysconfig/network-scripts/network-functions
-+++ b/sysconfig/network-scripts/network-functions
-@@ -470,7 +470,7 @@ check_link_down ()
+--- a/network-scripts/network-functions
++++ b/network-scripts/network-functions
+@@ -456,7 +456,7 @@ check_link_down ()
          ip link set dev $1 up >/dev/null 2>&1
      fi
      timeout=0
@@ -21,5 +22,5 @@ index 080101b..798f28a 100644
      while [ $timeout -le $delay ]; do
          [ "$(cat /sys/class/net/$REALDEVICE/carrier 2>/dev/null)" != "0" ] && return 1
 -- 
-1.9.1
+1.8.3.1
 

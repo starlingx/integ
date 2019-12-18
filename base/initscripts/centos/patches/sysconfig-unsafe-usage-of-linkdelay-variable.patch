@@ -11,15 +11,16 @@ down.
 This does not address but is related to CGTS-5821
 
 Signed-off-by: Allain Legacy <allain.legacy@windriver.com>
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- sysconfig/network-scripts/network-functions | 2 +-
+ network-scripts/network-functions | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/sysconfig/network-scripts/network-functions b/sysconfig/network-scripts/network-functions
+diff --git a/network-scripts/network-functions b/network-scripts/network-functions
 index 13cf4de..4bcc48f 100644
---- a/sysconfig/network-scripts/network-functions
-+++ b/sysconfig/network-scripts/network-functions
-@@ -471,7 +471,7 @@ check_link_down ()
+--- a/network-scripts/network-functions
++++ b/network-scripts/network-functions
+@@ -457,7 +457,7 @@ check_link_down ()
      fi
      timeout=0
      delay=20
@@ -29,5 +30,5 @@ index 13cf4de..4bcc48f 100644
          [ "$(cat /sys/class/net/$REALDEVICE/carrier 2>/dev/null)" == "1" ] && return 1
          sleep 0.5
 -- 
-2.7.4
+1.8.3.1
 
