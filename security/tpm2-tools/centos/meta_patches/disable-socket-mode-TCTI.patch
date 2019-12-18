@@ -1,8 +1,9 @@
 From e54d19f53dcd78d0aaceb30d1fb89eebefc1c066 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 17:30:56 -0400
-Subject: [PATCH 1/2] WRS: disable-socket-mode-TCTI.patch
+Subject: [PATCH 1/2] disable-socket-mode-TCTI.patch
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  SPECS/tpm2-tools.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -11,8 +12,8 @@ diff --git a/SPECS/tpm2-tools.spec b/SPECS/tpm2-tools.spec
 index 308ecfa..935580d 100644
 --- a/SPECS/tpm2-tools.spec
 +++ b/SPECS/tpm2-tools.spec
-@@ -43,7 +43,7 @@ tpm2-tools is a batch of testing tools for tpm2.0. It is based on tpm2-tss.
- ./bootstrap
+@@ -35,7 +35,7 @@ tpm2-tools is a batch of testing tools for tpm2.0. It is based on tpm2-tss.
+ %autosetup -p1 -n %{name}-%{version}
  
  %build
 -%configure --prefix=/usr --disable-static --disable-silent-rules
@@ -21,5 +22,5 @@ index 308ecfa..935580d 100644
  
  %install
 -- 
-2.7.4
+1.8.3.1
 
