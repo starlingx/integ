@@ -1,7 +1,7 @@
 From 8c725e6e7a4931066488a74227f902269850a263 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:58 -0400
-Subject: [PATCH 02/10] WRS: spec-avoid-dir-collisions.patch
+Subject: [PATCH 02/10] spec-avoid-dir-collisions.patch
 
 Signed-off-by: zhipengl <zhipengs.liu@intel.com>
 ---

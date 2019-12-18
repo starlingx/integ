@@ -1,7 +1,7 @@
 From 85cd40238fb1f76483848007bd1e5663bb3f21ff Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:11:59 -0400
-Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH] 0001-Update-package-versioning-for-TIS-format.patch
 
 ---
  SPECS/resource-agents.spec | 2 +-
