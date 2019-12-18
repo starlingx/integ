@@ -7,6 +7,8 @@ Subject: [PATCH] close connection on HTTP 413 Request Entity Too
 Allow low_conn to retrieve/handle unread response data buffers
 in case ProtocolError or socket.error are raised while sending
 request data.
+
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  requests/adapters.py | 18 ++++++++++++------
  1 file changed, 12 insertions(+), 6 deletions(-)
@@ -16,9 +18,9 @@ index fd46325..087258a 100644
 --- a/requests/adapters.py
 +++ b/requests/adapters.py
 @@ -466,12 +466,18 @@ class HTTPAdapter(BaseAdapter):
-
+ 
                      low_conn.endheaders()
-
+ 
 -                    for i in request.body:
 -                        low_conn.send(hex(len(i))[2:].encode('utf-8'))
 -                        low_conn.send(b'\r\n')
@@ -37,7 +39,7 @@ index fd46325..087258a 100644
 +                        # data buffers in case ProtocolError or socket.error
 +                        # are raised while sending request data
 +                        pass
-
+ 
                      # Receive the response from the server
                      try:
 -- 

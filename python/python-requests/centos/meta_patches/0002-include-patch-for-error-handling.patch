@@ -3,6 +3,7 @@ From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 13 Dec 2017 09:02:40 -0500
 Subject: [PATCH 2/2] include patch for error handling
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  SPECS/python-requests.spec | 2 ++
  1 file changed, 2 insertions(+)
@@ -11,10 +12,10 @@ diff --git a/SPECS/python-requests.spec b/SPECS/python-requests.spec
 index 111bab7..8aab964 100644
 --- a/SPECS/python-requests.spec
 +++ b/SPECS/python-requests.spec
-@@ -39,6 +39,8 @@ Patch2:         python-requests-urllib3-at-%{urllib3_unbundled_version}.patch
- # https://bugzilla.redhat.com/show_bug.cgi?id=1653223
- Patch5:         requests-2.20.0-no-py2-httpbin.patch
-
+@@ -38,6 +38,8 @@ Patch4:         Don-t-inject-pyopenssl-into-urllib3.patch
+ #   build-time package tests
+ Patch5:         Skip-all-tests-needing-httpbin.patch
+ 
 +Patch6:         0001-close-connection-on-HTTP-413-Request-Entit.patch
 +
  BuildArch:      noarch
