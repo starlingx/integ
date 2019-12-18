@@ -7,26 +7,25 @@ Date: Wed, 20 Nov 2019 10:59:45 -0500
 Subject: [PATCH 3/3] Add STX patches
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
 ---
- SPECS/systemd.spec | 5 +++++
- 1 file changed, 5 insertions(+)
+ SPECS/systemd.spec | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 4c83150..e1e98bb 100644
+index 34d7c59..6885233 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -786,6 +786,11 @@ Patch0744: 0744-selinux-don-t-log-SELINUX_INFO-and-SELINUX_WARNING-m.patch
- Patch0745: 0745-fix-mis-merge.patch
- Patch0746: 0746-fs-util-chase_symlinks-prevent-double-free.patch
+@@ -146,6 +146,9 @@ Patch0093: 0093-Allocate-temporary-strings-to-hold-dbus-paths-on-the.patch
+ Patch0094: 0094-sd-bus-if-we-receive-an-invalid-dbus-message-ignore-.patch
+ Patch0095: 0095-Revert-core-one-step-back-again-for-nspawn-we-actual.patch
  
 +# STX Patches
 +Patch0801: 801-inject-millisec-in-syslog-date.patch
 +Patch0802: 802-fix-build-error-for-unused-variable.patch
-+Patch0803: 803-Fix-compile-failure-due-to-deprecated-value.patch
-+
- Patch9999: 9999-Update-kernel-install-script-by-backporting-fedora-p.patch
  
- %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
+ %ifarch %{ix86} x86_64 aarch64
+ %global have_gnu_efi 1
 -- 
-1.8.3.1
+2.7.4
 
