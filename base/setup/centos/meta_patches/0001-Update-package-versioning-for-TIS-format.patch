@@ -3,6 +3,7 @@ From: Don Penney <don.penney@windriver.com>
 Date: Mon, 26 Sep 2016 17:40:54 -0400
 Subject: [PATCH 09/15] Update package versioning for TIS format
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  SPECS/setup.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
@@ -14,12 +15,12 @@ index 3ad2458..8f5fc46 100644
 @@ -1,7 +1,7 @@
  Summary: A set of system configuration and setup files
  Name: setup
- Version: 2.8.71
--Release: 10%{?dist}
-+Release: 10.el7%{?_tis_dist}.%{tis_patch_ver}
+ Version: 2.12.2
+-Release: 2%{?dist}
++Release: 2.el8%{?_tis_dist}.%{tis_patch_ver}
  License: Public Domain
  Group: System Environment/Base
  URL: https://pagure.io/setup/
---
-2.7.4
+-- 
+1.8.3.1
 

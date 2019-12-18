@@ -5,6 +5,7 @@ Subject: [PATCH] Change group,passwd,and uidgid
 
 Signed-off-by: Andy Ning <andy.ning@windriver.com>
 Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  group  | 22 ++++++++++++----------
  passwd | 19 +++++++++++--------
@@ -38,7 +39,6 @@ index 2753bd8..74174c3 100644
 -ftp::50:
  lock::54:
 -audio::63:
- nobody::99:
  users::100:
 +postgres:x:120:
 +nova:x:162:nova
@@ -52,8 +52,9 @@ index 2753bd8..74174c3 100644
 +libvirt:x:991:nova
 +ironic:x:1874:ironic
 +www:x:1877:www
+ nobody::65534:
 diff --git a/passwd b/passwd
-index 6c6a8eb..b478fc3 100644
+index 8175e8b..e939817 100644
 --- a/passwd
 +++ b/passwd
 @@ -1,13 +1,16 @@
@@ -69,7 +70,6 @@ index 6c6a8eb..b478fc3 100644
 -operator:*:11:0:operator:/root:/sbin/nologin
 -games:*:12:100:games:/usr/games:/sbin/nologin
 -ftp:*:14:50:FTP User:/var/ftp:/sbin/nologin
- nobody:*:99:99:Nobody:/:/sbin/nologin
 +postgres:x:120:120:PostgreSQL Server:/var/lib/pgsql:/bin/sh
 +neutron:x:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
 +sysinv:x:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
@@ -81,11 +81,12 @@ index 6c6a8eb..b478fc3 100644
 +nova:x:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
 +ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
 +www:x:1877:1877:www:/home/www:/sbin/nologin
+ nobody:*:65534:65534:Kernel Overflow User:/:/sbin/nologin
 diff --git a/uidgid b/uidgid
-index c6bbd4b..714ba2a 100644
+index e86d45e..a424152 100644
 --- a/uidgid
 +++ b/uidgid
-@@ -127,13 +127,14 @@ stapusr	-	156	/		-	systemtap-runtime
+@@ -128,13 +128,14 @@ stapusr	-	156	/		-	systemtap-runtime
  stapsys	-	157	/		-	systemtap-runtime
  stapdev	-	158	/		-	systemtap-runtime
  swift	160	160	/var/lib/swift		/sbin/nologin	openstack-swift
@@ -103,23 +104,21 @@ index c6bbd4b..714ba2a 100644
  avahi-autoipd	170	170	/var/lib/avahi-autoipd		/sbin/nologin	avahi
  pulse	171	171	/var/run/pulse		/sbin/nologin	pulseaudio
  rtkit	172	172	/proc		/sbin/nologin	rtkit
-@@ -152,7 +153,6 @@ mongodb	184	184	/var/lib/mongodb		/sbin/nologin	mongodb
- jboss	185	185	/var/lib/jbossas		/sbin/nologin	jbossas-core	#was jboss-as and wildfly
+@@ -153,7 +154,6 @@ mongodb	184	184	/var/lib/mongodb		/sbin/nologin	mongodb
+ wildfly	185	185	/usr/share/wildfly		/sbin/nologin	wildfly	#was jboss-as
  jbosson-agent	186	-	/		/sbin/nologin	jboss-on-agent
  jbosson	-	186	-		-	jboss-on-agent
 -heat	187	187	/var/lib/heat		/sbin/nologin	heat
  haproxy	188	188	/var/lib/haproxy		/sbin/nologin	haproxy
  hacluster	189	-	/		/sbin/nologin	pacemaker
  haclient	-	189	-		-	pacemaker
-@@ -163,6 +163,8 @@ systemd-network	192	192	/		/sbin/nologin	systemd
+@@ -163,4 +163,6 @@ systemd-network	192	192	/		/sbin/nologin	systemd
  systemd-resolve	193	193	/		/sbin/nologin	systemd
  gnats	?	?	?		?	gnats, gnats-db
  listar	?	?	?		?	listar
 +fm      195 195 /var/lib/fm             /sbin/nologin   fm-mgr
- nfsnobody	65534	65534	/var/lib/nfs		/sbin/nologin	nfs-utils
+ nobody	65534	65534	/		/sbin/nologin	setup
 +www     1877    1877    /home/www       /sbin/nologin   setup
- 
- # Note: nfsnobody is 4294967294 on 64-bit platforms (-2)
 -- 
-1.8.3.1
+2.7.4
 
