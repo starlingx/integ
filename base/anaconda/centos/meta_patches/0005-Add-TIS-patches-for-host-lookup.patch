@@ -4,34 +4,25 @@ Date: Thu, 23 Nov 2017 16:50:10 -0500
 Subject: [PATCH] Add TIS patches for host lookup
 
 ---
- SPECS/anaconda.spec | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ SPECS/anaconda.spec | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
 diff --git a/SPECS/anaconda.spec b/SPECS/anaconda.spec
-index 174dbee..8541334 100644
+index 0153e82..3a045f0 100644
 --- a/SPECS/anaconda.spec
 +++ b/SPECS/anaconda.spec
-@@ -27,6 +27,8 @@ Patch10: anaconda-centos-armhfp-extloader.patch
- # WRS
+@@ -18,6 +18,8 @@ Patch102: 0002-add-centos-background-color.patch
+ 
  Patch10001: 0001-TIS-Progress-and-error-handling.patch
  Patch10002: 0002-revert-7.4-grub2-efi-handling.patch
 +Patch10003: 0003-Set-default-hostname-to-localhost.patch
 +Patch10004: 0004-Cache-server-ip-in-etc-hosts.patch
  
- # Versions of required components (done so we make sure the buildrequires
- # match the requires versions of things).
-@@ -257,6 +259,8 @@ runtime on NFS/HTTP/FTP servers or local disks.
- # WRS
- %patch10001 -p1
- %patch10002 -p1
-+%patch10003 -p1
-+%patch10004 -p1
- 
- %build
- %configure --disable-static \
-@@ -275,6 +279,10 @@ desktop-file-install ---dir=%{buildroot}%{_datadir}/applications %{buildroot}%{_
- mkdir -p %{buildroot}%{_datadir}/anaconda/site-python
- install -m 0644 pyanaconda/sitecustomize.py %{buildroot}%{_datadir}/anaconda/site-python/
+ # To generate Source0 do:
+ # git clone https://github.com/rhinstaller/anaconda
+@@ -266,6 +268,10 @@ mkdir %{buildroot}%{_datadir}/anaconda/addons
+ %ifarch %livearches
+ desktop-file-install --dir=%{buildroot}%{_datadir}/applications %{buildroot}%{_datadir}/applications/liveinst.desktop
  %endif
 +
 +# Add anaconda-preexec script
@@ -40,14 +31,14 @@ index 174dbee..8541334 100644
  # NOTE: If you see "error: Installed (but unpackaged) file(s) found" that include liveinst files,
  #       check the IS_LIVEINST_ARCH in configure.ac to make sure your architecture is properly defined
  
-@@ -323,6 +331,7 @@ update-desktop-database &> /dev/null || :
- %{_sysconfdir}/X11/xinit/xinitrc.d/*
+@@ -323,6 +329,7 @@ update-desktop-database &> /dev/null || :
  %{_datadir}/applications/*.desktop
+ %{_sysconfdir}/xdg/autostart/*.desktop
  %endif
 +%{_sbindir}/anaconda-preexec
  
  %files gui
- %{_libdir}/python*/site-packages/pyanaconda/ui/gui/*
+ %{python3_sitearch}/pyanaconda/ui/gui/*
 -- 
-1.8.3.1
+2.7.4
 

@@ -8,18 +8,18 @@ Subject: [PATCH] Update package versioning for TIS format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/anaconda.spec b/SPECS/anaconda.spec
-index e2d706d..00b19c4 100644
+index ef88921..b345630 100644
 --- a/SPECS/anaconda.spec
 +++ b/SPECS/anaconda.spec
-@@ -3,7 +3,7 @@
+@@ -7,7 +7,7 @@
  Summary: Graphical system installer
  Name:    anaconda
- Version: 21.48.22.147
+ Version: 29.19.0.40
 -Release: 1%{?dist}
-+Release: 1.el7.centos%{?_tis_dist}.%{tis_patch_ver}
++Release: 1.el8%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2+ and MIT
  Group:   Applications/System
  URL:     http://fedoraproject.org/wiki/Anaconda
 -- 
-1.8.3.1
+2.7.4
 
