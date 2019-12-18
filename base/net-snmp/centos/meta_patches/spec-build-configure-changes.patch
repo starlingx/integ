@@ -1,39 +1,44 @@
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ SPECS/net-snmp.spec | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
 diff --git a/SPECS/net-snmp.spec b/SPECS/net-snmp.spec
 index 8a24ba1..40af31f 100644
 --- a/SPECS/net-snmp.spec
 +++ b/SPECS/net-snmp.spec
 @@ -1,3 +1,6 @@
-+# WRS: Disable check
++# Disable check
 +%global netsnmp_check 0
 +
- # use netsnmp_tcp_wrappers 0 to disable tcp_wrappers support
- %{!?netsnmp_tcp_wrappers:%global netsnmp_tcp_wrappers 1}
  # use nestnmp_check 0 to speed up packaging by disabling 'make test'
-@@ -339,7 +342,7 @@ rm testing/fulltests/default/T200*
- %endif
-
- %build
+ %{!?netsnmp_check: %global netsnmp_check 1}
+ 
+@@ -196,7 +199,7 @@ rm testing/fulltests/default/T200*
+ # Autoreconf to get autoconf 2.69 for ARM (#926223)
+ autoreconf
+ 
 -MIBS="host agentx smux \
 +MIBS="agentx smux \
       ucd-snmp/diskio tcp-mib udp-mib mibII/mta_sendmail \
       ip-mib/ipv4InterfaceTable ip-mib/ipv6InterfaceTable \
       ip-mib/ipAddressPrefixTable/ipAddressPrefixTable \
-@@ -360,6 +363,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
+@@ -222,6 +225,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
+     --with-ldflags="-Wl,-z,relro -Wl,-z,now" \
      --with-logfile="/var/log/snmpd.log" \
-     --with-persistent-directory="/var/lib/net-snmp" \
      --with-mib-modules="$MIBS" \
 +    --with-out-mib-modules=host \
- %if %{netsnmp_tcp_wrappers}
-     --with-libwrap=yes \
- %endif
-@@ -378,6 +382,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
-     --with-security-modules=tsm  \
      --with-mysql \
+     --with-openssl \
+     --with-persistent-directory="/var/lib/net-snmp" \
+@@ -232,6 +236,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
      --with-systemd \
+     --with-temp-file-pattern=/var/run/net-snmp/snmp-tmp-XXXXXX \
+     --with-transports="DTLSUDP TLSTCP" \
 +    --without-nl \
      --with-sys-contact="root@localhost" <<EOF
  EOF
-
---
+ 
+-- 
 1.8.3.1
 
