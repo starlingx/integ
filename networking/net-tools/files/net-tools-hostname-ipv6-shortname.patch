@@ -1,17 +1,18 @@
 From e1aab6b4103e7d6f625de7b2e4d842826f3a3615 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:42:24 -0400
-Subject: [PATCH 1/2] WRS: Patch22: net-tools-hostname-ipv6-shortname.patch
+Subject: [PATCH 1/2] net-tools-hostname-ipv6-shortname.patch
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- hostname.c               |   7 +-
+ hostname.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/hostname.c b/hostname.c
 index ae98ca6..56aeb06 100644
 --- a/hostname.c
 +++ b/hostname.c
-@@ -356,8 +356,13 @@ int main(int argc, char **argv)
+@@ -344,8 +344,13 @@ int main(int argc, char **argv)
  	    break;
  	case 'a':
  	case 'f':
@@ -27,5 +28,5 @@ index ae98ca6..56aeb06 100644
  	    type = c;
  	    break;
 -- 
-1.9.1
+1.8.3.1
 
