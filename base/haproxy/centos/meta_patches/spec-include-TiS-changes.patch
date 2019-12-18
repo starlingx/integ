@@ -1,27 +1,27 @@
 From 0b326ac9fcee3fbac7e41e3bc269cc7251dcf9dd Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 16:12:36 -0400
-Subject: WRS: spec-include-TiS-changes.patch
+Subject: spec-include-TiS-changes.patch
 
 Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
 ---
- SPECS/haproxy.spec | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ SPECS/haproxy.spec | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/haproxy.spec b/SPECS/haproxy.spec
-index 30dca25..53def97 100644
+index 490d006..b28896f 100644
 --- a/SPECS/haproxy.spec
 +++ b/SPECS/haproxy.spec
-@@ -26,6 +26,8 @@ Patch0:         halog-unused-variables.patch
- Patch1:         iprange-return-type.patch
- Patch2:         haproxy-tcp-user-timeout.patch
- Patch3:         haproxy-systemd-wrapper-exit-code.patch
-+Patch4:         haproxy-env-var.patch
-+Patch5:         haproxy-tpm-support.patch
+@@ -23,6 +23,7 @@ Source4:        %{name}.sysconfig
+ Source5:        halog.1
  
+ Patch0:		bz1664533-fix-handling-priority-flag-HTTP2-decoder.patch
++Patch1:         haproxy-tpm-support.patch
+ 
+ BuildRequires:  lua-devel
  BuildRequires:  pcre-devel
- BuildRequires:  zlib-devel
-@@ -37,6 +39,8 @@ Requires(post):     systemd
+@@ -36,6 +37,8 @@ Requires(post):     systemd
  Requires(preun):    systemd
  Requires(postun):   systemd
  
@@ -30,16 +30,15 @@ index 30dca25..53def97 100644
  %description
  HAProxy is a TCP/HTTP reverse proxy which is particularly suited for high
  availability environments. Indeed, it can:
-@@ -57,6 +61,8 @@ availability environments. Indeed, it can:
- %patch1 -p0
- %patch2 -p1
- %patch3 -p1
-+%patch4 -p1
-+%patch5 -p1
+@@ -53,6 +56,7 @@ availability environments. Indeed, it can:
+ %prep
+ %setup -q
+ %patch0 -p1
++%patch1 -p1
  
  %build
  regparm_opts=
-@@ -79,7 +85,7 @@ popd
+@@ -75,7 +79,7 @@ popd
  %{__make} install-man DESTDIR=%{buildroot} PREFIX=%{_prefix}
  
  %{__install} -p -D -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
@@ -49,5 +48,5 @@ index 30dca25..53def97 100644
  %{__install} -p -D -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
  %{__install} -p -D -m 0644 %{SOURCE5} %{buildroot}%{_mandir}/man1/halog.1
 -- 
-1.8.3.1
+2.7.4
 
