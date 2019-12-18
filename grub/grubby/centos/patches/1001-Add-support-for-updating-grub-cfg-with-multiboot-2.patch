@@ -4,35 +4,41 @@ Date: Tue, 13 Feb 2018 22:48:54 -0500
 Subject: [PATCH 1/1] Add support for updating grub.cfg with multiboot 2
 
 ---
- Makefile           |   5 +++
+ Makefile           |   4 ++
  __init__.py        |   8 ++++
  grub-cfg-update    |  17 ++++++++
  grub_cfg_update.py | 126 +++++++++++++++++++++++++++++++++++++++++++++++++++++
  new-kernel-pkg     |  33 ++++++++++----
- 5 files changed, 181 insertions(+), 8 deletions(-)
+ 5 files changed, 180 insertions(+), 8 deletions(-)
  create mode 100644 __init__.py
  create mode 100644 grub-cfg-update
  create mode 100644 grub_cfg_update.py
 
 diff --git a/Makefile b/Makefile
-index e021f35..93fa41b 100644
+index 8eeec80..de72d3c 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -56,6 +56,11 @@ install: all
- 		install -m 755 grubby $(DESTDIR)$(PREFIX)/sbin ; \
- 		install -m 644 grubby.8 $(DESTDIR)/$(mandir)/man8 ; \
+@@ -49,6 +49,7 @@ test: all
+ install: all
+ 	mkdir -p $(DESTDIR)$(PREFIX)$(sbindir)
+ 	mkdir -p $(DESTDIR)/$(mandir)/man8
++	mkdir -p $(DESTDIR)/usr/lib64/python3.6/site-packages/grubby
+ 	install -m 755 new-kernel-pkg $(DESTDIR)$(PREFIX)$(sbindir)
+ 	install -m 644 new-kernel-pkg.8 $(DESTDIR)/$(mandir)/man8
+ 	install -m 755 installkernel $(DESTDIR)$(PREFIX)$(sbindir)
+@@ -59,6 +60,9 @@ install: all
  	fi
-+	mkdir -p $(DESTDIR)/usr/lib64/python2.7/site-packages/grubby
-+	install -m 644 grub_cfg_update.py $(DESTDIR)/usr/lib64/python2.7/site-packages/grubby/grub_cfg_update.py
-+	install -m 644 __init__.py $(DESTDIR)/usr/lib64/python2.7/site-packages/grubby/__init__.py
-+	install -m 500 grub-cfg-update $(DESTDIR)$(PREFIX)/sbin/grub-cfg-update
-+
+ 	install -m 755 -d $(DESTDIR)$(PREFIX)$(libexecdir)/grubby/
+ 	install -m 755 rpm-sort $(DESTDIR)$(PREFIX)$(libexecdir)/grubby/rpm-sort
++	install -m 644 grub_cfg_update.py $(DESTDIR)/usr/lib64/python3.6/site-packages/grubby/grub_cfg_update.py
++	install -m 644 __init__.py $(DESTDIR)/usr/lib64/python3.6/site-packages/grubby/__init__.py
++	install -m 500 grub-cfg-update $(DESTDIR)$(PREFIX)$(sbindir)/grub-cfg-update
  
  grubby:: $(OBJECTS)
  	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(grubby_LIBS)
 diff --git a/__init__.py b/__init__.py
 new file mode 100644
-index 0000000..5f30af6
+index 0000000..40094b3
 --- /dev/null
 +++ b/__init__.py
 @@ -0,0 +1,8 @@
@@ -44,14 +50,13 @@ index 0000000..5f30af6
 +#
 +#
 +#
-\ No newline at end of file
 diff --git a/grub-cfg-update b/grub-cfg-update
 new file mode 100644
-index 0000000..5e457e9
+index 0000000..64fd286
 --- /dev/null
 +++ b/grub-cfg-update
 @@ -0,0 +1,17 @@
-+#!/usr/bin/env python
++#!/usr/bin/env python3
 +
 +"""
 +Copyright (c) 2018 Wind River Systems, Inc.
@@ -70,11 +75,11 @@ index 0000000..5e457e9
 +
 diff --git a/grub_cfg_update.py b/grub_cfg_update.py
 new file mode 100644
-index 0000000..f5cd174
+index 0000000..03c83c9
 --- /dev/null
 +++ b/grub_cfg_update.py
 @@ -0,0 +1,126 @@
-+#!/usr/bin/env python
++#!/usr/bin/env python3
 +#
 +# Copyright (c) 2018 Wind River Systems, Inc.
 +# SPDX-License-Identifier: Apache-2.0
@@ -201,10 +206,10 @@ index 0000000..f5cd174
 +        print e
 +        sys.exit(-1)
 diff --git a/new-kernel-pkg b/new-kernel-pkg
-index 977ef2d..1bb0a64 100755
+index 9add50b..f87a171 100755
 --- a/new-kernel-pkg
 +++ b/new-kernel-pkg
-@@ -185,6 +185,11 @@ install() {
+@@ -176,6 +176,11 @@ install() {
  	return
      fi
  
@@ -216,7 +221,7 @@ index 977ef2d..1bb0a64 100755
      INITRD=""
      if [ -f $initrdfile ]; then
  	[ -n "$verbose" ] && echo "found $initrdfile and using it with grubby"
-@@ -334,6 +339,11 @@ remove() {
+@@ -332,6 +337,11 @@ remove() {
  	return
      fi
  
@@ -228,7 +233,7 @@ index 977ef2d..1bb0a64 100755
      local files
      local f
      files="/etc/kernel/prerm.d/*[^~] /etc/kernel/prerm.d/$version/*[^~]"
-@@ -483,14 +493,21 @@ update() {
+@@ -446,14 +456,21 @@ update() {
      fi
  
      if [ -n "$cfgGrub2Efi" ]; then
@@ -259,5 +264,5 @@ index 977ef2d..1bb0a64 100755
  	[ -n "$verbose" ] && echo "$grub2EfiConfig does not exist, not running grubby"
      fi
 -- 
-1.8.3.1
+2.7.4
 

@@ -3,15 +3,16 @@ From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 5 Apr 2017 09:35:06 -0400
 Subject: [PATCH] Use generic OS title for Titanium
 
+Signed-off-by: lilong-neu <lilong-neu@neusoft.com>
 ---
  new-kernel-pkg | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/new-kernel-pkg b/new-kernel-pkg
-index 847e959..977ef2d 100755
+index 0fe6caa..9add50b 100755
 --- a/new-kernel-pkg
 +++ b/new-kernel-pkg
-@@ -166,6 +166,8 @@ set_title() {
+@@ -157,6 +157,8 @@ set_title() {
  	fi
      elif [ $ARCH = 's390' -o $ARCH = 's390x' ]; then
  	title=$(echo $version | sed 's/ /_/g')
@@ -21,5 +22,5 @@ index 847e959..977ef2d 100755
  	. /etc/os-release
  	title="$NAME ($version) $VERSION"
 -- 
-1.9.1
+2.7.4
 
