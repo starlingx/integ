@@ -1,7 +1,7 @@
 From 1eeae27ddc87dc61928b96baa63fe2ff767e35b0 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:25:05 -0400
-Subject: [PATCH] WRS: 0001-Update-package-versioning-for-TIS-format.patch
+Subject: [PATCH]: 0001-Update-package-versioning-for-TIS-format.patch
 
 Conflicts:
 	SPECS/dhcp.spec
@@ -10,15 +10,15 @@ Conflicts:
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
-index 42409f6..70c7a6d 100644
+index 4bfbf5c..a07357e 100644
 --- a/SPECS/dhcp.spec
 +++ b/SPECS/dhcp.spec
-@@ -18,7 +18,7 @@
+@@ -16,7 +16,7 @@
  Summary:  Dynamic host configuration protocol software
  Name:     dhcp
- Version:  4.2.5
--Release:  68%{?dist}.1
-+Release:  68.el7.centos.1%{?_tis_dist}.%{tis_patch_ver}
+ Version:  4.3.6
+-Release:  30%{?dist}
++Release:  30.el8%{?_tis_dist}.%{tis_patch_ver}
  # NEVER CHANGE THE EPOCH on this package.  The previous maintainer (prior to
  # dcantrell maintaining the package) made incorrect use of the epoch and
  # that's why it is at 12 now.  It should have never been used, but it was.
