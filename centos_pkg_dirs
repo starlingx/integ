@@ -49,8 +49,6 @@ config/puppet-modules/openstack/puppet-horizon-9.5.0
 config/puppet-modules/openstack/puppet-keystone-11.3.0
 config/puppet-modules/openstack/puppet-openstacklib-11.3.0
 config/puppet-modules/openstack/puppet-oslo-11.3.0
-python/python-eventlet
-python/python-requests
 base/systemd
 storage-drivers/python-3parclient
 storage-drivers/python-lefthandclient
