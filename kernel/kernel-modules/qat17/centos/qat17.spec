@@ -23,6 +23,7 @@ BuildRequires: libudev-devel
 BuildRequires: boost-devel
 BuildRequires: perl
 BuildRequires: openssl
+BuildRequires: elfutils-libelf-devel
 
 %define icp_tools accelcomp
 %define kernel_version %(rpm -q kernel%{?bt_ext}-devel | sed 's/kernel%{?bt_ext}-devel-//')
@@ -112,10 +113,10 @@ find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
 
 # Always Sign the modules(s).
 # If the module signing keys are not defined, define them here.
-%{!?privkey: %define privkey /usr/src/kernels/%{kernel_version}/signing_key.priv}
+%{!?privkey: %define privkey /usr/src/kernels/%{kernel_version}/signing_key.pem}
 %{!?pubkey: %define pubkey /usr/src/kernels/%{kernel_version}/signing_key.x509}
 for module in $(find %{buildroot} -type f -name \*.ko);
-do %{__perl} /usr/src/kernels/%{kernel_version}/scripts/sign-file \
+do /usr/src/kernels/%{kernel_version}/scripts/sign-file \
     sha256 %{privkey} %{pubkey} $module;
 done
 
