@@ -10,7 +10,7 @@
 Name:    %{kmod_name}-kmod%{?bt_ext}
 # the version is the Kernel version from which
 # this driver is extracted
-Version: 4.12
+Version: 4.18
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
@@ -22,7 +22,7 @@ ExclusiveArch: x86_64
 # Sources.
 # the integrity is available as a tarball, with
 # the git commit Id referenced in the name
-Source0:  %{kmod_name}-kmod-e6aef069.tar.gz
+Source0:  %{kmod_name}-kmod-37e0c813.tar.gz
 Source1:  modules-load.conf
 Source2:  COPYING
 Source3:  README
@@ -36,7 +36,6 @@ Patch02: 0002-integrity-expose-module-params.patch
 Patch03: 0003-integrity-restrict-by-iversion.patch
 Patch04: 0004-integrity-disable-set-xattr-on-imasig.patch
 Patch05: Changes-for-CentOS-7.4-support.patch
-Patch06: Changes-for-CentOS-7.6-support.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -123,10 +122,10 @@ find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
 
 # Always Sign the modules(s).
 # If the module signing keys are not defined, define them here.
-%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.priv}
+%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.pem}
 %{!?pubkey: %define pubkey /usr/src/kernels/%{kversion}/signing_key.x509}
 for module in $(find %{buildroot} -type f -name \*.ko);
-do %{__perl} /usr/src/kernels/%{kversion}/scripts/sign-file \
+do /usr/src/kernels/%{kversion}/scripts/sign-file \
     sha256 %{privkey} %{pubkey} $module;
 done
 

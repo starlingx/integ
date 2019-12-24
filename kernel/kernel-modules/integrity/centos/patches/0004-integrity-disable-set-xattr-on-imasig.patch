@@ -18,45 +18,22 @@ detect that imasig is set on that iint
 ---
  ima/ima_appraise.c | 33 +++++++++++++++++++++++++++++----
  ima/ima_main.c     |  2 --
- 2 files changed, 29 insertions(+), 6 deletions(-)
+ 2 files changed, 24 insertions(+), 5 deletions(-)
 
 diff --git a/ima/ima_appraise.c b/ima/ima_appraise.c
 index 88b5091..cff2ad2 100644
 --- a/ima/ima_appraise.c
 +++ b/ima/ima_appraise.c
-@@ -205,7 +208,11 @@ int ima_appraise_measurement(enum ima_hooks func,
- 		if (rc && rc != -ENODATA)
- 			goto out;
- 
--		cause = "missing-hash";
-+		if (iint->flags & IMA_DIGSIG_REQUIRED)
-+			cause = "missing-signature";
-+		else
-+			cause = "missing-hash";
-+
- 		status = INTEGRITY_NOLABEL;
- 		if (opened & FILE_CREATED)
- 			iint->flags |= IMA_NEW_FILE;
-@@ -352,7 +355,8 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
- 	int rc = 0;
- 
- 	/* do not collect and update hash for digital signatures */
--	if (iint->flags & IMA_DIGSIG)
-+	/* WRS: Don't do it if appraise_type is set to imasig    */
-+	if ((iint->flags & IMA_DIGSIG) || (iint->flags & IMA_DIGSIG_REQUIRED))
- 		return;
- 
- 	rc = ima_collect_measurement(iint, file, NULL, 0, ima_hash_algo);
-@@ -376,6 +380,7 @@ void __ima_inode_post_setattr(struct dentry *dentry)
+@@ -392,6 +392,7 @@ void __ima_inode_post_setattr(struct dentry *dentry)
  	struct inode *inode = d_backing_inode(dentry);
  	struct integrity_iint_cache *iint;
- 	int must_appraise, rc;
+ 	int action, rc;
 +	int imasig = 0;
  
  	if (!(ima_policy_flag & IMA_APPRAISE) || !S_ISREG(inode->i_mode)
- 	    || !inode->i_op->removexattr)
-@@ -384,11 +389,20 @@ void __ima_inode_post_setattr(struct dentry *dentry)
- 	must_appraise = ima_must_appraise(inode, MAY_ACCESS, POST_SETATTR);
+ 	    || !vfs_removexattr(dentry, XATTR_NAME_IMA))
+@@ -402,7 +403,18 @@ void __ima_inode_post_setattr(struct dentry *dentry)
+ 		rc = vfs_removexattr(dentry, XATTR_NAME_IMA);
  	iint = integrity_iint_find(inode);
  	if (iint) {
 +		/* WRS: Before we clear all the ACTION RULE FLAGS, check if
@@ -65,18 +42,15 @@ index 88b5091..cff2ad2 100644
 +		 */
 +		if (iint->flags & IMA_DIGSIG_REQUIRED)
 +			imasig = 1;
- 		iint->flags &= ~(IMA_APPRAISE | IMA_APPRAISED |
- 				 IMA_APPRAISE_SUBMASK | IMA_APPRAISED_SUBMASK |
- 				 IMA_ACTION_RULE_FLAGS);
--		if (must_appraise)
-+		if (must_appraise) {
- 			iint->flags |= IMA_APPRAISE;
+ 		set_bit(IMA_CHANGE_ATTR, &iint->atomic_flags);
++		if (action) {
++			set_bit(IMA_APPRAISE, &iint->atomic_flags);
 +			if (imasig)
-+				iint->flags |= IMA_DIGSIG_REQUIRED;
++				set_bit(IMA_DIGSIG_REQUIRED, &iint->atomic_flags);
 +		}
+ 		if (!action)
+ 			clear_bit(IMA_UPDATE_XATTR, &iint->atomic_flags);
  	}
- 	if (!must_appraise)
- 		rc = inode->i_op->removexattr(dentry, XATTR_NAME_IMA);
 @@ -450,6 +464,17 @@ int __ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
  int __ima_inode_removexattr(struct dentry *dentry, const char *xattr_name)
  {
@@ -103,15 +77,15 @@ index ea3ace3..15ac6a7 100644
  	if (!(mode & FMODE_WRITE))
  		return;
  
--	inode_lock(inode);
- 	if (atomic_read(&inode->i_writecount) == 1) {
- 		if ((iint->version != inode->i_version) ||
- 		    (iint->flags & IMA_NEW_FILE)) {
+-	mutex_lock(&iint->mutex);
+	if (atomic_read(&inode->i_writecount) == 1) {
+		update = test_and_clear_bit(IMA_UPDATE_XATTR,
+					    &iint->atomic_flags);
 @@ -139,7 +138,6 @@ static void ima_check_last_writer(struct integrity_iint_cache *iint,
- 				ima_update_xattr(iint, file);
- 		}
- 	}
--	inode_unlock(inode);
+				ima_update_xattr(iint, file);
+		}
+	}
+-	mutex_unlock(&iint->mutex);
  }
  
  /**
