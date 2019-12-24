@@ -18,7 +18,7 @@ diff --git a/Makefile b/Makefile
 index 23681f0..f3250cc 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1,6 +1,9 @@
+@@ -2,6 +2,9 @@
 -#
 +
 +ifneq ($(KERNELRELEASE),)
@@ -28,7 +28,7 @@ index 23681f0..f3250cc 100644
 +
  obj-$(CONFIG_TCG_TPM) += tpm.o
  tpm-y := tpm-interface.o tpm-dev.o tpm-sysfs.o tpm-chip.o tpm2-cmd.o \
- 	 tpm-dev-common.o tpmrm-dev.o tpm1_eventlog.o tpm2_eventlog.o \
+	 tpm-dev-common.o tpmrm-dev.o eventlog/common.o eventlog/tpm1.o \
 @@ -17,7 +20,110 @@ obj-$(CONFIG_TCG_NSC) += tpm_nsc.o
  obj-$(CONFIG_TCG_ATMEL) += tpm_atmel.o
  obj-$(CONFIG_TCG_INFINEON) += tpm_infineon.o

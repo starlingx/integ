@@ -17,23 +17,23 @@ Subject: [PATCH] ARM64 based ACPI commands should not be compiled
  	u32 sm;
  	int rc;
 @@ -564,6 +563,7 @@ static int crb_acpi_add(struct acpi_devi
- 	    sm == ACPI_TPM2_COMMAND_BUFFER_WITH_START_METHOD)
- 		priv->flags |= CRB_FL_ACPI_START;
- 
+	if (!priv)
+		return -ENOMEM;
+
 +#ifdef CONFIG_ARM64
- 	if (sm == ACPI_TPM2_COMMAND_BUFFER_WITH_SMC) {
- 		if (buf->header.length < (sizeof(*buf) + sizeof(*crb_smc))) {
- 			dev_err(dev,
+	if (sm == ACPI_TPM2_COMMAND_BUFFER_WITH_ARM_SMC) {
+		if (buf->header.length < (sizeof(*buf) + sizeof(*crb_smc))) {
+			dev_err(dev,
 @@ -572,10 +572,11 @@ static int crb_acpi_add(struct acpi_devi
- 				ACPI_TPM2_COMMAND_BUFFER_WITH_SMC);
- 			return -EINVAL;
- 		}
+				ACPI_TPM2_COMMAND_BUFFER_WITH_ARM_SMC);
+			return -EINVAL;
+		}
 -		crb_smc = ACPI_ADD_PTR(struct tpm2_crb_smc, buf, sizeof(*buf));
 +		struct tpm2_crb_smc *crb_smc = ACPI_ADD_PTR(struct tpm2_crb_smc, buf, sizeof(*buf));
- 		priv->smc_func_id = crb_smc->smc_func_id;
- 		priv->flags |= CRB_FL_CRB_SMC_START;
- 	}
+		priv->smc_func_id = crb_smc->smc_func_id;
+	}
+
 +#endif
- 
- 	rc = crb_map_io(device, priv, buf);
- 	if (rc)
+	priv->sm = sm;
+	priv->hid = acpi_device_hid(device);
+

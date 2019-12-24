@@ -10,19 +10,19 @@
 Name:    %{kmod_name}-kmod%{?bt_ext}
 # the version is the Kernel version from which
 # this driver is extracted
-Version: 4.12
+Version: 4.18
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
 Summary: %{kmod_name}%{?bt_ext} kernel module(s)
 
-BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
+BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl, elfutils-libelf-devel
 ExclusiveArch: x86_64
 
 # Sources.
 # the tpmdd is available as a tarball, with
 # the git commit Id referenced in the name
-Source0:  %{kmod_name}-kmod-e6aef069.tar.gz
+Source0:  %{kmod_name}-kmod-37e0c813.tar.gz
 Source1:  modules-load.conf
 Source2:  COPYING
 Source3:  README
@@ -30,12 +30,7 @@ Source3:  README
 # Patches
 Patch01: 0001-disable-arm64-acpi-command.patch
 Patch02: 0002-tpmdd-kcompat-support.patch
-Patch03: UPSTREAM-0001-tpm-replace-msleep-with-usleep_range.patch
-Patch04: UPSTREAM-0002-tpm-reduce-tpm-polling-delay-in-tpm_tis_core.patch
-Patch05: UPSTREAM-0003-tpm-use-tpm_msleep-value-as-max-delay.patch
-Patch06: UPSTREAM-0004-tpm-wait-for-stat-to-specify-variable-polling-time.patch
 Patch07: UPSTREAM-0005-tpm-ignore-burstcount-to-improve-send-performance.patch
-Patch08: UPSTREAM-0006-tpm-use-struct-tpm_chip.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -130,10 +125,10 @@ find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
 
 # Always Sign the modules(s).
 # If the module signing keys are not defined, define them here.
-%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.priv}
+%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.pem}
 %{!?pubkey: %define pubkey /usr/src/kernels/%{kversion}/signing_key.x509}
 for module in $(find %{buildroot} -type f -name \*.ko);
-do %{__perl} /usr/src/kernels/%{kversion}/scripts/sign-file \
+do /usr/src/kernels/%{kversion}/scripts/sign-file \
     sha256 %{privkey} %{pubkey} $module;
 done
 
