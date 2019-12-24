@@ -5,83 +5,81 @@ Subject: [PATCH] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+
 ---
- SPECS/kernel.spec | 73 +++++++++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 60 insertions(+), 13 deletions(-)
+ SPECS/kernel.spec | 78 ++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 64 insertions(+), 14 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 852fd10..e42177e 100644
+index b11034f..1927d5a 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -5,7 +5,8 @@ Summary: The Linux kernel
+@@ -3,6 +3,8 @@
  
- %define dist .el7
+ Summary: The Linux kernel
  
--# % define buildid .local
++%define dist .el8_0
++
+ # For a kernel released for public testing, released_kernel should be 1.
+ # For internal testing builds during development, it should be 0.
+ %global released_kernel 1
+@@ -31,14 +33,17 @@ Summary: The Linux kernel
+ %endif
+ 
+ # define buildid .local
 +# This is the STX patch release
 +%define buildid .%{tis_patch_ver}.tis
  
- # For a kernel released for public testing, released_kernel should be 1.
- # For internal testing builds during development, it should be 0.
-@@ -14,12 +15,14 @@ Summary: The Linux kernel
- %global distro_build 957
- 
- %define rpmversion 3.10.0
--%define pkgrelease 957.21.3.el7
-+%define _pkgrelease 957.21.3
-+%define pkgrelease %{_pkgrelease}.el7
-+
+ %define rpmversion 4.18.0
+-%define pkgrelease 80.11.2.el8_0
++%define _pkgrelease 80.11.2
++%define pkgrelease %{_pkgrelease}.el8_0
  
  # allow pkg_release to have configurable %%{?dist} tag
- %define specrelease 957.21.3%{?dist}
+ %define specrelease 80.11.2%{?dist}
  
 -%define pkg_release %{specrelease}%{?buildid}
 +%define pkg_release %{specrelease}%{buildid}
  
- # The kernel tarball/base version
- %define rheltarball %{rpmversion}-%{pkgrelease}
-@@ -68,7 +71,7 @@ Summary: The Linux kernel
+ # What parts do we want to build?  We must build at least one kernel.
+ # These are the kernels that are built IF the architecture allows it.
+@@ -85,9 +90,9 @@ Summary: The Linux kernel
+ # Only build the debug kernel (--with dbgonly):
  %define with_dbgonly   %{?_with_dbgonly:      1} %{?!_with_dbgonly:      0}
- 
  # Control whether we perform a compat. check against published ABI.
 -%define with_kabichk   %{?_without_kabichk:   0} %{?!_without_kabichk:   1}
 +%define with_kabichk  0
- 
  # Control whether we perform a compat. check against DUP ABI.
- %define with_kabidupchk 1
-@@ -91,7 +94,7 @@ Summary: The Linux kernel
- # Set debugbuildsenabled to 1 for production (build separate debug kernels)
- #  and 0 for rawhide (all kernels are debug kernels).
- # See also 'make debug' and 'make release'. RHEL only ever does 1.
--%define debugbuildsenabled 1
-+%define debugbuildsenabled 0
- 
- %define with_gcov %{?_with_gcov: 1} %{?!_with_gcov: 0}
- 
-@@ -385,6 +388,7 @@ BuildRequires: bison flex
- # required for zfcpdump
- BuildRequires: glibc-static
+-%define with_kabidupchk %{?_with_kabidupchk:  1} %{?!_with_kabidupchk:   0}
++%define with_kabidupchk 1
+ #
+ # Control whether to run an extensive DWARF based kABI check.
+ # Note that this option needs to have baseline setup in SOURCE300.
+@@ -352,6 +357,7 @@ BuildRequires: xmlto
+ %if %{with_perf} || %{with_tools}
+ BuildRequires: asciidoc
  %endif
 +BuildRequires: util-linux
  
  Source0: linux-%{rpmversion}-%{pkgrelease}.tar.xz
  
-@@ -450,6 +454,12 @@ Patch1000: debrand-single-cpu.patch
- Patch1001: debrand-rh_taint.patch
- Patch1002: debrand-rh-i686-cpu.patch
+@@ -412,6 +418,12 @@ Source2001: cpupower.config
+ # Sources for CentOS debranding
+ Source9000: centos.pem
  
 +# StarlingX Cloud sources here.
 +# Not sure if we need to worry about numerical collisions between
 +# SourceX and PatchX, so let's not risk it
-+Source30000: kernel-3.10.0-x86_64.config.tis_extra
++Source30000: kernel-x86_64.config.tis_extra
 +Source30001: ima_signing_key.pub
 +
- BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+ ## Patches needed for building this package
  
- %description
-@@ -612,6 +622,13 @@ manipulation of eBPF programs and maps.
+ Patch1000: debrand-single-cpu.patch
+@@ -638,6 +650,13 @@ eBPF sample programs and selftests.
  
- %endif # with_bpftool
+ %endif # with_bpf_samples
  
 +%ifarch x86_64
 +%package unsigned
@@ -93,140 +91,150 @@ index 852fd10..e42177e 100644
  %if %{with_gcov}
  %package gcov
  Summary: gcov graph and source files for coverage data collection.
-@@ -777,6 +794,9 @@ cd linux-%{KVRA}
- # Drop some necessary files from the source dir into the buildroot
- cp $RPM_SOURCE_DIR/kernel-%{version}-*.config .
+@@ -918,6 +937,8 @@ cd configs
  
+ # Drop some necessary files from the source dir into the buildroot
+ cp $RPM_SOURCE_DIR/kernel-*.config .
 +# Copy any TiS-specific config changes
-+cp $RPM_SOURCE_DIR/kernel-%{version}-*.config.tis_extra .
-+
- ApplyOptionalPatch linux-kernel-test.patch
- ApplyOptionalPatch debrand-single-cpu.patch
- ApplyOptionalPatch debrand-rh_taint.patch
-@@ -821,6 +841,15 @@ for i in *.config
- do
-   mv $i .config
-   Arch=`head -1 .config | cut -b 3-`
-+
-+  # Handle StarlingX Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
-+  # the make line below so that the one below removes any dependencies of ones that we
-+  # turn off here.  We also want it before "make listnewconfig" so that we can set the
-+  # config option for new configs introduced in the StarlingX Cloud patches.
++cp $RPM_SOURCE_DIR/kernel-*.config.tis_extra .
+ cp %{SOURCE41} .
+ VERSION=%{version} ./generate_all_configs.sh
+ 
+@@ -939,6 +960,17 @@ do
+ done
+ %endif
+ 
++# Handle StarlingX Cloud customizations.  Use -n to match oldnoconfig below.  We want this before
++# the make line below so that the one below removes any dependencies of ones that we
++# turn off here.  We also want it before "make listnewconfig" so that we can set the
++# config option for new configs introduced in the StarlingX Cloud patches.
++for i in *.config
++do
 +  if [ -f ${i}.tis_extra ]; then
-+    scripts/kconfig/merge_config.sh -m -n .config ${i}.tis_extra
++    ../scripts/kconfig/merge_config.sh -m -n .config ${i}.tis_extra
 +  fi
++done
 +
-   make %{?cross_opts} ARCH=$Arch listnewconfig | grep -E '^CONFIG_' >.newoptions || true
- %if %{listnewconfig_fail}
-   if [ -s .newoptions ]; then
-@@ -894,12 +923,13 @@ BuildKernel() {
+ cp %{SOURCE42} .
+ ./process_configs.sh -w -c kernel %{rpmversion}
+ 
+@@ -1003,7 +1035,8 @@ BuildKernel() {
  
      # and now to start the build process
  
--    make %{?cross_opts} -s mrproper
-+    make -j"%(nproc)" %{?cross_opts} -s mrproper
- 
-     cp %{SOURCE11} .	# x509.genkey
-     cp %{SOURCE12} .	# extra_certificates
-     cp %{SOURCE15} .	# rheldup3.x509
-     cp %{SOURCE16} .	# rhelkpatch1.x509
-+    cp %{SOURCE30001} . # ima_signing_key.pub
- 
+-    %{make} -s mrproper
++    %{make} -j"%(nproc)" -s mrproper
++    cp %{SOURCE30001} certs/. # ima_signing_key.pub
      cp configs/$Config .config
  
-@@ -914,8 +944,8 @@ BuildKernel() {
-     fi
- %endif
+     %if %{signkernel}%{signmodules}
+@@ -1013,8 +1046,8 @@ BuildKernel() {
+     Arch=`head -1 .config | cut -b 3-`
+     echo USING ARCH=$Arch
  
--    make -s %{?cross_opts} ARCH=$Arch oldnoconfig >/dev/null
--    make -s %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" $MakeTarget %{?sparse_mflags}
-+    make -s -j"%(nproc)"  %{?cross_opts} ARCH=$Arch oldnoconfig >/dev/null
-+    make -s -j"%(nproc)" %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" $MakeTarget %{?sparse_mflags}
- 
-     if [ "$Flavour" != "kdump" ]; then
-         make -s %{?cross_opts} ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" modules %{?sparse_mflags} || exit 1
-@@ -939,6 +969,8 @@ BuildKernel() {
+-    %{make} -s ARCH=$Arch oldnoconfig >/dev/null
+-    %{make} -s ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" $MakeTarget %{?sparse_mflags} %{?kernel_mflags}
++    %{make} -s -j"%(nproc)" ARCH=$Arch oldnoconfig >/dev/null
++    %{make} -s -j"%(nproc)" ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" $MakeTarget %{?sparse_mflags} %{?kernel_mflags}
+     if [ $DoModules -eq 1 ]; then
+ 	%{make} -s ARCH=$Arch V=1 %{?_smp_mflags} KCFLAGS="%{?kcflags}" WITH_GCOV="%{?with_gcov}" modules %{?sparse_mflags} || exit 1
      fi
- # EFI SecureBoot signing, x86_64-only
- %ifarch x86_64
+@@ -1059,6 +1092,8 @@ BuildKernel() {
+         echo "pesigning failed"
+         exit 1
+     fi
 +    cp $KernelImage vmlinuz.unsigned
 +    $CopyKernel vmlinuz.unsigned $RPM_BUILD_ROOT/%{image_install_path}/vmlinuz.unsigned
-     %pesign -s -i $KernelImage -o $KernelImage.signed -a %{SOURCE13} -c %{SOURCE14} -n %{pesign_name}
-     mv $KernelImage.signed $KernelImage
- %endif
-@@ -955,7 +987,7 @@ BuildKernel() {
-     if [ "$Flavour" != "kdump" ]; then
-         # Override $(mod-fw) because we don't want it to install any firmware
-         # we'll get it from the linux-firmware package and we don't want conflicts
--        make -s %{?cross_opts} %{?_smp_mflags} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
-+        make -s -j"%(nproc)" %{?cross_opts} %{?_smp_mflags} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
- %if %{with_gcov}
- 	# install gcov-needed files to $BUILDROOT/$BUILD/...:
- 	#   gcov_info->filename is absolute path
-@@ -965,7 +997,7 @@ BuildKernel() {
- %endif
+     mv vmlinuz.signed $SignImage
+     if [ "$KernelExtension" == "gz" ]; then
+         gzip -f9 $SignImage
+@@ -1078,7 +1113,7 @@ BuildKernel() {
+     if [ $DoModules -eq 1 ]; then
+ 	# Override $(mod-fw) because we don't want it to install any firmware
+ 	# we'll get it from the linux-firmware package and we don't want conflicts
+-	%{make} -s ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
++	%{make} -s -j"%(nproc)" ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT modules_install KERNELRELEASE=$KernelVer mod-fw=
      fi
- %ifarch %{vdso_arches}
--    make -s %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=$KernelVer
-+    make -s -j"%(nproc)"  %{?cross_opts} ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=$KernelVer
-     if [ ! -s ldconfig-kernel.conf ]; then
-       echo > ldconfig-kernel.conf "\
- # Placeholder file, no vDSO hwcap entries used in this kernel."
-@@ -1174,6 +1206,12 @@ BuildKernel() {
-     cp signing_key.priv signing_key.priv.sign${Flavour:+.${Flavour}}
-     cp signing_key.x509 signing_key.x509.sign${Flavour:+.${Flavour}}
  
-+    # STX: Copy these keys as part of the devel package
-+    # The Module signing keys are to ensure that only Out-of-tree
-+    # built against the StarlingX Kernel get signed and loaded sans warnings
-+    cp signing_key.priv ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
-+    cp signing_key.x509 ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
-+
-     # remove files that will be auto generated by depmod at rpm -i time
-     for i in alias alias.bin builtin.bin ccwmap dep dep.bin ieee1394map inputmap isapnpmap ofmap pcimap seriomap symbols symbols.bin usbmap softdep devname
-     do
-@@ -1234,15 +1272,15 @@ make %{?cross_opts} %{?_smp_mflags} -C tools/power/cpupower CPUFREQ_BENCH=false
+ %if %{with_gcov}
+@@ -1090,7 +1125,7 @@ BuildKernel() {
+ %endif
+ 
+     if [ $DoVDSO -ne 0 ]; then
+-        %{make} -s ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=$KernelVer
++        %{make} -s -j"%(nproc)" ARCH=$Arch INSTALL_MOD_PATH=$RPM_BUILD_ROOT vdso_install KERNELRELEASE=$KernelVer
+         if [ ! -s ldconfig-kernel.conf ]; then
+           echo > ldconfig-kernel.conf "\
+     # Placeholder file, no vDSO hwcap entries used in this kernel."
+@@ -1408,6 +1443,12 @@ BuildKernel() {
+ 	# Save the signing keys so we can sign the modules in __modsign_install_post
+ 	cp certs/signing_key.pem certs/signing_key.pem.sign${Flav}
+ 	cp certs/signing_key.x509 certs/signing_key.x509.sign${Flav}
++	# STX: Copy these keys as part of the devel package
++	# The Module signing keys are to ensure that only Out-of-tree
++	# built against the StarlingX Kernel get signed and loaded sans warnings
++	cp certs/signing_key.pem ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
++	chmod 755 ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/signing_key.pem
++	cp certs/signing_key.x509 ${RPM_BUILD_ROOT}/lib/modules/${KernelVer}/build/
+     fi
+ %endif
+ 
+@@ -1482,15 +1523,15 @@ chmod +x tools/power/cpupower/utils/version-gen.sh
  %endif
  %ifarch x86_64
     pushd tools/power/x86/x86_energy_perf_policy/
--   make
-+   make -j"%(nproc)"
+-   %{make}
++   %{make} -j"%(nproc)"
     popd
     pushd tools/power/x86/turbostat
--   make
-+   make -j"%(nproc)"
+-   %{make}
++   %{make} -j"%(nproc)"
     popd
  %endif #turbostat/x86_energy_perf_policy
  %endif
- pushd tools
--make tmon
-+make -j"%(nproc)" tmon
+ pushd tools/thermal/tmon/
+-%{make}
++%{make} -j"%(nproc)"
+ popd
+ pushd tools/iio/
+ %{make}
+@@ -1513,11 +1554,11 @@ popd
+ # in the source tree. We installed them previously to $RPM_BUILD_ROOT/usr
+ # but there's no way to tell the Makefile to take them from there.
+ make headers_install
+-%{make} -s ARCH=$Arch V=1 samples/bpf/
++%{make} -s -j"%(nproc)" ARCH=$Arch V=1 samples/bpf/
+ pushd tools/testing/selftests
+ # We need to install here because we need to call make with ARCH set which
+ # doesn't seem possible to do in the install section.
+-%{make} -s ARCH=$Arch V=1 TARGETS=bpf INSTALL_PATH=%{buildroot}%{_libexecdir}/bpf-samples/selftests install
++%{make} -s -j"%(nproc)" ARCH=$Arch V=1 TARGETS=bpf INSTALL_PATH=%{buildroot}%{_libexecdir}/bpf-samples/selftests install
  popd
  %endif
  
-@@ -1536,6 +1574,10 @@ fi}\
- %{expand:\
- %{_sbindir}/new-kernel-pkg --package kernel%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
- }\
+@@ -1819,6 +1860,10 @@ fi\
+ #
+ %define kernel_variant_posttrans() \
+ %{expand:%%posttrans %{?1:%{1}-}core}\
 +# If this is a pkg upgrade (ie installed as a patch), set the reboot flag\
 +if [ $1 -gt 1 ] ; then\
 +    touch /var/run/node_is_patched_rr\
 +fi\
- %{nil}
- 
- #
-@@ -1756,6 +1798,11 @@ fi
- %kernel_variant_files %{with_debug} debug
- %kernel_variant_files %{with_kdump} kdump
+ if [ -x %{_sbindir}/weak-modules ]\
+ then\
+     %{_sbindir}/weak-modules --add-kernel %{KVERREL}%{?1:+%{1}} || exit $?\
+@@ -2090,6 +2135,11 @@ fi
+ %kernel_variant_files  %{with_vdso_install} %{with_debug} debug
+ %kernel_variant_files  %{with_vdso_install} %{with_zfcpdump} zfcpdump
  
 +%ifarch x86_64
 +%files unsigned
 +/boot/vmlinuz.unsigned
 +%endif
 +
- %changelog
- * Mon Jun 17 2019 CentOS Sources <bugs@centos.org> - 3.10.0-957.21.3.el7
- - Apply debranding changes
+ # plz don't put in a version string unless you're going to tag
+ # and build.
+ #
 -- 
-1.8.3.1
+2.18.1
 

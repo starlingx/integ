@@ -11,15 +11,17 @@ start naming its "ethX" devices at eth1000 instead of eth0.  This
 will let us rename to a range starting at eth0.
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+
 ---
  net/core/dev.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 92d6c59..238c90d 100644
+index b6f9647..b424353 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -1090,6 +1090,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
+@@ -1096,6 +1096,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
  				set_bit(i, inuse);
  		}
  
@@ -33,5 +35,5 @@ index 92d6c59..238c90d 100644
  		free_page((unsigned long) inuse);
  	}
 -- 
-1.8.3.1
+2.18.1
 

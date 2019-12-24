@@ -6,96 +6,52 @@ Subject: [PATCH 1/2] Kernel-source-patches-for-TiC
 
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+
 ---
- SPECS/kernel.spec | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 68 insertions(+)
+ SPECS/kernel.spec | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index e42177e..d5df4a4 100644
+index 1927d5a..a851036 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -460,6 +460,42 @@ Patch1002: debrand-rh-i686-cpu.patch
- Source30000: kernel-3.10.0-x86_64.config.tis_extra
- Source30001: ima_signing_key.pub
+@@ -433,6 +433,17 @@ Patch1002: debrand-rh-i686-cpu.patch
+ # empty final patch to facilitate testing of kernel patches
+ Patch999999: linux-kernel-test.patch
  
 +# StarlingX Cloud patches here.
-+Patch40001: Fix-compile-issue-when-transparent-hugepages-are-off.patch
 +Patch40002: Notification-of-death-of-arbitrary-processes.patch
-+Patch40003: CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
 +Patch40004: PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
 +Patch40005: affine-compute-kernel-threads.patch
 +Patch40006: Affine-irqs-and-workqueues-with-kthread_cpus.patch
 +Patch40007: Make-kernel-start-eth-devices-at-offset.patch
 +Patch40008: intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
-+Patch40009: memblock-introduce-memblock_alloc_range.patch
-+Patch40010: cma-add-placement-specifier-for-cma-kernel-parameter.patch
-+Patch40011: x86-enable-DMA-CMA-with-swiotlb.patch
-+Patch40012: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
-+Patch40013: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
-+Patch40014: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
-+Patch40015: rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
-+Patch40016: Porting-Cacheinfo-from-Kernel-4.10.17.patch
-+Patch40017: Fix-cacheinfo-compilation-issues-for-3.10.patch
-+Patch40018: cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch
-+Patch40019: cpuidle-menu-add-per-CPU-PM-QoS-resume-latency-consi.patch
-+Patch40020: CPU-PM-expose-pm_qos_resume_latency-for-CPUs.patch
-+Patch40021: cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
 +Patch40022: US101216-IMA-support-in-Titanium-kernel.patch
 +Patch40023: US103091-IMA-System-Configuration.patch
-+# Fix compile warnings that break the build
-+Patch40024: aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
-+Patch40025: dpt_i2o-fix-build-warning.patch
-+# DRBD was choking on write same
 +Patch40026: turn-off-write-same-in-smartqpi-driver.patch
-+# Fix use-after-free in eventpoll_release_file
-+Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
-+# Fix three potential kernel memory leaks
-+Patch40028: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
-+Patch40029: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
-+Patch40030: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +
- BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+ # END OF PATCH DEFINITIONS
  
- %description
-@@ -802,6 +838,38 @@ ApplyOptionalPatch debrand-single-cpu.patch
+ BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
+@@ -900,6 +911,17 @@ ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
  ApplyOptionalPatch debrand-rh-i686-cpu.patch
  
 +# StarlingX Cloud patches here.
-+ApplyOptionalPatch Fix-compile-issue-when-transparent-hugepages-are-off.patch
 +ApplyOptionalPatch Notification-of-death-of-arbitrary-processes.patch
-+ApplyOptionalPatch CGTS-3744-route-do-not-cache-fib-route-info-on-local.patch
 +ApplyOptionalPatch PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
 +ApplyOptionalPatch affine-compute-kernel-threads.patch
 +ApplyOptionalPatch Affine-irqs-and-workqueues-with-kthread_cpus.patch
 +ApplyOptionalPatch Make-kernel-start-eth-devices-at-offset.patch
 +ApplyOptionalPatch intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
-+ApplyOptionalPatch memblock-introduce-memblock_alloc_range.patch
-+ApplyOptionalPatch cma-add-placement-specifier-for-cma-kernel-parameter.patch
-+ApplyOptionalPatch x86-enable-DMA-CMA-with-swiotlb.patch
-+ApplyOptionalPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
-+ApplyOptionalPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
-+ApplyOptionalPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
-+ApplyOptionalPatch rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
-+ApplyOptionalPatch Porting-Cacheinfo-from-Kernel-4.10.17.patch
-+ApplyOptionalPatch Fix-cacheinfo-compilation-issues-for-3.10.patch
-+ApplyOptionalPatch cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch
-+ApplyOptionalPatch cpuidle-menu-add-per-CPU-PM-QoS-resume-latency-consi.patch
-+ApplyOptionalPatch CPU-PM-expose-pm_qos_resume_latency-for-CPUs.patch
-+ApplyOptionalPatch cpuidle-menu-Avoid-taking-spinlock-for-accessing-QoS.patch
 +ApplyOptionalPatch US101216-IMA-support-in-Titanium-kernel.patch
 +ApplyOptionalPatch US103091-IMA-System-Configuration.patch
-+ApplyOptionalPatch aic94xx-Skip-reading-user-settings-if-flash-is-not-f.patch
-+ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
 +ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
-+ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
-+ApplyOptionalPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
-+ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
-+ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +
- # Any further pre-build tree manipulations happen here.
+ # END OF PATCH APPLICATIONS
  
- chmod +x scripts/checkpatch.pl
+ # Any further pre-build tree manipulations happen here.
 -- 
-1.8.3.1
+2.18.1
 

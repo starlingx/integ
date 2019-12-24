@@ -18,54 +18,44 @@ IMA public key as a compiled data blob, similar to how the Kernel loads
 trusted X509 keys into the system truststore (.system_keyring)
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
----
- .gitignore                    |  1 +
- include/keys/system_keyring.h |  2 ++
- kernel/Makefile               | 42 ++++++++++++++++++++--
- kernel/ima_certificate.S      | 20 +++++++++++
- kernel/system_keyring.c       | 82 +++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 145 insertions(+), 2 deletions(-)
- create mode 100644 kernel/ima_certificate.S
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
 
-diff --git a/.gitignore b/.gitignore
-index f73f35f..7148219 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -106,3 +106,4 @@ localversion
+---
+ certs/.gitignore              |  1 +
+ certs/Makefile                | 45 +++++++++++++++++++-
+ certs/ima_certificate.S       | 20 +++++++++
+ certs/system_keyring.c        | 80 +++++++++++++++++++++++++++++++++++
+ include/keys/system_keyring.h |  2 +
+ 5 files changed, 146 insertions(+), 2 deletions(-)
+ create mode 100644 certs/ima_certificate.S
+
+diff --git a/certs/.gitignore b/certs/.gitignore
+index f51aea4..3396b4a 100644
+--- a/certs/.gitignore
++++ b/certs/.gitignore
+@@ -2,3 +2,4 @@
+ # Generated files
+ #
+ x509_certificate_list
++ima_x509_certificate
+diff --git a/certs/Makefile b/certs/Makefile
+index 5d0999b..3e868ea 100644
+--- a/certs/Makefile
++++ b/certs/Makefile
+@@ -3,7 +3,7 @@
+ # Makefile for the linux kernel signature checking certificates.
+ #
  
- # Red Hat key security
- kernel/x509_certificate_list
-+kernel/ima_x509_certificate
-diff --git a/include/keys/system_keyring.h b/include/keys/system_keyring.h
-index 0e49b3c..6b2da90 100644
---- a/include/keys/system_keyring.h
-+++ b/include/keys/system_keyring.h
-@@ -34,4 +34,6 @@ static inline struct key *get_system_trusted_keyring(void)
- 
- #endif /* CONFIG_SYSTEM_TRUSTED_KEYRING */
- 
-+extern struct key *ima_keyring;
-+
- #endif /* _KEYS_SYSTEM_KEYRING_H */
-diff --git a/kernel/Makefile b/kernel/Makefile
-index 44a82c1..000b9a8 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -57,7 +57,7 @@ obj-$(CONFIG_QUEUED_SPINLOCKS) += qspinlock.o
- obj-$(CONFIG_QUEUED_RWLOCKS) += qrwlock.o qrwlock_gen.o
- obj-$(CONFIG_LOCK_SPIN_ON_OWNER) += osq_lock.o
- obj-$(CONFIG_UID16) += uid16.o
 -obj-$(CONFIG_SYSTEM_TRUSTED_KEYRING) += system_keyring.o system_certificates.o
 +obj-$(CONFIG_SYSTEM_TRUSTED_KEYRING) += system_keyring.o system_certificates.o ima_certificate.o
- obj-$(CONFIG_MODULES) += module.o
- obj-$(CONFIG_MODULE_SIG) += module_signing.o
- obj-$(CONFIG_MODULE_SIG_UEFI) += modsign_uefi.o
-@@ -199,7 +199,45 @@ targets += $(obj)/.x509.list
- $(obj)/.x509.list:
- 	@echo $(X509_CERTIFICATES) >$@
+ obj-$(CONFIG_SYSTEM_BLACKLIST_KEYRING) += blacklist.o
+ ifneq ($(CONFIG_SYSTEM_BLACKLIST_HASH_LIST),"")
+ obj-$(CONFIG_SYSTEM_BLACKLIST_KEYRING) += blacklist_hashes.o
+@@ -29,7 +29,48 @@ $(obj)/x509_certificate_list: scripts/extract-cert $(SYSTEM_TRUSTED_KEYS_SRCPREF
+ 	$(call if_changed,extract_certs,$(SYSTEM_TRUSTED_KEYS_SRCPREFIX)$(CONFIG_SYSTEM_TRUSTED_KEYS))
+ endif # CONFIG_SYSTEM_TRUSTED_KEYRING
  
 -clean-files := x509_certificate_list .x509.list
-+
 +###############################################################################
 +#
 +# We will roll in the IMA X.509 certificate and pull it in the kernel
@@ -89,14 +79,18 @@ index 44a82c1..000b9a8 100644
 +endif
 +endif
 +
-+kernel/ima_certificate.o: $(obj)/ima_x509_certificate
++# GCC doesn't include .incbin files in -MD generated dependencies (PR#66871)
++$(obj)/ima_certificate.o: $(obj)/ima_x509_certificate
 +
-+quiet_cmd_imacert  = CERTS   $@
-+      cmd_imacert  = cat $(IMA_X509_CERTIFICATE) >$@ $(foreach IMA_X509,$(IMA_X509_CERTIFICATE),; echo "  - Including cert $(IMA_X509)")
++# Cope with signing_key.x509 existing in $(srctree) not $(objtree)
++AFLAGS_ima_certificate.o := -I$(IMA_X509_CERTIFICATE)
 +
-+targets += $(obj)/ima_x509_certificate
-+$(obj)/ima_x509_certificate: $(IMA_X509_CERTIFICATE) $(obj)/.x509.ima
-+	$(call if_changed,imacert)
++quiet_cmd_extract_certs  = EXTRACT_CERTS   $(patsubst "%",%,$(2))
++      cmd_extract_certs  = scripts/extract-cert $(2) $@ || ( rm $@; exit 1)
++
++targets += ima_x509_certificate
++$(obj)/ima_x509_certificate: scripts/extract-cert $(SYSTEM_TRUSTED_KEYS_SRCPREFIX)$(SYSTEM_TRUSTED_KEYS_FILENAME) FORCE
++	$(call if_changed,extract_certs,$(SYSTEM_TRUSTED_KEYS_SRCPREFIX)$(CONFIG_SYSTEM_TRUSTED_KEYS))
 +
 +targets += $(obj)/.x509.ima
 +$(obj)/.x509.ima:
@@ -104,14 +98,14 @@ index 44a82c1..000b9a8 100644
 +
 +
 +clean-files := x509_certificate_list .x509.list ima_x509_certificate .x509.ima
- endif
  
  ifeq ($(CONFIG_MODULE_SIG),y)
-diff --git a/kernel/ima_certificate.S b/kernel/ima_certificate.S
+ ###############################################################################
+diff --git a/certs/ima_certificate.S b/certs/ima_certificate.S
 new file mode 100644
-index 0000000..0c665dd
+index 0000000..f163630
 --- /dev/null
-+++ b/kernel/ima_certificate.S
++++ b/certs/ima_certificate.S
 @@ -0,0 +1,20 @@
 +#include <linux/export.h>
 +#include <linux/init.h>
@@ -122,7 +116,7 @@ index 0000000..0c665dd
 +    .globl VMLINUX_SYMBOL(ima_system_certificate)
 +VMLINUX_SYMBOL(ima_system_certificate):
 +__cert_list_start:
-+    .incbin "kernel/ima_x509_certificate"
++    .incbin "certs/ima_x509_certificate"
 +__cert_list_end:
 +
 +    .align 8
@@ -133,13 +127,13 @@ index 0000000..0c665dd
 +#else
 +    .long __cert_list_end - __cert_list_start
 +#endif
-diff --git a/kernel/system_keyring.c b/kernel/system_keyring.c
-index c15e93f..92beb15 100644
---- a/kernel/system_keyring.c
-+++ b/kernel/system_keyring.c
-@@ -23,10 +23,15 @@ EXPORT_SYMBOL_GPL(system_trusted_keyring);
- #ifdef CONFIG_SYSTEM_BLACKLIST_KEYRING
- struct key *system_blacklist_keyring;
+diff --git a/certs/system_keyring.c b/certs/system_keyring.c
+index 19bd050..02d7a8b 100644
+--- a/certs/system_keyring.c
++++ b/certs/system_keyring.c
+@@ -27,10 +27,15 @@ static struct key *secondary_trusted_keys;
+ #ifdef CONFIG_INTEGRITY_PLATFORM_KEYRING
+ static struct key *platform_trusted_keys;
  #endif
 +struct key *ima_keyring;
 +EXPORT_SYMBOL_GPL(ima_keyring);
@@ -150,12 +144,12 @@ index c15e93f..92beb15 100644
 +extern __initconst const u8 ima_system_certificate[];
 +extern __initconst const unsigned long ima_system_certificate_size;
 +
- /*
-  * Load the compiled-in keys
-  */
-@@ -57,6 +62,27 @@ static __init int system_trusted_keyring_init(void)
- 
- 	set_bit(KEY_FLAG_TRUSTED_ONLY, &system_blacklist_keyring->flags);
+ /**
+  * restrict_link_to_builtin_trusted - Restrict keyring addition by built in CA
+  *
+@@ -126,6 +131,25 @@ static __init int system_trusted_keyring_init(void)
+ 	if (key_link(secondary_trusted_keys, builtin_trusted_keys) < 0)
+ 		panic("Can't link trusted keyrings\n");
  #endif
 +	/* Normally (if trusted integrity keyring is disabled), the _ima
 +	 * keyring needs to be created by user space but that has the
@@ -173,19 +167,16 @@ index c15e93f..92beb15 100644
 +				current_cred(),
 +				((KEY_POS_ALL & ~KEY_POS_SETATTR) |
 +				KEY_USR_VIEW | KEY_USR_READ | KEY_USR_SEARCH),
-+				KEY_ALLOC_NOT_IN_QUOTA, NULL);
++				KEY_ALLOC_NOT_IN_QUOTA, NULL, NULL);
 +	if (IS_ERR(ima_keyring))
 +		panic("Can't allocate system IMA keyring\n");
-+
-+    set_bit(KEY_FLAG_TRUSTED_ONLY, &ima_keyring->flags);
  
  	return 0;
  }
-@@ -121,3 +147,59 @@ dodgy_cert:
- 	return 0;
+@@ -191,6 +215,62 @@ dodgy_cert:
  }
  late_initcall(load_system_certificate_list);
-+
+ 
 +/*
 + * Load the compiled-in IMA certificate.
 + */
@@ -221,7 +212,7 @@ index c15e93f..92beb15 100644
 +					   ((KEY_POS_ALL & ~KEY_POS_SETATTR) |
 +					   KEY_USR_VIEW | KEY_USR_READ),
 +					   KEY_ALLOC_NOT_IN_QUOTA |
-+					   KEY_ALLOC_TRUSTED);
++					   KEY_ALLOC_BUILT_IN);
 +		if (IS_ERR(key)) {
 +			pr_err("Problem loading in-kernel X.509 certificate (%ld)\n",
 +			       PTR_ERR(key));
@@ -241,6 +232,21 @@ index c15e93f..92beb15 100644
 +	return 0;
 +}
 +late_initcall(load_ima_system_certificate);
++
+ #ifdef CONFIG_SYSTEM_DATA_VERIFICATION
+ 
+ /**
+diff --git a/include/keys/system_keyring.h b/include/keys/system_keyring.h
+index c7f899e..4f757a7 100644
+--- a/include/keys/system_keyring.h
++++ b/include/keys/system_keyring.h
+@@ -73,4 +73,6 @@ static inline void set_platform_trusted_keys(struct key *keyring)
+ 
+ #endif /* CONFIG_INTEGRITY_PLATFORM_KEYRING */
+ 
++extern struct key *ima_keyring;
++
+ #endif /* _KEYS_SYSTEM_KEYRING_H */
 -- 
-1.8.3.1
+2.18.1
 
