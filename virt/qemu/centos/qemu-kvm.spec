@@ -160,7 +160,7 @@ Source27: kvm.conf
 Source28: 95-kvm-memlock.conf
 Source29: keycodemapdb-16e5b07.tar.gz
 
-#WRS
+# STX
 Source127: qemu_clean
 Source128: qemu_clean.service
 Source129: qemu-system-x86.conf
@@ -175,7 +175,7 @@ BuildRequires: cyrus-sasl-devel
 BuildRequires: libtool
 BuildRequires: libaio-devel
 BuildRequires: rsync
-BuildRequires: python
+BuildRequires: python3
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: libiscsi-devel
@@ -199,7 +199,6 @@ BuildRequires: libseccomp-devel >= 1.0.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
-BuildRequires: libssh2-devel
 %ifarch x86_64
 BuildRequires: librados2-devel
 BuildRequires: librbd1-devel
@@ -260,7 +259,7 @@ BuildRequires: binutils
 BuildRequires: kernel-devel
 %endif
 
-# WRS: build_configure.sh enables libcap-ng
+# STX: build_configure.sh enables libcap-ng
 BuildRequires: libcap-ng-devel
 
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
@@ -475,7 +474,9 @@ cp %{SOURCE24} build_configure.sh
 %else
   disable \
 %endif
-  --target-list="$buildarch"
+  --target-list="$buildarch" \
+  --python=%{__python3} \
+  --disable-capstone
 
 echo "config-host.mak contents:"
 echo "==="
@@ -484,7 +485,7 @@ echo "==="
 
 make V=1 %{?_smp_mflags} $buildldflags
 
-# WRS: Disable - we are not using traces
+# STX: Disable - we are not using traces
 # Setup back compat qemu-kvm binary
 # ./scripts/tracetool.py --backend dtrace --format stap \
 #   --binary %{_libexecdir}/qemu-kvm --target-name %{kvm_target} \
@@ -548,15 +549,15 @@ install %{SOURCE17} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 install %{SOURCE20} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
-# WRS: Disable traces
+# STX: Disable traces
 # install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
 # install -m 0644 qemu-kvm-simpletrace.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
 
-# WRS: Add kvm softlink
+# STX: Add kvm softlink
 ln -sf %{_libexecdir}/qemu-kvm $RPM_BUILD_ROOT/usr/bin/kvm
 
 rm $RPM_BUILD_ROOT%{_bindir}/qemu-system-%{kvm_target}
-# WRS: Disable traces
+# STX: Disable traces
 # rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}.stp
 # rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}-simpletrace.stp
 
@@ -691,14 +692,14 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 
 find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
 
-# WRS
+# STX
 install -d %{buildroot}/etc/init.d
 install -m 700 %{SOURCE127} %{buildroot}/etc/init.d/qemu_clean
 install -d %{buildroot}/etc/systemd/system/
 install -m 664 %{SOURCE128} %{buildroot}/etc/systemd/system/qemu_clean.service
 
 %check
-# WRS: Disable unit tests
+# STX: Disable unit tests
 # make check V=1
 
 %post
@@ -725,7 +726,7 @@ getent passwd qemu >/dev/null || \
 useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
   -c "qemu user" qemu
 
-# WRS
+# STX
 if [ $1 -eq 1 ] ; then
     ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-system-x86_64
 fi
@@ -737,14 +738,14 @@ exit 0
 # %systemd_preun ksm.service
 # %systemd_preun ksmtuned.service
 
-# WRS
+# STX
 %systemd_preun qemu_clean.service
 
 %postun -n qemu-kvm-common%{?pkgsuffix}
 # %systemd_postun_with_restart ksm.service
 # %systemd_postun_with_restart ksmtuned.service
 
-# WRS
+# STX
 %systemd_postun_with_restart qemu_clean.service
 
 %global kvm_files \
@@ -784,7 +785,7 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{pkgname}/bridge.conf
 %config(noreplace) %{_sysconfdir}/modprobe.d/vhost.conf
 %{_sysconfdir}/modprobe.d/qemu-system-x86.conf
-# WRS: Disable traces
+# STX: Disable traces
 # %{_datadir}/%{pkgname}/simpletrace.py*
 # %{_datadir}/%{pkgname}/tracetool/*.py*
 # %{_datadir}/%{pkgname}/tracetool/backend/*.py*
@@ -838,7 +839,7 @@ exit 0
     %{_sysconfdir}/security/limits.d/95-kvm-memlock.conf
 %endif
 
-# WRS
+# STX
 /etc/init.d/qemu_clean
 /etc/systemd/system/qemu_clean.service
 /usr/bin/virtfs-proxy-helper
@@ -859,7 +860,7 @@ exit 0
 %{_mandir}/man1/qemu-img.1*
 %{_mandir}/man7/qemu-block-drivers.7*
 %{_mandir}/man8/qemu-nbd.8*
-# WRS: virtfs
+# STX: virtfs
 %{_mandir}/man1/virtfs-proxy-helper.1*
 
 %if 0
