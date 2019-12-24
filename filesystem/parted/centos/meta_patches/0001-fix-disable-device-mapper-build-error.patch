@@ -1,0 +1,27 @@
+From da8023e8e5c34e5a9f533216490be9aefedf1a9f Mon Sep 17 00:00:00 2001
+From: chendongqi <chen.dq@neusoft.com>
+Date: Tue, 17 Dec 2019 17:58:49 +0800
+Subject: [PATCH] fix-disable-device-mapper-build-error
+
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ SPECS/parted.spec | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/SPECS/parted.spec b/SPECS/parted.spec
+index 183f7d4..9cd6d48 100644
+--- a/SPECS/parted.spec
++++ b/SPECS/parted.spec
+@@ -113,6 +113,9 @@ Patch0088: 0088-linux.c-Use-sys-sysmacros.h-for-major-minor.patch
+ 
+ Patch0099: syscalls.patch
+ 
++# Fix "DM" undeclared build error after adding "--disable-device-mapper"
++Patch1000: fix-disable-device-mapper-build-error.patch
++
+ Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+ BuildRequires: gcc
+ BuildRequires: e2fsprogs-devel
+-- 
+2.7.4
+

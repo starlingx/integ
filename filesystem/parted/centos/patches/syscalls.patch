@@ -3,6 +3,7 @@ From: Allain Legacy <allain.legacy@windriver.com>
 Date: Fri, 28 Sep 2018 02:28:30 +0800
 Subject:
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  libparted/arch/linux.c | 11 +++++++++++
  1 file changed, 11 insertions(+)
@@ -11,7 +12,7 @@ diff --git a/libparted/arch/linux.c b/libparted/arch/linux.c
 index 6e78faf..27f706b 100644
 --- a/libparted/arch/linux.c
 +++ b/libparted/arch/linux.c
-@@ -1673,12 +1673,14 @@ _device_close (PedDevice* dev)
+@@ -1771,12 +1771,14 @@ _device_close (PedDevice* dev)
  
  #if SIZEOF_OFF_T < 8
  
@@ -26,7 +27,7 @@ index 6e78faf..27f706b 100644
  
  loff_t
  llseek (unsigned int fd, loff_t offset, unsigned int whence)
-@@ -1686,11 +1688,20 @@ llseek (unsigned int fd, loff_t offset, unsigned int whence)
+@@ -1784,11 +1786,20 @@ llseek (unsigned int fd, loff_t offset, unsigned int whence)
          loff_t result;
          int retval;
  
@@ -48,5 +49,5 @@ index 6e78faf..27f706b 100644
  }
  
 -- 
-2.7.4
+1.8.3.1
 
