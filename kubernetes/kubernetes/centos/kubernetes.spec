@@ -63,6 +63,9 @@ Obsoletes:      cadvisor
 Requires: kubernetes-master
 Requires: kubernetes-node
 
+# STX Patches
+Patch000:  0001-STX-specify-the-python-interpreter.patch
+
 %description
 %{summary}
 
@@ -855,6 +858,7 @@ done
 mkdir -p src/k8s.io/kubernetes
 mv $(ls | grep -v "^src$") src/k8s.io/kubernetes/.
 
+%patch000 -p1
 ###############
 
 %build
