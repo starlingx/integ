@@ -18,7 +18,7 @@ Patch3:         0004-Enable-clear-DNS-cache-on-reload.patch
 
 BuildArch:      noarch
 
-BuildRequires: python2-devel
+BuildRequires: python3-devel
 
 Requires:      puppet-concat
 Requires:      puppet-puppi
