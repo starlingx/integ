@@ -31,19 +31,19 @@ index fb0bd96..a446775 100644
  Patch000:   patch000-fix_escape_sequence_being_output_under_systemd_service_units.patch
  Patch001:   patch001-fix_missing_python3_during_build_phase.patch
  
-+Patch1: support-interface-scriptlets.patch
-+Patch2: relocate-dhclient-leases-to-var-run.patch
-+Patch3: dhclient-restrict-interfaces-to-those-on-c.patch
-+Patch4: support-interface-promisc.patch
-+Patch5: 0001-dhclient-remove-1-arg.patch
-+Patch6: 0001-force-delay-check-link-down.patch
-+Patch7: run-ifdown-on-all-interfaces.patch
-+Patch8: sysconfig-affirmative-check-for-link-carrier.patch
-+Patch9: sysconfig-unsafe-usage-of-linkdelay-variable.patch
-+Patch10: ipv6-static-route-support.patch
-+Patch11: ifup-eth-stop-waiting-if-link-is-up.patch
-+Patch12: ifup-alias-scope.patch
-+Patch13: ifup-alias-check-ipaddr.patch
++Patch1001: support-interface-scriptlets.patch
++Patch1002: relocate-dhclient-leases-to-var-run.patch
++Patch1003: dhclient-restrict-interfaces-to-those-on-c.patch
++Patch1004: support-interface-promisc.patch
++Patch1005: 0001-dhclient-remove-1-arg.patch
++Patch1006: 0001-force-delay-check-link-down.patch
++Patch1007: run-ifdown-on-all-interfaces.patch
++Patch1008: sysconfig-affirmative-check-for-link-carrier.patch
++Patch1009: sysconfig-unsafe-usage-of-linkdelay-variable.patch
++Patch1010: ipv6-static-route-support.patch
++Patch1011: ifup-eth-stop-waiting-if-link-is-up.patch
++Patch1012: ifup-alias-scope.patch
++Patch1013: ifup-alias-check-ipaddr.patch
 +
  # Downstream patches -- these should be always included when doing rebase:
  # ------------------
