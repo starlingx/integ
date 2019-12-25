@@ -14,7 +14,7 @@ Source0:        %{prefix}-%{module_dir}-%{git_sha}.tar.gz
 
 BuildArch:      noarch
 
-BuildRequires: python2-devel
+BuildRequires: python3-devel
 
 %description
 A Puppet module to dynamically add resources to the catalog
