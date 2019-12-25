@@ -20,7 +20,7 @@ Patch4:         Fix-the-logical-statement-for-nuke_fs_on_resize.patch
 
 BuildArch:      noarch
 
-BuildRequires: python2-devel
+BuildRequires: python3-devel
 
 # According to .fixtures.yml the following puppet modules are also required
 Requires:      puppet-stdlib
