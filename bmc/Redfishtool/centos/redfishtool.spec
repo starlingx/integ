@@ -19,29 +19,31 @@ Source0: %{name}-%{version}.tar.gz
 BuildArch: noarch
 
 Patch01: 0001-Adapt-redfishtool-to-python2.patch
+Patch02: 0002-Change-python-to-python3-explicitly.patch
 
-BuildRequires: python-setuptools
+BuildRequires: python3-setuptools
 
-Requires:      python-requests
+Requires:      python3-requests
 
 %description
 Redfish Tool Package
 
-%define pythonroot           /usr/lib64/python2.7/site-packages
+%define pythonroot           %python3_sitearch
 %define debug_package %{nil}
 
 %prep
 %setup
 %patch01 -p1
+%patch02 -p1
 
 # Remove bundled egg-info
 rm -rf *.egg-info
 
 %build
-%{__python} setup.py build
+%{__python3} setup.py build
 
 %install
-%{__python} setup.py install --root=%{buildroot} \
+%{__python3} setup.py install --root=%{buildroot} \
                              --install-lib=%{pythonroot} \
                              --prefix=/usr \
                              --install-data=/usr/share \
