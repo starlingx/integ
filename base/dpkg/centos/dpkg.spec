@@ -10,8 +10,8 @@ Source0: %{name}_%{version}.tar.xz
 
 BuildRequires: gcc
 BuildRequires: gcc-c++
-BuildRequires: ncurses-static
 BuildRequires: perl-version
+BuildRequires: perl-Term-ANSIColor
 
 %description
 dpkg
