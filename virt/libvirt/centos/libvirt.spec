@@ -263,7 +263,7 @@ Source2: libvirt.logrotate
 Source3: libvirt.lxc
 Source4: libvirt.qemu
 Source5: libvirt.uml
-Source6: gnulib-ffc927e.tar.gz
+Source6: gnulib-68df637.tar.gz
 Source7: keycodemapdb-16e5b07.tar.gz
 Source8: qemu
 
@@ -309,7 +309,10 @@ BuildRequires: /usr/bin/pod2man
 %endif
 BuildRequires: git
 BuildRequires: perl
-BuildRequires: python
+BuildRequires: python3
+BuildRequires: rpcgen
+BuildRequires: libtirpc-devel
+
 %if %{with_systemd}
 BuildRequires: systemd-units
 %endif
@@ -1126,6 +1129,9 @@ exit 1
     print("PATCHLIST="..tmp.."\n")
 }
 
+# Clear git information after tarball decompression
+rm -rf .git
+
 git init -q
 git config user.name rpm-build
 git config user.email rpm-build
@@ -1308,7 +1314,7 @@ rm -rf .git
 # STX: Generate configure script.  Default is to do a "git clone" of gnulib.
 # Use the tar ball gnulib tarball instead.
 tar zxf %{SOURCE6}
-./bootstrap --no-git --gnulib-srcdir=gnulib-ffc927e --copy
+./bootstrap --no-git --gnulib-srcdir=gnulib-68df637 --copy
 tar zxf %{SOURCE7} -C src
 
 %if 0%{?enable_autotools}
