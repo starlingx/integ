@@ -1,0 +1,30 @@
+From 49520cf6a3c826de7b4c8c0842c24991770d9db2 Mon Sep 17 00:00:00 2001
+From: Long Li <lilong-neu@neusoft.com>
+Date: Wed, 12 Feb 2020 20:16:15 +0800
+Subject: [PATCH] Fix shimver directory
+
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
+---
+ SOURCES/shim.rpmmacros | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/SOURCES/shim.rpmmacros b/SOURCES/shim.rpmmacros
+index 26e7e72..c14a03f 100644
+--- a/SOURCES/shim.rpmmacros
++++ b/SOURCES/shim.rpmmacros
+@@ -13,9 +13,9 @@
+ %global shimefix64 %{expand:%{SOURCE22}}
+ #%%global shimefiarm %%{expand:%%{SOURCE23}
+ 
+-%global shimveraa64 15-2.el8
+-%global shimveria32 15-2.el8
+-%global shimverx64 15-2.el8
++%global shimveraa64 15-2.el8%{?_tis_dist}.%{tis_patch_ver}
++%global shimveria32 15-2.el8%{?_tis_dist}.%{tis_patch_ver}
++%global shimverx64 15-2.el8%{?_tis_dist}.%{tis_patch_ver}
+ #%%global shimverarm 15-1.el8
+ 
+ %global shimdiraa64 %{_datadir}/shim/%{shimveraa64}/aa64
+-- 
+2.7.4
+
