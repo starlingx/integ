@@ -1,11 +1,11 @@
-From 21db84dcb55f87c792a6d59cef0c68741a9d24b1 Mon Sep 17 00:00:00 2001
-From: Scott Little <scott.little@windriver.com>
-Date: Mon, 2 Oct 2017 16:50:44 -0400
-Subject: [PATCH 1/4] STX: 0001-Update-package-versioning-for-TIS-format.patch
+From 89fe761fdee16c6a129427b9717a7e99e0f1d55a Mon Sep 17 00:00:00 2001
+From: ec <ec@starlingx.com>
+Date: Thu, 19 Dec 2019 05:12:09 +0000
+Subject: [PATCH] Update package versioning for TIS format
 
 ---
- SPECS/sudo.spec | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ SPECS/sudo.spec | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/SPECS/sudo.spec b/SPECS/sudo.spec
 index c8d2f64..b6402bb 100644
@@ -15,8 +15,8 @@ index c8d2f64..b6402bb 100644
  Summary: Allows restricted root access for specified users
  Name: sudo
  Version: 1.8.23
--Release: 3%{?dist}
-+Release: 3.el7%{?_tis_dist}.%{tis_patch_ver}
+-Release: 4%{?dist}.1
++Release: 4.el7_7.1%{?_tis_dist}.%{tis_patch_ver}
  License: ISC
  Group: Applications/System
  URL: http://www.courtesan.com/sudo/
