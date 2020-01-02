@@ -22,7 +22,7 @@ Patch6:         route-options-support.patch
 
 BuildArch:      noarch
 
-BuildRequires: python2-devel
+BuildRequires: python3-devel
 
 %description
 A Puppet module to manage non volatile network and route configuration
