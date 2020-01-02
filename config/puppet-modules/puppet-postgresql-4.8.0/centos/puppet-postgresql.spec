@@ -17,7 +17,7 @@ Patch0002:      0002-remove-puppetlabs-apt-as-a-requirement.patch
 
 BuildArch:      noarch
 
-BuildRequires: python2-devel
+BuildRequires: python3-devel
 
 # According to .fixtures.yml the following puppet modules are also needed
 #Requires:      puppet-apt
