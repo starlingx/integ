@@ -8,12 +8,12 @@ Subject: [PATCH] spec-include-tis-changes
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/cloud-init.spec b/SPECS/cloud-init.spec
-index a873d81..1175601 100644
+index d7dc778..1842e08 100644
 --- a/SPECS/cloud-init.spec
 +++ b/SPECS/cloud-init.spec
-@@ -38,6 +38,8 @@ Patch15: ci-Fix-string-missmatch-when-mounting-ntfs.patch
- # For bz#1602784 - cloud-init: Sometimes image boots fingerprints is configured, there's a network device present but it's not configured
- Patch16: ci-net-Make-sysconfig-renderer-compatible-with-Network-.patch
+@@ -42,6 +42,8 @@ Patch18: ci-cc_mounts-check-if-mount-a-on-no-change-fstab-path.patch
+ # For bz#1648375 - [Azure] [RHEL 8] Cloud-init fixes to support fast provisioning for Azure[8.0.1]
+ Patch19: ci-Azure-Return-static-fallback-address-as-if-failed-to.patch
  
 +Patch1000: cloud-init-interactive-parted.patch
 +
