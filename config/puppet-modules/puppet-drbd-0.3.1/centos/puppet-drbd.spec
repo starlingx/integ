@@ -24,7 +24,7 @@ Patch0009:      0009-drbd-slow-before-swact.patch
 
 BuildArch:      noarch
 
-BuildRequires: python2-devel
+BuildRequires: python3-devel
 
 # According to .fixtures.yml the following puppet modules are required
 Requires:      puppet-concat
