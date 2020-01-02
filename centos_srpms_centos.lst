@@ -10,7 +10,7 @@ initscripts-9.49.46-1.el7.src.rpm
 kernel-3.10.0-957.21.3.el7.src.rpm
 libevent-2.0.21-4.el7.src.rpm
 # libibverbs-41mlnx1-OFED.4.5.0.1.0.45101.src.rpm
-lighttpd-1.4.54-1.el7.src.rpm
+lighttpd-1.4.54-4.el8.src.rpm
 logrotate-3.8.6-17.el7.src.rpm
 # mlnx-ofa_kernel-4.5-OFED.4.5.1.0.1.1.gb4fdfac.src.rpm
 net-snmp-5.7.2-37.el7.src.rpm
