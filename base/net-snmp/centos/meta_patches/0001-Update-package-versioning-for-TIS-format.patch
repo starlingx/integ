@@ -16,11 +16,11 @@ index a59db4f..8a24ba1 100644
  Summary:    A collection of SNMP protocol tools and libraries
  Name:       net-snmp
  Version:    5.8
--Release:    7%{?dist}.1
-+Release:    7.el8_0%{?_tis_dist}.%{tis_patch_ver}.1
+-Release:    7%{?dist}.2
++Release:    7.el8_0.2%{?_tis_dist}.%{tis_patch_ver}
  Epoch:      1
  
  License:    BSD
 -- 
-1.8.3.1
+2.7.4
 

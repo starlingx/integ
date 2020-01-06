@@ -14,7 +14,7 @@ index 8a24ba1..40af31f 100644
  # use nestnmp_check 0 to speed up packaging by disabling 'make test'
  %{!?netsnmp_check: %global netsnmp_check 1}
  
-@@ -196,7 +199,7 @@ rm testing/fulltests/default/T200*
+@@ -198,7 +201,7 @@ rm testing/fulltests/default/T200*
  # Autoreconf to get autoconf 2.69 for ARM (#926223)
  autoreconf
  
@@ -23,7 +23,7 @@ index 8a24ba1..40af31f 100644
       ucd-snmp/diskio tcp-mib udp-mib mibII/mta_sendmail \
       ip-mib/ipv4InterfaceTable ip-mib/ipv6InterfaceTable \
       ip-mib/ipAddressPrefixTable/ipAddressPrefixTable \
-@@ -222,6 +225,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
+@@ -224,6 +227,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
      --with-ldflags="-Wl,-z,relro -Wl,-z,now" \
      --with-logfile="/var/log/snmpd.log" \
      --with-mib-modules="$MIBS" \
@@ -31,7 +31,7 @@ index 8a24ba1..40af31f 100644
      --with-mysql \
      --with-openssl \
      --with-persistent-directory="/var/lib/net-snmp" \
-@@ -232,6 +236,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
+@@ -234,6 +238,7 @@ MIBS="$MIBS ucd-snmp/lmsensorsMib"
      --with-systemd \
      --with-temp-file-pattern=/var/run/net-snmp/snmp-tmp-XXXXXX \
      --with-transports="DTLSUDP TLSTCP" \
@@ -40,5 +40,5 @@ index 8a24ba1..40af31f 100644
  EOF
  
 -- 
-1.8.3.1
+2.7.4
 
