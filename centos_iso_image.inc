@@ -27,11 +27,11 @@ libvirt-client
 
 
 # python-ryu
-python2-ryu
-python-ryu-common
+#python2-ryu
+#python-ryu-common
 
 # python-smartpm
-python-smartpm
+#python-smartpm
 
 # lldpd
 lldpd
@@ -53,15 +53,15 @@ swtpm-tools
 
 
 # python-3parclient
-python-3parclient
+#python-3parclient
 
 # python-lefthandclient
-python-lefthandclient
+#python-lefthandclient
 
 
 
 # docker-distribution
-docker-distribution
+#docker-distribution
 
 # helm
 helm
@@ -74,46 +74,46 @@ helm
 
 # e1000e-kmod
 kmod-e1000e
-kmod-e1000e-rt
+#kmod-e1000e-rt
 
 # i40e-kmod
 kmod-i40e
-kmod-i40e-rt
+#kmod-i40e-rt
 
 # iavf-kmod
-kmod-iavf
-kmod-iavf-rt
+#kmod-iavf
+#kmod-iavf-rt
 
 # ixgbevf-kmod
 kmod-ixgbevf
-kmod-ixgbevf-rt
+#kmod-ixgbevf-rt
 
 # ixgbe-kmod
 kmod-ixgbe
-kmod-ixgbe-rt
+#kmod-ixgbe-rt
 
 # qat17
 qat17
-qat17-rt
+#qat17-rt
 
 # tpm-kmod
-kmod-tpm
-kmod-tpm-rt
+#kmod-tpm
+#kmod-tpm-rt
 
 # integrity-kmod
-kmod-integrity
-kmod-integrity-rt
+#kmod-integrity
+#kmod-integrity-rt
 
 # drbd-kernel
 kmod-drbd
-kmod-drbd-rt
+#kmod-drbd-rt
 
 # opae-intel-fpga-driver
-kmod-opae-fpga-driver
-kmod-opae-fpga-driver-rt
+#kmod-opae-fpga-driver
+#kmod-opae-fpga-driver-rt
 
 # rpm
-rpm-plugin-systemd-inhibit
+#rpm-plugin-systemd-inhibit
 
 # dpkg
 dpkg
@@ -125,12 +125,12 @@ cgcs-users
 ldapscripts
 
 # drbd
-drbd
-drbd-utils
-drbd-udev
-drbd-pacemaker
-drbd-heartbeat
-drbd-bash-completion
+#drbd
+#drbd-utils
+#drbd-udev
+#drbd-pacemaker
+#drbd-heartbeat
+#drbd-bash-completion
 
 
 # initscripts
@@ -140,14 +140,14 @@ initscripts
 setup
 
 # nss-pam-ldapd
-nss-pam-ldapd
+#nss-pam-ldapd
 
 
 # nfs-utils series package
 
 # dhcp
-dhcp
-dhclient
+dhcp-server
+dhcp-client
 
 # openssh
 openssh
@@ -158,25 +158,25 @@ openssh-server
 facter
 
 # vim
-vim-enhanced
+#vim-enhanced
 
 # python
-python
+#python
 
 # libvirt-python
-python2-libvirt
+python3-libvirt
 
 # lighttpd
 lighttpd
-lighttpd-fastcgi
-lighttpd-mod_geoip
+#lighttpd-fastcgi
+#lighttpd-mod_geoip
 lighttpd-mod_mysql_vhost
 
 # logrotate
 logrotate
 
 # novnc
-novnc
+#novnc
 
 # sudo
 sudo
@@ -186,7 +186,7 @@ sudo
 # net-snmp
 net-snmp-utils
 net-snmp-libs
-net-snmp-python
+#net-snmp-python
 
 # openldap
 openldap
@@ -197,7 +197,7 @@ openldap-clients
 openvswitch
 
 # libevent
-libevent
+#libevent
 
 # tpm2-tools
 tpm2-tools
@@ -209,10 +209,10 @@ kernel
 kernel-tools
 kernel-tools-libs
 perf
-python-perf
+python3-perf
 
 # puppet
-puppet
+#puppet
 
 # systemd
 systemd
@@ -224,14 +224,14 @@ tboot
 memcached
 
 # kubernetes
-kubernetes
-kubernetes-master
-kubernetes-node
-kubernetes-kubeadm
-kubernetes-client
+#kubernetes
+#kubernetes-master
+#kubernetes-node
+#kubernetes-kubeadm
+#kubernetes-client
 
 # resource-agents
-resource-agents
+#resource-agents
 
 
 # haproxy
@@ -241,7 +241,7 @@ haproxy
 # iptables
 
 # python-psycopg2
-python-psycopg2
+#python-psycopg2
 
 # dnsmasq
 dnsmasq
@@ -251,34 +251,34 @@ dnsmasq-utils
 parted
 
 # python-keyring
-python-keyring
+#python-keyring
 
 # grub2
 grub2-tools
 grub2-efi-x64-modules
 
 # kernel-rt
-kernel-rt
-kernel-rt-kvm
-kernel-rt-tools
+#kernel-rt
+#kernel-rt-kvm
+#kernel-rt-tools
 
 # mellanox drivers
-rdma-core
-mlnx-ofa_kernel-modules
-mlnx-ofa_kernel-rt-modules
+#rdma-core
+#mlnx-ofa_kernel-modules
+#mlnx-ofa_kernel-rt-modules
 
 
 # python2-ruamel-yaml
-python2-ruamel-yaml
+#python2-ruamel-yaml
 
 
 # redfish tool
 Redfishtool
 
 # kvm-timer-advance (AIO and worker nodes only)
-kvm-timer-advance
+#kvm-timer-advance
 
 # aws packages for interacting with amazon aws registry
 # botocore is an unspecified requirement of boto3
-python2-botocore
-python-boto3
+#python2-botocore
+#python-boto3
