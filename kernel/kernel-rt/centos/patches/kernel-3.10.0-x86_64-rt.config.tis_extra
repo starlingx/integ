@@ -959,3 +959,6 @@ CONFIG_LOCK_TORTURE_TEST=n
 # Disable kernel memory accounting, which is broken
 CONFIG_MEMCG_KMEM=n
 
+# Needed for opae fpga kernel module
+# as it turns on hidden option REGMAP_MMIO
+CONFIG_MFD_SYSCON=y
