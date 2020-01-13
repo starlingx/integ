@@ -35,7 +35,7 @@ diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
 index d3d746b..e9a8d95 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -3488,13 +3488,14 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
+@@ -3490,13 +3490,14 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
  	struct cfs_rq *cfs_rq;
  	u64 runtime;
  	u64 starting_runtime = remaining;
@@ -51,7 +51,7 @@ index d3d746b..e9a8d95 100644
  		if (!cfs_rq_throttled(cfs_rq))
  			goto next;
  
-@@ -3511,7 +3512,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
+@@ -3513,7 +3514,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
  			unthrottle_cfs_rq(cfs_rq);
  
  next:
@@ -60,7 +60,7 @@ index d3d746b..e9a8d95 100644
  
  		if (!remaining)
  			break;
-@@ -3527,7 +3528,7 @@ next:
+@@ -3529,7 +3530,7 @@ next:
   * period the timer is deactivated until scheduling resumes; cfs_b->idle is
   * used to track this state.
   */
@@ -69,7 +69,7 @@ index d3d746b..e9a8d95 100644
  {
  	u64 runtime, runtime_expires;
  	int throttled;
-@@ -3576,11 +3577,11 @@ static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
+@@ -3578,11 +3579,11 @@ static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
  	while (throttled && cfs_b->runtime > 0 && !cfs_b->distribute_running) {
  		runtime = cfs_b->runtime;
  		cfs_b->distribute_running = 1;
@@ -83,7 +83,7 @@ index d3d746b..e9a8d95 100644
  
  		cfs_b->distribute_running = 0;
  		throttled = !list_empty(&cfs_b->throttled_cfs_rq);
-@@ -3689,17 +3690,18 @@ static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+@@ -3691,17 +3692,18 @@ static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
  static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
  {
  	u64 runtime = 0, slice = sched_cfs_bandwidth_slice();
@@ -105,7 +105,7 @@ index d3d746b..e9a8d95 100644
  		return;
  	}
  
-@@ -3710,18 +3712,18 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
+@@ -3712,18 +3714,18 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
  	if (runtime)
  		cfs_b->distribute_running = 1;
  
@@ -127,7 +127,7 @@ index d3d746b..e9a8d95 100644
  }
  
  /*
-@@ -3785,7 +3787,7 @@ static void check_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+@@ -3787,7 +3789,7 @@ static void check_cfs_rq_runtime(struct cfs_rq *cfs_rq)
  }
  
  static inline u64 default_cfs_period(void);
@@ -136,22 +136,23 @@ index d3d746b..e9a8d95 100644
  static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b);
  
  static enum hrtimer_restart sched_cfs_slack_timer(struct hrtimer *timer)
-@@ -3802,10 +3804,11 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
+@@ -3806,11 +3808,12 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
  	struct cfs_bandwidth *cfs_b =
  		container_of(timer, struct cfs_bandwidth, period_timer);
  	ktime_t now;
 +	unsigned long flags;
  	int overrun;
  	int idle = 0;
+ 	int count = 0;
  
 -	raw_spin_lock(&cfs_b->lock);
 +	raw_spin_lock_irqsave(&cfs_b->lock, flags);
  	for (;;) {
  		now = hrtimer_cb_get_time(timer);
  		overrun = hrtimer_forward(timer, now, cfs_b->period);
-@@ -3813,9 +3816,9 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
- 		if (!overrun)
- 			break;
+@@ -3840,9 +3843,9 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
+ 			count = 0;
+ 		}
  
 -		idle = do_sched_cfs_period_timer(cfs_b, overrun);
 +		idle = do_sched_cfs_period_timer(cfs_b, overrun, flags);
