@@ -57,6 +57,7 @@ networking/mellanox/libibverbs
 kernel/kernel-modules/mlnx-ofa_kernel
 networking/mellanox/rdma-core
 docker/python-docker
+kubernetes/containerd
 kubernetes/kubernetes
 kubernetes/docker-distribution
 kubernetes/etcd
