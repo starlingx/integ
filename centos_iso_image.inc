@@ -229,7 +229,6 @@ kubernetes-master
 kubernetes-node
 kubernetes-kubeadm
 kubernetes-client
-containerd
 
 # resource-agents
 resource-agents
