@@ -6,10 +6,11 @@
 
 # Define the kmod package name here.
 %define kmod_name opae-intel-fpga-driver
-%define iteration 2
+# If a release doesn't have an iteration number, just use 0
+%define iteration 6
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 1.3.0
+Version: 2.0.1
 Release: %{iteration}%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
@@ -20,7 +21,9 @@ BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
 ExclusiveArch: x86_64
 
 # Sources.
-Source0:  %{kmod_name}-%{version}-%{iteration}.tar.gz
+# The source tarball name may or may not include the iteration number.
+Source0:  %{kmod_name}-%{version}.tar.gz
+Patch01:  Remove-regmap-mmio-as-it-is-built-into-the-kernel.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -78,7 +81,7 @@ It is built to depend upon the specific ABI provided by a range of releases
 of the same variant of the Linux kernel and not on any one specific build.
 
 %prep
-%autosetup -p 1 -n %{kmod_name}-%{version}-%{iteration}
+%autosetup -p 1 -n %{kmod_name}-%{version}
 %{__gzip} %{kmod_name}.7
 echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.conf
 
@@ -87,7 +90,7 @@ echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.con
 
 %install
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} %{_builddir}/%{kmod_name}-%{version}-%{iteration}/*.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
+%{__install} %{_builddir}/%{kmod_name}-%{version}/*.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} -d %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} kmod-%{kmod_name}.conf %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
