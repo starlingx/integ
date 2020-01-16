@@ -115,9 +115,6 @@ rpm-plugin-systemd-inhibit
 # dpkg
 dpkg
 
-# cgcs-users
-cgcs-users
-
 # ldapscripts
 ldapscripts
 

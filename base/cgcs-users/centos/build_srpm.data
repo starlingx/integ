@@ -1,5 +1,0 @@
-TAR_NAME=cgcs-users
-VERSION=1.0
-COPY_LIST="${CGCS_BASE}/downloads/ibsh-0.3e.tar.gz \
-           ${PKG_BASE}/${TAR_NAME}-${VERSION}/*"
-TIS_PATCH_VER=2
