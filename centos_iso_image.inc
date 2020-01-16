@@ -30,9 +30,6 @@ libvirt-client
 python2-ryu
 python-ryu-common
 
-# python-smartpm
-python-smartpm
-
 # lldpd
 lldpd
 

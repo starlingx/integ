@@ -9,7 +9,6 @@ virt/libvirt
 virt/libvirt-python
 base/lighttpd
 networking/python-ryu
-python/python-smartpm
 python/python-voluptuous
 networking/lldpd
 logging/logrotate
