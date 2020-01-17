@@ -23,7 +23,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'stx-integ'
+project = u'StarlingX Integration'
 copyright = u'2018, StarlingX'
 author = u'StarlingX'
 
