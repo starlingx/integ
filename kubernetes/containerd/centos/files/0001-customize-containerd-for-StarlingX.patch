@@ -1,0 +1,37 @@
+From fb2f78f1a3f1ec51a12f1404c21651dc0144663e Mon Sep 17 00:00:00 2001
+From: Shuicheng Lin <shuicheng.lin@intel.com>
+Date: Wed, 25 Sep 2019 20:02:34 +0800
+Subject: [PATCH] customize containerd for StarlingX
+
+1. disable btrfs to pass build.
+3. hardcode version info due to miss git info in tarball.
+
+Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
+---
+ containerd/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/containerd/Makefile b/containerd/Makefile
+index 6758161..49dd612 100644
+--- a/containerd/Makefile
++++ b/containerd/Makefile
+@@ -20,7 +20,7 @@ ROOTDIR=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ DESTDIR ?= /usr/local
+ 
+ # Used to populate variables in version package.
+-VERSION=$(shell git describe --match 'v[0-9]*' --dirty='.m' --always)
++VERSION="v1.3.0"
+ REVISION=$(shell git rev-parse HEAD)$(shell if ! git diff --no-ext-diff --quiet --exit-code; then echo .m; fi)
+ PACKAGE=github.com/containerd/containerd
+ 
+@@ -90,6 +90,7 @@ endif
+ # Build tags seccomp and apparmor are needed by CRI plugin.
+ GO_BUILDTAGS ?= seccomp apparmor
+ GO_BUILDTAGS += ${DEBUG_TAGS}
++GO_BUILDTAGS += no_btrfs
+ GO_TAGS=$(if $(GO_BUILDTAGS),-tags "$(GO_BUILDTAGS)",)
+ GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) $(EXTRA_LDFLAGS)'
+ SHIM_GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) -extldflags "-static" $(EXTRA_LDFLAGS)'
+-- 
+2.7.4
+
