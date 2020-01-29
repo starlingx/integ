@@ -1,28 +1,29 @@
-From 88ea759637bfe3359375e86dd698a1efbf274784 Mon Sep 17 00:00:00 2001
-Message-Id: <88ea759637bfe3359375e86dd698a1efbf274784.1527782348.git.Jim.Somerville@windriver.com>
-From: eric zhang <eric.zhang@windriver.com>
-Date: Wed, 14 Mar 2018 15:52:15 -0400
+From 6152dc85e1b94ec93a3378f4f77b3b33907aac35 Mon Sep 17 00:00:00 2001
+Message-Id: <6152dc85e1b94ec93a3378f4f77b3b33907aac35.1579886617.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Mon, 20 Jan 2020 11:40:06 -0500
 Subject: [PATCH 1/1] Support TiS system
 
 This patch added the following to support TiS system:
-1. Support package versioning for TiS format
-2. Add rt support
-3. Compile fix in dcbnl.h
-4. Fix compile for some ks stuff
-5. Fix compile neuter some stats output
-6. Load all kernel modules
-7. Sign kernel module
+- Support package versioning for TiS format
+- Add rt support
+- Compile fix in dcbnl.h
+- Fix compile for some ks stuff
+- Fix compile to neuter some stats output
+- Disable use of kernel page pool functionality
+- Load all kernel modules
+- Sign kernel module
 
 Signed-off-by: Allain Legacy <allain.legacy@windriver.com>
-Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Kam Nasim <kam.nasim@windriver.com>
 Signed-off-by: eric zhang <eric.zhang@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/mlnx-ofa_kernel.spec | 49 +++++++++++++++++++++++++++++++---------------
- 1 file changed, 33 insertions(+), 16 deletions(-)
+ SPECS/mlnx-ofa_kernel.spec | 51 +++++++++++++++++++++++++++++++---------------
+ 1 file changed, 35 insertions(+), 16 deletions(-)
 
 diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
-index 33fe911..7a9253d 100644
+index 85af93f..6e77d09 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
 @@ -27,8 +27,14 @@
@@ -67,7 +68,7 @@ index 33fe911..7a9253d 100644
  %{!?_version: %global _version 4.5}
  %{!?_release: %global _release OFED.4.5.1.0.1.1.gb4fdfac}
  %global _kmp_rel %{_release}%{?_kmp_build_num}%{?_dist}
-@@ -75,11 +82,16 @@
+@@ -75,11 +82,17 @@
  Summary: Infiniband HCA Driver
  Name: %{_name}
  Version: %{_version}
@@ -82,11 +83,12 @@ index 33fe911..7a9253d 100644
 +Patch01: 0001-neuter-HAVE_IEEE_GETQCN.patch
 +Patch02: 0001-neuter-a-bunch-of-ks-stuff.patch
 +Patch03: 0001-neuter-some-stats-output.patch
++Patch04: Disable-use-of-page-pool.patch
 +
  BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
  Vendor: Mellanox Technologies
  Obsoletes: kernel-ib
-@@ -135,7 +147,6 @@ EOF)
+@@ -135,7 +148,6 @@ EOF)
  %global kernel_release() %{KVERSION}
  %global flavors_to_build default
  %package -n %{non_kmp_pname}
@@ -94,7 +96,7 @@ index 33fe911..7a9253d 100644
  Requires: coreutils
  Requires: pciutils
  Requires: grep
-@@ -162,7 +173,7 @@ Obsoletes: mlnx-en-doc
+@@ -162,7 +174,7 @@ Obsoletes: mlnx-en-doc
  Obsoletes: mlnx-en-debuginfo
  Obsoletes: mlnx-en-sources
  Version: %{_version}
@@ -103,7 +105,7 @@ index 33fe911..7a9253d 100644
  Summary: Infiniband Driver and ULPs kernel modules
  Group: System Environment/Libraries
  %description -n %{non_kmp_pname}
-@@ -174,7 +185,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -174,7 +186,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  %package -n %{devel_pname}
  Version: %{_version}
  # build KMP rpms?
@@ -112,7 +114,7 @@ index 33fe911..7a9253d 100644
  Obsoletes: kernel-ib-devel
  Obsoletes: compat-rdma-devel
  Obsoletes: kernel-ib
-@@ -212,13 +223,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -212,13 +224,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  	else \
  		echo -n '0'; fi)
  
@@ -127,7 +129,7 @@ index 33fe911..7a9253d 100644
  %global buildsubdir %{_name}-%{version}
  # Disgusting hack alert! We need to ensure we sign modules *after* all
  # invocations of strip occur, which is in __debug_install_post if
-@@ -231,7 +241,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -231,7 +242,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
    %{__modsign_install_post} \
  %{nil}
  
@@ -135,7 +137,7 @@ index 33fe911..7a9253d 100644
  #
  %if "%{_vendor}" == "suse"
  %debug_package
-@@ -262,12 +271,16 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -262,12 +272,17 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
  %{!?install_mod_dir: %global install_mod_dir updates}
  
  %prep
@@ -149,11 +151,12 @@ index 33fe911..7a9253d 100644
 +%patch01 -p1
 +%patch02 -p1
 +%patch03 -p1
++%patch04 -p1
 +
  %build
  export EXTRA_CFLAGS='-DVERSION=\"%version\"'
  export INSTALL_MOD_DIR=%{install_mod_dir}
-@@ -282,7 +295,6 @@ for flavor in %flavors_to_build; do
+@@ -282,7 +297,6 @@ for flavor in %flavors_to_build; do
  	find compat -type f -exec touch -t 200012201010 '{}' \; || true
  	./configure --build-dummy-mods --prefix=%{_prefix} --kernel-version $KVERSION --kernel-sources $KSRC --modules-dir $LIB_MOD_DIR $CONF_OPTIONS %{?_smp_mflags}
  	make %{?_smp_mflags} kernel
@@ -161,7 +164,7 @@ index 33fe911..7a9253d 100644
  	cd -
  done
  
-@@ -291,9 +303,11 @@ touch ofed-files
+@@ -291,9 +305,11 @@ touch ofed-files
  export RECORD_PY_FILES=1
  export INSTALL_MOD_PATH=%{buildroot}
  export INSTALL_MOD_DIR=%{install_mod_dir}
@@ -174,7 +177,7 @@ index 33fe911..7a9253d 100644
  for flavor in %flavors_to_build; do 
  	export KSRC=%{kernel_source $flavor}
  	export KVERSION=%{kernel_release $KSRC}
-@@ -343,6 +357,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
+@@ -343,6 +359,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
  echo "override ${mod_name} * extra/%{_name}${mod_path}" >> %{buildroot}%{_sysconfdir}/depmod.d/zz01-%{_name}-${mod_name}.conf
  done
  %endif
@@ -183,7 +186,7 @@ index 33fe911..7a9253d 100644
  %endif
  
  # copy sources
-@@ -686,6 +702,7 @@ fi
+@@ -686,6 +704,7 @@ fi
  %config(noreplace) %{_sysconfdir}/depmod.d/zz01-%{_name}-*.conf
  %endif
  %endif
