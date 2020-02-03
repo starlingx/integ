@@ -36,8 +36,20 @@
 # option to build openvswitch-ovn-docker package
 %bcond_with ovn_docker
 
-%if 0%{?fedora}
+%if 0%{?rhel} > 7 || 0%{?fedora}
+# Use Python3
+%global _py python3
 %global with_python3 1
+%if 0%{?fedora}
+%global with_python2 1
+%else
+%global with_python2 0
+%endif
+%else
+# Use Python2
+%global _py python
+%global with_python2 1
+%global with_python3 0
 %endif
 
 Name: openvswitch
@@ -92,10 +104,12 @@ ExclusiveArch: x86_64 aarch64 ppc64le s390x
 Patch01: run-services-as-root-user.patch
 
 BuildRequires: gcc
-BuildRequires: python2-sphinx
+BuildRequires: %{_py}-sphinx
 BuildRequires: autoconf automake libtool
 BuildRequires: systemd-units openssl openssl-devel
+%if 0%{?with_python2}
 BuildRequires: python2-devel python2-six
+%endif
 %if 0%{?with_python3}
 BuildRequires: python3-devel python3-six
 %endif
@@ -103,7 +117,7 @@ BuildRequires: desktop-file-utils
 BuildRequires: groff-base graphviz
 # make check dependencies
 BuildRequires: procps-ng
-BuildRequires: python2-pyOpenSSL
+BuildRequires: %{_py}-pyOpenSSL
 %if %{with check_datapath_kernel}
 BuildRequires: nmap-ncat
 # would be useful but not available in RHEL or EPEL
@@ -120,7 +134,7 @@ BuildRequires: libcap-ng libcap-ng-devel
 BuildRequires: zlib-devel libpcap-devel numactl-devel
 BuildRequires: rdma-core-devel
 BuildRequires:  libmnl-devel
-Requires: python-pyelftools
+#Requires: python-pyelftools
 
 # Virtual provide for depending on DPDK-enabled OVS
 Provides: openvswitch-dpdk = %{version}-%{release}
@@ -150,6 +164,7 @@ Open vSwitch provides standard network bridging functions and
 support for the OpenFlow protocol for remote per-flow control of
 traffic.
 
+%if 0%{?with_python2}
 %package -n python2-openvswitch
 Summary: Open vSwitch python2 bindings
 License: ASL 2.0
@@ -160,6 +175,7 @@ Provides: python-openvswitch = %{epoch}:%{version}-%{release}
 
 %description -n python2-openvswitch
 Python bindings for the Open vSwitch database
+%endif
 
 %if 0%{?with_python3}
 %package -n python3-openvswitch
@@ -176,8 +192,12 @@ Python bindings for the Open vSwitch database
 Summary: Open vSwitch testing utilities
 License: ASL 2.0
 BuildArch: noarch
+%if 0%{?with_python2}
 Requires: python2-openvswitch = %{epoch}:%{version}-%{release}
 Requires: python2 python2-twisted
+%else
+Requires: python3-openvswitch = %{?epoch:%{epoch}:}%{version}-%{release}
+%endif
 
 %description test
 Utilities that are useful to diagnose performance and connectivity
@@ -316,8 +336,8 @@ cd -
 %endif
 %endif
   --with-pkidir=%{_sharedstatedir}/openvswitch/pki \
-  PYTHON=/usr/bin/python2
-/usr/bin/python2 build-aux/dpdkstrip.py \
+  PYTHON=/usr/bin/%{_py}
+/usr/bin/%{_py} build-aux/dpdkstrip.py \
         --dpdk \
         < rhel/usr_lib_systemd_system_ovs-vswitchd.service.in \
         > rhel/usr_lib_systemd_system_ovs-vswitchd.service
@@ -368,12 +388,14 @@ install -p -m 0755 rhel/etc_sysconfig_network-scripts_ifdown-ovs \
 install -p -m 0755 rhel/etc_sysconfig_network-scripts_ifup-ovs \
         $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/network-scripts/ifup-ovs
 
+%if 0%{?with_python2}
 install -d -m 0755 $RPM_BUILD_ROOT%{python2_sitelib}
 cp -a $RPM_BUILD_ROOT/%{_datadir}/openvswitch/python/* \
    $RPM_BUILD_ROOT%{python2_sitelib}
+%endif
 %if 0%{?with_python3}
 install -d -m 0755 $RPM_BUILD_ROOT%{python3_sitelib}
-cp -a $RPM_BUILD_ROOT/%{_datadir}/openvswitch/python/ovs \
+cp -a $RPM_BUILD_ROOT/%{_datadir}/openvswitch/python/* \
    $RPM_BUILD_ROOT%{python3_sitelib}
 %endif
 rm -rf $RPM_BUILD_ROOT/%{_datadir}/openvswitch/python/
@@ -418,6 +440,9 @@ rm -f $RPM_BUILD_ROOT/%{_bindir}/ovs-benchmark \
 rm -f $RPM_BUILD_ROOT/%{_bindir}/ovn-docker-overlay-driver \
         $RPM_BUILD_ROOT/%{_bindir}/ovn-docker-underlay-driver
 %endif
+
+sed -i "s|/usr/bin/env python|/usr/bin/env python3|" $RPM_BUILD_ROOT/usr/share/openvswitch/scripts/dpdk-pmdinfo.py
+sed -i "s|/usr/bin/env python|/usr/bin/env python3|" $RPM_BUILD_ROOT/usr/share/openvswitch/scripts/dpdk-devbind.py
 
 %check
 %if %{with check}
@@ -562,8 +587,10 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 
+%if 0%{?with_python2}
 %files -n python2-openvswitch
 %{python2_sitelib}/ovs
+%endif
 
 %if 0%{?with_python3}
 %files -n python3-openvswitch
@@ -571,19 +598,26 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %files test
-%{_bindir}/ovs-test
-%{_bindir}/ovs-vlan-test
-%{_bindir}/ovs-l3ping
 %{_bindir}/ovs-pcap
 %{_bindir}/ovs-tcpdump
 %{_bindir}/ovs-tcpundump
-%{_mandir}/man8/ovs-test.8*
-%{_mandir}/man8/ovs-vlan-test.8*
-%{_mandir}/man8/ovs-l3ping.8*
 %{_mandir}/man1/ovs-pcap.1*
 %{_mandir}/man8/ovs-tcpdump.8*
 %{_mandir}/man1/ovs-tcpundump.1*
-%{python2_sitelib}/ovstest
+%if 0%{?with_python2}
+%{_bindir}/ovs-test
+%{_bindir}/ovs-vlan-test
+%{_bindir}/ovs-l3ping
+%{_mandir}/man8/ovs-test.8*
+%{_mandir}/man8/ovs-vlan-test.8*
+%{_mandir}/man8/ovs-l3ping.8*
+%{python_sitelib}/ovstest
+%else
+%exclude %{_mandir}/man8/ovs-test.8*
+%exclude %{_mandir}/man8/ovs-vlan-test.8*
+%exclude %{_mandir}/man8/ovs-l3ping.8*
+%{python3_sitelib}/ovstest
+%endif
 
 %files devel
 %{_libdir}/*.a
@@ -611,8 +645,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/openvswitch/scripts/openvswitch.init
 %{_sysconfdir}/sysconfig/network-scripts/ifup-ovs
 %{_sysconfdir}/sysconfig/network-scripts/ifdown-ovs
-%{_datadir}/openvswitch/bugtool-plugins/
-%{_datadir}/openvswitch/scripts/ovs-bugtool-*
 %{_datadir}/openvswitch/scripts/ovs-check-dead-ifs
 %{_datadir}/openvswitch/scripts/ovs-lib
 %{_datadir}/openvswitch/scripts/ovs-save
@@ -623,19 +655,16 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/openvswitch/scripts/ovs-systemd-reload
 %{_datadir}/openvswitch/scripts/dpdk-pmdinfo.py
 %{_datadir}/openvswitch/scripts/dpdk-devbind.py
-%exclude %{_datadir}/openvswitch/scripts/*.py[oc]
 %config %{_datadir}/openvswitch/vswitch.ovsschema
 %config %{_datadir}/openvswitch/vtep.ovsschema
 %{_bindir}/ovs-appctl
 %{_bindir}/ovs-dpctl
-%{_bindir}/ovs-dpctl-top
 %{_bindir}/ovs-ofctl
 %{_bindir}/ovs-vsctl
 %{_bindir}/ovsdb-client
 %{_bindir}/ovsdb-tool
 %{_bindir}/ovs-pki
 %{_bindir}/vtep-ctl
-%{_sbindir}/ovs-bugtool
 %{_sbindir}/ovs-vswitchd
 %{_sbindir}/ovsdb-server
 %{_mandir}/man1/ovsdb-client.1*
@@ -651,10 +680,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man7/ovs-fields.7*
 %{_mandir}/man8/vtep-ctl.8*
 %{_mandir}/man8/ovs-appctl.8*
-%{_mandir}/man8/ovs-bugtool.8*
 %{_mandir}/man8/ovs-ctl.8*
 %{_mandir}/man8/ovs-dpctl.8*
-%{_mandir}/man8/ovs-dpctl-top.8*
 %{_mandir}/man8/ovs-kmod-ctl.8*
 %{_mandir}/man8/ovs-ofctl.8*
 %{_mandir}/man8/ovs-pki.8*
@@ -671,6 +698,16 @@ rm -rf $RPM_BUILD_ROOT
 /var/lib/openvswitch
 %attr(755,-,-) /var/log/openvswitch
 %ghost %attr(755,root,root) %{_rundir}/openvswitch
+%if 0%{?with_python2}
+%{_datadir}/openvswitch/bugtool-plugins/
+%{_datadir}/openvswitch/scripts/ovs-bugtool-*
+%{_bindir}/ovs-dpctl-top
+%{_sbindir}/ovs-bugtool
+%{_mandir}/man8/ovs-dpctl-top.8*
+%{_mandir}/man8/ovs-bugtool.8*
+%else
+%exclude %{_mandir}/man8/ovs-dpctl-top.8*
+%endif
 
 %if %{with ovn_docker}
 %files ovn-docker
@@ -685,9 +722,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/ovn-trace
 %{_datadir}/openvswitch/scripts/ovn-ctl
 %{_datadir}/openvswitch/scripts/ovndb-servers.ocf
+%if 0%{?with_python2}
 %{_datadir}/openvswitch/scripts/ovn-bugtool-nbctl-show
 %{_datadir}/openvswitch/scripts/ovn-bugtool-sbctl-lflow-list
 %{_datadir}/openvswitch/scripts/ovn-bugtool-sbctl-show
+%endif
 %{_mandir}/man1/ovn-detrace.1*
 %{_mandir}/man8/ovn-ctl.8*
 %{_mandir}/man8/ovn-nbctl.8*
