@@ -26,6 +26,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 #STX
 Source1: setup_vtpm
 
+Patch1: 0001-change-python-to-python3.patch
 
 # due to gnutls backlevel API:
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 19
@@ -36,7 +37,7 @@ Source1: setup_vtpm
 
 BuildRequires:  automake autoconf bash coreutils libtool sed
 BuildRequires:  libtpms-devel >= 0.6.0 fuse-devel glib2-devel gmp-devel
-BuildRequires:  expect bash net-tools nss-devel socat python-twisted
+BuildRequires:  expect bash net-tools nss-devel socat python3-twisted
 %if %{with_gnutls}
 BuildRequires:  gnutls >= 3.1.0 gnutls-devel gnutls-utils
 BuildRequires:  libtasn1-devel libtasn1
@@ -153,6 +154,8 @@ Tools for the TPM emulator from the swtpm package
 
 %prep
 %setup -q
+
+%patch1 -p1
 
 %build
 

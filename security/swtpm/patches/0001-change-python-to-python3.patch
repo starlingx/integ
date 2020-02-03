@@ -1,0 +1,59 @@
+From 96dce63b7f7d70bb3e8734ee0bcd0f967390a7d3 Mon Sep 17 00:00:00 2001
+From: chendongqi <chen.dq@neusoft.com>
+Date: Thu, 19 Dec 2019 17:15:21 +0800
+Subject: [PATCH] change-python-to-python3
+
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
+---
+ tests/test_clientfds.py | 10 +++++++---
+ tests/test_ctrlchannel3 |  2 +-
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/tests/test_clientfds.py b/tests/test_clientfds.py
+index 7dbbfce..6f301db 100755
+--- a/tests/test_clientfds.py
++++ b/tests/test_clientfds.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/python3
+ 
+ import os
+ import sys
+@@ -42,7 +42,11 @@ def spawn_swtpm():
+     cmd += " --pid file=" + pidfile + " --tpmstate dir=" + tpmpath
+     print("Running child cmd: %s" % cmd)
+     try:
+-        child = subprocess.Popen(cmd.split())
++        if sys.version_info[0] >= 3:
++            child = subprocess.Popen(cmd.split(),
++                                     pass_fds=[_fd.fileno(), _ctrlfd.fileno()])
++        else:
++            child = subprocess.Popen(cmd.split())
+     except OSError as err:
+         print("OS error: %d" % err.errno)
+         return False
+@@ -94,7 +98,7 @@ if __name__ == "__main__":
+         else:
+             res = 0
+     except:
+-        print "__Exception: ", sys.exc_info()
++        print("__Exception: ", sys.exc_info())
+         res = -1
+ 
+     if child:
+diff --git a/tests/test_ctrlchannel3 b/tests/test_ctrlchannel3
+index 4fe7363..588a5a7 100755
+--- a/tests/test_ctrlchannel3
++++ b/tests/test_ctrlchannel3
+@@ -44,7 +44,7 @@ if wait_for_file $PID_FILE 3; then
+ 	exit 1
+ fi
+ 
+-LOG=$(SOCK_PATH=$SWTPM_CTRL_UNIX_PATH exec python $DIR/test_setdatafd.py)
++LOG=$(SOCK_PATH=$SWTPM_CTRL_UNIX_PATH exec python3 $DIR/test_setdatafd.py)
+ res=$?
+ 
+ if [ $res -ne 0 ]; then
+-- 
+2.7.4
+
