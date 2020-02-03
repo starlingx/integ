@@ -1,0 +1,34 @@
+From 820ad50e1d2e013ff7835ab3acb3809f5eee3d8e Mon Sep 17 00:00:00 2001
+From: Long Li <lilong-neu@neusoft.com>
+Date: Thu, 26 Dec 2019 09:53:28 +0800
+Subject: [PATCH] Change python to python3 explicitly
+
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
+---
+ redfishtool.py      | 2 +-
+ scripts/redfishtool | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/redfishtool.py b/redfishtool.py
+index b7b1b3c..7f585ab 100644
+--- a/redfishtool.py
++++ b/redfishtool.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/python3
+ # Copyright Notice:
+ # Copyright 2016 DMTF. All rights reserved.
+ # License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfishtool/blob/master/LICENSE.md
+diff --git a/scripts/redfishtool b/scripts/redfishtool
+index 3bc1eb0..7bed4fe 100644
+--- a/scripts/redfishtool
++++ b/scripts/redfishtool
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/python3
+ # Copyright Notice:
+ # Copyright 2016 DMTF. All rights reserved.
+ # License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfishtool/blob/master/LICENSE.md
+-- 
+1.8.3.1
+
