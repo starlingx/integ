@@ -1,14 +1,14 @@
-From 9ec23c9ac2ba1a0379bf96359e0741c07b4d190e Mon Sep 17 00:00:00 2001
-From: Long Li <lilong-neu@neusoft.com>
-Date: Tue, 5 Nov 2019 10:29:32 +0800
-Subject: [PATCH] haproxy-tpm-support
+From a2a25214f6f4913b774bdd6c0b80d3ea424d3a1b Mon Sep 17 00:00:00 2001
+From: Kam Nasim <kam.nasim@windriver.com>
+Date: Wed, 22 Mar 2017 12:07:24 -0400
+Subject: [PATCH] haproxy tpm support
 
 ---
  include/types/global.h |  12 ++++
  src/cfgparse.c         |  28 ++++++++++
  src/haproxy.c          |  24 ++++++++
- src/ssl_sock.c         | 147 +++++++++++++++++++++++++++++++++++++++++++------
- 4 files changed, 194 insertions(+), 17 deletions(-)
+ src/ssl_sock.c         | 145 ++++++++++++++++++++++++++++++++++++++++++++-----
+ 4 files changed, 194 insertions(+), 15 deletions(-)
 
 diff --git a/include/types/global.h b/include/types/global.h
 index bd7761c..ff750ea 100644
@@ -87,7 +87,7 @@ index 94f2963..198cdbf 100644
  		struct cfg_kw_list *kwl;
  		int index;
 diff --git a/src/haproxy.c b/src/haproxy.c
-index 8100f27..6983444 100644
+index 8100f27..fbc54bd 100644
 --- a/src/haproxy.c
 +++ b/src/haproxy.c
 @@ -1994,6 +1994,24 @@ static void deinit_stick_rules(struct list *rules)
@@ -124,15 +124,23 @@ index 8100f27..6983444 100644
 +	 */
 +	if (global.tpm.tpm_object && global.tpm.tpm_object != '\0')
 +		deinit_tpm_engine();
-+    
++
  	userlist_free(userlist);
  
  	cfg_unregister_sections();
 diff --git a/src/ssl_sock.c b/src/ssl_sock.c
-index 24ccc4b..da88025 100644
+index 24ccc4b..5005f02 100644
 --- a/src/ssl_sock.c
 +++ b/src/ssl_sock.c
-@@ -3322,6 +3322,80 @@ end:
+@@ -62,6 +62,7 @@
+ 
+ #include <import/lru.h>
+ #include <import/xxhash.h>
++#include <openssl/engine.h>
+ 
+ #include <common/buffer.h>
+ #include <common/compat.h>
+@@ -3322,6 +3323,80 @@ end:
  	return ret;
  }
  
@@ -148,7 +156,7 @@ index 24ccc4b..da88025 100644
 +		return -1;
 +	}
 +	if (!global.tpm.tpm_key) {
-+		Warning ("Could not find tpm_key; initializing engine\n");
++		ha_warning("Could not find tpm_key; initializing engine\n");
 +		/* no key present; load the dynamic TPM engine */
 +		if (global.tpm.tpm_engine && global.tpm.tpm_engine[0]) {
 +			ENGINE_load_dynamic();
@@ -213,7 +221,7 @@ index 24ccc4b..da88025 100644
  static int ssl_sock_load_cert_file(const char *path, struct bind_conf *bind_conf, struct ssl_bind_conf *ssl_conf,
  				   char **sni_filter, int fcount, char **err)
  {
-@@ -3335,26 +3409,54 @@ static int ssl_sock_load_cert_file(const char *path, struct bind_conf *bind_conf
+@@ -3335,26 +3410,55 @@ static int ssl_sock_load_cert_file(const char *path, struct bind_conf *bind_conf
  		return 1;
  	}
  
@@ -222,13 +230,6 @@ index 24ccc4b..da88025 100644
 -		          err && *err ? *err : "", path);
 -		SSL_CTX_free(ctx);
 -		return 1;
--	}
--
--	ret = ssl_sock_load_cert_chain_file(ctx, path, bind_conf, ssl_conf, sni_filter, fcount);
--	if (ret <= 0) {
--		memprintf(err, "%sunable to load SSL certificate from PEM file '%s'.\n",
--		          err && *err ? *err : "", path);
--		if (ret < 0) /* serious error, must do that ourselves */
 +	/* NOTE: TPM support
 +	 * This SSL context applies to SSL frontends only.
 +	 * If the TPM option is set then the Private key 
@@ -243,25 +244,31 @@ index 24ccc4b..da88025 100644
 +		ret = ssl_sock_load_tpm_key(ctx, err);
 +		if (ret > 0) {
 +			/* tpm configuration failed */
++			SSL_CTX_free(ctx);
++			return 1;
++		}
+ 	}
+ 
+-	ret = ssl_sock_load_cert_chain_file(ctx, path, bind_conf, ssl_conf, sni_filter, fcount);
+-	if (ret <= 0) {
+-		memprintf(err, "%sunable to load SSL certificate from PEM file '%s'.\n",
+-		          err && *err ? *err : "", path);
+-		if (ret < 0) /* serious error, must do that ourselves */
++	else { /* non TPM mode */
++		if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
++			memprintf(err, "%sunable to load SSL private key from PEM file '%s'.\n",
++			          err && *err ? *err : "", path);
  			SSL_CTX_free(ctx);
 -		return 1;
 +			return 1;
 +		}
  	}
-+	else { /* non TPM mode */
-+		if (SSL_CTX_use_PrivateKey_file(ctx, path, SSL_FILETYPE_PEM) <= 0) {
-+			memprintf(err, "%sunable to load SSL private key from PEM file '%s'.\n",
-+			          err && *err ? *err : "", path);
-+ 			SSL_CTX_free(ctx);
-+			return 1;
-+		}
-+ 	}
  
 -	if (SSL_CTX_check_private_key(ctx) <= 0) {
 -		memprintf(err, "%sinconsistencies between private key and certificate loaded from PEM file '%s'.\n",
 -		          err && *err ? *err : "", path);
 -		return 1;
-+	ret = ssl_sock_load_cert_chain_file(ctx, path, bind_conf, sni_filter, fcount);
++	ret = ssl_sock_load_cert_chain_file(ctx, path, bind_conf, ssl_conf, sni_filter, fcount);
 +		if (ret <= 0) {
 +			memprintf(err, "%sunable to load SSL certificate from PEM file '%s'.\n",
 +					  err && *err ? *err : "", path);
@@ -285,7 +292,7 @@ index 24ccc4b..da88025 100644
  	}
  
  	/* we must not free the SSL_CTX anymore below, since it's already in
-@@ -4597,6 +4699,17 @@ int ssl_sock_prepare_srv_ctx(struct server *srv)
+@@ -4597,6 +4701,17 @@ int ssl_sock_prepare_srv_ctx(struct server *srv)
  	SSL_CTX_set_mode(ctx, mode);
  	srv->ssl_ctx.ctx = ctx;
  
