@@ -26,6 +26,8 @@ BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
 BuildRequires: go-bindata
+BuildRequires: rpm-devel >= 4.14.0
+BuildRequires: rpm-libs >= 4.14.0
 
 # required packages on install
 Requires: /bin/sh
