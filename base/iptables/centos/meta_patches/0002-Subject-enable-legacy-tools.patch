@@ -1,0 +1,50 @@
+From 2792003159081a47b832e21310579ec052f675bc Mon Sep 17 00:00:00 2001
+From: SidneyAn <ran1.an@intel.com>
+Date: Tue, 4 Feb 2020 10:48:52 +0000
+Subject: [PATCH 2/2] Subject: enable legacy tools
+
+Signed-off-by: SidneyAn <ran1.an@intel.com>
+---
+ SPECS/iptables.spec | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/SPECS/iptables.spec b/SPECS/iptables.spec
+index 7147745..4a24703 100644
+--- a/SPECS/iptables.spec
++++ b/SPECS/iptables.spec
+@@ -280,10 +280,10 @@ rm -f %{buildroot}%{_sysconfdir}/ethertypes
+ %endif
+
+ # drop all legacy tools
+-rm -f %{buildroot}%{_sbindir}/*legacy*
++#rm -f %{buildroot}%{_sbindir}/*legacy*
+ rm -f %{buildroot}%{_bindir}/iptables-xml
+ rm -f %{buildroot}%{_mandir}/man1/iptables-xml*
+-rm -f %{buildroot}%{_mandir}/man8/xtables-legacy*
++#rm -f %{buildroot}%{_mandir}/man8/xtables-legacy*
+
+ # rename nft versions to standard name
+ pfx=%{buildroot}%{_sbindir}/iptables
+@@ -374,12 +374,20 @@ done
+ %{_sbindir}/ip6tables-translate
+ %{_sbindir}/xtables-monitor
+ %{_sbindir}/xtables-nft-multi
++%{_sbindir}/iptables-legacy
++%{_sbindir}/iptables-legacy-restore
++%{_sbindir}/iptables-legacy-save
++%{_sbindir}/ip6tables-legacy
++%{_sbindir}/ip6tables-legacy-restore
++%{_sbindir}/ip6tables-legacy-save
++%{_sbindir}/xtables-legacy-multi
+ %{_mandir}/man8/iptables*
+ %{_mandir}/man8/ip6tables*
+ %{_mandir}/man8/nfnl_osf*
+ %{_mandir}/man8/xtables-monitor*
+ %{_mandir}/man8/xtables-nft*
+ %{_mandir}/man8/xtables-translate*
++%{_mandir}/man8/xtables-legacy*
+ %dir %{_libdir}/xtables
+ %{_libdir}/xtables/libarpt*
+ %{_libdir}/xtables/libebt*
+--
+2.17.1

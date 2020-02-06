@@ -1,0 +1,28 @@
+From 90b243ff4c05787cb3d0c765e0aef4a7deb02401 Mon Sep 17 00:00:00 2001
+From: SidneyAn <ran1.an@intel.com>
+Date: Wed, 5 Feb 2020 03:59:26 +0000
+Subject: [PATCH] Subject: update package versioning for STX
+
+Signed-off-by: SidneyAn <ran1.an@intel.com>
+---
+ SPECS/libnftnl.spec | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/SPECS/libnftnl.spec b/SPECS/libnftnl.spec
+index f13138f..8de5ebf 100644
+--- a/SPECS/libnftnl.spec
++++ b/SPECS/libnftnl.spec
+@@ -1,9 +1,8 @@
+ %define rpmversion 1.1.1
+-%define specrelease 4%{?dist}
+
+ Name:           libnftnl
+ Version:        %{rpmversion}
+-Release:        %{specrelease}%{?buildid}
++Release:        4.el8%{?_tis_dist}.%{tis_patch_ver}
+ Summary:        Library for low-level interaction with nftables Netlink's API over libmnl
+ License:        GPLv2+
+ URL:            http://netfilter.org/projects/libnftnl/
+--
+2.18.1
+

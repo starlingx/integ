@@ -1,0 +1,26 @@
+From 959a0ca2e8561b7928114e565c1328ec6b420e06 Mon Sep 17 00:00:00 2001
+From: SidneyAn <ran1.an@intel.com>
+Date: Tue, 4 Feb 2020 10:33:55 +0000
+Subject: [PATCH 1/2] Subject: update package versioning for STX
+
+Signed-off-by: SidneyAn <ran1.an@intel.com>
+---
+ SPECS/iptables.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/iptables.spec b/SPECS/iptables.spec
+index 464057c..7147745 100644
+--- a/SPECS/iptables.spec
++++ b/SPECS/iptables.spec
+@@ -7,7 +7,7 @@
+ Name: iptables
+ Summary: Tools for managing Linux kernel packet filtering capabilities
+ Version: 1.8.2
+-Release: 9%{?dist}.1
++Release: 9.el8_0.1%{?_tis_dist}.%{tis_patch_ver}
+ Source: http://www.netfilter.org/projects/iptables/files/%{name}-%{version}.tar.bz2
+ Source1: iptables.init
+ Source2: iptables-config
+-- 
+2.18.1
+
