@@ -16,7 +16,7 @@ diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index f7aad95..29d3878 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -424,6 +424,11 @@ Patch1031: epoll-fix-use-after-free-in-eventpoll_release_file.patch
+@@ -425,6 +425,11 @@ Patch1031: epoll-fix-use-after-free-in-eventpoll_release_file.patch
  Patch1032: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
  Patch1033: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
  Patch1034: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
@@ -28,7 +28,7 @@ index f7aad95..29d3878 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -791,6 +796,9 @@ ApplyPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
+@@ -798,6 +803,9 @@ ApplyPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
  ApplyPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
  ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
  ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch

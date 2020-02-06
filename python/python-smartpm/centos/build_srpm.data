@@ -1,6 +1,0 @@
-CLIENT_NAME=python-smartpm
-VERSION=1.4.1
-
-COPY_LIST="$CGCS_BASE/downloads/$CLIENT_NAME-$VERSION.tar.gz $PKG_BASE/files/* $PKG_BASE/centos/patches/*"
-
-TIS_PATCH_VER=2

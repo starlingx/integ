@@ -6,15 +6,16 @@ Subject: [PATCH 1/2] Kernel source patches for TiC
 
 Signed-off-by: Bin Yang <bin.yang@intel.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
- SPECS/kernel-rt.spec | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+ SPECS/kernel-rt.spec | 71 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 71 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index adffde2..f7aad95 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -386,6 +386,44 @@ Source1000: modprobe-dccp-blacklist.conf
+@@ -388,6 +388,43 @@ Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
  
  # Empty final patch file to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
@@ -35,7 +36,6 @@ index adffde2..f7aad95 100644
 +Patch1014: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +Patch1015: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +Patch1016: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
-+Patch1017: rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
 +Patch1018: Porting-Cacheinfo-from-Kernel-4.10.17.patch
 +Patch1019: Fix-cacheinfo-compilation-issues-for-3.10.patch
 +Patch1020: cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch
@@ -59,7 +59,7 @@ index adffde2..f7aad95 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -718,6 +756,41 @@ cp %{SOURCE38} .
+@@ -727,6 +764,40 @@ cp %{SOURCE38} .
  
  ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
@@ -80,7 +80,6 @@ index adffde2..f7aad95 100644
 +ApplyPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +ApplyPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +ApplyPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
-+ApplyPatch rcu-Don-t-wake-rcuc-X-kthreads-on-NOCB-CPUs.patch
 +ApplyPatch Porting-Cacheinfo-from-Kernel-4.10.17.patch
 +ApplyPatch Fix-cacheinfo-compilation-issues-for-3.10.patch
 +ApplyPatch cpuidle-menu-stop-seeking-deeper-idle-if-current-sta.patch

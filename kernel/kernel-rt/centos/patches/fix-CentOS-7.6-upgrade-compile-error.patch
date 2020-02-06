@@ -14,8 +14,8 @@ defined
 Signed-off-by: Martin, Chen <haochuan.z.chen@intel.com>
 ---
  drivers/block/drbd/drbd_req.c | 8 ++++----
- include/linux/filter.h        | 4 ++++
- 2 files changed, 8 insertions(+), 4 deletions(-)
+ include/linux/filter.h        | 3 +++
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/block/drbd/drbd_req.c b/drivers/block/drbd/drbd_req.c
 index a6f13f7..cbd0a49 100644
@@ -51,17 +51,16 @@ diff --git a/include/linux/filter.h b/include/linux/filter.h
 index cddbb31..15ce55f 100644
 --- a/include/linux/filter.h
 +++ b/include/linux/filter.h
-@@ -665,6 +665,10 @@ static inline bool bpf_jit_blinding_enabled(struct bpf_prog *prog)
- 	return true;
- }
- #else
+@@ -763,6 +763,9 @@ void bpf_prog_kallsyms_add(struct bpf_prog *fp);
+ void bpf_prog_kallsyms_del(struct bpf_prog *fp);
+ 
+ #else /* CONFIG_BPF_JIT */
 +struct bpf_prog * __weak trace_bpf_int_jit_compile(struct bpf_prog *prog);
 +void __weak trace_bpf_jit_compile(struct bpf_prog *prog);
 +void __weak trace_bpf_jit_free(struct bpf_prog *fp);
-+
- static inline bool ebpf_jit_enabled(void)
+ 
+ static inline bool bpf_prog_ebpf_jited(const struct bpf_prog *fp)
  {
- 	return false;
 -- 
 1.8.3.1
 

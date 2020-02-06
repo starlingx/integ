@@ -17,6 +17,7 @@ definitions on module deinit
 - modification to ima_file_check to pass in file OPEN status
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Robin Lu <bin1.lu@intel.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
 
 ---

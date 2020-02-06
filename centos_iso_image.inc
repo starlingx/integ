@@ -30,9 +30,6 @@ libvirt-client
 #python2-ryu
 #python-ryu-common
 
-# python-smartpm
-#python-smartpm
-
 # lldpd
 lldpd
 
@@ -117,9 +114,6 @@ kmod-drbd
 
 # dpkg
 dpkg
-
-# cgcs-users
-cgcs-users
 
 # ldapscripts
 ldapscripts
@@ -229,6 +223,7 @@ memcached
 #kubernetes-node
 #kubernetes-kubeadm
 #kubernetes-client
+#containerd
 
 # resource-agents
 #resource-agents

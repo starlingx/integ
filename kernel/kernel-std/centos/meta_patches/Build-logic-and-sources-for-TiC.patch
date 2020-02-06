@@ -6,6 +6,7 @@ Subject: [PATCH] Build logic and sources for TiC
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+Signed-off-by: Robin Lu <bin1.lu@intel.com>
 
 ---
  SPECS/kernel.spec | 78 ++++++++++++++++++++++++++++++++++++++---------

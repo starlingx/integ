@@ -9,7 +9,6 @@ virt/libvirt
 virt/libvirt-python
 base/lighttpd
 #networking/python-ryu
-#python/python-smartpm
 #python/python-voluptuous
 networking/lldpd
 #logging/logrotate
@@ -49,8 +48,6 @@ config/puppet-modules/puppet-puppi
 #config/puppet-modules/openstack/puppet-keystone-11.3.0
 #config/puppet-modules/openstack/puppet-openstacklib-11.3.0
 #config/puppet-modules/openstack/puppet-oslo-11.3.0
-#python/python-eventlet
-python/python-requests
 base/systemd
 #storage-drivers/python-3parclient
 #storage-drivers/python-lefthandclient
@@ -59,6 +56,7 @@ security/tboot
 #kernel/kernel-modules/mlnx-ofa_kernel
 #networking/mellanox/rdma-core
 #docker/python-docker
+#kubernetes/containerd
 kubernetes/kubernetes
 #kubernetes/docker-distribution
 kubernetes/etcd
@@ -75,7 +73,6 @@ kernel/kernel-modules/qat17
 kernel/kernel-modules/drbd
 #kernel/kernel-modules/intel-opae-fpga
 base/dpkg
-base/cgcs-users
 base/cluster-resource-agents
 base/libfdt
 base/haproxy
