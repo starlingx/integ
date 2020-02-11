@@ -1,2 +1,2 @@
-TIS_PATCH_VER=2
+TIS_PATCH_VER=1
 COPY_LIST="$PKG_BASE/files/tis-shim.crt"
