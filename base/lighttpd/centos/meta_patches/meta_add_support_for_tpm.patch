@@ -1,32 +1,31 @@
 From 2cfc139ffabdb52c82834be2f88333f99c181677 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Tue, 28 Mar 2017 17:33:34 -0400
-Subject: [PATCH] Adding support for TPM 2.0
-
+Subject: [PATCH 4/4] Adding support for TPM 2.0
 ---
  SPECS/lighttpd.spec | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
-index c27f78f..bc11989 100644
+index fb0e5f9..7205133 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
-@@ -76,6 +76,7 @@ Patch3: lighttpd-1.4.39-socket.patch
+@@ -62,6 +62,7 @@ Patch0: lighttpd-1.4.54-defaultconf.patch
  
- # WRS Patches
+ # STX Patches
  Patch100: check-content-length.patch
 +Patch101: lighttpd-tpm-support.patch
  
- BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
- # For the target poweredby.png image (skip requirement + provide image on EL5)
-@@ -191,6 +192,7 @@ Authentication module for lighttpd that uses PAM.
+ Requires: system-logos
+ Requires: %{name}-filesystem
+@@ -163,6 +164,7 @@ for the directories.
  
- # WRS Patches
+ # STX Patches
  %patch100 -p1 -b .content_length
 +%patch101 -p1 -b .tpm_support
  
- #install -p -m 0644 %{SOURCE100} src/mod_geoip.c
- #install -p -m 0644 %{SOURCE101} mod_geoip.txt
+ %build
+ autoreconf -if
 -- 
-2.7.4
+2.17.1
 
