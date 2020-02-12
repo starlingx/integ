@@ -12,7 +12,7 @@ diff --git a/SPECS/parted.spec b/SPECS/parted.spec
 index 183f7d4..9cd6d48 100644
 --- a/SPECS/parted.spec
 +++ b/SPECS/parted.spec
-@@ -113,6 +113,9 @@ Patch0088: 0088-linux.c-Use-sys-sysmacros.h-for-major-minor.patch
+@@ -115,6 +115,9 @@ Patch0090: 0090-libparted-s390-Re-enabled-virtio-attached-DASD-heuri.patch
  
  Patch0099: syscalls.patch
  
