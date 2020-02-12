@@ -3,3 +3,4 @@
 0003-revert-7.4-grub2-efi-handling.patch
 0004-Upversion-rpm-devel-dependency.patch
 0005-Add-TIS-patches-for-host-lookup.patch
+0006-Add-support-for-https-and-IPv6-to-anaconda-preexec.patch
