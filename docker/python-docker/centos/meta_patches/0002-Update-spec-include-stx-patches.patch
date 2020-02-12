@@ -3,33 +3,33 @@ From: John Kung <john.kung@windriver.com>
 Date: Wed, 7 Aug 2019 15:01:11 -0400
 Subject: [PATCH 1/1] Update-spec-include-stx-patches
 
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- SPECS/python-docker.spec | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ SPECS/python-docker.spec | 4 ++++
+ 1 file changed, 4 insertions(+)
 
 diff --git a/SPECS/python-docker.spec b/SPECS/python-docker.spec
 index 92420e3..9a05819 100644
 --- a/SPECS/python-docker.spec
 +++ b/SPECS/python-docker.spec
-@@ -29,6 +29,7 @@ Source0:        https://files.pythonhosted.org/packages/source/d/%{srcname}/%{sr
- # work in RHEL.  This patch converts those environment markers into simple if
- # statements.
- Patch1: remove-environment-markers.patch
-+Patch2: 0001-Update-client-close-socket.patch
+@@ -22,6 +22,8 @@ License:        ASL 2.0
+ URL:            https://pypi.org/project/%{srcname}
+ Source0:        https://files.pythonhosted.org/packages/source/d/%{srcname}/%{srcname}-%{version}.tar.gz
  
++Patch1: 0001-Update-client-close-socket.patch
++
  BuildArch:      noarch
  
-@@ -138,7 +139,9 @@ run containers, manage containers, manage Swarms, etc.
- %endif # with_python3
+ %description
+@@ -92,6 +94,8 @@ run containers, manage containers, manage Swarms, etc.
  
  %prep
--%autosetup -n %{srcname}-%{version} -p 1
-+%setup -q -n %{srcname}-%{version}
-+%patch2 -p1
+ %setup -n %{srcname}-%{version}
++%patch1 -p1
 +
  rm -fr docker.egg-info
  
  %build
 -- 
-1.8.3.1
+2.7.4
 
