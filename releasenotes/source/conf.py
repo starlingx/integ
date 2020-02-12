@@ -46,7 +46,7 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
-project = u'stx-integ'
+project = u'StarlingX Integration'
 
 # Release notes are version independent, no need to set version and release
 release = ''
