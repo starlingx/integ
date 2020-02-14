@@ -1,20 +1,23 @@
 diff --git a/SPECS/python-keyring.spec b/SPECS/python-keyring.spec
-index 60d05ee..a41f849 100644
+index e7dd917..3f10461 100644
 --- a/SPECS/python-keyring.spec
 +++ b/SPECS/python-keyring.spec
-@@ -10,6 +10,7 @@ Source0:        https://pypi.io/packages/source/k/keyring/keyring-%{version}.tar
- BuildArch:      noarch
+@@ -43,6 +43,7 @@ Python keyring lib also provides following build-in keyrings.\
+ Summary:        Python 2 library to access the system keyring service
  BuildRequires:  python2-devel
- BuildRequires:  python-setuptools
+ BuildRequires:  python2-setuptools
 +BuildRequires:  python2-setuptools_scm
- Obsoletes:      %{name}-kwallet < %{version}-%{release}
- Obsoletes:      %{name}-gnome < %{version}-%{release}
+ BuildRequires:  python2-keyczar
+ BuildRequires:  python2-mock
  
-@@ -50,6 +51,7 @@ Python keyring lib also provides following build-in keyrings.
+@@ -71,6 +72,7 @@ Obsoletes:      %{name}-gnome < 0.6
  Summary:        Python 3 library to access the system keyring service
- BuildRequires:  python3-devel
- BuildRequires:  python3-setuptools
-+BuildRequires:  python3-setuptools_scm
- 
- %description -n python3-keyring
- The Python keyring lib provides a easy way to access the system keyring
+ BuildRequires:  python%{python3_pkgversion}-devel
+ BuildRequires:  python%{python3_pkgversion}-setuptools
++BuildRequires:  python%{python3_pkgversion}-setuptools_scm
+ %if 0%{?with_tests}
+ BuildRequires:  python%{python3_pkgversion}-importlib-metadata
+ BuildRequires:  python%{python3_pkgversion}-pytest
+-- 
+2.7.4
+
