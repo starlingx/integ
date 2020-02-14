@@ -1,13 +1,7 @@
----
- support-files/CMakeLists.txt | 1 +
- support-files/rpm/server.cnf | 9 +++++++++
- 2 files changed, 10 insertions(+)
-
-diff --git a/support-files/CMakeLists.txt b/support-files/CMakeLists.txt
-index 71e9b3f..5f3b2a6 100644
---- a/support-files/CMakeLists.txt
-+++ b/support-files/CMakeLists.txt
-@@ -81,6 +81,7 @@ IF(UNIX)
+diff -up mariadb-10.1.8/support-files/CMakeLists.txt.p9 mariadb-10.1.8/support-files/CMakeLists.txt
+--- mariadb-10.1.8/support-files/CMakeLists.txt.p9	2015-11-03 11:38:46.029139464 +0100
++++ mariadb-10.1.8/support-files/CMakeLists.txt	2015-11-03 11:41:07.107605055 +0100
+@@ -62,6 +62,7 @@ IF(UNIX)
    ENDIF()
  
    CONFIGURE_FILE(mariadb.pc.in ${CMAKE_CURRENT_BINARY_DIR}/mariadb.pc @ONLY)
@@ -15,10 +9,9 @@ index 71e9b3f..5f3b2a6 100644
    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/mariadb.pc DESTINATION ${INSTALL_SHAREDIR}/pkgconfig COMPONENT Development)
  
    INSTALL(FILES mysql.m4 DESTINATION ${INSTALL_SHAREDIR}/aclocal COMPONENT Development)
-diff --git a/support-files/rpm/server.cnf b/support-files/rpm/server.cnf
-index 9682d2b..6f398d4 100644
---- a/support-files/rpm/server.cnf
-+++ b/support-files/rpm/server.cnf
+diff -up mariadb-10.1.8/support-files/rpm/server.cnf.p9 mariadb-10.1.8/support-files/rpm/server.cnf
+--- mariadb-10.1.8/support-files/rpm/server.cnf.p9	2015-10-15 17:44:19.000000000 +0200
++++ mariadb-10.1.8/support-files/rpm/server.cnf	2015-11-03 11:38:25.228070808 +0100
 @@ -9,7 +9,16 @@
  [server]
  
@@ -36,6 +29,3 @@ index 9682d2b..6f398d4 100644
  
  #
  # * Galera-related settings
--- 
-1.9.1
-

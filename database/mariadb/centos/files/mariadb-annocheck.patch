@@ -1,0 +1,13 @@
+Harden the "hardened" flags even more to comply with RHEL8 security rules
+
+--- mariadb-10.3.10/CMakeLists.txt	2018-10-02 11:45:39.000000000 +0200
++++ mariadb-10.3.10/CMakeLists.txt_patched	2018-11-08 03:48:01.713969313 +0100
+@@ -226,7 +226,7 @@ IF(NOT WITH_TSAN)
+     # security-enhancing flags
+     MY_CHECK_AND_SET_COMPILER_FLAG("-pie -fPIC")
+     MY_CHECK_AND_SET_COMPILER_FLAG("-Wl,-z,relro,-z,now")
+-    MY_CHECK_AND_SET_COMPILER_FLAG("-fstack-protector --param=ssp-buffer-size=4")
++    MY_CHECK_AND_SET_COMPILER_FLAG("-fstack-protector-strong --param=ssp-buffer-size=4")
+     MY_CHECK_AND_SET_COMPILER_FLAG("-D_FORTIFY_SOURCE=2" RELEASE RELWITHDEBINFO)
+   ENDIF()
+ ENDIF()

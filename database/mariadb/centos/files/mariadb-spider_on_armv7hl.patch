@@ -1,0 +1,1078 @@
+Fix for:
+https://jira.mariadb.org/browse/MDEV-18737
+Taken from:
+https://github.com/MariaDB/server/commit/ddce85907611e0533d6226de7f53e751cf173f6a
+
+
+
+
+
+From 3faf5d4c1c3274a20a92cb3eb7eb2de6140894d6 Mon Sep 17 00:00:00 2001
+From: Kentoku SHIBA <kentokushiba@gmail.com>
+Date: Thu, 25 Jul 2019 22:52:45 +0900
+Subject: [PATCH] MDEV-18737 Spider "Out of memory" on armv7hl (#1363)
+
+This is an issue of memory alignment of variable argument when calling my_multi_malloc().
+The fix is strictly casting allocating size to "uint".
+---
+ storage/spider/ha_spider.cc            |  36 +++--
+ storage/spider/spd_conn.cc             |  69 +++++-----
+ storage/spider/spd_copy_tables.cc      |  25 ++--
+ storage/spider/spd_db_conn.cc          |  13 +-
+ storage/spider/spd_db_handlersocket.cc |   4 +-
+ storage/spider/spd_db_mysql.cc         |  10 +-
+ storage/spider/spd_db_oracle.cc        |  24 ++--
+ storage/spider/spd_direct_sql.cc       |  78 +++++------
+ storage/spider/spd_group_by_handler.cc |   7 +-
+ storage/spider/spd_ping_table.cc       |  36 +++--
+ storage/spider/spd_table.cc            | 134 ++++++++++---------
+ storage/spider/spd_trx.cc              | 173 +++++++++++++------------
+ 12 files changed, 327 insertions(+), 282 deletions(-)
+
+diff --git a/storage/spider/ha_spider.cc b/storage/spider/ha_spider.cc
+index 967d2c6e5de..e04f0c8ef55 100644
+--- a/storage/spider/ha_spider.cc
++++ b/storage/spider/ha_spider.cc
+@@ -394,15 +394,24 @@ int ha_spider::open(
+   {
+     if (!(searched_bitmap = (uchar *)
+       spider_bulk_malloc(spider_current_trx, 15, MYF(MY_WME),
+-        &searched_bitmap, sizeof(uchar) * no_bytes_in_map(table->read_set),
+-        &ft_discard_bitmap, sizeof(uchar) * no_bytes_in_map(table->read_set),
+-        &position_bitmap, sizeof(uchar) * no_bytes_in_map(table->read_set),
+-        &partition_handler_share, sizeof(SPIDER_PARTITION_HANDLER_SHARE),
+-        &idx_read_bitmap, sizeof(uchar) * no_bytes_in_map(table->read_set),
+-        &idx_write_bitmap, sizeof(uchar) * no_bytes_in_map(table->read_set),
+-        &rnd_read_bitmap, sizeof(uchar) * no_bytes_in_map(table->read_set),
+-        &rnd_write_bitmap, sizeof(uchar) * no_bytes_in_map(table->read_set),
+-        &pt_handler_share_handlers, sizeof(ha_spider *) * part_num,
++        &searched_bitmap,
++          (uint) sizeof(uchar) * no_bytes_in_map(table->read_set),
++        &ft_discard_bitmap,
++          (uint) sizeof(uchar) * no_bytes_in_map(table->read_set),
++        &position_bitmap,
++          (uint) sizeof(uchar) * no_bytes_in_map(table->read_set),
++        &partition_handler_share,
++          (uint) sizeof(SPIDER_PARTITION_HANDLER_SHARE),
++        &idx_read_bitmap,
++          (uint) sizeof(uchar) * no_bytes_in_map(table->read_set),
++        &idx_write_bitmap,
++          (uint) sizeof(uchar) * no_bytes_in_map(table->read_set),
++        &rnd_read_bitmap,
++          (uint) sizeof(uchar) * no_bytes_in_map(table->read_set),
++        &rnd_write_bitmap,
++          (uint) sizeof(uchar) * no_bytes_in_map(table->read_set),
++        &pt_handler_share_handlers,
++          (uint) sizeof(ha_spider *) * part_num,
+         NullS))
+     ) {
+       error_num = HA_ERR_OUT_OF_MEM;
+@@ -11317,7 +11326,7 @@ int ha_spider::create(
+     if (!(tmp_share.static_key_cardinality = (longlong *)
+       spider_bulk_malloc(spider_current_trx, 246, MYF(MY_WME),
+         &tmp_share.static_key_cardinality,
+-          sizeof(*tmp_share.static_key_cardinality) * form->s->keys,
++          (uint) (sizeof(*tmp_share.static_key_cardinality) * form->s->keys),
+         NullS))
+     ) {
+       error_num = HA_ERR_OUT_OF_MEM;
+@@ -12126,7 +12135,8 @@ int ha_spider::info_push(
+           spider_free(spider_current_trx, hs_pushed_ret_fields, MYF(0));
+         if (!(hs_pushed_ret_fields = (uint32 *)
+           spider_bulk_malloc(spider_current_trx, 17, MYF(MY_WME),
+-          &hs_pushed_ret_fields, sizeof(uint32) * hs_pushed_ret_fields_num,
++          &hs_pushed_ret_fields,
++            (uint) (sizeof(uint32) * hs_pushed_ret_fields_num),
+           NullS))
+         ) {
+           DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+@@ -13690,8 +13700,8 @@ SPIDER_BULK_ACCESS_LINK *ha_spider::create_bulk_access_link()
+ */
+   if (!(bulk_access_link = (SPIDER_BULK_ACCESS_LINK *)
+     spider_bulk_malloc(spider_current_trx, 168, MYF(MY_WME),
+-    &bulk_access_link, sizeof(SPIDER_BULK_ACCESS_LINK),
+-    &ref, ALIGN_SIZE(ref_length) * 2,
++    &bulk_access_link, (uint) (sizeof(SPIDER_BULK_ACCESS_LINK)),
++    &ref, (uint) (ALIGN_SIZE(ref_length) * 2),
+     NullS))
+   ) {
+     goto error_bulk_malloc;
+diff --git a/storage/spider/spd_conn.cc b/storage/spider/spd_conn.cc
+index 911c9bc95ac..f8ca9108061 100644
+--- a/storage/spider/spd_conn.cc
++++ b/storage/spider/spd_conn.cc
+@@ -470,30 +470,30 @@ SPIDER_CONN *spider_create_conn(
+ #endif
+     if (!(conn = (SPIDER_CONN *)
+       spider_bulk_malloc(spider_current_trx, 18, MYF(MY_WME | MY_ZEROFILL),
+-        &conn, sizeof(*conn),
+-        &tmp_name, share->conn_keys_lengths[link_idx] + 1,
+-        &tmp_host, share->tgt_hosts_lengths[link_idx] + 1,
++        &conn, (uint) (sizeof(*conn)),
++        &tmp_name, (uint) (share->conn_keys_lengths[link_idx] + 1),
++        &tmp_host, (uint) (share->tgt_hosts_lengths[link_idx] + 1),
+         &tmp_username,
+-          share->tgt_usernames_lengths[link_idx] + 1,
++          (uint) (share->tgt_usernames_lengths[link_idx] + 1),
+         &tmp_password,
+-          share->tgt_passwords_lengths[link_idx] + 1,
+-        &tmp_socket, share->tgt_sockets_lengths[link_idx] + 1,
++          (uint) (share->tgt_passwords_lengths[link_idx] + 1),
++        &tmp_socket, (uint) (share->tgt_sockets_lengths[link_idx] + 1),
+         &tmp_wrapper,
+-          share->tgt_wrappers_lengths[link_idx] + 1,
+-        &tmp_ssl_ca, share->tgt_ssl_cas_lengths[link_idx] + 1,
++          (uint) (share->tgt_wrappers_lengths[link_idx] + 1),
++        &tmp_ssl_ca, (uint) (share->tgt_ssl_cas_lengths[link_idx] + 1),
+         &tmp_ssl_capath,
+-          share->tgt_ssl_capaths_lengths[link_idx] + 1,
++          (uint) (share->tgt_ssl_capaths_lengths[link_idx] + 1),
+         &tmp_ssl_cert,
+-          share->tgt_ssl_certs_lengths[link_idx] + 1,
++          (uint) (share->tgt_ssl_certs_lengths[link_idx] + 1),
+         &tmp_ssl_cipher,
+-          share->tgt_ssl_ciphers_lengths[link_idx] + 1,
++          (uint) (share->tgt_ssl_ciphers_lengths[link_idx] + 1),
+         &tmp_ssl_key,
+-          share->tgt_ssl_keys_lengths[link_idx] + 1,
++          (uint) (share->tgt_ssl_keys_lengths[link_idx] + 1),
+         &tmp_default_file,
+-          share->tgt_default_files_lengths[link_idx] + 1,
++          (uint) (share->tgt_default_files_lengths[link_idx] + 1),
+         &tmp_default_group,
+-          share->tgt_default_groups_lengths[link_idx] + 1,
+-        &need_mon, sizeof(int),
++          (uint) (share->tgt_default_groups_lengths[link_idx] + 1),
++        &need_mon, (uint) (sizeof(int)),
+         NullS))
+     ) {
+       *error_num = HA_ERR_OUT_OF_MEM;
+@@ -592,13 +592,13 @@ SPIDER_CONN *spider_create_conn(
+   } else if (conn_kind == SPIDER_CONN_KIND_HS_READ) {
+     if (!(conn = (SPIDER_CONN *)
+       spider_bulk_malloc(spider_current_trx, 19, MYF(MY_WME | MY_ZEROFILL),
+-        &conn, sizeof(*conn),
+-        &tmp_name, share->hs_read_conn_keys_lengths[link_idx] + 1,
+-        &tmp_host, share->tgt_hosts_lengths[link_idx] + 1,
+-        &tmp_socket, share->hs_read_socks_lengths[link_idx] + 1,
++        &conn, (uint) (sizeof(*conn)),
++        &tmp_name, (uint) (share->hs_read_conn_keys_lengths[link_idx] + 1),
++        &tmp_host, (uint) (share->tgt_hosts_lengths[link_idx] + 1),
++        &tmp_socket, (uint) (share->hs_read_socks_lengths[link_idx] + 1),
+         &tmp_wrapper,
+-          share->tgt_wrappers_lengths[link_idx] + 1,
+-        &need_mon, sizeof(int),
++          (uint) (share->tgt_wrappers_lengths[link_idx] + 1),
++        &need_mon, (uint) (sizeof(int)),
+         NullS))
+     ) {
+       *error_num = HA_ERR_OUT_OF_MEM;
+@@ -634,13 +634,13 @@ SPIDER_CONN *spider_create_conn(
+   } else {
+     if (!(conn = (SPIDER_CONN *)
+       spider_bulk_malloc(spider_current_trx, 20, MYF(MY_WME | MY_ZEROFILL),
+-        &conn, sizeof(*conn),
+-        &tmp_name, share->hs_write_conn_keys_lengths[link_idx] + 1,
+-        &tmp_host, share->tgt_hosts_lengths[link_idx] + 1,
+-        &tmp_socket, share->hs_write_socks_lengths[link_idx] + 1,
++        &conn, (uint) (sizeof(*conn)),
++        &tmp_name, (uint) (share->hs_write_conn_keys_lengths[link_idx] + 1),
++        &tmp_host, (uint) (share->tgt_hosts_lengths[link_idx] + 1),
++        &tmp_socket, (uint) (share->hs_write_socks_lengths[link_idx] + 1),
+         &tmp_wrapper,
+-          share->tgt_wrappers_lengths[link_idx] + 1,
+-        &need_mon, sizeof(int),
++          (uint) (share->tgt_wrappers_lengths[link_idx] + 1),
++        &need_mon, (uint) (sizeof(int)),
+         NullS))
+     ) {
+       *error_num = HA_ERR_OUT_OF_MEM;
+@@ -3634,13 +3634,16 @@ int spider_create_mon_threads(
+       }
+       if (!(share->bg_mon_thds = (THD **)
+         spider_bulk_malloc(spider_current_trx, 23, MYF(MY_WME | MY_ZEROFILL),
+-          &share->bg_mon_thds, sizeof(THD *) * share->all_link_count,
+-          &share->bg_mon_threads, sizeof(pthread_t) * share->all_link_count,
+-          &share->bg_mon_mutexes, sizeof(pthread_mutex_t) *
+-            share->all_link_count,
+-          &share->bg_mon_conds, sizeof(pthread_cond_t) * share->all_link_count,
++          &share->bg_mon_thds,
++            (uint) (sizeof(THD *) * share->all_link_count),
++          &share->bg_mon_threads,
++            (uint) (sizeof(pthread_t) * share->all_link_count),
++          &share->bg_mon_mutexes,
++            (uint) (sizeof(pthread_mutex_t) * share->all_link_count),
++          &share->bg_mon_conds,
++            (uint) (sizeof(pthread_cond_t) * share->all_link_count),
+           &share->bg_mon_sleep_conds,
+-            sizeof(pthread_cond_t) * share->all_link_count,
++            (uint) (sizeof(pthread_cond_t) * share->all_link_count),
+           NullS))
+       ) {
+         error_num = HA_ERR_OUT_OF_MEM;
+diff --git a/storage/spider/spd_copy_tables.cc b/storage/spider/spd_copy_tables.cc
+index 13c53220b16..1a472e2c12b 100644
+--- a/storage/spider/spd_copy_tables.cc
++++ b/storage/spider/spd_copy_tables.cc
+@@ -390,12 +390,15 @@ int spider_udf_get_copy_tgt_tables(
+   do {
+     if (!(table_conn = (SPIDER_COPY_TABLE_CONN *)
+       spider_bulk_malloc(spider_current_trx, 25, MYF(MY_WME | MY_ZEROFILL),
+-        &table_conn, sizeof(SPIDER_COPY_TABLE_CONN),
+-        &tmp_share, sizeof(SPIDER_SHARE),
+-        &tmp_connect_info, sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT,
+-        &tmp_connect_info_length, sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT,
+-        &tmp_long, sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT,
+-        &tmp_longlong, sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT,
++        &table_conn, (uint) (sizeof(SPIDER_COPY_TABLE_CONN)),
++        &tmp_share, (uint) (sizeof(SPIDER_SHARE)),
++        &tmp_connect_info,
++          (uint) (sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT),
++        &tmp_connect_info_length,
++          (uint) (sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT),
++        &tmp_long, (uint) (sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT),
++        &tmp_longlong,
++          (uint) (sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT),
+         NullS))
+     ) {
+       spider_sys_index_end(table_tables);
+@@ -706,12 +709,12 @@ int spider_udf_copy_tables_create_table_list(
+   if (!(copy_tables->link_idxs[0] = (int *)
+     spider_bulk_malloc(spider_current_trx, 26, MYF(MY_WME | MY_ZEROFILL),
+       &copy_tables->link_idxs[0],
+-        sizeof(int) * copy_tables->link_idx_count[0],
++        (uint) (sizeof(int) * copy_tables->link_idx_count[0]),
+       &copy_tables->link_idxs[1],
+-        sizeof(int) * copy_tables->link_idx_count[1],
+-      &tmp_name_ptr, sizeof(char) * (
++        (uint) (sizeof(int) * copy_tables->link_idx_count[1]),
++      &tmp_name_ptr, (uint) (sizeof(char) * (
+         spider_table_name_length * 2 + copy_tables->database_length + 3
+-      ),
++      )),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -906,7 +909,7 @@ long long spider_copy_tables_body(
+ 
+   if (!(copy_tables = (SPIDER_COPY_TABLES *)
+     spider_bulk_malloc(spider_current_trx, 27, MYF(MY_WME | MY_ZEROFILL),
+-      &copy_tables, sizeof(SPIDER_COPY_TABLES),
++      &copy_tables, (uint) (sizeof(SPIDER_COPY_TABLES)),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+diff --git a/storage/spider/spd_db_conn.cc b/storage/spider/spd_db_conn.cc
+index cc4599ce0b3..f7178293b05 100644
+--- a/storage/spider/spd_db_conn.cc
++++ b/storage/spider/spd_db_conn.cc
+@@ -2643,7 +2643,8 @@ int spider_db_fetch_for_item_sum_func(
+           if (!spider->direct_aggregate_item_first)
+           {
+             if (!spider_bulk_malloc(spider_current_trx, 240, MYF(MY_WME),
+-              &spider->direct_aggregate_item_first, sizeof(SPIDER_ITEM_HLD),
++              &spider->direct_aggregate_item_first,
++              (uint) (sizeof(SPIDER_ITEM_HLD)),
+               NullS)
+             ) {
+               DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+@@ -2662,7 +2663,7 @@ int spider_db_fetch_for_item_sum_func(
+           {
+             if (!spider_bulk_malloc(spider_current_trx, 241, MYF(MY_WME),
+               &spider->direct_aggregate_item_current->next,
+-              sizeof(SPIDER_ITEM_HLD), NullS)
++              (uint) (sizeof(SPIDER_ITEM_HLD)), NullS)
+             ) {
+               DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+             }
+@@ -4034,8 +4035,8 @@ int spider_db_store_result(
+       current->field_count = field_count;
+       if (!(position = (SPIDER_POSITION *)
+         spider_bulk_malloc(spider_current_trx, 7, MYF(MY_WME | MY_ZEROFILL),
+-          &position, sizeof(SPIDER_POSITION) * page_size,
+-          &tmp_row, sizeof(char*) * field_count,
++          &position, (uint) (sizeof(SPIDER_POSITION) * page_size),
++          &tmp_row, (uint) (sizeof(SPIDER_DB_ROW) * field_count),
+           NullS))
+       )
+         DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+@@ -10814,8 +10815,8 @@ int spider_db_udf_copy_tables(
+   DBUG_ENTER("spider_db_udf_copy_tables");
+   if (!(last_row_pos = (ulong *)
+     spider_bulk_malloc(spider_current_trx, 30, MYF(MY_WME),
+-      &last_row_pos, sizeof(ulong) * table->s->fields,
+-      &last_lengths, sizeof(ulong) * table->s->fields,
++      &last_row_pos, (uint) (sizeof(ulong) * table->s->fields),
++      &last_lengths, (uint) (sizeof(ulong) * table->s->fields),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+diff --git a/storage/spider/spd_db_handlersocket.cc b/storage/spider/spd_db_handlersocket.cc
+index 1e42838f40a..1e88ad4a59a 100644
+--- a/storage/spider/spd_db_handlersocket.cc
++++ b/storage/spider/spd_db_handlersocket.cc
+@@ -505,8 +505,8 @@ SPIDER_DB_ROW *spider_db_handlersocket_row::clone()
+     DBUG_RETURN(NULL);
+   }
+   if (!spider_bulk_malloc(spider_current_trx, 169, MYF(MY_WME),
+-    &clone_row->hs_row, sizeof(SPIDER_HS_STRING_REF) * field_count,
+-    &tmp_char, row_size,
++    &clone_row->hs_row, (uint) (sizeof(SPIDER_HS_STRING_REF) * field_count),
++    &tmp_char, (uint) (row_size),
+     NullS)
+   ) {
+     delete clone_row;
+diff --git a/storage/spider/spd_db_mysql.cc b/storage/spider/spd_db_mysql.cc
+index 1b62b4a9bd5..947a614f11e 100644
+--- a/storage/spider/spd_db_mysql.cc
++++ b/storage/spider/spd_db_mysql.cc
+@@ -523,9 +523,9 @@ SPIDER_DB_ROW *spider_db_mbase_row::clone()
+     row_size = record_size + field_count;
+   }
+   if (!spider_bulk_malloc(spider_current_trx, 29, MYF(MY_WME),
+-    &clone_row->row, sizeof(char*) * field_count,
+-    &tmp_char, row_size,
+-    &clone_row->lengths, sizeof(ulong) * field_count,
++    &clone_row->row, (uint) (sizeof(char*) * field_count),
++    &tmp_char, (uint) (row_size),
++    &clone_row->lengths, (uint) (sizeof(ulong) * field_count),
+     NullS)
+   ) {
+     delete clone_row;
+@@ -13519,7 +13519,7 @@ int spider_mbase_handler::init_union_table_name_pos()
+   if (!union_table_name_pos_first)
+   {
+     if (!spider_bulk_malloc(spider_current_trx, 236, MYF(MY_WME),
+-      &union_table_name_pos_first, sizeof(SPIDER_INT_HLD),
++      &union_table_name_pos_first, (uint) (sizeof(SPIDER_INT_HLD)),
+       NullS)
+     ) {
+       DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+@@ -13540,7 +13540,7 @@ int spider_mbase_handler::set_union_table_name_pos()
+     if (!union_table_name_pos_current->next)
+     {
+       if (!spider_bulk_malloc(spider_current_trx, 237, MYF(MY_WME),
+-        &union_table_name_pos_current->next, sizeof(SPIDER_INT_HLD),
++        &union_table_name_pos_current->next, (uint) (sizeof(SPIDER_INT_HLD)),
+         NullS)
+       ) {
+         DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+diff --git a/storage/spider/spd_db_oracle.cc b/storage/spider/spd_db_oracle.cc
+index 08d7d3e083d..d869afc61f4 100644
+--- a/storage/spider/spd_db_oracle.cc
++++ b/storage/spider/spd_db_oracle.cc
+@@ -588,16 +588,16 @@ int spider_db_oracle_row::init()
+   if (
+     !(ind = (sb2 *)
+       spider_bulk_malloc(spider_current_trx, 161, MYF(MY_WME | MY_ZEROFILL),
+-        &ind, sizeof(sb2) * field_count,
+-        &rlen, sizeof(ub2) * field_count,
+-        &coltp, sizeof(ub2) * field_count,
+-        &colsz, sizeof(ub2) * field_count,
+-        &row_size, sizeof(ulong) * field_count,
+-        &val, sizeof(char *) * field_count,
+-        &tmp_val, MAX_FIELD_WIDTH * field_count,
+-        &defnp, sizeof(OCIDefine *) * field_count,
+-        &lobhp, sizeof(OCILobLocator *) * field_count,
+-        &colhp, sizeof(OCIParam *) * field_count,
++        &ind, (uint) (sizeof(sb2) * field_count),
++        &rlen, (uint) (sizeof(ub2) * field_count),
++        &coltp, (uint) (sizeof(ub2) * field_count),
++        &colsz, (uint) (sizeof(ub2) * field_count),
++        &row_size, (uint) (sizeof(ulong) * field_count),
++        &val, (uint) (sizeof(char *) * field_count),
++        &tmp_val, (uint) (MAX_FIELD_WIDTH * field_count),
++        &defnp, (uint) (sizeof(OCIDefine *) * field_count),
++        &lobhp, (uint) (sizeof(OCILobLocator *) * field_count),
++        &colhp, (uint) (sizeof(OCIParam *) * field_count),
+         NullS)
+     ) ||
+     !(val_str = new spider_string[field_count])
+@@ -12487,7 +12487,7 @@ int spider_oracle_handler::init_union_table_name_pos()
+   if (!union_table_name_pos_first)
+   {
+     if (!spider_bulk_malloc(spider_current_trx, 238, MYF(MY_WME),
+-      &union_table_name_pos_first, sizeof(SPIDER_INT_HLD),
++      &union_table_name_pos_first, (uint) (sizeof(SPIDER_INT_HLD)),
+       NullS)
+     ) {
+       DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+@@ -12508,7 +12508,7 @@ int spider_oracle_handler::set_union_table_name_pos()
+     if (!union_table_name_pos_current->next)
+     {
+       if (!spider_bulk_malloc(spider_current_trx, 239, MYF(MY_WME),
+-        &union_table_name_pos_current->next, sizeof(SPIDER_INT_HLD),
++        &union_table_name_pos_current->next, (uint) (sizeof(SPIDER_INT_HLD)),
+         NullS)
+       ) {
+         DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+diff --git a/storage/spider/spd_direct_sql.cc b/storage/spider/spd_direct_sql.cc
+index 7237d0877a7..7bf0b91a4a7 100644
+--- a/storage/spider/spd_direct_sql.cc
++++ b/storage/spider/spd_direct_sql.cc
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 2009-2018 Kentoku Shiba
++/* Copyright (C) 2009-2019 Kentoku Shiba
++   Copyright (C) 2019 MariaDB corp
+ 
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+@@ -117,31 +118,32 @@ int spider_udf_direct_sql_create_table_list(
+ #if MYSQL_VERSION_ID < 50500
+   if (!(direct_sql->db_names = (char**)
+     spider_bulk_malloc(spider_current_trx, 31, MYF(MY_WME | MY_ZEROFILL),
+-      &direct_sql->db_names, sizeof(char*) * table_count,
+-      &direct_sql->table_names, sizeof(char*) * table_count,
+-      &direct_sql->tables, sizeof(TABLE*) * table_count,
+-      &tmp_name_ptr, sizeof(char) * (
++      &direct_sql->db_names, (uint) (sizeof(char*) * table_count),
++      &direct_sql->table_names, (uint) (sizeof(char*) * table_count),
++      &direct_sql->tables, (uint) (sizeof(TABLE*) * table_count),
++      &tmp_name_ptr, (uint) (sizeof(char) * (
+         table_name_list_length +
+         thd->db_length * table_count +
+         2 * table_count
+-      ),
+-      &direct_sql->iop, sizeof(int) * table_count,
++      )),
++      &direct_sql->iop, (uint) (sizeof(int) * table_count),
+       NullS))
+   )
+ #else
+   if (!(direct_sql->db_names = (char**)
+     spider_bulk_malloc(spider_current_trx, 31, MYF(MY_WME | MY_ZEROFILL),
+-      &direct_sql->db_names, sizeof(char*) * table_count,
+-      &direct_sql->table_names, sizeof(char*) * table_count,
+-      &direct_sql->tables, sizeof(TABLE*) * table_count,
+-      &tmp_name_ptr, sizeof(char) * (
++      &direct_sql->db_names, (uint) (sizeof(char*) * table_count),
++      &direct_sql->table_names, (uint) (sizeof(char*) * table_count),
++      &direct_sql->tables, (uint) (sizeof(TABLE*) * table_count),
++      &tmp_name_ptr, (uint) (sizeof(char) * (
+         table_name_list_length +
+         SPIDER_THD_db_length(thd) * table_count +
+         2 * table_count
+-      ),
+-      &direct_sql->iop, sizeof(int) * table_count,
+-      &direct_sql->table_list, sizeof(TABLE_LIST) * table_count,
+-      &direct_sql->real_table_bitmap, sizeof(uchar) * ((table_count + 7) / 8),
++      )),
++      &direct_sql->iop, (uint) (sizeof(int) * table_count),
++      &direct_sql->table_list, (uint) (sizeof(TABLE_LIST) * table_count),
++      &direct_sql->real_table_bitmap,
++        (uint) (sizeof(uchar) * ((table_count + 7) / 8)),
+       NullS))
+   )
+ #endif
+@@ -412,23 +414,23 @@ SPIDER_CONN *spider_udf_direct_sql_create_conn(
+ #endif
+     if (!(conn = (SPIDER_CONN *)
+       spider_bulk_malloc(spider_current_trx, 32, MYF(MY_WME | MY_ZEROFILL),
+-        &conn, sizeof(*conn),
+-        &tmp_name, direct_sql->conn_key_length + 1,
+-        &tmp_host, direct_sql->tgt_host_length + 1,
+-        &tmp_username, direct_sql->tgt_username_length + 1,
+-        &tmp_password, direct_sql->tgt_password_length + 1,
+-        &tmp_socket, direct_sql->tgt_socket_length + 1,
+-        &tmp_wrapper, direct_sql->tgt_wrapper_length + 1,
+-        &tmp_ssl_ca, direct_sql->tgt_ssl_ca_length + 1,
+-        &tmp_ssl_capath, direct_sql->tgt_ssl_capath_length + 1,
+-        &tmp_ssl_cert, direct_sql->tgt_ssl_cert_length + 1,
+-        &tmp_ssl_cipher, direct_sql->tgt_ssl_cipher_length + 1,
+-        &tmp_ssl_key, direct_sql->tgt_ssl_key_length + 1,
++        &conn, (uint) (sizeof(*conn)),
++        &tmp_name, (uint) (direct_sql->conn_key_length + 1),
++        &tmp_host, (uint) (direct_sql->tgt_host_length + 1),
++        &tmp_username, (uint) (direct_sql->tgt_username_length + 1),
++        &tmp_password, (uint) (direct_sql->tgt_password_length + 1),
++        &tmp_socket, (uint) (direct_sql->tgt_socket_length + 1),
++        &tmp_wrapper, (uint) (direct_sql->tgt_wrapper_length + 1),
++        &tmp_ssl_ca, (uint) (direct_sql->tgt_ssl_ca_length + 1),
++        &tmp_ssl_capath, (uint) (direct_sql->tgt_ssl_capath_length + 1),
++        &tmp_ssl_cert, (uint) (direct_sql->tgt_ssl_cert_length + 1),
++        &tmp_ssl_cipher, (uint) (direct_sql->tgt_ssl_cipher_length + 1),
++        &tmp_ssl_key, (uint) (direct_sql->tgt_ssl_key_length + 1),
+         &tmp_default_file,
+-          direct_sql->tgt_default_file_length + 1,
++          (uint) (direct_sql->tgt_default_file_length + 1),
+         &tmp_default_group,
+-          direct_sql->tgt_default_group_length + 1,
+-        &need_mon, sizeof(int),
++          (uint) (direct_sql->tgt_default_group_length + 1),
++        &need_mon, (uint) (sizeof(int)),
+         NullS))
+     ) {
+       *error_num = HA_ERR_OUT_OF_MEM;
+@@ -439,12 +441,12 @@ SPIDER_CONN *spider_udf_direct_sql_create_conn(
+   } else {
+     if (!(conn = (SPIDER_CONN *)
+       spider_bulk_malloc(spider_current_trx, 33, MYF(MY_WME | MY_ZEROFILL),
+-        &conn, sizeof(*conn),
+-        &tmp_name, direct_sql->conn_key_length + 1,
+-        &tmp_host, direct_sql->tgt_host_length + 1,
+-        &tmp_socket, direct_sql->tgt_socket_length + 1,
+-        &tmp_wrapper, direct_sql->tgt_wrapper_length + 1,
+-        &need_mon, sizeof(int),
++        &conn, (uint) (sizeof(*conn)),
++        &tmp_name, (uint) (direct_sql->conn_key_length + 1),
++        &tmp_host, (uint) (direct_sql->tgt_host_length + 1),
++        &tmp_socket, (uint) (direct_sql->tgt_socket_length + 1),
++        &tmp_wrapper, (uint) (direct_sql->tgt_wrapper_length + 1),
++        &need_mon, (uint) (sizeof(int)),
+         NullS))
+     ) {
+       *error_num = HA_ERR_OUT_OF_MEM;
+@@ -1602,8 +1604,8 @@ long long spider_direct_sql_body(
+   SPIDER_BACKUP_DASTATUS;
+   if (!(direct_sql = (SPIDER_DIRECT_SQL *)
+     spider_bulk_malloc(spider_current_trx, 34, MYF(MY_WME | MY_ZEROFILL),
+-      &direct_sql, sizeof(SPIDER_DIRECT_SQL),
+-      &sql, sizeof(char) * args->lengths[0],
++      &direct_sql, (uint) (sizeof(SPIDER_DIRECT_SQL)),
++      &sql, (uint) (sizeof(char) * args->lengths[0]),
+       NullS))
+   ) {
+     error_num = HA_ERR_OUT_OF_MEM;
+diff --git a/storage/spider/spd_group_by_handler.cc b/storage/spider/spd_group_by_handler.cc
+index 3b57092c4ce..51cfca23106 100644
+--- a/storage/spider/spd_group_by_handler.cc
++++ b/storage/spider/spd_group_by_handler.cc
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 2008-2018 Kentoku Shiba
++/* Copyright (C) 2008-2019 Kentoku Shiba
++   Copyright (C) 2019 MariaDB corp
+ 
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+@@ -637,9 +638,9 @@ SPIDER_CONN_HOLDER *spider_fields::create_conn_holder(
+   DBUG_PRINT("info",("spider this=%p", this));
+   return_conn_holder = (SPIDER_CONN_HOLDER *)
+     spider_bulk_malloc(spider_current_trx, 252, MYF(MY_WME | MY_ZEROFILL),
+-      &return_conn_holder, sizeof(SPIDER_CONN_HOLDER),
++      &return_conn_holder, (uint) (sizeof(SPIDER_CONN_HOLDER)),
+       &table_link_idx_holder,
+-        table_count * sizeof(SPIDER_TABLE_LINK_IDX_HOLDER),
++        (uint) (table_count * sizeof(SPIDER_TABLE_LINK_IDX_HOLDER)),
+       NullS
+     );
+   if (!return_conn_holder)
+diff --git a/storage/spider/spd_ping_table.cc b/storage/spider/spd_ping_table.cc
+index 431d46063c3..60e36fc24fb 100644
+--- a/storage/spider/spd_ping_table.cc
++++ b/storage/spider/spd_ping_table.cc
+@@ -1,4 +1,5 @@
+-/* Copyright (C) 2009-2018 Kentoku Shiba
++/* Copyright (C) 2009-2019 Kentoku Shiba
++   Copyright (C) 2019 MariaDB corp
+ 
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+@@ -367,12 +368,15 @@ int spider_get_ping_table_mon(
+   do {
+     if (!(table_mon = (SPIDER_TABLE_MON *)
+       spider_bulk_malloc(spider_current_trx, 35, MYF(MY_WME | MY_ZEROFILL),
+-        &table_mon, sizeof(SPIDER_TABLE_MON),
+-        &tmp_share, sizeof(SPIDER_SHARE),
+-        &tmp_connect_info, sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT,
+-        &tmp_connect_info_length, sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT,
+-        &tmp_long, sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT,
+-        &tmp_longlong, sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT,
++        &table_mon, (uint) (sizeof(SPIDER_TABLE_MON)),
++        &tmp_share, (uint) (sizeof(SPIDER_SHARE)),
++        &tmp_connect_info,
++          (uint) (sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT),
++        &tmp_connect_info_length,
++          (uint) (sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT),
++        &tmp_long, (uint) (sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT),
++        &tmp_longlong,
++          (uint) (sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT),
+         NullS))
+     ) {
+       spider_sys_index_end(table_link_mon);
+@@ -491,13 +495,17 @@ SPIDER_TABLE_MON_LIST *spider_get_ping_table_tgt(
+   SPD_INIT_ALLOC_ROOT(&mem_root, 4096, 0, MYF(MY_WME));
+   if (!(table_mon_list = (SPIDER_TABLE_MON_LIST *)
+     spider_bulk_malloc(spider_current_trx, 36, MYF(MY_WME | MY_ZEROFILL),
+-      &table_mon_list, sizeof(SPIDER_TABLE_MON_LIST),
+-      &tmp_share, sizeof(SPIDER_SHARE),
+-      &tmp_connect_info, sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT,
+-      &tmp_connect_info_length, sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT,
+-      &tmp_long, sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT,
+-      &tmp_longlong, sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT,
+-      &key_str, str->length() + 1,
++      &table_mon_list, (uint) (sizeof(SPIDER_TABLE_MON_LIST)),
++      &tmp_share, (uint) (sizeof(SPIDER_SHARE)),
++      &tmp_connect_info,
++        (uint) (sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT),
++      &tmp_connect_info_length,
++        (uint) (sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT),
++      &tmp_long,
++        (uint) (sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT),
++      &tmp_longlong,
++        (uint) (sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT),
++      &key_str, (uint) (str->length() + 1),
+       NullS))
+   ) {
+     my_error(HA_ERR_OUT_OF_MEM, MYF(0));
+diff --git a/storage/spider/spd_table.cc b/storage/spider/spd_table.cc
+index 83c5a37555f..5bae895570d 100644
+--- a/storage/spider/spd_table.cc
++++ b/storage/spider/spd_table.cc
+@@ -1209,8 +1209,8 @@ int spider_create_string_list(
+ 
+   if (!(*string_list = (char**)
+     spider_bulk_malloc(spider_current_trx, 37, MYF(MY_WME | MY_ZEROFILL),
+-      string_list, sizeof(char*) * (*list_length),
+-      string_length_list, sizeof(int) * (*list_length),
++      string_list, (uint) (sizeof(char*) * (*list_length)),
++      string_length_list, (uint) (sizeof(int) * (*list_length)),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -1328,7 +1328,7 @@ int spider_create_long_list(
+ 
+   if (!(*long_list = (long*)
+     spider_bulk_malloc(spider_current_trx, 38, MYF(MY_WME | MY_ZEROFILL),
+-      long_list, sizeof(long) * (*list_length),
++      long_list, (uint) (sizeof(long) * (*list_length)),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -1412,7 +1412,7 @@ int spider_create_longlong_list(
+ 
+   if (!(*longlong_list = (longlong *)
+     spider_bulk_malloc(spider_current_trx, 39, MYF(MY_WME | MY_ZEROFILL),
+-      longlong_list, sizeof(longlong) * (*list_length),
++      longlong_list, (uint) (sizeof(longlong) * (*list_length)),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -1483,8 +1483,8 @@ int spider_increase_string_list(
+ 
+   if (!(tmp_str_list = (char**)
+     spider_bulk_malloc(spider_current_trx, 40, MYF(MY_WME | MY_ZEROFILL),
+-      &tmp_str_list, sizeof(char*) * link_count,
+-      &tmp_length_list, sizeof(uint) * link_count,
++      &tmp_str_list, (uint) (sizeof(char*) * link_count),
++      &tmp_length_list, (uint) (sizeof(uint) * link_count),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -1546,8 +1546,8 @@ int spider_increase_null_string_list(
+ 
+   if (!(tmp_str_list = (char**)
+     spider_bulk_malloc(spider_current_trx, 247, MYF(MY_WME | MY_ZEROFILL),
+-      &tmp_str_list, sizeof(char*) * link_count,
+-      &tmp_length_list, sizeof(uint) * link_count,
++      &tmp_str_list, (uint) (sizeof(char*) * link_count),
++      &tmp_length_list, (uint) (sizeof(uint) * link_count),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -1604,7 +1604,7 @@ int spider_increase_long_list(
+ 
+   if (!(tmp_long_list = (long*)
+     spider_bulk_malloc(spider_current_trx, 41, MYF(MY_WME | MY_ZEROFILL),
+-      &tmp_long_list, sizeof(long) * link_count,
++      &tmp_long_list, (uint) (sizeof(long) * link_count),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -1649,7 +1649,7 @@ int spider_increase_longlong_list(
+ 
+   if (!(tmp_longlong_list = (longlong*)
+     spider_bulk_malloc(spider_current_trx, 42, MYF(MY_WME | MY_ZEROFILL),
+-      &tmp_longlong_list, sizeof(longlong) * link_count,
++      &tmp_longlong_list, (uint) (sizeof(longlong) * link_count),
+       NullS))
+   ) {
+     my_error(ER_OUT_OF_RESOURCES, MYF(0), HA_ERR_OUT_OF_MEM);
+@@ -2972,17 +2972,17 @@ int spider_parse_connect_info(
+   if (!(share_alter->tmp_server_names = (char **)
+     spider_bulk_malloc(spider_current_trx, 43, MYF(MY_WME | MY_ZEROFILL),
+       &share_alter->tmp_server_names,
+-      sizeof(char *) * 16 * share->all_link_count,
++      (uint) (sizeof(char *) * 16 * share->all_link_count),
+       &share_alter->tmp_server_names_lengths,
+-      sizeof(uint *) * 16 * share->all_link_count,
++      (uint) (sizeof(uint *) * 16 * share->all_link_count),
+       &share_alter->tmp_tgt_ports,
+-      sizeof(long) * share->all_link_count,
++      (uint) (sizeof(long) * share->all_link_count),
+       &share_alter->tmp_tgt_ssl_vscs,
+-      sizeof(long) * share->all_link_count,
++      (uint) (sizeof(long) * share->all_link_count),
+       &share_alter->tmp_monitoring_binlog_pos_at_failing,
+-      sizeof(long) * share->all_link_count,
++      (uint) (sizeof(long) * share->all_link_count),
+       &share_alter->tmp_link_statuses,
+-      sizeof(long) * share->all_link_count,
++      (uint) (sizeof(long) * share->all_link_count),
+       NullS))
+   ) {
+     error_num = HA_ERR_OUT_OF_MEM;
+@@ -4383,13 +4383,17 @@ SPIDER_SHARE *spider_create_share(
+   bitmap_size = spider_bitmap_size(table_share->fields);
+   if (!(share = (SPIDER_SHARE *)
+     spider_bulk_malloc(spider_current_trx, 46, MYF(MY_WME | MY_ZEROFILL),
+-      &share, sizeof(*share),
+-      &tmp_name, length + 1,
+-      &tmp_static_key_cardinality, sizeof(*tmp_static_key_cardinality) * table_share->keys,
+-      &tmp_cardinality, sizeof(*tmp_cardinality) * table_share->fields,
+-      &tmp_cardinality_upd, sizeof(*tmp_cardinality_upd) * bitmap_size,
+-      &tmp_table_mon_mutex_bitmap, sizeof(*tmp_table_mon_mutex_bitmap) *
+-        ((spider_param_udf_table_mon_mutex_count() + 7) / 8),
++      &share, (uint) (sizeof(*share)),
++      &tmp_name, (uint) (length + 1),
++      &tmp_static_key_cardinality,
++        (uint) (sizeof(*tmp_static_key_cardinality) * table_share->keys),
++      &tmp_cardinality,
++        (uint) (sizeof(*tmp_cardinality) * table_share->fields),
++      &tmp_cardinality_upd,
++        (uint) (sizeof(*tmp_cardinality_upd) * bitmap_size),
++      &tmp_table_mon_mutex_bitmap,
++        (uint) (sizeof(*tmp_table_mon_mutex_bitmap) *
++          ((spider_param_udf_table_mon_mutex_count() + 7) / 8)),
+       NullS))
+   ) {
+     *error_num = HA_ERR_OUT_OF_MEM;
+@@ -5907,8 +5911,8 @@ SPIDER_LGTM_TBLHND_SHARE *spider_get_lgtm_tblhnd_share(
+     DBUG_PRINT("info",("spider create new lgtm tblhnd share"));
+     if (!(lgtm_tblhnd_share = (SPIDER_LGTM_TBLHND_SHARE *)
+       spider_bulk_malloc(spider_current_trx, 244, MYF(MY_WME | MY_ZEROFILL),
+-        &lgtm_tblhnd_share, sizeof(*lgtm_tblhnd_share),
+-        &tmp_name, table_name_length + 1,
++        &lgtm_tblhnd_share, (uint) (sizeof(*lgtm_tblhnd_share)),
++        &tmp_name, (uint) (table_name_length + 1),
+         NullS))
+     ) {
+       *error_num = HA_ERR_OUT_OF_MEM;
+@@ -6017,9 +6021,10 @@ SPIDER_PARTITION_SHARE *spider_get_pt_share(
+     DBUG_PRINT("info",("spider create new pt share"));
+     if (!(partition_share = (SPIDER_PARTITION_SHARE *)
+       spider_bulk_malloc(spider_current_trx, 51, MYF(MY_WME | MY_ZEROFILL),
+-        &partition_share, sizeof(*partition_share),
+-        &tmp_name, table_share->path.length + 1,
+-        &tmp_cardinality, sizeof(*tmp_cardinality) * table_share->fields,
++        &partition_share, (uint) (sizeof(*partition_share)),
++        &tmp_name, (uint) (table_share->path.length + 1),
++        &tmp_cardinality,
++          (uint) (sizeof(*tmp_cardinality) * table_share->fields),
+         NullS))
+     ) {
+       *error_num = HA_ERR_OUT_OF_MEM;
+@@ -6395,15 +6400,18 @@ int spider_open_all_tables(
+ 
+       if (!(share = (SPIDER_SHARE *)
+         spider_bulk_malloc(spider_current_trx, 52, MYF(MY_WME | MY_ZEROFILL),
+-          &share, sizeof(*share),
+-          &connect_info, sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT,
+-          &connect_info_length, sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT,
+-          &long_info, sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT,
+-          &longlong_info, sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT,
+-          &conns, sizeof(SPIDER_CONN *),
+-          &need_mon, sizeof(int),
+-          &spider->conn_link_idx, sizeof(uint),
+-          &spider->conn_can_fo, sizeof(uchar),
++          &share, (uint) (sizeof(*share)),
++          &connect_info,
++            (uint) (sizeof(char *) * SPIDER_TMP_SHARE_CHAR_PTR_COUNT),
++          &connect_info_length,
++            (uint) (sizeof(uint) * SPIDER_TMP_SHARE_UINT_COUNT),
++          &long_info, (uint) (sizeof(long) * SPIDER_TMP_SHARE_LONG_COUNT),
++          &longlong_info,
++            (uint) (sizeof(longlong) * SPIDER_TMP_SHARE_LONGLONG_COUNT),
++          &conns, (uint) (sizeof(SPIDER_CONN *)),
++          &need_mon, (uint) (sizeof(int)),
++          &spider->conn_link_idx, (uint) (sizeof(uint)),
++          &spider->conn_can_fo, (uint) (sizeof(uchar)),
+           NullS))
+       ) {
+         delete spider;
+@@ -7204,12 +7212,12 @@ int spider_db_init(
+ 
+   if (!(spider_udf_table_mon_mutexes = (pthread_mutex_t *)
+     spider_bulk_malloc(NULL, 53, MYF(MY_WME | MY_ZEROFILL),
+-      &spider_udf_table_mon_mutexes, sizeof(pthread_mutex_t) *
+-        spider_param_udf_table_mon_mutex_count(),
+-      &spider_udf_table_mon_conds, sizeof(pthread_cond_t) *
+-        spider_param_udf_table_mon_mutex_count(),
+-      &spider_udf_table_mon_list_hash, sizeof(HASH) *
+-        spider_param_udf_table_mon_mutex_count(),
++      &spider_udf_table_mon_mutexes, (uint) (sizeof(pthread_mutex_t) *
++        spider_param_udf_table_mon_mutex_count()),
++      &spider_udf_table_mon_conds, (uint) (sizeof(pthread_cond_t) *
++        spider_param_udf_table_mon_mutex_count()),
++      &spider_udf_table_mon_list_hash, (uint) (sizeof(HASH) *
++        spider_param_udf_table_mon_mutex_count()),
+       NullS))
+   )
+     goto error_alloc_mon_mutxes;
+@@ -7258,10 +7266,10 @@ int spider_db_init(
+ #ifndef WITHOUT_SPIDER_BG_SEARCH
+   if (!(spider_table_sts_threads = (SPIDER_THREAD *)
+     spider_bulk_malloc(NULL, 256, MYF(MY_WME | MY_ZEROFILL),
+-      &spider_table_sts_threads, sizeof(SPIDER_THREAD) *
+-        spider_param_table_sts_thread_count(),
+-      &spider_table_crd_threads, sizeof(SPIDER_THREAD) *
+-        spider_param_table_crd_thread_count(),
++      &spider_table_sts_threads, (uint) (sizeof(SPIDER_THREAD) *
++        spider_param_table_sts_thread_count()),
++      &spider_table_crd_threads, (uint) (sizeof(SPIDER_THREAD) *
++        spider_param_table_crd_thread_count()),
+       NullS))
+   )
+     goto error_alloc_mon_mutxes;
+@@ -7968,8 +7976,8 @@ SPIDER_INIT_ERROR_TABLE *spider_get_init_error_table(
+     }
+     if (!(spider_init_error_table = (SPIDER_INIT_ERROR_TABLE *)
+       spider_bulk_malloc(spider_current_trx, 54, MYF(MY_WME | MY_ZEROFILL),
+-        &spider_init_error_table, sizeof(*spider_init_error_table),
+-        &tmp_name, share->table_name_length + 1,
++        &spider_init_error_table, (uint) (sizeof(*spider_init_error_table)),
++        &tmp_name, (uint) (share->table_name_length + 1),
+         NullS))
+     ) {
+       pthread_mutex_unlock(&spider_init_error_tbl_mutex);
+@@ -9551,25 +9559,25 @@ int spider_create_spider_object_for_share(
+ #if defined(HS_HAS_SQLCOM) && defined(HAVE_HANDLERSOCKET)
+   if (!(need_mons = (int *)
+     spider_bulk_malloc(spider_current_trx, 255, MYF(MY_WME | MY_ZEROFILL),
+-      &need_mons, (sizeof(int) * share->link_count),
+-      &conns, (sizeof(SPIDER_CONN *) * share->link_count),
+-      &conn_link_idx, (sizeof(uint) * share->link_count),
+-      &conn_can_fo, (sizeof(uchar) * share->link_bitmap_size),
+-      &conn_keys, (sizeof(char *) * share->link_count),
+-      &hs_r_conn_keys, (sizeof(char *) * share->link_count),
+-      &hs_w_conn_keys, (sizeof(char *) * share->link_count),
+-      &dbton_hdl, (sizeof(spider_db_handler *) * SPIDER_DBTON_SIZE),
++      &need_mons, (uint) (sizeof(int) * share->link_count),
++      &conns, (uint) (sizeof(SPIDER_CONN *) * share->link_count),
++      &conn_link_idx, (uint) (sizeof(uint) * share->link_count),
++      &conn_can_fo, (uint) (sizeof(uchar) * share->link_bitmap_size),
++      &conn_keys, (uint) (sizeof(char *) * share->link_count),
++      &hs_r_conn_keys, (uint) (sizeof(char *) * share->link_count),
++      &hs_w_conn_keys, (uint) (sizeof(char *) * share->link_count),
++      &dbton_hdl, (uint) (sizeof(spider_db_handler *) * SPIDER_DBTON_SIZE),
+       NullS))
+   )
+ #else
+   if (!(need_mons = (int *)
+     spider_bulk_malloc(spider_current_trx, 255, MYF(MY_WME | MY_ZEROFILL),
+-      &need_mons, (sizeof(int) * share->link_count),
+-      &conns, (sizeof(SPIDER_CONN *) * share->link_count),
+-      &conn_link_idx, (sizeof(uint) * share->link_count),
+-      &conn_can_fo, (sizeof(uchar) * share->link_bitmap_size),
+-      &conn_keys, (sizeof(char *) * share->link_count),
+-      &dbton_hdl, (sizeof(spider_db_handler *) * SPIDER_DBTON_SIZE),
++      &need_mons, (uint) (sizeof(int) * share->link_count),
++      &conns, (uint) (sizeof(SPIDER_CONN *) * share->link_count),
++      &conn_link_idx, (uint) (sizeof(uint) * share->link_count),
++      &conn_can_fo, (uint) (sizeof(uchar) * share->link_bitmap_size),
++      &conn_keys, (uint) (sizeof(char *) * share->link_count),
++      &dbton_hdl, (uint) (sizeof(spider_db_handler *) * SPIDER_DBTON_SIZE),
+       NullS))
+   )
+ #endif
+diff --git a/storage/spider/spd_trx.cc b/storage/spider/spd_trx.cc
+index bb9f11793cb..1638533eca1 100644
+--- a/storage/spider/spd_trx.cc
++++ b/storage/spider/spd_trx.cc
+@@ -548,81 +548,90 @@ int spider_create_trx_alter_table(
+ 
+   if (!(alter_table = (SPIDER_ALTER_TABLE *)
+     spider_bulk_malloc(spider_current_trx, 55, MYF(MY_WME | MY_ZEROFILL),
+-      &alter_table, sizeof(*alter_table),
+-      &tmp_name, sizeof(char) * (share->table_name_length + 1),
+-
+-      &tmp_server_names, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_table_names, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_dbs, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_hosts, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_usernames, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_passwords, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_sockets, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_wrappers, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_ssl_cas, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_ssl_capaths, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_ssl_certs, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_ssl_ciphers, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_ssl_keys, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_default_files, sizeof(char *) * share->all_link_count,
+-      &tmp_tgt_default_groups, sizeof(char *) * share->all_link_count,
+-      &tmp_static_link_ids, sizeof(char *) * share->all_link_count,
+-
+-      &tmp_server_names_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_table_names_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_dbs_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_hosts_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_usernames_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_passwords_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_sockets_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_wrappers_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_ssl_cas_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_ssl_capaths_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_ssl_certs_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_ssl_ciphers_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_ssl_keys_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_default_files_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_tgt_default_groups_lengths, sizeof(uint) * share->all_link_count,
+-      &tmp_static_link_ids_lengths, sizeof(uint) * share->all_link_count,
+-
+-      &tmp_tgt_ports, sizeof(long) * share->all_link_count,
+-      &tmp_tgt_ssl_vscs, sizeof(long) * share->all_link_count,
++      &alter_table, (uint) (sizeof(*alter_table)),
++      &tmp_name, (uint) (sizeof(char) * (share->table_name_length + 1)),
++
++      &tmp_server_names, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_table_names, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_dbs, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_hosts, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_usernames, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_passwords, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_sockets, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_wrappers, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_ssl_cas, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_ssl_capaths, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_ssl_certs, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_ssl_ciphers, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_ssl_keys, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_default_files, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_tgt_default_groups, (uint) (sizeof(char *) * share->all_link_count),
++      &tmp_static_link_ids, (uint) (sizeof(char *) * share->all_link_count),
++
++      &tmp_server_names_lengths, (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_table_names_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_dbs_lengths, (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_hosts_lengths, (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_usernames_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_passwords_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_sockets_lengths, (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_wrappers_lengths, (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_ssl_cas_lengths, (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_ssl_capaths_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_ssl_certs_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_ssl_ciphers_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_ssl_keys_lengths, (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_default_files_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_tgt_default_groups_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++      &tmp_static_link_ids_lengths,
++        (uint) (sizeof(uint) * share->all_link_count),
++
++      &tmp_tgt_ports, (uint) (sizeof(long) * share->all_link_count),
++      &tmp_tgt_ssl_vscs, (uint) (sizeof(long) * share->all_link_count),
+       &tmp_monitoring_binlog_pos_at_failing,
+-        sizeof(long) * share->all_link_count,
+-      &tmp_link_statuses, sizeof(long) * share->all_link_count,
+-
+-      &tmp_server_names_char, sizeof(char) *
+-        (share_alter->tmp_server_names_charlen + 1),
+-      &tmp_tgt_table_names_char, sizeof(char) *
+-        (share_alter->tmp_tgt_table_names_charlen + 1),
+-      &tmp_tgt_dbs_char, sizeof(char) *
+-        (share_alter->tmp_tgt_dbs_charlen + 1),
+-      &tmp_tgt_hosts_char, sizeof(char) *
+-        (share_alter->tmp_tgt_hosts_charlen + 1),
+-      &tmp_tgt_usernames_char, sizeof(char) *
+-        (share_alter->tmp_tgt_usernames_charlen + 1),
+-      &tmp_tgt_passwords_char, sizeof(char) *
+-        (share_alter->tmp_tgt_passwords_charlen + 1),
+-      &tmp_tgt_sockets_char, sizeof(char) *
+-        (share_alter->tmp_tgt_sockets_charlen + 1),
+-      &tmp_tgt_wrappers_char, sizeof(char) *
+-        (share_alter->tmp_tgt_wrappers_charlen + 1),
+-      &tmp_tgt_ssl_cas_char, sizeof(char) *
+-        (share_alter->tmp_tgt_ssl_cas_charlen + 1),
+-      &tmp_tgt_ssl_capaths_char, sizeof(char) *
+-        (share_alter->tmp_tgt_ssl_capaths_charlen + 1),
+-      &tmp_tgt_ssl_certs_char, sizeof(char) *
+-        (share_alter->tmp_tgt_ssl_certs_charlen + 1),
+-      &tmp_tgt_ssl_ciphers_char, sizeof(char) *
+-        (share_alter->tmp_tgt_ssl_ciphers_charlen + 1),
+-      &tmp_tgt_ssl_keys_char, sizeof(char) *
+-        (share_alter->tmp_tgt_ssl_keys_charlen + 1),
+-      &tmp_tgt_default_files_char, sizeof(char) *
+-        (share_alter->tmp_tgt_default_files_charlen + 1),
+-      &tmp_tgt_default_groups_char, sizeof(char) *
+-        (share_alter->tmp_tgt_default_groups_charlen + 1),
+-      &tmp_static_link_ids_char, sizeof(char) *
+-        (share_alter->tmp_static_link_ids_charlen + 1),
++        (uint) (sizeof(long) * share->all_link_count),
++      &tmp_link_statuses, (uint) (sizeof(long) * share->all_link_count),
++
++      &tmp_server_names_char, (uint) (sizeof(char) *
++        (share_alter->tmp_server_names_charlen + 1)),
++      &tmp_tgt_table_names_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_table_names_charlen + 1)),
++      &tmp_tgt_dbs_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_dbs_charlen + 1)),
++      &tmp_tgt_hosts_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_hosts_charlen + 1)),
++      &tmp_tgt_usernames_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_usernames_charlen + 1)),
++      &tmp_tgt_passwords_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_passwords_charlen + 1)),
++      &tmp_tgt_sockets_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_sockets_charlen + 1)),
++      &tmp_tgt_wrappers_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_wrappers_charlen + 1)),
++      &tmp_tgt_ssl_cas_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_ssl_cas_charlen + 1)),
++      &tmp_tgt_ssl_capaths_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_ssl_capaths_charlen + 1)),
++      &tmp_tgt_ssl_certs_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_ssl_certs_charlen + 1)),
++      &tmp_tgt_ssl_ciphers_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_ssl_ciphers_charlen + 1)),
++      &tmp_tgt_ssl_keys_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_ssl_keys_charlen + 1)),
++      &tmp_tgt_default_files_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_default_files_charlen + 1)),
++      &tmp_tgt_default_groups_char, (uint) (sizeof(char) *
++        (share_alter->tmp_tgt_default_groups_charlen + 1)),
++      &tmp_static_link_ids_char, (uint) (sizeof(char) *
++        (share_alter->tmp_static_link_ids_charlen + 1)),
+       NullS))
+   ) {
+     error_num = HA_ERR_OUT_OF_MEM;
+@@ -1200,10 +1209,10 @@ SPIDER_TRX *spider_get_trx(
+     DBUG_PRINT("info",("spider create new trx"));
+     if (!(trx = (SPIDER_TRX *)
+       spider_bulk_malloc(NULL, 56, MYF(MY_WME | MY_ZEROFILL),
+-        &trx, sizeof(*trx),
+-        &tmp_share, sizeof(SPIDER_SHARE),
+-        &udf_table_mutexes, sizeof(pthread_mutex_t) *
+-          spider_param_udf_table_lock_mutex_count(),
++        &trx, (uint) (sizeof(*trx)),
++        &tmp_share, (uint) (sizeof(SPIDER_SHARE)),
++        &udf_table_mutexes, (uint) (sizeof(pthread_mutex_t) *
++          spider_param_udf_table_lock_mutex_count()),
+         NullS))
+     )
+       goto error_alloc_trx;
+@@ -4191,10 +4200,10 @@ int spider_create_trx_ha(
+   {
+     if (!(trx_ha = (SPIDER_TRX_HA *)
+       spider_bulk_malloc(spider_current_trx, 58, MYF(MY_WME),
+-        &trx_ha, sizeof(SPIDER_TRX_HA),
+-        &tmp_name, sizeof(char *) * (share->table_name_length + 1),
+-        &conn_link_idx, sizeof(uint) * share->link_count,
+-        &conn_can_fo, sizeof(uchar) * share->link_bitmap_size,
++        &trx_ha, (uint) (sizeof(SPIDER_TRX_HA)),
++        &tmp_name, (uint) (sizeof(char *) * (share->table_name_length + 1)),
++        &conn_link_idx, (uint) (sizeof(uint) * share->link_count),
++        &conn_can_fo, (uint) (sizeof(uchar) * share->link_bitmap_size),
+         NullS))
+     ) {
+       DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+-- 
+2.23.0
+

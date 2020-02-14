@@ -26,8 +26,14 @@
 
 [Unit]
 Description=@NICE_PROJECT_NAME@ @MAJOR_VERSION@.@MINOR_VERSION@ database server
-After=syslog.target
+Documentation=man:mysqld(8)
+Documentation=https://mariadb.com/kb/en/library/systemd/
 After=network.target
+
+[Install]
+WantedBy=multi-user.target
+Alias=mysql.service
+Alias=mysqld.service
 
 [Service]
 Type=notify
@@ -35,13 +41,13 @@ User=mysql
 Group=mysql
 
 ExecStartPre=@libexecdir@/mysql-check-socket
+# '%n' expands to 'Full unit name'; man systemd.unit
 ExecStartPre=@libexecdir@/mysql-prepare-db-dir %n
 # MYSQLD_OPTS here is for users to set in /etc/systemd/system/@DAEMON_NAME@@.service.d/MY_SPECIAL.conf
 # Note: we set --basedir to prevent probes that might trigger SELinux alarms,
 # per bug #547485
 ExecStart=@libexecdir@/mysqld --basedir=@prefix@ $MYSQLD_OPTS $_WSREP_NEW_CLUSTER
 ExecStartPost=@libexecdir@/mysql-check-upgrade
-ExecStopPost=@libexecdir@/mysql-wait-stop
 
 # Setting this to true can break replication and the Type=notify settings
 # See also bind-address mysqld option.
@@ -65,6 +71,3 @@ TimeoutSec=300
 
 # Place temp files in a secure directory, not /tmp
 PrivateTmp=true
-
-[Install]
-WantedBy=multi-user.target
