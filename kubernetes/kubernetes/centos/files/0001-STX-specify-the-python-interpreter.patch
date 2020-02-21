@@ -1,0 +1,80 @@
+From 60780d3f934b9dd14bcd80fe604d6eb37b7c3349 Mon Sep 17 00:00:00 2001
+From: SidneyAn <ran1.an@intel.com>
+Date: Wed, 22 Jan 2020 02:46:03 +0000
+Subject: [PATCH] STX: specify the python interpreter
+
+Change python to python3 explicitly in line #!/usr/bin/env python
+
+Signed-off-by: SidneyAn <ran1.an@intel.com>
+---
+ src/k8s.io/kubernetes/hack/boilerplate/boilerplate.py      | 2 +-
+ src/k8s.io/kubernetes/hack/boilerplate/boilerplate_test.py | 2 +-
+ src/k8s.io/kubernetes/hack/boilerplate/test/fail.py        | 2 +-
+ src/k8s.io/kubernetes/hack/boilerplate/test/pass.py        | 2 +-
+ src/k8s.io/kubernetes/hack/verify-flags-underscore.py      | 2 +-
+ src/k8s.io/kubernetes/hack/verify-publishing-bot.py        | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/src/k8s.io/kubernetes/hack/boilerplate/boilerplate.py b/src/k8s.io/kubernetes/hack/boilerplate/boilerplate.py
+index d5d901ee..1f843cbf 100755
+--- a/src/k8s.io/kubernetes/hack/boilerplate/boilerplate.py
++++ b/src/k8s.io/kubernetes/hack/boilerplate/boilerplate.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ # Copyright 2015 The Kubernetes Authors.
+ #
+diff --git a/src/k8s.io/kubernetes/hack/boilerplate/boilerplate_test.py b/src/k8s.io/kubernetes/hack/boilerplate/boilerplate_test.py
+index 66453045..fc049ca2 100644
+--- a/src/k8s.io/kubernetes/hack/boilerplate/boilerplate_test.py
++++ b/src/k8s.io/kubernetes/hack/boilerplate/boilerplate_test.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ # Copyright 2016 The Kubernetes Authors.
+ #
+diff --git a/src/k8s.io/kubernetes/hack/boilerplate/test/fail.py b/src/k8s.io/kubernetes/hack/boilerplate/test/fail.py
+index cbdd06ff..e59627aa 100644
+--- a/src/k8s.io/kubernetes/hack/boilerplate/test/fail.py
++++ b/src/k8s.io/kubernetes/hack/boilerplate/test/fail.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ # Copyright 2015 The Kubernetes Authors.
+ #
+diff --git a/src/k8s.io/kubernetes/hack/boilerplate/test/pass.py b/src/k8s.io/kubernetes/hack/boilerplate/test/pass.py
+index 5b7ce29a..0a0f9c9d 100644
+--- a/src/k8s.io/kubernetes/hack/boilerplate/test/pass.py
++++ b/src/k8s.io/kubernetes/hack/boilerplate/test/pass.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ # Copyright 2015 The Kubernetes Authors.
+ #
+diff --git a/src/k8s.io/kubernetes/hack/verify-flags-underscore.py b/src/k8s.io/kubernetes/hack/verify-flags-underscore.py
+index 169f7944..9d97ad9f 100755
+--- a/src/k8s.io/kubernetes/hack/verify-flags-underscore.py
++++ b/src/k8s.io/kubernetes/hack/verify-flags-underscore.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ # Copyright 2015 The Kubernetes Authors.
+ #
+diff --git a/src/k8s.io/kubernetes/hack/verify-publishing-bot.py b/src/k8s.io/kubernetes/hack/verify-publishing-bot.py
+index dc8c3d79..ba816939 100755
+--- a/src/k8s.io/kubernetes/hack/verify-publishing-bot.py
++++ b/src/k8s.io/kubernetes/hack/verify-publishing-bot.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ # Copyright 2019 The Kubernetes Authors.
+ #
+-- 
+2.18.1
+
