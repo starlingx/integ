@@ -4,43 +4,37 @@ Date: Mon, 15 Jan 2018 13:22:09 -0500
 Subject: [PATCH 2/2] Add Ti certificate
 
 ---
- SPECS/shim.spec | 4 ++++
+ SPECS/shim-unsigned-x64.spec | 4 ++++
  1 file changed, 4 insertions(+)
- mode change 100644 => 100755 SPECS/shim.spec
 
-diff --git a/SPECS/shim.spec b/SPECS/shim.spec
-old mode 100644
-new mode 100755
-index de216b6..83da6cd
---- a/SPECS/shim.spec
-+++ b/SPECS/shim.spec
-@@ -12,8 +12,10 @@ Source0:        https://github.com/mjg59/shim/releases/download/%{version}/shim-
- #Source3:       dbx-aa64.esl
- Source4:        shim-find-debuginfo.sh
- Source5:	centos.esl
+diff --git a/SPECS/shim-unsigned-x64.spec b/SPECS/shim-unsigned-x64.spec
+index aa45c33..384d339 100755
+--- a/SPECS/shim-unsigned-x64.spec
++++ b/SPECS/shim-unsigned-x64.spec
+@@ -30,12 +30,14 @@ Source1:	centossecureboot001.der
+ Source2:	dbx.esl
+ 
+ Source100:	shim-find-debuginfo.sh
 +Source1000:     tis-shim.crt
  
- Patch0:		0001-Add-vendor-esl.patch
+ Patch0001:	0001-Make-sure-that-MOK-variables-always-get-mirrored.patch
+ Patch0002:	0002-mok-fix-the-mirroring-of-RT-variables.patch
+ Patch0003:	0003-mok-consolidate-mirroring-code-in-a-helper-instead-o.patch
+ Patch0004:	0004-Make-VLogError-behave-as-expected.patch
+ Patch0005:	0005-MokListRT-Fatal.patch
 +Patch1000:	0001-Use-Titanium-certificate.patch
  
- BuildRequires: git openssl-devel openssl
- BuildRequires: pesign >= 0.106-1
-@@ -104,6 +106,7 @@ git commit -a -q -m "%{version} baseline."
- git am --ignore-whitespace %{patches} </dev/null
+ BuildRequires:	elfutils-libelf-devel
+ BuildRequires:	git openssl-devel openssl
+@@ -100,6 +102,8 @@ BuildArch:	noarch
+ %autosetup -S git -n shim-%{version}
  git config --unset user.email
  git config --unset user.name
 +cp %{SOURCE1000} .
++
+ mkdir build-%{efiarch}
+ mkdir build-%{efialtarch}
  
- %ifarch x86_64
- cd ..
-@@ -118,6 +121,7 @@ git commit -a -q -m "%{version} baseline."
- git am --ignore-whitespace %{patches} </dev/null
- git config --unset user.email
- git config --unset user.name
-+cp %{SOURCE1000} .
- %endif
- 
- %build
 -- 
-1.8.3.1
+2.7.4
 

@@ -9,7 +9,7 @@ Subject: [PATCH] Use Titanium certificate
  2 files changed, 18 insertions(+), 8 deletions(-)
 
 diff --git a/Make.defaults b/Make.defaults
-index 3cec82d..d7606db 100644
+index e11ab5a..d16510c 100644
 --- a/Make.defaults
 +++ b/Make.defaults
 @@ -51,6 +51,12 @@ CLANG_BUGS	= $(if $(findstring gcc,$(CC)),-maccumulate-outgoing-args,)
@@ -26,7 +26,7 @@ index 3cec82d..d7606db 100644
  	CFLAGS	+= -DOVERRIDE_SECURITY_POLICY
  endif
 diff --git a/Makefile b/Makefile
-index 115e7f0..8964a97 100644
+index 115e7f0..933c859 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -34,7 +34,7 @@ else
@@ -76,5 +76,5 @@ index 115e7f0..8964a97 100644
  shim.o: $(SOURCES)
  ifneq ($(origin ENABLE_SHIM_CERT),undefined)
 -- 
-1.8.3.1
+2.7.4
 
