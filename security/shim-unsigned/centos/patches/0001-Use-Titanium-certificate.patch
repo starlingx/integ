@@ -1,15 +1,16 @@
-From 057532ac6c77d20ae8d6ce0354e7ef67b1870eb6 Mon Sep 17 00:00:00 2001
+From 7fc985a350f9f7f5abbd19cef7a1947a3e33e5c8 Mon Sep 17 00:00:00 2001
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Mon, 15 Jan 2018 13:25:04 -0500
 Subject: [PATCH] Use Titanium certificate
 
+Signed-off-by: Scott Little <scott.little@windriver.com>
 ---
  Make.defaults |  6 ++++++
- Makefile      | 20 ++++++++++++--------
- 2 files changed, 18 insertions(+), 8 deletions(-)
+ Makefile      | 29 ++++++++++++++++-------------
+ 2 files changed, 22 insertions(+), 13 deletions(-)
 
 diff --git a/Make.defaults b/Make.defaults
-index 3cec82d..d7606db 100644
+index e11ab5a..d16510c 100644
 --- a/Make.defaults
 +++ b/Make.defaults
 @@ -51,6 +51,12 @@ CLANG_BUGS	= $(if $(findstring gcc,$(CC)),-maccumulate-outgoing-args,)
@@ -26,11 +27,14 @@ index 3cec82d..d7606db 100644
  	CFLAGS	+= -DOVERRIDE_SECURITY_POLICY
  endif
 diff --git a/Makefile b/Makefile
-index 115e7f0..8964a97 100644
+index 115e7f0..f2b37fa 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -34,7 +34,7 @@ else
+@@ -32,9 +32,10 @@ TARGETS	+= $(MMNAME).signed $(FBNAME).signed
+ CFLAGS += -DENABLE_SHIM_CERT
+ else
  TARGETS += $(MMNAME) $(FBNAME)
++CFLAGS += -DENABLE_SHIM_CERT
  endif
  OBJS	= shim.o mok.o netboot.o cert.o replacements.o tpm.o version.o errlog.o
 -KEYS	= shim_cert.h ocsp.* ca.* shim.crt shim.csr shim.p12 shim.pem shim.key shim.cer
@@ -38,7 +42,7 @@ index 115e7f0..8964a97 100644
  ORIG_SOURCES	= shim.c mok.c netboot.c replacements.c tpm.c errlog.c shim.h version.h $(wildcard include/*.h)
  MOK_OBJS = MokManager.o PasswordCrypt.o crypt_blowfish.o
  ORIG_MOK_SOURCES = MokManager.c PasswordCrypt.c crypt_blowfish.c shim.h $(wildcard include/*.h)
-@@ -52,14 +52,18 @@ FALLBACK_SRCS = $(foreach source,$(ORIG_FALLBACK_SRCS),$(TOPDIR)/$(source))
+@@ -52,14 +53,18 @@ FALLBACK_SRCS = $(foreach source,$(ORIG_FALLBACK_SRCS),$(TOPDIR)/$(source))
  
  all: $(TARGETS)
  
@@ -61,7 +65,7 @@ index 115e7f0..8964a97 100644
  	echo "static UINT8 shim_cert[] __attribute__((__unused__)) = {" > $@
  	$(HEXDUMP) -v -e '1/1 "0x%02x, "' $< >> $@
  	echo "};" >> $@
-@@ -70,10 +74,10 @@ version.c : $(TOPDIR)/version.c.in
+@@ -70,15 +75,13 @@ version.c : $(TOPDIR)/version.c.in
  		-e "s,@@COMMIT@@,$(COMMIT_ID)," \
  		< $< > $@
  
@@ -74,7 +78,31 @@ index 115e7f0..8964a97 100644
 +	$(CERTUTIL) -d certdb/ -A -i $(INTERNAL_CERT).crt -n shim -t u
  
  shim.o: $(SOURCES)
- ifneq ($(origin ENABLE_SHIM_CERT),undefined)
+-ifneq ($(origin ENABLE_SHIM_CERT),undefined)
+ shim.o: shim_cert.h
+-endif
+ shim.o: $(wildcard $(TOPDIR)/*.h)
+ 
+ cert.o : $(TOPDIR)/cert.S
+@@ -213,8 +216,8 @@ endif
+ 		$^ $@
+ 
+ ifneq ($(origin ENABLE_SBSIGN),undefined)
+-%.efi.signed: %.efi shim.key shim.crt
+-	$(SBSIGN) --key shim.key --cert shim.crt --output $@ $<
++%.efi.signed: %.efi $(INTERNAL_CERT).key $(INTERNAL_CERT).crt
++	$(SBSIGN) --key $(INTERNAL_CERT).key --cert $(INTERNAL_CERT).crt --output $@ $<
+ else
+ %.efi.signed: %.efi certdb/secmod.db
+ 	$(PESIGN) -n certdb -i $< -c "shim" -s -o $@ -f
+@@ -258,6 +261,6 @@ archive: tag
+ 	@rm -rf /tmp/shim-$(VERSION)
+ 	@echo "The archive is in shim-$(VERSION).tar.bz2"
+ 
+-.PHONY : install-deps shim.key
++.PHONY : install-deps $(INTERNAL_CERT).key
+ 
+ export ARCH CC LD OBJCOPY EFI_INCLUDE
 -- 
 1.8.3.1
 
