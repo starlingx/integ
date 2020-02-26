@@ -88,6 +88,13 @@
 %define with_storage_gluster 0%{!?_without_storage_gluster:1}
 %define with_numactl          0%{!?_without_numactl:1}
 
+# We need a recent enough libiscsi (>= 1.18.0)
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
+    %define with_storage_iscsi_direct 0%{!?_without_storage_iscsi_direct:1}
+%else
+    %define with_storage_iscsi_direct 0
+%endif
+
 # A few optional bits off by default, we enable later
 %define with_fuse          0%{!?_without_fuse:0}
 %define with_cgconfig      0%{!?_without_cgconfig:0}
@@ -389,6 +396,10 @@ BuildRequires: /usr/sbin/qcow-create
 BuildRequires: lvm2
 # For ISCSI driver
 BuildRequires: iscsi-initiator-utils
+%if %{with_storage_iscsi_direct}
+# For pool type=iscsi-direct
+BuildRequires: libiscsi-devel
+%endif
 # For disk driver
 BuildRequires: parted-devel
 # For Multipath support
@@ -690,6 +701,17 @@ Requires: iscsi-initiator-utils
 The storage driver backend adding implementation of the storage APIs for iscsi
 volumes using the host iscsi stack.
 
+%if %{with_storage_iscsi_direct}
+%package daemon-driver-storage-iscsi-direct
+Summary: Storage driver plugin for iscsi-direct
+Requires: libvirt-daemon-driver-storage-core = %{version}-%{release}
+Requires: libvirt-libs = %{version}-%{release}
+Requires: libiscsi
+
+%description daemon-driver-storage-iscsi-direct
+The storage driver backend adding implementation of the storage APIs for iscsi
+volumes using libiscsi direct connection.
+%endif
 
 %package daemon-driver-storage-mpath
 Summary: Storage driver plugin for multipath volumes
@@ -754,6 +776,9 @@ Requires: libvirt-daemon-driver-storage-logical = %{version}-%{release}
 Requires: libvirt-daemon-driver-storage-scsi = %{version}-%{release}
 Requires: libvirt-daemon-driver-storage-iscsi = %{version}-%{release}
 Requires: libvirt-daemon-driver-storage-mpath = %{version}-%{release}
+%if %{with_storage_iscsi_direct}
+Requires: libvirt-daemon-driver-storage-iscsi-direct = %{version}-%{release}
+%endif
 %if %{with_storage_gluster}
 Requires: libvirt-daemon-driver-storage-gluster = %{version}-%{release}
 %endif
@@ -1279,6 +1304,12 @@ rm -rf .git
     %define arg_pm_utils --without-pm-utils
 %endif
 
+%if %{with_storage_iscsi_direct}
+    %define arg_storage_iscsi_direct --with-storage-iscsi-direct
+%else
+    %define arg_storage_iscsi_direct --without-storage-iscsi-direct
+%endif
+
 %define when  %(date +"%%F-%%T")
 %define where %(hostname)
 %define who   %{?packager}%{!?packager:Unknown}
@@ -1345,6 +1376,7 @@ rm -f po/stamp-po
            --with-storage-fs \
            --with-storage-lvm \
            --with-storage-iscsi \
+           %{?arg_storage_iscsi_direct} \
            --with-storage-scsi \
            --with-storage-disk \
            --with-storage-mpath \
@@ -1940,6 +1972,11 @@ exit 0
 
 %files daemon-driver-storage-iscsi
 %{_libdir}/%{name}/storage-backend/libvirt_storage_backend_iscsi.so
+
+%if %{with_storage_iscsi_direct}
+%files daemon-driver-storage-iscsi-direct
+%{_libdir}/%{name}/storage-backend/libvirt_storage_backend_iscsi-direct.so
+%endif
 
 %files daemon-driver-storage-mpath
 %{_libdir}/%{name}/storage-backend/libvirt_storage_backend_mpath.so
