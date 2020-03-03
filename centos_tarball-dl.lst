@@ -57,6 +57,9 @@ puppet-network-7deacd5fdc22c0543455878a8d1872f2f5417c1d.tar.gz#packstack/puppet/
 puppet-nslcd-b8c19b1ada89865f2e50758e054583798ad8011a.tar.gz#packstack/puppet/modules/nslcd#https://github.com/jlyheden/puppet-nslcd/tarball/b8c19b1ada89865f2e50758e054583798ad8011a#http##
 puppi-c1c47f4edfd761d1bbde32a75da0c3fa7cc93a81.tar.gz#puppi-master#https://github.com/example42/puppi/tarball/c1c47f4edfd761d1bbde32a75da0c3fa7cc93a81#http##
 # python-cephclient-v0.1.0.5.tar.gz#python-cephclient-0.1.0.5#https://github.com/dmsimard/python-cephclient/archive/v0.1.0.5.tar.gz#http##
+mechanize-0.4.5.tar.gz#mechanize-0.4.5#https://github.com/python-mechanize/mechanize/archive/v0.4.5.tar.gz#http##
+html5lib-python-1.0.1.tar.gz#html5lib-1.0.1#https://github.com/html5lib/html5lib-python/archive/1.0.1.tar.gz#http##
+python-webencodings-0.5.1.tar.gz#webencodings-0.5.1#https://github.com/gsnedders/python-webencodings/archive/v0.5.1.tar.gz#http##
 python-setuptools-v38.5.1.tar.gz#setuptools-38.5.1#https://github.com/pypa/setuptools/archive/v38.5.1.tar.gz#http##
 !qat1.7.l.4.5.0-00034.tar.gz#quickassist#https://01.org/sites/default/files/downloads/qat1.7.l.4.5.0-00034.tar.gz#http_script##post-dl-script/qat1.7.sh
 rapidjson-f54b0e47a08782a6131cc3d60f94d038fa6e0a51.tar.gz#rapidjson#https://api.github.com/repos/ceph/rapidjson/tarball/f54b0e47a08782a6131cc3d60f94d038fa6e0a51#https##
