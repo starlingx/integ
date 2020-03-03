@@ -1,0 +1,2 @@
+COPY_LIST="$CGCS_BASE/downloads/trident-installer-20.01.0.tar.gz"
+TIS_PATCH_VER=1

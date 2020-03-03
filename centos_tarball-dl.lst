@@ -72,6 +72,7 @@ spdk-f474ce6930f0a44360e1cc4ecd606d2348481c4c.tar.gz#spdk#https://api.github.com
 spectre-meltdown-checker-0.37+-5cc77741.tar.gz#spectre-meltdown-checker#https://github.com/speed47/spectre-meltdown-checker/tarball/5cc77741af1d2f52140aa9f89339f56b6c4b6783#http##
 swtpm-0.1.0-253eac5.tar.gz#swtpm-0.1.0#https://github.com/stefanberger/swtpm/tarball/1303be7d03294fb02204cb8242f366cbf0da076d#http##
 !tpm-kmod-e6aef069.tar.gz#tpm#http://git.infradead.org/users/jjs/linux-tpmdd.git/snapshot/e6aef069b6e97790cb127d5eeb86ae9ff0b7b0e3.tar.gz#http_script#post-dl-script/tpm-kmod.sh
+trident-installer-20.01.0.tar.gz#trident-installer-20.01.0#https://github.com/NetApp/trident/releases/download/v20.01.0/trident-installer-20.01.0.tar.gz#https##
 !tss2-930.tar.gz#tss2-930#https://git.code.sf.net/p/ibmtpm20tss/tss#git#v930#
 xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz#xxHash#https://api.github.com/repos/ceph/xxHash/tarball/1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9#https##
 zstd-f4340f46b2387bc8de7d5320c0b83bb1499933ad.tar.gz#zstd#https://api.github.com/repos/facebook/zstd/tarball/f4340f46b2387bc8de7d5320c0b83bb1499933ad#https##

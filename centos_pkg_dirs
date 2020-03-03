@@ -51,6 +51,7 @@ config/puppet-modules/openstack/puppet-oslo-11.3.0
 base/systemd
 storage-drivers/python-3parclient
 storage-drivers/python-lefthandclient
+storage-drivers/trident-installer
 security/tboot
 networking/mellanox/libibverbs
 kernel/kernel-modules/mlnx-ofa_kernel
