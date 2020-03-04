@@ -37,7 +37,7 @@ Python library for parsing HTML
 %endif # with_python3
 
 %prep
-%setup
+%setup  -q -n html5lib-%{version}
 
 
 %build

@@ -23,7 +23,7 @@ Summary:        This is a Python implementation of the WHATWG Encoding standard.
 This is a Python implementation of the WHATWG Encoding standard.
 
 %prep
-%setup
+%setup -q -n webencodings-%{version}
 
 %build
 export PBR_VERSION=%{version}
