@@ -159,7 +159,8 @@ log_and_restart_blocked_osds ()
     local message=$2
     for name in $names; do
         wlog $name "INFO" "$message"
-        ${CEPH_SCRIPT} restart $name
+        # Restart the daemons but release ceph mon and osd file descriptors
+        ${CEPH_SCRIPT} restart $name {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-
     done
 }
 
