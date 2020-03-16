@@ -1,21 +1,19 @@
-From 5d869ea9407975726a95d046391cd640b726ca93 Mon Sep 17 00:00:00 2001
-Message-Id: <5d869ea9407975726a95d046391cd640b726ca93.1566591106.git.Jim.Somerville@windriver.com>
-From: Bin Yang <bin.yang@intel.com>
-Date: Mon, 29 Jul 2019 11:48:49 -0400
+From 212f8edf21d8053d99c37d2ebfe3d723fb166bf7 Mon Sep 17 00:00:00 2001
+Message-Id: <212f8edf21d8053d99c37d2ebfe3d723fb166bf7.1584131446.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 13 Mar 2020 16:15:29 -0400
 Subject: [PATCH 1/2] Kernel source patches for TiC
 
-Signed-off-by: Bin Yang <bin.yang@intel.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
-Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
- SPECS/kernel-rt.spec | 71 ++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 71 insertions(+)
+ SPECS/kernel-rt.spec | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index adffde2..f7aad95 100644
+index c48b73e..5660f0b 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -388,6 +388,43 @@ Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
+@@ -388,6 +388,42 @@ Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
  
  # Empty final patch file to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
@@ -33,7 +31,6 @@ index adffde2..f7aad95 100644
 +Patch1011: PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
 +Patch1012: x86-enable-DMA-CMA-with-swiotlb.patch
 +Patch1013: Add-missing-ifdef-around-max-latency-variable.patch
-+Patch1014: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +Patch1015: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +Patch1016: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
 +Patch1018: Porting-Cacheinfo-from-Kernel-4.10.17.patch
@@ -59,7 +56,7 @@ index adffde2..f7aad95 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -727,6 +764,40 @@ cp %{SOURCE38} .
+@@ -727,6 +763,39 @@ cp %{SOURCE38} .
  
  ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
@@ -77,7 +74,6 @@ index adffde2..f7aad95 100644
 +ApplyPatch Notification-of-death-of-arbitrary-processes.patch
 +ApplyPatch x86-enable-DMA-CMA-with-swiotlb.patch
 +ApplyPatch Add-missing-ifdef-around-max-latency-variable.patch
-+ApplyPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +ApplyPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +ApplyPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
 +ApplyPatch Porting-Cacheinfo-from-Kernel-4.10.17.patch

@@ -1,7 +1,7 @@
-From f9a5a49c9daac827d94cd562c0c6f100388fd798 Mon Sep 17 00:00:00 2001
-Message-Id: <f9a5a49c9daac827d94cd562c0c6f100388fd798.1566587341.git.Jim.Somerville@windriver.com>
-In-Reply-To: <ac67546ccbecd3ee18145be31d87d7253048adda.1566587341.git.Jim.Somerville@windriver.com>
-References: <ac67546ccbecd3ee18145be31d87d7253048adda.1566587341.git.Jim.Somerville@windriver.com>
+From 6c41acf7c1a4f5f3437e474505193bb353d241e6 Mon Sep 17 00:00:00 2001
+Message-Id: <6c41acf7c1a4f5f3437e474505193bb353d241e6.1584125537.git.Jim.Somerville@windriver.com>
+In-Reply-To: <47c970e28e2adfd6483fa8d861eeb338492297bf.1584125537.git.Jim.Somerville@windriver.com>
+References: <47c970e28e2adfd6483fa8d861eeb338492297bf.1584125537.git.Jim.Somerville@windriver.com>
 From: "zhao.shuai" <zhaos@neusoft.com>
 Date: Tue, 6 Aug 2019 16:18:04 +0800
 Subject: [PATCH 2/2] Compile issues
@@ -13,10 +13,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 9 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index d5df4a4..1d765ed 100644
+index 012ddbd..6595a38 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -497,6 +497,12 @@ Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
+@@ -496,6 +496,12 @@ Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
  Patch40028: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
  Patch40029: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
  Patch40030: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
@@ -29,7 +29,7 @@ index d5df4a4..1d765ed 100644
  
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
-@@ -881,6 +887,9 @@ ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
+@@ -879,6 +885,9 @@ ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
  ApplyOptionalPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
  ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
  ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
