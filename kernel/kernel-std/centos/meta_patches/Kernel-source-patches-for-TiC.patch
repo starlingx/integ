@@ -1,5 +1,5 @@
-From ac67546ccbecd3ee18145be31d87d7253048adda Mon Sep 17 00:00:00 2001
-Message-Id: <ac67546ccbecd3ee18145be31d87d7253048adda.1566587341.git.Jim.Somerville@windriver.com>
+From 47c970e28e2adfd6483fa8d861eeb338492297bf Mon Sep 17 00:00:00 2001
+Message-Id: <47c970e28e2adfd6483fa8d861eeb338492297bf.1584125537.git.Jim.Somerville@windriver.com>
 From: "zhao.shuai" <zhaos@neusoft.com>
 Date: Mon, 5 Aug 2019 17:55:01 +0800
 Subject: [PATCH 1/2] Kernel-source-patches-for-TiC
@@ -8,14 +8,14 @@ Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
- SPECS/kernel.spec | 66 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
+ SPECS/kernel.spec | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index e42177e..d5df4a4 100644
+index 0b2ff2e..012ddbd 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -463,6 +463,41 @@ Patch1002: debrand-rh-i686-cpu.patch
+@@ -463,6 +463,40 @@ Patch1002: debrand-rh-i686-cpu.patch
  Source30000: kernel-3.10.0-x86_64.config.tis_extra
  Source30001: ima_signing_key.pub
  
@@ -31,7 +31,6 @@ index e42177e..d5df4a4 100644
 +Patch40009: memblock-introduce-memblock_alloc_range.patch
 +Patch40010: cma-add-placement-specifier-for-cma-kernel-parameter.patch
 +Patch40011: x86-enable-DMA-CMA-with-swiotlb.patch
-+Patch40012: Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +Patch40013: Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +Patch40014: x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
 +Patch40016: Porting-Cacheinfo-from-Kernel-4.10.17.patch
@@ -57,7 +56,7 @@ index e42177e..d5df4a4 100644
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -816,6 +851,37 @@ ApplyOptionalPatch debrand-single-cpu.patch
+@@ -816,6 +850,36 @@ ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
  ApplyOptionalPatch debrand-rh-i686-cpu.patch
  
@@ -73,7 +72,6 @@ index e42177e..d5df4a4 100644
 +ApplyOptionalPatch memblock-introduce-memblock_alloc_range.patch
 +ApplyOptionalPatch cma-add-placement-specifier-for-cma-kernel-parameter.patch
 +ApplyOptionalPatch x86-enable-DMA-CMA-with-swiotlb.patch
-+ApplyOptionalPatch Enable-building-mpt2sas-and-mpt3sas-as-builtin-for-C.patch
 +ApplyOptionalPatch Enable-building-kernel-with-CONFIG_BLK_DEV_NBD.patch
 +ApplyOptionalPatch x86-make-dma_alloc_coherent-return-zeroed-memory-if-.patch
 +ApplyOptionalPatch Porting-Cacheinfo-from-Kernel-4.10.17.patch
