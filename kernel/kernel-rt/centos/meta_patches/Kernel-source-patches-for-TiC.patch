@@ -1,19 +1,19 @@
-From 212f8edf21d8053d99c37d2ebfe3d723fb166bf7 Mon Sep 17 00:00:00 2001
-Message-Id: <212f8edf21d8053d99c37d2ebfe3d723fb166bf7.1584131446.git.Jim.Somerville@windriver.com>
+From 0a8e423b2d06a4604c51a1e5bfcc305203d49a62 Mon Sep 17 00:00:00 2001
+Message-Id: <0a8e423b2d06a4604c51a1e5bfcc305203d49a62.1584650624.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 13 Mar 2020 16:15:29 -0400
 Subject: [PATCH 1/2] Kernel source patches for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel-rt.spec | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 69 insertions(+)
+ SPECS/kernel-rt.spec | 72 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index c48b73e..5660f0b 100644
+index c48b73e..c549d7e 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -388,6 +388,42 @@ Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
+@@ -388,6 +388,44 @@ Source30002: kernel-3.10.0-x86_64-rt-trace.config.tis_extra
  
  # Empty final patch file to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
@@ -53,10 +53,12 @@ index c48b73e..5660f0b 100644
 +Patch1032: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
 +Patch1033: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
 +Patch1034: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
++# Workaround for broken bios causing IOMMU issues
++Patch1035: Allow-dmar-quirks-for-broken-bioses.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -727,6 +763,39 @@ cp %{SOURCE38} .
+@@ -727,6 +765,40 @@ cp %{SOURCE38} .
  
  ## Apply Patches here
  ApplyPatch linux-kernel-test.patch
@@ -93,6 +95,7 @@ index c48b73e..5660f0b 100644
 +ApplyPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
 +ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
 +ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
++ApplyPatch Allow-dmar-quirks-for-broken-bioses.patch
  
  # move off upstream version mechanism
  if [ -e localversion-rt ]; then

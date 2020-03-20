@@ -1,7 +1,7 @@
-From fd3288457759c51746ad1c6cf26c883be36da86e Mon Sep 17 00:00:00 2001
-Message-Id: <fd3288457759c51746ad1c6cf26c883be36da86e.1584131446.git.Jim.Somerville@windriver.com>
-In-Reply-To: <212f8edf21d8053d99c37d2ebfe3d723fb166bf7.1584131446.git.Jim.Somerville@windriver.com>
-References: <212f8edf21d8053d99c37d2ebfe3d723fb166bf7.1584131446.git.Jim.Somerville@windriver.com>
+From 611efdc47a31f229612fd324925c76f6fb204d9c Mon Sep 17 00:00:00 2001
+Message-Id: <611efdc47a31f229612fd324925c76f6fb204d9c.1584650624.git.Jim.Somerville@windriver.com>
+In-Reply-To: <0a8e423b2d06a4604c51a1e5bfcc305203d49a62.1584650624.git.Jim.Somerville@windriver.com>
+References: <0a8e423b2d06a4604c51a1e5bfcc305203d49a62.1584650624.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 13 Mar 2020 16:15:29 -0400
 Subject: [PATCH 2/2] Compile issues
@@ -12,25 +12,25 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 8 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index 5660f0b..c37c238 100644
+index c549d7e..f8fe5be 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -424,6 +424,11 @@ Patch1031: epoll-fix-use-after-free-in-eventpoll_release_file.patch
- Patch1032: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
- Patch1033: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
+@@ -426,6 +426,11 @@ Patch1033: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
  Patch1034: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
-+Patch1035: fix-compilation-issues.patch
+ # Workaround for broken bios causing IOMMU issues
+ Patch1035: Allow-dmar-quirks-for-broken-bioses.patch
++Patch1100: fix-compilation-issues.patch
 +# Fix CentOS 7.6 upgrade compile error
-+Patch1036: fix-CentOS-7.6-upgrade-compile-error.patch
++Patch1101: fix-CentOS-7.6-upgrade-compile-error.patch
 +# Compile fix for disabling CONFIG_MEMCG_KMEM
-+Patch1037: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++Patch1102: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
  
-@@ -796,6 +801,9 @@ ApplyPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
- ApplyPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
+@@ -799,6 +804,9 @@ ApplyPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
  ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
  ApplyPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
+ ApplyPatch Allow-dmar-quirks-for-broken-bioses.patch
 +ApplyPatch fix-compilation-issues.patch
 +ApplyPatch fix-CentOS-7.6-upgrade-compile-error.patch
 +ApplyPatch compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
