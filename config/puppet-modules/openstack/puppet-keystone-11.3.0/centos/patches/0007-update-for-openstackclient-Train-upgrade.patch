@@ -1,0 +1,86 @@
+From 77f06068cdad5a6a20635731a9d2df7e0cdca175 Mon Sep 17 00:00:00 2001
+From: chenyan <yan.chen@intel.com>
+Date: Fri, 27 Mar 2020 10:41:38 +0800
+Subject: [PATCH] update for openstackclient Train upgrade
+
+Signed-off-by: chenyan <yan.chen@intel.com>
+---
+ lib/puppet/provider/keystone.rb                     | 10 +++++++---
+ lib/puppet/provider/keystone_role/openstack.rb      |  4 ++--
+ lib/puppet/provider/keystone_user_role/openstack.rb |  4 ++--
+ 3 files changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/lib/puppet/provider/keystone.rb b/lib/puppet/provider/keystone.rb
+index 2c0b749..630692e 100644
+--- a/lib/puppet/provider/keystone.rb
++++ b/lib/puppet/provider/keystone.rb
+@@ -213,7 +213,10 @@ class Puppet::Provider::Keystone < Puppet::Provider::Openstack
+ 
+   def self.get_service_url
+     service_url = nil
+-    if ENV['OS_URL']
++    if ENV['OS_ENDPOINT']
++      service_url = ENV['OS_ENDPOINT'].dup
++    # Compatibility with pre-4.0.0 openstackclient
++    elsif ENV['OS_URL']
+       service_url = ENV['OS_URL'].dup
+     elsif admin_endpoint
+       service_url = admin_endpoint
+@@ -319,8 +322,9 @@ class Puppet::Provider::Keystone < Puppet::Provider::Openstack
+ 
+   def self.request_by_service_token(service, action, error, properties=nil, options={})
+     properties ||= []
+-    @credentials.token = admin_token
+-    @credentials.url   = service_url
++    @credentials.token    = admin_token
++    @credentials.endpoint = service_url
++    @credentials.url = service_url
+     raise error unless @credentials.service_token_set?
+     Puppet::Provider::Openstack.request(service, action, properties, @credentials, options)
+   end
+diff --git a/lib/puppet/provider/keystone_role/openstack.rb b/lib/puppet/provider/keystone_role/openstack.rb
+index 60e3496..b8f3fa0 100644
+--- a/lib/puppet/provider/keystone_role/openstack.rb
++++ b/lib/puppet/provider/keystone_role/openstack.rb
+@@ -51,7 +51,7 @@ Puppet::Type.type(:keystone_role).provide(
+     list = request('role', 'list')
+     reallist = list.collect do |role|
+       new(
+-        :name        => role[:name],
++        :name        => role[:name].downcase,
+         :ensure      => :present,
+         :id          => role[:id]
+       )
+@@ -63,7 +63,7 @@ Puppet::Type.type(:keystone_role).provide(
+   def self.prefetch(resources)
+     roles = instances
+     resources.keys.each do |name|
+-       if provider = roles.find{ |role| role.name == name }
++       if provider = roles.find{ |role| role.name == name.downcase }
+         resources[name].provider = provider
+       end
+     end
+diff --git a/lib/puppet/provider/keystone_user_role/openstack.rb b/lib/puppet/provider/keystone_user_role/openstack.rb
+index eee0768..b51c84e 100644
+--- a/lib/puppet/provider/keystone_user_role/openstack.rb
++++ b/lib/puppet/provider/keystone_user_role/openstack.rb
+@@ -45,14 +45,14 @@ Puppet::Type.type(:keystone_user_role).provide(
+   end
+ 
+   def exists?
+-    roles_db = self.class.request('role', 'list', properties)
++    roles_db = self.class.request('role assignment', 'list', ['--names'] + properties)
+     @property_hash[:name] = resource[:name]
+     if roles_db.empty?
+       @property_hash[:ensure] = :absent
+     else
+       @property_hash[:ensure] = :present
+       @property_hash[:roles]  = roles_db.collect do |role|
+-        role[:name]
++        role[:role]
+       end
+     end
+     return @property_hash[:ensure] == :present
+-- 
+2.17.1
+
