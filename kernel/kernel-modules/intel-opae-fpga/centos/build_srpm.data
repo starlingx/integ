@@ -1,3 +1,4 @@
 COPY_LIST=" \
-  $STX_BASE/downloads/opae-intel-fpga-driver-1.3.0-2.tar.gz"
+  $PATCHES_BASE/* \
+  $STX_BASE/downloads/opae-intel-fpga-driver-2.0.1.tar.gz"
 TIS_PATCH_VER=1

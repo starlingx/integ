@@ -8,7 +8,7 @@
 %define kmod_name i40e
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 2.10.19.30
+Version: 2.10.19.82
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2

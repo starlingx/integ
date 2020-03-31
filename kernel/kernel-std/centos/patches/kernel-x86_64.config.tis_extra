@@ -24,8 +24,9 @@ CONFIG_SCSI_PMCRAID=y
 CONFIG_SCSI_HPSA=y
 CONFIG_MEGARAID_SAS=y
 CONFIG_SCSI_SMARTPQI=y
-CONFIG_SCSI_MPT2SAS=y
-CONFIG_SCSI_MPT3SAS=y
+# These two will only build as modules
+CONFIG_SCSI_MPT2SAS=m
+CONFIG_SCSI_MPT3SAS=m
 CONFIG_SCSI_VIRTIO=y
 CONFIG_FUSION_SAS=y
 CONFIG_SCSI_AIC94XX=y
@@ -814,3 +815,7 @@ CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
 
 # Disable kernel memory accounting, which is broken
 CONFIG_MEMCG_KMEM=n
+
+# Needed for opae fpga kernel module
+# as it turns on hidden option REGMAP_MMIO
+CONFIG_MFD_SYSCON=y

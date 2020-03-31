@@ -1,24 +1,26 @@
-=======================
-stx-integ Documentation
-=======================
+===================================
+StarlingX Integration Project
+===================================
 
-This is the documentation for StarlingX integration and packaging.
+The starlingx/integ project provides integration and packaging for StarlingX.
 
-Release Notes
+-------------
+Release notes
 -------------
 
 .. toctree::
    :maxdepth: 1
 
-   Release Notes <https://docs.starlingx.io/releasenotes/stx-integ>
+   Release notes <https://docs.starlingx.io/releasenotes/integ>
 
+-----
 Links
 -----
 
-* Source: `stx-integ`_
-* Code Review: `Gerrit`_
-* Bugs: `Storyboard`_
+* Source: `starlingx/integ`_
+* Code review: `Gerrit`_
+* Project tracking: `Storyboard`_
 
-.. _stx-integ: https://opendev.org/starlingx/integ
+.. _starlingx/integ: https://opendev.org/starlingx/integ
 .. _Gerrit: https://review.opendev.org/#/q/project:starlingx/integ
 .. _Storyboard: https://storyboard.openstack.org/#!/project/starlingx/integ

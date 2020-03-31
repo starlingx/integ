@@ -51,6 +51,7 @@ config/puppet-modules/puppet-puppi
 base/systemd
 #storage-drivers/python-3parclient
 #storage-drivers/python-lefthandclient
+storage-drivers/trident-installer
 security/tboot
 #networking/mellanox/libibverbs
 #kernel/kernel-modules/mlnx-ofa_kernel
@@ -90,3 +91,6 @@ grub/grub2
 bmc/Redfishtool
 #virt/kvm-timer-advance
 requests-toolbelt
+python/python-mechanize
+python/python-html5lib
+python/python-webencodings

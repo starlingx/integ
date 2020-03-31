@@ -1,0 +1,3 @@
+COPY_LIST="$CGCS_BASE/downloads/mechanize-0.4.5.tar.gz"
+
+TIS_PATCH_VER=0

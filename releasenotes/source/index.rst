@@ -1,6 +1,6 @@
-=======================
-stx-integ Release Notes
-=======================
+===================================
+StarlingX Integration Release Notes
+===================================
 
 .. toctree::
    :maxdepth: 2

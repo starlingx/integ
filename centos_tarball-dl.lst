@@ -25,7 +25,7 @@ googletest-fdb850479284e2aae047b87df6beae84236d0135.tar.gz#googletest#https://ap
 # gorilla-context-08b5f424b9271eedf6f9f0ce86cb9396ed337a42.tar.gz#gorilla-context#https://github.com/gorilla/context/archive/08b5f424b9271eedf6f9f0ce86cb9396ed337a42.tar.gz#http##
 # gorilla-mux-456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#gorilla-mux#https://github.com/gorilla/mux/archive/456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#http##
 helm-v2.13.1-linux-amd64.tar.gz#linux-amd64#https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz#http##
-i40e-2.10.19.30.tar.gz#i40e-2.10.19.30#https://sourceforge.net/projects/e1000/files/i40e%20stable/2.10.19.30/i40e-2.10.19.30.tar.gz/download#http##
+i40e-2.10.19.82.tar.gz#i40e-2.10.19.82#https://sourceforge.net/projects/e1000/files/i40e%20stable/2.10.19.82/i40e-2.10.19.82.tar.gz/download#http##
 iavf-3.7.61.20.tar.gz#iavf-3.7.61.20#https://sourceforge.net/projects/e1000/files/iavf%20stable/3.7.61.20/iavf-3.7.61.20.tar.gz/download#http##
 !integrity-kmod-e6aef069.tar.gz#integrity#http://git.infradead.org/users/jjs/linux-tpmdd.git/snapshot/e6aef069b6e97790cb127d5eeb86ae9ff0b7b0e3.tar.gz#http_script##post-dl-script/integrity-kmod.sh
 isa-l-7e1a337433a340bc0974ed0f04301bdaca374af6.tar.gz#isa-l#https://api.github.com/repos/ceph/isa-l/tarball/7e1a337433a340bc0974ed0f04301bdaca374af6#https##
@@ -43,7 +43,7 @@ lldpd-0.9.0.tar.gz#lldpd-0.9.0#https://media.luffy.cx/files/lldpd/lldpd-0.9.0.ta
 lua-1fce39c6397056db645718b8f5821571d97869a4.tar.gz#lua#https://api.github.com/repos/ceph/lua/tarball/1fce39c6397056db645718b8f5821571d97869a4#https##
 !mariadb-10.1.28.tar.gz#mariadb-10.1.28#https://github.com/MariaDB/server/archive/mariadb-10.1.28.tar.gz#http_script##post-dl-script/mariadb.sh
 !MLNX_OFED_SRC-4.5-1.0.1.0.tgz#MLNX_OFED_SRC-4.5-1.0.1.0#http://content.mellanox.com/ofed/MLNX_OFED-4.5-1.0.1.0/MLNX_OFED_SRC-4.5-1.0.1.0.tgz#http_script##post-dl-script/MLNX_OFEDqat1.7.sh
-opae-intel-fpga-driver-1.3.0-2.tar.gz#opae-intel-fpga-driver-1.3.0-2#https://github.com/OPAE/opae-sdk/releases/download/1.3.0-2/opae-intel-fpga-driver-1.3.0-2.tar.gz#http##
+opae-intel-fpga-driver-2.0.1.tar.gz#opae-intel-fpga-driver-2.0.1#https://github.com/OPAE/opae-sdk/releases/download/1.3.6-4/opae-intel-fpga-driver-2.0.1.tar.gz#http##
 openvswitch-2.11.0.tar.gz#openvswitch-2.11.0#https://github.com/openvswitch/ovs/archive/v2.11.0.tar.gz#http##
 puppet-boolean-22b726dd78b0a60a224cc7054aebbf28e9306f62.tar.gz#puppet-boolean#https://github.com/voxpupuli/puppet-boolean/tarball/22b726dd78b0a60a224cc7054aebbf28e9306f62#http##
 puppet-dnsmasq-cff07e90890662972c97684a2baee964f68ff3ed.tar.gz#packstack/puppet/modules/dnsmasq/#https://github.com/procore/puppet-dnsmasq/tarball/cff07e90890662972c97684a2baee964f68ff3ed#http##
@@ -57,6 +57,9 @@ puppet-network-7deacd5fdc22c0543455878a8d1872f2f5417c1d.tar.gz#packstack/puppet/
 puppet-nslcd-b8c19b1ada89865f2e50758e054583798ad8011a.tar.gz#packstack/puppet/modules/nslcd#https://github.com/jlyheden/puppet-nslcd/tarball/b8c19b1ada89865f2e50758e054583798ad8011a#http##
 puppi-c1c47f4edfd761d1bbde32a75da0c3fa7cc93a81.tar.gz#puppi-master#https://github.com/example42/puppi/tarball/c1c47f4edfd761d1bbde32a75da0c3fa7cc93a81#http##
 # python-cephclient-v0.1.0.5.tar.gz#python-cephclient-0.1.0.5#https://github.com/dmsimard/python-cephclient/archive/v0.1.0.5.tar.gz#http##
+mechanize-0.4.5.tar.gz#mechanize-0.4.5#https://github.com/python-mechanize/mechanize/archive/v0.4.5.tar.gz#http##
+html5lib-python-1.0.1.tar.gz#html5lib-1.0.1#https://github.com/html5lib/html5lib-python/archive/1.0.1.tar.gz#http##
+python-webencodings-0.5.1.tar.gz#webencodings-0.5.1#https://github.com/gsnedders/python-webencodings/archive/v0.5.1.tar.gz#http##
 python-setuptools-v38.5.1.tar.gz#setuptools-38.5.1#https://github.com/pypa/setuptools/archive/v38.5.1.tar.gz#http##
 !qat1.7.l.4.5.0-00034.tar.gz#quickassist#https://01.org/sites/default/files/downloads/qat1.7.l.4.5.0-00034.tar.gz#http_script##post-dl-script/qat1.7.sh
 rapidjson-f54b0e47a08782a6131cc3d60f94d038fa6e0a51.tar.gz#rapidjson#https://api.github.com/repos/ceph/rapidjson/tarball/f54b0e47a08782a6131cc3d60f94d038fa6e0a51#https##
@@ -69,6 +72,7 @@ spdk-f474ce6930f0a44360e1cc4ecd606d2348481c4c.tar.gz#spdk#https://api.github.com
 spectre-meltdown-checker-0.37+-5cc77741.tar.gz#spectre-meltdown-checker#https://github.com/speed47/spectre-meltdown-checker/tarball/5cc77741af1d2f52140aa9f89339f56b6c4b6783#http##
 swtpm-0.1.0-253eac5.tar.gz#swtpm-0.1.0#https://github.com/stefanberger/swtpm/tarball/1303be7d03294fb02204cb8242f366cbf0da076d#http##
 !tpm-kmod-e6aef069.tar.gz#tpm#http://git.infradead.org/users/jjs/linux-tpmdd.git/snapshot/e6aef069b6e97790cb127d5eeb86ae9ff0b7b0e3.tar.gz#http_script#post-dl-script/tpm-kmod.sh
+trident-installer-20.01.0.tar.gz#trident-installer-20.01.0#https://github.com/NetApp/trident/releases/download/v20.01.0/trident-installer-20.01.0.tar.gz#https##
 !tss2-930.tar.gz#tss2-930#https://git.code.sf.net/p/ibmtpm20tss/tss#git#v930#
 xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz#xxHash#https://api.github.com/repos/ceph/xxHash/tarball/1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9#https##
 zstd-f4340f46b2387bc8de7d5320c0b83bb1499933ad.tar.gz#zstd#https://api.github.com/repos/facebook/zstd/tarball/f4340f46b2387bc8de7d5320c0b83bb1499933ad#https##
