@@ -58,6 +58,8 @@ kubernetes/kubernetes
 kubernetes/docker-distribution
 kubernetes/etcd
 kubernetes/helm
+kubernetes/chartmuseum
+kubernetes/armada
 grub/grubby
 base/dpkg
 base/cluster-resource-agents

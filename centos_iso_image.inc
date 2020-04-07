@@ -63,6 +63,9 @@ docker-distribution
 # helm
 helm
 
+# armada
+armada
+
 # rpm
 rpm-plugin-systemd-inhibit
 

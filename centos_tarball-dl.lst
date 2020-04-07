@@ -25,7 +25,6 @@ googletest-fdb850479284e2aae047b87df6beae84236d0135.tar.gz#googletest#https://ap
 # gophercloud-gophercloud-aa00757ee3ab58e53520b6cb910ca0543116400a.tar.gz#gophercloud-gophercloud#github.com/gophercloud/gophercloud/archive/aa00757ee3ab58e53520b6cb910ca0543116400a.tar.gz#http##
 # gorilla-context-08b5f424b9271eedf6f9f0ce86cb9396ed337a42.tar.gz#gorilla-context#https://github.com/gorilla/context/archive/08b5f424b9271eedf6f9f0ce86cb9396ed337a42.tar.gz#http##
 # gorilla-mux-456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#gorilla-mux#https://github.com/gorilla/mux/archive/456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#http##
-helm-v2.13.1-linux-amd64.tar.gz#linux-amd64#https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz#http##
 helm-v3.2.1-linux-amd64.tar.gz#linux-amd64#https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz#http##
 isa-l-7e1a337433a340bc0974ed0f04301bdaca374af6.tar.gz#isa-l#https://api.github.com/repos/ceph/isa-l/tarball/7e1a337433a340bc0974ed0f04301bdaca374af6#https##
 isa-l_crypto-603529a4e06ac8a1662c13d6b31f122e21830352.tar.gz#isa-l_crypto#https://api.github.com/repos/01org/isa-l_crypto/tarball/603529a4e06ac8a1662c13d6b31f122e21830352#https##

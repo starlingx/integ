@@ -14,8 +14,9 @@
 # We want to run as the "www" user and scripts can't be setuid.  The
 # sudoers permissions are set up to allow sysadmin to run this script
 # as the "www" user without a password.
-if [ $USER != "www" ]; then
-    exec sudo -u www $0 $@
+WWW_ID=$(id -u www)
+if [ ${UID} -ne ${WWW_ID} ]; then
+    exec sudo -u www -g www "$0" "$@"
 fi
 
 

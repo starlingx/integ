@@ -1,0 +1,92 @@
+From 6e464edeadab3b2631775326fb12e6d6e6eb1e2a Mon Sep 17 00:00:00 2001
+From: Jim Gauld <james.gauld@windriver.com>
+Date: Mon, 1 Jun 2020 11:36:46 -0400
+Subject: [PATCH] Add Helm v2 client initialization using tiller postStart exec
+
+This adds helm v2 client initialization using the tiller
+container postStart exec to access helm v2 binary.
+
+This will perform 'helm init', removes the default repos
+'stable' and 'local', and add valid repos that were provided
+as overrides. Note that helm will only add repos that exist.
+
+This expects overrides in this format:
+conf:
+  tiller:
+    charts_url: 'http://192.168.204.1:8080/helm_charts'
+    repo_names:
+      - 'starlingx'
+      - 'stx-platform'
+    repos:
+      stable: https://kubernetes-charts.storage.googleapis.com
+
+This gives the following result:
+helmv2-cli -- helm repo list
+NAME        	URL
+stable      	https://kubernetes-charts.storage.googleapis.com
+starlingx   	http://192.168.204.1:8080/helm_charts/starlingx
+stx-platform	http://192.168.204.1:8080/helm_charts/stx-platform
+
+Signed-off-by: Jim Gauld <james.gauld@windriver.com>
+---
+ charts/armada/templates/deployment-api.yaml | 28 ++++++++++++++++++++++++++++
+ charts/armada/values.yaml                   |  4 ++++
+ 2 files changed, 32 insertions(+)
+
+diff --git a/charts/armada/templates/deployment-api.yaml b/charts/armada/templates/deployment-api.yaml
+index a48c8b6..ccbdb4d 100644
+--- a/charts/armada/templates/deployment-api.yaml
++++ b/charts/armada/templates/deployment-api.yaml
+@@ -179,6 +179,34 @@ spec:
+             - -trace
+ {{- end }}
+           lifecycle:
++            postStart:
++              exec:
++                command:
++                  - sh
++                  - "-c"
++                  - |
++                    /bin/sh <<'EOF'
++                    # Delay initialization since postStart handler runs asynchronously and there
++                    # is no guarantee it is called before the Container’s entrypoint.
++                    sleep 5
++                    # Initialize Helm v2 client.
++                    export HELM_HOST=:{{ .Values.conf.tiller.port }}
++                    /helm init --client-only --skip-refresh
++                    /helm repo rm stable
++                    /helm repo rm local
++{{- if .Values.conf.tiller.repos }}
++                    {{- range $name, $repo := .Values.conf.tiller.repos }}
++                    /helm repo add {{ $name }} {{ $repo }}
++                    {{- end }}
++{{- end }}
++{{- if .Values.conf.tiller.repo_names }}
++                    {{- range .Values.conf.tiller.repo_names }}
++                    /helm repo add {{ . }} {{ $envAll.Values.conf.tiller.charts_url }}/{{ . }}
++                    {{- end }}
++{{- end }}
++                    ln -s -f /helm /tmp/helm
++                    exit 0
++                    EOF
+             preStop:
+               exec:
+                 command:
+diff --git a/charts/armada/values.yaml b/charts/armada/values.yaml
+index 4c1e603..fb3e5c2 100644
+--- a/charts/armada/values.yaml
++++ b/charts/armada/values.yaml
+@@ -217,6 +217,10 @@ conf:
+     # Note: Defaulting to the (default) kubernetes grace period, as anything
+     # greater than that will have no effect.
+     prestop_sleep: 30
++    # Helm v2 initialization
++    charts_url: null
++    repo_names: []
++    repos: {}
+ 
+ monitoring:
+   prometheus:
+-- 
+1.8.3.1
+
