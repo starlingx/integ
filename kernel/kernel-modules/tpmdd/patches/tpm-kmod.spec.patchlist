@@ -1,7 +1,0 @@
-0001-disable-arm64-acpi-command.patch
-0002-tpmdd-kcompat-support.patch
-UPSTREAM-0001-tpm-replace-msleep-with-usleep_range.patch
-UPSTREAM-0002-tpm-reduce-tpm-polling-delay-in-tpm_tis_core.patch
-UPSTREAM-0003-tpm-use-tpm_msleep-value-as-max-delay.patch
-UPSTREAM-0004-tpm-wait-for-stat-to-specify-variable-polling-time.patch
-UPSTREAM-0005-tpm-ignore-burstcount-to-improve-send-performance.patch

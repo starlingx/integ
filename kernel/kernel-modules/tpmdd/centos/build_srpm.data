@@ -1,5 +1,0 @@
-COPY_LIST=" \
-  $PKG_BASE/files/* \
-  $PKG_BASE/patches/* \
-  $STX_BASE/downloads/tpm-kmod-e6aef069.tar.gz"
-TIS_PATCH_VER=6
