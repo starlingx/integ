@@ -87,7 +87,7 @@ class Config(object):
         self.service_pid_file = os.path.join(
             '/var/run/ceph', '{}.pid'.format(self.service_name))
 
-        self.restful_plugin_port = 5001
+        self.restful_plugin_port = 7999
 
         # maximum size of a message received/sent via
         # service monitor control socket
