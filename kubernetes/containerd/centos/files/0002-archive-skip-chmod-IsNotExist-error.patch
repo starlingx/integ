@@ -1,0 +1,33 @@
+From e2269f2ae0a8bb996b13d98ed6ffbdad7cdafd0f Mon Sep 17 00:00:00 2001
+From: Mikko Ylinen <mikko.ylinen@intel.com>
+Date: Mon, 23 Mar 2020 20:52:14 +0200
+Subject: [PATCH] archive: skip chmod IsNotExist error
+
+handleLChmod() does not properly check that files behind the handlinks exist
+before calling os.Chmod(). We've seen base images where this results in
+"no such file or directory" error from os.Chmod() when unpacking the image.
+
+To keep the existing logic but fix the problem, this commit simply skips
+IsNotExist error.
+
+Signed-off-by: Mikko Ylinen <mikko.ylinen@intel.com>
+---
+ containerd/archive/tar_unix.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/containerd/archive/tar_unix.go b/containerd/archive/tar_unix.go
+index d081351..2134083 100644
+--- a/containerd/archive/tar_unix.go
++++ b/containerd/archive/tar_unix.go
+@@ -125,7 +125,7 @@ func handleTarTypeBlockCharFifo(hdr *tar.Header, path string) error {
+ func handleLChmod(hdr *tar.Header, path string, hdrInfo os.FileInfo) error {
+ 	if hdr.Typeflag == tar.TypeLink {
+ 		if fi, err := os.Lstat(hdr.Linkname); err == nil && (fi.Mode()&os.ModeSymlink == 0) {
+-			if err := os.Chmod(path, hdrInfo.Mode()); err != nil {
++			if err := os.Chmod(path, hdrInfo.Mode()); err != nil && !os.IsNotExist(err) {
+ 				return err
+ 			}
+ 		}
+-- 
+1.8.3.1
+

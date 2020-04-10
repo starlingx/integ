@@ -14,6 +14,7 @@ Source2: crictl-v1.16.0-linux-amd64.tar.gz
 Source3: crictl.yaml
 Source4: containerd.service
 Patch5: 0001-customize-containerd-for-StarlingX.patch
+Patch6: 0002-archive-skip-chmod-IsNotExist-error.patch
 URL: https://www.starlingx.io
 Vendor: StarlingX
 Packager: StarlingX
@@ -54,6 +55,7 @@ low-level storage and network attachments, etc.
 %setup -q -c -n src -a 1
 %setup -q -c -T -D -n src -a 2
 %patch5 -p1
+%patch6 -p1
 
 %build
 # build containerd
