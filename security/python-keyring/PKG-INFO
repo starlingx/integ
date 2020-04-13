@@ -1,6 +1,6 @@
-Metadata-Version: 1.1
+Metadata-Version: 2.1
 Name: python-keyring
-Version: 19.3.0
+Version: 21.0.0
 Summary: Python 3 library to store and access passwords safely
 Home-page: https://github.com/jaraco/keyring
 Author:

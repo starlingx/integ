@@ -9,15 +9,15 @@ Subject: [PATCH] first meta patch to move python-keyring package from download
  1 file changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/SPECS/python-keyring.spec b/SPECS/python-keyring.spec
-index 46ed459..e7dd917 100644
+index 8e51184..09cda6c 100644
 --- a/SPECS/python-keyring.spec
 +++ b/SPECS/python-keyring.spec
 @@ -9,7 +9,7 @@
  
  Name:           python-keyring
- Version:        19.3.0
+ Version:        21.0.0
 -Release:        1%{?dist}
-+Release:        1%{?_tis_dist}.%{tis_patch_ver}
++Release:        1.el8%{?_tis_dist}.%{tis_patch_ver}
  Summary:        Store and access your passwords safely
  License:        MIT and Python
  URL:            https://github.com/jaraco/keyring
@@ -35,9 +35,9 @@ index 46ed459..e7dd917 100644
  BuildRequires:  python%{python3_pkgversion}-setuptools
 -BuildRequires:  python%{python3_pkgversion}-setuptools_scm
  %if 0%{?with_tests}
+ %if 0%{?fedora} < 32
  BuildRequires:  python%{python3_pkgversion}-importlib-metadata
- BuildRequires:  python%{python3_pkgversion}-pytest
-@@ -85,6 +83,9 @@ Requires:       python%{python3_pkgversion}-importlib-metadata
+@@ -89,6 +87,9 @@ Requires:       python%{python3_pkgversion}-importlib-metadata
  
  %{?python_provide:%python_provide python%{python3_pkgversion}-keyring}
  
