@@ -53,7 +53,7 @@ swtpm-tools
 #python-3parclient
 
 # python-lefthandclient
-#python-lefthandclient
+python3-lefthandclient
 
 
 
