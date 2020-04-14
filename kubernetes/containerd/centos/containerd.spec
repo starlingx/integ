@@ -3,14 +3,14 @@
 # Copyright (C) 2019 Intel Corporation
 #
 Name: containerd
-Version: 1.3.0
+Version: 1.3.3
 Release: %{tis_patch_ver}%{?_tis_dist}
 Summary: Open and reliable container runtime
 Group: Kubernetes
 License: ASL 2.0
 Source0: containerd-v%{version}.tar.gz
-Source1: runc-1.0.0-rc8.tar.gz
-Source2: crictl-v1.16.0-linux-amd64.tar.gz
+Source1: runc-1.0.0-rc10.tar.gz
+Source2: crictl-v1.18.0-linux-amd64.tar.gz
 Source3: crictl.yaml
 Source4: containerd.service
 Patch5: 0001-customize-containerd-for-StarlingX.patch
@@ -22,7 +22,7 @@ Packager: StarlingX
 BuildRequires: pkgconfig(systemd)
 BuildRequires: pkgconfig(libseccomp)
 BuildRequires: pkgconfig(libsystemd-journal)
-BuildRequires: golang >= 1.10.0
+BuildRequires: golang >= 1.12.16
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
