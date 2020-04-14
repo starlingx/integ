@@ -1,0 +1,44 @@
+From ee648637dde0394a9e487a47a2c6f33f2e238046 Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Mon, 6 Apr 2020 20:59:53 -0400
+Subject: [PATCH] Fix pagesize check to allow for options already ending in 'i'
+
+Commit https://github.com/kubernetes/kubernetes/commit/03ecc20 adds a
+pagesize mount option quantity check that appends an 'i' to the pagesize
+value.
+
+Based on the current StarlingX configuration the hugepages are mounted
+with the following option that already contains an 'i' as a suffix:
+pagesize=1Gi.
+
+This temporary patch updates the logic to avoid appending an additional
+'i' at the end of the size string. This extra 'i' is not handled by
+ParseQuantity() and results is a pod stuck Terminating as the mount
+is not removed from the container.
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ pkg/volume/emptydir/empty_dir_linux.go | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/pkg/volume/emptydir/empty_dir_linux.go b/pkg/volume/emptydir/empty_dir_linux.go
+index 63a25dc4ed0..7343c5e510a 100644
+--- a/pkg/volume/emptydir/empty_dir_linux.go
++++ b/pkg/volume/emptydir/empty_dir_linux.go
+@@ -69,7 +69,12 @@ func getPageSize(path string, mounter mount.Interface) (*resource.Quantity, erro
+ 			// NOTE: Adding suffix 'i' as result should be comparable with a medium size.
+ 			// pagesize mount option is specified without a suffix,
+ 			// e.g. pagesize=2M or pagesize=1024M for x86 CPUs
+-			pageSize, err := resource.ParseQuantity(strings.TrimPrefix(opt, prefix) + "i")
++                        opt_val := strings.TrimPrefix(opt, prefix)
++                        val := opt_val
++                        if !strings.HasSuffix(opt_val, "i") {
++                                val = opt_val + "i"
++                        }
++			pageSize, err := resource.ParseQuantity(val)
+ 			if err != nil {
+ 				return nil, fmt.Errorf("error getting page size from '%s' mount option: %v", opt, err)
+ 			}
+-- 
+2.16.6
+

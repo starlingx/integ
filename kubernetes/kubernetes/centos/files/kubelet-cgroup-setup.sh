@@ -26,21 +26,38 @@ function ERROR {
     logger -s -p daemon.error "$0($$): ERROR: $@"
 }
 
-# Create minimal cgroup directories and configure cpuset attributes
-# pids should be first in the list, since it appears to get auto deleted
+# Create minimal cgroup directories and configure cpuset attributes if required
 function create_cgroup {
     local cg_name=$1
     local cg_nodeset=$2
     local cg_cpuset=$3
 
     local CGROUP=/sys/fs/cgroup
-    local CONTROLLERS=("pids" "cpuset" "memory" "cpu,cpuacct" "systemd")
+    local CONTROLLERS_AUTO_DELETED=("pids" "hugetlb")
+    local CONTROLLERS_PRESERVED=("cpuset" "memory" "cpu,cpuacct" "systemd")
     local cnt=''
     local CGDIR=''
     local RC=0
 
-    # Create the cgroup for required controllers
-    for cnt in ${CONTROLLERS[@]}; do
+    # Ensure that these cgroups are created every time as they are auto deleted
+    for cnt in ${CONTROLLERS_AUTO_DELETED[@]}; do
+        CGDIR=${CGROUP}/${cnt}/${cg_name}
+        if [ -d ${CGDIR} ]; then
+            LOG "Nothing to do, already configured: ${CGDIR}."
+            continue
+        fi
+        LOG "Creating: ${CGDIR}"
+        mkdir -p ${CGDIR}
+        RC=$?
+        if [ ${RC} -ne 0 ]; then
+            ERROR "Creating: ${CGDIR}, rc=${RC}"
+            exit ${RC}
+        fi
+    done
+
+    # These cgroups are preserved so if any of these are encountered additional
+    # cgroup setup is not required
+    for cnt in ${CONTROLLERS_PRESERVED[@]}; do
         CGDIR=${CGROUP}/${cnt}/${cg_name}
         if [ -d ${CGDIR} ]; then
             LOG "Nothing to do, already configured: ${CGDIR}."

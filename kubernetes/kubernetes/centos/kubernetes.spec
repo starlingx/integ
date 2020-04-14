@@ -23,16 +23,16 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.16.2
+%global commit                  1.18.1
 
 %global con_provider            github
 %global con_provider_tld        com
 %global con_project             kubernetes
 %global con_repo                kubernetes-contrib
 # https://github.com/kubernetes/contrib
-%global con_commit              1.16.2
+%global con_commit              1.18.1
 
-%global kube_version            1.16.2
+%global kube_version            1.18.1
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -54,6 +54,8 @@ Source4:        kubeadm.conf
 Source5:        kubelet-cgroup-setup.sh
 
 Source33:       genmanpages.sh
+
+Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -350,7 +352,6 @@ Provides: golang(%{import_path}/pkg/genericapiserver/options) = %{version}-%{rel
 Provides: golang(%{import_path}/pkg/genericapiserver/validation) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/healthz) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/httplog) = %{version}-%{release}
-Provides: golang(%{import_path}/pkg/hyperkube) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/kubectl) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/kubectl/cmd) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/kubectl/cmd/config) = %{version}-%{release}
@@ -835,6 +836,7 @@ Kubernetes client tools like kubectl
 %prep
 %setup -q -n %{con_repo}-%{con_commit} -T -b 1
 %setup -q -n %{repo}-%{commit}
+%patch1 -p1
 
 # copy contrib folder
 mkdir contrib
@@ -869,7 +871,7 @@ export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
 %ifarch ppc64le
 export GOLDFLAGS='-linkmode=external'
 %endif
-make WHAT="cmd/hyperkube cmd/kube-apiserver cmd/kubeadm"
+make WHAT="cmd/kube-proxy cmd/kube-apiserver cmd/kube-controller-manager cmd/kubelet cmd/kubeadm cmd/kube-scheduler cmd/kubectl"
 
 # convert md to man
 ./hack/generate-docs.sh || true
@@ -896,9 +898,6 @@ output_path="${KUBE_OUTPUT_BINPATH}/$(kube::golang::host_platform)"
 
 install -m 755 -d %{buildroot}%{_bindir}
 
-echo "+++ INSTALLING hyperkube"
-install -p -m 755 -t %{buildroot}%{_bindir} ${output_path}/hyperkube
-
 echo "+++ INSTALLING kube-apiserver"
 install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
 
@@ -910,11 +909,23 @@ install -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system/kubelet.service
 echo "+++ INSTALLING kubelet-cgroup-setup.sh"
 install -p -m 0700 -t %{buildroot}/%{_bindir} %{SOURCE5}
 
-binaries=(kube-controller-manager kube-scheduler kube-proxy kubelet kubectl)
-for bin in "${binaries[@]}"; do
-  echo "+++ HARDLINKING ${bin} to hyperkube"
-  ln %{buildroot}%{_bindir}/hyperkube %{buildroot}%{_bindir}/${bin}
-done
+echo "+++ INSTALLING kube-apiserver"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
+
+echo "+++ INSTALLING kube-controller-manager"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-controller-manager
+
+echo "+++ INSTALLING kube-scheduler"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-scheduler
+
+echo "+++ INSTALLING kube-proxy"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-proxy
+
+echo "+++ INSTALLING kubelet"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kubelet
+
+echo "+++ INSTALLING kubectl"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kubectl
 
 # install the bash completion
 install -d -m 0755 %{buildroot}%{_datadir}/bash-completion/completions/
@@ -1064,7 +1075,6 @@ fi
 %{_mandir}/man1/kubectl.1*
 %{_mandir}/man1/kubectl-*
 %{_bindir}/kubectl
-%{_bindir}/hyperkube
 %{_datadir}/bash-completion/completions/kubectl
 
 ##############################################
