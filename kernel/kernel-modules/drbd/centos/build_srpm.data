@@ -1,4 +1,0 @@
-COPY_LIST="$FILES_BASE/* \
-           $DISTRO/patches/* \
-           $CGCS_BASE/downloads/drbd-8.4.11-1.tar.gz"
-TIS_PATCH_VER=0

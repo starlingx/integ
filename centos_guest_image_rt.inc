@@ -2,32 +2,9 @@
 # If these have dependencies, they will be pulled in automatically
 #
 
-
-#
-# Network Drivers
-#
-
-# iavf-kmod
-kmod-iavf-rt
-
-# i40e-kmod
-kmod-i40e-rt
-
-# ixgbevf-kmod
-kmod-ixgbevf-rt
-
-# ixgbe-kmod
-kmod-ixgbe-rt
-
-# qat17
-qat17-rt
-
 #
 # TPM2 libs to enable vTPM on Guest
 #
-
-# tpm-kmod
-kmod-tpm-rt
 
 # tss2
 tss2

@@ -7,12 +7,10 @@ grub2-2.02-0.76.el7.centos.src.rpm
 grubby-8.28-25.el7.src.rpm
 haproxy-1.5.18-8.el7.src.rpm
 initscripts-9.49.46-1.el7.src.rpm
-kernel-3.10.0-1062.1.2.el7.src.rpm
 libevent-2.0.21-4.el7.src.rpm
 # libibverbs-41mlnx1-OFED.4.5.0.1.0.45101.src.rpm
 lighttpd-1.4.54-1.el7.src.rpm
 logrotate-3.8.6-17.el7.src.rpm
-# mlnx-ofa_kernel-4.5-OFED.4.5.1.0.1.1.gb4fdfac.src.rpm
 net-snmp-5.7.2-37.el7.src.rpm
 net-tools-2.0-0.24.20131004git.el7.src.rpm
 ntp-4.2.6p5-29.el7.centos.src.rpm
