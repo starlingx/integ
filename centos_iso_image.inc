@@ -163,6 +163,8 @@ k8s-pod-recovery
 # resource-agents
 resource-agents
 
+# isolcpus device plugin for K8s
+isolcpus-device-plugin
 
 # haproxy
 haproxy

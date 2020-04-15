@@ -60,6 +60,7 @@ kubernetes/chartmuseum
 kubernetes/armada-helm-toolkit
 kubernetes/armada
 kubernetes/k8s-pod-recovery
+kubernetes/plugins/isolcpus-device-plugin
 grub/grubby
 base/dpkg
 base/cluster-resource-agents
