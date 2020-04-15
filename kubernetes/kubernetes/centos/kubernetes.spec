@@ -762,7 +762,7 @@ building other packages which use %{project}/%{repo}.
 Summary: %{summary} - for running unit tests
 
 # below Rs used for testing
-Requires: golang >= 1.12.10
+Requires: golang >= 1.13.4
 Requires: etcd >= 2.0.9
 Requires: hostname
 Requires: rsync
@@ -775,7 +775,7 @@ Requires: NetworkManager
 %package master
 Summary: Kubernetes services for master host
 
-BuildRequires: golang >= 1.12.10
+BuildRequires: golang >= 1.13.4
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -799,7 +799,7 @@ Requires: docker-ce
 %endif
 Requires: conntrack-tools
 
-BuildRequires: golang >=  1.12.10
+BuildRequires: golang >=  1.13.4
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -825,7 +825,7 @@ Kubernetes tool for standing up clusters
 %package client
 Summary: Kubernetes client tools
 
-BuildRequires: golang >= 1.12.10
+BuildRequires: golang >= 1.13.4
 BuildRequires: go-bindata
 
 %description client
