@@ -1,7 +1,7 @@
-From 0b4a6feba98f0e0bfc3db007463cd43a43797d45 Mon Sep 17 00:00:00 2001
+From 0c0ad51a359b9751910a3229f988ddf37bc489b0 Mon Sep 17 00:00:00 2001
 From: Dahir Osman <dahir.osman@windriver.com>
 Date: Tue, 14 Jun 2016 14:55:39 -0400
-Subject: [PATCH] Add build dependency
+Subject: [PATCH 1/3] Add build dependency
 
 To fix package complaining that libnl is not available
 ---
@@ -9,7 +9,7 @@ To fix package complaining that libnl is not available
  1 file changed, 1 insertion(+)
 
 diff --git a/SPECS/libibverbs.spec b/SPECS/libibverbs.spec
-index 4fc96d1..864c31c 100644
+index 9b4e0cd..519e421 100644
 --- a/SPECS/libibverbs.spec
 +++ b/SPECS/libibverbs.spec
 @@ -22,6 +22,7 @@ Source: http://openfabrics.org/downloads/verbs/libibverbs-%{version}.tar.gz
@@ -21,5 +21,5 @@ index 4fc96d1..864c31c 100644
  BuildRequires: valgrind-devel
  %endif
 -- 
-1.8.3.1
+2.7.4
 
