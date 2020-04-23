@@ -935,6 +935,15 @@ install -d -m 0755 %{buildroot}%{_datadir}/bash-completion/completions/
 install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}
 install -m 644 -t %{buildroot}%{_sysconfdir}/%{name} contrib/init/systemd/environ/*
 
+# install specific cluster addons for optional use
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons
+# Addon: volumesnapshots
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/crd
+install -m 0644 -t %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/crd cluster/addons/volumesnapshots/crd/*
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller
+install -m 0644 -t %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller cluster/addons/volumesnapshots/volume-snapshot-controller/*
+
 # install service files
 install -d -m 0755 %{buildroot}%{_unitdir}
 install -m 0644 -t %{buildroot}%{_unitdir} contrib/init/systemd/*.service
@@ -967,9 +976,10 @@ for file in $(find . -iname "*.go" \! -iname "*_test.go") ; do
     echo "%%dir %%{gopath}/src/%%{import_path}/$(dirname $file)" >> devel.file-list
     install -d -p %{buildroot}/%{gopath}/src/%{import_path}/$(dirname $file)
     cp -pav $file %{buildroot}/%{gopath}/src/%{import_path}/$file
-    echo "%%{gopath}/src/%%{import_path}/$file" >> devel.file-list
+    echo "%%{gopath}/src/%%{import_path}/$file" >> devel.filelist
 done
 %endif
+
 
 %if 0%{?with_devel}
 sort -u -o devel.file-list devel.file-list
@@ -1034,6 +1044,16 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/scheduler
 %config(noreplace) %{_sysconfdir}/%{name}/config
 %config(noreplace) %{_sysconfdir}/%{name}/controller-manager
+%dir %{_sysconfdir}/%{name}/addons
+%dir %{_sysconfdir}/%{name}/addons/volumesnapshots
+%dir %{_sysconfdir}/%{name}/addons/volumesnapshots/crd
+%{_sysconfdir}/%{name}/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+%{_sysconfdir}/%{name}/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+%{_sysconfdir}/%{name}/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+%dir %{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller
+%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller/volume-snapshot-controller-deployment.yaml
+%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller/rbac-volume-snapshot-controller.yaml
+%dir %{_sysconfdir}/%{name}/
 %{_tmpfilesdir}/kubernetes.conf
 %verify(not size mtime md5) %attr(755, kube,kube) %dir /run/%{name}
 
