@@ -1,5 +1,7 @@
-BUILDER=docker
+BUILDER=script
 LABEL=k8s-plugins-sriov-network-device
-DOCKER_REPO=https://github.com/intel/sriov-network-device-plugin.git
-DOCKER_REF=000db15405f3ce3b7c2f9feb180c3051aa3f7aea
-
+SOURCE_REPO=https://github.com/intel/sriov-network-device-plugin.git
+SOURCE_REF=4e0302aeb4812844524005686b74175d8b0fc515
+COMMAND=bash
+SCRIPT=build-sriov-network-device-plugin-image.sh
+ARGS="sriov-device-plugin"
