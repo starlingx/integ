@@ -58,6 +58,9 @@ Source33:       genmanpages.sh
 Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
 Patch2: kubelet-service-remove-docker-dependency.patch
 Patch3: fix_http2_erringroundtripper_handling.patch
+Patch4: kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
+Patch5: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
+Patch6: kubelet-cpumanager-infrastructure-pods-use-system-re.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -840,6 +843,9 @@ Kubernetes client tools like kubectl
 %setup -q -n %{repo}-%{commit}
 %patch1 -p1
 %patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
 
 # copy contrib folder
 mkdir contrib
