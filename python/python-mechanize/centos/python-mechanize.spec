@@ -3,14 +3,14 @@
 
 %global with_check 0
 %global build_wheel 0
-
+%define with_python3 1
 # define some macros for RHEL 6
 %global __python2 %__python
 %global python2_sitelib %python_sitelib
 
 Name:           mechanize
 Version:        0.4.5
-Release:        1.el7%{?_tis_dist}.%{tis_patch_ver}
+Release:        1.el8%{?_tis_dist}.%{tis_patch_ver}
 Summary:        Automate interaction with HTTP web servers
 
 Group:          Applications/System
@@ -19,17 +19,23 @@ URL:            https://github.com/python-mechanize/mechanize
 Source0:        mechanize-0.4.5.tar.gz
 
 BuildArch:      noarch
+%if 0%{?with_python3}
+Requires:       python3-html5lib
+%else
 Requires:       python-html5lib
+%endif
 
 
 %description
 Stateful programmatic web browsing in Python.
 
+%if 0%{?with_python2}
 %package -n python2-mechanize
 Summary:        Automate interaction with HTTP web servers
 %{?python_provide:%python_provide python2-mechanize}
 %description -n python2-mechanize
 Stateful programmatic web browsing in Python.
+%endif # with_python2
 
 %if 0%{?with_python3}
 %package -n python3-mechanize
@@ -47,7 +53,9 @@ Stateful programmatic web browsing in Python.
 
 %build
 export PBR_VERSION=%{version}
+%if 0%{?with_python2}
 %{__python} setup.py build
+%endif # with_python2
 
 %if 0%{?with_python3}
 %{__python3} setup.py build
@@ -74,6 +82,7 @@ sed -i '/^mechanize\/tests\//d' %{buildroot}%{python3_record}
 find %{buildroot}%{python3_sitelib} -name '*.exe' | xargs rm -f
 %endif # with_python3
 
+%if 0%{?with_python2}
 %if 0%{?build_wheel}
 pip2 install -I dist/%{python2_wheelname} --root %{buildroot} --strip-file-prefix %{buildroot}
 %else
@@ -88,22 +97,27 @@ sed -i '/^mechanize\/tests\//d' %{buildroot}%{python2_record}
 %endif
 
 find %{buildroot}%{python2_sitelib} -name '*.exe' | xargs rm -f
+%endif # with_python2
 
 # Don't ship these
 rm -r docs/{Makefile,conf.py}
 
 %if 0%{?with_check}
 %check
+%if 0%{?with_python2}
 LANG=en_US.utf8 PYTHONPATH=$(pwd) py.test
+%endif # with_python2
 
 %if 0%{?with_python3}
 LANG=en_US.utf8 PYTHONPATH=$(pwd) py.test-%{python3_version}
 %endif # with_python3
 %endif # with_check
 
+%if 0%{?with_python2}
 %files -n python2-mechanize
 %doc docs/*
 %{python2_sitelib}/*
+%endif # with_python2
 
 %if 0%{?with_python3}
 %files -n python3-mechanize
