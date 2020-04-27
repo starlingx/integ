@@ -1,0 +1,42 @@
+From 79a3abb5f66b598847c3fb33c89082a542da1ec0 Mon Sep 17 00:00:00 2001
+From: Long Li <lilong-neu@neusoft.com>
+Date: Thu, 12 Dec 2019 10:54:08 +0800
+Subject: [PATCH] 0010-drbd-include-sysmacros.patch
+
+Fix build error, prompt for undefined reference to
+`major' and `minor' in file `drbdadm_adjust.c'
+so include the header file to fix build error
+
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
+---
+ user/drbdadm_adjust.c        | 1 +
+ user/legacy/drbdadm_adjust.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/user/drbdadm_adjust.c b/user/drbdadm_adjust.c
+index efa09a7..0b40763 100644
+--- a/user/drbdadm_adjust.c
++++ b/user/drbdadm_adjust.c
+@@ -44,6 +44,7 @@
+ #include "drbdtool_common.h"
+ #include "drbdadm_parser.h"
+ #include "config_flags.h"
++#include <sys/sysmacros.h>
+ 
+ /* drbdsetup show might complain that the device minor does
+    not exist at all. Redirect stderr to /dev/null therefore.
+diff --git a/user/legacy/drbdadm_adjust.c b/user/legacy/drbdadm_adjust.c
+index 0de5b62..09cb00a 100644
+--- a/user/legacy/drbdadm_adjust.c
++++ b/user/legacy/drbdadm_adjust.c
+@@ -40,6 +40,7 @@
+ #include "drbdadm.h"
+ #include "drbdtool_common.h"
+ #include "drbdadm_parser.h"
++#include <sys/sysmacros.h>
+ 
+ /* drbdsetup show might complain that the device minor does
+    not exist at all. Redirect stderr to /dev/null therefore.
+-- 
+2.7.4
+
