@@ -5,7 +5,7 @@ ceph-object-corpus-e32bf8ca3dc6151ebe7f205ba187815bc18e1cef.tar.gz#ceph-object-c
 civetweb-ff2881e2cd5869a71ca91083bad5d12cccd22136.tar.gz#civetweb#https://api.github.com/repos/ceph/civetweb/tarball/ff2881e2cd5869a71ca91083bad5d12cccd22136#https##
 containerd-v1.3.3.tar.gz#containerd#https://github.com/containerd/containerd/archive/v1.3.3.tar.gz#https##
 crictl-v1.18.0-linux-amd64.tar.gz#crictl#https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.18.0/crictl-v1.18.0-linux-amd64.tar.gz#https##
-# docker-distribution-48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89.tar.gz#docker-distribution#github.com/docker/distribution/archive/48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89.tar.gz#http##
+docker-distribution-v2.7.1.tar.gz#docker-distribution-2.7.1#https://github.com/docker/distribution/archive/v2.7.1.tar.gz#http##
 # docker-libtrust-fa567046d9b14f6aa788882a950d69651d230b21.tar.gz#docker-libtrust#https://github.com/docker/libtrust/archive/fa567046d9b14f6aa788882a950d69651d230b21.tar.gz#http##
 dpdk-18.11.tar.xz#dpdk-18.11#http://fast.dpdk.org/rel/dpdk-18.11.tar.xz#http##
 dpdk-6ece49ad5a26f5e2f5c4af6c06c30376c0ddc387.tar.gz#dpdk#https://api.github.com/repos/spdk/dpdk/tarball/6ece49ad5a26f5e2f5c4af6c06c30376c0ddc387#https##
