@@ -200,8 +200,8 @@ def print_disk_view(rows=None, extended=False):
 
         pt = PrettyTable(disk_lables_extended) if extended else  \
             PrettyTable(disk_lables_brief)
-        pt.align = 'l'
-        pt.align['Size'] = 'r'
+        pt.align = 'l'          # pylint: disable=unsupported-assignment-operation
+        pt.align['Size'] = 'r'  # pylint: disable=unsupported-assignment-operation
         for r in rows:
             if len(r) == len(pt.field_names):
                 pt.add_row(r)
@@ -227,9 +227,9 @@ def print_vg_view(rows=None, extended=False):
 
         pt = PrettyTable(vg_labels_extended) if extended else  \
             PrettyTable(vg_labels_brief)
-        pt.align = 'l'
+        pt.align = 'l'  # pylint: disable=unsupported-assignment-operation
         for C in ['VG Size', 'Current LVs', 'Current PVs']:
-            pt.align[C] = 'r'
+            pt.align[C] = 'r'  # pylint: disable=unsupported-assignment-operation
 
         for r in rows:
             if len(r) == len(pt.field_names):
