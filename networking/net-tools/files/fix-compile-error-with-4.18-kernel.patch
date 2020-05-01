@@ -1,0 +1,29 @@
+From 54dbb5d37a5e370b7ce1c49b5ae79571713ba053 Mon Sep 17 00:00:00 2001
+From: Sun Austin <austin.sun@intel.com>
+Date: Fri, 14 Feb 2020 13:49:01 +0000
+Subject: [PATCH] fix compile error with 4.18 kernel
+
+remove "netinet/ip.h" to avoid redefinition of 'struct iphdr'.
+It is defined in 4.18 kernel header file "linux/ip.h" already.
+
+Signed-off-by: Sun Austin <austin.sun@intel.com>
+Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
+---
+ iptunnel.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/iptunnel.c b/iptunnel.c
+index 5ed587c..901e557 100644
+--- a/iptunnel.c
++++ b/iptunnel.c
+@@ -26,7 +26,6 @@
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+ #include <netinet/in.h>
+-#include <netinet/ip.h>
+ #include <arpa/inet.h>
+ #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1))
+ #include <net/if.h>
+-- 
+2.7.4
+

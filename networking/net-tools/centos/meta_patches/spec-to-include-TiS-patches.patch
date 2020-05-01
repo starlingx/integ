@@ -1,37 +1,49 @@
-From 24d92c7a7730e71bac4182df53d5fd6f4d7d6957 Mon Sep 17 00:00:00 2001
+From 98d37e1ee488883576260d9098d233902ef26ffb Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
-Date: Mon, 2 Oct 2017 16:42:22 -0400
-Subject: [PATCH 1/2] WRS: spec-to-include-TiS-patches.patch
+Date: Sun, 16 Feb 2020 04:59:41 +0000
+Subject: [PATCH] WRS: spec-to-include-TiS-patches.patch
 
+Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 ---
- SPECS/net-tools.spec | 7 +++++++
- 1 file changed, 7 insertions(+)
+ SPECS/net-tools.spec | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/net-tools.spec b/SPECS/net-tools.spec
-index 2ee770e..2f09372 100644
+index d8497ee..25285cc 100644
 --- a/SPECS/net-tools.spec
 +++ b/SPECS/net-tools.spec
-@@ -68,6 +68,10 @@ Patch24: net-tools-netstat-sctp-man.patch
+@@ -3,7 +3,7 @@
+ Summary: Basic networking tools
+ Name: net-tools
+ Version: 2.0
+-Release: 0.24.%{checkout}%{?dist}
++Release: 0.24.20131004git.el7%{?_tis_dist}.%{tis_patch_ver}
+ License: GPLv2+
+ Group: System Environment/Base
+ URL: http://sourceforge.net/projects/net-tools/
+@@ -68,6 +68,11 @@ Patch24: net-tools-netstat-sctp-man.patch
  # output of interface names was restricted to 8-10 characters max
  Patch25: net-tools-interface-name-len.patch
  
-+# WindRiver patches
++# STX patches
 +Patch100: net-tools-hostname-ipv6-shortname.patch
 +Patch101: net-tools-ifconfig-no-ifstate-on-flush.patch
++Patch102: fix-compile-error-with-4.18-kernel.patch
 +
  BuildRequires: gettext, libselinux
  BuildRequires: libselinux-devel
  BuildRequires: systemd-units
-@@ -107,6 +111,9 @@ cp %SOURCE8 ./man/en_US
+@@ -107,6 +112,10 @@ cp %SOURCE8 ./man/en_US
  %patch24 -p1 -b .sctp-man
  %patch25 -p1 -b .interface-name-len
  
 +%patch100 -p1 -b .hostname-ipv6
 +%patch101 -p1 -b .ifconfig-no-ifstate-on-flush
++%patch102 -p1 -b .fix-compile-error
 +
  touch ./config.h
  
  %build
 -- 
-1.9.1
+2.7.4
 
