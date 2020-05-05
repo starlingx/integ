@@ -52,8 +52,6 @@ storage-drivers/python-3parclient
 storage-drivers/python-lefthandclient
 storage-drivers/trident-installer
 security/tboot
-networking/mellanox/libibverbs
-networking/mellanox/rdma-core
 docker/python-docker
 kubernetes/containerd
 kubernetes/kubernetes

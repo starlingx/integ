@@ -199,9 +199,6 @@ python-keyring
 grub2-tools
 grub2-efi-x64-modules
 
-# mellanox drivers
-rdma-core
-
 # python2-ruamel-yaml
 python2-ruamel-yaml
 
