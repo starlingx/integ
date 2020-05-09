@@ -8,13 +8,13 @@ Subject: [PATCH] Update package versioning for TIS format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/anaconda.spec b/SPECS/anaconda.spec
-index ef88921..b345630 100644
+index 69a55d2..2848ba3 100644
 --- a/SPECS/anaconda.spec
 +++ b/SPECS/anaconda.spec
 @@ -7,7 +7,7 @@
  Summary: Graphical system installer
  Name:    anaconda
- Version: 29.19.0.40
+ Version: 29.19.1.13
 -Release: 1%{?dist}
 +Release: 1.el8%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2+ and MIT

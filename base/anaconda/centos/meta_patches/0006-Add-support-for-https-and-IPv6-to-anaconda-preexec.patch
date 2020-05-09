@@ -7,18 +7,17 @@ Include the source patch that adds support for https and IPv6.
 
 Signed-off-by: Don Penney <don.penney@windriver.com>
 ---
- SPECS/anaconda.spec | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ SPECS/anaconda.spec | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/anaconda.spec b/SPECS/anaconda.spec
 index c482f38..8fea2fa 100644
 --- a/SPECS/anaconda.spec
 +++ b/SPECS/anaconda.spec
-@@ -24,11 +24,12 @@ Patch8: 9800-rpmostreepayload-Rework-remote-add-handling.patch
- Patch9: yumpayload-dont-verify-disabled-repos.patch
- Patch10: anaconda-centos-armhfp-extloader.patch
+@@ -16,10 +16,12 @@ Patch100: centos-l10n.patch
+ Patch101: 0001-branding-syspurpose-doesn-t-make-sense-for-CentOS.patch
+ Patch102: 0002-add-centos-background-color.patch
  
--# WRS
 +# StarlingX
  Patch10001: 0001-TIS-Progress-and-error-handling.patch
  Patch10002: 0002-revert-7.4-grub2-efi-handling.patch
@@ -26,22 +25,8 @@ index c482f38..8fea2fa 100644
  Patch10004: 0004-Cache-server-ip-in-etc-hosts.patch
 +Patch10005: 0005-Add-support-for-IPv6-and-https-to-anaconda-preexec.patch
  
- # Versions of required components (done so we make sure the buildrequires
- # match the requires versions of things).
-@@ -256,11 +257,12 @@ runtime on NFS/HTTP/FTP servers or local disks.
- %patch10 -p1
- %endif
- 
--# WRS
-+# StarlingX
- %patch10001 -p1
- %patch10002 -p1
- %patch10003 -p1
- %patch10004 -p1
-+%patch10005 -p1
- 
- %build
- %configure --disable-static \
+ # To generate Source0 do:
+ # git clone https://github.com/rhinstaller/anaconda
 -- 
-1.8.3.1
+2.7.4
 
