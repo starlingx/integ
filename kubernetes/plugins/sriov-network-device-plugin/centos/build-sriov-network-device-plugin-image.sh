@@ -14,12 +14,6 @@ if [ -z "${IMAGE_TAG}" ]; then
     exit 1
 fi
 
-make build
-if [ $? -ne 0 ]; then
-    echo "Failed to build ${PROJECT}. Aborting..." >&2
-    exit 1
-fi
-
 make image
 if [ $? -ne 0 ]; then
     echo "Failed to make ${PROJECT} image. Aborting..." >&2
