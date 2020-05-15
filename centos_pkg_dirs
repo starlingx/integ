@@ -80,3 +80,4 @@ requests-toolbelt
 python/python-mechanize
 python/python-html5lib
 python/python-webencodings
+python/python-daemon
