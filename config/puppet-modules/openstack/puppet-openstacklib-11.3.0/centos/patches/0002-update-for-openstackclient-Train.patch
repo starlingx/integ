@@ -1,0 +1,35 @@
+From f3769af45374b58ec9698a73676cbe088c112ac1 Mon Sep 17 00:00:00 2001
+From: chenyan <yan.chen@intel.com>
+Date: Fri, 27 Mar 2020 10:48:23 +0800
+Subject: [PATCH] update for openstackclient Train
+
+Signed-off-by: chenyan <yan.chen@intel.com>
+---
+ lib/puppet/provider/openstack/credentials.rb | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/puppet/provider/openstack/credentials.rb b/lib/puppet/provider/openstack/credentials.rb
+index 9c831e3..f43da5b 100644
+--- a/lib/puppet/provider/openstack/credentials.rb
++++ b/lib/puppet/provider/openstack/credentials.rb
+@@ -5,7 +5,7 @@ class Puppet::Provider::Openstack::Credentials
+ 
+   KEYS = [
+     :auth_url, :password, :project_name, :username,
+-    :token, :url,
++    :token, :endpoint, :url,
+     :identity_api_version,
+     :region_name,
+     :interface
+@@ -28,7 +28,7 @@ class Puppet::Provider::Openstack::Credentials
+   end
+ 
+   def service_token_set?
+-    return true if @token && @url
++    return true if (@token && @endpoint) || (@token && @url)
+   end
+ 
+   def to_env
+-- 
+2.17.1
+

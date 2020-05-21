@@ -26,7 +26,6 @@ security/tpm2-tools
 security/libtpms
 security/swtpm
 security/spectre-meltdown-checker
-kernel/kernel-std
 config/puppet-4.8.2
 config/puppet-modules/puppet-boolean-1.0.2
 config/puppet-modules/puppet-create_resources
@@ -53,9 +52,6 @@ base/systemd
 #storage-drivers/python-lefthandclient
 storage-drivers/trident-installer
 security/tboot
-#networking/mellanox/libibverbs
-#kernel/kernel-modules/mlnx-ofa_kernel
-#networking/mellanox/rdma-core
 #docker/python-docker
 #kubernetes/containerd
 kubernetes/kubernetes
@@ -63,16 +59,6 @@ kubernetes/kubernetes
 kubernetes/etcd
 kubernetes/helm
 grub/grubby
-kernel/kernel-modules/intel-e1000e
-kernel/kernel-modules/intel-iavf
-kernel/kernel-modules/intel-i40e
-kernel/kernel-modules/intel-ixgbevf
-kernel/kernel-modules/intel-ixgbe
-kernel/kernel-modules/qat17
-#kernel/kernel-modules/tpmdd
-#kernel/kernel-modules/integrity
-kernel/kernel-modules/drbd
-#kernel/kernel-modules/intel-opae-fpga
 base/dpkg
 base/cluster-resource-agents
 base/libfdt

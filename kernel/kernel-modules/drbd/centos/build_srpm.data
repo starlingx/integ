@@ -1,3 +1,0 @@
-COPY_LIST="$FILES_BASE/* \
-           $CGCS_BASE/downloads/drbd-9.0.21-1.tar.gz"
-TIS_PATCH_VER=0

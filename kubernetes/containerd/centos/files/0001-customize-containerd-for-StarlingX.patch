@@ -1,4 +1,4 @@
-From fb2f78f1a3f1ec51a12f1404c21651dc0144663e Mon Sep 17 00:00:00 2001
+From 311301438b0366004e238cbcc2ca07d38d8a9369 Mon Sep 17 00:00:00 2001
 From: Shuicheng Lin <shuicheng.lin@intel.com>
 Date: Wed, 25 Sep 2019 20:02:34 +0800
 Subject: [PATCH] customize containerd for StarlingX
@@ -16,7 +16,7 @@ Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
  2 files changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/containerd/Makefile b/containerd/Makefile
-index 6758161..49dd612 100644
+index 37012e8..7ab6a22 100644
 --- a/containerd/Makefile
 +++ b/containerd/Makefile
 @@ -20,7 +20,7 @@ ROOTDIR=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -24,11 +24,11 @@ index 6758161..49dd612 100644
  
  # Used to populate variables in version package.
 -VERSION=$(shell git describe --match 'v[0-9]*' --dirty='.m' --always)
-+VERSION="v1.3.0"
++VERSION=v1.3.3
  REVISION=$(shell git rev-parse HEAD)$(shell if ! git diff --no-ext-diff --quiet --exit-code; then echo .m; fi)
  PACKAGE=github.com/containerd/containerd
  
-@@ -90,6 +90,7 @@ endif
+@@ -95,6 +95,7 @@ endif
  # Build tags seccomp and apparmor are needed by CRI plugin.
  GO_BUILDTAGS ?= seccomp apparmor
  GO_BUILDTAGS += ${DEBUG_TAGS}
@@ -37,7 +37,7 @@ index 6758161..49dd612 100644
  GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) $(EXTRA_LDFLAGS)'
  SHIM_GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) -extldflags "-static" $(EXTRA_LDFLAGS)'
 diff --git a/containerd/remotes/docker/authorizer.go b/containerd/remotes/docker/authorizer.go
-index 9652d3a..38ab5fb 100644
+index 9652d3a..72a6f3a 100644
 --- a/containerd/remotes/docker/authorizer.go
 +++ b/containerd/remotes/docker/authorizer.go
 @@ -366,7 +366,8 @@ func (ah *authHandler) fetchTokenWithOAuth(ctx context.Context, to tokenOptions)
@@ -51,5 +51,5 @@ index 9652d3a..38ab5fb 100644
  	} else if resp.StatusCode < 200 || resp.StatusCode >= 400 {
  		b, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 64000)) // 64KB
 -- 
-2.7.4
+2.16.6
 

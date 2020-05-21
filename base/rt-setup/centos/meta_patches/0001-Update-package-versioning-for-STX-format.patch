@@ -1,0 +1,37 @@
+From acc7db42e01d83082072bdf3de8b7426897f7045 Mon Sep 17 00:00:00 2001
+From: Yong Fu <fuyong@neusot.com>
+Date: Wed, 8 Apr 2020 11:03:15 +0800
+Subject: [PATCH] Update package versioning for STX format
+
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
+---
+ SPECS/rt-setup.spec | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/SPECS/rt-setup.spec b/SPECS/rt-setup.spec
+index 05e2707..e350ce1 100644
+--- a/SPECS/rt-setup.spec
++++ b/SPECS/rt-setup.spec
+@@ -1,8 +1,8 @@
+ Name: rt-setup
+ Version: 2.1
+-Release: 2%{?dist}
++Release: 2.el8%{?_tis_dist}.%{tis_patch_ver}
+ License: GPL+
+-Summary: Setup RHEL-RT environment details
++Summary: Setup CentOS-RT environment details
+ Group: System Environment/Base
+ Source: rt-setup-%{version}.tar.bz2
+ 
+@@ -22,7 +22,7 @@ Requires: systemd
+ %global debug_package %{nil}
+ 
+ %description
+-The 'rt-setup' package configures details required by RHEL-RT environment.
++The 'rt-setup' package configures details required by CentOS-RT environment.
+   - creates realtime group
+   - adds realtime limits configuration for PAM
+   - adds /usr/bin/rt-setup-kdump to config kdump in RT
+-- 
+2.7.4
+

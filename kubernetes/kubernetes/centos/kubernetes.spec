@@ -23,16 +23,16 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.16.2
+%global commit                  1.18.1
 
 %global con_provider            github
 %global con_provider_tld        com
 %global con_project             kubernetes
 %global con_repo                kubernetes-contrib
 # https://github.com/kubernetes/contrib
-%global con_commit              1.16.2
+%global con_commit              1.18.1
 
-%global kube_version            1.16.2
+%global kube_version            1.18.1
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -54,6 +54,8 @@ Source4:        kubeadm.conf
 Source5:        kubelet-cgroup-setup.sh
 
 Source33:       genmanpages.sh
+
+Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -353,7 +355,6 @@ Provides: golang(%{import_path}/pkg/genericapiserver/options) = %{version}-%{rel
 Provides: golang(%{import_path}/pkg/genericapiserver/validation) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/healthz) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/httplog) = %{version}-%{release}
-Provides: golang(%{import_path}/pkg/hyperkube) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/kubectl) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/kubectl/cmd) = %{version}-%{release}
 Provides: golang(%{import_path}/pkg/kubectl/cmd/config) = %{version}-%{release}
@@ -764,7 +765,7 @@ building other packages which use %{project}/%{repo}.
 Summary: %{summary} - for running unit tests
 
 # below Rs used for testing
-Requires: golang >= 1.12.10
+Requires: golang >= 1.13.4
 Requires: etcd >= 2.0.9
 Requires: hostname
 Requires: rsync
@@ -777,7 +778,7 @@ Requires: NetworkManager
 %package master
 Summary: Kubernetes services for master host
 
-BuildRequires: golang >= 1.12.10
+BuildRequires: golang >= 1.13.4
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -801,7 +802,7 @@ Requires: docker-ce
 %endif
 Requires: conntrack-tools
 
-BuildRequires: golang >=  1.12.10
+BuildRequires: golang >=  1.13.4
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -827,7 +828,7 @@ Kubernetes tool for standing up clusters
 %package client
 Summary: Kubernetes client tools
 
-BuildRequires: golang >= 1.12.10
+BuildRequires: golang >= 1.13.4
 BuildRequires: go-bindata
 
 %description client
@@ -838,6 +839,7 @@ Kubernetes client tools like kubectl
 %prep
 %setup -q -n %{con_repo}-%{con_commit} -T -b 1
 %setup -q -n %{repo}-%{commit}
+%patch1 -p1
 
 # copy contrib folder
 mkdir contrib
@@ -873,7 +875,7 @@ export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
 %ifarch ppc64le
 export GOLDFLAGS='-linkmode=external'
 %endif
-make WHAT="cmd/hyperkube cmd/kube-apiserver cmd/kubeadm"
+make WHAT="cmd/kube-proxy cmd/kube-apiserver cmd/kube-controller-manager cmd/kubelet cmd/kubeadm cmd/kube-scheduler cmd/kubectl"
 
 # convert md to man
 ./hack/generate-docs.sh || true
@@ -900,9 +902,6 @@ output_path="${KUBE_OUTPUT_BINPATH}/$(kube::golang::host_platform)"
 
 install -m 755 -d %{buildroot}%{_bindir}
 
-echo "+++ INSTALLING hyperkube"
-install -p -m 755 -t %{buildroot}%{_bindir} ${output_path}/hyperkube
-
 echo "+++ INSTALLING kube-apiserver"
 install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
 
@@ -914,11 +913,23 @@ install -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system/kubelet.service
 echo "+++ INSTALLING kubelet-cgroup-setup.sh"
 install -p -m 0700 -t %{buildroot}/%{_bindir} %{SOURCE5}
 
-binaries=(kube-controller-manager kube-scheduler kube-proxy kubelet kubectl)
-for bin in "${binaries[@]}"; do
-  echo "+++ HARDLINKING ${bin} to hyperkube"
-  ln %{buildroot}%{_bindir}/hyperkube %{buildroot}%{_bindir}/${bin}
-done
+echo "+++ INSTALLING kube-apiserver"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
+
+echo "+++ INSTALLING kube-controller-manager"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-controller-manager
+
+echo "+++ INSTALLING kube-scheduler"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-scheduler
+
+echo "+++ INSTALLING kube-proxy"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-proxy
+
+echo "+++ INSTALLING kubelet"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kubelet
+
+echo "+++ INSTALLING kubectl"
+install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kubectl
 
 # install the bash completion
 install -d -m 0755 %{buildroot}%{_datadir}/bash-completion/completions/
@@ -927,6 +938,15 @@ install -d -m 0755 %{buildroot}%{_datadir}/bash-completion/completions/
 # install config files
 install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}
 install -m 644 -t %{buildroot}%{_sysconfdir}/%{name} contrib/init/systemd/environ/*
+
+# install specific cluster addons for optional use
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons
+# Addon: volumesnapshots
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/crd
+install -m 0644 -t %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/crd cluster/addons/volumesnapshots/crd/*
+install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller
+install -m 0644 -t %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller cluster/addons/volumesnapshots/volume-snapshot-controller/*
 
 # install service files
 install -d -m 0755 %{buildroot}%{_unitdir}
@@ -960,9 +980,10 @@ for file in $(find . -iname "*.go" \! -iname "*_test.go") ; do
     echo "%%dir %%{gopath}/src/%%{import_path}/$(dirname $file)" >> devel.file-list
     install -d -p %{buildroot}/%{gopath}/src/%{import_path}/$(dirname $file)
     cp -pav $file %{buildroot}/%{gopath}/src/%{import_path}/$file
-    echo "%%{gopath}/src/%%{import_path}/$file" >> devel.file-list
+    echo "%%{gopath}/src/%%{import_path}/$file" >> devel.filelist
 done
 %endif
+
 
 %if 0%{?with_devel}
 sort -u -o devel.file-list devel.file-list
@@ -1027,6 +1048,16 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/scheduler
 %config(noreplace) %{_sysconfdir}/%{name}/config
 %config(noreplace) %{_sysconfdir}/%{name}/controller-manager
+%dir %{_sysconfdir}/%{name}/addons
+%dir %{_sysconfdir}/%{name}/addons/volumesnapshots
+%dir %{_sysconfdir}/%{name}/addons/volumesnapshots/crd
+%{_sysconfdir}/%{name}/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+%{_sysconfdir}/%{name}/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+%{_sysconfdir}/%{name}/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+%dir %{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller
+%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller/volume-snapshot-controller-deployment.yaml
+%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller/rbac-volume-snapshot-controller.yaml
+%dir %{_sysconfdir}/%{name}/
 %{_tmpfilesdir}/kubernetes.conf
 %verify(not size mtime md5) %attr(755, kube,kube) %dir /run/%{name}
 
@@ -1068,7 +1099,6 @@ fi
 %{_mandir}/man1/kubectl.1*
 %{_mandir}/man1/kubectl-*
 %{_bindir}/kubectl
-%{_bindir}/hyperkube
 %{_datadir}/bash-completion/completions/kubectl
 
 ##############################################

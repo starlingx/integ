@@ -1,5 +1,0 @@
-COPY_LIST=" \
-  $FILES_BASE/* \
-  $PATCHES_BASE/* \
-  $STX_BASE/downloads/integrity-kmod-37e0c813.tar.gz"
-TIS_PATCH_VER=1

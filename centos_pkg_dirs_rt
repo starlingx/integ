@@ -1,14 +1,1 @@
-kernel/kernel-rt
-networking/mellanox/libibverbs
-kernel/kernel-modules/mlnx-ofa_kernel
-networking/mellanox/rdma-core
-kernel/kernel-modules/intel-e1000e
-kernel/kernel-modules/intel-iavf
-kernel/kernel-modules/intel-i40e
-kernel/kernel-modules/intel-ixgbevf
-kernel/kernel-modules/intel-ixgbe
-kernel/kernel-modules/qat17
-kernel/kernel-modules/tpmdd
-kernel/kernel-modules/integrity
-kernel/kernel-modules/drbd
-kernel/kernel-modules/intel-opae-fpga
+base/rt-setup

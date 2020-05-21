@@ -63,52 +63,6 @@ swtpm-tools
 # helm
 helm
 
-
-
-
-
-
-
-# e1000e-kmod
-kmod-e1000e
-#kmod-e1000e-rt
-
-# i40e-kmod
-kmod-i40e
-#kmod-i40e-rt
-
-# iavf-kmod
-#kmod-iavf
-#kmod-iavf-rt
-
-# ixgbevf-kmod
-kmod-ixgbevf
-#kmod-ixgbevf-rt
-
-# ixgbe-kmod
-kmod-ixgbe
-#kmod-ixgbe-rt
-
-# qat17
-qat17
-#qat17-rt
-
-# tpm-kmod
-#kmod-tpm
-#kmod-tpm-rt
-
-# integrity-kmod
-#kmod-integrity
-#kmod-integrity-rt
-
-# drbd-kernel
-kmod-drbd
-#kmod-drbd-rt
-
-# opae-intel-fpga-driver
-#kmod-opae-fpga-driver
-#kmod-opae-fpga-driver-rt
-
 # rpm
 #rpm-plugin-systemd-inhibit
 
@@ -198,13 +152,6 @@ tpm2-tools
 
 # audit
 
-# kernel
-kernel
-kernel-tools
-kernel-tools-libs
-perf
-python3-perf
-
 # puppet
 #puppet
 
@@ -251,17 +198,6 @@ parted
 # grub2
 grub2-tools
 grub2-efi-x64-modules
-
-# kernel-rt
-#kernel-rt
-#kernel-rt-kvm
-#kernel-rt-tools
-
-# mellanox drivers
-#rdma-core
-#mlnx-ofa_kernel-modules
-#mlnx-ofa_kernel-rt-modules
-
 
 # python2-ruamel-yaml
 #python2-ruamel-yaml

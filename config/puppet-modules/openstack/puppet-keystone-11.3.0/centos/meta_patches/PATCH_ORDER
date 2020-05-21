@@ -5,3 +5,4 @@
 0005-escape-special-characters-in-bootstrap.patch
 0006-Add-support-for-fernet-receipts.patch
 0007-update-Barbican-admin-secret-s-user-project-IDs.patch
+0008-update-for-openstackclient-Train-upgrade.patch

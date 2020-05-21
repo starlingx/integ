@@ -1,0 +1,33 @@
+From 37836a4a1ce5548f39a23f5686f6f7c12bef3504 Mon Sep 17 00:00:00 2001
+From: chenyan <yan.chen@intel.com>
+Date: Thu, 26 Mar 2020 14:17:54 +0800
+Subject: [PATCH] update for openstackclient Train upgrade
+
+Signed-off-by: chenyan <yan.chen@intel.com>
+---
+ SPECS/puppet-keystone.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-keystone.spec b/SPECS/puppet-keystone.spec
+index ae233f0..2e6ede3 100644
+--- a/SPECS/puppet-keystone.spec
++++ b/SPECS/puppet-keystone.spec
+@@ -16,6 +16,7 @@ Patch0003:      0003-remove-eventlet_bindhost-from-Keystoneconf.patch
+ Patch0004:      0004-escape-special-characters-in-bootstrap.patch
+ Patch0005:      0005-Add-support-for-fernet-receipts.patch
+ Patch0006:      0006-update-Barbican-admin-secret-s-user-project-IDs-duri.patch
++Patch0007:      0007-update-for-openstackclient-Train-upgrade.patch
+ 
+ BuildArch:      noarch
+ 
+@@ -39,6 +40,7 @@ Puppet module for OpenStack Keystone
+ %patch0004 -p1
+ %patch0005 -p1
+ %patch0006 -p1
++%patch0007 -p1
+ 
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+-- 
+2.17.1
+

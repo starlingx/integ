@@ -1,4 +1,0 @@
-# EXT4_SUPER_MAGIC
-measure func=FILE_CHECK uid=0 fsmagic=0xEF53
-appraise func=FILE_MMAP mask=MAY_EXEC uid=0 appraise_type=imasig fsmagic=0xEF53
-appraise func=BPRM_CHECK mask=MAY_EXEC uid=0 appraise_type=imasig fsmagic=0xEF53
