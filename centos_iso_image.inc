@@ -50,21 +50,21 @@ swtpm-tools
 
 
 # python-3parclient
-#python-3parclient
+python3-3parclient
 
 # python-lefthandclient
-#python-lefthandclient
+python3-lefthandclient
 
 
 
 # docker-distribution
-#docker-distribution
+docker-distribution
 
 # helm
 helm
 
 # rpm
-#rpm-plugin-systemd-inhibit
+rpm-plugin-systemd-inhibit
 
 # dpkg
 dpkg
@@ -73,12 +73,12 @@ dpkg
 ldapscripts
 
 # drbd
-#drbd
-#drbd-utils
-#drbd-udev
-#drbd-pacemaker
-#drbd-heartbeat
-#drbd-bash-completion
+drbd
+drbd-utils
+drbd-udev
+drbd-pacemaker
+drbd-heartbeat
+drbd-bash-completion
 
 
 # initscripts
@@ -88,7 +88,7 @@ initscripts
 setup
 
 # nss-pam-ldapd
-#nss-pam-ldapd
+nss-pam-ldapd
 
 
 # nfs-utils series package
@@ -106,7 +106,7 @@ openssh-server
 facter
 
 # vim
-#vim-enhanced
+vim-enhanced
 
 # python
 #python
@@ -116,7 +116,7 @@ python3-libvirt
 
 # lighttpd
 lighttpd
-#lighttpd-fastcgi
+lighttpd-fastcgi
 #lighttpd-mod_geoip
 lighttpd-mod_mysql_vhost
 
@@ -193,23 +193,23 @@ dnsmasq-utils
 parted
 
 # python-keyring
-#python-keyring
+#python3-keyring
 
 # grub2
 grub2-tools
 grub2-efi-x64-modules
 
-# python2-ruamel-yaml
-#python2-ruamel-yaml
+# python3-ruamel-yaml
+python3-ruamel-yaml
 
 
 # redfish tool
 Redfishtool
 
 # kvm-timer-advance (AIO and worker nodes only)
-#kvm-timer-advance
+kvm-timer-advance
 
 # aws packages for interacting with amazon aws registry
 # botocore is an unspecified requirement of boto3
-#python2-botocore
-#python-boto3
+python3-botocore
+python3-boto3
