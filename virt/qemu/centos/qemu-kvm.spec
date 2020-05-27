@@ -264,6 +264,9 @@ BuildRequires: libcap-ng-devel
 
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
+# qemu-keymap
+BuildRequires: pkgconfig(xkbcommon)
+
 # RHEV-specific changes:
 # We provide special suffix for qemu-kvm so the conflit is easy
 # In addition, RHEV version should obsolete all RHEL version in case both
@@ -768,6 +771,7 @@ exit 0
 %doc %{qemudocdir}/qmp-spec.txt
 %doc %{qemudocdir}/qemu-qmp-ref.html
 %doc %{qemudocdir}/qemu-qmp-ref.txt
+%{_bindir}/qemu-keymap
 
 %dir %{_datadir}/%{pkgname}/
 %{_datadir}/%{pkgname}/keymaps/
