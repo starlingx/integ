@@ -12,6 +12,13 @@ URL:            https://github.com/gsnedders/python-webencodings/archive/v0.5.1.
 Source0:        python-webencodings-0.5.1.tar.gz
 
 BuildArch:      noarch
+%if 0%{?with_python3}
+BuildRequires:  python3-devel
+BuildRequires:  python3-pip
+%else
+BuildRequires:  python2-devel
+BuildRequires:  python-pip
+%endif
 
 %description
 This is a Python implementation of the WHATWG Encoding standard.

@@ -19,7 +19,17 @@ URL:            https://github.com/python-mechanize/mechanize
 Source0:        mechanize-0.4.5.tar.gz
 
 BuildArch:      noarch
+%if 0%{?with_python3}
+BuildRequires:  python3-devel
+BuildRequires:  python3-pip
+BuildRequires:  python3-wheel
+Requires:       python3-html5lib
+%else
+BuildRequires:  python2-devel
+BuildRequires:  python-pip
+BuildRequires:  python-wheel
 Requires:       python-html5lib
+%endif
 
 
 %description
