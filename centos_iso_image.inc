@@ -27,8 +27,8 @@ libvirt-client
 
 
 # python-ryu
-#python2-ryu
-#python-ryu-common
+python3-ryu
+python3-ryu-common
 
 # lldpd
 lldpd

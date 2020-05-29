@@ -8,7 +8,7 @@ virt/qemu
 virt/libvirt
 virt/libvirt-python
 base/lighttpd
-#networking/python-ryu
+networking/python-ryu
 #python/python-voluptuous
 networking/lldpd
 #logging/logrotate
