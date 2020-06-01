@@ -1,4 +1,4 @@
-%define name python-3parclient
+%define name python3-3parclient
 %define version 4.2.3
 Summary: HPE 3PAR HTTP REST Client
 Name: %{name}
@@ -13,10 +13,10 @@ BuildArch: noarch
 Vendor: Walter A. Boring IV <walter.boring@hpe.com>
 Url: http://packages.python.org/python-3parclient
 
-BuildRequires:    python2-devel
-BuildRequires:    python-setuptools
-BuildRequires:    python2-pip
-BuildRequires:    python2-wheel
+BuildRequires:    python3-devel
+BuildRequires:    python3-setuptools
+BuildRequires:    python3-pip
+BuildRequires:    python3-wheel
 
 %description
 HPE 3PAR HTTP REST Client
@@ -25,11 +25,11 @@ HPE 3PAR HTTP REST Client
 %setup -q
 
 %build
-%{__python2} setup.py build
-%py2_build_wheel
+%{__python3} setup.py build
+%py3_build_wheel
 
 %install
-%{__python2} setup.py install -O1 --skip-build --root %{buildroot} --record=INSTALLED_FILES
+%{__python3} setup.py install -O1 --skip-build --root %{buildroot} --record=INSTALLED_FILES
 mkdir -p $RPM_BUILD_ROOT/wheels
 install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
