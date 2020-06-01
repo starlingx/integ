@@ -4,9 +4,6 @@
 %global with_check 0
 %global build_wheel 0
 %define with_python3 1
-# define some macros for RHEL 6
-%global __python2 %__python
-%global python2_sitelib %python_sitelib
 
 Name:           mechanize
 Version:        0.4.5

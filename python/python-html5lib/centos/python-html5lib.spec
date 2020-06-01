@@ -1,6 +1,3 @@
-# define some macros for RHEL 6
-%global __python2 %__python
-%global python2_sitelib %python_sitelib
 %define with_python3 1
 
 Name:           html5lib-python
