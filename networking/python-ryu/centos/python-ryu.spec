@@ -1,6 +1,6 @@
 %{!?upstream_version: %global upstream_version %{version}%{?milestone}}
 
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 7
 %global with_python3 1
 %endif
 
@@ -22,6 +22,7 @@ BuildArch:      noarch
 Ryu provides software components with well defined API that make it easy for developers to create new
 network management and control applications.
 
+%if 0%{?with_python2}
 %package -n     python2-%{pypi_name}
 Summary:        Component-based Software-defined Networking Framework
 %{?python_provide:%python_provide python2-%{pypi_name}}
@@ -71,6 +72,7 @@ BuildRequires:  python-tinyrpc
 %description -n python2-%{pypi_name}
 Ryu provides software components with well defined API that make it easy for developers to create new
 network management and control applications.
+%endif
 
 %if 0%{?with_python3}
 %package -n     python3-%{pypi_name}
@@ -89,7 +91,7 @@ Requires:  python3-routes
 Requires:  python3-six
 Requires:  python3-tinyrpc
 Requires:  python3-webob
-Requires:  python-%{pypi_name}-common = %{version}-%{release}
+Requires:  python3-%{pypi_name}-common = %{version}-%{release}
 
 BuildRequires:  python3-devel
 BuildRequires:  python3-debtcollector
@@ -122,19 +124,19 @@ network management and control applications.
 This is the Python 3 version.
 %endif
 
-%package -n python-%{pypi_name}-common
+%package -n python3-%{pypi_name}-common
 Summary:        Component-based Software-defined Networking Framework
 
-%description -n python-%{pypi_name}-common
+%description -n python3-%{pypi_name}-common
 Ryu provides software components with well defined API that make it easy for developers to create new
 network management and control applications.
 
 This package contains common data between python 2 and 3 versions
 
-%package -n python-%{pypi_name}-tests
+%package -n python3-%{pypi_name}-tests
 Summary:    Ryu tests
-Requires:   python-%{pypi_name} = %{version}-%{release}
-%description -n python-%{pypi_name}-tests
+Requires:   python3-%{pypi_name} = %{version}-%{release}
+%description -n python3-%{pypi_name}-tests
 Ryu set of tests
 
 %prep
@@ -154,10 +156,13 @@ rm -rf %{pypi_name}/tests/integrated/common
 
 %build
 export PBR_VERSION=%{version}
+%if 0%{?with_python2}
 %py2_build
 %py2_build_wheel
+%endif
 %if 0%{?with_python3}
 %py3_build
+%py3_build_wheel
 %endif
 
 cd doc && make man
@@ -169,14 +174,18 @@ export PBR_VERSION=%{version}
 for bin in %{pypi_name}{,-manager}; do
     mv %{buildroot}%{_bindir}/$bin  %{buildroot}%{_bindir}/$bin-%{python3_version}
     ln -s ./$bin-%{python3_version} %{buildroot}%{_bindir}/$bin-3
+    ln -s ./$bin-%{python3_version} %{buildroot}%{_bindir}/$bin
 done;
 %endif
+
+%if 0%{?with_python2}
 %py2_install
 for bin in %{pypi_name}{,-manager}; do
     mv %{buildroot}%{_bindir}/$bin  %{buildroot}%{_bindir}/$bin-%{python2_version}
     ln -s ./$bin-%{python2_version} %{buildroot}%{_bindir}/$bin-2
     ln -s ./$bin-%{python2_version} %{buildroot}%{_bindir}/$bin
 done;
+%endif
 mkdir -p $RPM_BUILD_ROOT/wheels
 install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
@@ -190,9 +199,12 @@ mv %{buildroot}%{_prefix}%{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf %{buildro
 # Tests without virtualenv (N) and without PEP8 tests (P)
 PYTHON=%{__python3} ./run_tests.sh -N -P
 %endif
+%if 0%{?with_python2}
 PYTHON=%{__python2} ./run_tests.sh -N -P
 %endif
+%endif
 
+%if 0%{?with_python2}
 %files -n     python2-%{pypi_name}
 %{python2_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %{python2_sitelib}/%{pypi_name}
@@ -203,7 +215,7 @@ PYTHON=%{__python2} ./run_tests.sh -N -P
 %{_bindir}/%{pypi_name}-manager-2
 %{_bindir}/%{pypi_name}-manager-%{python2_version}
 %exclude %{python2_sitelib}/%{pypi_name}/tests
-
+%endif
 
 %if 0%{?with_python3}
 %files -n     python3-%{pypi_name}
@@ -215,19 +227,19 @@ PYTHON=%{__python2} ./run_tests.sh -N -P
 %{_bindir}/%{pypi_name}-manager
 %{_bindir}/%{pypi_name}-manager-3
 %{_bindir}/%{pypi_name}-manager-%{python3_version}
-%exclude %{python2_sitelib}/%{pypi_name}/tests
+%exclude %{python3_sitelib}/%{pypi_name}/tests
 %endif
 
-%files -n     python-%{pypi_name}-common
+%files -n     python3-%{pypi_name}-common
 %doc README.rst
 %license LICENSE
 %dir %attr(0755, root, %{service}) %{_sysconfdir}/%{pypi_name}
 %config(noreplace) %attr(0640, root, %{service}) %{_sysconfdir}/%{pypi_name}/%{pypi_name}.conf
-%exclude %{python2_sitelib}/%{pypi_name}/tests
+%exclude %{python3_sitelib}/%{pypi_name}/tests
 
-%files -n python-%{pypi_name}-tests
+%files -n python3-%{pypi_name}-tests
 %license LICENSE
-%{python2_sitelib}/%{pypi_name}/tests
+%{python3_sitelib}/%{pypi_name}/tests
 
 %package wheels
 Summary: %{name} wheels
