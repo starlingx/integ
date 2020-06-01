@@ -1,4 +1,4 @@
-%define name python-lefthandclient
+%define name python3-lefthandclient
 %define version 2.1.0
 %define release 1
 
@@ -15,10 +15,10 @@ BuildArch: noarch
 Vendor: Kurt Martin <kurt.f.martin@hpe.com>
 Url: http://packages.python.org/python-lefthandclient
 
-BuildRequires:    python2-devel
-BuildRequires:    python-setuptools
-BuildRequires:    python2-pip
-BuildRequires:    python2-wheel
+BuildRequires:    python3-devel
+BuildRequires:    python3-setuptools
+BuildRequires:    python3-pip
+BuildRequires:    python3-wheel
 
 %description
 HPE LeftHand/StoreVirtual HTTP REST Client
@@ -27,11 +27,11 @@ HPE LeftHand/StoreVirtual HTTP REST Client
 %setup -q
 
 %build
-%{__python2} setup.py build
-%py2_build_wheel
+%{__python3} setup.py build
+%py3_build_wheel
 
 %install
-%{__python2} setup.py install -O1 --skip-build --root %{buildroot} --record=INSTALLED_FILES
+%{__python3} setup.py install -O1 --skip-build --root %{buildroot} --record=INSTALLED_FILES
 mkdir -p $RPM_BUILD_ROOT/wheels
 install -m 644 dist/*.whl $RPM_BUILD_ROOT/wheels/
 
