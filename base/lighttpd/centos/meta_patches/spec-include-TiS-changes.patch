@@ -18,7 +18,7 @@ index de52e46..7acdc84 100644
 +
  Patch0: lighttpd-1.4.39-defaultconf.patch
  #Patch1: lighttpd-1.4.40-mod_geoip.patch
- Patch2: lighttpd-1.4.35-system-crypto-policy.patch
+ Patch2: lighttpd-1.4.54-system-crypto-policy.patch
 @@ -194,17 +195,19 @@ autoreconf -if
      --libdir='%{_libdir}/lighttpd' \
      %{confswitch mysql} \
