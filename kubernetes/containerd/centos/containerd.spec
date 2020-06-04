@@ -21,7 +21,7 @@ Packager: StarlingX
 
 BuildRequires: pkgconfig(systemd)
 BuildRequires: pkgconfig(libseccomp)
-BuildRequires: pkgconfig(libsystemd-journal)
+BuildRequires: systemd-devel
 BuildRequires: golang >= 1.12.16
 BuildRequires: systemd
 BuildRequires: rsync
@@ -40,6 +40,7 @@ Provides: containerd.io
 
 
 %global _missing_build_ids_terminate_build 0
+%global debug_package %{nil}
 
 %define CONTAINERD_DIR ${HOME}/go/src/github.com/containerd/containerd
 %define RUNC_DIR ${HOME}/go/src/github.com/opencontainers/runc

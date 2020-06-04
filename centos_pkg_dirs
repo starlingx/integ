@@ -53,7 +53,7 @@ storage-drivers/python-lefthandclient
 storage-drivers/trident-installer
 security/tboot
 docker/python-docker
-#kubernetes/containerd
+kubernetes/containerd
 kubernetes/kubernetes
 kubernetes/docker-distribution
 kubernetes/etcd
@@ -79,4 +79,4 @@ virt/kvm-timer-advance
 requests-toolbelt
 python/python-mechanize
 python/python-html5lib
-python/python-webencodings
+#python/python-webencodings

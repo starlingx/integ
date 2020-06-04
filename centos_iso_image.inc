@@ -124,7 +124,7 @@ lighttpd-mod_mysql_vhost
 logrotate
 
 # novnc
-#novnc
+novnc
 
 # sudo
 sudo
@@ -145,7 +145,7 @@ openldap-clients
 openvswitch
 
 # libevent
-#libevent
+libevent
 
 # tpm2-tools
 tpm2-tools
@@ -153,7 +153,7 @@ tpm2-tools
 # audit
 
 # puppet
-#puppet
+puppet
 
 # systemd
 systemd
@@ -165,15 +165,15 @@ tboot
 memcached
 
 # kubernetes
-#kubernetes
-#kubernetes-master
-#kubernetes-node
-#kubernetes-kubeadm
-#kubernetes-client
-#containerd
+kubernetes
+kubernetes-master
+kubernetes-node
+kubernetes-kubeadm
+kubernetes-client
+containerd
 
 # resource-agents
-#resource-agents
+resource-agents
 
 
 # haproxy
@@ -183,7 +183,7 @@ haproxy
 # iptables
 
 # python-psycopg2
-#python-psycopg2
+python3-psycopg2
 
 # dnsmasq
 dnsmasq
@@ -193,7 +193,7 @@ dnsmasq-utils
 parted
 
 # python-keyring
-#python3-keyring
+python3-keyring
 
 # grub2
 grub2-tools
