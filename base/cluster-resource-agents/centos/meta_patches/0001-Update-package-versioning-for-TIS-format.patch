@@ -11,13 +11,13 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index 21fa049..fd8bc97 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -89,7 +89,7 @@
+@@ -76,7 +76,7 @@
  Name:		resource-agents
  Summary:	Open Source HA Reusable Cluster Resource Scripts
  Version:	4.1.1
--Release:	12%{?dist}.7
-+Release:	12.el7_6.7%{?_tis_dist}.%{tis_patch_ver}
- License:	GPLv2+ and LGPLv2+ and ASL 2.0
+-Release:	33%{?rcver:%{rcver}}%{?numcomm:.%{numcomm}}%{?alphatag:.%{alphatag}}%{?dirty:.%{dirty}}%{?dist}
++Release:	33.el8%{?_tis_dist}.%{tis_patch_ver}
+ License:	GPLv2+ and LGPLv2+
  URL:		https://github.com/ClusterLabs/resource-agents
  %if 0%{?fedora} || 0%{?centos_version} || 0%{?rhel}
 -- 

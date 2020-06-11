@@ -12,35 +12,35 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index ec85fc2..bb96485 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -725,14 +725,11 @@ rm -rf %{buildroot}
+@@ -703,14 +703,11 @@ rm -rf %{buildroot}
  %endif
  
  %if %{with linuxha}
--%dir /usr/lib/ocf
--%dir /usr/lib/ocf/resource.d
--%dir /usr/lib/ocf/lib
-+/usr/lib/ocf/lib/heartbeat/*
+-%dir %{_usr}/lib/ocf
+-%dir %{_usr}/lib/ocf/resource.d
+-%dir %{_usr}/lib/ocf/lib
++%{_usr}/lib/ocf/lib/heartbeat/*
  
--/usr/lib/ocf/lib/heartbeat
+-%{_usr}/lib/ocf/lib/heartbeat
 -
--/usr/lib/ocf/resource.d/heartbeat
--/usr/lib/ocf/resource.d/openstack
-+/usr/lib/ocf/resource.d/heartbeat/*
-+/usr/lib/ocf/resource.d/heartbeat/.ocf-*
-+/usr/lib/ocf/resource.d/openstack/*
+-%{_usr}/lib/ocf/resource.d/heartbeat
+-%{_usr}/lib/ocf/resource.d/openstack
++%{_usr}/lib/ocf/resource.d/heartbeat/*
++%{_usr}/lib/ocf/resource.d/heartbeat/.ocf-*
++%{_usr}/lib/ocf/resource.d/openstack/*
  %if %{with rgmanager}
- /usr/lib/ocf/resource.d/redhat
+ %{_usr}/lib/ocf/resource.d/redhat
  %endif
-@@ -758,8 +755,6 @@ rm -rf %{buildroot}
+@@ -738,8 +735,6 @@ rm -rf %{buildroot}
  
- %{_includedir}/heartbeat
- 
+ %if %{defined _tmpfilesdir}
+ %dir %attr (1755, root, root)	/run/resource-agents
+-%else
 -%dir %attr (1755, root, root)	%{_var}/run/resource-agents
--
- %{_mandir}/man7/*.7*
+ %endif
  
- ###
-@@ -912,7 +907,6 @@ rm -rf %{buildroot}
+ %{_mandir}/man7/*.7*
+@@ -896,7 +891,6 @@ rm -rf %{buildroot}
  %exclude %{_mandir}/man8/ldirectord.8.gz
  
  # For compatability with pre-existing agents
