@@ -10,7 +10,7 @@ Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/openssh.spec b/SPECS/openssh.spec
-index 5c030bc..0a91b56 100644
+index 0a4b2ea..73df54b 100644
 --- a/SPECS/openssh.spec
 +++ b/SPECS/openssh.spec
 @@ -73,7 +73,7 @@
@@ -22,7 +22,7 @@ index 5c030bc..0a91b56 100644
  URL: http://www.openssh.com/portable.html
  #URL1: http://pamsshagentauth.sourceforge.net
  Source0: ftp://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-%{version}.tar.gz
-@@ -323,7 +323,7 @@ Requires: openssh = %{version}-%{release}
+@@ -313,7 +313,7 @@ Requires: openssh = %{version}-%{release}
  Summary: PAM module for authentication with ssh-agent
  Group: System Environment/Base
  Version: %{pam_ssh_agent_ver}
@@ -32,5 +32,5 @@ index 5c030bc..0a91b56 100644
  
  %description
 -- 
-1.8.3.1
+2.17.1
 
