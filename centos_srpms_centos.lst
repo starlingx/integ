@@ -35,7 +35,7 @@ setup-2.12.2-2.el8.src.rpm
 shim-15-8.el8.src.rpm
 shim-unsigned-x64-15-2.el8.src.rpm
 sudo-1.8.25p1-4.el8.src.rpm
-systemd-239-13.el8_0.5.src.rpm
+systemd-239-18.el8_1.5.src.rpm
 tboot-1.9.7-2.el8.src.rpm
 tpm2-tools-3.1.1-4.el8.src.rpm
 # watchdog-5.13-12.el7.src.rpm
