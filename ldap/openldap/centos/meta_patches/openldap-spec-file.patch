@@ -4,15 +4,16 @@ Date: Mon, 2 Oct 2017 17:11:21 -0400
 Subject: [PATCH] openldap-spec-file.patch
 
 Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
 ---
- SPECS/openldap.spec | 7 +++++--
+ ldap/SPECS/openldap.spec | 7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/SPECS/openldap.spec b/SPECS/openldap.spec
-index 85abac9..66a1377 100644
+index 61140f2..99e0db0 100644
 --- a/SPECS/openldap.spec
 +++ b/SPECS/openldap.spec
-@@ -205,7 +205,7 @@ mv check_password.so check_password.so.%{check_password_version}
+@@ -207,7 +207,7 @@ mv check_password.so check_password.so.%{check_password_version}
  ln -s check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/check_password.so
  install -m 755 check_password.so.%{check_password_version} %{buildroot}%{_libdir}/openldap/
  # install -m 644 README %{buildroot}%{_libdir}/openldap
@@ -21,7 +22,7 @@ index 85abac9..66a1377 100644
  cat > %{buildroot}%{_sysconfdir}/openldap/check_password.conf <<EOF
  # OpenLDAP pwdChecker library configuration
  
-@@ -320,6 +320,9 @@ exit 0
+@@ -322,6 +322,9 @@ exit 0
  
  
  %post servers
@@ -31,7 +32,7 @@ index 85abac9..66a1377 100644
  %systemd_post slapd.service
  
  # generate configuration if necessary
-@@ -472,7 +475,7 @@ exit 0
+@@ -474,7 +477,7 @@ exit 0
  %{_mandir}/man5/slapd*.5*
  %{_mandir}/man5/slapo-*.5*
  # obsolete configuration
@@ -41,5 +42,5 @@ index 85abac9..66a1377 100644
  %files clients
  %{_bindir}/*
 -- 
-1.8.3.1
+2.17.1
 

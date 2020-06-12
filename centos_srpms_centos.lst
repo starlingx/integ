@@ -13,7 +13,7 @@ lighttpd-1.4.55-1.el8.src.rpm
 mariadb-10.3.17-1.module_el8.1.0+257+48736ea6.src.rpm
 net-snmp-5.8-7.el8_0.2.src.rpm
 net-tools-2.0-0.51.20160912git.el8.src.rpm
-openldap-2.4.46-9.el8.src.rpm
+openldap-2.4.46-11.el8_1.src.rpm
 openssh-7.8p1-4.el8.src.rpm
 parted-3.2-38.el8.src.rpm
 puppet-4.8.2-1.el7.src.rpm

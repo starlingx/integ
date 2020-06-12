@@ -7,23 +7,24 @@ Conflicts:
 	SPECS/openldap.spec
 
 Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
 ---
- SPECS/openldap.spec | 2 +-
+ ldap/SPECS/openldap.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/openldap.spec b/SPECS/openldap.spec
-index c38f1bd..d35d73f 100644
+index 9df02d9..200920c 100644
 --- a/SPECS/openldap.spec
 +++ b/SPECS/openldap.spec
 @@ -5,7 +5,7 @@
  
  Name: openldap
  Version: 2.4.46
--Release: 9%{?dist}
-+Release: 9.el8%{?_tis_dist}.%{tis_patch_ver}
+-Release: 11%{?dist}
++Release: 11.el8_1%{?_tis_dist}.%{tis_patch_ver}
  Summary: LDAP support libraries
  License: OpenLDAP
  URL: http://www.openldap.org/
 -- 
-1.8.3.1
+2.17.1
 
