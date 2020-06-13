@@ -59,6 +59,7 @@ kubernetes/docker-distribution
 kubernetes/etcd
 kubernetes/helm
 kubernetes/chartmuseum
+kubernetes/armada-helm-toolkit
 kubernetes/armada
 grub/grubby
 base/dpkg

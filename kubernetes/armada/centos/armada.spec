@@ -20,7 +20,7 @@ Patch1:         0001-Add-Helm-v2-client-initialization-using-tiller-postS.patch
 BuildArch:      noarch
 
 BuildRequires: helm
-BuildRequires: openstack-helm-infra
+BuildRequires: armada-helm-toolkit
 BuildRequires: chartmuseum
 
 %description
@@ -55,7 +55,7 @@ BuildRequires: chartmuseum
 #   (we don't need to create them)
 
 # Stage helm-toolkit in the local repo
-cp %{helm_folder}/helm-toolkit-%{toolkit_version}.tgz %{charts_staging}
+cp %{helm_folder}/armada-helm-toolkit-%{toolkit_version}.tgz %{charts_staging}/helm-toolkit-%{toolkit_version}.tgz
 
 # Host a local server for the charts.
 chartmuseum --debug --port=8879 --context-path='/charts' --storage="local" --storage-local-rootdir="%{charts_staging}" &
