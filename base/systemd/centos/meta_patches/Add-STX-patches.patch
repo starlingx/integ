@@ -8,6 +8,7 @@ Subject: [PATCH 3/3] Add STX patches
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Long Li <lilong-neu@neusoft.com>
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
 ---
  SPECS/systemd.spec | 3 +++
  1 file changed, 3 insertions(+)
@@ -16,9 +17,9 @@ diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
 index 34d7c59..6885233 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -146,6 +146,9 @@ Patch0093: 0093-Allocate-temporary-strings-to-hold-dbus-paths-on-the.patch
- Patch0094: 0094-sd-bus-if-we-receive-an-invalid-dbus-message-ignore-.patch
- Patch0095: 0095-Revert-core-one-step-back-again-for-nspawn-we-actual.patch
+@@ -292,6 +292,9 @@ Patch0239: 0239-sd-bus-use-queue-message-references-for-managing-r-w.patch
+ Patch0240: 0240-journal-do-not-trigger-assertion-when-journal_file_c.patch
+ Patch0241: 0241-journal-use-cleanup-attribute-at-one-more-place.patch
  
 +# STX Patches
 +Patch0801: 801-inject-millisec-in-syslog-date.patch
@@ -27,5 +28,5 @@ index 34d7c59..6885233 100644
  %ifarch %{ix86} x86_64 aarch64
  %global have_gnu_efi 1
 -- 
-2.7.4
+2.17.1
 
