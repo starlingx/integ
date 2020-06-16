@@ -4,14 +4,14 @@ Date: Mon, 22 Jan 2018 16:05:57 -0500
 Subject: macros
 
 ---
- SOURCES/grub.macros | 10 +---------
- 1 file changed, 1 insertion(+), 9 deletions(-)
+ SOURCES/grub.macros | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 10f74df..075727c 100644
+index d59f889..ed426f3 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -82,15 +82,6 @@
+@@ -122,12 +122,6 @@
  %global legacy_package_arch pc
  %global platform pc
  
@@ -20,18 +20,15 @@ index 10f74df..075727c 100644
 -%global alt_grub_target_name i386-efi
 -%global alt_platform efi
 -%global alt_package_arch efi-ia32
--%global alt_efi_cflags %(echo %{efi_cflags} |			\\\
--	sed							\\\
--		-e 's/-m64//g'				\\\
--	) %{nil}
- %endif
- %ifarch %{ix86}
- %global target_cpu_name %{_arch}
-@@ -401,6 +392,7 @@ cd grub-%{1}-%{tarversion}					\
- install -m 700 -d $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/	\
- install -m 700 -d $RPM_BUILD_ROOT/boot/grub2/			\
+-
+ %global alt_efi_host_cflags %{expand:%%(echo %{efi_host_cflags})}
+ %global alt_efi_target_cflags					\\\
+ 	%{expand:%%(echo %{target_cflags} |			\\\
+@@ -439,6 +433,7 @@ cd ..								\
+ %define do_efi_install()					\
+ cd grub-%{1}-%{tarversion}					\
  make DESTDIR=$RPM_BUILD_ROOT install				\
-+find $RPM_BUILD_ROOT -name "grub2-bios-setup*" | xargs rm -f \
++find $RPM_BUILD_ROOT -name "grub2-bios-setup*" | xargs rm -f    \
  if [ -f $RPM_BUILD_ROOT%{_infodir}/grub.info ]; then		\
  	rm -f $RPM_BUILD_ROOT%{_infodir}/grub.info		\
  fi								\

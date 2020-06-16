@@ -8,18 +8,18 @@ Subject: [PATCH] Update-package-versioning-for-TIS-format
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index 12d34ad..88c6c09 100644
+index b471027..ccd0244 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -17,7 +17,7 @@
- Name:           grub2
- Epoch:          1
- Version:        2.02
--Release:        0.76%{?dist}%{?buildid}
-+Release:        0.76.el7.centos%{?_tis_dist}.%{tis_patch_ver}
- Summary:        Bootloader with support for Linux, Multiboot and more
- Group:          System Environment/Base
- License:        GPLv3+
+@@ -7,7 +7,7 @@
+ Name:		grub2
+ Epoch:		1
+ Version:	2.02
+-Release:	66%{?dist}.1
++Release:       66.el8_0.1%{?_tis_dist}.%{tis_patch_ver}
+ Summary:	Bootloader with support for Linux, Multiboot and more
+ Group:		System Environment/Base
+ License:	GPLv3+
 -- 
 2.7.4
 

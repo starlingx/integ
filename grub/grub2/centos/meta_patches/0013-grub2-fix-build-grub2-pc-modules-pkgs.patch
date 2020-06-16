@@ -1,0 +1,32 @@
+From b7e6032f36678ce38a48a8eeb7d19c3cbac0cb36 Mon Sep 17 00:00:00 2001
+From: Long Li <lilong-neu@neusoft.com>
+Date: Wed, 18 Dec 2019 14:07:48 +0800
+Subject: 0013-grub2-fix-build-grub2-pc-modules-pkgs
+
+This pkg is needed when install Stx system ISO, and it is built in el7 version
+no problem, however, it is not built in el8 version, if it not exits, it will
+prompt error for no such grub needed by other grub2 pkg install procedure.
+
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
+---
+ SOURCES/grub.macros | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
+index 6e0e18e..0abe21d 100644
+--- a/SOURCES/grub.macros
++++ b/SOURCES/grub.macros
+@@ -189,8 +189,8 @@
+ 
+ %ifarch x86_64
+ %global with_efi_common 1
+-%global with_legacy_modules 0
+-%global with_legacy_common 0
++%global with_legacy_modules 1
++%global with_legacy_common 1
+ %else
+ %global with_efi_common 0
+ %global with_legacy_common 1
+-- 
+2.7.4
+

@@ -6,15 +6,16 @@ Subject: [PATCH] 10_linux: mktitle: de-brand the grub.cfg menu
 Replace "CentOS" with a generic name.
 
 Signed-off-by: Michel Thebeau <michel.thebeau@windriver.com>
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
 ---
  util/grub.d/10_linux.in | 12 +++++-------
  1 file changed, 5 insertions(+), 7 deletions(-)
 
 diff --git a/util/grub.d/10_linux.in b/util/grub.d/10_linux.in
-index b3c460c..131c1f2 100644
+index da2992a..5482ebf 100644
 --- a/util/grub.d/10_linux.in
 +++ b/util/grub.d/10_linux.in
-@@ -71,22 +71,20 @@ mktitle ()
+@@ -101,22 +101,20 @@ mktitle ()
    local title_type
    local version
    local OS_NAME
@@ -43,5 +44,5 @@ index b3c460c..131c1f2 100644
    esac
    echo -n ${title}
 -- 
-1.8.3.1
+2.7.4
 

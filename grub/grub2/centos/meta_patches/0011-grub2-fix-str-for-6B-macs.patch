@@ -1,40 +1,40 @@
 From 5e0c8a6125403db7e90990d20c1cdda5cb9deb78 Mon Sep 17 00:00:00 2001
 From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 28 Mar 2018 14:08:57 -0400
-Subject: [PATCH 11/12] Patch GRUB so that it doesn't add a trailing colon
+Subject: Patch GRUB so that it doesn't add a trailing colon
  after MAC
 
 A CentOS GRUB patch added support for macs > 6B in size.  This
 breaks PXEbooting the installer, because a routine within grub
 relies on the max MAC string length.
+
 ---
  SOURCES/grub.macros  | 2 +-
- SOURCES/grub.patches | 2 ++
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ SOURCES/grub.patches | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index ffdd23c..8fcb272 100644
+index 5c43b37..d410247 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -82,7 +82,7 @@
+@@ -110,7 +110,7 @@
+ %global legacy_target_cpu_name i386
  %global legacy_package_arch pc
  %global platform pc
- 
--%global wrs_modules " multiboot multiboot2"
-+%global wrs_modules " multiboot multiboot2 regexp"
+-%global extra_modules " multiboot multiboot2"
++%global extra_modules " multiboot multiboot2 regexp"
  %else
- %global wrs_modules ""
+ %global extra_modules ""
  
 diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
-index e24bd8c..73ccdee 100644
+index d872b74..03e89fc 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -288,3 +288,5 @@ Patch0287: 0287-Make-root_url-reflect-the-protocol-hostname-of-our-b.patch
- Patch0289: 0288-efi-uga-Fix-PCIe-LER-when-GRUB2-accesses-non-enabled.patch
+@@ -258,3 +258,4 @@ Patch0257: 0257-docs-Stop-using-polkit-pkexec-for-grub-boot-success..patch
+ Patch0258: 0258-Fix-the-looking-up-grub.cfg-XXX-while-tftp-booting.patch
  Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
  Patch1001: 1001-add-tboot.patch
 +Patch1002: 1002-Don-t-write-trailing-colon-when-populating-MAC-strin.patch
-+
 -- 
 2.7.4
 

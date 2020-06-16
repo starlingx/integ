@@ -1,7 +1,7 @@
 From 25964e485c769efcccf853babcc8263eb1c89baf Mon Sep 17 00:00:00 2001
 From: jmckenna <jason.mckenna@windriver.com>
 Date: Wed, 28 Mar 2018 12:53:34 -0400
-Subject: WRS: 0010-grub2-add-tboot.patch
+Subject: 0007-grub2-add-tboot.patch
 
 ---
  SOURCES/grub.macros  | 5 +++++
@@ -9,35 +9,35 @@ Subject: WRS: 0010-grub2-add-tboot.patch
  2 files changed, 6 insertions(+)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 9ef91d6..ffdd23c 100644
+index 60bb1b3..5c43b37 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -82,6 +82,10 @@
+@@ -110,6 +110,10 @@
+ %global legacy_target_cpu_name i386
  %global legacy_package_arch pc
  %global platform pc
- 
-+%global wrs_modules " multiboot multiboot2"
++%global extra_modules " multiboot multiboot2"
 +%else
-+%global wrs_modules ""
++%global extra_modules ""
 +
  %endif
- %ifarch %{ix86}
- %global target_cpu_name %{_arch}
-@@ -347,6 +351,7 @@ GRUB_MODULES="	all_video boot btrfs cat chain configfile echo	\\\
- 		search_label serial sleep syslinuxcfg test tftp \\\
+ 
+ %ifarch x86_64
+@@ -387,6 +391,7 @@ GRUB_MODULES="	all_video boot blscfg btrfs			\\\
+ 		search_label serial sleep syslinuxcfg test tftp	\\\
  		video xfs"					\
- GRUB_MODULES+=%{efi_modules}					\
-+GRUB_MODULES+=%{wrs_modules}                                    \
+ GRUB_MODULES+=%{platform_modules}				\
++GRUB_MODULES+=%{extra_modules}                                    \
  %{expand:%%{mkimage %{1} %{2} %{3} %{4} %{5} %{6} %{7}}}	\
  %{nil}
  
 diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
-index d7475f0..e24bd8c 100644
+index c265b9d..d872b74 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -287,3 +287,4 @@ Patch0286: 0286-efinet-also-use-the-firmware-acceleration-for-http.patch
- Patch0287: 0287-Make-root_url-reflect-the-protocol-hostname-of-our-b.patch
- Patch0289: 0288-efi-uga-Fix-PCIe-LER-when-GRUB2-accesses-non-enabled.patch
+@@ -257,3 +257,4 @@ Patch0256: 0256-grub-boot-success.timer-Add-a-few-Conditions-for-run.patch
+ Patch0257: 0257-docs-Stop-using-polkit-pkexec-for-grub-boot-success..patch
+ Patch0258: 0258-Fix-the-looking-up-grub.cfg-XXX-while-tftp-booting.patch
  Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
 +Patch1001: 1001-add-tboot.patch
 -- 

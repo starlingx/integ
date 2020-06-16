@@ -8,11 +8,11 @@ Subject: [PATCH] ship .lst files
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index 613f2e1..7e11008 100644
+index ccd0244..1a55c34 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -299,6 +299,8 @@ fi
- %ifarch x86_64
+@@ -334,6 +334,8 @@ fi
+ 
  %files common -f grub.lang
  %dir %{_libdir}/grub/
 +%dir %{_libdir}/grub/%{grubefiarch}/
