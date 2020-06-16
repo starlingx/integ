@@ -139,7 +139,7 @@ index 4a88620..ac7b1f7 100644
      stdoutLog.info(_("Running pre-installation scripts"))
  
 diff --git a/pyanaconda/payload/dnfpayload.py b/pyanaconda/payload/dnfpayload.py
-index 267f91e..b2a048d 100644
+index 54069f9..27e2cb5 100644
 --- a/pyanaconda/payload/dnfpayload.py
 +++ b/pyanaconda/payload/dnfpayload.py
 @@ -62,6 +62,7 @@ import dnf.conf.substitutions
@@ -166,7 +166,7 @@ index 267f91e..b2a048d 100644
  
          self._req_groups = set()
          self._req_packages = set()
-@@ -718,6 +721,7 @@ class DNFPayload(payload.PackagePayload):
+@@ -741,6 +744,7 @@ class DNFPayload(payload.PackagePayload):
  
      def _payload_setup_error(self, exn):
          log.error('Payload setup error: %r', exn)
@@ -174,7 +174,7 @@ index 267f91e..b2a048d 100644
          if errors.errorHandler.cb(exn) == errors.ERROR_RAISE:
              # The progress bar polls kind of slowly, thus installation could
              # still continue for a bit before the quit message is processed.
-@@ -1048,6 +1052,7 @@ class DNFPayload(payload.PackagePayload):
+@@ -1071,6 +1075,7 @@ class DNFPayload(payload.PackagePayload):
              if token == 'install':
                  msg = _("Installing %s") % msg
                  progressQ.send_message(msg)
@@ -182,7 +182,7 @@ index 267f91e..b2a048d 100644
              elif token == 'configure':
                  msg = _("Configuring %s") % msg
                  progressQ.send_message(msg)
-@@ -1059,6 +1064,7 @@ class DNFPayload(payload.PackagePayload):
+@@ -1082,6 +1087,7 @@ class DNFPayload(payload.PackagePayload):
              elif token == 'post':
                  msg = (N_("Performing post-installation setup tasks"))
                  progressQ.send_message(msg)

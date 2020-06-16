@@ -8,21 +8,21 @@ Subject: [PATCH] revert 7.4 grub2 efi handling
  1 file changed, 3 insertions(+), 33 deletions(-)
 
 diff --git a/pyanaconda/bootloader.py b/pyanaconda/bootloader.py
-index d2c772d..0d40711 100644
+index 44c16d1..42a466f 100644
 --- a/pyanaconda/bootloader.py
 +++ b/pyanaconda/bootloader.py
-@@ -1457,9 +1457,7 @@ class GRUB2(GRUB):
+@@ -1458,9 +1458,7 @@ class GRUB2(GRUB):
  
      """
      name = "GRUB2"
 -    # grub2 is a virtual provides that's provided by grub2-pc, grub2-ppc64le,
 -    # and all of the primary grub components that aren't grub2-efi-${EFIARCH}
 -    packages = ["grub2", "grub2-tools"]
-+    packages = ["grub2"]
++    packages = ["grub2-tools"]
      _config_file = "grub.cfg"
      _config_dir = "grub2"
      _passwd_file = "user.cfg"
-@@ -1888,8 +1886,7 @@ class EFIGRUB1(EFIBase, GRUB):
+@@ -1890,8 +1888,7 @@ class EFIGRUB1(EFIBase, GRUB):
  
  
  class EFIGRUB(EFIBase, GRUB2):
@@ -32,7 +32,7 @@ index d2c772d..0d40711 100644
      can_dual_boot = False
      stage2_is_valid_stage1 = False
      stage2_bootable = False
-@@ -1899,38 +1896,13 @@ class EFIGRUB(EFIBase, GRUB2):
+@@ -1901,38 +1898,13 @@ class EFIGRUB(EFIBase, GRUB2):
      def __init__(self):
          super().__init__()
          self.efi_dir = 'BOOT'
@@ -72,7 +72,7 @@ index d2c772d..0d40711 100644
  
  class ArmEFIGRUB(EFIGRUB):
      _serial_consoles = ["ttyAMA", "ttyS"]
-@@ -1938,12 +1910,10 @@ class ArmEFIGRUB(EFIGRUB):
+@@ -1940,12 +1912,10 @@ class ArmEFIGRUB(EFIGRUB):
  
      def __init__(self):
          super().__init__()
