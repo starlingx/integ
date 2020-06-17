@@ -3,4 +3,4 @@ COPY_LIST="${STX_BASE}/downloads/containerd-v1.3.3.tar.gz
            ${STX_BASE}/downloads/crictl-v1.18.0-linux-amd64.tar.gz
            ${FILES_BASE}/*"
 
-TIS_PATCH_VER=1
+TIS_PATCH_VER=2

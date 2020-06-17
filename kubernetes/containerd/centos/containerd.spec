@@ -12,7 +12,6 @@ Source0: containerd-v%{version}.tar.gz
 Source1: runc-1.0.0-rc10.tar.gz
 Source2: crictl-v1.18.0-linux-amd64.tar.gz
 Source3: crictl.yaml
-Source4: containerd.service
 Patch5: 0001-customize-containerd-for-StarlingX.patch
 Patch6: 0002-archive-skip-chmod-IsNotExist-error.patch
 URL: https://www.starlingx.io
@@ -76,6 +75,8 @@ popd
 # install containerd
 install -d %{buildroot}%{_bindir}
 install -p -m 755 %{CONTAINERD_DIR}/bin/containerd %{buildroot}%{_bindir}/containerd
+install -d  %{buildroot}%{_prefix}/local/bin
+ln -s  %{_bindir}/containerd %{buildroot}%{_prefix}/local/bin/containerd
 install -p -m 755 %{CONTAINERD_DIR}/bin/containerd-shim %{buildroot}%{_bindir}/containerd-shim
 install -p -m 755 %{CONTAINERD_DIR}/bin/containerd-shim-runc-v1 %{buildroot}%{_bindir}/containerd-shim-runc-v1
 install -p -m 755 %{CONTAINERD_DIR}/bin/containerd-shim-runc-v2 %{buildroot}%{_bindir}/containerd-shim-runc-v2
@@ -86,10 +87,11 @@ install -p -m 755 %{_builddir}/src/crictl %{buildroot}%{_bindir}/crictl
 install -d %{buildroot}%{_sysconfdir}
 install -m 644 %{_sourcedir}/crictl.yaml %{buildroot}%{_sysconfdir}/crictl.yaml
 install -d %{buildroot}%{_unitdir}
-install -p -m 644 %{_sourcedir}/containerd.service %{buildroot}%{_unitdir}/containerd.service
+install -p -m 644 %{CONTAINERD_DIR}/containerd.service %{buildroot}%{_unitdir}/containerd.service
 
 # list files owned by the package here
 %files
+%{_prefix}/local/bin/containerd
 %{_bindir}/containerd
 %{_bindir}/containerd-shim
 %{_bindir}/containerd-shim-runc-v1
