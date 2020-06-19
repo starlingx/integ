@@ -1,0 +1,15 @@
+diff --git a/contrib/init/systemd/kubelet.service b/contrib/init/systemd/kubelet.service
+index 1082bba..1fae395 100644
+--- a/contrib/init/systemd/kubelet.service
++++ b/contrib/init/systemd/kubelet.service
+@@ -1,8 +1,8 @@
+ [Unit]
+ Description=Kubernetes Kubelet Server
+ Documentation=https://kubernetes.io/docs/concepts/overview/components/#kubelet https://kubernetes.io/docs/reference/generated/kubelet/
+-After=docker.service
+-Requires=docker.service
++Wants=network-online.target
++After=network-online.target
+ 
+ [Service]
+ WorkingDirectory=/var/lib/kubelet
