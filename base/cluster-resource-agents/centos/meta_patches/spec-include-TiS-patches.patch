@@ -12,9 +12,9 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index a16660a..ec85fc2 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -148,6 +148,24 @@ Patch1002:	bz1568588-9-google-cloud-sdk-oauth2client-python-rsa-to-cryptography.
- Patch1003:	bz1568588-10-gcloud-support-info.patch
- Patch1004:	bz1568589-4-aliyun-vpc-move-ip-bundled.patch
+@@ -136,6 +136,24 @@ Patch1003:	10-gcloud-support-info.patch
+ Patch1004:	aliyun-vpc-move-ip-4-bundled.patch
+ Patch1005:	python3-syntax-fixes.patch
  
 +# STX
 +
@@ -37,8 +37,8 @@ index a16660a..ec85fc2 100644
  Obsoletes:	heartbeat-resources <= %{version}
  Provides:	heartbeat-resources = %{version}
  
-@@ -508,6 +526,25 @@ cp %{aliyuncli_dir}/LICENSE %{aliyuncli}_LICENSE
- %patch1004 -p1
+@@ -488,6 +506,25 @@ cp %{aliyuncli_dir}/LICENSE %{aliyuncli}_LICENSE
+ %patch1005 -p1
  %endif
  
 +# STX

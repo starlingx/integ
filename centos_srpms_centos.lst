@@ -30,7 +30,7 @@ python-docker-4.0.2-2.el8.src.rpm
 python-keyring-21.0.0-1.el8.src.rpm
 # python-psycopg2-2.5.1-3.el7.src.rpm
 # python-voluptuous-0.8.9-1.el7.src.rpm
-resource-agents-4.1.1-12.el7_6.7.src.rpm
+resource-agents-4.1.1-33.el8.src.rpm
 setup-2.12.2-2.el8.src.rpm
 shim-15-8.el8.src.rpm
 shim-unsigned-x64-15-2.el8.src.rpm

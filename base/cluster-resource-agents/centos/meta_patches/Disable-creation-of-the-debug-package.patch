@@ -12,9 +12,9 @@ diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
 index 2536cb7..e5fbbeb 100644
 --- a/SPECS/resource-agents.spec
 +++ b/SPECS/resource-agents.spec
-@@ -35,6 +35,9 @@
-   } || %{?__transaction_systemd_inhibit:1}%{?!__transaction_systemd_inhibit:0}%{nil \
-   } || %(test -f /usr/lib/os-release; test $? -ne 0; echo $?))
+@@ -19,6 +19,9 @@
+ # git archive --prefix=$distdir/ HEAD | gzip > $TARFILE
+ #
  
 +# Disable debug package, it currently triggers a segfault in dwz tool
 +%define  debug_package  %{nil}
