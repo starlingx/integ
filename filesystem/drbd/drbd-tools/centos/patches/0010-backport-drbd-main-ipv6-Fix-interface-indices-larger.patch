@@ -1,0 +1,39 @@
+From 393137563853cde5561845aeb8498d831d6368aa Mon Sep 17 00:00:00 2001
+From: paul <paul@starlingx.com>
+Date: Mon, 29 Jun 2020 16:48:39 +0000
+Subject: [PATCH] backport: drbd main ipv6: Fix interface indices larger than
+ 255
+
+fscanf line probably copied from kernel printf, but printf specifies the
+minimal field width and scanf the maximal field width.
+
+The bug was triggered on Xen servers that create and assign new,
+incremented interface IDs for new machines.
+
+ifindex is of type int anyways: struct net_device as defined in
+include/linux/netdevice.h. We should not rely on the assumption that
+the values are small enough to fit in one byte.
+
+Signed-off-by: Roland Kammerer <roland.kammerer@linbit.com>
+
+Signed-off-by: paul <paul@starlingx.com>
+---
+ user/drbdadm_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/user/drbdadm_main.c b/user/drbdadm_main.c
+index 19c5a44..d516d6f 100644
+--- a/user/drbdadm_main.c
++++ b/user/drbdadm_main.c
+@@ -3091,7 +3091,7 @@ int have_ip_ipv6(const char *ip)
+ 
+ 	while (fscanf
+ 	       (if_inet6,
+-		X32(08) X32(08) X32(08) X32(08) " %*02x %*02x %*02x %*02x %s",
++		X32(08) X32(08) X32(08) X32(08) " %*x %*x %*x %*x %s",
+ 		b, b + 1, b + 2, b + 3, name) > 0) {
+ 		for (i = 0; i < 4; i++)
+ 			addr6.s6_addr32[i] = cpu_to_be32(b[i]);
+-- 
+1.8.3.1
+
