@@ -1,29 +1,25 @@
----
- scripts/CMakeLists.txt | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+We have some downstream patches and other scripts that include variables to
+be expanded by cmake. Cmake needs to know about them, so adding them manually.
 
-diff --git a/scripts/CMakeLists.txt b/scripts/CMakeLists.txt
-index 2f9c185..a6e4d49 100644
---- a/scripts/CMakeLists.txt
-+++ b/scripts/CMakeLists.txt
-@@ -362,6 +362,35 @@ ELSE()
+--- mariadb-10.3.8/scripts/CMakeLists.txt	2018-07-02 09:34:11.000000000 +0200
++++ mariadb-10.3.8/scripts/CMakeLists.txt_patched	2018-07-03 10:58:15.954670153 +0200
+@@ -361,6 +361,34 @@ ELSE()
+       COMPONENT ${${file}_COMPONENT}
       )
    ENDFOREACH()
- 
++
 +  # files for systemd
 +  SET(SYSTEMD_SCRIPTS
 +    mysql.tmpfiles.d
 +    mysql.service
 +    mysql@.service
 +    mysql-prepare-db-dir
-+    mysql-wait-ready
-+    mysql-wait-stop
 +    mysql-check-socket
 +    mysql-check-upgrade
 +    mysql-scripts-common
 +    mysql_config_multilib
 +    clustercheck
-+    mysql.init
++    galera_new_cluster
 +    my.cnf
 +  )
 +  FOREACH(file ${SYSTEMD_SCRIPTS})
@@ -39,9 +35,6 @@ index 2f9c185..a6e4d49 100644
 +    ENDIF()
 +  ENDFOREACH()
 +
-   FOREACH(file ${WSREP_SOURCE})
-     CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${file}.sh
-       ${CMAKE_CURRENT_BINARY_DIR}/${file} ESCAPE_QUOTES @ONLY)
--- 
-1.9.1
-
+ ENDIF()
+ 
+ # Install libgcc as  mylibgcc.a

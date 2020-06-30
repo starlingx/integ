@@ -1,4 +1,4 @@
-# Fails on aarch64
+# Fails on ppc64le
 encryption.create_or_replace :
 innodb_gis.rtree_compress2 :
 innodb.innodb_buffer_pool_resize :

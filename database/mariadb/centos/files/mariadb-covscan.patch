@@ -1,0 +1,19 @@
+Error: SHELLCHECK_WARNING:
+/usr/bin/mysql_install_db:431:10: warning: Remove backticks to avoid executing output. [SC2092]
+#  429|     if test ! -d "$dir"
+#  430|     then
+#  431|->     if ! `mkdir -p "$dir"`
+#  432|       then
+#  433|         echo "Fatal error Can't create database directory '$dir'"
+--- mariadb-10.3.10/scripts/mysql_install_db.sh	2018-10-02 11:45:42.000000000 +0200
++++ mariadb-10.3.10/scripts/mysql_install_db.sh_patched	2018-11-14 10:06:54.868469138 +0100
+@@ -428,7 +428,7 @@ for dir in "$ldata" "$ldata/mysql"
+ do
+   if test ! -d "$dir"
+   then
+-    if ! `mkdir -p "$dir"`
++    if ! mkdir -p "$dir"
+     then
+       echo "Fatal error Can't create database directory '$dir'"
+       link_to_help
+

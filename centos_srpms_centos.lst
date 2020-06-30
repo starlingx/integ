@@ -10,7 +10,6 @@ initscripts-10.00.1-1.el8_0.1.src.rpm
 # libevent-2.0.21-4.el7.src.rpm
 lighttpd-1.4.55-1.el8.src.rpm
 # logrotate-3.8.6-17.el7.src.rpm
-mariadb-10.3.17-1.module_el8.1.0+257+48736ea6.src.rpm
 net-snmp-5.8-7.el8_0.2.src.rpm
 net-tools-2.0-0.51.20160912git.el8.src.rpm
 openldap-2.4.46-11.el8_1.src.rpm
