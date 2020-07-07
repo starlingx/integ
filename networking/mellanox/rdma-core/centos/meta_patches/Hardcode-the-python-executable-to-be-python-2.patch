@@ -1,0 +1,32 @@
+From 72aa6f72693b4483aa1145a68c1235f0ca29ebbc Mon Sep 17 00:00:00 2001
+Message-Id: <72aa6f72693b4483aa1145a68c1235f0ca29ebbc.1588025676.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Mon, 27 Apr 2020 16:58:23 -0400
+Subject: [PATCH 1/1] Hardcode the python executable to be python 2
+
+The build messes up trying to use python 3 otherwise.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/rdma-core.spec | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/SPECS/rdma-core.spec b/SPECS/rdma-core.spec
+index e95d9fc..2f3db49 100644
+--- a/SPECS/rdma-core.spec
++++ b/SPECS/rdma-core.spec
+@@ -405,10 +405,7 @@ easy, object-oriented access to IB verbs.
+          -DENABLE_STATIC=1 \
+ %endif
+          %{EXTRA_CMAKE_FLAGS} \
+-%if %{defined __python3}
+-         -DPYTHON_EXECUTABLE:PATH=%{__python3} \
+-         -DCMAKE_INSTALL_PYTHON_ARCH_LIB:PATH=%{python3_sitearch} \
+-%endif
++         -DPYTHON_EXECUTABLE:PATH=/usr/bin/python \
+ %if %{with srp_compat}
+          -DENABLE_SRP_COMPAT=1 \
+ %endif
+-- 
+1.8.3.1
+
