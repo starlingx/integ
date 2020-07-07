@@ -1,10 +1,10 @@
-From 7e592781c3f5635f8b455cfcc2daaca572c633da Mon Sep 17 00:00:00 2001
-Message-Id: <7e592781c3f5635f8b455cfcc2daaca572c633da.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From a1a5aa15cca4c0ea9c3cdd937c11636ae3125ebb Mon Sep 17 00:00:00 2001
+Message-Id: <a1a5aa15cca4c0ea9c3cdd937c11636ae3125ebb.1594049325.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 23 Aug 2017 17:58:12 -0400
-Subject: [PATCH 25/32] US101216: IMA support in Titanium kernel
+Subject: [PATCH 23/34] US101216: IMA support in Titanium kernel
 
 facilitate building the IMA subsytem out-of-the-kernel tree as a Kernel
 module (for which CONFIG_IMA and CONFIG_INTEGRITY will be undefined) by:
@@ -29,10 +29,10 @@ Signed-off-by: Robin Lu <bin1.lu@intel.com>
  7 files changed, 140 insertions(+), 90 deletions(-)
 
 diff --git a/fs/namei.c b/fs/namei.c
-index 9f90b63..bf91ea0 100644
+index bf1b5e7..042d3ce 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -3243,7 +3243,7 @@ opened:
+@@ -3265,7 +3265,7 @@ opened:
  	error = open_check_o_direct(file);
  	if (error)
  		goto exit_fput;
@@ -42,10 +42,10 @@ index 9f90b63..bf91ea0 100644
  		goto exit_fput;
  
 diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
-index 00e98c3..cb9250e 100644
+index 3db8b9c..a2093a1 100644
 --- a/fs/nfsd/vfs.c
 +++ b/fs/nfsd/vfs.c
-@@ -898,7 +898,7 @@ nfsd_open(struct svc_rqst *rqstp, struct svc_fh *fhp, umode_t type,
+@@ -882,7 +882,7 @@ nfsd_open(struct svc_rqst *rqstp, struct svc_fh *fhp, umode_t type,
  		goto out_nfserr;
  	}
  
@@ -55,10 +55,10 @@ index 00e98c3..cb9250e 100644
  		fput(file);
  		goto out_nfserr;
 diff --git a/fs/xattr.c b/fs/xattr.c
-index e540aca..cc307ec 100644
+index 7a0d20f..4160060 100644
 --- a/fs/xattr.c
 +++ b/fs/xattr.c
-@@ -208,6 +208,7 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
+@@ -215,6 +215,7 @@ vfs_getxattr_alloc(struct dentry *dentry, const char *name, char **xattr_value,
  	*xattr_value = value;
  	return error;
  }
@@ -67,10 +67,10 @@ index e540aca..cc307ec 100644
  /* Compare an extended attribute value with the given value */
  int vfs_xattr_cmp(struct dentry *dentry, const char *xattr_name,
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index eb6f994..2dbaf80 100644
+index c0793d4..ae7b4b7 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -681,9 +681,8 @@ struct inode {
+@@ -683,9 +683,8 @@ struct inode {
  			struct fsnotify_mark_connector __rcu *i_fsnotify_marks)
  #endif
  
@@ -81,7 +81,7 @@ index eb6f994..2dbaf80 100644
  	void			*i_private; /* fs or device private pointer */
  };
  
-@@ -2852,7 +2851,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
+@@ -2810,7 +2809,6 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
  	return atomic_read(&inode->i_writecount) > 0;
  }
  
@@ -89,7 +89,7 @@ index eb6f994..2dbaf80 100644
  static inline void i_readcount_dec(struct inode *inode)
  {
  	BUG_ON(!atomic_read(&inode->i_readcount));
-@@ -2862,16 +2860,7 @@ static inline void i_readcount_inc(struct inode *inode)
+@@ -2820,16 +2818,7 @@ static inline void i_readcount_inc(struct inode *inode)
  {
  	atomic_inc(&inode->i_readcount);
  }
@@ -227,7 +227,7 @@ index 83222ce..a5040b6 100644
 -#endif /* CONFIG_INTEGRITY */
  #endif /* _LINUX_INTEGRITY_H */
 diff --git a/security/security.c b/security/security.c
-index f069482..646a0e3 100644
+index 44aaadf..1b450aa 100644
 --- a/security/security.c
 +++ b/security/security.c
 @@ -161,6 +161,110 @@ EXPORT_SYMBOL(unregister_lsm_notifier);

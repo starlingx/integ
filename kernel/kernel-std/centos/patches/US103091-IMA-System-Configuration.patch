@@ -1,10 +1,10 @@
-From 43dfb08aa6e053bcf1cf5696ea6bc3b9b2aa3d53 Mon Sep 17 00:00:00 2001
-Message-Id: <43dfb08aa6e053bcf1cf5696ea6bc3b9b2aa3d53.1527544850.git.Jim.Somerville@windriver.com>
-In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
-References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+From 4db7ed6a642616f8c913691f95dc2e4e26ed583e Mon Sep 17 00:00:00 2001
+Message-Id: <4db7ed6a642616f8c913691f95dc2e4e26ed583e.1593547667.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 4 Oct 2017 14:02:10 -0400
-Subject: [PATCH 23/26] US103091: IMA: System Configuration
+Subject: [PATCH 21/30] US103091: IMA: System Configuration
 
 Normally (if trusted integrity keyring is disabled), the _ima keyring
 needs to be created by user space (specifically systemd), but that has
@@ -28,10 +28,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  create mode 100644 kernel/ima_certificate.S
 
 diff --git a/.gitignore b/.gitignore
-index f73f35f..7148219 100644
+index 01f4d91..05fad94 100644
 --- a/.gitignore
 +++ b/.gitignore
-@@ -106,3 +106,4 @@ localversion
+@@ -107,3 +107,4 @@ localversion
  
  # Red Hat key security
  kernel/x509_certificate_list
@@ -48,7 +48,7 @@ index 0e49b3c..6b2da90 100644
 +
  #endif /* _KEYS_SYSTEM_KEYRING_H */
 diff --git a/kernel/Makefile b/kernel/Makefile
-index 44a82c1..000b9a8 100644
+index 85c409e..5d10606 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
 @@ -57,7 +57,7 @@ obj-$(CONFIG_QUEUED_SPINLOCKS) += qspinlock.o

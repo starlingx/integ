@@ -1,10 +1,10 @@
-From f5020c58583d04f0c6f8df1cbbd7d2e747fcb537 Mon Sep 17 00:00:00 2001
-Message-Id: <f5020c58583d04f0c6f8df1cbbd7d2e747fcb537.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From 886f1f57089f573829a2788fefbadf1eb7e88fd8 Mon Sep 17 00:00:00 2001
+Message-Id: <886f1f57089f573829a2788fefbadf1eb7e88fd8.1594049324.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Alex Shi <alex.shi@linaro.org>
 Date: Thu, 12 Jan 2017 21:27:04 +0800
-Subject: [PATCH 22/32] cpuidle/menu: add per CPU PM QoS resume latency
+Subject: [PATCH 20/34] cpuidle/menu: add per CPU PM QoS resume latency
  consideration
 
 [ commit 9908859acaa95640d4a07991a93f7cd5bfc18e02 from linux-stable ]
@@ -31,7 +31,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 7 insertions(+)
 
 diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index eb9fb0e..fe2dcb8 100644
+index 147dcbe..3e3f9ff 100644
 --- a/drivers/cpuidle/governors/menu.c
 +++ b/drivers/cpuidle/governors/menu.c
 @@ -19,6 +19,7 @@
@@ -42,7 +42,7 @@ index eb9fb0e..fe2dcb8 100644
  #include <linux/module.h>
  
  #define BUCKETS 12
-@@ -259,10 +260,12 @@ again:
+@@ -258,10 +259,12 @@ again:
  static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
  {
  	struct menu_device *data = &__get_cpu_var(menu_devices);
@@ -55,7 +55,7 @@ index eb9fb0e..fe2dcb8 100644
  
  	if (data->needs_update) {
  		menu_update(drv, dev);
-@@ -271,6 +274,10 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
+@@ -270,6 +273,10 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
  
  	data->exit_us = 0;
  

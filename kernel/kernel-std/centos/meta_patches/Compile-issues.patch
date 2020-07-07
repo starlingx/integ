@@ -1,41 +1,42 @@
-From 6c41acf7c1a4f5f3437e474505193bb353d241e6 Mon Sep 17 00:00:00 2001
-Message-Id: <6c41acf7c1a4f5f3437e474505193bb353d241e6.1584125537.git.Jim.Somerville@windriver.com>
-In-Reply-To: <47c970e28e2adfd6483fa8d861eeb338492297bf.1584125537.git.Jim.Somerville@windriver.com>
-References: <47c970e28e2adfd6483fa8d861eeb338492297bf.1584125537.git.Jim.Somerville@windriver.com>
+From 39bdad1285ace0190025ff4d6e52eead16297774 Mon Sep 17 00:00:00 2001
+Message-Id: <39bdad1285ace0190025ff4d6e52eead16297774.1593551476.git.Jim.Somerville@windriver.com>
 From: "zhao.shuai" <zhaos@neusoft.com>
 Date: Tue, 6 Aug 2019 16:18:04 +0800
-Subject: [PATCH 2/2] Compile issues
+Subject: [PATCH 1/1] Compile issues
 
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
- SPECS/kernel.spec | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ SPECS/kernel.spec | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 012ddbd..6595a38 100644
+index da62fbe..e1173de 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -496,6 +496,12 @@ Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
- Patch40028: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
- Patch40029: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
- Patch40030: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
+@@ -495,6 +495,14 @@ Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
+ # Fix two potential kernel memory leaks
+ Patch40028: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
+ Patch40029: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +# Fix assorted compilation issues
-+Patch40031: fix-compilation-issues.patch
++Patch40030: fix-compilation-issues.patch
 +# Fix CentOS 7.6 upgrade compile error
-+Patch40032: fix-CentOS-7.6-upgrade-compile-error.patch
++Patch40031: fix-CentOS-7.6-upgrade-compile-error.patch
 +# Compile fix for disabling CONFIG_MEMCG_KMEM
-+Patch40033: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++Patch40032: compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++# Fix CentOS 7.8 upgrade compile errors
++Patch40033: fix-CentOS-7.8-upgrade-compile-errors.patch
  
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
-@@ -879,6 +885,9 @@ ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
- ApplyOptionalPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
+@@ -877,6 +885,10 @@ ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
+ ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
  ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
  ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +ApplyOptionalPatch fix-compilation-issues.patch
 +ApplyOptionalPatch fix-CentOS-7.6-upgrade-compile-error.patch
 +ApplyOptionalPatch compile-fix-for-disabling-CONFIG_MEMCG_KMEM.patch
++ApplyOptionalPatch fix-CentOS-7.8-upgrade-compile-errors.patch
  
  # Any further pre-build tree manipulations happen here.
  

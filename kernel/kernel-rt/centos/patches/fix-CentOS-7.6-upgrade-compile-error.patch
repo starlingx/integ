@@ -1,7 +1,10 @@
-From c48d3f2683c28939b3c11bdfa67e4446cd11beee Mon Sep 17 00:00:00 2001
+From 0f5d4715c743a15c006d13016c0fbdd7a1eb326d Mon Sep 17 00:00:00 2001
+Message-Id: <0f5d4715c743a15c006d13016c0fbdd7a1eb326d.1594049325.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: "Martin, Chen" <haochuan.z.chen@intel.com>
 Date: Mon, 14 Jan 2019 17:59:03 +0000
-Subject: [PATCH] fix CentOS 7.6 upgrade compile error
+Subject: [PATCH 33/34] fix CentOS 7.6 upgrade compile error
 
 1, fix improper call of part_round_stats and part_inc_in_flight
 in drbd_req.c, as CONFIG_BLK_DEV_DRBD=m defined in
@@ -12,6 +15,7 @@ trace_bpf_jit_compile, trace_bpf_jit_free, if pmd_read_atomic not
 defined
 
 Signed-off-by: Martin, Chen <haochuan.z.chen@intel.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  drivers/block/drbd/drbd_req.c | 8 ++++----
  include/linux/filter.h        | 3 +++
@@ -48,7 +52,7 @@ index a6f13f7..cbd0a49 100644
  }
  
 diff --git a/include/linux/filter.h b/include/linux/filter.h
-index cddbb31..15ce55f 100644
+index 9f8aa2f..2ddea70 100644
 --- a/include/linux/filter.h
 +++ b/include/linux/filter.h
 @@ -763,6 +763,9 @@ void bpf_prog_kallsyms_add(struct bpf_prog *fp);

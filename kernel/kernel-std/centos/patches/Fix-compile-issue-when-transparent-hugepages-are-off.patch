@@ -1,41 +1,18 @@
-From b6ceef1c915827b50ce3f76da4dc47f3eb768b44 Mon Sep 17 00:00:00 2001
-Message-Id: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+From e5e57e53c3fab5de7b6cb314d932be5edba27af6 Mon Sep 17 00:00:00 2001
+Message-Id: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Thu, 15 Dec 2016 14:27:48 -0500
-Subject: [PATCH 01/26] Fix compile issue when transparent hugepages are off
+Subject: [PATCH 01/30] Fix compile issue when transparent hugepages are off
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
- drivers/gpu/drm/i915/i915_gemfs.c | 4 ++--
- fs/proc/task_mmu.c                | 2 ++
- mm/swap.c                         | 2 ++
- 3 files changed, 6 insertions(+), 2 deletions(-)
+ fs/proc/task_mmu.c | 2 ++
+ mm/swap.c          | 2 ++
+ 2 files changed, 4 insertions(+)
 
-diff --git a/drivers/gpu/drm/i915/i915_gemfs.c b/drivers/gpu/drm/i915/i915_gemfs.c
-index 888b7d3f..efe915c7 100644
---- a/drivers/gpu/drm/i915/i915_gemfs.c
-+++ b/drivers/gpu/drm/i915/i915_gemfs.c
-@@ -49,7 +49,7 @@ int i915_gemfs_init(struct drm_i915_private *i915)
- 	 * memory pressure shmem should split any huge-pages which can be
- 	 * shrunk.
- 	 */
--
-+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
- 	if (has_transparent_hugepage()) {
- 		struct super_block *sb = gemfs->mnt_sb;
- 		/* FIXME: Disabled until we get W/A for read BW issue. */
-@@ -63,7 +63,7 @@ int i915_gemfs_init(struct drm_i915_private *i915)
- 			return err;
- 		}
- 	}
--
-+#endif
- 	i915->mm.gemfs = gemfs;
- 
- 	return 0;
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index e27a1d42..e8a8ba9d 100644
+index e27a1d4..e8a8ba9 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -1116,7 +1116,9 @@ static int pagemap_pmd_range(pmd_t *pmdp, unsigned long addr, unsigned long end,
@@ -49,7 +26,7 @@ index e27a1d42..e8a8ba9d 100644
  	int err = 0;
  
 diff --git a/mm/swap.c b/mm/swap.c
-index 0982a35..6dcf38c 100644
+index 25c2657..83cbbca 100644
 --- a/mm/swap.c
 +++ b/mm/swap.c
 @@ -1043,8 +1043,10 @@ void release_pages(struct page **pages, int nr, bool cold)

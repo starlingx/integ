@@ -1,17 +1,18 @@
-From 32af2a0ea3905e23d85a65fd9326dbc6db0a21c4 Mon Sep 17 00:00:00 2001
+From 3e10c41d0655bb9f7bc88ab9d87c28fa012ad2f8 Mon Sep 17 00:00:00 2001
+Message-Id: <3e10c41d0655bb9f7bc88ab9d87c28fa012ad2f8.1593548668.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 20 Apr 2018 14:51:56 -0400
-Subject: [PATCH] Build logic and sources for TiC
+Subject: [PATCH 1/3] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
- SPECS/kernel.spec | 73 ++++++++++++++++++++++++++++++++++++++---------
+ SPECS/kernel.spec | 73 +++++++++++++++++++++++++++++++++++++++++++++----------
  1 file changed, 60 insertions(+), 13 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 852fd10..e42177e 100644
+index 4dafec3..d0dad72 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -5,7 +5,8 @@ Summary: The Linux kernel
@@ -25,16 +26,16 @@ index 852fd10..e42177e 100644
  # For a kernel released for public testing, released_kernel should be 1.
  # For internal testing builds during development, it should be 0.
 @@ -14,12 +15,14 @@ Summary: The Linux kernel
- %global distro_build 1062
+ %global distro_build 1127
  
  %define rpmversion 3.10.0
--%define pkgrelease 1062.1.2.el7
-+%define _pkgrelease 1062.1.2
+-%define pkgrelease 1127.13.1.el7
++%define _pkgrelease 1127.13.1
 +%define pkgrelease %{_pkgrelease}.el7
 +
  
  # allow pkg_release to have configurable %%{?dist} tag
- %define specrelease 1062.1.2%{?dist}
+ %define specrelease 1127.13.1%{?dist}
  
 -%define pkg_release %{specrelease}%{?buildid}
 +%define pkg_release %{specrelease}%{buildid}
@@ -226,7 +227,7 @@ index 852fd10..e42177e 100644
 +%endif
 +
  %changelog
- * Fri Sep 20 2019 CentOS Sources <bugs@centos.org> - 3.10.0-1062.1.2.el7
+ * Tue Jun 23 2020 CentOS Sources <bugs@centos.org> - 3.10.0-1127.13.1.el7
  - Apply debranding changes
 -- 
 1.8.3.1

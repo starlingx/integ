@@ -1,10 +1,10 @@
-From 6b6edb5a389c03e208e6a123a7807af66283237d Mon Sep 17 00:00:00 2001
-Message-Id: <6b6edb5a389c03e208e6a123a7807af66283237d.1527544850.git.Jim.Somerville@windriver.com>
-In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
-References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+From 5e36e7ce9c89e117afa6ecdf2e8d1ce3dadace93 Mon Sep 17 00:00:00 2001
+Message-Id: <5e36e7ce9c89e117afa6ecdf2e8d1ce3dadace93.1593547666.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH 05/26] affine compute kernel threads
+Subject: [PATCH 05/30] affine compute kernel threads
 
 This is a kernel enhancement to configure the cpu affinity of kernel
 threads via kernel boot option kthread_cpus=<cpulist>. The compute
@@ -39,10 +39,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  6 files changed, 32 insertions(+), 6 deletions(-)
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 1806170..2f7feb0 100644
+index 85f4ab2..b0d045e 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -1551,6 +1551,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+@@ -1571,6 +1571,16 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
  
  	kpti		[X86-64] Enable kernel page table isolation.
  
@@ -60,7 +60,7 @@ index 1806170..2f7feb0 100644
  			Default is 0 (don't ignore, but inject #GP)
  
 diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
-index 14b4972..37a6adf 100644
+index b6b72ce..d232a85 100644
 --- a/include/linux/cpumask.h
 +++ b/include/linux/cpumask.h
 @@ -52,6 +52,7 @@ extern int nr_cpu_ids;
@@ -80,10 +80,10 @@ index 14b4972..37a6adf 100644
  #if NR_CPUS > 1
  #define num_online_cpus()	cpumask_weight(cpu_online_mask)
 diff --git a/init/main.c b/init/main.c
-index 085c9c5..089f83d 100644
+index 93177dd..6c07f83 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -959,10 +959,6 @@ static noinline void __init kernel_init_freeable(void)
+@@ -966,10 +966,6 @@ static noinline void __init kernel_init_freeable(void)
  	 * init can allocate pages on any node
  	 */
  	set_mems_allowed(node_states[N_MEMORY]);
@@ -94,7 +94,7 @@ index 085c9c5..089f83d 100644
  
  	cad_pid = task_pid(current);
  
-@@ -978,6 +974,8 @@ static noinline void __init kernel_init_freeable(void)
+@@ -987,6 +983,8 @@ static noinline void __init kernel_init_freeable(void)
  
  	do_basic_setup();
  
@@ -104,10 +104,10 @@ index 085c9c5..089f83d 100644
  	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
  		pr_err("Warning: unable to open an initial console.\n");
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 0d9e250..6c156bd 100644
+index dbd179a..7409fde 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1012,6 +1012,19 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
+@@ -1016,6 +1016,19 @@ static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
  const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
  EXPORT_SYMBOL(cpu_active_mask);
  

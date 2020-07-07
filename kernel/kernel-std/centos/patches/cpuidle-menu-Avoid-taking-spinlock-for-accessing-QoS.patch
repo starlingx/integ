@@ -1,10 +1,10 @@
-From c900922b59bc9f2b680f9d1846bf7599d8410de8 Mon Sep 17 00:00:00 2001
-Message-Id: <c900922b59bc9f2b680f9d1846bf7599d8410de8.1527544850.git.Jim.Somerville@windriver.com>
-In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
-References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+From 99d9e02330b1cf04109d0875466806958db82f76 Mon Sep 17 00:00:00 2001
+Message-Id: <99d9e02330b1cf04109d0875466806958db82f76.1593547667.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>
 Date: Fri, 24 Feb 2017 13:25:14 +0100
-Subject: [PATCH 21/26] cpuidle: menu: Avoid taking spinlock for accessing QoS
+Subject: [PATCH 19/30] cpuidle: menu: Avoid taking spinlock for accessing QoS
  values
 
 [commit	6dbf5cea05a7098a69f294c96b6d76f08562cae5 from linux-stable ]
@@ -37,7 +37,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  3 files changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/base/power/qos.c b/drivers/base/power/qos.c
-index b2ca302..0cc2a13 100644
+index 30e72c0..4c2b9ea 100644
 --- a/drivers/base/power/qos.c
 +++ b/drivers/base/power/qos.c
 @@ -104,8 +104,7 @@ EXPORT_SYMBOL_GPL(dev_pm_qos_flags);
@@ -51,10 +51,10 @@ index b2ca302..0cc2a13 100644
  
  /**
 diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index fe2dcb8..f9861fd 100644
+index 3e3f9ff..cd3b079 100644
 --- a/drivers/cpuidle/governors/menu.c
 +++ b/drivers/cpuidle/governors/menu.c
-@@ -265,7 +265,7 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
+@@ -264,7 +264,7 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
  	int i;
  	int multiplier;
  	struct timespec t;

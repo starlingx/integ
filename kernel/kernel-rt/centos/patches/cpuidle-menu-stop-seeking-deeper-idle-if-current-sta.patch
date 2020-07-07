@@ -1,10 +1,10 @@
-From 9218064183a57581be8b7b980ce4b8ac9821555b Mon Sep 17 00:00:00 2001
-Message-Id: <9218064183a57581be8b7b980ce4b8ac9821555b.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From 31e1916b35d62464c58b359a97c5292ac2ccae60 Mon Sep 17 00:00:00 2001
+Message-Id: <31e1916b35d62464c58b359a97c5292ac2ccae60.1594049324.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Alex Shi <alex.shi@linaro.org>
 Date: Thu, 12 Jan 2017 21:27:02 +0800
-Subject: [PATCH 21/32] cpuidle/menu: stop seeking deeper idle if current state
+Subject: [PATCH 19/34] cpuidle/menu: stop seeking deeper idle if current state
  is deep enough
 
 [ commit 8e37e1a2a3295f5d99e6dbe99eca24eca7a034ef from linux-stable ]
@@ -29,10 +29,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index c99fee9..eb9fb0e 100644
+index 20904ff..147dcbe 100644
 --- a/drivers/cpuidle/governors/menu.c
 +++ b/drivers/cpuidle/governors/menu.c
-@@ -323,11 +323,11 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
+@@ -322,11 +322,11 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
  		if (s->disabled || su->disable)
  			continue;
  		if (s->target_residency > data->predicted_us)
@@ -45,7 +45,7 @@ index c99fee9..eb9fb0e 100644
 -			continue;
 +			break;
  
- 		data->last_state_idx = i;
+ 		dev->last_state_idx = i;
  		data->exit_us = s->exit_latency;
 -- 
 1.8.3.1

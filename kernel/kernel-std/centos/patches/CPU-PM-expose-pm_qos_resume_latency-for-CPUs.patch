@@ -1,7 +1,10 @@
-From 648072810b35e6251c6503a8e6693deeb6d0a89d Mon Sep 17 00:00:00 2001
+From 87b20e041aab114acea1979a37543d74a19deee6 Mon Sep 17 00:00:00 2001
+Message-Id: <87b20e041aab114acea1979a37543d74a19deee6.1593547667.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Alex Shi <alex.shi@linaro.org>
 Date: Thu, 12 Jan 2017 21:27:03 +0800
-Subject: [PATCH] CPU / PM: expose pm_qos_resume_latency for CPUs
+Subject: [PATCH 18/30] CPU / PM: expose pm_qos_resume_latency for CPUs
 
 [ commit 37efa4b41ffb31dcdfc3beb97d47992bb2a083e5 from linux-stable ]
 
@@ -36,7 +39,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/drivers/base/cpu.c b/drivers/base/cpu.c
-index 65e786d..91d620f 100644
+index 2a2e357..2ef47e5 100644
 --- a/drivers/base/cpu.c
 +++ b/drivers/base/cpu.c
 @@ -15,6 +15,7 @@
@@ -56,5 +59,5 @@ index 65e786d..91d620f 100644
  #ifdef CONFIG_KEXEC
  	if (!error)
 -- 
-2.7.4
+1.8.3.1
 

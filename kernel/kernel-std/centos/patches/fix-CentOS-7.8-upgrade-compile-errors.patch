@@ -1,0 +1,48 @@
+From 2b9bd30107f3ba61093852a93d3bc6a2576aea2c Mon Sep 17 00:00:00 2001
+Message-Id: <2b9bd30107f3ba61093852a93d3bc6a2576aea2c.1586455469.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Wed, 8 Apr 2020 17:24:40 -0400
+Subject: [PATCH 1/1] fix CentOS 7.8 upgrade compile errors
+
+Add __init to hyperv_init.
+
+Remove the transparent huge pages only restriction on
+vma_address as memory-failure now also uses it.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ arch/x86/hyperv/hv_init.c | 2 +-
+ mm/internal.h             | 2 --
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/x86/hyperv/hv_init.c b/arch/x86/hyperv/hv_init.c
+index 2c8a003..0b99f9a 100644
+--- a/arch/x86/hyperv/hv_init.c
++++ b/arch/x86/hyperv/hv_init.c
+@@ -146,7 +146,7 @@ static int __init hv_pci_init(void)
+  * 1. Setup the hypercall page.
+  * 2. Register Hyper-V specific clocksource.
+  */
+-void hyperv_init(void)
++void __init hyperv_init(void)
+ {
+ 	u64 guest_id;
+ 	union hv_x64_msr_hypercall_contents hypercall_msr;
+diff --git a/mm/internal.h b/mm/internal.h
+index 6b35e45..7215806 100644
+--- a/mm/internal.h
++++ b/mm/internal.h
+@@ -239,10 +239,8 @@ static inline void mlock_migrate_page(struct page *newpage, struct page *page)
+ 
+ extern pmd_t maybe_pmd_mkwrite(pmd_t pmd, struct vm_area_struct *vma);
+ 
+-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
+ extern unsigned long vma_address(struct page *page,
+ 				 struct vm_area_struct *vma);
+-#endif
+ #else /* !CONFIG_MMU */
+ static inline int mlocked_vma_newpage(struct vm_area_struct *v, struct page *p)
+ {
+-- 
+1.8.3.1
+
