@@ -1,7 +1,10 @@
-From 220edc1ccc6a0bc3dfb94a92946bf2b9a6cc0c61 Mon Sep 17 00:00:00 2001
+From 9fe51a9e3d0bfd1cf6b98691a5ad744a8318d5b4 Mon Sep 17 00:00:00 2001
+Message-Id: <9fe51a9e3d0bfd1cf6b98691a5ad744a8318d5b4.1594049324.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 7 Apr 2016 11:16:19 -0600
-Subject: [PATCH] Notification of death of arbitrary processes
+Subject: [PATCH 11/34] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -35,7 +38,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  create mode 100644 kernel/death_notify.h
 
 diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-index d8c82e0..ba0c12e 100644
+index 257ff37..71b7cc4 100644
 --- a/include/linux/init_task.h
 +++ b/include/linux/init_task.h
 @@ -77,6 +77,14 @@ extern struct nsproxy init_nsproxy;
@@ -53,7 +56,7 @@ index d8c82e0..ba0c12e 100644
  extern struct group_info init_groups;
  
  #define INIT_STRUCT_PID {						\
-@@ -231,6 +239,7 @@ extern struct task_group root_task_group;
+@@ -230,6 +238,7 @@ extern struct task_group root_task_group;
  	.alloc_lock	= __SPIN_LOCK_UNLOCKED(tsk.alloc_lock),		\
  	.journal_info	= NULL,						\
  	.cpu_timers	= INIT_CPU_TIMERS(tsk.cpu_timers),		\
@@ -62,10 +65,10 @@ index d8c82e0..ba0c12e 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */		\
  	INIT_TIMER_LIST							\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 97ff026..0785453 100644
+index 91736d9..ba78477 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1686,6 +1686,12 @@ struct task_struct {
+@@ -1712,6 +1712,12 @@ struct task_struct {
  	short il_next;
  	short pref_node_fork;
  #endif
@@ -79,7 +82,7 @@ index 97ff026..0785453 100644
  	int numa_scan_seq;
  	unsigned int numa_scan_period;
 diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-index a817b5c..2cf7776 100644
+index 02376de..2c711a1 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
 @@ -55,6 +55,24 @@
@@ -108,10 +111,10 @@ index a817b5c..2cf7776 100644
  #define PR_GET_ENDIAN	19
  #define PR_SET_ENDIAN	20
 diff --git a/init/Kconfig b/init/Kconfig
-index 1d645a1..37e48c0 100644
+index 11a36c3..8192d77 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1581,6 +1581,21 @@ config VM_EVENT_COUNTERS
+@@ -1582,6 +1582,21 @@ config VM_EVENT_COUNTERS
  	  on EXPERT systems.  /proc/vmstat will only show page counts
  	  if VM event counters are disabled.
  
@@ -134,7 +137,7 @@ index 1d645a1..37e48c0 100644
  	default y
  	bool "Enable SLUB debugging support" if EXPERT
 diff --git a/kernel/Makefile b/kernel/Makefile
-index 762218c..d357e7d 100644
+index 66146e7..8286972 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
 @@ -120,6 +120,7 @@ obj-$(CONFIG_TRACEPOINTS) += trace/
@@ -430,7 +433,7 @@ index 0000000..b2b8e8c
 +#endif /* CONFIG_SIGEXIT */
 +#endif
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 8a908ea..448a3c3 100644
+index 88851a5..c72cdee 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -59,6 +59,9 @@
@@ -454,10 +457,10 @@ index 8a908ea..448a3c3 100644
  	__exit_signal(p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 6bda4c0..f3cd3ad 100644
+index 875e1e3..2518d76 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1518,6 +1518,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -1539,6 +1539,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
  	p->sequential_io	= 0;
  	p->sequential_io_avg	= 0;
  #endif
@@ -469,7 +472,7 @@ index 6bda4c0..f3cd3ad 100644
  	/* Perform scheduler related setup. Assign this task to a CPU. */
  	retval = sched_fork(clone_flags, p);
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 59e84a2..728daa9 100644
+index 54f488c..c06947a 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -47,6 +47,9 @@
@@ -532,5 +535,5 @@ index e79ea7e..5d43b93 100644
  		error = prctl_set_mm(arg2, arg3, arg4, arg5);
  		break;
 -- 
-2.7.4
+1.8.3.1
 

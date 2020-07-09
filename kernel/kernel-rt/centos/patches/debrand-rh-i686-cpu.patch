@@ -1,10 +1,10 @@
-From 7d1684c010cbbc13b80056d53932ef62d280dc3f Mon Sep 17 00:00:00 2001
-Message-Id: <7d1684c010cbbc13b80056d53932ef62d280dc3f.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From 7b5e2f3c72395088ec4ed7ec475533f465593595 Mon Sep 17 00:00:00 2001
+Message-Id: <7b5e2f3c72395088ec4ed7ec475533f465593595.1594049323.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Tue, 3 Apr 2018 18:07:37 -0400
-Subject: [PATCH 03/32] debrand rh i686 cpu
+Subject: [PATCH 03/34] debrand rh i686 cpu
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---

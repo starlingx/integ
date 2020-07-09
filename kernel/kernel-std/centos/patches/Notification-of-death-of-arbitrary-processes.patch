@@ -1,7 +1,10 @@
-From 36270456f8d6e274791fbf846ad03249759eafa6 Mon Sep 17 00:00:00 2001
+From e062321902c23966c2c75a709b421f96edf9ea59 Mon Sep 17 00:00:00 2001
+Message-Id: <e062321902c23966c2c75a709b421f96edf9ea59.1593547666.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 7 Apr 2016 11:16:19 -0600
-Subject: [PATCH] Notification of death of arbitrary processes
+Subject: [PATCH 02/30] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -35,7 +38,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  create mode 100644 kernel/death_notify.h
 
 diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-index a05294b..cfb7197 100644
+index 2a7ddab..c5c378b 100644
 --- a/include/linux/init_task.h
 +++ b/include/linux/init_task.h
 @@ -77,6 +77,14 @@ extern struct nsproxy init_nsproxy;
@@ -62,10 +65,10 @@ index a05294b..cfb7197 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */		\
  	.pids = {							\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index d184652..ba6ae5c 100644
+index 710fd37..c853bc3 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1653,6 +1653,12 @@ struct task_struct {
+@@ -1681,6 +1681,12 @@ struct task_struct {
  	short il_next;
  	short pref_node_fork;
  #endif
@@ -79,7 +82,7 @@ index d184652..ba6ae5c 100644
  	int numa_scan_seq;
  	unsigned int numa_scan_period;
 diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-index a817b5c..2cf7776 100644
+index 02376de..2c711a1 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
 @@ -55,6 +55,24 @@
@@ -108,10 +111,10 @@ index a817b5c..2cf7776 100644
  #define PR_GET_ENDIAN	19
  #define PR_SET_ENDIAN	20
 diff --git a/init/Kconfig b/init/Kconfig
-index 6ec689c..550cea4 100644
+index 710d87f..67313dc 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1580,6 +1580,21 @@ config VM_EVENT_COUNTERS
+@@ -1581,6 +1581,21 @@ config VM_EVENT_COUNTERS
  	  on EXPERT systems.  /proc/vmstat will only show page counts
  	  if VM event counters are disabled.
  
@@ -134,7 +137,7 @@ index 6ec689c..550cea4 100644
  	default y
  	bool "Enable SLUB debugging support" if EXPERT
 diff --git a/kernel/Makefile b/kernel/Makefile
-index 2fb90fa..44a82c1 100644
+index 552c4d1..85c409e 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
 @@ -113,6 +113,7 @@ obj-$(CONFIG_TRACEPOINTS) += trace/
@@ -430,7 +433,7 @@ index 0000000..b2b8e8c
 +#endif /* CONFIG_SIGEXIT */
 +#endif
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 1afa799..a2ea26b 100644
+index ebc8bb0..a719e75 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -59,6 +59,9 @@
@@ -454,10 +457,10 @@ index 1afa799..a2ea26b 100644
  	__exit_signal(p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index c75422b..30dee92 100644
+index 26762d3..6cf25b9 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1477,6 +1477,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+@@ -1502,6 +1502,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
  	p->sequential_io	= 0;
  	p->sequential_io_avg	= 0;
  #endif
@@ -469,7 +472,7 @@ index c75422b..30dee92 100644
  	/* Perform scheduler related setup. Assign this task to a CPU. */
  	retval = sched_fork(clone_flags, p);
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 35133a7..3f72ac0 100644
+index a984c4b..446484f 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -46,6 +46,9 @@
@@ -532,5 +535,5 @@ index 1fbf388..0bc6b02 100644
  		error = prctl_set_mm(arg2, arg3, arg4, arg5);
  		break;
 -- 
-2.7.4
+1.8.3.1
 

@@ -1,7 +1,10 @@
-From ebe06187bf2aec10d537ce4595e416035367d703 Mon Sep 17 00:00:00 2001
+From 29dd132150699440a78c52e9098ba56b5e5b2470 Mon Sep 17 00:00:00 2001
+Message-Id: <29dd132150699440a78c52e9098ba56b5e5b2470.1593547667.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Konstantin Khlebnikov <koct9i@gmail.com>
 Date: Tue, 17 Jun 2014 06:58:05 +0400
-Subject: [PATCH] epoll: fix use-after-free in eventpoll_release_file
+Subject: [PATCH 25/30] epoll: fix use-after-free in eventpoll_release_file
 
 This fixes use-after-free of epi->fllink.next inside list loop macro.
 This loop actually releases elements in the body.  The list is
@@ -21,15 +24,16 @@ Cc: Stable <stable@vger.kernel.org> # 3.13+
 Cc: Sasha Levin <sasha.levin@oracle.com>
 Cc: Jason Baron <jbaron@akamai.com>
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  fs/eventpoll.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/eventpoll.c b/fs/eventpoll.c
-index b73e062..b10b48c 100644
+index 6731b99..229eea5 100644
 --- a/fs/eventpoll.c
 +++ b/fs/eventpoll.c
-@@ -910,7 +910,7 @@ static const struct file_operations eventpoll_fops = {
+@@ -920,7 +920,7 @@ static const struct file_operations eventpoll_fops = {
  void eventpoll_release_file(struct file *file)
  {
  	struct eventpoll *ep;
@@ -38,7 +42,7 @@ index b73e062..b10b48c 100644
  
  	/*
  	 * We don't want to get "file->f_lock" because it is not
-@@ -926,7 +926,7 @@ void eventpoll_release_file(struct file *file)
+@@ -936,7 +936,7 @@ void eventpoll_release_file(struct file *file)
  	 * Besides, ep_remove() acquires the lock, so we can't hold it here.
  	 */
  	mutex_lock(&epmutex);
@@ -48,5 +52,5 @@ index b73e062..b10b48c 100644
  		mutex_lock_nested(&ep->mtx, 0);
  		ep_remove(ep, epi);
 -- 
-2.7.4
+1.8.3.1
 

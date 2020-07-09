@@ -1,10 +1,10 @@
-From ea38fcef34645b2220eadad6c862d5884c48026d Mon Sep 17 00:00:00 2001
-Message-Id: <ea38fcef34645b2220eadad6c862d5884c48026d.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From cfa3a689d2f3bd66d23f950ed14a9d02570cef68 Mon Sep 17 00:00:00 2001
+Message-Id: <cfa3a689d2f3bd66d23f950ed14a9d02570cef68.1594049324.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Akinobu Mita <akinobu.mita@gmail.com>
 Date: Tue, 31 May 2016 16:07:55 -0400
-Subject: [PATCH 10/32] memblock: introduce memblock_alloc_range()
+Subject: [PATCH 10/34] memblock: introduce memblock_alloc_range()
 
 Commit 2bfc2862c4fe38379a2fb2cfba33fad32ccb4ff4 upstream
 Backported-by: Nam Ninh <nam.ninh@windriver.com>
@@ -32,7 +32,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  2 files changed, 20 insertions(+), 4 deletions(-)
 
 diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-index 5a439c9..d6bcbef 100644
+index 41e69df..b81e6af 100644
 --- a/include/linux/memblock.h
 +++ b/include/linux/memblock.h
 @@ -306,6 +306,8 @@ static inline bool memblock_bottom_up(void) { return false; }
@@ -45,7 +45,7 @@ index 5a439c9..d6bcbef 100644
  				phys_addr_t max_addr);
  phys_addr_t __memblock_alloc_base(phys_addr_t size, phys_addr_t align,
 diff --git a/mm/memblock.c b/mm/memblock.c
-index fbc8071..ff910a4 100644
+index 52a3803..47ea53d 100644
 --- a/mm/memblock.c
 +++ b/mm/memblock.c
 @@ -1120,9 +1120,9 @@ int __init_memblock memblock_set_node(phys_addr_t base, phys_addr_t size,

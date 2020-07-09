@@ -1,10 +1,10 @@
-From d84a5bd81b7ef68f35c3bbd845e71aee10e4e9b7 Mon Sep 17 00:00:00 2001
-Message-Id: <d84a5bd81b7ef68f35c3bbd845e71aee10e4e9b7.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From ebfdb59f48056644e2aa56e9137be06448f6c151 Mon Sep 17 00:00:00 2001
+Message-Id: <ebfdb59f48056644e2aa56e9137be06448f6c151.1594049325.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 4 Oct 2017 14:02:10 -0400
-Subject: [PATCH 26/32] US103091: IMA: System Configuration
+Subject: [PATCH 24/34] US103091: IMA: System Configuration
 
 Normally (if trusted integrity keyring is disabled), the _ima keyring
 needs to be created by user space (specifically systemd), but that has
@@ -38,7 +38,7 @@ index 0e49b3c..6b2da90 100644
 +
  #endif /* _KEYS_SYSTEM_KEYRING_H */
 diff --git a/kernel/Makefile b/kernel/Makefile
-index d357e7d..f333b29 100644
+index 8286972..500993b 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
 @@ -62,7 +62,7 @@ obj-$(CONFIG_QUEUED_SPINLOCKS) += qspinlock.o

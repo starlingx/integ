@@ -1,10 +1,10 @@
-From 049ff2fee2c00370ddc9c9bb598fe1e89aaced2d Mon Sep 17 00:00:00 2001
-Message-Id: <049ff2fee2c00370ddc9c9bb598fe1e89aaced2d.1527544850.git.Jim.Somerville@windriver.com>
-In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
-References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+From c0d06a46f920fb04c373d412504f4cda1ca3dc08 Mon Sep 17 00:00:00 2001
+Message-Id: <c0d06a46f920fb04c373d412504f4cda1ca3dc08.1593547666.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Allain Legacy <allain.legacy@windriver.com>
 Date: Fri, 29 Jan 2016 12:13:40 -0500
-Subject: [PATCH 03/26] CGTS-3744: route: do not cache fib route info on local
+Subject: [PATCH 03/30] CGTS-3744: route: do not cache fib route info on local
  routes with oif
 
 For local routes that require a particular output interface we do not want to
@@ -32,10 +32,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 11 insertions(+)
 
 diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index f19aca2..5246096 100644
+index eccd5b0..27261d0 100644
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -2121,6 +2121,17 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
+@@ -2132,6 +2132,17 @@ static struct rtable *__mkroute_output(const struct fib_result *res,
  		 */
  		if (fi && res->prefixlen < 4)
  			fi = NULL;

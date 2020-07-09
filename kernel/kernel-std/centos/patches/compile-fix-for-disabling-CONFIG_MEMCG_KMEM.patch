@@ -1,15 +1,19 @@
-From 66936b9bfda2fa11019bf45298047c7365fdacb4 Mon Sep 17 00:00:00 2001
+From d5e2f81871334dd067d0bc60b2663e595b4fce60 Mon Sep 17 00:00:00 2001
+Message-Id: <d5e2f81871334dd067d0bc60b2663e595b4fce60.1593547667.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Bart Wensley <barton.wensley@windriver.com>
 Date: Mon, 8 Jul 2019 13:32:44 -0500
-Subject: [PATCH 1/1] compile fix for disabling CONFIG_MEMCG_KMEM
+Subject: [PATCH 30/30] compile fix for disabling CONFIG_MEMCG_KMEM
 
 Signed-off-by: Bart Wensley <barton.wensley@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  mm/memcontrol.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 175fef9..e475427 100644
+index 4953f35..620a570 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
 @@ -2995,6 +2995,8 @@ static void __mem_cgroup_commit_charge(struct mem_cgroup *memcg,

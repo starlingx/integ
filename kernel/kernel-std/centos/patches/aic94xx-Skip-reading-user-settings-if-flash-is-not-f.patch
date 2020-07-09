@@ -1,10 +1,10 @@
-From 6771ec5b24042ea92c2a872d28b41e39c4445c68 Mon Sep 17 00:00:00 2001
-Message-Id: <6771ec5b24042ea92c2a872d28b41e39c4445c68.1527544850.git.Jim.Somerville@windriver.com>
-In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
-References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+From 01e7ef1a076f945c7f4f6d482ca0bddbaea64043 Mon Sep 17 00:00:00 2001
+Message-Id: <01e7ef1a076f945c7f4f6d482ca0bddbaea64043.1593547667.git.Jim.Somerville@windriver.com>
+In-Reply-To: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
+References: <e5e57e53c3fab5de7b6cb314d932be5edba27af6.1593547666.git.Jim.Somerville@windriver.com>
 From: Hannes Reinecke <hare@suse.de>
 Date: Mon, 6 Jul 2015 13:07:58 +0200
-Subject: [PATCH 24/26] aic94xx: Skip reading user settings if flash is not
+Subject: [PATCH 22/30] aic94xx: Skip reading user settings if flash is not
  found
 
 If no user settings are found it's pointless trying to

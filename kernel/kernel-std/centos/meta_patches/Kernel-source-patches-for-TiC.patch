@@ -1,21 +1,23 @@
-From 47c970e28e2adfd6483fa8d861eeb338492297bf Mon Sep 17 00:00:00 2001
-Message-Id: <47c970e28e2adfd6483fa8d861eeb338492297bf.1584125537.git.Jim.Somerville@windriver.com>
+From 86a451e8890bc8d46f89a8941533c4eab7b84879 Mon Sep 17 00:00:00 2001
+Message-Id: <86a451e8890bc8d46f89a8941533c4eab7b84879.1593548669.git.Jim.Somerville@windriver.com>
+In-Reply-To: <3e10c41d0655bb9f7bc88ab9d87c28fa012ad2f8.1593548668.git.Jim.Somerville@windriver.com>
+References: <3e10c41d0655bb9f7bc88ab9d87c28fa012ad2f8.1593548668.git.Jim.Somerville@windriver.com>
 From: "zhao.shuai" <zhaos@neusoft.com>
 Date: Mon, 5 Aug 2019 17:55:01 +0800
-Subject: [PATCH 1/2] Kernel-source-patches-for-TiC
+Subject: [PATCH 2/3] Kernel-source-patches-for-TiC
 
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Robin Lu <bin1.lu@intel.com>
 ---
- SPECS/kernel.spec | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+ SPECS/kernel.spec | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 0b2ff2e..012ddbd 100644
+index d0dad72..da62fbe 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -463,6 +463,40 @@ Patch1002: debrand-rh-i686-cpu.patch
+@@ -463,6 +463,39 @@ Patch1002: debrand-rh-i686-cpu.patch
  Source30000: kernel-3.10.0-x86_64.config.tis_extra
  Source30001: ima_signing_key.pub
  
@@ -48,15 +50,14 @@ index 0b2ff2e..012ddbd 100644
 +Patch40026: turn-off-write-same-in-smartqpi-driver.patch
 +# Fix use-after-free in eventpoll_release_file
 +Patch40027: epoll-fix-use-after-free-in-eventpoll_release_file.patch
-+# Fix three potential kernel memory leaks
-+Patch40028: ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
-+Patch40029: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
-+Patch40030: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
++# Fix two potential kernel memory leaks
++Patch40028: rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
++Patch40029: rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +
  BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
  
  %description
-@@ -816,6 +850,36 @@ ApplyOptionalPatch debrand-single-cpu.patch
+@@ -816,6 +849,35 @@ ApplyOptionalPatch debrand-single-cpu.patch
  ApplyOptionalPatch debrand-rh_taint.patch
  ApplyOptionalPatch debrand-rh-i686-cpu.patch
  
@@ -86,7 +87,6 @@ index 0b2ff2e..012ddbd 100644
 +ApplyOptionalPatch dpt_i2o-fix-build-warning.patch
 +ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
 +ApplyOptionalPatch epoll-fix-use-after-free-in-eventpoll_release_file.patch
-+ApplyOptionalPatch ipvs-fix-memory-leak-in-ip_vs_ctl.c.patch
 +ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_acl_chmod.patch
 +ApplyOptionalPatch rh-ext4-release-leaked-posix-acl-in-ext4_xattr_set_a.patch
 +

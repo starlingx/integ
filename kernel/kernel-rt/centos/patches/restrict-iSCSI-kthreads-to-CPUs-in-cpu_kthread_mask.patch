@@ -1,10 +1,10 @@
-From d692cbb183b38e030c7c1221b67c9389bdeaf7f3 Mon Sep 17 00:00:00 2001
-Message-Id: <d692cbb183b38e030c7c1221b67c9389bdeaf7f3.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From 8cb24cac0b51473cc8bb7bf235729fc40d8572cd Mon Sep 17 00:00:00 2001
+Message-Id: <8cb24cac0b51473cc8bb7bf235729fc40d8572cd.1594049325.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Alex Kozyrev <alex.kozyrev@windriver.com>
 Date: Fri, 16 Mar 2018 15:50:57 -0400
-Subject: [PATCH 32/32] restrict iSCSI kthreads to CPUs in cpu_kthread_mask
+Subject: [PATCH 28/34] restrict iSCSI kthreads to CPUs in cpu_kthread_mask
 
 Do not allow them to run on other CPUs to prevent interference with VMs.
 
@@ -16,10 +16,10 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  2 files changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/target/iscsi/iscsi_target.c b/drivers/target/iscsi/iscsi_target.c
-index d8f587e..17b08b7 100644
+index ed34731..2843de3 100644
 --- a/drivers/target/iscsi/iscsi_target.c
 +++ b/drivers/target/iscsi/iscsi_target.c
-@@ -3575,8 +3575,8 @@ void iscsit_thread_get_cpumask(struct iscsi_conn *conn)
+@@ -3576,8 +3576,8 @@ void iscsit_thread_get_cpumask(struct iscsi_conn *conn)
  	 * iSCSI connection's RX/TX threads will be scheduled to
  	 * execute upon.
  	 */
@@ -31,10 +31,10 @@ index d8f587e..17b08b7 100644
  			cpumask_set_cpu(cpu, conn->conn_cpumask);
  			return;
 diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
-index 46ae77a..42b6c63 100644
+index dcc8441..ce640eb 100644
 --- a/include/linux/cpumask.h
 +++ b/include/linux/cpumask.h
-@@ -754,6 +754,7 @@ extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
+@@ -764,6 +764,7 @@ extern const DECLARE_BITMAP(cpu_all_bits, NR_CPUS);
  #define for_each_possible_cpu(cpu) for_each_cpu((cpu), cpu_possible_mask)
  #define for_each_online_cpu(cpu)   for_each_cpu((cpu), cpu_online_mask)
  #define for_each_present_cpu(cpu)  for_each_cpu((cpu), cpu_present_mask)

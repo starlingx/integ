@@ -1,10 +1,10 @@
-From d249a02d441998c43aeb1755c85cffb062628500 Mon Sep 17 00:00:00 2001
-Message-Id: <d249a02d441998c43aeb1755c85cffb062628500.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From 8e88ef0b592269b1fe1e4854eb592bd66f13026e Mon Sep 17 00:00:00 2001
+Message-Id: <8e88ef0b592269b1fe1e4854eb592bd66f13026e.1594049324.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Thu, 22 Dec 2016 17:54:11 -0500
-Subject: [PATCH 14/32] Add missing ifdef around max latency variable
+Subject: [PATCH 14/34] Add missing ifdef around max latency variable
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/kernel/trace/trace_hwlat.c b/kernel/trace/trace_hwlat.c
-index 4b30d8b..1bb578c 100644
+index 45a9e3b..8261a79 100644
 --- a/kernel/trace/trace_hwlat.c
 +++ b/kernel/trace/trace_hwlat.c
 @@ -167,7 +167,9 @@ void trace_hwlat_callback(bool enter)
@@ -37,7 +37,7 @@ index 4b30d8b..1bb578c 100644
  	}
  
  out:
-@@ -582,7 +586,9 @@ static int hwlat_tracer_init(struct trace_array *tr)
+@@ -585,7 +589,9 @@ static int hwlat_tracer_init(struct trace_array *tr)
  
  	disable_migrate = false;
  	hwlat_data.count = 0;

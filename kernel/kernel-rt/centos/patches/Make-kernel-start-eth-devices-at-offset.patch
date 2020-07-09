@@ -1,10 +1,10 @@
-From 97a7d3c050d7996f6a630184fa428a4d170c2ea8 Mon Sep 17 00:00:00 2001
-Message-Id: <97a7d3c050d7996f6a630184fa428a4d170c2ea8.1528226387.git.Jim.Somerville@windriver.com>
-In-Reply-To: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
-References: <c8270e79f6b7008fde44b8d5aa6314d8cf89d3ed.1528226387.git.Jim.Somerville@windriver.com>
+From d42259a5a3bffd350c52506425fd33f9ce7f42a9 Mon Sep 17 00:00:00 2001
+Message-Id: <d42259a5a3bffd350c52506425fd33f9ce7f42a9.1594049324.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
+References: <8a1447370731dd7b2f788ee75d36a3fcf9b76461.1594049323.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 12 May 2016 18:00:00 -0400
-Subject: [PATCH 09/32] Make kernel start eth devices at offset
+Subject: [PATCH 09/34] Make kernel start eth devices at offset
 
 In order to avoid naming collisions, we want to make the kernel
 start naming its "ethX" devices at eth1000 instead of eth0.  This
@@ -16,7 +16,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 1425f9d..db04f3b 100644
+index af236cc..375111d 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -1092,6 +1092,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
