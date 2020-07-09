@@ -1,0 +1,33 @@
+From 2da0c51f8b282a9d285424047b3e33dcae230681 Mon Sep 17 00:00:00 2001
+From: Dongqi Chen <chen.dq@neusoft.com>
+Date: Thu, 9 Jul 2020 16:52:12 +0800
+Subject: [PATCH] Skip cipher monkey patch on ruby 2.4+
+
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ SPECS/puppet.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet.spec b/SPECS/puppet.spec
+index 6c965d0..ce87eec 100644
+--- a/SPECS/puppet.spec
++++ b/SPECS/puppet.spec
+@@ -39,6 +39,7 @@ Patch1002:      1002-Set-hasstatus-to-false-by-default.patch
+ Patch1003:      1003-Update-getpid-function.patch
+ Patch1004:      1004-Block-enabling-of-services.patch
+ Patch1005:      1005-Set-strict_variables-and-basemodulepath-in-puppet.co.patch
++Patch1006:      1006-Skip-cipher-monkey-patch-on-ruby-2.4.patch
+ 
+ 
+ Group:          System Environment/Base
+@@ -134,6 +135,7 @@ The server can also function as a certificate authority and file server.
+ %patch1003 -p1
+ %patch1004 -p1
+ %patch1005 -p1
++%patch1006 -p1
+ 
+ 
+ # Unbundle
+-- 
+2.7.4
+

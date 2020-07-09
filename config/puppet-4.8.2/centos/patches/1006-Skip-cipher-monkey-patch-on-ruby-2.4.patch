@@ -1,0 +1,39 @@
+From fc7c1aaf60062746d463de97d5d0c2bee7fb7199 Mon Sep 17 00:00:00 2001
+From: Josh Cooper <josh@puppet.com>
+Date: Tue May 16 15:47:04 2017 -0700
+Subject: [PATCH] (PUP-7383) Skip cipher monkey patch on ruby 2.4+
+
+[commit fc7c1aaf60062746d463de97d5d0c2bee7fb7199]
+https://github.com/puppetlabs/puppet/pull/5911/commits/fc7c1aaf60062746d463de97d5d0c2bee7fb7199
+
+Previously, we appended "!SSLv2" to the SSLContext
+DEFAULT_PARAMS[:ciphers] to ensure that puppet never uses SSLv2, either
+from our http client or when using open-uri. However, ruby 2.4 only
+defines the `:ciphers` array if using openssl < 1.1.0[1]. As a result,
+puppet as a gem running on newer systems would hard fail.
+
+Check existence of array before trying to append to it.
+
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ lib/puppet/util/monkey_patches.rb | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/lib/puppet/util/monkey_patches.rb b/lib/puppet/util/monkey_patches.rb
+index 0632ccc..8ba6587 100644
+--- a/lib/puppet/util/monkey_patches.rb
++++ b/lib/puppet/util/monkey_patches.rb
+@@ -101,7 +101,9 @@ class OpenSSL::SSL::SSLContext
+   else
+     DEFAULT_PARAMS[:options] = OpenSSL::SSL::OP_NO_SSLv2 | OpenSSL::SSL::OP_NO_SSLv3
+   end
+-  DEFAULT_PARAMS[:ciphers] << ':!SSLv2'
++  if DEFAULT_PARAMS[:ciphers]
++    DEFAULT_PARAMS[:ciphers] << ':!SSLv2'
++  end
+ 
+   alias __original_initialize initialize
+   private :__original_initialize
+-- 
+2.7.4
+

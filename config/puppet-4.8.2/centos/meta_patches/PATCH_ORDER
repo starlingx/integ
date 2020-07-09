@@ -1,2 +1,3 @@
 0000-Update-package-versioning-for-TIS-format.patch
 0001-Add-WRS-Patches.patch
+0002-Skip-cipher-monkey-patch-on-ruby-2.4.patch
