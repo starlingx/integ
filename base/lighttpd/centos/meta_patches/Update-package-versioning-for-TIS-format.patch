@@ -4,23 +4,24 @@ Date: Mon, 20 Mar 2017 10:21:28 -0400
 Subject: [PATCH 2/4] Update-package-versioning-for-TIS-format.patch
 
 Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
 ---
  SPECS/lighttpd.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/lighttpd.spec b/SPECS/lighttpd.spec
-index 20c4503..3280403 100644
+index 8b029b4..226bada 100644
 --- a/SPECS/lighttpd.spec
 +++ b/SPECS/lighttpd.spec
 @@ -44,7 +44,7 @@
  Summary: Lightning fast webserver with light system requirements
  Name: lighttpd
  Version: 1.4.55
--Release: 1%{?dist}
-+Release: 1.el8%{?_tis_dist}.%{tis_patch_ver}
+-Release: 3%{?dist}
++Release: 3.el8%{?_tis_dist}.%{tis_patch_ver}
  License: BSD
  URL: http://www.lighttpd.net/
  Source0: http://download.lighttpd.net/lighttpd/releases-1.4.x/lighttpd-%{version}.tar.gz
--- 
-2.7.4
+--
+2.17.1
 
