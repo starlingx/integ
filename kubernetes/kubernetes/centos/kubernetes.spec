@@ -63,6 +63,7 @@ Patch5: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
 Patch6: kubelet-cpumanager-infrastructure-pods-use-system-re.patch
 Patch7: kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 Patch8: Fix-exclusive-CPU-allocations-being-deleted-at-conta.patch
+Patch9: kubeadm-create-platform-pods-with-zero-CPU-resources.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -850,6 +851,7 @@ Kubernetes client tools like kubectl
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
+%patch9 -p1
 
 # copy contrib folder
 mkdir contrib
