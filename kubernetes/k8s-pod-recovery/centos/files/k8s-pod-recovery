@@ -1,0 +1,247 @@
+#!/bin/bash
+#
+# Copyright (c) 2020 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# chkconfig: 2345 76 25
+#
+### BEGIN INIT INFO
+# Provides:          k8s-pod-recovery
+# Default-Start:     3 5
+# Required-Start:
+# Required-Stop:
+# Default-Stop:      0 1 2 6
+# Short-Description: Service to recovery pods after host boot
+### END INIT INFO
+
+. /etc/platform/platform.conf
+
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+export KUBECONFIG=/etc/kubernetes/admin.conf
+SLEEP_DELAY_SEC=15
+
+NAME=$(basename $0)
+PIDFILE=/var/run/${NAME}.pid
+HOST=$(hostname)
+
+# Log info message to /var/log/daemon.log
+function LOG {
+    logger -p daemon.info -t "${NAME}($$): " "$@"
+}
+
+# Log error message to /var/log/daemon.log
+function ERROR {
+    logger -p daemon.error -t "${NAME}($$): " "$@"
+}
+
+function _check_for_k8s_config {
+    # If this node has not been configured, then there is nothing to recovery
+    if [ ! -f ${KUBECONFIG} ]; then
+        LOG "${KUBECONFIG} does not exist. No pods to recover."
+        exit 0
+    fi
+}
+
+function _check_for_existing_process {
+    # Abort if another instantiation is already running
+    if [ -e ${PIDFILE} ]; then
+        PID=$(cat ${PIDFILE})
+        PROCESS=$(cat /proc/${PID}/comm)
+        if [ -n "${PID}" -a -e /proc/${PID} -a ${PROCESS} == ${NAME} ]; then
+            ERROR "Aborting, ${PID} already running: ${PIDFILE}."
+            exit 1
+        else
+            OUT=$(rm -v -f ${PIDFILE})
+            LOG "${OUT}"
+        fi
+    fi
+
+    # Create pidfile to indicate the script is running
+    echo $$ > ${PIDFILE}
+}
+
+function _wait_for_systemd {
+    while true; do
+        if systemctl is-system-running | grep -q -e running -e degraded; then
+            break
+        fi
+        LOG "Waiting for systemd to finish booting..."
+        sleep ${SLEEP_DELAY_SEC}
+    done
+}
+
+function _wait_for_pod_stabilization {
+    last_count=0
+    stability_count=0
+    NINETY_SEC_COUNT=$((90/SLEEP_DELAY_SEC))
+    while true ; do
+        pods_in_flux=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pods --no-headers --all-namespaces | grep -v -e Running -e Completed | wc -l)
+        if [[ $pods_in_flux -ne $last_count ]]; then
+            LOG "Waiting on pod transitions to stabilize... $pods_in_flux pods are not Running/Completed"
+            last_count=$pods_in_flux
+            stability_count=0
+        else
+            LOG "Pods transitions are stable... for $((stability_count*${SLEEP_DELAY_SEC})) seconds."
+            if [[ $stability_count -eq $NINETY_SEC_COUNT ]]; then
+                break
+            fi
+            stability_count=$((stability_count+1))
+        fi
+        sleep ${SLEEP_DELAY_SEC}
+    done
+}
+
+function _unknown_pods {
+    # $1: actions <recover|verify>
+
+    # Target specific namespaces and pods on this host
+    SUPPORTED_NAMESPACES=('openstack' 'monitor')
+
+    if [ "$1" == 'recover' ]; then
+        # Recovers pods that are: Running/Unknown and Pending/Init:Unknown
+        for ns in ${SUPPORTED_NAMESPACES[@]}; do
+            PODS=$(kubectl get pods -n $ns --field-selector spec.nodeName=${HOST} 2>/dev/null | awk /Unknown/'{print $1}')
+            for pod in $PODS ; do
+                LOG "Unknown pods: Recovering: $ns/$pod"
+                kubectl delete pods -n $ns $pod --wait=false
+            done
+        done
+    elif [ "$1" == 'verify' ]; then
+        for ns in ${SUPPORTED_NAMESPACES[@]}; do
+            PODS=$(kubectl get pods -n $ns --field-selector spec.nodeName=${HOST} 2>/dev/null | awk /Unknown/'{print $1}')
+            if [ -z "${PODS}" ]; then
+                LOG "Unknown pods: None present for namespace: $ns"
+            else
+                ERROR "Unknown pods: still present for namespace: $ns"
+            fi
+        done
+    else
+        ERROR "Unknown action: $1"
+    fi
+}
+
+function _node_affinity_pods {
+    # $1: actions <recover|verify>
+
+    if [ "$1" == 'recover' ]; then
+        PODS=$(kubectl get pods --all-namespaces --field-selector status.phase=Failed,spec.nodeName=${HOST} 2>/dev/null | awk /NodeAffinity/'{print $1"/"$2}')
+        for pod in $PODS ; do
+            LOG "NodeAffinity pods: Recovering: $pod"
+            kubectl delete pods -n ${pod//// } --wait=false
+        done
+    elif [ "$1" == 'verify' ]; then
+        PODS=$(kubectl get pods --all-namespaces --field-selector status.phase=Failed,spec.nodeName=${HOST} 2>/dev/null | awk /NodeAffnity/'{print $1"/"$2}')
+        if [ -z "${PODS}" ]; then
+            LOG "NodeAffinity pods: None present."
+        else
+            ERROR "NodeAffinity pods: still present"
+        fi
+    else
+        ERROR "Unknown action: $1"
+    fi
+
+}
+
+function _force_reset_pods {
+    # $1: actions <recover|verify>
+
+    # Handle resetting openstack libvirt pod as it sometimes is in a Running but
+    # unusable state
+    if kubectl get namespace openstack > /dev/null 2>&1; then
+
+        # Get the libvirt pods on this host that are Running without all
+        # conditions True
+        #
+        # Conditions:
+        #   Initialized       True
+        #   Ready             True
+        #   ContainersReady   True
+        #   PodScheduled      True
+        #
+        # NAME                                          STATUS    CONDITIONS            NODE
+        # libvirt-libvirt-controller-0-937646f6-xst4r   Running   True,True,True,True   controller-0
+        #
+        CUSTOM_COLUMNS='custom-columns=NAME:.metadata.name,STATUS:status.phase,CONDITIONS:status.conditions[*].status,NODE:spec.nodeName'
+        FIELD_SELECTOR="spec.nodeName=${HOST}"
+        PODS=$(kubectl get pods -n openstack -l application=libvirt --field-selector ${FIELD_SELECTOR} -o ${CUSTOM_COLUMNS} | grep -v NAME | grep -v 'True,True,True,True' | awk '{print $1}')
+
+        if [ "$1" == 'recover' ]; then
+            for pod in $PODS ; do
+                LOG "Recovering libvirt pod: $pod"
+                kubectl delete pods -n openstack $pod --wait=false
+            done
+        elif [ "$1" == 'verify' ]; then
+            if [ -z "${PODS}" ]; then
+                LOG "Openstack libvirt pod on ${HOST} is running."
+            else
+                ERROR "Openstack libvirt pod on ${HOST} has not been recovered."
+            fi
+        else
+            ERROR "Unknown action: $1"
+        fi
+    fi
+}
+
+function _examine_pods {
+    # $1: actions <recover|verify>
+
+    # Wait for pods transitions to stop
+    _wait_for_pod_stabilization
+
+    # Check for recovery actions
+    _unknown_pods $1
+    _node_affinity_pods $1
+    _force_reset_pods $1
+}
+
+
+function start {
+    _check_for_k8s_config
+    _check_for_existing_process
+
+    LOG "Starting."
+
+    _wait_for_systemd
+    _examine_pods 'recover'
+    _examine_pods 'verify'
+}
+
+function stop {
+    LOG "Stopping."
+}
+
+function status {
+    :
+}
+
+function reset {
+    :
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|force-reload|reload)
+        stop
+        start
+        ;;
+    status)
+        status
+        ;;
+    reset)
+        reset
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|force-reload|restart|reload|status|reset}"
+        exit 1
+        ;;
+esac
+
+exit 0

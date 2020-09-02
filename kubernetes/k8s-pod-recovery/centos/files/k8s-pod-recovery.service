@@ -1,0 +1,14 @@
+[Unit]
+Description=Kubernetes Pods Recovery Service
+After=sw-patch.service
+After=kubelet.service
+Requires=kubelet.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/k8s-pod-recovery start
+ExecStop=/usr/local/sbin/k8s-pod-recovery stop
+PIDFile=/var/run/k8s-pod-recovery.pid
+
+[Install]
+WantedBy=multi-user.target

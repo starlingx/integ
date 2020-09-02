@@ -174,6 +174,7 @@ kubernetes-node
 kubernetes-kubeadm
 kubernetes-client
 containerd
+k8s-pod-recovery
 
 # resource-agents
 resource-agents
