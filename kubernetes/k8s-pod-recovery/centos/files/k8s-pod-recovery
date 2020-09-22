@@ -145,6 +145,32 @@ function _node_affinity_pods {
 
 }
 
+function _labeled_pods {
+    # $1: actions <recover|verify>
+
+    # Delete pods with the restart-on-reboot=true label
+    PODS=$(kubectl get pods --all-namespaces --no-headers --field-selector=spec.nodeName=${HOST} --selector=restart-on-reboot=true 2>/dev/null | awk '{print $1"/"$2}')
+
+    if [ "$1" == 'recover' ]; then
+        for pod in $PODS; do
+            LOG "restart-on-reboot labeled pods: Recovering: ${pod//// }"
+            kubectl delete pods -n ${pod//// } --wait=false
+        done
+    elif [ "$1" == 'verify' ]; then
+        for pod in $PODS; do
+            LOG "restart-on-reboot labeled  pods: Verifying: ${pod//// }"
+            STATUS=$(kubectl get pod --no-headers -n ${pod//// } 2>/dev/null | awk '{print $3}')
+            if [[ "${STATUS}" != "Running" ]]; then
+                ERROR "$pod: not recovered: $STATUS"
+            else
+                LOG "$pod: recovered"
+            fi
+        done
+    else
+        ERROR "Unknown action: $1"
+    fi
+}
+
 function _force_reset_pods {
     # $1: actions <recover|verify>
 
@@ -187,6 +213,9 @@ function _force_reset_pods {
 
 function _examine_pods {
     # $1: actions <recover|verify>
+
+    # No need to wait for pod transitions if we know the pod needs to be restarted
+    _labeled_pods $1
 
     # Wait for pods transitions to stop
     _wait_for_pod_stabilization
