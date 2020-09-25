@@ -1,7 +1,7 @@
 Name: helm
 Version: 3.2.1
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
-Summary: The Kubernetes Package Manager 
+Summary: The Kubernetes Package Manager
 License: Apache-2.0
 Group: devel
 Packager: Wind River <info@windriver.com>
@@ -9,7 +9,7 @@ URL: https://github.com/kubernetes/helm/releases
 Source0: %{name}-v%{version}-linux-amd64.tar.gz
 Source1: helm-upload
 Source2: helm.sudo
-Source3: helmv2-cli
+Source3: helmv2-cli.sh
 
 Requires: /bin/bash
 

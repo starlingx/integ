@@ -20,18 +20,21 @@ PATH=/bin:/usr/bin:/usr/local/bin
 # Process input options
 SCRIPT=$(basename $0)
 OPTS=$(getopt -o dh --long debug,help -n ${SCRIPT} -- "$@")
-if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
+if [ $? != 0 ]; then
+    echo "Failed parsing options." >&2
+    exit 1
+fi
 eval set -- "$OPTS"
 
 DEBUG=false
 HELP=false
 while true; do
-  case "$1" in
-    -d | --debug ) DEBUG=true; shift ;;
-    -h | --help )  HELP=true; shift ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
+    case "$1" in
+        -d | --debug ) DEBUG=true; shift ;;
+        -h | --help )  HELP=true; shift ;;
+        -- ) shift; break ;;
+        * ) break ;;
+    esac
 done
 
 # Treat remaining arguments as commands + options
@@ -63,9 +66,41 @@ function ERROR {
     LOG "${MSG} $@"
 }
 
-# Determine armada pod
-POD=$(kubectl get pods -n armada --selector=application=armada \
-      --output=jsonpath={.items..metadata.name})
+# Determine running armada pods, including list of status conditions
+# This jsonpath gives the following output format per pod:
+# armada-api-bc77f956d-jwl4n::Initialized=True:Ready=True:ContainersReady=True:PodScheduled=True
+JSONPATH='{range .items[*]}{"\n"}{@.metadata.name}:{@.metadata.deletionTimestamp}{range @.status.conditions[*]}{":"}{@.type}={@.status}{end}{end}'
+ARMADA_PODS=( $(kubectl get pods -n armada \
+                --selector=application=armada,component=api \
+                --field-selector status.phase=Running \
+                --output=jsonpath="${JSONPATH}") )
+if [ ${#ARMADA_PODS[@]} -eq 0 ]; then
+    ERROR "Could not find armada pod."
+    exit 1
+fi
+if [ ${DEBUG} == 'true' ]; then
+    LOG "Found armada pods: ${ARMADA_PODS[@]}"
+fi
+
+# Get first available Running and Ready armada pod, with tiller container we can exec
+POD=""
+for LINE in "${ARMADA_PODS[@]}"; do
+    # match only Ready pods with nil deletionTimestamp
+    if [[ $LINE =~ ::.*Ready=True ]]; then
+        # extract pod name, it is first element delimited by :
+        A=( ${LINE/:/ } )
+        P=${A[0]}
+    else
+        continue
+    fi
+
+    kubectl exec -it -n armada ${P} -c tiller -- pwd 1>/dev/null 2>/dev/null
+    RC=$?
+    if [ ${RC} -eq 0 ]; then
+        POD=${P}
+        break
+    fi
+done
 if [ -z "${POD}" ]; then
     ERROR "Could not find armada pod."
     exit 1
@@ -77,7 +112,7 @@ fi
 # Determine tiller listen port (configured by armada chart)
 # armada-api is container index 0, tiller is container index 1
 TILLER_PORT=$(kubectl get pod -n armada ${POD} \
-              --output=jsonpath={.spec.containers[1].ports[0].containerPort})
+                --output=jsonpath={.spec.containers[1].ports[0].containerPort})
 if [ -z "${TILLER_PORT}" ]; then
     ERROR "Could not find tiller listen port."
     exit 1
