@@ -96,7 +96,6 @@ Requires:       swtpm fuse
 #STX
 #Requires:       trousers >= 0.3.9 tpm-tools >= 1.3.8-6 expect bash net-tools gnutls-utils
 Requires:       trousers >= 0.3.9 expect bash net-tools gnutls-utils
-Requires:       tpm2-abrmd
 
 %description    tools
 Tools for the TPM emulator from the swtpm package
@@ -134,7 +133,7 @@ Tools for the TPM emulator from the swtpm package
 %attr( 755, root, root) %{_bindir}/swtpm_cert
 %endif
 %attr( 755, root, root) %{_bindir}/swtpm_setup
-%attr( 755, root , tss)  %{_bindir}/swtpm_setup.sh
+%attr( 755, tss , tss)  %{_bindir}/swtpm_setup.sh
 %attr( 755, root, root) %{_bindir}/swtpm_ioctl
 %{_mandir}/man8/swtpm_bios.8*
 %{_mandir}/man8/swtpm_cert.8*
