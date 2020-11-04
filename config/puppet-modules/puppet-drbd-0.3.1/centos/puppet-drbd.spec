@@ -21,6 +21,7 @@ Patch0006:      0006-CGTS-7164-Add-resource-options-cpu-mask-to-affine-drbd-kern
 Patch0007:      0007-Add-disk-by-path-test.patch
 Patch0008:      0008-CGTS-7953-support-for-new-drbd-resources.patch
 Patch0009:      0009-drbd-slow-before-swact.patch
+Patch0010:      0010-Format-DRBD-resource-cpu-mask-to-support-64-or-larger-cpus.patch
 
 BuildArch:      noarch
 
@@ -53,6 +54,7 @@ find . \( -name spec -o -name ext \) | xargs rm -rf
 %patch0007 -p1
 %patch0008 -p1
 %patch0009 -p1
+%patch0010 -p1
 
 %install
 rm -rf %{buildroot}
