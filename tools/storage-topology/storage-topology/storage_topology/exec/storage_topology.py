@@ -171,8 +171,8 @@ def convert_to_readable_size(size, orig_unit='B'):
     # convert original size to bytes
     try:
         i = units.index(orig_unit)
-    except:
-        raise RuntimeError('Invalid size unit passed: %s' % (orig_unit))
+    except Exception as exc:
+        raise RuntimeError('Invalid size unit passed: %s' % (orig_unit)) from exc
     size = size * pow(1024, i)
 
     unitIndex = int(math.floor(math.log(size, 1024)))
