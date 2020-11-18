@@ -1,0 +1,59 @@
+From ff9365f72ac978846a73253012129ccba123c1f0 Mon Sep 17 00:00:00 2001
+From: Yong Fu <fuyong@neusoft.com>
+Date: Thu, 16 Jul 2020 17:43:57 +0800
+Subject: [PATCH 2/3] modify file path and add dependencies
+
+No permission to create a folder in the root directory causes the build to fail.
+Therefore, the build directory needs to be changed.
+
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
+---
+ SPECS/docker-ce-cli.spec | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/SPECS/docker-ce-cli.spec b/SPECS/docker-ce-cli.spec
+index 5b496d4..4058591 100644
+--- a/SPECS/docker-ce-cli.spec
++++ b/SPECS/docker-ce-cli.spec
+@@ -21,6 +21,8 @@ Requires: /bin/sh
+ BuildRequires: make
+ BuildRequires: libtool-ltdl-devel
+ BuildRequires: git
++BuildRequires: golang
++BuildRequires: go-md2man
+ 
+ # conflicting packages
+ Conflicts: docker
+@@ -44,15 +46,15 @@ depending on a particular stack or provider.
+ %setup -q -c -n src -a 1
+ 
+ %build
+-mkdir -p /go/src/github.com/docker
+-rm -f /go/src/github.com/docker/cli
+-ln -s /root/rpmbuild/BUILD/src/cli /go/src/github.com/docker/cli
+-pushd /go/src/github.com/docker/cli
++mkdir -p ${HOME}/go/src/github.com/docker
++rm -f ${HOME}/go/src/github.com/docker/cli
++ln -s %{_builddir}/src/cli ${HOME}/go/src/github.com/docker/cli
++pushd ${HOME}/go/src/github.com/docker/cli
+ DISABLE_WARN_OUTSIDE_CONTAINER=1 make VERSION=%{_origversion} GITCOMMIT=%{_gitcommit} dynbinary manpages # cli
+ popd
+ 
+ # Build all associated plugins
+-pushd /root/rpmbuild/BUILD/src/plugins
++pushd %{_builddir}/src/plugins
+ for installer in *.installer; do
+     bash ${installer} build
+ done
+@@ -68,7 +70,7 @@ install -d $RPM_BUILD_ROOT/%{_bindir}
+ install -p -m 755 cli/build/docker $RPM_BUILD_ROOT/%{_bindir}/docker
+ 
+ # install plugins
+-pushd /root/rpmbuild/BUILD/src/plugins
++pushd %{_builddir}/src/plugins
+ for installer in *.installer; do
+     DESTDIR=$RPM_BUILD_ROOT \
+         PREFIX=/usr/libexec/docker/cli-plugins \
+-- 
+1.8.3.1
+

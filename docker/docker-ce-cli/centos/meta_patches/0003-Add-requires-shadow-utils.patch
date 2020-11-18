@@ -1,0 +1,30 @@
+From dec02509f23e6a15f2793f72e9f9fc2d42daf186 Mon Sep 17 00:00:00 2001
+From: Angie Wang <angie.wang@windriver.com>
+Date: Wed, 17 Mar 2021 09:40:24 -0500
+Subject: [PATCH 3/3] Add requires shadow-utils
+
+docker-ce-cli is failed to execute post scriptlet during
+anaconda install due to "groupadd: command not found".
+Make sure docker-ce-cli post scriptlet is executed after
+shadow-utils is installed.
+
+Signed-off-by: Angie Wang <angie.wang@windriver.com>
+---
+ SPECS/docker-ce-cli.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/docker-ce-cli.spec b/SPECS/docker-ce-cli.spec
+index 4058591..f542ab0 100644
+--- a/SPECS/docker-ce-cli.spec
++++ b/SPECS/docker-ce-cli.spec
+@@ -17,6 +17,7 @@ Packager: Docker <support@docker.com>
+ 
+ # required packages on install
+ Requires: /bin/sh
++Requires(post): shadow-utils
+ 
+ BuildRequires: make
+ BuildRequires: libtool-ltdl-devel
+-- 
+1.8.3.1
+
