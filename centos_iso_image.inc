@@ -33,9 +33,6 @@ python-ryu-common
 # lldpd
 lldpd
 
-
-
-
 # tss2
 tss2
 
@@ -43,19 +40,11 @@ tss2
 # libtpms
 libtpms
 
-# swtpm
-swtpm
-swtpm-cuse
-swtpm-tools
-
-
 # python-3parclient
 python-3parclient
 
 # python-lefthandclient
 python-lefthandclient
-
-
 
 # docker-distribution
 docker-distribution

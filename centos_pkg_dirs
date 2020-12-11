@@ -24,7 +24,6 @@ base/libevent
 security/tss2
 security/tpm2-tools
 security/libtpms
-security/swtpm
 security/spectre-meltdown-checker
 config/puppet-4.8.2
 config/puppet-modules/puppet-boolean-1.0.2
