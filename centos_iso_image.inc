@@ -33,9 +33,6 @@ python3-ryu-common
 # lldpd
 lldpd
 
-
-
-
 # tss2
 tss2
 
@@ -43,25 +40,20 @@ tss2
 # libtpms
 libtpms
 
-# swtpm
-swtpm
-swtpm-cuse
-swtpm-tools
-
-
 # python-3parclient
 python3-3parclient
 
 # python-lefthandclient
 python3-lefthandclient
 
-
-
 # docker-distribution
 docker-distribution
 
 # helm
 helm
+
+# armada
+armada
 
 # rpm
 rpm-plugin-systemd-inhibit
@@ -171,6 +163,7 @@ kubernetes-node
 kubernetes-kubeadm
 kubernetes-client
 containerd
+k8s-pod-recovery
 
 # resource-agents
 resource-agents

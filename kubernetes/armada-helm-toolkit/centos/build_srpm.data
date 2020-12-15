@@ -1,0 +1,11 @@
+# NOTE: This package and version is identical to
+# stx/openstack-armada-app/openstack-helm-infra .
+# This decouples distro build of armada chart from flock.
+TAR_NAME=openstack-helm-infra
+SHA=c9d6676bf9a5aceb311dc31dadd07cba6a3d6392
+VERSION=1.0.0
+TAR="$TAR_NAME-$SHA.tar.gz"
+
+COPY_LIST="${CGCS_BASE}/downloads/$TAR $PKG_BASE/files/*"
+
+TIS_PATCH_VER=PKG_GITREVCOUNT

@@ -34,12 +34,12 @@
 %global shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           %{project}-%{repo}
-Version:        2.6.2
+Version:        2.7.1
 Release:        1%{?_tis_dist}.%{tis_patch_ver}
 Summary:        Docker toolset to pack, ship, store, and deliver content
 License:        ASL 2.0
 URL:            https://%{provider_prefix}
-Source0:        %{project}-%{repo}-%{version}.tar.gz
+Source0:        %{project}-%{repo}-v%{version}.tar.gz
 Source1:        %{name}.service
 Source2:        config.yml
 BuildRequires: systemd
@@ -295,7 +295,7 @@ make test
 %else
 %doc LICENSE
 %endif
-%doc AUTHORS CONTRIBUTING.md MAINTAINERS README.md
+%doc CONTRIBUTING.md MAINTAINERS README.md
 %{_bindir}/registry
 %{_unitdir}/%{name}.service
 %dir %{_sharedstatedir}/registry
@@ -308,14 +308,14 @@ make test
 %else
 %doc LICENSE
 %endif
-%doc CONTRIBUTING.md README.md ROADMAP.md AUTHORS
+%doc CONTRIBUTING.md README.md ROADMAP.md
 %dir %{gopath}/src/%{provider}.%{provider_tld}/%{project}
 %endif
 
 %if 0%{?with_unit_test} && 0%{?with_devel}
 %files unit-test -f unit-test.file-list
 %license LICENSE
-%doc CONTRIBUTING.md README.md ROADMAP.md AUTHORS
+%doc CONTRIBUTING.md README.md ROADMAP.md
 %endif
 
 %changelog

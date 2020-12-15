@@ -45,6 +45,7 @@ Patch0007: 0007-Update-OCF-to-attempt-connect-in-certain-states.patch
 Patch0008: 0008-Increase-short-cmd-timeout-to-15-secs.patch
 Patch0009: 0009-Check-for-mounted-device-before-demoting-Primary-DRB.patch
 Patch0010: 0010-drbd-include-sysmacros.patch
+Patch0011: 0011-backport-drbd-main-ipv6-Fix-interface-indices-larger.patch
 
 License: GPLv2+
 ExclusiveOS: linux

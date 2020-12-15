@@ -11,13 +11,18 @@ URL:            https://github.com/html5lib/html5lib-python/archive/1.0.1.tar.gz
 Source0:        html5lib-python-1.0.1.tar.gz
 
 BuildArch:      noarch
-%if 0%{?with_python2}
-Requires:       python-webencodings
-%endif # with_python2
+
 %if 0%{?with_python3}
+BuildRequires:  python3-devel
+BuildRequires:  python3-pip
 BuildRequires:  python3-wheel
 Requires:       python3-webencodings
-%endif # with_python3
+%else
+BuildRequires:  python2-devel
+BuildRequires:  python-pip
+BuildRequires:  python-wheel
+Requires:       python-webencodings
+%endif
 
 
 %description

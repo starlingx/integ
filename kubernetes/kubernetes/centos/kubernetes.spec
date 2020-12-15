@@ -56,6 +56,7 @@ Source5:        kubelet-cgroup-setup.sh
 Source33:       genmanpages.sh
 
 Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
+Patch2: kubelet-service-remove-docker-dependency.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -844,6 +845,7 @@ Kubernetes client tools like kubectl
 # copy contrib folder
 mkdir contrib
 cp -r ../%{con_repo}-%{con_commit}/init contrib/.
+%patch2 -p1
 
 #src/k8s.io/kubernetes/pkg/util/certificates
 # Patch the code to remove eliptic.P224 support

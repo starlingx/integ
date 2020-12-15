@@ -19,9 +19,9 @@ index 26e7e72..c14a03f 100644
 -%global shimveraa64 15-2.el8
 -%global shimveria32 15-2.el8
 -%global shimverx64 15-2.el8
-+%global shimveraa64 15-2.el8%{?_tis_dist}.%{tis_patch_ver}
-+%global shimveria32 15-2.el8%{?_tis_dist}.%{tis_patch_ver}
-+%global shimverx64 15-2.el8%{?_tis_dist}.%{tis_patch_ver}
++%global shimveraa64 15-2.el8%{?_tis_dist}.*
++%global shimveria32 15-2.el8%{?_tis_dist}.*
++%global shimverx64 15-2.el8%{?_tis_dist}.*
  #%%global shimverarm 15-1.el8
  
  %global shimdiraa64 %{_datadir}/shim/%{shimveraa64}/aa64

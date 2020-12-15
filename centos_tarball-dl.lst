@@ -1,11 +1,14 @@
+armada-6cc6346cde888c683fec4df910ebefdf6dccb310.tar.gz#armada#https://github.com/airshipit/armada/tarball/6cc6346cde888c683fec4df910ebefdf6dccb310#http##
 blkin-f24ceec055ea236a093988237a9821d145f5f7c8.tar.gz#blkin#https://api.github.com/repos/ceph/blkin/tarball/f24ceec055ea236a093988237a9821d145f5f7c8#https##
 boost_1_67_0.tar.bz2#boost_1_67_0#https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2#https##
 ceph-erasure-code-corpus-2d7d78b9cc52e8a9529d8cc2d2954c7d375d5dd7.tar.gz#ceph-erasure-code-corpus#https://api.github.com/repos/ceph/ceph-erasure-code-corpus/tarball/2d7d78b9cc52e8a9529d8cc2d2954c7d375d5dd7#https##
 ceph-object-corpus-e32bf8ca3dc6151ebe7f205ba187815bc18e1cef.tar.gz#ceph-object-corpus#https://api.github.com/repos/ceph/ceph-object-corpus/tarball/e32bf8ca3dc6151ebe7f205ba187815bc18e1cef#https##
+chartmuseum-0.12.0.tar.gz#chartmuseum#https://github.com/helm/chartmuseum/archive/v0.12.0.tar.gz#https##
+!chartmuseum-v0.12.0-amd64#chartmuseum-bin#https://s3.amazonaws.com/chartmuseum/release/v0.12.0/bin/linux/amd64/chartmuseum#https##
 civetweb-ff2881e2cd5869a71ca91083bad5d12cccd22136.tar.gz#civetweb#https://api.github.com/repos/ceph/civetweb/tarball/ff2881e2cd5869a71ca91083bad5d12cccd22136#https##
 containerd-v1.3.3.tar.gz#containerd#https://github.com/containerd/containerd/archive/v1.3.3.tar.gz#https##
 crictl-v1.18.0-linux-amd64.tar.gz#crictl#https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.18.0/crictl-v1.18.0-linux-amd64.tar.gz#https##
-# docker-distribution-48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89.tar.gz#docker-distribution#github.com/docker/distribution/archive/48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89.tar.gz#http##
+docker-distribution-v2.7.1.tar.gz#docker-distribution-2.7.1#https://github.com/docker/distribution/archive/v2.7.1.tar.gz#http##
 # docker-libtrust-fa567046d9b14f6aa788882a950d69651d230b21.tar.gz#docker-libtrust#https://github.com/docker/libtrust/archive/fa567046d9b14f6aa788882a950d69651d230b21.tar.gz#http##
 dpdk-18.11.tar.xz#dpdk-18.11#http://fast.dpdk.org/rel/dpdk-18.11.tar.xz#http##
 dpdk-6ece49ad5a26f5e2f5c4af6c06c30376c0ddc387.tar.gz#dpdk#https://api.github.com/repos/spdk/dpdk/tarball/6ece49ad5a26f5e2f5c4af6c06c30376c0ddc387#https##
@@ -22,7 +25,7 @@ googletest-fdb850479284e2aae047b87df6beae84236d0135.tar.gz#googletest#https://ap
 # gophercloud-gophercloud-aa00757ee3ab58e53520b6cb910ca0543116400a.tar.gz#gophercloud-gophercloud#github.com/gophercloud/gophercloud/archive/aa00757ee3ab58e53520b6cb910ca0543116400a.tar.gz#http##
 # gorilla-context-08b5f424b9271eedf6f9f0ce86cb9396ed337a42.tar.gz#gorilla-context#https://github.com/gorilla/context/archive/08b5f424b9271eedf6f9f0ce86cb9396ed337a42.tar.gz#http##
 # gorilla-mux-456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#gorilla-mux#https://github.com/gorilla/mux/archive/456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#http##
-helm-v2.13.1-linux-amd64.tar.gz#linux-amd64#https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz#http##
+helm-v3.2.1-linux-amd64.tar.gz#linux-amd64#https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz#http##
 isa-l-7e1a337433a340bc0974ed0f04301bdaca374af6.tar.gz#isa-l#https://api.github.com/repos/ceph/isa-l/tarball/7e1a337433a340bc0974ed0f04301bdaca374af6#https##
 isa-l_crypto-603529a4e06ac8a1662c13d6b31f122e21830352.tar.gz#isa-l_crypto#https://api.github.com/repos/01org/isa-l_crypto/tarball/603529a4e06ac8a1662c13d6b31f122e21830352#https##
 jerasure-96c76b89d661c163f65a014b8042c9354ccf7f31.tar.gz#jerasure#https://api.github.com/repos/ceph/jerasure/tarball/96c76b89d661c163f65a014b8042c9354ccf7f31#https##
@@ -35,7 +38,7 @@ libtpms-0.6.0-4f0d59d.tar.gz#libtpms-0.6.0#https://github.com/stefanberger/libtp
 lldpd-0.9.0.tar.gz#lldpd-0.9.0#https://media.luffy.cx/files/lldpd/lldpd-0.9.0.tar.gz#http##
 lua-1fce39c6397056db645718b8f5821571d97869a4.tar.gz#lua#https://api.github.com/repos/ceph/lua/tarball/1fce39c6397056db645718b8f5821571d97869a4#https##
 !mariadb-10.3.17.tar.gz#mariadb-10.3.17#https://github.com/MariaDB/server/archive/mariadb-10.3.17.tar.gz#http_script##post-dl-script/mariadb.sh
-!MLNX_OFED_SRC-4.7-3.2.9.0.tgz#MLNX_OFED_SRC-4.7-3.2.9.0#http://content.mellanox.com/ofed/MLNX_OFED-4.7-3.2.9.0/MLNX_OFED_SRC-4.7-3.2.9.0.tgz#http_script##post-dl-script/MLNX_OFED.sh
+openstack-helm-infra-c9d6676bf9a5aceb311dc31dadd07cba6a3d6392.tar.gz#openstack-helm-infra#https://github.com/openstack/openstack-helm-infra/archive/c9d6676bf9a5aceb311dc31dadd07cba6a3d6392.tar.gz#http##
 openvswitch-2.11.0.tar.gz#openvswitch-2.11.0#https://github.com/openvswitch/ovs/archive/v2.11.0.tar.gz#http##
 puppet-boolean-22b726dd78b0a60a224cc7054aebbf28e9306f62.tar.gz#puppet-boolean#https://github.com/voxpupuli/puppet-boolean/tarball/22b726dd78b0a60a224cc7054aebbf28e9306f62#http##
 puppet-dnsmasq-cff07e90890662972c97684a2baee964f68ff3ed.tar.gz#packstack/puppet/modules/dnsmasq/#https://github.com/procore/puppet-dnsmasq/tarball/cff07e90890662972c97684a2baee964f68ff3ed#http##
@@ -62,7 +65,6 @@ runc-1.0.0-rc10.tar.gz#runc#https://github.com/opencontainers/runc/archive/v1.0.
 # Sirupsen-logrus-55eb11d21d2a31a3cc93838241d04800f52e823d.tar.gz#Sirupsen-logrus#github.com/Sirupsen/logrus/archive/55eb11d21d2a31a3cc93838241d04800f52e823d.tar.gz#http##
 spdk-f474ce6930f0a44360e1cc4ecd606d2348481c4c.tar.gz#spdk#https://api.github.com/repos/ceph/spdk/tarball/f474ce6930f0a44360e1cc4ecd606d2348481c4c#https##
 spectre-meltdown-checker-0.37+-5cc77741.tar.gz#spectre-meltdown-checker#https://github.com/speed47/spectre-meltdown-checker/tarball/5cc77741af1d2f52140aa9f89339f56b6c4b6783#http##
-swtpm-0.1.0-253eac5.tar.gz#swtpm-0.1.0#https://github.com/stefanberger/swtpm/tarball/1303be7d03294fb02204cb8242f366cbf0da076d#http##
 trident-installer-20.04.0.tar.gz#trident-installer-20.04.0#https://github.com/NetApp/trident/releases/download/v20.04.0/trident-installer-20.04.0.tar.gz#https##
 !tss2-930.tar.gz#tss2-930#https://git.code.sf.net/p/ibmtpm20tss/tss#git#v930#
 xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz#xxHash#https://api.github.com/repos/ceph/xxHash/tarball/1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9#https##

@@ -24,7 +24,6 @@ networking/openvswitch
 security/tss2
 security/tpm2-tools
 security/libtpms
-security/swtpm
 security/spectre-meltdown-checker
 config/puppet-4.8.2
 config/puppet-modules/puppet-boolean-1.0.2
@@ -58,6 +57,10 @@ kubernetes/kubernetes
 kubernetes/docker-distribution
 kubernetes/etcd
 kubernetes/helm
+kubernetes/chartmuseum
+kubernetes/armada-helm-toolkit
+kubernetes/armada
+kubernetes/k8s-pod-recovery
 grub/grubby
 base/dpkg
 base/cluster-resource-agents
@@ -80,3 +83,4 @@ requests-toolbelt
 python/python-mechanize
 python/python-html5lib
 #python/python-webencodings
+#python/python-daemon
