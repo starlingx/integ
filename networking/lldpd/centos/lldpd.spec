@@ -13,7 +13,9 @@
 %bcond_without dot1
 %bcond_without dot3
 %bcond_without custom
-%bcond_without snmp
+# This has been conditionally removed since starlingx host code no longer
+# manages or uses net-snmp because it's now containerized.
+%bcond_with snmp
 %bcond_with json
 
 # On RHEL <= 6, compile with oldies

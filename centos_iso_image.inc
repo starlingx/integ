@@ -123,11 +123,6 @@ sudo
 
 # config files
 
-# net-snmp
-net-snmp-utils
-net-snmp-libs
-net-snmp-python
-
 # openldap
 openldap
 openldap-servers
