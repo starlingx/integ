@@ -15,8 +15,8 @@ index 12d34ad..88c6c09 100644
  Name:           grub2
  Epoch:          1
  Version:        2.02
--Release:        0.76%{?dist}%{?buildid}
-+Release:        0.76.el7.centos%{?_tis_dist}.%{tis_patch_ver}
+-Release:        0.86%{?dist}%{?buildid}
++Release:        0.86.el7.centos%{?_tis_dist}.%{tis_patch_ver}
  Summary:        Bootloader with support for Linux, Multiboot and more
  Group:          System Environment/Base
  License:        GPLv3+

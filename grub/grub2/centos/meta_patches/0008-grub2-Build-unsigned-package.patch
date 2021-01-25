@@ -16,10 +16,10 @@ index 075727c..5581deb 100644
  %{desc}									\
  This subpackage provides optional components of grub used with removeable media on %{1} systems.\
 +                                                                        \
-+%package %{1}-unsigned                                                  \
++%{expand:%%package %{1}-unsigned}                                       \
 +Summary:    Unsigned versions of GRUB EFI binaries                      \
 +                                                                        \
-+%description %{1}-unsigned                                              \
++%{expand:%%description %{1}-unsigned}                                   \
 +This package contains unsigned version of GRUB EFI binaries.            \
 +                                                                        \
  %{nil}
@@ -31,9 +31,9 @@ index 075727c..5581deb 100644
  	-p /EFI/BOOT -d grub-core ${GRUB_MODULES}		\
 +cp %{2}.orig %{2}.unsigned                                      \
 +cp %{3}.orig %{3}.unsigned                                      \
- %{expand:%%{pesign -s -i %{2}.orig -o %{2} -a %{5} -c %{6} -n %{7}}}	\
- %{expand:%%{pesign -s -i %{3}.orig -o %{3} -a %{5} -c %{6} -n %{7}}}	\
- %{nil}
+ %{expand:%%{pesign -s -i %{2}.orig -o %{2}.one -a %{5} -c %{6} -n %{7}}}	\
+ %{expand:%%{pesign -s -i %{3}.orig -o %{3}.one -a %{5} -c %{6} -n %{7}}}	\
+ %{expand:%%{pesign -s -i %{2}.one -o %{2} -a %{8} -c %{9} -n %{10}}}	\
 @@ -403,6 +412,8 @@ find $RPM_BUILD_ROOT -iname "*.module" -exec chmod a-x {} '\;'	\
  touch $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/grub.cfg		\
  ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
@@ -45,8 +45,8 @@ index 075727c..5581deb 100644
  install -D -m 700 unicode.pf2					\\\
 @@ -490,4 +501,8 @@ cd ..								\
  %defattr(-,root,root,-)						\
- %attr(0700,root,root)/boot/efi/EFI/%{efidir}/%{3}		\
- %attr(0700,root,root)/boot/efi/EFI/%{efidir}/fonts		\
+ %verify(not mtime) %attr(0700,root,root)/boot/efi/EFI/%{efidir}/%{3} \
+ %verify(not mtime) %attr(0700,root,root)/boot/efi/EFI/%{efidir}/fonts \
 +                                                               \
 +%{expand:%%files %{1}-unsigned}                                 \
 +/boot/efi/EFI/%{efidir}/%{grubefiname}.unsigned                 \

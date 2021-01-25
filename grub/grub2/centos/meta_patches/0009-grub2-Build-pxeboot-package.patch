@@ -12,13 +12,13 @@ index 5581deb..9ef91d6 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
 @@ -242,6 +242,13 @@ Summary:    Unsigned versions of GRUB EFI binaries                      \
- %description %{1}-unsigned                                              \
+ %{expand:%%description %{1}-unsigned}                                   \
  This package contains unsigned version of GRUB EFI binaries.            \
                                                                          \
-+%package %{1}-pxeboot                                                   \
++%{expand:%%package %{1}-pxeboot}                                        \
 +Summary:    PXE bootable GRUB EFI binaries                              \
 +                                                                        \
-+%description %{1}-pxeboot                                               \
++%{expand:%%description %{1}-pxeboot}                                    \
 +This package contains the version of EFI GRUB that is served by the pxeboot \
 +server                                                                  \
 +                                                                        \
