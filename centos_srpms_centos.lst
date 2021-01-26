@@ -33,7 +33,7 @@ resource-agents-4.1.1-12.el7_6.7.src.rpm
 setup-2.8.71-10.el7.src.rpm
 shim-15-1.el7.centos.src.rpm
 shim-signed-15-1.el7.centos.src.rpm
-sudo-1.8.23-4.el7_7.1.src.rpm
+sudo-1.8.23-10.el7.src.rpm
 systemd-219-67.el7.src.rpm
 tboot-1.9.6-3.el7.src.rpm
 tpm2-tools-3.0.4-2.el7.src.rpm
