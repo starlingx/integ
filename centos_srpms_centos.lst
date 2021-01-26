@@ -13,7 +13,7 @@ logrotate-3.8.6-17.el7.src.rpm
 net-tools-2.0-0.24.20131004git.el7.src.rpm
 ntp-4.2.6p5-29.el7.centos.src.rpm
 openldap-2.4.44-20.el7.src.rpm
-openssh-7.4p1-16.el7.src.rpm
+openssh-7.4p1-21.el7.src.rpm
 parted-3.1-29.el7.src.rpm
 puppet-4.8.2-1.el7.src.rpm
 puppet-ceph-2.4.1-1.el7.src.rpm
