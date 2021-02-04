@@ -201,3 +201,6 @@ kvm-timer-advance
 # botocore is an unspecified requirement of boto3
 python2-botocore
 python-boto3
+
+# Pf bbdev configuration tool for ACC100 (Mt. Bryce)
+pf-bb-config

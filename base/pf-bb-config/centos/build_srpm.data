@@ -1,0 +1,8 @@
+TAR_NAME=pf-bb-config
+GIT_SHA=791b4f38d15377d4fbb3c9799a652acbc405b088
+
+COPY_LIST=" \
+    $STX_BASE/downloads/$TAR_NAME-$GIT_SHA.tar.gz \
+    $PKG_BASE/files/* \
+"
+TIS_PATCH_VER=PKG_GITREVCOUNT

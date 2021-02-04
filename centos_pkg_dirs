@@ -83,3 +83,5 @@ python/python-mechanize
 python/python-html5lib
 python/python-webencodings
 python/python-daemon
+base/inih
+base/pf-bb-config
