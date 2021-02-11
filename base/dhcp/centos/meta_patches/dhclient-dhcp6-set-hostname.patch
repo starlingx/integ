@@ -12,9 +12,9 @@ index 87bad65..fb51eb5 100644
 --- a/SOURCES/dhclient-script
 +++ b/SOURCES/dhclient-script
 @@ -653,6 +653,10 @@ dh6config() {
- 
              add_ipv6_addr_with_DAD
  
+             make_resolv_conf
 +
 +            if [ -n "${new_fqdn_hostname}" ] && need_hostname; then
 +                hostname ${new_fqdn_hostname} || echo "See -nc option in dhclient(8) man page."
