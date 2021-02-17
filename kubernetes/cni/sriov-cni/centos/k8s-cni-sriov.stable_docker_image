@@ -1,5 +1,5 @@
 BUILDER=docker
 LABEL=k8s-cni-sriov
 DOCKER_REPO=https://github.com/intel/sriov-cni.git
-DOCKER_REF=365c8f8cc1204df84f3e976ea30f113e733ca665
+DOCKER_REF=b18123d809f1c010cae19018e3395ed5981e76f7
 
