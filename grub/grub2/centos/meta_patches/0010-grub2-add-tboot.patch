@@ -28,16 +28,16 @@ index 9ef91d6..ffdd23c 100644
  		video xfs"					\
  GRUB_MODULES+=%{efi_modules}					\
 +GRUB_MODULES+=%{wrs_modules}                                    \
- %{expand:%%{mkimage %{1} %{2} %{3} %{4} %{5} %{6} %{7}}}	\
+ %{expand:%%{mkimage %{1} %{2} %{3} %{4} %{5} %{6} %{7} %{8} %{9} %{10}}} \
  %{nil}
  
 diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
 index d7475f0..e24bd8c 100644
 --- a/SOURCES/grub.patches
 +++ b/SOURCES/grub.patches
-@@ -287,3 +287,4 @@ Patch0286: 0286-efinet-also-use-the-firmware-acceleration-for-http.patch
- Patch0287: 0287-Make-root_url-reflect-the-protocol-hostname-of-our-b.patch
- Patch0289: 0288-efi-uga-Fix-PCIe-LER-when-GRUB2-accesses-non-enabled.patch
+@@ -333,3 +334,4 @@ Patch0286: 0286-efinet-also-use-the-firmware-acceleration-for-http.patch
+ Patch0333: 0333-linuxefi-fail-kernel-validation-without-shim-protoco.patch
+ Patch0334: 0334-linux-Fix-integer-overflows-in-initrd-size-handling.patch
  Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
 +Patch1001: 1001-add-tboot.patch
 -- 
