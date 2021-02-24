@@ -1,2 +1,2 @@
-0001-move-package-from-tarball-to-srpm.patch
-0002-meta-buildrequires-python-setuptools_scm.patch
+0001-Update-package-versioning-for-TIS-format.patch
+0002-Change-keyring-path.patch
