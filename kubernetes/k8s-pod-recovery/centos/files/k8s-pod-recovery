@@ -21,6 +21,7 @@
 
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 export KUBECONFIG=/etc/kubernetes/admin.conf
+CONF_DIR=/etc/k8s-post-recovery.d
 SLEEP_DELAY_SEC=15
 
 NAME=$(basename $0)
@@ -99,6 +100,12 @@ function _unknown_pods {
 
     # Target specific namespaces and pods on this host
     SUPPORTED_NAMESPACES=('openstack' 'monitor')
+
+    shopt -s nullglob
+    for conf_file in ${CONF_DIR}/*.conf; do
+        grep -q '^namespace=' $conf_file || continue
+        SUPPORTED_NAMESPACES+=($(grep '^namespace=' $conf_file | awk -F '=' '{print $2}'))
+    done
 
     if [ "$1" == 'recover' ]; then
         # Recovers pods that are: Running/Unknown and Pending/Init:Unknown

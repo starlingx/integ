@@ -17,10 +17,12 @@ Requires: systemd
 
 %define local_dir /usr/local
 %define local_sbindir %{local_dir}/sbin
+%define k8s_recovery_conf_dir /etc/k8s-post-recovery.d
 
 %prep
 
 %install
+install -d %{buildroot}%{k8s_recovery_conf_dir}
 install -d %{buildroot}%{local_sbindir}
 install -m 755 %{SOURCE0} %{buildroot}%{local_sbindir}/k8s-pod-recovery
 install -p -D -m 644 %{SOURCE1} %{buildroot}%{_unitdir}/k8s-pod-recovery.service
@@ -50,3 +52,4 @@ fi
 %defattr(-,root,root,-)
 %{local_sbindir}/k8s-pod-recovery
 %{_unitdir}/k8s-pod-recovery.service
+%{k8s_recovery_conf_dir}
