@@ -74,23 +74,24 @@ function _wait_for_systemd {
 }
 
 function _wait_for_pod_stabilization {
+
+    local extra_args=$1
+    local time_between_polls=$2
+    local stable_cycles=$3
+
     last_count=0
     stability_count=0
-    NINETY_SEC_COUNT=$((90/SLEEP_DELAY_SEC))
-    while true ; do
-        pods_in_flux=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pods --no-headers --all-namespaces | grep -v -e Running -e Completed | wc -l)
+    while [[ $stability_count -lt $stable_cycles ]] ; do
+        pods_in_flux=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pods --no-headers --all-namespaces $extra_args | grep -v -e Running -e Completed | wc -l)
         if [[ $pods_in_flux -ne $last_count ]]; then
             LOG "Waiting on pod transitions to stabilize... $pods_in_flux pods are not Running/Completed"
             last_count=$pods_in_flux
             stability_count=0
         else
-            LOG "Pods transitions are stable... for $((stability_count*${SLEEP_DELAY_SEC})) seconds."
-            if [[ $stability_count -eq $NINETY_SEC_COUNT ]]; then
-                break
-            fi
+            LOG "Pods transitions are stable... for $((stability_count*time_between_polls)) seconds."
             stability_count=$((stability_count+1))
         fi
-        sleep ${SLEEP_DELAY_SEC}
+        sleep $time_between_polls
     done
 }
 
@@ -148,15 +149,19 @@ function _node_affinity_pods {
 function _labeled_pods {
     # $1: actions <recover|verify>
 
-    # Delete pods with the restart-on-reboot=true label
-    PODS=$(kubectl get pods --all-namespaces --no-headers --field-selector=spec.nodeName=${HOST} --selector=restart-on-reboot=true 2>/dev/null | awk '{print $1"/"$2}')
-
     if [ "$1" == 'recover' ]; then
+        POLLING_INTERVAL=5
+        STABILITY_COUNT=6
+        _wait_for_pod_stabilization "--selector=restart-on-reboot=true --field-selector=spec.nodeName=${HOST}" $POLLING_INTERVAL $STABILITY_COUNT
+
+        # Delete pods with the restart-on-reboot=true label
+        PODS=$(kubectl get pods --all-namespaces --no-headers --field-selector=spec.nodeName=${HOST} --selector=restart-on-reboot=true 2>/dev/null | awk '{print $1"/"$2}')
         for pod in $PODS; do
             LOG "restart-on-reboot labeled pods: Recovering: ${pod//// }"
             kubectl delete pods -n ${pod//// } --wait=false
         done
     elif [ "$1" == 'verify' ]; then
+        PODS=$(kubectl get pods --all-namespaces --no-headers --field-selector=spec.nodeName=${HOST} --selector=restart-on-reboot=true 2>/dev/null | awk '{print $1"/"$2}')
         for pod in $PODS; do
             LOG "restart-on-reboot labeled  pods: Verifying: ${pod//// }"
             STATUS=$(kubectl get pod --no-headers -n ${pod//// } 2>/dev/null | awk '{print $3}')
@@ -214,11 +219,11 @@ function _force_reset_pods {
 function _examine_pods {
     # $1: actions <recover|verify>
 
-    # No need to wait for pod transitions if we know the pod needs to be restarted
+    # Manage labeled pods first
     _labeled_pods $1
 
     # Wait for pods transitions to stop
-    _wait_for_pod_stabilization
+    _wait_for_pod_stabilization "" $SLEEP_DELAY_SEC 6
 
     # Check for recovery actions
     _unknown_pods $1
