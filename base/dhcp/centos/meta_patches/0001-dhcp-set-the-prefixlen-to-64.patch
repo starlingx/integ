@@ -1,0 +1,49 @@
+From 54d85d8a0378a6610012adeae7abaefaf01ea9a1 Mon Sep 17 00:00:00 2001
+From: Zhixiong Chi <zhixiong.chi@windriver.com>
+Date: Tue, 9 Feb 2021 18:30:14 -0800
+Subject: [PATCH] WRS: dhcp: set the prefixlen to 64
+
+Drop the patch dhcp-dhclient_ipv6_prefix.patch to keep the default
+value of the prefixlen to 64, since we don't need this patch to set
+the default value 128 as usual, otherwise it will occurs that all hosts
+(controller|compute node) offline after booting off the controller-0,
+or the other usage scenes.
+As usual, 128 is usually the specifications call for host address
+and it doesn't include any on-link information.
+By contrast, 64 indicates that's subnet area, and this vaule is used
+frequently as usual. So we still use the previous vaule 64.
+Meanwhile we don't need to modify the relevant place where every
+application code needed for the compatibility any more.
+
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
+---
+ SPECS/dhcp.spec | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/SPECS/dhcp.spec b/SPECS/dhcp.spec
+index c893632..f7add1a 100644
+--- a/SPECS/dhcp.spec
++++ b/SPECS/dhcp.spec
+@@ -111,7 +111,8 @@ Patch70:  dhcp-4.2.5-reference_count_overflow.patch
+ Patch71:  dhcp-replay_file_limit.patch
+ Patch72:  dhcp-4.2.5-expiry_before_renewal_v2.patch
+ Patch73:  dhcp-4.2.5-bind-config.patch
+-Patch74:  dhcp-dhclient_ipv6_prefix.patch
++#Drop dhcp-dhclient_ipv6_prefix.patch not to set the default prefixlen 128
++#Patch74:  dhcp-dhclient_ipv6_prefix.patch
+ # Support build with bind 9.11.3+
+ Patch75:  dhcp-4.2.5-isc-util.patch
+ 
+@@ -452,7 +453,8 @@ rm -rf includes/isc-dhcp
+ 
+ # https://bugzilla.redhat.com/show_bug.cgi?id=1647784
+ %patch72 -p1 -b .t2-expirity
+-%patch74 -p1 -b .ipv6-prefix
++# Drop this patch not to set the default prefixlen 128
++#%patch74 -p1 -b .ipv6-prefix
+ 
+ # Support for BIND 9.11
+ %patch73 -p1 -b .bind-config
+-- 
+2.17.0
+
