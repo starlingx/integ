@@ -4,3 +4,4 @@
 0004-Upversion-rpm-devel-dependency.patch
 0005-Add-TIS-patches-for-host-lookup.patch
 0006-Add-support-for-https-and-IPv6-to-anaconda-preexec.patch
+0007-meta-Disable-modular-filtering.patch
