@@ -1,0 +1,30 @@
+From bd3514de09a67df86e81f3ec8667ab05ebc51669 Mon Sep 17 00:00:00 2001
+From: Yong Fu <fuyong@neusoft.com>
+Date: Thu, 16 Jul 2020 16:36:56 +0800
+Subject: [PATCH 3/3] fix-docker-ce-installation-error
+
+When installing centos8 iSO, docker-ce will abort installation process.
+msg: "Error in POSTIN scriptlet in rpm package docker-ce-cli"
+Irrespective of the earlier error while adding docker group it actually adds the group.
+The error should be ignored
+
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
+---
+ SPECS/docker-ce.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/docker-ce.spec b/SPECS/docker-ce.spec
+index ac1898a..50042c7 100644
+--- a/SPECS/docker-ce.spec
++++ b/SPECS/docker-ce.spec
+@@ -130,6 +130,7 @@ install -D -m 0644 %{_topdir}/SOURCES/docker.socket $RPM_BUILD_ROOT/%{_unitdir}/
+ if ! getent group docker > /dev/null; then
+     groupadd --system docker
+ fi
++exit 0
+ 
+ %preun
+ %systemd_preun docker.service
+-- 
+2.17.1
+

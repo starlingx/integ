@@ -51,6 +51,7 @@ storage-drivers/python-3parclient
 storage-drivers/python-lefthandclient
 storage-drivers/trident-installer
 security/tboot
+docker/docker-ce
 docker/python-docker
 kubernetes/containerd
 kubernetes/kubernetes
