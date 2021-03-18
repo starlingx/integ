@@ -2,7 +2,6 @@ anaconda-29.19.1.13-1.el8.src.rpm
 cloud-init-18.5-1.el8.4.src.rpm
 dhcp-4.3.6-30.el8.src.rpm
 dnsmasq-2.79-4.el8.src.rpm
-docker-ce-19.03.12-3.el7.src.rpm
 facter-2.4.4-4.el7.src.rpm
 grub2-2.02-66.el8_0.1.src.rpm
 grubby-8.40-34.el8.src.rpm
