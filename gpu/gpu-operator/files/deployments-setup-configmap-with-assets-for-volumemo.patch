@@ -1,0 +1,137 @@
+From de6068e56987960b7f3227dd4747e64b169742df Mon Sep 17 00:00:00 2001
+From: Babak Sarashki <babak.sarashki@windriver.com>
+Date: Sat, 6 Mar 2021 00:22:40 +0000
+Subject: [PATCH] deployments: setup configmap with assets for volumemounts
+
+This feature allows inclusion of assets/ in the helm chart and their
+export to the gpu-operator pod through configmap volumeMounts.
+
+Signed-off-by: Babak Sarashki <babak.sarashki@windriver.com>
+---
+ .../gpu-operator/templates/operator.yaml      | 45 +++++++++++++++++++
+ .../templates/operator_configmap.yaml         | 36 +++++++++++++++
+ deployments/gpu-operator/values.yaml          |  2 +
+ 3 files changed, 83 insertions(+)
+ create mode 100644 deployments/gpu-operator/templates/operator_configmap.yaml
+
+diff --git a/deployments/gpu-operator/templates/operator.yaml b/deployments/gpu-operator/templates/operator.yaml
+index 50983b20..90aa3874 100644
+--- a/deployments/gpu-operator/templates/operator.yaml
++++ b/deployments/gpu-operator/templates/operator.yaml
+@@ -50,6 +50,45 @@ spec:
+           - name: host-os-release
+             mountPath: "/host-etc/os-release"
+             readOnly: true
++
++          {{- if eq .Values.operator.include_assets "include_assets" }}
++          {{- range $path, $_ := .Files.Glob "assets/gpu-feature-discovery/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/gpu-feature-discovery/%s" (base $path) }}
++            subPath: {{ printf "gfd_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-container-toolkit/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-container-toolkit/%s" (base $path) }}
++            subPath: {{ printf "state_container_toolkit_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-device-plugin/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-device-plugin/%s" (base $path) }}
++            subPath: {{ printf "state_device_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-device-plugin-validation/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-device-plugin-validation/%s" (base $path) }}
++            subPath: {{ printf "state_device_validation_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-driver/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-driver/%s" (base $path) }}
++            subPath: {{ printf "state_driver_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-monitoring/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-monitoring/%s" (base $path) }}
++            subPath: {{ printf "state_monitor_%s" (base $path) }}
++          {{- end }}
++          {{- end }}
++
+         readinessProbe:
+           exec:
+             command: ["stat", "/tmp/operator-sdk-ready"]
+@@ -63,6 +102,12 @@ spec:
+         - name: host-os-release
+           hostPath:
+             path: "/etc/os-release"
++        {{- if eq .Values.operator.include_assets "include_assets" }}
++        - name: assets
++          configMap:
++            name: operator-configmap
++        {{- end }}
++
+     {{- with .Values.operator.nodeSelector }}
+       nodeSelector:
+         {{- toYaml . | nindent 8 }}
+diff --git a/deployments/gpu-operator/templates/operator_configmap.yaml b/deployments/gpu-operator/templates/operator_configmap.yaml
+new file mode 100644
+index 00000000..61f366e8
+--- /dev/null
++++ b/deployments/gpu-operator/templates/operator_configmap.yaml
+@@ -0,0 +1,36 @@
++{{- if eq .Values.operator.include_assets "include_assets" }}
++apiVersion: v1
++kind: ConfigMap
++metadata:
++  name: operator-configmap
++data:
++{{- range $path, $_ := .Files.Glob "assets/gpu-feature-discovery/*" }}
++{{ printf "gfd_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-container-toolkit/*" }}
++{{ printf "state_container_toolkit_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-device-plugin/*" }}
++{{ printf "state_device_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-device-plugin-validation/*" }}
++{{ printf "state_device_validation_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-driver/*" }}
++{{ printf "state_driver_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-monitoring/*" }}
++{{ printf "state_monitor_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++{{- end }}
+diff --git a/deployments/gpu-operator/values.yaml b/deployments/gpu-operator/values.yaml
+index 00d94195..8b43c59f 100644
+--- a/deployments/gpu-operator/values.yaml
++++ b/deployments/gpu-operator/values.yaml
+@@ -39,6 +39,8 @@ operator:
+                 values: [""]
+   logging:
+     timeEncoding: epoch
++  # Set to "include_assets" to include assets/gpu-operator with the helm chart
++  include_assets: ""
+ 
+ driver:
+   repository: nvcr.io/nvidia
+-- 
+2.17.1
+
