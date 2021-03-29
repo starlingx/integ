@@ -1,8 +1,0 @@
-VERSION=1.6.0
-TAR_NAME=gpu-operator
-TAR="$TAR_NAME-$VERSION.tar.gz"
-COPY_LIST=" \
-  $PKG_BASE/files/* \
-  $STX_BASE/downloads/$TAR"
-
-TIS_PATCH_VER=PKG_GITREVCOUNT
