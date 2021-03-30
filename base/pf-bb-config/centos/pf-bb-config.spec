@@ -1,13 +1,13 @@
-%global git_sha    791b4f38d15377d4fbb3c9799a652acbc405b088
+%global git_sha    945712e8876be2003f2f31de70353c48501519fa
 
 Summary:  PF BBDEV (baseband device) Configuration Application.
 Name: pf-bb-config
-Version: 20.11
+Version: 21.3
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 License: Apache-2.0
 Group: base
 Packager: Wind River <info@windriver.com>
-URL: https://github.com/intel/pf-bb-config/releases/tag/v20.11
+URL: https://github.com/intel/pf-bb-config/releases/tag/v21.3
 Source0: %{name}-%{git_sha}.tar.gz
 Patch0: Reject-device-configuration-if-not-enabled.patch
 
