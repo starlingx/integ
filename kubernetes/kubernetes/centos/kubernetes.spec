@@ -57,6 +57,7 @@ Source33:       genmanpages.sh
 
 Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
 Patch2: kubelet-service-remove-docker-dependency.patch
+Patch3: fix_http2_erringroundtripper_handling.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -838,6 +839,7 @@ Kubernetes client tools like kubectl
 %setup -q -n %{con_repo}-%{con_commit} -T -b 1
 %setup -q -n %{repo}-%{commit}
 %patch1 -p1
+%patch3 -p1
 
 # copy contrib folder
 mkdir contrib
@@ -873,6 +875,10 @@ export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
 %ifarch ppc64le
 export GOLDFLAGS='-linkmode=external'
 %endif
+
+# uncomment these two lines to build unoptimized binaries for debugging.
+# export GOLDFLAGS=""
+# export GOGCFLAGS="-N -l"
 make WHAT="cmd/kube-proxy cmd/kube-apiserver cmd/kube-controller-manager cmd/kubelet cmd/kubeadm cmd/kube-scheduler cmd/kubectl"
 
 # convert md to man
