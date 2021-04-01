@@ -18,8 +18,8 @@ index 178a961..84aa1ac 100644
  Summary: The NTP daemon and utilities
  Name: ntp
  Version: 4.2.6p5
--Release: 29%{?dist}
-+Release: 29.el7.centos%{?_tis_dist}.%{tis_patch_ver}
+-Release: 29%{?dist}.2
++Release: 29.el7.centos.2%{?_tis_dist}.%{tis_patch_ver}
  # primary license (COPYRIGHT) : MIT
  # ElectricFence/ (not used) : GPLv2
  # kernel/sys/ppsclock.h (not used) : BSD with advertising
