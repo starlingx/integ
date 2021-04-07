@@ -1,0 +1,540 @@
+From 74c08e4ce69b80e8c5687d01c6bd1a4752233e20 Mon Sep 17 00:00:00 2001
+From: Babak Sarashki <babak.sarashki@windriver.com>
+Date: Sun, 7 Mar 2021 17:19:08 +0000
+Subject: [PATCH 2/2] enablement: support on starlingx cloud platform
+
+StarlingX is a cloud infrastructure software stack for edge.
+It has an immutable file system, and system configruation. For
+instance changes to set containerd runtime by the gpu-operator
+will be overriden and must be avoided. The default_runtime is
+to remain docker, therefore.
+
+This commit enables gpu-operator on Starlingx (starlingx.io).
+The changes to the gpu-operator include bundling modified assets
+and a modified version of the nvidia-driver with the helm charts.
+
+The modficiations to the assets include setting the runtimeClassName
+on the gpu-operator pods that require nvidia-container-runtime and
+host-mounting the kernel headers and build directory.  The changes to
+the nvidia-driver account for pre-installed kernel packages.
+
+To load the operator on starlingx, define a runtimeclass with name
+and handler set to nvidia; thereafter:
+
+$ source /etc/platform/openrc
+[...(keystone_admin)]$ system service-parameter-add \
+  platform container_runtime \
+  custom_container_runtime=nvidia:/path/to/nvidia-container-runtime
+
+[...(keystone_admin)]$ system host-lock 1; system host-unlock 1
+
+Signed-off-by: Babak Sarashki <babak.sarashki@windriver.com>
+---
+ .../gpu-feature-discovery/0500_daemonset.yaml |   1 +
+ .../cuda-vector-add.yaml                      |   1 +
+ .../0400_device_plugin.yml                    |   1 +
+ assets/state-driver/0400_configmap.yaml       | 327 +++++++++++++++++-
+ assets/state-driver/0500_daemonset.yaml       |  39 ++-
+ assets/state-monitoring/0900_daemonset.yaml   |   1 +
+ deployments/gpu-operator/values.yaml          |   8 +-
+ 7 files changed, 373 insertions(+), 5 deletions(-)
+
+diff --git a/assets/gpu-feature-discovery/0500_daemonset.yaml b/assets/gpu-feature-discovery/0500_daemonset.yaml
+index 9785dc93..1589e710 100644
+--- a/assets/gpu-feature-discovery/0500_daemonset.yaml
++++ b/assets/gpu-feature-discovery/0500_daemonset.yaml
+@@ -18,6 +18,7 @@ spec:
+         app.kubernetes.io/part-of: nvidia-gpu
+     spec:
+       serviceAccount: nvidia-gpu-feature-discovery
++      runtimeClassName: nvidia
+       containers:
+         - image: "FILLED BY THE OPERATOR"
+           name: gpu-feature-discovery
+diff --git a/assets/state-device-plugin-validation/cuda-vector-add.yaml b/assets/state-device-plugin-validation/cuda-vector-add.yaml
+index cfb547ad..8269adeb 100644
+--- a/assets/state-device-plugin-validation/cuda-vector-add.yaml
++++ b/assets/state-device-plugin-validation/cuda-vector-add.yaml
+@@ -12,6 +12,7 @@ spec:
+       effect: NoSchedule
+   readOnlyRootFilesystem: true
+   restartPolicy: OnFailure
++  runtimeClassName: nvidia
+   initContainers:
+   - name: device-plugin-validation-init
+     image: "FILLED BY THE OPERATOR"
+diff --git a/assets/state-device-plugin/0400_device_plugin.yml b/assets/state-device-plugin/0400_device_plugin.yml
+index a5cf7fae..84e9c534 100644
+--- a/assets/state-device-plugin/0400_device_plugin.yml
++++ b/assets/state-device-plugin/0400_device_plugin.yml
+@@ -30,6 +30,7 @@ spec:
+         operator: Exists
+         effect: NoSchedule
+       serviceAccount: nvidia-device-plugin
++      runtimeClassName: nvidia
+       initContainers:
+       - name: toolkit-validation
+         image: "FILLED BY THE OPERATOR"
+diff --git a/assets/state-driver/0400_configmap.yaml b/assets/state-driver/0400_configmap.yaml
+index 48e9f51e..561adc9f 100644
+--- a/assets/state-driver/0400_configmap.yaml
++++ b/assets/state-driver/0400_configmap.yaml
+@@ -4,7 +4,7 @@ metadata:
+   name: nvidia-driver
+   namespace: gpu-operator-resources
+ data:
+-  oci-nvidia-hook-json: | 
++  oci-nvidia-hook-json: |
+     {
+         "version": "1.0.0",
+         "hook": {
+@@ -20,3 +20,328 @@ data:
+         },
+         "stages": ["prestart"]
+     }
++  nvidia-driver-build-script: |
++    #! /bin/bash
++    # Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
++    # Copyright (c) 2021 Wind River Systems, Inc. SPDX-License-Identifier:
++    # Apache-2.0.
++    # This script is from: https://gitlab.com/nvidia/container-images/driver.
++    # It is modified and included under configmap for platforms that require
++    # pre-installed packages. Such platforms have the option to modify the
++    # entrypoint in 0500_daemonset.yaml, or the nvidia-driver script here for
++    # further customizations.
++
++    set -eu
++
++    RUN_DIR=/run/nvidia
++    PID_FILE=${RUN_DIR}/${0##*/}.pid
++    DRIVER_VERSION=${DRIVER_VERSION:?"Missing driver version"}
++    KERNEL_UPDATE_HOOK=/run/kernel/postinst.d/update-nvidia-driver
++    KERNEL_VERSION="$(uname -r)"
++
++    # Default to 0 ; 1 is experimental and not supported
++    export IGNORE_PREEMPT_RT_PRESENCE=0
++
++    # Check if the kernel version requires a new precompiled driver packages.
++    _kernel_requires_package() {
++        local proc_mount_arg=""
++
++        echo "Checking NVIDIA driver packages..."
++        cd /usr/src/nvidia-${DRIVER_VERSION}/kernel
++
++        # When the kernel version is latest on host, this check fails and lead to recompilation, even when precompiled modules exist.
++        #if [ "${KERNEL_VERSION}" != "$(uname -r)" ]; then
++        #Not needed with pre-installed readonly headers, devel and modules
++        #proc_mount_arg="--proc-mount-point /lib/modules/${KERNEL_VERSION}/proc"
++        #fi
++        for pkg_name in $(ls -d -1 precompiled/** 2> /dev/null); do
++            is_match=$(../mkprecompiled --match ${pkg_name} ${proc_mount_arg})
++            if [ "${is_match}" == "kernel interface matches." ]; then
++                echo "Found NVIDIA driver package ${pkg_name##*/}"
++                return 1
++            fi
++        done
++        return 0
++    }
++
++    # Compile the kernel modules, optionally sign them, and generate a precompiled package for use by the nvidia-installer.
++    _create_driver_package() (
++        local pkg_name="nvidia-modules-${KERNEL_VERSION%%-*}${PACKAGE_TAG:+-${PACKAGE_TAG}}"
++        local nvidia_sign_args=""
++        local nvidia_modeset_sign_args=""
++        local nvidia_uvm_sign_args=""
++
++        trap "make -s -j 4 SYSSRC=/lib/modules/${KERNEL_VERSION}/build clean > /dev/null" EXIT
++
++        echo "Compiling NVIDIA driver kernel modules..."
++        cd /usr/src/nvidia-${DRIVER_VERSION}/kernel
++
++        export IGNORE_CC_MISMATCH=1
++        make -s -j 4 SYSSRC=/lib/modules/${KERNEL_VERSION}/build nv-linux.o nv-modeset-linux.o > /dev/null
++
++        echo "Relinking NVIDIA driver kernel modules..."
++        rm -f nvidia.ko nvidia-modeset.ko
++        ld -d -r -o nvidia.ko ./nv-linux.o ./nvidia/nv-kernel.o_binary
++        ld -d -r -o nvidia-modeset.ko ./nv-modeset-linux.o ./nvidia-modeset/nv-modeset-kernel.o_binary
++
++        if [ -n "${PRIVATE_KEY}" ]; then
++            echo "Signing NVIDIA driver kernel modules..."
++            donkey get ${PRIVATE_KEY} sh -c "PATH=${PATH}:/usr/src/kernels/$(uname -r)/scripts &&             \
++              sign-file sha512 \$DONKEY_FILE pubkey.x509 nvidia.ko nvidia.ko.sign &&                          \
++              sign-file sha512 \$DONKEY_FILE pubkey.x509 nvidia-modeset.ko nvidia-modeset.ko.sign &&          \
++              sign-file sha512 \$DONKEY_FILE pubkey.x509 nvidia-uvm.ko"
++            nvidia_sign_args="--linked-module nvidia.ko --signed-module nvidia.ko.sign"
++            nvidia_modeset_sign_args="--linked-module nvidia-modeset.ko --signed-module nvidia-modeset.ko.sign"
++            nvidia_uvm_sign_args="--signed"
++        fi
++
++        echo "Building NVIDIA driver package ${pkg_name}..."
++        ../mkprecompiled --pack ${pkg_name} --description ${KERNEL_VERSION}                              \
++                                            --driver-version ${DRIVER_VERSION}                           \
++                                            --kernel-interface nv-linux.o                                \
++                                            --linked-module-name nvidia.ko                               \
++                                            --core-object-name nvidia/nv-kernel.o_binary                 \
++                                            ${nvidia_sign_args}                                          \
++                                            --target-directory .                                         \
++                                            --kernel-interface nv-modeset-linux.o                        \
++                                            --linked-module-name nvidia-modeset.ko                       \
++                                            --core-object-name nvidia-modeset/nv-modeset-kernel.o_binary \
++                                            ${nvidia_modeset_sign_args}                                  \
++                                            --target-directory .                                         \
++                                            --kernel-module nvidia-uvm.ko                                \
++                                            ${nvidia_uvm_sign_args}                                      \
++                                            --target-directory .
++        mkdir -p precompiled
++        mv ${pkg_name} precompiled
++    )
++
++    # Load the kernel modules and start persistenced.
++    _load_driver() {
++        echo "Loading IPMI kernel module..."
++        modprobe ipmi_msghandler
++
++        echo "Loading NVIDIA driver kernel modules..."
++        modprobe -a nvidia nvidia-uvm nvidia-modeset
++
++        echo "Starting NVIDIA persistence daemon..."
++        nvidia-persistenced --persistence-mode
++    }
++
++    # Stop persistenced and unload the kernel modules if they are currently loaded.
++    _unload_driver() {
++        local rmmod_args=()
++        local nvidia_deps=0
++        local nvidia_refs=0
++        local nvidia_uvm_refs=0
++        local nvidia_modeset_refs=0
++
++        echo "Stopping NVIDIA persistence daemon..."
++        if [ -f /var/run/nvidia-persistenced/nvidia-persistenced.pid ]; then
++            local pid=$(< /var/run/nvidia-persistenced/nvidia-persistenced.pid)
++
++            kill -SIGTERM "${pid}"
++            for i in $(seq 1 10); do
++                kill -0 "${pid}" 2> /dev/null || break
++                sleep 0.1
++            done
++            if [ $i -eq 10 ]; then
++                echo "Could not stop NVIDIA persistence daemon" >&2
++                return 1
++            fi
++        fi
++
++        echo "Unloading NVIDIA driver kernel modules..."
++        if [ -f /sys/module/nvidia_modeset/refcnt ]; then
++            nvidia_modeset_refs=$(< /sys/module/nvidia_modeset/refcnt)
++            rmmod_args+=("nvidia-modeset")
++            ((++nvidia_deps))
++        fi
++        if [ -f /sys/module/nvidia_uvm/refcnt ]; then
++            nvidia_uvm_refs=$(< /sys/module/nvidia_uvm/refcnt)
++            rmmod_args+=("nvidia-uvm")
++            ((++nvidia_deps))
++        fi
++        if [ -f /sys/module/nvidia/refcnt ]; then
++            nvidia_refs=$(< /sys/module/nvidia/refcnt)
++            rmmod_args+=("nvidia")
++        fi
++        if [ ${nvidia_refs} -gt ${nvidia_deps} ] || [ ${nvidia_uvm_refs} -gt 0 ] || [ ${nvidia_modeset_refs} -gt 0 ]; then
++            echo "Could not unload NVIDIA driver kernel modules, driver is in use" >&2
++            return 1
++        fi
++
++        if [ ${#rmmod_args[@]} -gt 0 ]; then
++            rmmod ${rmmod_args[@]}
++        fi
++        return 0
++    }
++
++    # Link and install the kernel modules from a precompiled package using the nvidia-installer.
++    _install_driver() {
++        local install_args=()
++
++        echo "Installing NVIDIA driver kernel modules..."
++        cd /usr/src/nvidia-${DRIVER_VERSION}
++        rm -rf /lib/modules/${KERNEL_VERSION}/video
++
++        if [ "${ACCEPT_LICENSE}" = "yes" ]; then
++            install_args+=("--accept-license")
++        fi
++        nvidia-installer --kernel-module-only --no-drm --ui=none --no-nouveau-check ${install_args[@]+"${install_args[@]}"}
++        # May need to add no-cc-check for Rhel, otherwise it complains about cc missing in path
++        # /proc/version and lib/modules/KERNEL_VERSION/proc are different, by default installer looks at /proc/ so, added the proc-mount-point
++        # TODO: remove the -a flag. its not needed. in the new driver version, license-acceptance is implicit
++        #nvidia-installer --kernel-module-only --no-drm --ui=none --no-nouveau-check --no-cc-version-check --proc-mount-point /lib/modules/${KERNEL_VERSION}/proc ${install_args[@]+"${install_args[@]}"}
++    }
++
++    # Mount the driver rootfs into the run directory with the exception of sysfs.
++    _mount_rootfs() {
++        echo "Mounting NVIDIA driver rootfs..."
++        mount --make-runbindable /sys
++        mount --make-private /sys
++        mkdir -p ${RUN_DIR}/driver
++        mount --rbind / ${RUN_DIR}/driver
++    }
++
++    # Unmount the driver rootfs from the run directory.
++    _unmount_rootfs() {
++        echo "Unmounting NVIDIA driver rootfs..."
++        if findmnt -r -o TARGET | grep "${RUN_DIR}/driver" > /dev/null; then
++            umount -l -R ${RUN_DIR}/driver
++        fi
++    }
++
++    # Write a kernel postinst.d script to automatically precompile packages on kernel update (similar to DKMS).
++    _write_kernel_update_hook() {
++        if [ ! -d ${KERNEL_UPDATE_HOOK%/*} ]; then
++            return
++        fi
++
++        echo "Writing kernel update hook..."
++        cat > ${KERNEL_UPDATE_HOOK} <<'EOF'
++    #!/bin/bash
++
++    set -eu
++    trap 'echo "ERROR: Failed to update the NVIDIA driver" >&2; exit 0' ERR
++
++    NVIDIA_DRIVER_PID=$(< /run/nvidia/nvidia-driver.pid)
++
++    export "$(grep -z DRIVER_VERSION /proc/${NVIDIA_DRIVER_PID}/environ)"
++    nsenter -t "${NVIDIA_DRIVER_PID}" -m -- nvidia-driver update --kernel "$1"
++    EOF
++        chmod +x ${KERNEL_UPDATE_HOOK}
++    }
++
++    _shutdown() {
++        if _unload_driver; then
++            _unmount_rootfs
++            rm -f ${PID_FILE} ${KERNEL_UPDATE_HOOK}
++            return 0
++        fi
++        return 1
++    }
++
++    init() {
++        echo -e "\n========== NVIDIA Software Installer ==========\n"
++        echo -e "Starting installation of NVIDIA driver version ${DRIVER_VERSION} for Linux kernel version ${KERNEL_VERSION}\n"
++
++        exec 3> ${PID_FILE}
++        if ! flock -n 3; then
++            echo "An instance of the NVIDIA driver is already running, aborting"
++            exit 1
++        fi
++        echo $$ >&3
++
++        trap "echo 'Caught signal'; exit 1" HUP INT QUIT PIPE TERM
++        trap "_shutdown" EXIT
++
++        _unload_driver || exit 1
++        _unmount_rootfs
++
++        if _kernel_requires_package; then
++            _create_driver_package
++        fi
++
++        _install_driver
++        _load_driver
++        _mount_rootfs
++        _write_kernel_update_hook
++
++        echo "Done, now waiting for signal"
++        sleep infinity &
++        trap "echo 'Caught signal'; _shutdown && { kill $!; exit 0; }" HUP INT QUIT PIPE TERM
++        trap - EXIT
++        while true; do wait $! || continue; done
++        exit 0
++    }
++
++    update() {
++        exec 3>&2
++        if exec 2> /dev/null 4< ${PID_FILE}; then
++            if ! flock -n 4 && read pid <&4 && kill -0 "${pid}"; then
++                exec > >(tee -a "/proc/${pid}/fd/1")
++                exec 2> >(tee -a "/proc/${pid}/fd/2" >&3)
++            else
++                exec 2>&3
++            fi
++            exec 4>&-
++        fi
++        exec 3>&-
++
++        echo -e "\n========== NVIDIA Software Updater ==========\n"
++        echo -e "Starting update of NVIDIA driver version ${DRIVER_VERSION} for Linux kernel version ${KERNEL_VERSION}\n"
++
++        trap "echo 'Caught signal'; exit 1" HUP INT QUIT PIPE TERM
++
++        if _kernel_requires_package; then
++            _create_driver_package
++        fi
++
++        echo "Done"
++        exit 0
++    }
++
++    usage() {
++        cat >&2 <<EOF
++    Usage: $0 COMMAND [ARG...]
++
++    Commands:
++      init   [-a | --accept-license]
++      update [-k | --kernel VERSION] [-s | --sign KEYID] [-t | --tag TAG]
++    EOF
++        exit 1
++    }
++
++    if [ $# -eq 0 ]; then
++        usage
++    fi
++    command=$1; shift
++    case "${command}" in
++        init) options=$(getopt -l accept-license -o a -- "$@") ;;
++        update) options=$(getopt -l kernel:,sign:,tag: -o k:s:t: -- "$@") ;;
++        *) usage ;;
++    esac
++    if [ $? -ne 0 ]; then
++        usage
++    fi
++    eval set -- "${options}"
++
++    ACCEPT_LICENSE=""
++    KERNEL_VERSION=$(uname -r)
++    PRIVATE_KEY=""
++    PACKAGE_TAG=""
++
++    for opt in ${options}; do
++        case "$opt" in
++        -a | --accept-license) ACCEPT_LICENSE="yes"; shift 1 ;;
++        -k | --kernel) KERNEL_VERSION=$2; shift 2 ;;
++        -s | --sign) PRIVATE_KEY=$2; shift 2 ;;
++        -t | --tag) PACKAGE_TAG=$2; shift 2 ;;
++        --) shift; break ;;
++        esac
++    done
++    if [ $# -ne 0 ]; then
++        usage
++    fi
++
++    $command
+diff --git a/assets/state-driver/0500_daemonset.yaml b/assets/state-driver/0500_daemonset.yaml
+index 3a2dc06b..7a1d8a17 100644
+--- a/assets/state-driver/0500_daemonset.yaml
++++ b/assets/state-driver/0500_daemonset.yaml
+@@ -32,8 +32,19 @@ spec:
+       - image: "FILLED BY THE OPERATOR"
+         imagePullPolicy: Always
+         name: nvidia-driver-ctr
+-        command: ["nvidia-driver"]
+-        args: ["init"]
++        command: ["/bin/bash"]
++        args:
++        - "-c"
++        - "--"
++        - >
++          cat /usr/local/bin/nvidia-driver.22 > /usr/local/bin/nvidia-driver &&
++          chmod 755 /usr/local/bin/nvidia-driver &&
++          mkdir -p /usr/src/kernels &&
++          tar -C /usr/src/host-kernels/ -c $(uname -r) -f - | tar -C /usr/src/kernels/ -xf - &&
++          rm -rf /lib/modules/ && mkdir -p /lib/modules/ &&
++          tar -C /lib/host-modules/ -c $(uname -r) -f - | tar -C /lib/modules/ -xf - &&
++          ln -rfs /usr/lib64/libelf.so.1 /usr/lib/libelf.so &&
++          /usr/local/bin/nvidia-driver init
+         securityContext:
+           privileged: true
+           seLinuxOptions:
+@@ -44,10 +55,23 @@ spec:
+             mountPropagation: Bidirectional
+           - name: config
+             mountPath: /etc/containers/oci/hooks.d
++            subPath: oci-nvidia-hook-json
++          - name: config
++            mountPath: /usr/local/bin/nvidia-driver.22
++            subPath: nvidia-driver-build-script
+           - name: var-log
+             mountPath: /var/log
+           - name: dev-log
+             mountPath: /dev/log
++          - name: host-modules
++            mountPath: /lib/host-modules
++            readOnly: true
++          - name: host-include
++            mountPath: /usr/include
++            readOnly: true
++          - name: host-kernel-devel
++            mountPath: /usr/src/host-kernels
++            readOnly: true
+       volumes:
+         - name: run-nvidia
+           hostPath:
+@@ -58,11 +82,22 @@ spec:
+         - name: dev-log
+           hostPath:
+             path: /dev/log
++        - name: host-modules
++          hostPath:
++            path: /lib/modules
++        - name: host-kernel-devel
++          hostPath:
++            path: /usr/src/kernels/
++        - name: host-include
++          hostPath:
++            path: /usr/include
+         - name: config
+           configMap:
+             name: nvidia-driver
+             items:
+               - key: oci-nvidia-hook-json
+                 path: oci-nvidia-hook.json
++              - key: nvidia-driver-build-script
++                path: nvidia-driver-build-script
+       nodeSelector:
+         nvidia.com/gpu.present: "true"
+diff --git a/assets/state-monitoring/0900_daemonset.yaml b/assets/state-monitoring/0900_daemonset.yaml
+index 38c4d63a..aebb4297 100644
+--- a/assets/state-monitoring/0900_daemonset.yaml
++++ b/assets/state-monitoring/0900_daemonset.yaml
+@@ -31,6 +31,7 @@ spec:
+         effect: NoSchedule
+       serviceAccount: nvidia-dcgm-exporter
+       serviceAccountName: nvidia-dcgm-exporter
++      runtimeClassName: nvidia
+       initContainers:
+       - name: toolkit-validation
+         image: "FILLED BY THE OPERATOR"
+diff --git a/deployments/gpu-operator/values.yaml b/deployments/gpu-operator/values.yaml
+index 8b43c59f..17662729 100644
+--- a/deployments/gpu-operator/values.yaml
++++ b/deployments/gpu-operator/values.yaml
+@@ -15,6 +15,10 @@ operator:
+   #version: 1.5.2
+   imagePullPolicy: IfNotPresent
+   imagePullSecrets: []
++  # We cannot default to containerd because the operator modifies containerd
++  # configuration by adding itself to it, either as the default runtime or a
++  # runtimeclass, and restarts the service thereafter.
++  # defaultRuntime: containerd
+   defaultRuntime: docker
+   validator:
+     image: cuda-sample
+@@ -40,7 +44,7 @@ operator:
+   logging:
+     timeEncoding: epoch
+   # Set to "include_assets" to include assets/gpu-operator with the helm chart
+-  include_assets: ""
++  include_assets: "include_assets"
+ 
+ driver:
+   repository: nvcr.io/nvidia
+@@ -73,7 +77,7 @@ driver:
+ toolkit:
+   repository: nvcr.io/nvidia/k8s
+   image: container-toolkit
+-  version: 1.4.5-ubuntu18.04
++  version: 1.4.5-ubi8
+   imagePullPolicy: IfNotPresent
+   imagePullSecrets: []
+   env: []
+-- 
+2.17.1
+
