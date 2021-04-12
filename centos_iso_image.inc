@@ -80,6 +80,7 @@ drbd-bash-completion
 
 # initscripts
 initscripts
+network-scripts
 
 # setup
 setup
