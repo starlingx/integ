@@ -1,0 +1,315 @@
+From 477bbfd4f5012613144c5ba5517aa8de1f300da6 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 23 Oct 2020 21:21:58 +0200
+Subject: [PATCH 07/20] sd-event: split out enable and disable codepaths from
+ sd_event_source_set_enabled()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+So far half of sd_event_source_set_enabled() was doing enabling, the
+other half was doing disabling. Let's split that into two separate
+calls.
+
+(This also adds a new shortcut to sd_event_source_set_enabled(): if the
+caller toggles between "ON" and "ONESHOT" we'll now shortcut this, since
+the event source is already enabled in that case and shall remain
+enabled.)
+
+This heavily borrows and is inspired from Michal Sekletár's #17284
+refactoring.
+
+(cherry picked from commit ddfde737b546c17e54182028153aa7f7e78804e3)
+
+Related: #1819868
+
+[commit d7ad6ad123200f562081ff09f7bed3c6d969ac0a from
+https://github.com/systemd-rhel/rhel-8/
+
+LZ: Dropped SOURCE_INOTIFY related parts because it hasn't been added
+in this systemd version.]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 224 +++++++++++++++--------------
+ 1 file changed, 118 insertions(+), 106 deletions(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 2f5ff23..2e07478 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -1606,153 +1606,165 @@ _public_ int sd_event_source_get_enabled(sd_event_source *s, int *m) {
+         return 0;
+ }
+ 
+-_public_ int sd_event_source_set_enabled(sd_event_source *s, int m) {
++static int event_source_disable(sd_event_source *s) {
+         int r;
+ 
+-        assert_return(s, -EINVAL);
+-        assert_return(m == SD_EVENT_OFF || m == SD_EVENT_ON || m == SD_EVENT_ONESHOT, -EINVAL);
+-        assert_return(!event_pid_changed(s->event), -ECHILD);
++        assert(s);
++        assert(s->enabled != SD_EVENT_OFF);
+ 
+-        /* If we are dead anyway, we are fine with turning off
+-         * sources, but everything else needs to fail. */
+-        if (s->event->state == SD_EVENT_FINISHED)
+-                return m == SD_EVENT_OFF ? 0 : -ESTALE;
++        /* Unset the pending flag when this event source is disabled */
++        if (!IN_SET(s->type, SOURCE_DEFER, SOURCE_EXIT)) {
++                r = source_set_pending(s, false);
++                if (r < 0)
++                        return r;
++        }
+ 
+-        if (s->enabled == m)
+-                return 0;
++        s->enabled = SD_EVENT_OFF;
+ 
+-        if (m == SD_EVENT_OFF) {
++        switch (s->type) {
+ 
+-                /* Unset the pending flag when this event source is disabled */
+-                if (!IN_SET(s->type, SOURCE_DEFER, SOURCE_EXIT)) {
+-                        r = source_set_pending(s, false);
+-                        if (r < 0)
+-                                return r;
+-                }
++        case SOURCE_IO:
++                source_io_unregister(s);
++                break;
+ 
+-                switch (s->type) {
++        case SOURCE_TIME_REALTIME:
++        case SOURCE_TIME_BOOTTIME:
++        case SOURCE_TIME_MONOTONIC:
++        case SOURCE_TIME_REALTIME_ALARM:
++        case SOURCE_TIME_BOOTTIME_ALARM:
++                event_source_time_prioq_reshuffle(s);
++                break;
+ 
+-                case SOURCE_IO:
+-                        r = source_io_unregister(s);
+-                        if (r < 0)
+-                                return r;
++        case SOURCE_SIGNAL:
++                event_gc_signal_data(s->event, &s->priority, s->signal.sig);
++                break;
+ 
+-                        s->enabled = m;
+-                        break;
++        case SOURCE_CHILD:
++                assert(s->event->n_enabled_child_sources > 0);
++                s->event->n_enabled_child_sources--;
+ 
+-                case SOURCE_TIME_REALTIME:
+-                case SOURCE_TIME_BOOTTIME:
+-                case SOURCE_TIME_MONOTONIC:
+-                case SOURCE_TIME_REALTIME_ALARM:
+-                case SOURCE_TIME_BOOTTIME_ALARM:
+-                        s->enabled = m;
+-                        event_source_time_prioq_reshuffle(s);
+-                        break;
++                event_gc_signal_data(s->event, &s->priority, SIGCHLD);
++                break;
+ 
+-                case SOURCE_SIGNAL:
+-                        s->enabled = m;
++        case SOURCE_EXIT:
++                prioq_reshuffle(s->event->exit, s, &s->exit.prioq_index);
++                break;
+ 
+-                        event_gc_signal_data(s->event, &s->priority, s->signal.sig);
+-                        break;
++        case SOURCE_DEFER:
++        case SOURCE_POST:
++                break;
+ 
+-                case SOURCE_CHILD:
+-                        s->enabled = m;
++        default:
++                assert_not_reached("Wut? I shouldn't exist.");
++        }
+ 
+-                        assert(s->event->n_enabled_child_sources > 0);
+-                        s->event->n_enabled_child_sources--;
++        return 0;
++}
+ 
+-                        event_gc_signal_data(s->event, &s->priority, SIGCHLD);
+-                        break;
++static int event_source_enable(sd_event_source *s, int m) {
++        int r;
+ 
+-                case SOURCE_EXIT:
+-                        s->enabled = m;
+-                        prioq_reshuffle(s->event->exit, s, &s->exit.prioq_index);
+-                        break;
++        assert(s);
++        assert(IN_SET(m, SD_EVENT_ON, SD_EVENT_ONESHOT));
++        assert(s->enabled == SD_EVENT_OFF);
+ 
+-                case SOURCE_DEFER:
+-                case SOURCE_POST:
+-                        s->enabled = m;
+-                        break;
++        /* Unset the pending flag when this event source is enabled */
++        if (!IN_SET(s->type, SOURCE_DEFER, SOURCE_EXIT)) {
++                r = source_set_pending(s, false);
++                if (r < 0)
++                        return r;
++        }
+ 
+-                default:
+-                        assert_not_reached("Wut? I shouldn't exist.");
+-                }
++        s->enabled = m;
+ 
+-        } else {
++        switch (s->type) {
+ 
+-                /* Unset the pending flag when this event source is enabled */
+-                if (s->enabled == SD_EVENT_OFF && !IN_SET(s->type, SOURCE_DEFER, SOURCE_EXIT)) {
+-                        r = source_set_pending(s, false);
+-                        if (r < 0)
+-                                return r;
++        case SOURCE_IO:
++                r = source_io_register(s, m, s->io.events);
++                if (r < 0) {
++                        s->enabled = SD_EVENT_OFF;
++                        return r;
+                 }
+ 
+-                switch (s->type) {
++                break;
+ 
+-                case SOURCE_IO:
+-                        r = source_io_register(s, m, s->io.events);
+-                        if (r < 0)
+-                                return r;
++        case SOURCE_TIME_REALTIME:
++        case SOURCE_TIME_BOOTTIME:
++        case SOURCE_TIME_MONOTONIC:
++        case SOURCE_TIME_REALTIME_ALARM:
++        case SOURCE_TIME_BOOTTIME_ALARM:
++                event_source_time_prioq_reshuffle(s);
++                break;
+ 
+-                        s->enabled = m;
+-                        break;
++        case SOURCE_SIGNAL:
++                r = event_make_signal_data(s->event, s->signal.sig, NULL);
++                if (r < 0) {
++                        s->enabled = SD_EVENT_OFF;
++                        event_gc_signal_data(s->event, &s->priority, s->signal.sig);
++                        return r;
++                }
+ 
+-                case SOURCE_TIME_REALTIME:
+-                case SOURCE_TIME_BOOTTIME:
+-                case SOURCE_TIME_MONOTONIC:
+-                case SOURCE_TIME_REALTIME_ALARM:
+-                case SOURCE_TIME_BOOTTIME_ALARM:
+-                        s->enabled = m;
+-                        event_source_time_prioq_reshuffle(s);
+-                        break;
++                break;
+ 
+-                case SOURCE_SIGNAL:
++        case SOURCE_CHILD:
++                s->event->n_enabled_child_sources++;
+ 
+-                        s->enabled = m;
++                r = event_make_signal_data(s->event, SIGCHLD, NULL);
++                if (r < 0) {
++                        s->enabled = SD_EVENT_OFF;
++                        s->event->n_enabled_child_sources--;
++                        event_gc_signal_data(s->event, &s->priority, SIGCHLD);
++                        return r;
++                }
+ 
+-                        r = event_make_signal_data(s->event, s->signal.sig, NULL);
+-                        if (r < 0) {
+-                                s->enabled = SD_EVENT_OFF;
+-                                event_gc_signal_data(s->event, &s->priority, s->signal.sig);
+-                                return r;
+-                        }
+ 
+-                        break;
++                break;
+ 
+-                case SOURCE_CHILD:
++        case SOURCE_EXIT:
++                prioq_reshuffle(s->event->exit, s, &s->exit.prioq_index);
++                break;
+ 
+-                        if (s->enabled == SD_EVENT_OFF)
+-                                s->event->n_enabled_child_sources++;
++        case SOURCE_DEFER:
++        case SOURCE_POST:
++                break;
+ 
+-                        s->enabled = m;
++        default:
++                assert_not_reached("Wut? I shouldn't exist.");
++        }
+ 
+-                        r = event_make_signal_data(s->event, SIGCHLD, NULL);
+-                        if (r < 0) {
+-                                s->enabled = SD_EVENT_OFF;
+-                                s->event->n_enabled_child_sources--;
+-                                event_gc_signal_data(s->event, &s->priority, SIGCHLD);
+-                                return r;
+-                        }
++        return 0;
++}
+ 
+-                        break;
++_public_ int sd_event_source_set_enabled(sd_event_source *s, int m) {
++        int r;
+ 
+-                case SOURCE_EXIT:
+-                        s->enabled = m;
+-                        prioq_reshuffle(s->event->exit, s, &s->exit.prioq_index);
+-                        break;
++        assert_return(s, -EINVAL);
++        assert_return(IN_SET(m, SD_EVENT_OFF, SD_EVENT_ON, SD_EVENT_ONESHOT), -EINVAL);
++        assert_return(!event_pid_changed(s->event), -ECHILD);
+ 
+-                case SOURCE_DEFER:
+-                case SOURCE_POST:
+-                        s->enabled = m;
+-                        break;
++        /* If we are dead anyway, we are fine with turning off sources, but everything else needs to fail. */
++        if (s->event->state == SD_EVENT_FINISHED)
++                return m == SD_EVENT_OFF ? 0 : -ESTALE;
+ 
+-                default:
+-                        assert_not_reached("Wut? I shouldn't exist.");
++        if (s->enabled == m) /* No change? */
++                return 0;
++
++        if (m == SD_EVENT_OFF)
++                r = event_source_disable(s);
++        else {
++                if (s->enabled != SD_EVENT_OFF) {
++                        /* Switching from "on" to "oneshot" or back? If that's the case, we can take a shortcut, the
++                         * event source is already enabled after all. */
++                        s->enabled = m;
++                        return 0;
+                 }
++
++                r = event_source_enable(s, m);
+         }
++        if (r < 0)
++                return r;
+ 
+         event_source_pp_prioq_reshuffle(s);
+-
+         return 0;
+ }
+ 
+-- 
+2.17.1
+
