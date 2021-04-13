@@ -1,26 +1,27 @@
-From 91090adc8d4c774796d36f7563eea224569a9b0f Mon Sep 17 00:00:00 2001
+From 8ca176c7d8a3d21b928db29744f950c3cb336658 Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
-Date: Wed, 21 Apr 2021 13:59:22 +0800
+Date: Wed, 21 Apr 2021 14:41:27 +0800
 Subject: [PATCH] Add STX patches
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- SPECS/systemd.spec | 58 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 58 insertions(+)
+ SPECS/systemd.spec | 59 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 4c83150..72de7d6 100644
+index 9ed7715..bd14767 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -786,6 +786,64 @@ Patch0744: 0744-selinux-don-t-log-SELINUX_INFO-and-SELINUX_WARNING-m.patch
- Patch0745: 0745-fix-mis-merge.patch
- Patch0746: 0746-fs-util-chase_symlinks-prevent-double-free.patch
- 
+@@ -884,6 +884,65 @@ Patch0842: 0842-core-don-t-update-unit-description-if-it-is-already-.patch
+ Patch0843: 0843-unit-don-t-emit-PropertiesChanged-signal-if-adding-a.patch
+ Patch0844: 0844-core-fix-unnecessary-fallback-to-the-rescue-mode-cau.patch
+ Patch0845: 0845-core-Detect-initial-timer-state-from-serialized-data.patch
++
 +# STX Patches
-+Patch0801: 801-inject-millisec-in-syslog-date.patch
-+Patch0802: 802-fix-build-error-for-unused-variable.patch
-+Patch0803: 803-Fix-compile-failure-due-to-deprecated-value.patch
++Patch0851: 851-inject-millisec-in-syslog-date.patch
++Patch0852: 852-fix-build-error-for-unused-variable.patch
++Patch0853: 853-Fix-compile-failure-due-to-deprecated-value.patch
 +
 +# This cluster of patches relates to fixing redhat bug #1819868
 +# "systemd excessively reads mountinfo and udev in dense container environments"
