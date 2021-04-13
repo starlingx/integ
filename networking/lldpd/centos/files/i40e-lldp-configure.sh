@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# Copyright (c) 2016 Wind River Systems, Inc.
+# Copyright (c) 2021 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -13,6 +13,9 @@
 # This script allows a user to enable and disable the internal LLDP agent.
 #
 # Note: debugfs must be enabled in the kernel
+#
+# Note: Devices with firmware 5.05 and 8.10 use the ethtool command
+# Devices with firmware 7.10 use the sysfs command
 #
 # To enable:
 # ./i40e-lldp-configure.sh start
@@ -56,6 +59,23 @@ function configure_device {
     return ${RET}
 }
 
+function ethtool_device {
+    local DEVICE=$1
+    local COMMAND=$2
+
+    ethtool --set-priv-flags ${DEVICE} disable-fw-lldp ${COMMAND}
+    RET=$?
+
+    if [ ${RET} -ne 0 ]; then
+        err "Failed to set disable-fw-lldp ${COMMAND} for device ${DEVICE}"
+        return ${RET}
+    fi
+
+    log "Set disable-fw-lldp ${COMMAND} for device ${DEVICE}"
+    return ${RET}
+}
+
+
 function is_debugfs_mounted {
     if grep -qs "${DEBUGFS_PATH}" /proc/mounts; then
     return 0
@@ -71,10 +91,40 @@ function unmount_debugfs {
     umount ${DEBUGFS_PATH}
 }
 
+function find_device_interface_from_pciaddr {
+    INTERFACE=""
+
+    #Get device PCI address from path
+    local PCI_ADDR=${DEVICE##*/}
+
+    #Lookup the device directory
+    local DEVICE_PATH
+    DEVICE_PATH=$(find /sys/devices -type d -name ${PCI_ADDR})
+
+    if [ -z "${DEVICE_PATH}" ]; then
+        log "Unable to find interface for ${PCI_ADDR}"
+    else
+        #Get the interface name for device
+        INTERFACE=$(ls ${DEVICE_PATH}/net)
+        if [ -z "${INTERFACE}" ]; then
+            log "Unable to find interface for ${PCI_ADDR}"
+        else
+            log "Found interface ${INTERFACE} for PCI address ${PCI_ADDR}"
+        fi
+    fi
+
+}
+
 function scan_devices {
     local ACTION=$1
     local DEBUGFS_MOUNTED="false"
     local DEVICES=${DEBUGFS_I40_DEVICES_PATH}/*
+
+    if [ "${ACTION}" = "start" ]; then
+        local ETHTOOL_COMMAND="off"
+    else
+        local ETHTOOL_COMMAND="on"
+    fi
 
     if is_debugfs_mounted; then
         DEBUGFS_MOUNTED="true"
@@ -90,9 +140,33 @@ function scan_devices {
         log "Mounted debugfs"
     fi
 
+    # Set option to prevent the below for loop from running once
+    # if there are no directories in the $DEVICES path.
+    # Save the initial state in order to reset later
+    shopt -q nullglob
+    NULLGLOB=$?
+    shopt -s nullglob
+
     for DEVICE in $DEVICES; do
-        configure_device ${DEVICE} ${ACTION}
+        find_device_interface_from_pciaddr
+        if [ ! -z "${INTERFACE}" ]; then
+            ethtool_device ${INTERFACE} ${ETHTOOL_COMMAND}
+            RET=$?
+            # Ethtool method does not work for some firmware versions
+            # Fall back to sysfs method if ethtool does not work
+            if [ ${RET} -ne 0 ]; then
+                # Sysfs method is not able to return 1 if it fails
+                configure_device ${DEVICE} ${ACTION}
+            fi
+        else
+            configure_device ${DEVICE} ${ACTION}
+        fi
     done
+
+    # Unset option if that was the original state
+    if [ "${NULLGLOB}" -eq 1 ]; then
+        shopt -u nullglob
+    fi
 
     if [ ${DEBUGFS_MOUNTED} = "false" ]; then
         unmount_debugfs
