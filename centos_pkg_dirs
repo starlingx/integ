@@ -77,7 +77,7 @@ base/dnsmasq
 filesystem/parted
 security/python-keyring
 grub/grub2
-#ceph/ceph
+ceph/ceph
 bmc/Redfishtool
 virt/kvm-timer-advance
 requests-toolbelt

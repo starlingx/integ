@@ -3,6 +3,11 @@
 #
 
 
+# ceph
+ceph
+ceph-radosgw
+ceph-fuse
+
 
 # qemu-kvm-ev
 qemu-kvm-ev
