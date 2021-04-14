@@ -207,6 +207,7 @@ BuildRequires:    cmake gcc-c++
 BuildRequires:    multilib-rpm-config
 BuildRequires:    selinux-policy-devel
 BuildRequires:    systemd systemd-devel
+BuildRequires:    libxml2
 
 # Page compression algorithms for InnoDB & XtraDB
 BuildRequires:    zlib-devel
@@ -831,7 +832,7 @@ export CFLAGS CXXFLAGS CPPFLAGS
          -DWITH_INNODB_DISALLOW_WRITES=%{?with_galera:ON}%{!?with_galera:OFF} \
          -DWITH_EMBEDDED_SERVER=%{?with_embedded:ON}%{!?with_embedded:OFF} \
          -DWITH_MARIABACKUP=%{?with_backup:ON}%{!?with_backup:NO} \
-         -DWITH_UNIT_TESTS=%{?with_test:ON}%{!?with_test:NO} \
+         -DWITH_UNIT_TESTS=NO \
          -DCONC_WITH_SSL=%{?with_clibrary:ON}%{!?with_clibrary:NO} \
          -DWITH_SSL=system \
          -DWITH_ZLIB=system \
@@ -1132,67 +1133,6 @@ rm %{buildroot}%{_datadir}/%{pkg_name}/systemd/use_galera_new_cluster.conf
 %if %{without rocksdb}
 rm %{buildroot}%{_mandir}/man1/mysql_ldb.1*
 %endif
-
-%check
-%if %{with test}
-%if %runselftest
-
-# Workaround for rhbz#1618810
-OPENSSL_SYSTEM_CIPHERS_OVERRIDE=xyz_nonexistent_file
-export OPENSSL_SYSTEM_CIPHERS_OVERRIDE
-OPENSSL_CONF=''
-export OPENSSL_CONF
-
-# hack to let 32- and 64-bit tests run concurrently on same build machine
-export MTR_PARALLEL=1
-# builds might happen at the same host, avoid collision
-export MTR_BUILD_THREAD=%{__isa_bits}
-
-# The cmake build scripts don't provide any simple way to control the
-# options for mysql-test-run, so ignore the make target and just call it
-# manually.  Nonstandard options chosen are:
-# --force to continue tests after a failure
-# no retries please
-# test SSL with --ssl
-# skip tests that are listed in rh-skipped-tests.list
-# avoid redundant test runs with --binlog-format=mixed
-# increase timeouts to prevent unwanted failures during mass rebuilds
-
-# Usefull arguments:
-#    --do-test=mysql_client_test_nonblock \
-#    --skip-rpl
-#    --suite=roles
-#    --mem for running in the RAM; Not enough space in KOJI for this
-
-(
-  set -ex
-
-  cd mysql-test
-  perl ./mysql-test-run.pl --parallel=auto --force --retry=1 --ssl \
-    --suite-timeout=900 --testcase-timeout=30 \
-    --mysqld=--binlog-format=mixed --force-restart \
-    --shutdown-timeout=60 --max-test-fail=10 --big-test \
-    --skip-test=spider \
-%if %{ignore_testsuite_result}
-    --max-test-fail=9999 || :
-%else
-    --skip-test-list=unstable-tests
-%endif
-
-# Second run for the SPIDER suites that fail with SCA (ssl self signed certificate)
-  perl ./mysql-test-run.pl --parallel=auto --force --retry=1 \
-    --suite-timeout=60 --testcase-timeout=10 \
-    --mysqld=--binlog-format=mixed --force-restart \
-    --shutdown-timeout=60 --max-test-fail=0 --big-test \
-    --skip-ssl --suite=spider,spider/bg \
-%if %{ignore_testsuite_result}
-    --max-test-fail=999 || :
-%endif
-)
-
-%endif # if dry run
-%endif # with test
-
 
 
 %pre server
