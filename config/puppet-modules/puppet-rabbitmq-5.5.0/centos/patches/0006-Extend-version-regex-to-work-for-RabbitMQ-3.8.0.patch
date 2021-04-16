@@ -1,0 +1,26 @@
+From f29309c7a9c5633f39e51c2e36f629eceb5ea2c2 Mon Sep 17 00:00:00 2001
+From: Angie Wang <angie.wang@windriver.com>
+Date: Sun, 11 Apr 2021 20:04:48 -0400
+Subject: [PATCH] Extend version regex to work for RabbitMQ 3.8.0
+
+Signed-off-by: Angie Wang <angie.wang@windriver.com>
+---
+ lib/puppet/provider/rabbitmqctl.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/rabbitmqctl.rb b/lib/puppet/provider/rabbitmqctl.rb
+index c2476dc..16f18d9 100644
+--- a/lib/puppet/provider/rabbitmqctl.rb
++++ b/lib/puppet/provider/rabbitmqctl.rb
+@@ -4,7 +4,7 @@ class Puppet::Provider::Rabbitmqctl < Puppet::Provider
+ 
+   def self.rabbitmq_version
+     output = rabbitmqctl('-q', 'status')
+-    version = output.match(/\{rabbit,"RabbitMQ","([\d\.]+)"\}/)
++    version = output.match(%r{RabbitMQ.*?([\d\.]+)})
+     version[1] if version
+   end
+ 
+-- 
+2.29.2
+

@@ -4,3 +4,4 @@
 0004-Add-deprecation-patch-to-spec.patch
 0005-metapatch-for-revert.patch
 0006-metapatch-for-fact-removal.patch
+0007-meta-Extend-version-regex-to-work-for-RabbitMQ-3.8.0.patch
