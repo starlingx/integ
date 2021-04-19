@@ -314,15 +314,15 @@ class ServiceMonitor(object):
                 client, _ = self.command.accept()
                 request = client.recv(CONFIG.service_socket_bufsize)
                 LOG.debug('Monitor command socket: request=%s', str(request))
-                cmd = request.split(' ')
+                cmd = request.split(b' ')
                 cmd, args = cmd[0], cmd[1:]
-                if cmd == 'status':
+                if cmd == b'status':
                     self.send_response(client, request, self.status())
-                elif cmd == 'stop':
+                elif cmd == b'stop':
                     self.stop()
                     self.send_response(client, request, 'OK')
                     break
-                elif cmd == 'restful-url':
+                elif cmd == b'restful-url':
                     try:
                         self.restful_plugin_url = args[0]
                         self.send_response(client, request, 'OK')
@@ -330,7 +330,7 @@ class ServiceMonitor(object):
                         LOG.warning('Failed to update restful plugin url: '
                                     'args=%s', str(args))
                         self.send_response(client, request, 'ERR')
-                elif cmd == 'certificate':
+                elif cmd == b'certificate':
                     try:
                         self.certificate = args[0] if args else ''
                         self.send_response(client, request, 'OK')
@@ -338,7 +338,7 @@ class ServiceMonitor(object):
                         LOG.warning('Failed to update certificate path: '
                                     'args=%s', str(args))
                         self.send_response(client, request, 'ERR')
-                elif cmd == 'ceph-mgr-failures':
+                elif cmd == b'ceph-mgr-failures':
                     try:
                         self.ceph_mgr_failure_count = int(args[0])
                         self.send_response(client, request, 'OK')
@@ -349,7 +349,7 @@ class ServiceMonitor(object):
                         LOG.warning('Failed to update ceph-mgr failures: '
                                     'args=%s', str(args))
                         self.send_response(client, request, 'ERR')
-                elif cmd == 'ping-failures':
+                elif cmd == b'ping-failures':
                     try:
                         self.ping_failure_count = int(args[0])
                         self.send_response(client, request, 'OK')
@@ -363,7 +363,7 @@ class ServiceMonitor(object):
     @staticmethod
     def send_response(client, request, response):
         try:
-            client.send(response)
+            client.send(response.encode('utf-8'))
         except socket.error as err:
             LOG.warning('Failed to send response back. '
                         'request=%s, response=%s, reason=%s',
@@ -642,7 +642,9 @@ class ServiceMonitor(object):
             LOG.info('Run command: %s', ' '.join(command))
             return subprocess.check_output(
                 ['/usr/bin/timeout', str(timeout)] + command,
-                stderr=stderr, shell=False).strip()
+                stdin=subprocess.PIPE,
+                stderr=stderr, shell=False,
+                universal_newlines=True).strip()
         except subprocess.CalledProcessError as err:
             if err.returncode == GNU_TIMEOUT_EXPIRED_RETCODE:
                 raise CommandTimeout(command=err.cmd, timeout=timeout)
@@ -805,7 +807,7 @@ class ServiceMonitor(object):
                         '[ req_distinguished_name ]\n'
                         '0.organizationName = IT\n'
                         'commonName = ceph-restful\n').format(
-                            CONFIG.ceph_mgr_identity))
+                            CONFIG.ceph_mgr_identity).encode('utf-8'))
                     restful_cnf.flush()
                     subprocess.check_call([
                         '/usr/bin/openssl', 'req', '-new', '-nodes', '-x509',
@@ -893,7 +895,7 @@ class ServiceMonitor(object):
         with open(os.devnull, 'wb') as null:
             certificate = self.run_with_timeout(
                 command, CONFIG.ceph_cli_timeout_sec, stderr=null)
-            with open(CONFIG.restful_plugin_cert_path, 'wb') as cert_file:
+            with open(CONFIG.restful_plugin_cert_path, 'w') as cert_file:
                 cert_file.write(certificate)
             self.certificate = CONFIG.restful_plugin_cert_path
             self.request_update_certificate(
@@ -931,10 +933,10 @@ class ServiceMonitor(object):
         try:
             with contextlib.closing(
                     ServiceMonitor._make_client_socket()) as sock:
-                sock.send('status')
+                sock.send(b'status')
                 status = sock.recv(CONFIG.service_socket_bufsize)
                 LOG.debug('Status %s', status)
-                return status.startswith('OK')
+                return status.startswith(b'OK')
         except socket.error as err:
             LOG.error('Status error: reason=%s', err)
             return False
@@ -944,7 +946,7 @@ class ServiceMonitor(object):
         try:
             with contextlib.closing(
                     ServiceMonitor._make_client_socket()) as sock:
-                sock.send('stop')
+                sock.send(b'stop')
                 response = sock.recv(CONFIG.service_socket_bufsize)
                 LOG.debug('Stop response: %s', response)
                 return True
@@ -957,7 +959,7 @@ class ServiceMonitor(object):
         try:
             with contextlib.closing(
                     ServiceMonitor._make_client_socket()) as sock:
-                sock.send('ceph-mgr-failures {}'.format(count))
+                sock.send('ceph-mgr-failures {}'.format(count).encode('utf-8'))
                 sock.recv(CONFIG.service_socket_bufsize)
                 return True
         except socket.error as err:
@@ -969,7 +971,7 @@ class ServiceMonitor(object):
         try:
             with contextlib.closing(
                     ServiceMonitor._make_client_socket()) as sock:
-                sock.send('ping-failures {}'.format(count))
+                sock.send('ping-failures {}'.format(count).encode('utf-8'))
                 sock.recv(CONFIG.service_socket_bufsize)
                 return True
         except socket.error as err:
@@ -981,7 +983,7 @@ class ServiceMonitor(object):
         try:
             with contextlib.closing(
                     ServiceMonitor._make_client_socket()) as sock:
-                sock.send('restful-url {}'.format(url))
+                sock.send('restful-url {}'.format(url).encode('utf-8'))
                 sock.recv(CONFIG.service_socket_bufsize)
                 return True
         except socket.error as err:
@@ -993,7 +995,7 @@ class ServiceMonitor(object):
         try:
             with contextlib.closing(
                     ServiceMonitor._make_client_socket()) as sock:
-                sock.send('certificate {}'.format(path))
+                sock.send('certificate {}'.format(path).encode('utf-8'))
                 sock.recv(CONFIG.service_socket_bufsize)
                 return True
         except socket.error as err:
@@ -1041,16 +1043,16 @@ class InitWrapper(object):
                 LOG = setup_logging(cleanup_handlers=True)
                 try:
                     monitor = ServiceMonitor()
-                    status = 'OK'
+                    status = b'OK'
                 except ServiceAlreadyStarted:
-                    os.write(pipe[1], 'OK')
+                    os.write(pipe[1], b'OK')
                     os.close(pipe[1])
                     return
                 except Exception as err:
                     status = str(err)
                 os.write(pipe[1], status)
                 os.close(pipe[1])
-                if status == 'OK':
+                if status == b'OK':
                     try:
                         monitor.run()
                     except ServiceException as err:
@@ -1061,7 +1063,7 @@ class InitWrapper(object):
             os.close(pipe[1])
             try:
                 status = os.read(pipe[0], CONFIG.service_socket_bufsize)
-                if status == 'OK':
+                if status == b'OK':
                     sys.exit(0)
                 else:
                     LOG.warning('Service monitor failed to start: '
