@@ -1,0 +1,28 @@
+From 46962e144b850b6a1dca449f0ee623c8e85596d2 Mon Sep 17 00:00:00 2001
+From: David Sullivan <david.sullivan@windriver.com>
+Date: Tue, 20 Apr 2021 13:22:19 -0500
+Subject: [PATCH] Unmount all targets during drbd stop
+
+When stopping drbd, we need to unmount targets from each device. Devices
+with multiple mountpoints can fail to unmount, leading to metadata
+corruption. Add --all-targets to the umount command.
+---
+ scripts/drbd | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/drbd b/scripts/drbd
+index 3c7f8a5..eca4e3b 100755
+--- a/scripts/drbd
++++ b/scripts/drbd
+@@ -182,7 +182,7 @@ case "$1" in
+ 		for d in /dev/drbd* ; do
+ 			[ -L "$d" ] && continue
+ 			[ -b "$d" ] || continue
+-			M=$(umount "$d" 2>&1)
++			M=$(umount  --all-targets "$d" 2>&1)
+ 			case $M in
+ 			*" not mounted") :;;
+ 			*) echo "$M" >&2 ;;
+-- 
+2.24.1
+
