@@ -1,0 +1,25 @@
+From b6245bf904a6efbd2096de9d6530f84a6c9eb914 Mon Sep 17 00:00:00 2001
+From: Marcus Secato <marcus.viniciuscarvalhosecato@windriver.com>
+Date: Wed, 7 Apr 2021 16:20:17 -0400
+Subject: [PATCH] Add security context to pod and containers
+
+---
+ charts/armada/values.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/charts/armada/values.yaml b/charts/armada/values.yaml
+index 5a61c96..e4dc801 100644
+--- a/charts/armada/values.yaml
++++ b/charts/armada/values.yaml
+@@ -269,7 +269,7 @@ pod:
+   security_context:
+     armada:
+       pod:
+-        runAsUser: 65534
++        runAsUser: 1000
+       container:
+         armada_api_init:
+           readOnlyRootFilesystem: true
+-- 
+2.29.2
+
