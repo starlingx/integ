@@ -1,0 +1,44 @@
+From 04e2ffb437b301963804e6d199be1196d1b4307b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 10 Nov 2020 12:57:34 +0100
+Subject: [PATCH 15/20] sd-event: increase n_enabled_child_sources just once
+
+Neither source_child_pidfd_register() nor event_make_signal_data() look at
+n_enabled_child_sources.
+
+(cherry picked from commit ac9f2640cb9c107b43f47bba7e068d3b92b5337b)
+
+Related: #1819868
+
+[commit 188465c472996b426a1f22a9fc46d031b722c3b4 from
+https://github.com/systemd-rhel/rhel-8/]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 3ff15a2..e34fd0b 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -1722,8 +1722,6 @@ static int event_source_enable(sd_event_source *s, int enable) {
+                 break;
+ 
+         case SOURCE_CHILD:
+-                s->event->n_enabled_child_sources++;
+-
+                 r = event_make_signal_data(s->event, SIGCHLD, NULL);
+                 if (r < 0) {
+                         s->enabled = SD_EVENT_OFF;
+@@ -1732,6 +1730,7 @@ static int event_source_enable(sd_event_source *s, int enable) {
+                         return r;
+                 }
+ 
++                s->event->n_enabled_child_sources++;
+ 
+                 break;
+ 
+-- 
+2.17.1
+

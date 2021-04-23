@@ -1,0 +1,54 @@
+From 5de71cb7d887a569bfb987efdceda493338990bf Mon Sep 17 00:00:00 2001
+From: Tom Gundersen <teg@jklm.no>
+Date: Thu, 4 Jun 2015 16:54:45 +0200
+Subject: [PATCH 01/20] sd-event: don't touch fd's accross forks
+
+We protect most of the API from use accross forks, but we still allow both
+sd_event and sd_event_source objects to be unref'ed. This would cause
+problems as it would unregister sources from the underlying eventfd, hence
+also affecting the original instance in the parent process.
+
+This fixes the issue by not touching the fds on unref when done accross a fork,
+but still free the memory.
+
+This fixes a regression introduced by
+        "udevd: move main-loop to sd-event": 693d371d30fee
+
+where the worker processes were disabling the inotify event source in the
+main daemon.
+
+[commit f68067348f58cd08d8f4f5325ce22f9a9d2c2140 from
+https://github.com/systemd-rhel/rhel-8/]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 9d48e5a..a84bfbb 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -474,6 +474,9 @@ static int source_io_unregister(sd_event_source *s) {
+         assert(s);
+         assert(s->type == SOURCE_IO);
+ 
++        if (event_pid_changed(s->event))
++                return 0;
++
+         if (!s->io.registered)
+                 return 0;
+ 
+@@ -604,6 +607,9 @@ static int event_update_signal_fd(sd_event *e) {
+ 
+         assert(e);
+ 
++        if (event_pid_changed(e))
++                return 0;
++
+         add_to_epoll = e->signal_fd < 0;
+ 
+         r = signalfd(e->signal_fd, &e->sigset, SFD_NONBLOCK|SFD_CLOEXEC);
+-- 
+2.17.1
+

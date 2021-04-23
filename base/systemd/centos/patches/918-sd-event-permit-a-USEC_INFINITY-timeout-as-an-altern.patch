@@ -1,0 +1,60 @@
+From c0521bcf58da1857a2077cd3b3abc330bab33598 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 1 Feb 2016 00:20:18 +0100
+Subject: [PATCH 18/20] sd-event: permit a USEC_INFINITY timeout as an
+ alternative to a disabling an event source
+
+This should simplify handling of time events in clients and is in-line with the USEC_INFINITY macro we already have.
+This way setting a timeout to 0 indicates "elapse immediately", and a timeout of USEC_INFINITY "elapse never".
+
+[commit 393003e1debf7c7f75beaacbd532b92c3e3dc729 from
+https://github.com/systemd-rhel/rhel-8/
+
+LZ: Dropped the part that won't affect code to simplify the merging.]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 63f77ac..69dd02b 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -1109,7 +1109,6 @@ _public_ int sd_event_add_time(
+         int r;
+ 
+         assert_return(e, -EINVAL);
+-        assert_return(usec != (uint64_t) -1, -EINVAL);
+         assert_return(accuracy != (uint64_t) -1, -EINVAL);
+         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
+         assert_return(!event_pid_changed(e), -ECHILD);
+@@ -1791,7 +1790,6 @@ _public_ int sd_event_source_get_time(sd_event_source *s, uint64_t *usec) {
+ _public_ int sd_event_source_set_time(sd_event_source *s, uint64_t usec) {
+ 
+         assert_return(s, -EINVAL);
+-        assert_return(usec != (uint64_t) -1, -EINVAL);
+         assert_return(EVENT_SOURCE_IS_TIME(s->type), -EDOM);
+         assert_return(s->event->state != SD_EVENT_FINISHED, -ESTALE);
+         assert_return(!event_pid_changed(s->event), -ECHILD);
+@@ -1909,6 +1907,8 @@ static usec_t sleep_between(sd_event *e, usec_t a, usec_t b) {
+ 
+         if (a <= 0)
+                 return 0;
++        if (a >= USEC_INFINITY)
++                return USEC_INFINITY;
+ 
+         if (b <= a + 1)
+                 return a;
+@@ -1998,7 +1998,7 @@ static int event_arm_timer(
+                 d->needs_rearm = false;
+ 
+         a = prioq_peek(d->earliest);
+-        if (!a || a->enabled == SD_EVENT_OFF) {
++        if (!a || a->enabled == SD_EVENT_OFF || a->time.next == USEC_INFINITY) {
+ 
+                 if (d->fd < 0)
+                         return 0;
+-- 
+2.17.1
+

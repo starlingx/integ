@@ -1,21 +1,19 @@
-From 3c0e59a677c921f60f27002a27eb5f4776475e44 Mon Sep 17 00:00:00 2001
-Message-Id: <3c0e59a677c921f60f27002a27eb5f4776475e44.1574265913.git.Jim.Somerville@windriver.com>
-In-Reply-To: <eeb3e979288cb8c14d8546d12a27da4c88fbb0e4.1574265913.git.Jim.Somerville@windriver.com>
-References: <eeb3e979288cb8c14d8546d12a27da4c88fbb0e4.1574265913.git.Jim.Somerville@windriver.com>
-From: Jim Somerville <Jim.Somerville@windriver.com>
-Date: Wed, 20 Nov 2019 10:59:45 -0500
-Subject: [PATCH 3/3] Add STX patches
+From 91090adc8d4c774796d36f7563eea224569a9b0f Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Wed, 21 Apr 2021 13:59:22 +0800
+Subject: [PATCH] Add STX patches
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- SPECS/systemd.spec | 5 +++++
- 1 file changed, 5 insertions(+)
+ SPECS/systemd.spec | 58 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 4c83150..e1e98bb 100644
+index 4c83150..72de7d6 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -786,6 +786,11 @@ Patch0744: 0744-selinux-don-t-log-SELINUX_INFO-and-SELINUX_WARNING-m.patch
+@@ -786,6 +786,64 @@ Patch0744: 0744-selinux-don-t-log-SELINUX_INFO-and-SELINUX_WARNING-m.patch
  Patch0745: 0745-fix-mis-merge.patch
  Patch0746: 0746-fs-util-chase_symlinks-prevent-double-free.patch
  
@@ -24,9 +22,62 @@ index 4c83150..e1e98bb 100644
 +Patch0802: 802-fix-build-error-for-unused-variable.patch
 +Patch0803: 803-Fix-compile-failure-due-to-deprecated-value.patch
 +
++# This cluster of patches relates to fixing redhat bug #1819868
++# "systemd excessively reads mountinfo and udev in dense container environments"
++
++# Below patches are added for merging patch (1)
++Patch0901: 901-sd-event-don-t-touch-fd-s-accross-forks.patch
++Patch0902: 902-sd-event-make-sure-RT-signals-are-not-dropped.patch
++# Patch (1) for solving #1819868
++Patch0903: 903-sd-event-split-out-helper-functions-for-reshuffling-.patch
++
++# Below patches are added for merging patch (2)
++Patch0904: 904-sd-event-drop-pending-events-when-we-turn-off-on-an-.patch
++Patch0905: 905-sd-event-fix-call-to-event_make_signal_data.patch
++Patch0906: 906-sd-event-make-sure-to-create-a-signal-queue-for-the-.patch
++# Patch (2) for solving #1819868
++Patch0907: 907-sd-event-split-out-enable-and-disable-codepaths-from.patch
++
++# Below patch is added for merging patch (3)
++Patch0908: 908-sd-event-use-prioq_ensure_allocated-where-possible.patch
++# Patch (3) for solving #1819868
++Patch0909: 909-sd-event-split-clock-data-allocation-out-of-sd_event.patch
++
++# Patch (4) for solving #1819868
++Patch0910: 910-sd-event-split-out-code-to-add-remove-timer-event-so.patch
++
++# Below patch is added for merging patch (5)
++Patch0911: 911-sd-event-rename-PASSIVE-PREPARED-to-INITIAL-ARMED.patch
++# Patch (5) for solving #1819868
++Patch0912: 912-sd-event-refuse-running-default-event-loops-in-any-o.patch
++
++# Patch (6) for solving #1819868
++Patch0913: 913-sd-event-remove-earliest_index-latest_index-into-com.patch
++
++# Patch (7) for solving #1819868
++Patch0914: 914-sd-event-update-state-at-the-end-in-event_source_ena.patch
++
++# Patch (8) for solving #1819868
++Patch0915: 915-sd-event-increase-n_enabled_child_sources-just-once.patch
++
++# Below patches are added for merging patch (9)
++Patch0916: 916-sd-event-don-t-provide-priority-stability.patch
++Patch0917: 917-sd-event-when-determining-the-last-allowed-time-a-ti.patch
++Patch0918: 918-sd-event-permit-a-USEC_INFINITY-timeout-as-an-altern.patch
++# Patch (9) for solving #1819868
++Patch0919: 919-sd-event-add-ability-to-ratelimit-event-sources.patch
++
++# Patch (10) for solving #1819868
++Patch0920: 920-core-prevent-excessive-proc-self-mountinfo-parsing.patch
++
++# This patch fixes build issues related to the above patches. Our goal is to keep
++# upstream patches as unmodified as possible to facilitate maintaining them, so instead
++# of individually changing them for compilation, we just have one patch at the end to do it.
++Patch0921: 921-systemd-Fix-compiling-errors-when-merging-1819868.patch
++
  Patch9999: 9999-Update-kernel-install-script-by-backporting-fedora-p.patch
  
  %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
 -- 
-1.8.3.1
+2.17.1
 

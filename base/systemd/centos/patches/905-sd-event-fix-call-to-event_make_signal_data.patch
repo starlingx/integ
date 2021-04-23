@@ -1,0 +1,31 @@
+From 7380d2cca8bda0f8c821645f8a5ddb8ac47aec46 Mon Sep 17 00:00:00 2001
+From: Thomas Hindoe Paaboel Andersen <phomes@gmail.com>
+Date: Sun, 6 Sep 2015 22:06:45 +0200
+Subject: [PATCH 05/20] sd-event: fix call to event_make_signal_data
+
+This looks like a typo from commit 9da4cb2b where it was added.
+
+[commit b8a50a99a6e158a5b3ceacf0764dbe9f42558f3e from
+https://github.com/systemd-rhel/rhel-8/]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 6e93059..7c33dcd 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -1726,7 +1726,7 @@ _public_ int sd_event_source_set_enabled(sd_event_source *s, int m) {
+ 
+                         s->enabled = m;
+ 
+-                        r = event_make_signal_data(s->event, s->signal.sig, SIGCHLD);
++                        r = event_make_signal_data(s->event, s->signal.sig, NULL);
+                         if (r < 0) {
+                                 s->enabled = SD_EVENT_OFF;
+                                 s->event->n_enabled_child_sources--;
+-- 
+2.17.1
+

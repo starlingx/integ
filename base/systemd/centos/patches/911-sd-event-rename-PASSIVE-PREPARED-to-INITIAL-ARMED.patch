@@ -1,0 +1,126 @@
+From 6dc0338be9020eebcbfafe078a46bc7be8e4a2ff Mon Sep 17 00:00:00 2001
+From: Tom Gundersen <teg@jklm.no>
+Date: Sat, 14 Mar 2015 11:47:35 +0100
+Subject: [PATCH 11/20] sd-event: rename PASSIVE/PREPARED to INITIAL/ARMED
+
+[commit 2b0c9ef7352dae53ee746c32033999c1346633b3 from
+https://github.com/systemd-rhel/rhel-8/]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 22 +++++++++++-----------
+ src/systemd/sd-event.h             |  4 ++--
+ 2 files changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index e0e0eaa..299312a 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -2423,7 +2423,7 @@ static int dispatch_exit(sd_event *e) {
+ 
+         r = source_dispatch(p);
+ 
+-        e->state = SD_EVENT_PASSIVE;
++        e->state = SD_EVENT_INITIAL;
+         sd_event_unref(e);
+ 
+         return r;
+@@ -2492,7 +2492,7 @@ _public_ int sd_event_prepare(sd_event *e) {
+         assert_return(e, -EINVAL);
+         assert_return(!event_pid_changed(e), -ECHILD);
+         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
+-        assert_return(e->state == SD_EVENT_PASSIVE, -EBUSY);
++        assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
+ 
+         if (e->exit_requested)
+                 goto pending;
+@@ -2526,15 +2526,15 @@ _public_ int sd_event_prepare(sd_event *e) {
+         if (event_next_pending(e) || e->need_process_child)
+                 goto pending;
+ 
+-        e->state = SD_EVENT_PREPARED;
++        e->state = SD_EVENT_ARMED;
+ 
+         return 0;
+ 
+ pending:
+-        e->state = SD_EVENT_PREPARED;
++        e->state = SD_EVENT_ARMED;
+         r = sd_event_wait(e, 0);
+         if (r == 0)
+-                e->state = SD_EVENT_PREPARED;
++                e->state = SD_EVENT_ARMED;
+ 
+         return r;
+ }
+@@ -2547,7 +2547,7 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
+         assert_return(e, -EINVAL);
+         assert_return(!event_pid_changed(e), -ECHILD);
+         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
+-        assert_return(e->state == SD_EVENT_PREPARED, -EBUSY);
++        assert_return(e->state == SD_EVENT_ARMED, -EBUSY);
+ 
+         if (e->exit_requested) {
+                 e->state = SD_EVENT_PENDING;
+@@ -2643,7 +2643,7 @@ _public_ int sd_event_wait(sd_event *e, uint64_t timeout) {
+         r = 0;
+ 
+ finish:
+-        e->state = SD_EVENT_PASSIVE;
++        e->state = SD_EVENT_INITIAL;
+ 
+         return r;
+ }
+@@ -2666,14 +2666,14 @@ _public_ int sd_event_dispatch(sd_event *e) {
+ 
+                 e->state = SD_EVENT_RUNNING;
+                 r = source_dispatch(p);
+-                e->state = SD_EVENT_PASSIVE;
++                e->state = SD_EVENT_INITIAL;
+ 
+                 sd_event_unref(e);
+ 
+                 return r;
+         }
+ 
+-        e->state = SD_EVENT_PASSIVE;
++        e->state = SD_EVENT_INITIAL;
+ 
+         return 1;
+ }
+@@ -2684,7 +2684,7 @@ _public_ int sd_event_run(sd_event *e, uint64_t timeout) {
+         assert_return(e, -EINVAL);
+         assert_return(!event_pid_changed(e), -ECHILD);
+         assert_return(e->state != SD_EVENT_FINISHED, -ESTALE);
+-        assert_return(e->state == SD_EVENT_PASSIVE, -EBUSY);
++        assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
+ 
+         r = sd_event_prepare(e);
+         if (r > 0)
+@@ -2704,7 +2704,7 @@ _public_ int sd_event_loop(sd_event *e) {
+ 
+         assert_return(e, -EINVAL);
+         assert_return(!event_pid_changed(e), -ECHILD);
+-        assert_return(e->state == SD_EVENT_PASSIVE, -EBUSY);
++        assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
+ 
+         sd_event_ref(e);
+ 
+diff --git a/src/systemd/sd-event.h b/src/systemd/sd-event.h
+index 4957f3a..ffde7c8 100644
+--- a/src/systemd/sd-event.h
++++ b/src/systemd/sd-event.h
+@@ -51,8 +51,8 @@ enum {
+ };
+ 
+ enum {
+-        SD_EVENT_PASSIVE,
+-        SD_EVENT_PREPARED,
++        SD_EVENT_INITIAL,
++        SD_EVENT_ARMED,
+         SD_EVENT_PENDING,
+         SD_EVENT_RUNNING,
+         SD_EVENT_EXITING,
+-- 
+2.17.1
+
