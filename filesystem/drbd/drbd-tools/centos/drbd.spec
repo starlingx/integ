@@ -45,6 +45,7 @@ Patch0007: 0007-Update-OCF-to-attempt-connect-in-certain-states.patch
 Patch0008: 0008-Increase-short-cmd-timeout-to-15-secs.patch
 Patch0009: 0009-Check-for-mounted-device-before-demoting-Primary-DRB.patch
 Patch0010: 0010-backport-drbd-main-ipv6-Fix-interface-indices-larger.patch
+Patch0011: 0011-Unmount-all-targets-during-drbd-stop.patch
 
 License: GPLv2+
 ExclusiveOS: linux
@@ -275,6 +276,7 @@ management utility.
 %patch0008 -p1
 %patch0009 -p1
 %patch0010 -p1
+%patch0011 -p1
 
 %build
 %configure \
