@@ -17,6 +17,7 @@ Source0:        %{name}-%{git_sha}.tar.gz
 
 Patch1:         0001-Add-Helm-v2-client-initialization-using-tiller-postS.patch
 Patch2:         0002-Tiller-wait-for-postgres-database-ping.patch
+Patch3:         0003-Update-the-liveness-probe-to-verify-postgres-connect.patch
 
 BuildArch:      noarch
 
@@ -31,6 +32,7 @@ BuildRequires: chartmuseum
 %setup -n armada
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 # Package the armada chart tarball using methodology derived from:
