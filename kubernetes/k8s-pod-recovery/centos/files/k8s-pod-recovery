@@ -153,6 +153,36 @@ function _node_affinity_pods {
 
 }
 
+function _labeled_pods {
+    # $1: actions <recover|verify>
+
+    if [ "$1" == 'recover' ]; then
+        POLLING_INTERVAL=5
+        STABILITY_COUNT=6
+        _wait_for_pod_stabilization "--selector=restart-on-reboot=true --field-selector=spec.nodeName=${HOST}" $POLLING_INTERVAL $STABILITY_COUNT
+
+        # Delete pods with the restart-on-reboot=true label
+        PODS=$(kubectl get pods --all-namespaces --no-headers --field-selector=spec.nodeName=${HOST} --selector=restart-on-reboot=true 2>/dev/null | awk '{print $1"/"$2}')
+        for pod in $PODS; do
+            LOG "restart-on-reboot labeled pods: Recovering: ${pod//// }"
+            kubectl delete pods -n ${pod//// } --wait=false
+        done
+    elif [ "$1" == 'verify' ]; then
+        PODS=$(kubectl get pods --all-namespaces --no-headers --field-selector=spec.nodeName=${HOST} --selector=restart-on-reboot=true 2>/dev/null | awk '{print $1"/"$2}')
+        for pod in $PODS; do
+            LOG "restart-on-reboot labeled  pods: Verifying: ${pod//// }"
+            STATUS=$(kubectl get pod --no-headers -n ${pod//// } 2>/dev/null | awk '{print $3}')
+            if [[ "${STATUS}" != "Running" ]]; then
+                ERROR "$pod: not recovered: $STATUS"
+            else
+                LOG "$pod: recovered"
+            fi
+        done
+    else
+        ERROR "Unknown action: $1"
+    fi
+}
+
 function _force_reset_pods {
     # $1: actions <recover|verify>
 
@@ -195,6 +225,9 @@ function _force_reset_pods {
 
 function _examine_pods {
     # $1: actions <recover|verify>
+
+    # Manage labeled pods first
+    _labeled_pods $1
 
     # Wait for pods transitions to stop
     _wait_for_pod_stabilization "" $SLEEP_DELAY_SEC 6
