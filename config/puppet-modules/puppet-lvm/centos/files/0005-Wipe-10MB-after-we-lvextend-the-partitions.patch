@@ -1,0 +1,24 @@
+From c14a96cb55a3bcd20f772c25f2294eb3a1d376b9 Mon Sep 17 00:00:00 2001
+From: Mihnea Saracin <mihnea.saracin@windriver.com>
+Date: Fri, 21 May 2021 13:34:41 -0400
+Subject: [PATCH 5/5] Wipe 10MB after we lvextend the partitions
+
+---
+ .../puppet/modules/lvm/lib/puppet/provider/logical_volume/lvm.rb | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/packstack/puppet/modules/lvm/lib/puppet/provider/logical_volume/lvm.rb b/packstack/puppet/modules/lvm/lib/puppet/provider/logical_volume/lvm.rb
+index f9b1c66..a604e96 100755
+--- a/packstack/puppet/modules/lvm/lib/puppet/provider/logical_volume/lvm.rb
++++ b/packstack/puppet/modules/lvm/lib/puppet/provider/logical_volume/lvm.rb
+@@ -214,6 +214,7 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+           end
+         end
+         lvextend( '-L', "#{new_size}k", path) || fail( "Cannot extend to size #{new_size} because lvextend failed." )
++        exec_cmd("seek_end=$(($(blockdev --getsz #{path})/2048 - 10)); dd if=/dev/zero of=#{path} bs=1M seek=${seek_end} count=10")
+         exec_cmd('umount', path)
+         exec_cmd('fsadm', '-y', 'check', path )
+         r = exec_cmd('fsadm', '-y', 'resize', path, "#{new_size}k")
+-- 
+2.29.2
+
