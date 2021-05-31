@@ -161,8 +161,21 @@ function _labeled_pods {
         STABILITY_COUNT=6
         _wait_for_pod_stabilization "--selector=restart-on-reboot=true --field-selector=spec.nodeName=${HOST}" $POLLING_INTERVAL $STABILITY_COUNT
 
-        # Delete pods with the restart-on-reboot=true label
+
         PODS=$(kubectl get pods --all-namespaces --no-headers --field-selector=spec.nodeName=${HOST} --selector=restart-on-reboot=true 2>/dev/null | awk '{print $1"/"$2}')
+
+        # Don't have to restart device-plugin if no labeled pods are present. System may not be configured for SRIOV.
+        if [ ! -z "${PODS}" ]; then
+            LOG "Waiting for SRIOV device plugin pod to become available"
+            kubectl delete pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --wait=false
+            kubectl wait pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --for=condition=Ready --timeout=360s
+
+            if [ "$?" -ne 0 ]; then
+                ERROR "SRIOV device plugin timed out on ready wait. Continuing anyway. SRIOV pods may not recover."
+            fi
+        fi
+
+        # Delete pods with the restart-on-reboot=true label
         for pod in $PODS; do
             LOG "restart-on-reboot labeled pods: Recovering: ${pod//// }"
             kubectl delete pods -n ${pod//// } --wait=false
