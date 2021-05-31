@@ -129,11 +129,6 @@ sudo
 
 # config files
 
-# net-snmp
-net-snmp-utils
-net-snmp-libs
-#net-snmp-python
-
 # openldap
 openldap
 openldap-servers
@@ -174,6 +169,8 @@ k8s-pod-recovery
 # resource-agents
 resource-agents
 
+# isolcpus device plugin for K8s
+isolcpus-device-plugin
 
 # haproxy
 haproxy
@@ -212,3 +209,6 @@ kvm-timer-advance
 # botocore is an unspecified requirement of boto3
 python3-botocore
 python3-boto3
+
+# Pf bbdev configuration tool for ACC100 (Mt. Bryce)
+pf-bb-config

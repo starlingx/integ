@@ -17,7 +17,6 @@ security/shim-signed
 base/sudo
 virt/cloud-init
 #base/watchdog
-base/net-snmp
 ldap/openldap
 networking/openvswitch
 #base/libevent
@@ -62,6 +61,7 @@ kubernetes/chartmuseum
 kubernetes/armada-helm-toolkit
 kubernetes/armada
 kubernetes/k8s-pod-recovery
+kubernetes/plugins/isolcpus-device-plugin
 grub/grubby
 base/dpkg
 base/cluster-resource-agents
@@ -85,3 +85,6 @@ python/python-mechanize
 python/python-html5lib
 #python/python-webencodings
 #python/python-daemon
+base/inih
+base/pf-bb-config
+gpu/gpu-operator

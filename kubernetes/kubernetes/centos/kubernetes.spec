@@ -57,6 +57,14 @@ Source33:       genmanpages.sh
 
 Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
 Patch2: kubelet-service-remove-docker-dependency.patch
+Patch3: fix_http2_erringroundtripper_handling.patch
+Patch4: kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
+Patch5: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
+Patch6: kubelet-cpumanager-infrastructure-pods-use-system-re.patch
+Patch7: kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
+Patch8: Fix-exclusive-CPU-allocations-being-deleted-at-conta.patch
+Patch9: kubeadm-create-platform-pods-with-zero-CPU-resources.patch
+Patch10: add-option-to-disable-isolcpu-awareness.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -841,6 +849,14 @@ Kubernetes client tools like kubectl
 %setup -q -n %{con_repo}-%{con_commit} -T -b 1
 %setup -q -n %{repo}-%{commit}
 %patch1 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
+%patch10 -p1
 
 # copy contrib folder
 mkdir contrib
@@ -877,6 +893,10 @@ export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
 %ifarch ppc64le
 export GOLDFLAGS='-linkmode=external'
 %endif
+
+# uncomment these two lines to build unoptimized binaries for debugging.
+# export GOLDFLAGS=""
+# export GOGCFLAGS="-N -l"
 make WHAT="cmd/kube-proxy cmd/kube-apiserver cmd/kube-controller-manager cmd/kubelet cmd/kubeadm cmd/kube-scheduler cmd/kubectl"
 
 # convert md to man

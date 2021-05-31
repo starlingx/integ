@@ -48,6 +48,17 @@ stop ()
     RC=$?
 }
 
+# If system is an AIO the mtcClient will run this script twice
+# from 2 locations and this generates some errors.
+# So we have to exit the script if is called
+# from /etc/services.d/worker in order to be executed once
+if [[ "$system_type" == "All-in-one" ]]; then
+    dir_path=$(dirname "$(realpath $0)")
+    if [[ "$dir_path" == "/etc/services.d/worker" ]]; then
+        exit 0
+    fi
+fi
+
 RC=0
 
 case "$1" in

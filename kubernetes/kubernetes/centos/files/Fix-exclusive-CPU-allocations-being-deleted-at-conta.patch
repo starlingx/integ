@@ -1,0 +1,138 @@
+From c72ad02d7be3edaf17a07bb6b2c40249ba00038e Mon Sep 17 00:00:00 2001
+From: Chris Friesen <chris.friesen@windriver.com>
+Date: Tue, 21 Apr 2020 16:06:35 -0600
+Subject: [PATCH] Fix exclusive CPU allocations being deleted at container
+ restart
+
+The expectation is that exclusive CPU allocations happen at pod
+creation time. When a container restarts, it should not have its
+exclusive CPU allocations removed, and it should not need to
+re-allocate CPUs.
+
+There are a few places in the current code that look for containers
+that have exited and call CpuManager.RemoveContainer() to clean up
+the container.  This will end up deleting any exclusive CPU
+allocations for that container, and if the container restarts within
+the same pod it will end up using the default cpuset rather than
+what should be exclusive CPUs.
+
+Removing those calls and adding resource cleanup at allocation
+time should get rid of the problem.
+
+Signed-off-by: Chris Friesen <chris.friesen@windriver.com>
+---
+ pkg/kubelet/cm/cpumanager/cpu_manager.go       | 19 +++++++++----------
+ pkg/kubelet/cm/cpumanager/cpu_manager_test.go  | 12 ++++++++++++
+ pkg/kubelet/cm/internal_container_lifecycle.go |  9 ---------
+ 3 files changed, 21 insertions(+), 19 deletions(-)
+
+diff --git a/pkg/kubelet/cm/cpumanager/cpu_manager.go b/pkg/kubelet/cm/cpumanager/cpu_manager.go
+index 08d45c77182..c682f813a8a 100644
+--- a/pkg/kubelet/cm/cpumanager/cpu_manager.go
++++ b/pkg/kubelet/cm/cpumanager/cpu_manager.go
+@@ -242,6 +242,9 @@ func (m *manager) Start(activePods ActivePodsFunc, sourcesReady config.SourcesRe
+ }
+ 
+ func (m *manager) Allocate(p *v1.Pod, c *v1.Container) error {
++	// Garbage collect any stranded resources before allocating CPUs.
++	m.removeStaleState()
++
+ 	m.Lock()
+ 	defer m.Unlock()
+ 
+@@ -422,18 +425,14 @@ func (m *manager) reconcileState() (success []reconciledContainer, failure []rec
+ 			}
+ 
+ 			if cstatus.State.Terminated != nil {
+-				// Since the container is terminated, we know it is safe to
+-				// remove it without any reconciliation. Removing the container
+-				// will also remove it from the `containerMap` so that this
+-				// container will be skipped next time around the loop.
++				// The container is terminated but we can't call m.RemoveContainer()
++				// here because it could remove the allocated cpuset for the container
++				// which may be in the process of being restarted.  That would result
++				// in the container losing any exclusively-allocated CPUs that it
++				// was allocated.
+ 				_, _, err := m.containerMap.GetContainerRef(containerID)
+ 				if err == nil {
+-					klog.Warningf("[cpumanager] reconcileState: skipping container; already terminated (pod: %s, container id: %s)", pod.Name, containerID)
+-					err := m.RemoveContainer(containerID)
+-					if err != nil {
+-						klog.Errorf("[cpumanager] reconcileState: failed to remove container (pod: %s, container id: %s, error: %v)", pod.Name, containerID, err)
+-						failure = append(failure, reconciledContainer{pod.Name, container.Name, containerID})
+-					}
++					klog.Warningf("[cpumanager] reconcileState: ignoring terminated (pod: %s, container id: %s)", pod.Name, containerID)
+ 				}
+ 				continue
+ 			}
+diff --git a/pkg/kubelet/cm/cpumanager/cpu_manager_test.go b/pkg/kubelet/cm/cpumanager/cpu_manager_test.go
+index e806c62e80e..e3e0097cafb 100644
+--- a/pkg/kubelet/cm/cpumanager/cpu_manager_test.go
++++ b/pkg/kubelet/cm/cpumanager/cpu_manager_test.go
+@@ -41,6 +41,12 @@ import (
+ 	"k8s.io/kubernetes/pkg/kubelet/cm/devicemanager"
+ )
+ 
++type mockSourcesReady struct{}
++
++func (s *mockSourcesReady) AddSource(source string) {}
++
++func (s *mockSourcesReady) AllReady() bool { return false }
++
+ type mockState struct {
+ 	assignments   state.ContainerCPUAssignments
+ 	defaultCPUSet cpuset.CPUSet
+@@ -277,6 +283,8 @@ func TestCPUManagerAdd(t *testing.T) {
+ 			podStatusProvider: mockPodStatusProvider{},
+ 		}
+ 
++		mgr.sourcesReady = &mockSourcesReady{}
++
+ 		pod := makePod("fakePod", "fakeContainer", "2", "2")
+ 		container := &pod.Spec.Containers[0]
+ 		err := mgr.Allocate(pod, container)
+@@ -497,6 +505,8 @@ func TestCPUManagerAddWithInitContainers(t *testing.T) {
+ 			podStatusProvider: mockPodStatusProvider{},
+ 		}
+ 
++		mgr.sourcesReady = &mockSourcesReady{}
++
+ 		containers := append(
+ 			testCase.pod.Spec.InitContainers,
+ 			testCase.pod.Spec.Containers...)
+@@ -1038,6 +1048,8 @@ func TestCPUManagerAddWithResvList(t *testing.T) {
+ 			podStatusProvider: mockPodStatusProvider{},
+ 		}
+ 
++		mgr.sourcesReady = &mockSourcesReady{}
++
+ 		pod := makePod("fakePod", "fakeContainer", "2", "2")
+ 		container := &pod.Spec.Containers[0]
+ 		err := mgr.Allocate(pod, container)
+diff --git a/pkg/kubelet/cm/internal_container_lifecycle.go b/pkg/kubelet/cm/internal_container_lifecycle.go
+index 9e243430269..690718e4e68 100644
+--- a/pkg/kubelet/cm/internal_container_lifecycle.go
++++ b/pkg/kubelet/cm/internal_container_lifecycle.go
+@@ -54,19 +54,10 @@ func (i *internalContainerLifecycleImpl) PreStartContainer(pod *v1.Pod, containe
+ }
+ 
+ func (i *internalContainerLifecycleImpl) PreStopContainer(containerID string) error {
+-	if i.cpuManager != nil {
+-		return i.cpuManager.RemoveContainer(containerID)
+-	}
+ 	return nil
+ }
+ 
+ func (i *internalContainerLifecycleImpl) PostStopContainer(containerID string) error {
+-	if i.cpuManager != nil {
+-		err := i.cpuManager.RemoveContainer(containerID)
+-		if err != nil {
+-			return err
+-		}
+-	}
+ 	if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.TopologyManager) {
+ 		err := i.topologyManager.RemoveContainer(containerID)
+ 		if err != nil {
+-- 
+2.16.6
+

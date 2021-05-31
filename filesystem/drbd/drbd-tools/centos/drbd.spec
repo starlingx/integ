@@ -276,6 +276,7 @@ management utility.
 %patch0008 -p1
 %patch0009 -p1
 %patch0010 -p1
+%patch0011 -p1
 
 %build
 %configure \

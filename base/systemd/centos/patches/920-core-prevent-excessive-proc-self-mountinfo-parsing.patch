@@ -1,0 +1,37 @@
+From dc3e079395816ce251c4794992f1816a61c1215d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Michal=20Sekleta=CC=81r?= <msekleta@redhat.com>
+Date: Thu, 9 Jul 2020 18:16:44 +0200
+Subject: [PATCH 20/20] core: prevent excessive /proc/self/mountinfo parsing
+
+(cherry picked from commit d586f642fd90e3bb378f7b6d3e3a64a753e51756)
+
+Resolves: #1819868
+
+[commit 51737206afaa10d902c86ec9b5ec97cf425039c2 from
+https://github.com/systemd-rhel/rhel-8/]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/core/mount.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/core/mount.c b/src/core/mount.c
+index c7aed23..48427b7 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -1692,6 +1692,12 @@ static int mount_enumerate(Manager *m) {
+                 r = sd_event_source_set_priority(m->mount_utab_event_source, -10);
+                 if (r < 0)
+                         goto fail;
++
++                r = sd_event_source_set_ratelimit(m->mount_event_source, 1 * USEC_PER_SEC, 5);
++                if (r < 0) {
++                        log_error_errno(r, "Failed to enable rate limit for mount events: %m");
++                        goto fail;
++                }
+         }
+ 
+         r = mount_load_proc_self_mountinfo(m, false);
+-- 
+2.17.1
+

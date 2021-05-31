@@ -1,0 +1,31 @@
+From 7cc3363381f83bb060e8e686eb64b5425f2d4409 Mon Sep 17 00:00:00 2001
+Message-Id: <7cc3363381f83bb060e8e686eb64b5425f2d4409.1574264572.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7.1574264572.git.Jim.Somerville@windriver.com>
+References: <8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7.1574264572.git.Jim.Somerville@windriver.com>
+From: slin14 <shuicheng.lin@intel.com>
+Date: Thu, 9 Aug 2018 18:38:18 +0800
+Subject: [PATCH 2/3] fix build error for unused variable
+
+Signed-off-by: slin14 <shuicheng.lin@intel.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Long Li <lilong-neu@neusoft.com>
+---
+ src/journal/journald-syslog.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
+index 2149b20..23e66b2 100644
+--- a/src/journal/journald-syslog.c
++++ b/src/journal/journald-syslog.c
+@@ -154,8 +154,6 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
+         char header_priority[DECIMAL_STR_MAX(priority) + 3], header_time[64],
+              header_pid[STRLEN("[]: ") + DECIMAL_STR_MAX(pid_t) + 1];
+         int n = 0;
+-        time_t t;
+-        struct tm *tm;
+         _cleanup_free_ char *ident_buf = NULL;
+ 
+         assert(s);
+-- 
+2.7.4
+

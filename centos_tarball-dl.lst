@@ -1,4 +1,4 @@
-armada-6cc6346cde888c683fec4df910ebefdf6dccb310.tar.gz#armada#https://github.com/airshipit/armada/tarball/6cc6346cde888c683fec4df910ebefdf6dccb310#http##
+armada-7ef4b8643b5ec5216a8f6726841e156c0aa54a1a.tar.gz#armada#https://github.com/airshipit/armada/tarball/7ef4b8643b5ec5216a8f6726841e156c0aa54a1a#http##
 blkin-f24ceec055ea236a093988237a9821d145f5f7c8.tar.gz#blkin#https://api.github.com/repos/ceph/blkin/tarball/f24ceec055ea236a093988237a9821d145f5f7c8#https##
 boost_1_67_0.tar.bz2#boost_1_67_0#https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.bz2#https##
 ceph-erasure-code-corpus-2d7d78b9cc52e8a9529d8cc2d2954c7d375d5dd7.tar.gz#ceph-erasure-code-corpus#https://api.github.com/repos/ceph/ceph-erasure-code-corpus/tarball/2d7d78b9cc52e8a9529d8cc2d2954c7d375d5dd7#https##
@@ -69,3 +69,6 @@ trident-installer-20.04.0.tar.gz#trident-installer-20.04.0#https://github.com/Ne
 !tss2-930.tar.gz#tss2-930#https://git.code.sf.net/p/ibmtpm20tss/tss#git#v930#
 xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz#xxHash#https://api.github.com/repos/ceph/xxHash/tarball/1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9#https##
 zstd-f4340f46b2387bc8de7d5320c0b83bb1499933ad.tar.gz#zstd#https://api.github.com/repos/facebook/zstd/tarball/f4340f46b2387bc8de7d5320c0b83bb1499933ad#https##
+inih-b1dbff4b0bd1e1f40d237e21011f6dee0ec2fa69.tar.gz#inih-44#https://github.com/benhoyt/inih/tarball/b1dbff4b0bd1e1f40d237e21011f6dee0ec2fa69#https##
+pf-bb-config-945712e8876be2003f2f31de70353c48501519fa.tar.gz#pf-bb-config-21.3#https://github.com/intel/pf-bb-config/tarball/945712e8876be2003f2f31de70353c48501519fa#https##
+gpu-operator-1.6.0.tar.gz#gpu-operator-1.6.0#https://github.com/NVIDIA/gpu-operator/archive/1.6.0.tar.gz##https##

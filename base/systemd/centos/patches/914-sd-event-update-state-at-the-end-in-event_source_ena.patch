@@ -1,0 +1,125 @@
+From ad89da1e00919c510596dac78741c98052b1e2f7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 10 Nov 2020 10:38:37 +0100
+Subject: [PATCH 14/20] sd-event: update state at the end in
+ event_source_enable
+
+Coverity in CID#1435966 was complaining that s->enabled is not "restored" in
+all cases. But the code was actually correct, since it should only be
+"restored" in the error paths. But let's still make this prettier by not setting
+the state before all operations that may fail are done.
+
+We need to set .enabled for the prioq reshuffling operations, so move those down.
+
+No functional change intended.
+
+(cherry picked from commit d2eafe61ca07f8300dc741a0491a914213fa2b6b)
+
+Related: #1819868
+
+[commit deb9e6ad3a1d7cfbc3b53d1e74cda6ae398a90fd from
+https://github.com/systemd-rhel/rhel-8/]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 51 +++++++++++++++++-------------
+ 1 file changed, 29 insertions(+), 22 deletions(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 82cb9ad..3ff15a2 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -1691,11 +1691,11 @@ static int event_source_disable(sd_event_source *s) {
+         return 0;
+ }
+ 
+-static int event_source_enable(sd_event_source *s, int m) {
++static int event_source_enable(sd_event_source *s, int enable) {
+         int r;
+ 
+         assert(s);
+-        assert(IN_SET(m, SD_EVENT_ON, SD_EVENT_ONESHOT));
++        assert(IN_SET(enable, SD_EVENT_ON, SD_EVENT_ONESHOT));
+         assert(s->enabled == SD_EVENT_OFF);
+ 
+         /* Unset the pending flag when this event source is enabled */
+@@ -1705,31 +1705,16 @@ static int event_source_enable(sd_event_source *s, int m) {
+                         return r;
+         }
+ 
+-        s->enabled = m;
+-
+         switch (s->type) {
+-
+         case SOURCE_IO:
+-                r = source_io_register(s, m, s->io.events);
+-                if (r < 0) {
+-                        s->enabled = SD_EVENT_OFF;
++                r = source_io_register(s, enable, s->io.events);
++                if (r < 0)
+                         return r;
+-                }
+-
+-                break;
+-
+-        case SOURCE_TIME_REALTIME:
+-        case SOURCE_TIME_BOOTTIME:
+-        case SOURCE_TIME_MONOTONIC:
+-        case SOURCE_TIME_REALTIME_ALARM:
+-        case SOURCE_TIME_BOOTTIME_ALARM:
+-                event_source_time_prioq_reshuffle(s);
+                 break;
+ 
+         case SOURCE_SIGNAL:
+                 r = event_make_signal_data(s->event, s->signal.sig, NULL);
+                 if (r < 0) {
+-                        s->enabled = SD_EVENT_OFF;
+                         event_gc_signal_data(s->event, &s->priority, s->signal.sig);
+                         return r;
+                 }
+@@ -1750,10 +1735,12 @@ static int event_source_enable(sd_event_source *s, int m) {
+ 
+                 break;
+ 
++        case SOURCE_TIME_REALTIME:
++        case SOURCE_TIME_BOOTTIME:
++        case SOURCE_TIME_MONOTONIC:
++        case SOURCE_TIME_REALTIME_ALARM:
++        case SOURCE_TIME_BOOTTIME_ALARM:
+         case SOURCE_EXIT:
+-                prioq_reshuffle(s->event->exit, s, &s->exit.prioq_index);
+-                break;
+-
+         case SOURCE_DEFER:
+         case SOURCE_POST:
+                 break;
+@@ -1762,6 +1749,26 @@ static int event_source_enable(sd_event_source *s, int m) {
+                 assert_not_reached("Wut? I shouldn't exist.");
+         }
+ 
++        s->enabled = enable;
++
++        /* Non-failing operations below */
++        switch (s->type) {
++        case SOURCE_TIME_REALTIME:
++        case SOURCE_TIME_BOOTTIME:
++        case SOURCE_TIME_MONOTONIC:
++        case SOURCE_TIME_REALTIME_ALARM:
++        case SOURCE_TIME_BOOTTIME_ALARM:
++                event_source_time_prioq_reshuffle(s);
++                break;
++
++        case SOURCE_EXIT:
++                prioq_reshuffle(s->event->exit, s, &s->exit.prioq_index);
++                break;
++
++        default:
++                break;
++        }
++
+         return 0;
+ }
+ 
+-- 
+2.17.1
+

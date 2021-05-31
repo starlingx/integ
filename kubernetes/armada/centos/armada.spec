@@ -1,4 +1,4 @@
-%global git_sha     6cc6346cde888c683fec4df910ebefdf6dccb310
+%global git_sha     7ef4b8643b5ec5216a8f6726841e156c0aa54a1a
 
 # Build variables
 %global helm_folder /usr/lib/helm
@@ -16,6 +16,9 @@ URL:            https://airship-armada.readthedocs.io/
 Source0:        %{name}-%{git_sha}.tar.gz
 
 Patch1:         0001-Add-Helm-v2-client-initialization-using-tiller-postS.patch
+Patch2:         0002-Tiller-wait-for-postgres-database-ping.patch
+Patch3:         0003-Update-the-liveness-probe-to-verify-postgres-connect.patch
+Patch4:         0004-Update-postgres-liveness-check-to-support-IPv6-addre.patch
 
 BuildArch:      noarch
 
@@ -29,7 +32,9 @@ BuildRequires: chartmuseum
 %prep
 %setup -n armada
 %patch1 -p1
-
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
 
 %build
 # Package the armada chart tarball using methodology derived from:

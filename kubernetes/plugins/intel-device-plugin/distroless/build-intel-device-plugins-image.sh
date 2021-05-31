@@ -14,6 +14,10 @@ if [ -z "${IMAGE_TAG}" ]; then
     exit 1
 fi
 
+# https://bugs.launchpad.net/starlingx/+bug/1927153
+# pin clearlinux/golang to the last known working tag
+sed -i 's!clearlinux/golang:latest!clearlinux/golang:1.15.10!' build/docker/${DEVICE}.Dockerfile || exit 1
+
 make ${DEVICE}
 
 if [ $? -ne 0 ]; then
