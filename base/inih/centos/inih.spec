@@ -12,7 +12,7 @@ Source0: %{name}-%{git_sha}.tar.gz
 
 BuildRequires: gcc
 BuildRequires: gcc-c++
-BuildRequires: ncurses-static
+BuildRequires: ncurses
 BuildRequires: perl-version
 
 %define debug_package %{nil}
