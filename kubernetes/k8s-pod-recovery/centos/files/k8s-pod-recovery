@@ -167,11 +167,18 @@ function _labeled_pods {
         # Don't have to restart device-plugin if no labeled pods are present. System may not be configured for SRIOV.
         if [ ! -z "${PODS}" ]; then
             LOG "Waiting for SRIOV device plugin pod to become available"
-            kubectl delete pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --wait=false
-            kubectl wait pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --for=condition=Ready --timeout=360s
 
+            # Check if device-plugin is ready, but do not wait
+            kubectl wait pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --for=condition=Ready --timeout=0s
+            
+            # If device plugin is not ready, restart it and wait
             if [ "$?" -ne 0 ]; then
-                ERROR "SRIOV device plugin timed out on ready wait. Continuing anyway. SRIOV pods may not recover."
+                kubectl delete pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --wait=false
+                kubectl wait pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --for=condition=Ready --timeout=360s
+                
+                if [ "$?" -ne 0 ]; then
+                    ERROR "SRIOV device plugin timed out on ready wait. Continuing anyway. SRIOV pods may not recover."
+                fi
             fi
         fi
 
