@@ -112,6 +112,9 @@ lighttpd-fastcgi
 lighttpd-mod_geoip
 lighttpd-mod_mysql_vhost
 
+# linuxptp
+linuxptp
+
 # logrotate
 logrotate
 

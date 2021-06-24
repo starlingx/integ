@@ -1,0 +1,18 @@
+Metadata-Version: 1.1
+Name: linuxptp
+Version: 2.0-2
+Summary: linuxptp
+Home-page: http://linuxptp.sourceforge.net/
+Author:
+Author-email:
+License: GPLv2
+
+Description:
+This software is an implementation of the Precision Time Protocol (PTP)
+according to IEEE standard 1588 for Linux. The dual design goals are to
+provide a robust implementation of the standard and to use the most
+relevant and modern Application Programming Interfaces (API) offered by
+the Linux kernel. Supporting legacy APIs and other platforms is not a
+goal.
+
+Platform: UNKNOWN

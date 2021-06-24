@@ -1,6 +1,7 @@
 base/initscripts
 base/setup
 base/dhcp
+base/linuxptp
 base/openssh
 config/facter
 virt/qemu
