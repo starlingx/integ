@@ -25,6 +25,7 @@ def command(arguments, **kwargs):
         arguments,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        universal_newlines=True,
         **kwargs)
     out, err = process.communicate()
     return out, err, process.returncode
