@@ -29,6 +29,7 @@ import textwrap
 import keyring
 import subprocess
 import math
+from builtins import round
 from prettytable import PrettyTable
 from cgtsclient.common import utils
 from cgtsclient import client as cgts_client
@@ -145,7 +146,7 @@ def get_system_creds():
 
     proc = subprocess.Popen(['bash', '-c',
                              'source /etc/platform/openrc && env'],
-                            stdout=subprocess.PIPE)
+                            stdout=subprocess.PIPE, universal_newlines=True)
 
     for line in proc.stdout:
         key, _, value = line.partition("=")
@@ -180,7 +181,7 @@ def convert_to_readable_size(size, orig_unit='B'):
     if unitIndex > 5:
         unitIndex = 5
     sizer = math.pow(1024, unitIndex)
-    newsize = round(size / sizer, 2)
+    newsize = round(size // sizer, 2)
     return "%s %s" % (newsize, units[unitIndex])
 
 
