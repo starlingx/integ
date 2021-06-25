@@ -3,17 +3,16 @@
 # Copyright (C) 2019 Intel Corporation
 #
 Name: containerd
-Version: 1.3.3
+Version: 1.4.6
 Release: %{tis_patch_ver}%{?_tis_dist}
 Summary: Open and reliable container runtime
 Group: Kubernetes
 License: ASL 2.0
-Source0: containerd-v%{version}.tar.gz
-Source1: runc-1.0.0-rc10.tar.gz
-Source2: crictl-v1.18.0-linux-amd64.tar.gz
+Source0: containerd-%{version}.tar.gz
+Source1: runc-1.0.0-rc95.tar.gz
+Source2: crictl-v1.21.0-linux-amd64.tar.gz
 Source3: crictl.yaml
-Patch5: 0001-customize-containerd-for-StarlingX.patch
-Patch6: 0002-archive-skip-chmod-IsNotExist-error.patch
+Patch1: 0001-customize-containerd-for-StarlingX.patch
 URL: https://www.starlingx.io
 Vendor: StarlingX
 Packager: StarlingX
@@ -53,20 +52,21 @@ low-level storage and network attachments, etc.
 %prep
 %setup -q -c -n src -a 1
 %setup -q -c -T -D -n src -a 2
-%patch5 -p1
-%patch6 -p1
+%patch1 -p1
 
 %build
 # build containerd
+rm -rf %{CONTAINERD_DIR}
 mkdir -p %{CONTAINERD_DIR}
-mv %{_builddir}/src/containerd/* %{CONTAINERD_DIR}/
+cp -a %{_builddir}/src/containerd-%{version}/* %{CONTAINERD_DIR}/
 pushd %{CONTAINERD_DIR}
 make
 popd
 
 # build runc
+rm -rf %{RUNC_DIR}
 mkdir -p %{RUNC_DIR}
-mv %{_builddir}/src/runc/* %{RUNC_DIR}/
+cp -a %{_builddir}/src/runc-1.0.0-rc95/* %{RUNC_DIR}/
 pushd %{RUNC_DIR}
 make
 popd
