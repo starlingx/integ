@@ -1,0 +1,130 @@
+From 9c370125f2b8662bbd66af3d3587f4af184bf4e3 Mon Sep 17 00:00:00 2001
+From: dvoicule <dvoicule@opendev.org>
+Date: Fri, 25 Jun 2021 08:07:52 +0000
+Subject: [PATCH 3/3] Add python3 compatibility
+
+Python3 compatibility was lost in a previous patch:
+0001-Adapt-redfishtool-to-python2.patch.
+
+Use six library to fix urllib inconsistencies between python
+versions.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ redfishtool/AccountService.py       | 2 +-
+ redfishtool/Chassis.py              | 2 +-
+ redfishtool/Managers.py             | 2 +-
+ redfishtool/ServiceRoot.py          | 2 +-
+ redfishtool/SessionService.py       | 2 +-
+ redfishtool/Systems.py              | 2 +-
+ redfishtool/raw.py                  | 2 +-
+ redfishtool/redfishtoolTransport.py | 2 +-
+ 8 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/redfishtool/AccountService.py b/redfishtool/AccountService.py
+index bfb17f8..3846477 100644
+--- a/redfishtool/AccountService.py
++++ b/redfishtool/AccountService.py
+@@ -34,7 +34,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urlparse import urljoin
++from six.moves.urllib.parse import urljoin
+ 
+ class RfAccountServiceMain():
+     def __init__(self):
+diff --git a/redfishtool/Chassis.py b/redfishtool/Chassis.py
+index c1754e9..c8544eb 100644
+--- a/redfishtool/Chassis.py
++++ b/redfishtool/Chassis.py
+@@ -37,7 +37,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urlparse import urljoin
++from six.moves.urllib.parse import urljoin
+ 
+ class RfChassisMain():
+     def __init__(self):
+diff --git a/redfishtool/Managers.py b/redfishtool/Managers.py
+index 400dad7..57eb02d 100644
+--- a/redfishtool/Managers.py
++++ b/redfishtool/Managers.py
+@@ -37,7 +37,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urlparse import urljoin
++from six.moves.urllib.parse import urljoin
+ 
+ class RfManagersMain():
+     def __init__(self):
+diff --git a/redfishtool/ServiceRoot.py b/redfishtool/ServiceRoot.py
+index 9395b83..87a2386 100644
+--- a/redfishtool/ServiceRoot.py
++++ b/redfishtool/ServiceRoot.py
+@@ -12,7 +12,7 @@
+ #
+ import requests
+ import json
+-from urlparse import urljoin, urlparse, urlunparse
++from six.moves.urllib.parse import urljoin, urlparse, urlunparse
+ 
+ class RfServiceRoot:
+     def __init__(self):
+diff --git a/redfishtool/SessionService.py b/redfishtool/SessionService.py
+index c7a1624..e784601 100644
+--- a/redfishtool/SessionService.py
++++ b/redfishtool/SessionService.py
+@@ -30,7 +30,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urlparse import urljoin
++from six.moves.urllib.parse import urljoin
+ 
+ class RfSessionServiceMain():
+     def __init__(self):
+diff --git a/redfishtool/Systems.py b/redfishtool/Systems.py
+index 9a9148a..b75b3d8 100644
+--- a/redfishtool/Systems.py
++++ b/redfishtool/Systems.py
+@@ -39,7 +39,7 @@ import getopt
+ import re
+ import sys
+ from    .ServiceRoot import RfServiceRoot
+-from   urlparse import urljoin
++from six.moves.urllib.parse import urljoin
+ 
+ class RfSystemsMain():
+     def __init__(self):
+diff --git a/redfishtool/raw.py b/redfishtool/raw.py
+index 1b32d0b..86c3cd7 100644
+--- a/redfishtool/raw.py
++++ b/redfishtool/raw.py
+@@ -30,7 +30,7 @@ import getopt
+ import re
+ import sys
+ #from    .ServiceRoot import RfServiceRoot
+-from   urlparse import urljoin, urlparse, urlunparse
++from six.moves.urllib.parse import urljoin, urlparse, urlunparse
+ 
+ class RfRawMain():
+     def __init__(self):
+diff --git a/redfishtool/redfishtoolTransport.py b/redfishtool/redfishtoolTransport.py
+index b576666..83ea80b 100644
+--- a/redfishtool/redfishtoolTransport.py
++++ b/redfishtool/redfishtoolTransport.py
+@@ -39,7 +39,7 @@ import json
+ import sys
+ import socket
+ import time
+-from urlparse import urljoin, urlparse, urlunparse
++from six.moves.urllib.parse import urljoin, urlparse, urlunparse
+ from requests.auth import HTTPBasicAuth, AuthBase
+ from .ServiceRoot import RfServiceRoot
+ 
+-- 
+2.29.2
+

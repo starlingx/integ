@@ -20,6 +20,7 @@ BuildArch: noarch
 
 Patch01: 0001-Adapt-redfishtool-to-python2.patch
 Patch02: 0002-Change-python-to-python3-explicitly.patch
+Patch03: 0003-Add-python3-compatibility.patch
 
 BuildRequires: python3-setuptools
 
@@ -35,6 +36,7 @@ Redfish Tool Package
 %setup
 %patch01 -p1
 %patch02 -p1
+%patch03 -p1
 
 # Remove bundled egg-info
 rm -rf *.egg-info
