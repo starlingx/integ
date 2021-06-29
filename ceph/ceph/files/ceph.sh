@@ -22,8 +22,18 @@ logecho ()
 
 start ()
 {
-    logecho "Starting ceph services..."
-    ${INITDIR}/ceph start >> ${LOGFILE} 2>&1
+    SERVICES=""
+    if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" == "duplex" ]]; then
+        # In an AIO-DX configuration SM manages the floating MON and OSDs. Here
+        # we defer starting OSDs directly via the init script to allow SM to
+        # start them at the appropriate time. This will eliminate a race between
+        # MTC and SM starting OSDs simultaneously. Continue to start MON/MDS
+        # service here so that MDS is operational after the monitor is up.
+        SERVICES="mon mds"
+    fi
+
+    logecho "Starting ceph ${SERVICES} services..."
+    ${INITDIR}/ceph start ${SERVICES} >> ${LOGFILE} 2>&1
     RC=$?
 
     if [ ! -f ${CEPH_FILE} ]; then
