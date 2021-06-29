@@ -70,5 +70,5 @@ trident-installer-20.04.0.tar.gz#trident-installer-20.04.0#https://github.com/Ne
 xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz#xxHash#https://api.github.com/repos/ceph/xxHash/tarball/1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9#https##
 zstd-f4340f46b2387bc8de7d5320c0b83bb1499933ad.tar.gz#zstd#https://api.github.com/repos/facebook/zstd/tarball/f4340f46b2387bc8de7d5320c0b83bb1499933ad#https##
 inih-b1dbff4b0bd1e1f40d237e21011f6dee0ec2fa69.tar.gz#inih-44#https://github.com/benhoyt/inih/tarball/b1dbff4b0bd1e1f40d237e21011f6dee0ec2fa69#https##
-pf-bb-config-945712e8876be2003f2f31de70353c48501519fa.tar.gz#pf-bb-config-21.3#https://github.com/intel/pf-bb-config/tarball/945712e8876be2003f2f31de70353c48501519fa#https##
+pf-bb-config-d7d5f1ddd17b4c80e3e0d6ce87660926f58f8585.tar.gz#pf-bb-config-21.6#https://github.com/intel/pf-bb-config/tarball/d7d5f1ddd17b4c80e3e0d6ce87660926f58f8585#https##
 gpu-operator-1.6.0.tar.gz#gpu-operator-1.6.0#https://github.com/NVIDIA/gpu-operator/archive/1.6.0.tar.gz##https##
