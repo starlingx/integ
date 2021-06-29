@@ -1,0 +1,35 @@
+From 8b4e9d4aad5e3b997838e1186b00403393309d35 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Wed, 23 Jun 2021 10:25:11 -0400
+Subject: [PATCH 3/6] p3 Only check timestamps from uncalibrated and slave
+ ports
+
+---
+ port.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/port.c b/port.c
+index c945c13..affa48b 100644
+--- a/port.c
++++ b/port.c
+@@ -2541,10 +2541,13 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 		msg_put(msg);
+ 		return EV_NONE;
+ 	}
+-	if (msg_sots_valid(msg)) {
+-		ts_add(&msg->hwts.ts, -p->rx_timestamp_offset);
+-		clock_check_ts(p->clock, tmv_to_nanoseconds(msg->hwts.ts));
+-	}
++	if (msg_sots_valid(msg)) {
++		ts_add(&msg->hwts.ts, -p->rx_timestamp_offset);
++		if (p->state == PS_SLAVE || p->state == PS_UNCALIBRATED) {
++			clock_check_ts(p->clock,
++				tmv_to_nanoseconds(msg->hwts.ts));
++		}
++	}
+
+ 	switch (msg_type(msg)) {
+ 	case SYNC:
+--
+2.29.2
+

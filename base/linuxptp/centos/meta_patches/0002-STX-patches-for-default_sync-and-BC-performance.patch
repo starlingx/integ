@@ -1,0 +1,48 @@
+From 2b59f59616f4c9d27ee094f5099011f3015d90c8 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Wed, 23 Jun 2021 13:21:58 -0400
+Subject: [PATCH] STX patches for default_sync and BC performance
+
+---
+ SPECS/linuxptp.spec | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/SPECS/linuxptp.spec b/SPECS/linuxptp.spec
+index 3f91582..63c4246 100644
+--- a/SPECS/linuxptp.spec
++++ b/SPECS/linuxptp.spec
+@@ -34,6 +34,18 @@ Patch5:		linuxptp-team.patch
+ Patch6:		linuxptp-addreq.patch
+ # don't leak memory when allocation fails
+ Patch7:		linuxptp-msgput.patch
++# StarlingX
++Patch8: 0001-p1-Reset-state-when-switching-port-with-same-best-cl.patch
++# StarlingX
++Patch9: 0002-p2-Reset-clock-check-on-best-clock-port-change.patch
++# StarlingX
++Patch10: 0003-p3-Only-check-timestamps-from-uncalibrated-and-slave.patch
++# StarlingX
++Patch11: 0004-p4-Do-not-renew-raw-transport-sockets.patch
++# StarlingX
++Patch12: 0005-p5-Increase-the-minimum-clockcheck-interval-for-stab.patch
++# StarlingX
++Patch13: 0006-Add-option-to-disable-default-port-selection-in-phc2.patch
+
+ BuildRequires:	kernel-headers > 3.10.0-1002
+ BuildRequires:	systemd-units
+@@ -58,6 +70,12 @@ Supporting legacy APIs and other platforms is not a goal.
+ %patch5 -p1 -b .team
+ %patch6 -p1 -b .addreq
+ %patch7 -p1 -b .msgput
++%patch8 -p1
++%patch9 -p1
++%patch10 -p1
++%patch11 -p1
++%patch12 -p1
++%patch13 -p1
+ mv linuxptp-testsuite-%{testsuite_ver}* testsuite
+ mv clknetsim-%{clknetsim_ver}* testsuite/clknetsim
+
+--
+2.29.2
+

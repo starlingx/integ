@@ -1,0 +1,67 @@
+From da48222456566d63a940810733ff369895777bda Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Wed, 23 Jun 2021 10:21:45 -0400
+Subject: [PATCH 2/6] p2 Reset clock check on best clock port change
+
+---
+ clock.c      | 2 ++
+ clockcheck.c | 9 ++++++++-
+ clockcheck.h | 7 +++++++
+ 3 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/clock.c b/clock.c
+index 9fad542..7a66770 100644
+--- a/clock.c
++++ b/clock.c
+@@ -1739,6 +1739,8 @@ static void handle_state_decision_event(struct clock *c)
+
+	if (!cid_eq(&best_id, &c->best_id) || best != c->best) {
+ 		clock_freq_est_reset(c);
++	if (c->sanity_check)
++		clockcheck_reset(c->sanity_check);
+ 		tsproc_reset(c->tsproc, 1);
+ 		if (!tmv_is_zero(c->initial_delay))
+ 			tsproc_set_delay(c->tsproc, c->initial_delay);
+diff --git a/clockcheck.c b/clockcheck.c
+index d48a578..544ce9b 100644
+--- a/clockcheck.c
++++ b/clockcheck.c
+@@ -47,9 +47,16 @@ struct clockcheck *clockcheck_create(int freq_limit)
+ 	if (!cc)
+ 		return NULL;
+ 	cc->freq_limit = freq_limit;
++	clockcheck_reset(cc);
++	return cc;
++}
++
++void clockcheck_reset(struct clockcheck *cc)
++{
++	cc->freq_known = 0;
+ 	cc->max_freq = -CHECK_MAX_FREQ;
+ 	cc->min_freq = CHECK_MAX_FREQ;
+-	return cc;
++	cc->last_ts = 0;
+ }
+
+ int clockcheck_sample(struct clockcheck *cc, uint64_t ts)
+diff --git a/clockcheck.h b/clockcheck.h
+index 78aca48..6c02ce3 100644
+--- a/clockcheck.h
++++ b/clockcheck.h
+@@ -33,6 +33,13 @@ struct clockcheck;
+  */
+ struct clockcheck *clockcheck_create(int freq_limit);
+
++/**
++ * Reset a clock check.
++ * @param cc Pointer to a clock check obtained via @ref clockcheck_create().
++ */
++void clockcheck_reset(struct clockcheck *cc);
++
++
+ /**
+  * Perform the sanity check on a time stamp.
+  * @param cc Pointer to a clock check obtained via @ref clockcheck_create().
+--
+2.29.2
+

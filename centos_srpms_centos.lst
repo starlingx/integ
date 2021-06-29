@@ -9,6 +9,7 @@ haproxy-1.5.18-8.el7.src.rpm
 initscripts-9.49.46-1.el7.src.rpm
 libevent-2.0.21-4.el7.src.rpm
 lighttpd-1.4.54-1.el7.src.rpm
+linuxptp-2.0-2.el7.src.rpm
 logrotate-3.8.6-17.el7.src.rpm
 net-tools-2.0-0.24.20131004git.el7.src.rpm
 ntp-4.2.6p5-29.el7.centos.2.src.rpm
