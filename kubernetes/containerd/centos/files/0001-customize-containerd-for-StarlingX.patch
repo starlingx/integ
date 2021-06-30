@@ -1,22 +1,20 @@
-From 311301438b0366004e238cbcc2ca07d38d8a9369 Mon Sep 17 00:00:00 2001
-From: Shuicheng Lin <shuicheng.lin@intel.com>
-Date: Wed, 25 Sep 2019 20:02:34 +0800
+From a8466190118c114d5ddeec381bbafa8441d7e638 Mon Sep 17 00:00:00 2001
+From: Chris Friesen <chris.friesen@windriver.com>
+Date: Thu, 17 Jun 2021 10:27:09 -0400
 Subject: [PATCH] customize containerd for StarlingX
 
-1. disable btrfs to pass build.
+1. disable btrfs to avoid needing to pull in the devel package
 2. docker registry in StarlingX 3.0 branch doesn't support POST method
 for token and will return 400. Switch to GET method to get token if
 StatusCode is 400.
 3. hardcode version info due to miss git info in tarball.
-
-Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 ---
  containerd/Makefile                     | 3 ++-
  containerd/remotes/docker/authorizer.go | 3 ++-
  2 files changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/containerd/Makefile b/containerd/Makefile
-index 37012e8..7ab6a22 100644
+index c0fecb9..44dd5ad 100644
 --- a/containerd/Makefile
 +++ b/containerd/Makefile
 @@ -20,7 +20,7 @@ ROOTDIR=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -24,20 +22,20 @@ index 37012e8..7ab6a22 100644
  
  # Used to populate variables in version package.
 -VERSION=$(shell git describe --match 'v[0-9]*' --dirty='.m' --always)
-+VERSION=v1.3.3
++VERSION=v1.4.6
  REVISION=$(shell git rev-parse HEAD)$(shell if ! git diff --no-ext-diff --quiet --exit-code; then echo .m; fi)
  PACKAGE=github.com/containerd/containerd
- 
-@@ -95,6 +95,7 @@ endif
- # Build tags seccomp and apparmor are needed by CRI plugin.
- GO_BUILDTAGS ?= seccomp apparmor
+ SHIM_CGO_ENABLED ?= 0
+@@ -78,6 +78,7 @@ endif
+ # Build tags apparmor and selinux are needed by CRI plugin.
+ GO_BUILDTAGS ?= apparmor selinux
  GO_BUILDTAGS += ${DEBUG_TAGS}
 +GO_BUILDTAGS += no_btrfs
  GO_TAGS=$(if $(GO_BUILDTAGS),-tags "$(GO_BUILDTAGS)",)
  GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) $(EXTRA_LDFLAGS)'
  SHIM_GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) -extldflags "-static" $(EXTRA_LDFLAGS)'
 diff --git a/containerd/remotes/docker/authorizer.go b/containerd/remotes/docker/authorizer.go
-index 9652d3a..72a6f3a 100644
+index 001423a..2db8d60 100644
 --- a/containerd/remotes/docker/authorizer.go
 +++ b/containerd/remotes/docker/authorizer.go
 @@ -366,7 +366,8 @@ func (ah *authHandler) fetchTokenWithOAuth(ctx context.Context, to tokenOptions)
@@ -45,11 +43,11 @@ index 9652d3a..72a6f3a 100644
  	// As of September 2017, GCR is known to return 404.
  	// As of February 2018, JFrog Artifactory is known to return 401.
 -	if (resp.StatusCode == 405 && to.username != "") || resp.StatusCode == 404 || resp.StatusCode == 401 {
-+	// Current Registry in StarlingX returns 400 for POST /v2/token.
++       // Registry in StarlingX 3.0 returns 400 for POST /v2/token.  Should check if still applicable.
 +	if (resp.StatusCode == 405 && to.username != "") || resp.StatusCode == 404 || resp.StatusCode == 401 || resp.StatusCode == 400 {
  		return ah.fetchToken(ctx, to)
  	} else if resp.StatusCode < 200 || resp.StatusCode >= 400 {
  		b, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 64000)) // 64KB
 -- 
-2.16.6
+2.29.2
 
