@@ -1,0 +1,29 @@
+From 536eac16f1b6636ce4153fa58c74c417c4f69753 Mon Sep 17 00:00:00 2001
+From: Roland Kammerer <roland.kammerer@linbit.com>
+Date: Fri, 12 Jul 2019 13:36:50 +0200
+Subject: [PATCH] netlink: prepare for kernel v5.2
+
+[mvb: Adapted to drbd-utils 8.4.3.]
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ user/libgenl.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/user/libgenl.h b/user/libgenl.h
+index a37493a6e528..b1c3eab345ec 100644
+--- a/user/libgenl.h
++++ b/user/libgenl.h
+@@ -23,6 +23,10 @@
+ #define SOL_NETLINK 270
+ #endif
+ 
++#ifndef NLA_F_NESTED
++#define NLA_F_NESTED 0
++#endif
++
+ #define DEBUG_LEVEL 1
+ 
+ #define dbg(lvl, fmt, arg...)				\
+-- 
+2.29.2
+

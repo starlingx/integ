@@ -46,6 +46,8 @@ Patch0008: 0008-Increase-short-cmd-timeout-to-15-secs.patch
 Patch0009: 0009-Check-for-mounted-device-before-demoting-Primary-DRB.patch
 Patch0010: 0010-backport-drbd-main-ipv6-Fix-interface-indices-larger.patch
 Patch0011: 0011-Unmount-all-targets-during-drbd-stop.patch
+Patch0012: 0012-netlink-prepare-for-kernel-v5.2.patch
+Patch0013: 0013-netlink-Add-NLA_F_NESTED-flag-to-nested-attribute.patch
 
 License: GPLv2+
 ExclusiveOS: linux
@@ -277,6 +279,8 @@ management utility.
 %patch0009 -p1
 %patch0010 -p1
 %patch0011 -p1
+%patch0012 -p1
+%patch0013 -p1
 
 %build
 %configure \
