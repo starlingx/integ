@@ -34,6 +34,7 @@ install -d -m 755 %{buildroot}%{_datadir}/pf-bb-config/acc100
 install -p -D -m 700 pf_bb_config %{buildroot}%{_bindir}/pf_bb_config
 install -p -D -m 700 acc100/acc100_config_1vf_4g5g.cfg %{buildroot}%{_datadir}/pf-bb-config/acc100/acc100_config_1vf_4g5g.cfg
 install -p -D -m 700 acc100/acc100_config_vf_5g.cfg %{buildroot}%{_datadir}/pf-bb-config/acc100/acc100_config_vf_5g.cfg
+install -p -D -m 700 fpga_5gnr/fpga_5gnr_config_vf.cfg %{buildroot}%{_datadir}/pf-bb-config/fpga_5gnr/fpga_5gnr_config_vf.cfg
 install -p -D -m 644 README.md %{buildroot}%{_datadir}/pf-bb-config/README.md
 
 %clean
