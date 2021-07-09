@@ -1,0 +1,27 @@
+From b6b206cdba982d8152191e8e795d15ae29ed993e Mon Sep 17 00:00:00 2001
+From: Andre Fernando Zanella Kantek
+ <AndreFernandoZanella.Kantek@windriver.com>
+Date: Tue, 6 Jul 2021 10:17:40 -0400
+Subject: [PATCH 1/1] dhclient6 remove one shot arg
+
+Signed-off-by: Andre Fernando Zanella Kantek <AndreFernandoZanella.Kantek@windriver.com>
+---
+ sysconfig/network-scripts/ifup-eth | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sysconfig/network-scripts/ifup-eth b/sysconfig/network-scripts/ifup-eth
+index bf3f96b..cb87fd6 100755
+--- a/sysconfig/network-scripts/ifup-eth
++++ b/sysconfig/network-scripts/ifup-eth
+@@ -364,7 +364,7 @@ if is_true "${DHCPV6C}" && [ -x /sbin/dhclient ]; then
+     echo -n $"Determining IPv6 information for ${DEVICE}..."
+
+     # Initialize the dhclient args for IPv6 and obtain the hostname options if needed:
+-    DHCLIENTARGS="-6 -1 ${DHCPV6C_OPTIONS} ${DHCLIENTCONF} -lf ${LEASEFILE} --restrict-interfaces -pf /var/run/dhclient6-${DEVICE}.pid ${DEVICE}"
++    DHCLIENTARGS="-6 ${DHCPV6C_OPTIONS} ${DHCLIENTCONF} -lf ${LEASEFILE} --restrict-interfaces -pf /var/run/dhclient6-${DEVICE}.pid ${DEVICE}"
+     set_hostname_options DHCLIENTARGS
+
+     if /sbin/dhclient $DHCLIENTARGS; then
+--
+2.29.2
+
