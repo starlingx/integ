@@ -10,6 +10,7 @@ Packager: Wind River <info@windriver.com>
 URL: https://github.com/intel/pf-bb-config/tree/v21.6
 Source0: %{name}-%{git_sha}.tar.gz
 Patch0: Reject-device-configuration-if-not-enabled.patch
+Patch1: Fix-check-return-of-configure_device.patch
 
 BuildRequires: gcc
 BuildRequires: inih
@@ -23,6 +24,7 @@ space and sets the various parameters through memory-mapped IO read/writes.
 %prep
 %setup
 %patch0 -p1
+%patch1 -p1
 
 %build
 make
