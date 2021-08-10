@@ -1487,7 +1487,6 @@ echo "log_outputs=\"3:syslog:libvirtd\"" >> %{buildroot}/etc/libvirt/libvirtd.co
 ## We'll need to set up proper authentication later.
 sed -i '/#auth_tcp/a auth_tcp = "none"' %{buildroot}/etc/libvirt/libvirtd.conf
 
-install -d -m 711 %{buildroot}/data/images
 ## Install logrotate files 
 install -d -m 755 %{buildroot}/etc/logrotate.d
 install -p -D -m 644 %{SOURCE2} %{buildroot}/etc/logrotate.d/libvirtd
@@ -1780,9 +1779,6 @@ exit 0
 %endif
 
 %files
-
-# STX: Customization
-%dir /data/images/
 
 %files docs
 # TODO(STX): NEWS is not present in git source repo.
