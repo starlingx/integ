@@ -52,8 +52,11 @@ Obsoletes: docker-registry <= 0.9.1-5
 
 # e.g. el6 has ppc64 arch without gcc-go, so EA tag is required
 ExclusiveArch:  %{?go_arches:%{go_arches}}%{!?go_arches:%{ix86} x86_64 %{arm}}
+
 # If go_compiler is not set to 1, there is no virtual provide. Use golang instead.
-BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
+# Build with our own prefered golang, not 1.11 from CentOS
+# BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
+BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang >= 1.13}
 
 %description
 %{summary}
@@ -223,6 +226,7 @@ sed -i 's/elliptic.P224(), //' vendor/golang.org/x/crypto/ocsp/ocsp.go
 mkdir -p src/github.com/%{project}
 ln -s ../../../ src/%{import_path}
 export GOPATH=$(pwd):$(pwd)/Godeps/_workspace:%{gopath}
+go env -w GO111MODULE=auto
 %gobuild -o bin/registry %{import_path}/cmd/registry
 
 %install

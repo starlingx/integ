@@ -25,7 +25,11 @@ URL: https://github.com/helm/chartmuseum
 BuildRequires: pkgconfig(systemd)
 BuildRequires: pkgconfig(libseccomp)
 BuildRequires: pkgconfig(libsystemd-journal)
-BuildRequires: golang >= 1.10.0
+
+# Build with our own prefered golang, not 1.11 from CentOS
+# BuildRequires: golang >= 1.10.0
+BuildRequires: golang >= 1.13.0
+
 BuildRequires: rsync
 BuildRequires: go-md2man
 BuildRequires: go-bindata
