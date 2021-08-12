@@ -1,9 +1,0 @@
-VERSION=0.9.1
-CON_VERSION=0.9.1
-TAR_NAME=containernetworking-plugins
-TAR="$TAR_NAME-v$VERSION.tar.gz"
-#CONTRIB="$TAR_NAME-contrib-v$CON_VERSION.tar.gz"
-
-COPY_LIST="${CGCS_BASE}/downloads/$TAR"
-
-TIS_PATCH_VER=PKG_GITREVCOUNT
