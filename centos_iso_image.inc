@@ -161,6 +161,7 @@ kubernetes-kubeadm
 kubernetes-client
 containerd
 k8s-pod-recovery
+containernetworking-plugins
 
 # resource-agents
 resource-agents

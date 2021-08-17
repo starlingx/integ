@@ -53,6 +53,7 @@ storage-drivers/trident-installer
 security/tboot
 docker/python-docker
 kubernetes/containerd
+kubernetes/cni/plugins
 kubernetes/kubernetes
 kubernetes/kubernetes-unversioned
 kubernetes/docker-distribution
