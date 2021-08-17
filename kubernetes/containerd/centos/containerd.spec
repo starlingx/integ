@@ -20,7 +20,11 @@ Packager: StarlingX
 BuildRequires: pkgconfig(systemd)
 BuildRequires: pkgconfig(libseccomp)
 BuildRequires: pkgconfig(libsystemd-journal)
-BuildRequires: golang >= 1.12.16
+
+# Build with our own prefered golang
+# BuildRequires: golang >= 1.12.16
+BuildRequires: golang >= 1.13
+
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -60,6 +64,7 @@ rm -rf %{CONTAINERD_DIR}
 mkdir -p %{CONTAINERD_DIR}
 cp -a %{_builddir}/src/containerd/* %{CONTAINERD_DIR}/
 pushd %{CONTAINERD_DIR}
+go env -w GO111MODULE=auto
 make
 popd
 

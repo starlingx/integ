@@ -14,7 +14,10 @@ URL: unknown
 BuildArch: x86_64 
 Source: %name-%version.tar.gz
 
-BuildRequires: golang
+# Build with our own prefered golang, not 1.11 from CentOS
+# BuildRequires: golang
+BuildRequires: golang >= 1.13
+
 BuildRequires: systemd
 Requires: kubernetes-node
 Summary: Kubernetes device plugin for isolcpus 

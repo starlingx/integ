@@ -28,6 +28,9 @@
 %global kube_version            1.18.1
 %global kube_git_version        v%{kube_version}
 
+%global go_version              1.13.9
+%global go_path                 /usr/lib/golang-%{go_version}-%{go_version}/bin
+
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
 %global _buildshell  /bin/bash
 %global _checkshell  /bin/bash
@@ -765,7 +768,7 @@ building other packages which use %{project}/%{repo}.
 Summary: %{summary} - for running unit tests
 
 # below Rs used for testing
-Requires: golang >= 1.13.4
+Requires: golang-%{go_version}
 Requires: etcd >= 2.0.9
 Requires: hostname
 Requires: rsync
@@ -778,7 +781,8 @@ Requires: NetworkManager
 %package master
 Summary: Kubernetes services for master host
 
-BuildRequires: golang >= 1.13.4
+# Build with the recommended golang for this Kubernetes version
+BuildRequires: golang-%{go_version}
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -802,7 +806,7 @@ Requires: docker-ce
 %endif
 Requires: conntrack-tools
 
-BuildRequires: golang >=  1.13.4
+BuildRequires: golang-%{go_version}
 BuildRequires: systemd
 BuildRequires: rsync
 BuildRequires: go-md2man
@@ -828,7 +832,7 @@ Kubernetes tool for standing up clusters
 %package client
 Summary: Kubernetes client tools
 
-BuildRequires: golang >= 1.13.4
+BuildRequires: golang-%{go_version}
 BuildRequires: go-bindata
 
 %description client
@@ -873,12 +877,16 @@ mv $(ls | grep -v "^src$") src/k8s.io/kubernetes/.
 ###############
 
 %build
+export PATH=%{go_path}:$PATH
 export PBR_VERSION=%{version}
 pushd src/k8s.io/kubernetes/
 export KUBE_GIT_TREE_STATE="clean"
 export KUBE_GIT_COMMIT=%{commit}
 export KUBE_GIT_VERSION=%{kube_git_version}
 export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
+
+# Verify the go version we will build against
+go version
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=1392922#c1
 %ifarch ppc64le
