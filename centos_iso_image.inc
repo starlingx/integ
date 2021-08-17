@@ -155,8 +155,7 @@ tboot
 memcached
 
 # kubernetes
-kubernetes
-kubernetes-master
+kubernetes-unversioned
 kubernetes-node
 kubernetes-kubeadm
 kubernetes-client

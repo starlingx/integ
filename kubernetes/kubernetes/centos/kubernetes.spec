@@ -25,19 +25,16 @@
 %global import_path             k8s.io/kubernetes
 %global commit                  1.18.1
 
-%global con_provider            github
-%global con_provider_tld        com
-%global con_project             kubernetes
-%global con_repo                kubernetes-contrib
-# https://github.com/kubernetes/contrib
-%global con_commit              1.18.1
-
 %global kube_version            1.18.1
 %global kube_git_version        v%{kube_version}
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
 %global _buildshell  /bin/bash
 %global _checkshell  /bin/bash
+
+# Used to simplify the paths for install and files
+%global _stage1 %{_exec_prefix}/local/kubernetes/%{kube_version}/stage1
+%global _stage2 %{_exec_prefix}/local/kubernetes/%{kube_version}/stage2
 
 ##############################################
 Name:           kubernetes
@@ -48,15 +45,12 @@ License:        ASL 2.0
 URL:            https://%{import_path}
 ExclusiveArch:  x86_64 aarch64 ppc64le s390x
 Source0:        %{project}-v%{kube_version}.tar.gz
-Source1:        %{con_repo}-v%{con_commit}.tar.gz
-Source3:        kubernetes-accounting.conf
 Source4:        kubeadm.conf
 Source5:        kubelet-cgroup-setup.sh
 
 Source33:       genmanpages.sh
 
 Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
-Patch2: kubelet-service-remove-docker-dependency.patch
 Patch3: fix_http2_erringroundtripper_handling.patch
 Patch4: kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
 Patch5: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
@@ -841,9 +835,15 @@ BuildRequires: go-bindata
 Kubernetes client tools like kubectl
 
 ##############################################
+%package kube-misc
+Summary: dummy package
+%description kube-misc
+Kubernetes dummy package for misc stuff we don't want to
+install in production.
+
+##############################################
 
 %prep
-%setup -q -n %{con_repo}-%{con_commit} -T -b 1
 %setup -q -n %{repo}-%{commit}
 %patch1 -p1
 %patch3 -p1
@@ -854,11 +854,6 @@ Kubernetes client tools like kubectl
 %patch8 -p1
 %patch9 -p1
 %patch10 -p1
-
-# copy contrib folder
-mkdir contrib
-cp -r ../%{con_repo}-%{con_commit}/init contrib/.
-%patch2 -p1
 
 #src/k8s.io/kubernetes/pkg/util/certificates
 # Patch the code to remove eliptic.P224 support
@@ -919,17 +914,19 @@ output_path="${KUBE_OUTPUT_BINPATH}/$(kube::golang::host_platform)"
 %endif
 
 install -m 755 -d %{buildroot}%{_bindir}
+install -m 755 -d %{buildroot}%{_stage1}%{_bindir}
+install -m 755 -d %{buildroot}%{_stage2}%{_bindir}
 
 echo "+++ INSTALLING kube-apiserver"
 install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
 
 echo "+++ INSTALLING kubeadm"
-install -p -m 755 -t %{buildroot}%{_bindir} ${output_path}/kubeadm
-install -d -m 0755 %{buildroot}/%{_sysconfdir}/systemd/system/kubelet.service.d
-install -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system/kubelet.service.d %{SOURCE4}
+install -p -m 755 -t %{buildroot}%{_stage1}%{_bindir} ${output_path}/kubeadm
+install -d -m 0755 %{buildroot}%{_stage2}%{_sysconfdir}/systemd/system/kubelet.service.d
+install -p -m 0644 -t %{buildroot}%{_stage2}%{_sysconfdir}/systemd/system/kubelet.service.d %{SOURCE4}
 
 echo "+++ INSTALLING kubelet-cgroup-setup.sh"
-install -p -m 0700 -t %{buildroot}/%{_bindir} %{SOURCE5}
+install -p -m 0700 -t %{buildroot}%{_stage2}%{_bindir} %{SOURCE5}
 
 echo "+++ INSTALLING kube-apiserver"
 install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
@@ -944,18 +941,14 @@ echo "+++ INSTALLING kube-proxy"
 install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-proxy
 
 echo "+++ INSTALLING kubelet"
-install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kubelet
+install -p -m 754 -t %{buildroot}%{_stage2}%{_bindir} ${output_path}/kubelet
 
 echo "+++ INSTALLING kubectl"
-install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kubectl
+install -p -m 754 -t %{buildroot}%{_stage2}%{_bindir} ${output_path}/kubectl
 
 # install the bash completion
-install -d -m 0755 %{buildroot}%{_datadir}/bash-completion/completions/
-%{buildroot}%{_bindir}/kubectl completion bash > %{buildroot}%{_datadir}/bash-completion/completions/kubectl
-
-# install config files
-install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}
-install -m 644 -t %{buildroot}%{_sysconfdir}/%{name} contrib/init/systemd/environ/*
+install -d -m 0755 %{buildroot}%{_stage2}%{_datadir}/bash-completion/completions/
+%{buildroot}%{_stage2}%{_bindir}/kubectl completion bash > %{buildroot}%{_stage2}%{_datadir}/bash-completion/completions/kubectl
 
 # install specific cluster addons for optional use
 install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons
@@ -966,28 +959,11 @@ install -m 0644 -t %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/crd
 install -d -m 0755 %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller
 install -m 0644 -t %{buildroot}%{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller cluster/addons/volumesnapshots/volume-snapshot-controller/*
 
-# install service files
-install -d -m 0755 %{buildroot}%{_unitdir}
-install -m 0644 -t %{buildroot}%{_unitdir} contrib/init/systemd/*.service
-
 # install manpages
 install -d %{buildroot}%{_mandir}/man1
 install -p -m 644 docs/man/man1/* %{buildroot}%{_mandir}/man1
 rm -Rf %{buildroot}%{_mandir}/man1/cloud-controller-manager.*
 # from k8s tarball copied docs/man/man1/*.1
-
-# install the place the kubelet defaults to put volumes
-install -d %{buildroot}%{_sharedstatedir}/kubelet
-
-# place contrib/init/systemd/tmpfiles.d/kubernetes.conf to /usr/lib/tmpfiles.d/kubernetes.conf
-install -d -m 0755 %{buildroot}%{_tmpfilesdir}
-install -p -m 0644 -t %{buildroot}/%{_tmpfilesdir} contrib/init/systemd/tmpfiles.d/kubernetes.conf
-mkdir -p %{buildroot}/run
-install -d -m 0755 %{buildroot}/run/%{name}/
-
-# enable CPU and Memory accounting
-install -d -m 0755 %{buildroot}/%{_sysconfdir}/systemd/system.conf.d
-install -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system.conf.d %{SOURCE3}
 
 # source codes for building projects
 %if 0%{?with_devel}
@@ -1052,20 +1028,10 @@ fi
 %files master
 %license LICENSE
 %doc *.md
-%{_mandir}/man1/kube-apiserver.1*
-%{_mandir}/man1/kube-controller-manager.1*
-%{_mandir}/man1/kube-scheduler.1*
-%attr(754, -, kube) %caps(cap_net_bind_service=ep) %{_bindir}/kube-apiserver
+%attr(754, -, root) %caps(cap_net_bind_service=ep) %{_bindir}/kube-apiserver
 %{_bindir}/kube-controller-manager
 %{_bindir}/kube-scheduler
-%{_unitdir}/kube-apiserver.service
-%{_unitdir}/kube-controller-manager.service
-%{_unitdir}/kube-scheduler.service
 %dir %{_sysconfdir}/%{name}
-%config(noreplace) %{_sysconfdir}/%{name}/apiserver
-%config(noreplace) %{_sysconfdir}/%{name}/scheduler
-%config(noreplace) %{_sysconfdir}/%{name}/config
-%config(noreplace) %{_sysconfdir}/%{name}/controller-manager
 %dir %{_sysconfdir}/%{name}/addons
 %dir %{_sysconfdir}/%{name}/addons/volumesnapshots
 %dir %{_sysconfdir}/%{name}/addons/volumesnapshots/crd
@@ -1075,49 +1041,25 @@ fi
 %dir %{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller
 %{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller/volume-snapshot-controller-deployment.yaml
 %{_sysconfdir}/%{name}/addons/volumesnapshots/volume-snapshot-controller/rbac-volume-snapshot-controller.yaml
-%dir %{_sysconfdir}/%{name}/
-%{_tmpfilesdir}/kubernetes.conf
-%verify(not size mtime md5) %attr(755, kube,kube) %dir /run/%{name}
 
 ##############################################
 %files node
 %license LICENSE
-%doc *.md
-%{_mandir}/man1/kubelet.1*
-%{_mandir}/man1/kube-proxy.1*
-%{_bindir}/kubelet
-%{_bindir}/kubelet-cgroup-setup.sh
-%{_bindir}/kube-proxy
-%{_unitdir}/kube-proxy.service
-%{_unitdir}/kubelet.service
-%dir %{_sharedstatedir}/kubelet
-%dir %{_sysconfdir}/%{name}
-%config(noreplace) %{_sysconfdir}/%{name}/config
-%config(noreplace) %{_sysconfdir}/%{name}/kubelet
-%config(noreplace) %{_sysconfdir}/%{name}/kubelet.kubeconfig
-%config(noreplace) %{_sysconfdir}/%{name}/proxy
-%config(noreplace) %{_sysconfdir}/systemd/system.conf.d/kubernetes-accounting.conf
-%{_tmpfilesdir}/kubernetes.conf
-%verify(not size mtime md5) %attr(755, kube,kube) %dir /run/%{name}
+%{_stage2}%{_bindir}/kubelet
+%{_stage2}%{_bindir}/kubelet-cgroup-setup.sh
 
 ##############################################
 %files kubeadm
 %license LICENSE
-%doc *.md
-%{_mandir}/man1/kubeadm.1*
-%{_mandir}/man1/kubeadm-*
-%{_bindir}/kubeadm
-%dir %{_sysconfdir}/systemd/system/kubelet.service.d
-%config(noreplace) %{_sysconfdir}/systemd/system/kubelet.service.d/kubeadm.conf
+%{_stage1}%{_bindir}/kubeadm
+%dir %{_stage2}%{_sysconfdir}/systemd/system/kubelet.service.d
+%config(noreplace) %{_stage2}%{_sysconfdir}/systemd/system/kubelet.service.d/kubeadm.conf
 
 ##############################################
 %files client
 %license LICENSE
-%doc *.md
-%{_mandir}/man1/kubectl.1*
-%{_mandir}/man1/kubectl-*
-%{_bindir}/kubectl
-%{_datadir}/bash-completion/completions/kubectl
+%{_stage2}%{_bindir}/kubectl
+%{_stage2}%{_datadir}/bash-completion/completions/kubectl
 
 ##############################################
 %files unit-test
@@ -1130,11 +1072,21 @@ fi
 %endif
 
 ##############################################
+%files kube-misc
+%{_mandir}/man1/kube-apiserver.1*
+%{_mandir}/man1/kube-controller-manager.1*
+%{_mandir}/man1/kube-scheduler.1*
+%{_mandir}/man1/kube-proxy.1*
+%{_bindir}/kube-proxy
+%{_mandir}/man1/kubelet.1*
+%{_mandir}/man1/kubeadm.1*
+%{_mandir}/man1/kubeadm-*
+%{_mandir}/man1/kubectl.1*
+%{_mandir}/man1/kubectl-*
+
+##############################################
 
 %pre master
-getent group kube >/dev/null || groupadd -r kube
-getent passwd kube >/dev/null || useradd -r -g kube -d / -s /sbin/nologin \
-        -c "Kubernetes user" kube
 
 %post master
 %systemd_post kube-apiserver kube-scheduler kube-controller-manager
@@ -1147,19 +1099,10 @@ getent passwd kube >/dev/null || useradd -r -g kube -d / -s /sbin/nologin \
 
 
 %pre node
-getent group kube >/dev/null || groupadd -r kube
-getent passwd kube >/dev/null || useradd -r -g kube -d / -s /sbin/nologin \
-        -c "Kubernetes user" kube
 
 %post node
-%systemd_post kubelet kube-proxy
-# If accounting is not currently enabled systemd reexec
-if [[ `systemctl show docker kubelet | grep -q -e CPUAccounting=no -e MemoryAccounting=no; echo $?` -eq 0 ]]; then
-  systemctl daemon-reexec
-fi
 
 %preun node
-%systemd_preun kubelet kube-proxy
 
 %postun node
 %systemd_postun
