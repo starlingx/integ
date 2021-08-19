@@ -22,6 +22,7 @@ BuildRequires: systemd
 Requires: kubernetes-node
 Summary: Kubernetes device plugin for isolcpus 
 
+%define debug_package %{nil}
 %description
 Expose isolated CPUs to Kubernetes as devices via the device plugin API
 
