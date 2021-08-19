@@ -28,6 +28,7 @@ puppet-staging-1.0.4-1.b466d93git.el7.src.rpm
 puppet-stdlib-4.18.0-2.el7.src.rpm
 python-docker-3.3.0-1.el7.src.rpm
 python-keyring-5.7.1-1.el7.src.rpm
+python-kubernetes-8.0.0-8.el7.src.rpm
 python-psycopg2-2.5.1-3.el7.src.rpm
 python-voluptuous-0.8.9-1.el7.src.rpm
 resource-agents-4.1.1-12.el7_6.7.src.rpm

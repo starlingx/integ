@@ -1,0 +1,31 @@
+From b68ca3055178e31a5d87a0a98780e4987a4d23ae Mon Sep 17 00:00:00 2001
+From: Nabarun Pal <pal.nabarun95@gmail.com>
+Date: Thu, 16 Jul 2020 14:08:44 +0530
+Subject: [PATCH 10/13] Fixes codestyle failures
+
+Signed-off-by: Nabarun Pal <pal.nabarun95@gmail.com>
+---
+ watch/watch.py | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/watch/watch.py b/watch/watch.py
+index 6410dfa..3058ed9 100644
+--- a/watch/watch.py
++++ b/watch/watch.py
+@@ -171,9 +171,10 @@ class Watch(object):
+                                 retry_after_410 = True
+                                 break
+                             else:
+-                                reason = "%s: %s" % (obj['reason'], obj['message'])
+-                                raise client.rest.ApiException(status=obj['code'],
+-                                                               reason=reason)
++                                reason = "%s: %s" % (
++                                    obj['reason'], obj['message'])
++                                raise client.rest.ApiException(
++                                    status=obj['code'], reason=reason)
+                         else:
+                             retry_after_410 = False
+                             yield event
+-- 
+2.25.1
+

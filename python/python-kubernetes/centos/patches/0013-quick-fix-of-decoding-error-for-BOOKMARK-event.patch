@@ -1,0 +1,29 @@
+From 10ae4760b53a917116ae7525a7bbc94f35632cfb Mon Sep 17 00:00:00 2001
+From: Yu Liao <yliao@google.com>
+Date: Mon, 12 Apr 2021 17:17:42 -0700
+Subject: [PATCH 13/13] quick fix of decoding error for BOOKMARK event
+
+---
+ watch/watch.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/watch/watch.py b/watch/watch.py
+index 3bbb770..71fd459 100644
+--- a/watch/watch.py
++++ b/watch/watch.py
+@@ -96,7 +96,11 @@ class Watch(object):
+     def unmarshal_event(self, data, return_type):
+         js = json.loads(data)
+         js['raw_object'] = js['object']
+-        if return_type and js['type'] != 'ERROR':
++        # BOOKMARK event is treated the same as ERROR for a quick fix of
++        # decoding exception
++        # TODO: make use of the resource_version in BOOKMARK event for more
++        # efficient WATCH
++        if return_type and js['type'] != 'ERROR' and js['type'] != 'BOOKMARK':
+             obj = SimpleNamespace(data=json.dumps(js['raw_object']))
+             js['object'] = self._api_client.deserialize(obj, return_type)
+             if hasattr(js['object'], 'metadata'):
+-- 
+2.25.1
+

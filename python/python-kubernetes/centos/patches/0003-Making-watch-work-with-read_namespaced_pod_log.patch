@@ -1,0 +1,76 @@
+From 8e6f0435a38e24aac700d9ebac700bdf6138ba8c Mon Sep 17 00:00:00 2001
+From: Mitar <mitar.git@tnode.com>
+Date: Mon, 15 Oct 2018 23:57:46 -0700
+Subject: [PATCH 03/13] Making watch work with read_namespaced_pod_log.
+
+Fixes https://github.com/kubernetes-client/python/issues/199.
+---
+ watch/watch.py | 21 +++++++++++++++++----
+ 1 file changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/watch/watch.py b/watch/watch.py
+index bdf24f1..79b2358 100644
+--- a/watch/watch.py
++++ b/watch/watch.py
+@@ -20,6 +20,7 @@ import pydoc
+ from kubernetes import client
+ 
+ PYDOC_RETURN_LABEL = ":return:"
++PYDOC_FOLLOW_PARAM = ":param bool follow:"
+ 
+ # Removing this suffix from return type name should give us event's object
+ # type. e.g., if list_namespaces() returns "NamespaceList" type,
+@@ -65,7 +66,7 @@ class Watch(object):
+         self._raw_return_type = return_type
+         self._stop = False
+         self._api_client = client.ApiClient()
+-        self.resource_version = 0
++        self.resource_version = None
+ 
+     def stop(self):
+         self._stop = True
+@@ -78,8 +79,17 @@ class Watch(object):
+             return return_type[:-len(TYPE_LIST_SUFFIX)]
+         return return_type
+ 
++    def get_watch_argument_name(self, func):
++        if PYDOC_FOLLOW_PARAM in pydoc.getdoc(func):
++            return 'follow'
++        else:
++            return 'watch'
++
+     def unmarshal_event(self, data, return_type):
+-        js = json.loads(data)
++        try:
++            js = json.loads(data)
++        except ValueError:
++            return data
+         js['raw_object'] = js['object']
+         if return_type:
+             obj = SimpleNamespace(data=json.dumps(js['raw_object']))
+@@ -122,7 +132,7 @@ class Watch(object):
+ 
+         self._stop = False
+         return_type = self.get_return_type(func)
+-        kwargs['watch'] = True
++        kwargs[self.get_watch_argument_name(func)] = True
+         kwargs['_preload_content'] = False
+         if 'resource_version' in kwargs:
+             self.resource_version = kwargs['resource_version']
+@@ -136,9 +146,12 @@ class Watch(object):
+                     if self._stop:
+                         break
+             finally:
+-                kwargs['resource_version'] = self.resource_version
+                 resp.close()
+                 resp.release_conn()
++                if self.resource_version is not None:
++                    kwargs['resource_version'] = self.resource_version
++                else:
++                    break
+ 
+             if timeouts or self._stop:
+                 break
+-- 
+2.25.1
+

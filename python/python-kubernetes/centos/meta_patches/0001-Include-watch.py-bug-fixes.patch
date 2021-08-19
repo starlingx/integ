@@ -1,0 +1,95 @@
+From b33ab116b3a32578131712e9a450eb6c88782ef6 Mon Sep 17 00:00:00 2001
+From: Kyle MacLeod <kyle.macleod@windriver.com>
+Date: Tue, 17 Aug 2021 10:25:31 -0400
+Subject: [PATCH] Include watch.py bug fixes
+
+Patches watch.py up to commit 10ae476 in the 'base' repo
+(kubernetes-client/python-base).
+---
+ SPECS/python-kubernetes.spec | 45 +++++++++++++++++++++++++++++++++---
+ 1 file changed, 42 insertions(+), 3 deletions(-)
+
+diff --git a/SPECS/python-kubernetes.spec b/SPECS/python-kubernetes.spec
+index 87c48ca..1c6fb59 100644
+--- a/SPECS/python-kubernetes.spec
++++ b/SPECS/python-kubernetes.spec
+@@ -21,7 +21,7 @@ Source2:    make-adal-optional.patch
+
+ Name:       python-%{library}
+ Version:    8.0.0
+-Release:    8%{?dist}
++Release:    8.el7%{?_tis_dist}.%{tis_patch_ver}
+ Summary:    Python client for the kubernetes API.
+ License:    ASL 2.0
+ URL:        https://pypi.python.org/pypi/kubernetes
+@@ -30,6 +30,20 @@ Source0:    https://github.com/kubernetes-incubator/client-python/archive/v%{ver
+ Source1:    https://github.com/kubernetes-client/python-base/archive/83ebb9d5fdc0d46bbb2e30afcd8eec42c5da4ad1.tar.gz
+ BuildArch:  noarch
+
++Source3: 0001-Verify-Boilerplate-fix.patch
++Source4: 0002-fix-watching-with-a-specified-resource-version.patch
++Source5: 0003-Making-watch-work-with-read_namespaced_pod_log.patch
++Source6: 0004-Don-t-use-break-inside-finally.patch
++Source7: 0005-Remove-all-shebangs-from-Python-modules-and-checker.patch
++Source8: 0006-Fixed-Watch.unmarshal_event-when-data-is-not-a-JSON-.patch
++Source9: 0007-watch-stream-stop-unmarshalling-when-streaming-log.patch
++Source10: 0008-Retry-watch-if-request-expires.patch
++Source11: 0009-Fix-a-Python-2-compatibility-issue.patch
++Source12: 0010-Fixes-codestyle-failures.patch
++Source13: 0011-Fix-Watch-retries-with-410-errors.patch
++Source14: 0012-Fixes-kubernetes-client-python-issue-1047-ResponseNo.patch
++Source15: 0013-quick-fix-of-decoding-error-for-BOOKMARK-event.patch
++
+ %if 0%{?with_python2}
+ %package -n python2-%{library}
+ Summary:    Kubernetes Python Client
+@@ -133,11 +147,34 @@ mv python-base-83ebb9d5fdc0d46bbb2e30afcd8eec42c5da4ad1 base
+ %if 0%{?rhel} == 7
+ patch -p1 < %{SOURCE2}
+ %endif
++
++# Apply StarlingX patches.
++# The patches are taken from the context of the 'base' directory
++# which is a git submodule.
++# We have to use redirection since we can't run the patches
++# via autosetup due to the above tarball extraction:
++pushd base
++patch -p1 < %{SOURCE3}
++patch -p1 < %{SOURCE4}
++patch -p1 < %{SOURCE5}
++patch -p1 < %{SOURCE6}
++patch -p1 < %{SOURCE7}
++patch -p1 < %{SOURCE8}
++patch -p1 < %{SOURCE9}
++patch -p1 < %{SOURCE10}
++patch -p1 < %{SOURCE11}
++patch -p1 < %{SOURCE12}
++patch -p1 < %{SOURCE13}
++patch -p1 < %{SOURCE14}
++patch -p1 < %{SOURCE15}
++popd
+ popd
+
+ %build
+ %if 0%{?with_python2}
+-%py2_build
++# NOTE: py2_build macro is called py_build in our loadbuild servers
++# %py2_build
++%py_build
+ %endif
+ %if 0%{?with_python3}
+ %py3_build
+@@ -159,7 +196,9 @@ sphinx-build doc/source/ html
+
+ %install
+ %if 0%{?with_python2}
+-%py2_install
++# NOTE: py2_install macro is called py_install in our loadbuild servers
++# %py2_install
++%py_install
+ cp -pr kubernetes/test %{buildroot}%{python2_sitelib}/%{library}/
+ cp -pr kubernetes/e2e_test %{buildroot}%{python2_sitelib}/%{library}/
+ %endif
+--
+2.25.1
+

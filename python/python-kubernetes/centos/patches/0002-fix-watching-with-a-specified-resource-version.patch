@@ -1,0 +1,41 @@
+From 3c30a3099336a5976074c18ea61814646689b4a8 Mon Sep 17 00:00:00 2001
+From: Julian Taylor <juliantaylor108@gmail.com>
+Date: Sat, 19 Jan 2019 12:38:57 +0100
+Subject: [PATCH 02/13] fix watching with a specified resource version
+
+The watch code reset the version to the last found in the
+response.
+When you first list existing objects and then start watching from that
+resource version the existing versions are older than the version you
+wanted and the watch starts from the wrong version after the first
+restart.
+This leads to for example already deleted objects ending in the stream
+again.
+
+Fix this by setting the minimum resource version to reset from to the
+input resource version. As long as k8s returns all objects in order in
+the watch this should work.
+We cannot use the integer value of the resource version to order it as
+one should be treat the value as opaque.
+
+Closes https://github.com/kubernetes-client/python/issues/700
+---
+ watch/watch.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/watch/watch.py b/watch/watch.py
+index 21899dd..a9c315c 100644
+--- a/watch/watch.py
++++ b/watch/watch.py
+@@ -122,6 +122,8 @@ class Watch(object):
+         return_type = self.get_return_type(func)
+         kwargs['watch'] = True
+         kwargs['_preload_content'] = False
++        if 'resource_version' in kwargs:
++            self.resource_version = kwargs['resource_version']
+ 
+         timeouts = ('timeout_seconds' in kwargs)
+         while True:
+-- 
+2.25.1
+

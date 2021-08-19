@@ -1,0 +1,31 @@
+From 90399663f378b33227f723d3f0c1677965b6d96b Mon Sep 17 00:00:00 2001
+From: Darren Hague <d.hague@sap.com>
+Date: Thu, 8 Apr 2021 13:49:46 +0100
+Subject: [PATCH 12/13] Fixes kubernetes-client/python issue 1047
+ "ResponseNotChunked from watch"
+
+In recent versions of K8S (>1.16?), when a `Watch.stream()` call uses a
+resource_version which is too old the resulting 410 error is wrapped in JSON
+and returned in a non-chunked 200 response. Using `resp.stream()` instead of
+`resp.read_chunked()` automatically handles the response being either chunked or
+non-chunked.
+---
+ watch/watch.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/watch/watch.py b/watch/watch.py
+index b432778..3bbb770 100644
+--- a/watch/watch.py
++++ b/watch/watch.py
+@@ -53,7 +53,7 @@ def _find_return_type(func):
+ 
+ def iter_resp_lines(resp):
+     prev = ""
+-    for seg in resp.read_chunked(decode_content=False):
++    for seg in resp.stream(amt=None, decode_content=False):
+         if isinstance(seg, bytes):
+             seg = seg.decode('utf8')
+         seg = prev + seg
+-- 
+2.25.1
+

@@ -1,0 +1,26 @@
+From 972a76a83d0133b45db03495b0f9fd05ed2b94a3 Mon Sep 17 00:00:00 2001
+From: Mitar <mitar.git@tnode.com>
+Date: Wed, 20 Feb 2019 23:56:38 -0800
+Subject: [PATCH 04/13] Don't use break inside finally.
+
+It swallows exceptions.
+---
+ watch/watch.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/watch/watch.py b/watch/watch.py
+index 79b2358..5966eac 100644
+--- a/watch/watch.py
++++ b/watch/watch.py
+@@ -151,7 +151,7 @@ class Watch(object):
+                 if self.resource_version is not None:
+                     kwargs['resource_version'] = self.resource_version
+                 else:
+-                    break
++                    self._stop = True
+ 
+             if timeouts or self._stop:
+                 break
+-- 
+2.25.1
+
