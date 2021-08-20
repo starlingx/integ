@@ -23,12 +23,12 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.18.1
+%global commit                  1.19.13
 
-%global kube_version            1.18.1
+%global kube_version            1.19.13
 %global kube_git_version        v%{kube_version}
 
-%global go_version              1.13.9
+%global go_version              1.15.14
 %global go_path                 /usr/lib/golang-%{go_version}-%{go_version}/bin
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -40,7 +40,7 @@
 %global _stage2 %{_exec_prefix}/local/kubernetes/%{kube_version}/stage2
 
 ##############################################
-Name:           kubernetes
+Name:           kubernetes-%{kube_version}
 Version:        %{kube_version}
 Release:        1%{?_tis_dist}.%{tis_patch_ver}
 Summary:        Container cluster management
@@ -53,23 +53,20 @@ Source5:        kubelet-cgroup-setup.sh
 
 Source33:       genmanpages.sh
 
-Patch1: 0001-Fix-pagesize-check-to-allow-for-options-already-endi.patch
-Patch3: fix_http2_erringroundtripper_handling.patch
-Patch4: kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
-Patch5: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
-Patch6: kubelet-cpumanager-infrastructure-pods-use-system-re.patch
-Patch7: kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
-Patch8: Fix-exclusive-CPU-allocations-being-deleted-at-conta.patch
-Patch9: kubeadm-create-platform-pods-with-zero-CPU-resources.patch
-Patch10: add-option-to-disable-isolcpu-awareness.patch
+Patch1: kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
+Patch2: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
+Patch3: kubelet-cpumanager-infrastructure-pods-use-system-re.patch
+Patch4: kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
+Patch5: kubeadm-create-platform-pods-with-zero-CPU-resources.patch
+Patch6: enable-support-for-kubernetes-to-ignore-isolcpus.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
 
 # kubernetes is decomposed into master and node subpackages
 # require both of them for updates
-Requires: kubernetes-master
-Requires: kubernetes-node
+Requires: kubernetes-%{kube_version}-master
+Requires: kubernetes-%{kube_version}-node
 
 %description
 %{summary}
@@ -789,7 +786,7 @@ BuildRequires: go-md2man
 BuildRequires: go-bindata
 
 Requires(pre): shadow-utils
-Requires: kubernetes-client
+Requires: kubernetes-%{kube_version}-client
 
 %description master
 Kubernetes services for master host
@@ -814,7 +811,7 @@ BuildRequires: go-bindata
 
 Requires(pre): shadow-utils
 Requires:      socat
-Requires:      kubernetes-client
+Requires:      kubernetes-%{kube_version}-client
 
 %description node
 Kubernetes services for node host
@@ -822,7 +819,7 @@ Kubernetes services for node host
 ##############################################
 %package  kubeadm
 Summary:  Kubernetes tool for standing up clusters
-Requires: kubernetes-client
+Requires: kubernetes-%{kube_version}-client
 Requires: containernetworking-cni
 
 %description kubeadm
@@ -850,14 +847,11 @@ install in production.
 %prep
 %setup -q -n %{repo}-%{commit}
 %patch1 -p1
+%patch2 -p1
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
 
 #src/k8s.io/kubernetes/pkg/util/certificates
 # Patch the code to remove eliptic.P224 support
@@ -910,6 +904,8 @@ popd
 popd
 
 %install
+# go_path required for setup_env golang version check
+export PATH=%{go_path}:$PATH
 export PBR_VERSION=%{version}
 pushd src/k8s.io/kubernetes/
 . hack/lib/init.sh

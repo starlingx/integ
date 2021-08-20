@@ -156,9 +156,12 @@ memcached
 
 # kubernetes
 kubernetes-unversioned
-kubernetes-node
-kubernetes-kubeadm
-kubernetes-client
+kubernetes-1.18.1-node
+kubernetes-1.18.1-kubeadm
+kubernetes-1.18.1-client
+kubernetes-1.19.13-node
+kubernetes-1.19.13-kubeadm
+kubernetes-1.19.13-client
 containerd
 k8s-pod-recovery
 containernetworking-plugins

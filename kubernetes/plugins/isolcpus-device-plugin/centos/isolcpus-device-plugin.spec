@@ -19,7 +19,7 @@ Source: %name-%version.tar.gz
 BuildRequires: golang >= 1.13
 
 BuildRequires: systemd
-Requires: kubernetes-node
+Requires: kubernetes-unversioned
 Summary: Kubernetes device plugin for isolcpus 
 
 %define debug_package %{nil}
