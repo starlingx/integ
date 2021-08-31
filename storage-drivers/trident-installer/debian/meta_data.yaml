@@ -1,0 +1,10 @@
+---
+debname: trident-installer
+debver: 20.04.0-0
+dl_path:
+  name: trident-installer-20.04.0.tar.gz
+  url: https://github.com/NetApp/trident/releases/download/v20.04.0/trident-installer-20.04.0.tar.gz
+  md5sum: a4517756893dc2f373a86048868c4b2f
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

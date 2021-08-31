@@ -1,0 +1,16 @@
+Source: trident-installer
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: trident-installer
+Architecture: all
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+ libc6,
+ nfs-common
+Description: Netapp Trident-installer
+ https://netapp-trident.readthedocs.io/en/stable-v20.04/introduction.html
