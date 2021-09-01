@@ -1,0 +1,45 @@
+From 250304ce7a6f31e3999d128183fe299b99ec95aa Mon Sep 17 00:00:00 2001
+From: Javier Martinez Canillas <javierm@redhat.com>            
+Date: Mon, 24 Aug 2020 14:46:27 +0200
+Subject: [PATCH] tftp: roll over block counter to prevent timeouts with data
+ packets
+
+The block number is a 16-bit counter which only allows to fetch
+files no bigger than 65535 * blksize. To avoid this limit, the
+counter is rolled over. This behavior isn't defined in RFC 1350
+but is handled by many TFTP servers and it's what GRUB was doing
+before implicitly due an overflow.
+
+Suggested-by: Peter Jones <pjones@redhat.com>
+Signed-off-by: Javier Martinez Canillas <javierm@redhat.com>
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ grub-core/net/tftp.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/grub-core/net/tftp.c b/grub-core/net/tftp.c
+index 79c16f9..eab9ab7 100644
+--- a/grub-core/net/tftp.c
++++ b/grub-core/net/tftp.c
+@@ -183,8 +183,16 @@ tftp_receive (grub_net_udp_socket_t sock __attribute__ ((unused)),
+ 	  return GRUB_ERR_NONE;
+ 	}
+ 
+-      /* Ack old/retransmitted block. */
+-      if (grub_be_to_cpu16 (tftph->u.data.block) < data->block + 1)
++      /*
++       * Ack old/retransmitted block.
++       *
++       * The block number is a 16-bit counter which only allows to fetch
++       * files no bigger than 65535 * blksize. To avoid this limit, the
++       * counter is rolled over. This behavior isn't defined in RFC 1350
++       * but is handled by many TFTP servers and it's what GRUB was doing
++       * before implicitly due an overflow.
++       */
++      if (grub_be_to_cpu16 (tftph->u.data.block) < ((data->block + 1) & 0xffffu))
+ 	ack (data, grub_be_to_cpu16 (tftph->u.data.block));
+       /* Ignore unexpected block. */
+       else if (grub_be_to_cpu16 (tftph->u.data.block) > data->block + 1)
+-- 
+2.31.1
+
