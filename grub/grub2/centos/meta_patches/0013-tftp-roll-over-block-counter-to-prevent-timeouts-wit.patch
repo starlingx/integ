@@ -1,0 +1,23 @@
+From cff7cf7787b4619a7cbbe5ccbbfeced54999ad70 Mon Sep 17 00:00:00 2001
+From: jma1 <jma1@opendev.org>
+Date: Mon, 30 Aug 2021 06:27:13 +0000
+Subject: [PATCH] tftp: roll over block counter to prevent timeouts with data
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ grub.patches | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/grub.patches b/grub.patches
+index 678ba4b..ece014a 100644
+--- a/SOURCES/grub.patches
++++ b/SOURCES/grub.patches
+@@ -335,4 +335,5 @@ Patch0334: 0334-linux-Fix-integer-overflows-in-initrd-size-handling.patch
+ Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
+ Patch1001: 1001-add-tboot.patch
+ Patch1002: 1002-Don-t-write-trailing-colon-when-populating-MAC-strin.patch
++Patch1003: 1003-tftp-roll-over-block-counter-to-prevent-timeouts-wit.patch
+ 
+-- 
+2.29.2
+
