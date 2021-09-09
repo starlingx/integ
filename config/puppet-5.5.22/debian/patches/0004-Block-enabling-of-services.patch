@@ -1,0 +1,97 @@
+From eff536de54dacaef995bcd709647222534c40620 Mon Sep 17 00:00:00 2001
+From: Al Bailey <Al.Bailey@windriver.com>
+Date: Wed, 4 Oct 2017 14:31:23 -0500
+Subject: [PATCH 4/5] Block enabling of services
+
+---
+ lib/puppet/provider/service/debian.rb  | 16 ++++++++++------
+ lib/puppet/provider/service/redhat.rb  |  7 ++++---
+ lib/puppet/provider/service/systemd.rb |  5 +++--
+ 3 files changed, 17 insertions(+), 11 deletions(-)
+
+diff --git a/lib/puppet/provider/service/debian.rb b/lib/puppet/provider/service/debian.rb
+index e0fdd42..36e2747 100644
+--- a/lib/puppet/provider/service/debian.rb
++++ b/lib/puppet/provider/service/debian.rb
+@@ -16,6 +16,7 @@ Puppet::Type.type(:service).provide :debian, :parent => :init do
+   # is resolved.
+   commands :invoke_rc => "/usr/sbin/invoke-rc.d"
+   commands :service => "/usr/sbin/service"
++  commands :noop => "/bin/true"
+   optional_commands :systemctl => "/bin/systemctl"
+ 
+   defaultfor :operatingsystem => :cumuluslinux, :operatingsystemmajrelease => ['1','2']
+@@ -96,12 +97,15 @@ Puppet::Type.type(:service).provide :debian, :parent => :init do
+   end
+ 
+   def enable
+-    if self.class.runs_on_systemd?
+-      systemctl(:enable, @resource[:name])
+-    else
+-      update_rc @resource[:name], "defaults"
+-      update_rc @resource[:name], "enable"
+-    end
++    # if self.class.runs_on_systemd?
++    #   systemctl(:enable, @resource[:name])
++    # else
++    #   update_rc @resource[:name], "defaults"
++    #   update_rc @resource[:name], "enable"
++    # end
++
++    # Do not enable services
++    noop(@resource[:name])
+   end
+ 
+   # The start, stop, restart and status command use service
+diff --git a/lib/puppet/provider/service/redhat.rb b/lib/puppet/provider/service/redhat.rb
+index 20c6afe..d0d852e 100644
+--- a/lib/puppet/provider/service/redhat.rb
++++ b/lib/puppet/provider/service/redhat.rb
+@@ -7,6 +7,7 @@ Puppet::Type.type(:service).provide :redhat, :parent => :init, :source => :init
+   "
+ 
+   commands :chkconfig => "/sbin/chkconfig", :service => "/sbin/service"
++  commands :noop => "/bin/true"
+ 
+   defaultfor :osfamily => :redhat
+   defaultfor :osfamily => :suse, :operatingsystemmajrelease => ["10", "11"]
+@@ -43,10 +44,10 @@ Puppet::Type.type(:service).provide :redhat, :parent => :init, :source => :init
+   # Don't support them specifying runlevels; always use the runlevels
+   # in the init scripts.
+   def enable
+-      chkconfig("--add", @resource[:name])
+-      chkconfig(@resource[:name], :on)
++    # Do not enable services
++    noop(@resource[:name])
+   rescue Puppet::ExecutionFailure => detail
+-    raise Puppet::Error, "Could not enable #{self.name}: #{detail}", detail.backtrace
++    raise Puppet::Error, "Could not enable #{self.name}", detail.backtrace
+   end
+ 
+   def initscript
+diff --git a/lib/puppet/provider/service/systemd.rb b/lib/puppet/provider/service/systemd.rb
+index a0f2d0a..d9a2741 100644
+--- a/lib/puppet/provider/service/systemd.rb
++++ b/lib/puppet/provider/service/systemd.rb
+@@ -10,6 +10,7 @@ Puppet::Type.type(:service).provide :systemd, :parent => :base do
+   providing the proper suffix."
+ 
+   commands :systemctl => "systemctl"
++  commands :noop => "/bin/true"
+ 
+   confine :true => Puppet::FileSystem.exist?('/proc/1/comm') && Puppet::FileSystem.read('/proc/1/comm').include?('systemd')
+ 
+@@ -135,8 +136,8 @@ Puppet::Type.type(:service).provide :systemd, :parent => :base do
+   end
+ 
+   def enable
+-    self.unmask
+-    systemctl_change_enable(:enable)
++    #systemctl_change_enable(:enable)
++    [command(:noop), @resource[:name]]
+   end
+ 
+   def mask
+-- 
+2.16.6
+
