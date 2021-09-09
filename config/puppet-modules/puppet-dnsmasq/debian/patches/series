@@ -1,0 +1,4 @@
+0001-puppet-dnsmasq-Kilo-quilt-patches.patch
+0002-Fixing-mismatched-permission-on-dnsmasq-conf.patch
+0003-Support-management-of-tftp_max-option.patch
+0004-Enable-clear-DNS-cache-on-reload.patch

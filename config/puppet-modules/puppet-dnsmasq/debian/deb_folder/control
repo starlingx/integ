@@ -1,0 +1,17 @@
+Source: puppet-dnsmasq
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: puppet-dnsmasq
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+ puppet,
+ puppet-puppi,
+ puppet-module-puppetlabs-concat
+Description: Puppet module named puppet-dnsmasq
+ A Puppet module to configure dnsmasq
