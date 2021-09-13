@@ -1,25 +1,27 @@
-From dce66cbf8eb0a132592039934629f4ceea6fed6f Mon Sep 17 00:00:00 2001
+From da79b26cb5749800112c38cb55b1135f78c3433a Mon Sep 17 00:00:00 2001
+Message-Id: <da79b26cb5749800112c38cb55b1135f78c3433a.1630421052.git.Jim.Somerville@windriver.com>
 From: Cole Walker <cole.walker@windriver.com>
 Date: Mon, 21 Jun 2021 15:24:03 -0400
-Subject: [PATCH] Update package versioning for STX format
+Subject: [PATCH 1/2] Update package versioning for STX format
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/linuxptp.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/linuxptp.spec b/SPECS/linuxptp.spec
-index 6d97f12..60f340f 100644
+index 5ec953e..903eb79 100644
 --- a/SPECS/linuxptp.spec
 +++ b/SPECS/linuxptp.spec
-@@ -3,7 +3,7 @@
- %global clknetsim_ver 8b4842
+@@ -4,7 +4,7 @@
+ 
  Name:		linuxptp
- Version:	2.0
--Release:	2%{?dist}
-+Release:	2%{?_tis_dist}.%{tis_patch_ver}
+ Version:	3.1.1
+-Release:	1%{?dist}
++Release:	1%{?_tis_dist}.%{tis_patch_ver}
  Summary:	PTP implementation for Linux
-
+ 
  Group:		System Environment/Base
---
+-- 
 2.29.2
 
