@@ -1,0 +1,110 @@
+From fce7ccadec4911ccb9961dc7e915098975464a6a Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Mon, 13 Sep 2021 19:33:41 +0300
+Subject: [PATCH] Adapt first legacy patches
+
+Adapt 0001-Roll-up-TIS-patches.patch from CentOS.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ lib/puppet/provider/rabbitmq_policy/rabbitmqctl.rb | 6 ++++++
+ manifests/config.pp                                | 2 +-
+ manifests/init.pp                                  | 3 +++
+ manifests/install/rabbitmqadmin.pp                 | 3 ++-
+ manifests/params.pp                                | 1 +
+ 5 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/lib/puppet/provider/rabbitmq_policy/rabbitmqctl.rb b/lib/puppet/provider/rabbitmq_policy/rabbitmqctl.rb
+index 2082c7c..f9ea18b 100644
+--- a/lib/puppet/provider/rabbitmq_policy/rabbitmqctl.rb
++++ b/lib/puppet/provider/rabbitmq_policy/rabbitmqctl.rb
+@@ -112,6 +112,12 @@ Puppet::Type.type(:rabbitmq_policy).provide(:rabbitmqctl, parent: Puppet::Provid
+     resource[:definition] ||= definition
+     resource[:pattern]    ||= pattern
+     resource[:priority]   ||= priority
++    # WRS. Values passed in from packstack are in string format. These need
++    # to be converted back to integer for certain parameters (e.g. max-length,
++    # expires)
++    if (resource[:definition].keys & ["max-length", "expires"]).any?
++      resource[:definition].each {|k,v| resource[:definition][k] = v.to_i}
++    end
+     # rabbitmq>=3.2.0
+     if Puppet::Util::Package.versioncmp(self.class.rabbitmq_version, '3.2.0') >= 0
+       rabbitmqctl(
+diff --git a/manifests/config.pp b/manifests/config.pp
+index cb8c748..b85a312 100644
+--- a/manifests/config.pp
++++ b/manifests/config.pp
+@@ -142,7 +142,7 @@ class rabbitmq::config {
+     ensure => directory,
+     owner  => '0',
+     group  => '0',
+-    mode   => '0755',
++    mode   => '0750',
+   }
+ 
+   file { '/etc/rabbitmq/ssl':
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 84deff5..61ffcee 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -291,6 +291,7 @@ class rabbitmq(
+   Hash $config_shovel_statics                                                                      = $rabbitmq::params::config_shovel_statics,
+   String $default_user                                                                             = $rabbitmq::params::default_user,
+   String $default_pass                                                                             = $rabbitmq::params::default_pass,
++  String $default_host                                                                             = $rabbitmq::params::default_host,
+   Boolean $delete_guest_user                                                                       = $rabbitmq::params::delete_guest_user,
+   String $env_config                                                                               = $rabbitmq::params::env_config,
+   Stdlib::Absolutepath $env_config_path                                                            = $rabbitmq::params::env_config_path,
+@@ -413,6 +414,7 @@ class rabbitmq(
+ 
+     rabbitmq_plugin { 'rabbitmq_management':
+       ensure   => present,
++      require => [ File['/etc/rabbitmq'],
+       notify   => Class['rabbitmq::service'],
+       provider => 'rabbitmqplugins',
+     }
+@@ -431,6 +433,7 @@ class rabbitmq(
+   if ($ldap_auth) {
+     rabbitmq_plugin { 'rabbitmq_auth_backend_ldap':
+       ensure => present,
++      require => [ File['/etc/rabbitmq'],
+       notify => Class['rabbitmq::service'],
+     }
+   }
+diff --git a/manifests/install/rabbitmqadmin.pp b/manifests/install/rabbitmqadmin.pp
+index 89d8998..110d30b 100644
+--- a/manifests/install/rabbitmqadmin.pp
++++ b/manifests/install/rabbitmqadmin.pp
+@@ -29,6 +29,7 @@ class rabbitmq::install::rabbitmqadmin {
+ 
+     $default_user = $rabbitmq::default_user
+     $default_pass = $rabbitmq::default_pass
++    $default_host = $rabbitmq::default_host
+     $management_ip_address = $rabbitmq::management_ip_address
+     $archive_options = $rabbitmq::archive_options
+ 
+@@ -46,7 +47,7 @@ class rabbitmq::install::rabbitmqadmin {
+ 
+     archive { 'rabbitmqadmin':
+       path             => "${rabbitmq::rabbitmq_home}/rabbitmqadmin",
+-      source           => "${protocol}://${sanitized_ip}:${management_port}/cli/rabbitmqadmin",
++      source           => "${protocol}://${default_host}:${management_port}/cli/rabbitmqadmin",
+       username         => $default_user,
+       password         => $default_pass,
+       allow_insecure   => true,
+diff --git a/manifests/params.pp b/manifests/params.pp
+index ac136e5..e0646a4 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -100,6 +100,7 @@ class rabbitmq::params {
+   $config_shovel_statics               = {}
+   $default_user                        = 'guest'
+   $default_pass                        = 'guest'
++  $default_host                        = 'localhost'
+   $delete_guest_user                   = false
+   $env_config                          = 'rabbitmq/rabbitmq-env.conf.erb'
+   $env_config_path                     = '/etc/rabbitmq/rabbitmq-env.conf'
+-- 
+2.30.0
+
