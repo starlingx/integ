@@ -1,0 +1,46 @@
+From 40837e004d4c92212a9c0dd9974b1cc789dba80f Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Wed, 15 Sep 2021 13:39:32 +0300
+Subject: [PATCH 1/4] Adapt first set of legacy patches
+
+Adapt 0001-Roll-up-TIS-patches.patch from CentOS.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ manifests/config.pp | 4 ++--
+ manifests/init.pp   | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/manifests/config.pp b/manifests/config.pp
+index ac59623..440cfb5 100644
+--- a/manifests/config.pp
++++ b/manifests/config.pp
+@@ -79,8 +79,8 @@ define haproxy::config (
+   if $_global_options['chroot'] {
+     file { $_global_options['chroot']:
+       ensure => directory,
+-      owner  => $_global_options['user'],
+-      group  => $_global_options['group'],
++      owner  => 'root',
++      group  => 'root',
+     }
+   }
+ }
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 330a0ef..49c5a2e 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -111,8 +111,8 @@
+ class haproxy (
+   String[1] $package_ensure                                    = 'present',
+   String $package_name                                         = $haproxy::params::package_name,
+-  Variant[Enum['running', 'stopped'], Boolean] $service_ensure = 'running',
+-  Boolean $service_manage                                      = true,
++  Variant[Enum['running', 'stopped'], Boolean] $service_ensure = false,
++  Boolean $service_manage                                      = false,
+   String $service_options                                      = $haproxy::params::service_options,
+   $sysconfig_options                                           = $haproxy::params::sysconfig_options,
+   Hash $global_options                                         = $haproxy::params::global_options,
+-- 
+2.30.0
+
