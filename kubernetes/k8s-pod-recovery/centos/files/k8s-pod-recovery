@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020 Wind River Systems, Inc.
+# Copyright (c) 2020-2021 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -131,6 +131,35 @@ function _unknown_pods {
     fi
 }
 
+function _outofhugepages_pods {
+    # $1: actions <recover|verify>
+
+    # Target all namespaces and pods on this host
+    NAMESPACES=$(kubectl get ns | tail -n +2 | awk '{ print $1 }')
+
+    if [ "$1" == 'recover' ]; then
+        # Recovers pods that are: Running/OutOfhugepages
+        for ns in ${NAMESPACES[@]}; do
+            PODS=$(kubectl get pods -n $ns --field-selector spec.nodeName=${HOST} 2>/dev/null | awk /OutOfhugepages/'{print $1}')
+            for pod in $PODS ; do
+                LOG "OutOfhugepages pods: Recovering: $ns/$pod"
+                kubectl delete pods -n $ns $pod --wait=false
+            done
+        done
+    elif [ "$1" == 'verify' ]; then
+        for ns in ${NAMESPACES[@]}; do
+            PODS=$(kubectl get pods -n $ns --field-selector spec.nodeName=${HOST} 2>/dev/null | awk /OutOfhugepages/'{print $1}')
+            if [ -z "${PODS}" ]; then
+                LOG "OutOfhugepages pods: None present for namespace: $ns"
+            else
+                ERROR "OutOfhugepages pods: still present for namespace: $ns"
+            fi
+        done
+    else
+        ERROR "Unknown action: $1"
+    fi
+}
+
 function _node_affinity_pods {
     # $1: actions <recover|verify>
 
@@ -170,12 +199,12 @@ function _labeled_pods {
 
             # Check if device-plugin is ready, but do not wait
             kubectl wait pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --for=condition=Ready --timeout=0s
-            
+
             # If device plugin is not ready, restart it and wait
             if [ "$?" -ne 0 ]; then
                 kubectl delete pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --wait=false
                 kubectl wait pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --for=condition=Ready --timeout=360s
-                
+
                 if [ "$?" -ne 0 ]; then
                     ERROR "SRIOV device plugin timed out on ready wait. Continuing anyway. SRIOV pods may not recover."
                 fi
@@ -256,6 +285,7 @@ function _examine_pods {
     _unknown_pods $1
     _node_affinity_pods $1
     _force_reset_pods $1
+    _outofhugepages_pods $1
 }
 
 
