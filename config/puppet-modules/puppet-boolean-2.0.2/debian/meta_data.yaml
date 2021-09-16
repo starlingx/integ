@@ -1,0 +1,10 @@
+---
+debname: puppet-boolean
+debver: 2.0.2-0
+dl_path:
+  name: puppet-boolean-2.0.2-0.tar.gz
+  url: https://codeload.github.com/voxpupuli/puppet-boolean/tar.gz/refs/tags/v2.0.2
+  md5sum: c724f206a25561cadb024d6791b73eea
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
