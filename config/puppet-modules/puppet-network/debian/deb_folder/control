@@ -1,0 +1,19 @@
+Source: puppet-network
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: puppet-network
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+ puppet,
+ puppet-boolean,
+ puppet-module-adrienthebo-filemapper,
+ puppet-module-camptocamp-kmod,
+ puppet-module-puppetlabs-stdlib
+Description: Puppet module named puppet-boolean
+ A Puppet module to manage non volatile network and route configuration

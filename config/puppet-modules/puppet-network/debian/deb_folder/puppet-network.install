@@ -1,0 +1,6 @@
+lib usr/share/puppet/modules.available/puppet-network
+LICENSE usr/share/puppet/modules.available/puppet-network
+manifests usr/share/puppet/modules.available/puppet-network
+metadata.json usr/share/puppet/modules.available/puppet-network
+spec usr/share/puppet/modules.available/puppet-network
+templates usr/share/puppet/modules.available/puppet-network

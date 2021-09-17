@@ -1,0 +1,10 @@
+---
+debname: puppet-network
+debver: 0.9.1-1
+dl_path:
+  name: puppet-network-0.9.1-1.tar.gz
+  url: https://codeload.github.com/voxpupuli/puppet-network/tar.gz/10545c7a49b4878aa244424eb14b24e7450dc283
+  md5sum: f98a5b2ebb111e8c140417a764048a3e
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
