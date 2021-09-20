@@ -1,0 +1,10 @@
+---
+debname: puppet-module-oslo
+debver: 17.4.0-2
+dl_path:
+  name: puppet-module-oslo-17.4.0-2.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-oslo/-/archive/debian/17.4.0-2/puppet-module-oslo-debian-17.4.0-2.tar.gz
+  md5sum: 1dc3e1b22756f9ad236458ec0e48cbd5
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
