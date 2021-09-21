@@ -1,0 +1,4 @@
+manifests usr/share/puppet/modules.available/puppet-nslcd
+metadata.json usr/share/puppet/modules.available/puppet-nslcd
+spec usr/share/puppet/modules.available/puppet-nslcd
+templates usr/share/puppet/modules.available/puppet-nslcd
