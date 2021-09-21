@@ -1,0 +1,10 @@
+---
+debname: puppet-drbd
+debver: 0.5.2-0
+dl_path:
+  name: puppet-drbd-0.5.2-0.tar.gz
+  url: https://github.com/voxpupuli/puppet-drbd/archive/refs/tags/v0.5.2.tar.gz
+  md5sum: 2e828b92bac292461cd90d298fa4102f
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

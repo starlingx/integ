@@ -1,0 +1,6 @@
+files usr/share/puppet/modules.available/puppet-drbd
+LICENSE usr/share/puppet/modules.available/puppet-drbd
+manifests usr/share/puppet/modules.available/puppet-drbd
+metadata.json usr/share/puppet/modules.available/puppet-drbd
+spec usr/share/puppet/modules.available/puppet-drbd
+templates usr/share/puppet/modules.available/puppet-drbd

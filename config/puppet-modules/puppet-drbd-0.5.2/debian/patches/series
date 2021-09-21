@@ -1,0 +1,10 @@
+0001-Adapt-first-set-of-legacy-patches.patch
+0002-Disable-timeout-for-mkfs-command.patch
+0003-drbd-parallel-to-serial-synchronization.patch
+0004-US-96914-reuse-existing-drbd-cinder-resource.patch
+0005-Add-PausedSync-states-to-acceptable-cstate.patch
+0006-CGTS-7164-Add-resource-options-cpu-mask-to-affine-drbd-kernel-threads.patch
+0007-Add-disk-by-path-test.patch
+0008-CGTS-7953-support-for-new-drbd-resources.patch
+0009-drbd-slow-before-swact.patch
+0010-Format-DRBD-resource-cpu-mask-to-support-64-or-larger-cpus.patch
