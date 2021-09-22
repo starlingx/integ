@@ -34,6 +34,7 @@ kubernetes-contrib-v1.18.1.tar.gz#kubernetes-contrib-1.18.1#https://github.com/k
 kubernetes-v1.18.1.tar.gz#kubernetes-1.18.1#https://github.com/kubernetes/kubernetes/archive/7879fc12a63337efff607952a323df90cdc7a335.tar.gz#http##
 kubernetes-v1.19.13.tar.gz#kubernetes-1.19.13#https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.19.13.tar.gz#http##
 kubernetes-v1.20.9.tar.gz#kubernetes-1.20.9#https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.20.9.tar.gz#http##
+kubernetes-v1.21.3.tar.gz#kubernetes-1.21.3#https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.21.3.tar.gz#http##
 kvm-unit-tests.git-4ea7633.tar.bz2#kvm-unit-tests#https://git.kernel.org/pub/scm/virt/kvm/kvm-unit-tests.git/snapshot/kvm-unit-tests-20171020.tar.gz#http##
 ldapscripts-2.0.8.tgz#ldapscripts-2.0.8#https://sourceforge.net/projects/ldapscripts/files/ldapscripts/ldapscripts-2.0.8/ldapscripts-2.0.8.tgz/download#http##
 libtpms-0.6.0-4f0d59d.tar.gz#libtpms-0.6.0#https://github.com/stefanberger/libtpms/tarball/c421ca0f4d00c0caceeda8d62c1efb2b7e47db04#http##
