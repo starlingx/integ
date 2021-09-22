@@ -1,0 +1,25 @@
+diff --git a/scripts/Makefile.in b/scripts/Makefile.in
+index fc2e597..911ae7b 100644
+--- a/scripts/Makefile.in
++++ b/scripts/Makefile.in
+@@ -102,6 +102,7 @@ endif
+ 	  $(LN_S) -f notify.sh notify-emergency-reboot.sh ;\
+ 	  $(LN_S) -f notify.sh notify-emergency-shutdown.sh ;\
+ 	  $(LN_S) -f notify.sh notify-out-of-sync.sh; )
++	install -m 755 drbd-overview.pl $(DESTDIR)$(sbindir)/drbd-overview
+ ifeq ($(DISTRO),debian)
+ 	@ echo "Don't forget to run update-rc.d"
+ else
+diff --git a/scripts/drbd-overview.pl b/scripts/drbd-overview.pl
+index 3d2a397..22abdf4 100755
+--- a/scripts/drbd-overview.pl
++++ b/scripts/drbd-overview.pl
+@@ -413,8 +413,6 @@ eval {
+     warn "unrecognized value for --color" unless $use_colors =~ /^[01]$/;
+ };
+ 
+-print STDERR "NOTE: drbd-overview will be deprecated soon.\nPlease consider using drbdtop.\n\n";
+-
+ open STDERR, "/dev/null"
+ 	if $stderr_to_dev_null;
+ 

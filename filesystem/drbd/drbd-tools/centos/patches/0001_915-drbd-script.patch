@@ -1,0 +1,24 @@
+diff --git a/scripts/drbd b/scripts/drbd
+index 5b610f9..6fea91c 100755
+--- a/scripts/drbd
++++ b/scripts/drbd
+@@ -211,7 +211,9 @@ case "$1" in
+ 
+ 	[ -d /var/lock/subsys ] && touch /var/lock/subsys/drbd	# for RedHat
+ 	run_hook start_before-wait
+-	$DRBDADM wait-con-int # User interruptible version of wait-connect all
++    if [ ! -e /etc/platform/simplex ] ; then # Skip if simplex
++        $DRBDADM wait-con-int # User interruptible version of wait-connect all
++    fi
+ 	run_hook start
+ 
+ 	# Become primary if configured
+@@ -265,7 +267,7 @@ case "$1" in
+ 		for d in /dev/drbd* ; do
+ 			[ -L "$d" ] && continue
+ 			[ -b "$d" ] || continue
+-			M=$(umount "$d" 2>&1)
++			M=$(umount --all-targets "$d" 2>&1)
+ 			case $M in
+ 			*" not mounted") :;;
+ 			*) stop_failed=1; echo "$M" >&2 ;;

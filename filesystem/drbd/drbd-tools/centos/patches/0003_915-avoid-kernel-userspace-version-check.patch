@@ -1,16 +1,7 @@
-From ea19e3020367cfaf6da20dd690433ee72a24120c Mon Sep 17 00:00:00 2001
-From: Don Penney <don.penney@windriver.com>
-Date: Mon, 2 May 2016 15:17:54 -0400
-Subject: [PATCH 1/1] Avoid kernel/userspace version check
-
----
- user/drbdadm_usage_cnt.c | 32 +-------------------------------
- 1 file changed, 1 insertion(+), 31 deletions(-)
-
-diff --git a/user/drbdadm_usage_cnt.c b/user/drbdadm_usage_cnt.c
-index ff6d5c8..c6cb4ad 100644
---- a/user/drbdadm_usage_cnt.c
-+++ b/user/drbdadm_usage_cnt.c
+diff --git a/user/v84/drbdadm_usage_cnt.c b/user/v84/drbdadm_usage_cnt.c
+index 53bc9bc..0bd2ff3 100644
+--- a/user/v84/drbdadm_usage_cnt.c
++++ b/user/v84/drbdadm_usage_cnt.c
 @@ -244,37 +244,7 @@ static int vcs_ver_cmp(struct vcs_rel *rev1, struct vcs_rel *rev2)
  
  void warn_on_version_mismatch(void)
@@ -21,7 +12,7 @@ index ff6d5c8..c6cb4ad 100644
 -	/* get the kernel module version from /proc/drbd */
 -	vcs_get_current();
 -
--	/* get the userland version from REL_VERSION */
+-	/* get the userland version from PACKAGE_VERSION */
 -	vcs_get_userland();
 -
 -	cmp = vcs_ver_cmp(&userland_version, &current_vcs_rel);
@@ -46,10 +37,7 @@ index ff6d5c8..c6cb4ad 100644
 -			userland_version.version.minor,
 -			userland_version.version.sublvl,
 -			msg);
-+	return;
++    return;
  }
  
  void add_lib_drbd_to_path(void)
--- 
-1.8.3.1
-

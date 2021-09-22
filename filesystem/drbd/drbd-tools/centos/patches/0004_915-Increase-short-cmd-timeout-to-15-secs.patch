@@ -1,0 +1,12 @@
+diff --git a/scripts/global_common.conf b/scripts/global_common.conf
+index a916b70..9797275 100644
+--- a/scripts/global_common.conf
++++ b/scripts/global_common.conf
+@@ -13,6 +13,7 @@ global {
+ 
+ 	# minor-count dialog-refresh disable-ip-verification
+ 	# cmd-timeout-short 5; cmd-timeout-medium 121; cmd-timeout-long 600;
++	cmd-timeout-short 15;
+ }
+ 
+ common {
