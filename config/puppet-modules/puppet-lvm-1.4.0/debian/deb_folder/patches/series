@@ -1,0 +1,6 @@
+0001-puppet-lvm-kilo-quilt-changes.patch
+0002-US80802-PXE-Installation-changes-for-UEFI-support.-F.patch
+0003-US94222-Persistent-Dev-Naming.patch
+0004-Extending-nuke_fs_on_resize_failure-functionality.patch
+0005-Fix-the-logical-statement-for-nuke_fs_on_resize.patch
+0006-Wipe-10MB-after-we-lvextend-the-partitions.patch

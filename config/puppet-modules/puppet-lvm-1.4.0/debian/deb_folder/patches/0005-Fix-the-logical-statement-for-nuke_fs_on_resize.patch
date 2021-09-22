@@ -1,0 +1,44 @@
+From 559be488a84f0699ea7a65208c3c7b32b9095387 Mon Sep 17 00:00:00 2001
+From: Kristine Bujold <kristine.bujold@windriver.com>
+Date: Thu, 19 Jul 2018 09:02:27 -0400
+Subject: [PATCH 5/6] Fix the logical statement for nuke_fs_on_resize
+
+---
+ lib/puppet/provider/logical_volume/lvm.rb | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/lib/puppet/provider/logical_volume/lvm.rb b/lib/puppet/provider/logical_volume/lvm.rb
+index 6aa2989..70037e2 100644
+--- a/lib/puppet/provider/logical_volume/lvm.rb
++++ b/lib/puppet/provider/logical_volume/lvm.rb
+@@ -272,13 +272,15 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+         exec_cmd('umount', path)
+         exec_cmd('fsadm', '-y', 'check', path )
+         r = exec_cmd('fsadm', '-y', 'resize', path, "#{new_size}k")
+-        if r[:exit] != 0 and @resource[:nuke_fs_on_resize_failure]
++        if r[:exit] != 0 and [:true, "true", true ].include? @resource[:nuke_fs_on_resize_failure]
++          info( "Failed 'fsadm resize' erase the disk #{r}" )
+           exec_cmd('dd', 'if=/dev/zero', "of=#{path}", "bs=512", "count=16", "conv=notrunc")
+           blkid('-g')
+         end
+         r = exec_cmd('lvresize', '-r', '-f', '-L', "#{new_size}k", path)
+         if r[:exit] != 0
+-          if @resource[:nuke_fs_on_resize_failure]
++          if [:true, "true", true ].include? @resource[:nuke_fs_on_resize_failure]
++            info( "Failed 'fsadm resize' erase the disk #{r}" )
+             exec_cmd('dd', 'if=/dev/zero', "of=#{path}", "bs=512", "count=16", "conv=notrunc")
+             blkid('-g')
+             lvresize( '-f', '-L', "#{new_size}k", path) || fail( "Cannot reduce to size #{new_size} because lvresize failed." )
+@@ -303,7 +305,8 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+       exec_cmd('umount', path)
+       exec_cmd('fsadm', '-y', 'check', path )
+       r = exec_cmd('fsadm', '-y', 'resize', path, "#{new_size}k")
+-      if r[:exit] != 0 and @resource[:nuke_fs_on_resize_failure]
++      if r[:exit] != 0 and [:true, "true", true ].include? @resource[:nuke_fs_on_resize_failure]
++        info( "Failed 'fsadm resize' erase the disk #{r}" )
+         exec_cmd('dd', 'if=/dev/zero', "of=#{path}", "bs=512", "count=16", "conv=notrunc")
+         blkid('-g')
+       end
+-- 
+2.16.6
+

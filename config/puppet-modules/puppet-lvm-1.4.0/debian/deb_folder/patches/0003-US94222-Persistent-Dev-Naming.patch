@@ -1,0 +1,25 @@
+From 96e0b83a1f3131b66188ce1c2c9060e243c02ce3 Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Wed, 1 Mar 2017 09:12:34 +0000
+Subject: [PATCH 3/6] US94222: Persistent Dev Naming
+
+---
+ lib/puppet/provider/volume_group/lvm.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/volume_group/lvm.rb b/lib/puppet/provider/volume_group/lvm.rb
+index 4d6e426..a6d4a70 100644
+--- a/lib/puppet/provider/volume_group/lvm.rb
++++ b/lib/puppet/provider/volume_group/lvm.rb
+@@ -115,7 +115,7 @@ Puppet::Type.type(:volume_group).provide :lvm do
+ 
+   def physical_volumes
+     if @resource[:createonly].to_s == 'false' || !vgs(@resource[:name])
+-      lines = pvs('-o', 'pv_name,vg_name', '--separator', ',')
++      lines = `pvs -o pv_name,vg_name --separator ',' | awk -F ',' 'NR>1{cmd="find -L /dev/disk/by-path/ -samefile" $1; cmd | getline $1;print $1 "," $2; next};{print}'`
+       lines.split(%r{\n}).grep(%r{,#{@resource[:name]}$}).map do |s|
+         s.split(%r{,})[0].strip
+       end
+-- 
+2.16.6
+

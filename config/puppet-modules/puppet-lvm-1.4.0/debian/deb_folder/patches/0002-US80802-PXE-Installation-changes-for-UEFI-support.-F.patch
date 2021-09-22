@@ -1,0 +1,47 @@
+From 16802f9ad304e5aa286a1466ee42cd69c976cfb9 Mon Sep 17 00:00:00 2001
+From: Kristine Bujold <kristine.bujold@windriver.com>
+Date: Fri, 15 Jul 2016 16:55:16 -0400
+Subject: [PATCH 2/6] US80802 - PXE Installation changes for UEFI support.
+ Fixing pvcreate issue.
+
+---
+ lib/puppet/provider/physical_volume/lvm.rb | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/physical_volume/lvm.rb b/lib/puppet/provider/physical_volume/lvm.rb
+index 3d92a55..ff2f94c 100644
+--- a/lib/puppet/provider/physical_volume/lvm.rb
++++ b/lib/puppet/provider/physical_volume/lvm.rb
+@@ -3,7 +3,7 @@ Puppet::Type.type(:physical_volume).provide(:lvm) do
+ 
+   confine kernel: :linux
+ 
+-  commands pvcreate: 'pvcreate', pvremove: 'pvremove', pvs: 'pvs', vgs: 'vgs'
++  commands pvcreate: 'pvcreate', pvremove: 'pvremove', pvs: 'pvs', vgs: 'vgs', dd: 'dd'
+ 
+   def self.instances
+     get_physical_volumes.map do |physical_volumes_line|
+@@ -13,9 +13,20 @@ Puppet::Type.type(:physical_volume).provide(:lvm) do
+   end
+ 
+   def create
++    # Delete the first few bytes at the start and end of the partition. This is
++    # required with GPT partitions, the save the partiion info at the start and
++    # the end of the block
++    exec_cmd('dd', 'if=/dev/zero', "of=#{@resource[:name]}", "bs=512", "count=34")
++    exec_cmd('dd', 'if=/dev/zero', "of=#{@resource[:name]}", "bs=512", "count=34", "seek=$((`blockdev --getsz #{@resource[:name]}` - 34))")
++
+     create_physical_volume(@resource[:name])
+   end
+ 
++  def exec_cmd(*cmd)
++    output = Puppet::Util::Execution.execute(cmd, :failonfail => false, :combine => true)
++    {:out => output, :exit => $CHILD_STATUS.exitstatus}
++  end
++
+   def destroy
+     pvremove(@resource[:name])
+   end
+-- 
+2.16.6
+
