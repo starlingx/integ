@@ -1,0 +1,10 @@
+---
+debname: puppet-ldap
+debver: 0.2.4-0
+dl_path:
+  name: puppet-ldap-0.2.4-0.tar.gz
+  url: https://codeload.github.com/torian/puppet-ldap/tar.gz/480f13af6d17d1d3fcf0dc7b4bd04b49fa4099e1
+  md5sum: 9d6f59802e1f2855bee2167c370cf796
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
