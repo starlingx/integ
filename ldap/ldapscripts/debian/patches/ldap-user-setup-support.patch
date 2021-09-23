@@ -1,0 +1,354 @@
+---
+ Makefile                 |   5 +-
+ man/man1/ldapusersetup.1 |  60 +++++++++++
+ sbin/ldapusersetup       | 254 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 317 insertions(+), 2 deletions(-)
+ create mode 100644 man/man1/ldapusersetup.1
+ create mode 100644 sbin/ldapusersetup
+
+diff --git a/sbin/ldapusersetup b/sbin/ldapusersetup
+new file mode 100644
+index 0000000..27d12dc
+--- /dev/null
++++ b/sbin/ldapusersetup
+@@ -0,0 +1,254 @@
++#!/bin/sh
++
++#  ldapusersetup : interactive setup for adding users to LDAP
++
++#  Copyright (c) 2015 Wind River Systems, Inc.
++#
++#  This program is free software; you can redistribute it and/or
++#  modify it under the terms of the GNU General Public License
++#  as published by the Free Software Foundation; either version 2
++#  of the License, or (at your option) any later version.
++#
++#  This program is distributed in the hope that it will be useful,
++#  but WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#  GNU General Public License for more details.
++#
++#  You should have received a copy of the GNU General Public License
++#  along with this program; if not, write to the Free Software
++#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++#  USA.
++
++if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$#" -eq 1 ]
++then
++  echo "Usage : $0 [-u <username | uid> <field> <value>]
++where accepted field(s) are as follows:
++--sudo                        : whether to add this user to sudoer list
++--secondgroup <grp>           : the secondary group to add this user to
++--passmax     <value>         : the shadowMax value for this user
++--passwarning <value>         : the shadowWarning value for this user"
++  exit 1
++fi
++
++# Source runtime file
++_RUNTIMEFILE="/usr/lib/ldapscripts/runtime"
++. "$_RUNTIMEFILE"
++
++# runtime defaults
++_DEFAULTGRP2="sys_protected"
++_BASHSHELL="/bin/bash"
++_DEFAULTSHADOWMAX="90"
++_DEFAULTSHADOWWARNING="2"
++_SHELL=""
++
++### Helper functions ###
++
++# Gets input from user and validates it.
++# Will only return if input meets validation
++# criteria otherwise will just sit there.
++#
++# Input : input string ($1), valid output options ($2)
++# Output: the validated input
++# Note  : the validation list must be an array
++LdapUserInput () {
++declare -a optionAry=("${!2}")
++while true; do
++    read -p "$1" _output
++    # convert to lower case
++    _output2=${_output,,}
++    # check if output is a valid option
++    if [[ "${optionAry[@]}" =~ "$_output2" ]]; then
++	break
++    else
++       echo "Invalid input \"$_output\". Allowed options: ${optionAry[@]}" >&2
++   fi
++done
++   echo "$_output2"
++}
++
++# Delete an ldap user if it exists
++# and exit with error
++# Input : username ($1), exit msg ($2)
++# Output : none
++LdapRollback() {
++  ldapdeleteuser "$1"
++  end_die "$2"
++}
++
++# Add an ldap user and exit on failure
++# Input : username ($1)
++# Output : none
++LdapAddUser() {
++  ldapadduser "$1" users
++  [ $? -eq 0 ] || end_die "Critical setup error: cannot add user"
++}
++
++# Replace Login Shell and call Rollback on failure
++# Input : username ($1), shell to set ($2)
++# Output : none
++LdapAddLoginShell () {
++  # Support bash only now.
++  _SHELL="$_BASHSHELL"
++  # Replace the login shell
++  ldapmodifyuser $1 replace loginShell $_SHELL &> /dev/null
++  [ $? -eq 0 ] || LdapRollback $1 "Critical setup error: cannot set login shell"
++}
++
++# Add user to sudoer list
++# Input : username ($1)
++# Output : true or false
++LdapAddSudo() {
++  ldapaddsudo "$1" 2> /dev/null
++  [ $? -eq 0 ] || \
++   echo_log "Non critical setup error: cannot add to sudoer list"
++}
++
++# Add user to a secondary user group
++# Input : username ($1), user group ($2)
++# Output : true or false
++LdapSecondaryGroup () {
++  _newGrp="$2"
++  [ -z "$2" ] && _newGrp=$_DEFAULTGRP2
++
++  ldapaddusertogroup $1 $_newGrp
++  [ $? -eq 0 ] || \
++   echo_log "Non critical setup error: cannot add $1 to $_newGrp"
++}
++
++# Update shadowMax for user
++# Input : username ($1), shadow Max value ($2)
++# Output : none
++LdapUpdateShadowMax () {
++  _newShadow="$2"
++  ! [[ "$2" =~ ^[0-9]+$ ]] || [ -z "$2" ] \
++   && _newShadow=$_DEFAULTSHADOWMAX
++
++  ldapmodifyuser $1 replace shadowMax $_newShadow
++  echo "Updating password expiry to $_newShadow days"
++}
++
++# Update shadowWarning for user
++# Input : username ($1), shadow Warning value ($2)
++# Output : none
++LdapUpdateShadowWarning () {
++  _newWarning="$2"
++  ! [[ "$2" =~ ^[0-9]+$ ]] || [ -z "$2" ] \
++   && _newWarning=$_DEFAULTSHADOWWARNING
++
++  ldapmodifyuser $1 replace shadowWarning $_newWarning
++  echo "Updating password expiry to $_newWarning days"
++}
++
++# Since this setup script is meant to be a
++# wrapper on top of existing ldap scripts,
++# it share invoke those... we could have achieved
++# loose coupling by not relying on helpers but
++# at the expense of massively redundant code
++# duplication.
++declare -a helper_scripts=("ldapadduser" "ldapaddsudo" "ldapmodifyuser" "ldapaddusertogroup" "$_BASHSHELL")
++
++# Do some quick sanity tests to make sure
++# helper scripts are present
++for src in "${helper_scripts[@]}"; do
++  if ! type "$src" &>/dev/null; then
++    end_die "Cannot locate $src. Update your PATH variable"
++  fi
++done
++
++if [ "$#" -eq 0 ]; then
++  # This setup collects all attributes
++  # interactively during runtime
++  echo -n "Enter username to add to LDAP: "
++  read _username
++  LdapAddUser "$_username"
++
++  # Replace the login shell. Only bash is supported now.
++  LdapAddLoginShell "$_username"
++
++  # Should sudo be activated for this user
++  echo -n "Add $_username to sudoer list? (yes/NO): "
++  read CONFIRM
++  CONFIRM=${CONFIRM,,}
++
++  if is_yes $CONFIRM
++  then
++    LdapAddSudo "$_username"
++  fi
++
++  # Add to secondary user group
++  shellInput="Add $_username to secondary user group? (yes/NO): "
++  options=( "yes", "no" )
++  CONFIRM=`LdapUserInput "$shellInput" options[@]`
++  if is_yes $CONFIRM
++  then
++    echo -n "Secondary group to add user to? [$_DEFAULTGRP2]: "
++    read _grp2
++    LdapSecondaryGroup $_username $_grp2
++  fi
++
++  # Set password expiry
++  echo -n "Enter days after which user password must \
++be changed [$_DEFAULTSHADOWMAX]: "
++  read _shadowMax
++  LdapUpdateShadowMax $_username $_shadowMax
++
++  # Set password warning
++  echo -n "Enter days before password is to expire that \
++user is warned [$_DEFAULTSHADOWWARNING]: "
++  read _shadowWarning
++  LdapUpdateShadowWarning $_username $_shadowWarning
++
++else
++  # we have to read command line option
++  while [[ $# > 1 ]]
++  do
++    key="$1"
++
++    case $key in
++    	-u|--user) # compulsory
++	_username="$2"
++	shift
++	;;
++	--sudo)      # optional
++	_sudo="yes"
++	;;
++  	--passmax) # optional
++	_shadowMax="$2"
++	shift
++	;;
++	--passwarning) # optional
++	_shadowWarning="$2"
++	shift
++	;;
++	--secondgroup) # optional
++        _grpConfirm="1"
++	_grp2="$2"
++	shift
++	;;
++	*)
++
++	;;
++    esac
++    shift
++  done
++
++  # Add LDAP user
++  [ -z "$_username" ] && end_die "No username argument specified"
++  LdapAddUser $_username
++
++  # Change Login Shell
++  LdapAddLoginShell $_username "$_loginshell"
++
++  # Add sudo if required
++  if is_yes $_sudo
++  then
++    LdapAddSudo "$_username"
++  fi
++
++  # Add secondary group if required
++  [ -z "$_grpConfirm" ] || LdapSecondaryGroup $_username $_grp2
++
++  # Password modifications
++  LdapUpdateShadowMax $_username $_shadowMax
++  LdapUpdateShadowWarning $_username $_shadowWarning
++fi
+diff --git a/Makefile b/Makefile
+index f81c272..6e5b193 100644
+--- a/Makefile
++++ b/Makefile
+@@ -41,12 +41,13 @@ SBINFILES =	ldapdeletemachine ldapmodifygroup ldapsetpasswd lsldap ldapadduser l
+ 			ldapdeleteuser ldapsetprimarygroup ldapfinger ldapid ldapgid ldapmodifymachine \
+ 			ldaprenamegroup ldapaddgroup ldapaddusertogroup ldapdeleteuserfromgroup \
+ 			ldapinit ldapmodifyuser ldaprenamemachine ldapaddmachine ldapdeletegroup \
+-			ldaprenameuser ldapmodifysudo ldapdeletesudo
++			ldaprenameuser ldapmodifysudo ldapdeletesudo ldapusersetup
+ MAN1FILES =	ldapdeletemachine.1 ldapmodifymachine.1 ldaprenamemachine.1 ldapadduser.1 \
+ 			ldapdeleteuserfromgroup.1 ldapfinger.1 ldapid.1 ldapgid.1 ldapmodifyuser.1 lsldap.1 \
+ 			ldapaddusertogroup.1 ldaprenameuser.1 ldapinit.1 ldapsetpasswd.1 ldapaddgroup.1 \
+ 			ldapdeletegroup.1 ldapsetprimarygroup.1 ldapmodifygroup.1 ldaprenamegroup.1 \
+-			ldapaddmachine.1 ldapdeleteuser.1 ldapaddsudo.1 ldapmodifysudo.1 ldapdeletesudo.1
++			ldapaddmachine.1 ldapdeleteuser.1 ldapaddsudo.1 ldapmodifysudo.1 \
++			ldapdeletesudo.1 ldapusersetup.1
+ MAN5FILES = ldapscripts.5
+ TMPLFILES = ldapaddgroup.template.sample ldapaddmachine.template.sample \
+ 			ldapadduser.template.sample
+diff --git a/man/man1/ldapusersetup.1 b/man/man1/ldapusersetup.1
+new file mode 100644
+index 0000000..9b3129b
+--- /dev/null
++++ b/man/man1/ldapusersetup.1
+@@ -0,0 +1,60 @@
++.\" Copyright (c) 2015 Wind River Systems, Inc.
++.\"
++.\" This program is free software; you can redistribute it and/or
++.\" modify it under the terms of the GNU General Public License
++.\" as published by the Free Software Foundation; either version 2
++.\" of the License, or (at your option) any later version.
++.\"
++.\" This program is distributed in the hope that it will be useful,
++.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
++.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++.\" GNU General Public License for more details.
++.\"
++.\" You should have received a copy of the GNU General Public License
++.\" along with this program; if not, write to the Free Software
++.\" Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++.\" USA.
++.\"
++.\" Kam Nasim
++.\" knasim@windriver.com
++.\"
++.TH ldapusersetup 1 "December 16, 2015"
++
++.SH NAME
++ldapusersetup \- wizard for adding an LDAP user to CGCS.
++
++.SH SYNOPSIS
++.B ldapusersetup
++
++.SH DESCRIPTION
++ldapusersetup interactively walks through the process of creating an LDAP user
++for access to CGCS services. The user is prompted for:
++- username
++- if a sudoEntry needs to be created
++- if a secondary user group needs to be added
++- user password expiry and warning configuration
++Alternatively, the user may provide these parameters as command line actions.
++Look at the OPTIONS section for more information.
++
++To delete the user and all its group associations, simply use ldapdeleteuser(1)
++
++.SH OPTIONS
++.TP
++.B [-u <username | uid> <field> <value>]
++The name or uid of the user to modify.
++The following fields are available as long format options:
++--sudo                  : whether to add this user to sudoer list
++--secondgroup <grp>     : the secondary group to add this user to
++--passmax     <value>   : the shadowMax value for this user
++--passwarning <value>   : the shadowWarning value for this user"
++
++.SH "SEE ALSO"
++ldapdeleteuser(1), ldapaddgroup(1), ldapaddusertogroup(1), ldapmodifyuser(1), ldapscripts(5).
++
++.SH AVAILABILITY
++The ldapscripts are provided under the GNU General Public License v2 (see COPYING for more details).
++The latest version of the ldapscripts is available on :
++.B http://contribs.martymac.org
++
++.SH BUGS
++No bug known.

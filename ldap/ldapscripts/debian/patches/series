@@ -1,0 +1,6 @@
+sudo-support.patch
+sudo-delete-support.patch
+log_timestamp.patch
+ldap-user-setup-support.patch
+allow-anonymous-bind-for-ldap-search.patch
+ldapscripts-templates.patch
