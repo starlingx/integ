@@ -1,0 +1,104 @@
+From 1d06f74733c8728fc1f0cb21f519ae84beb03b67 Mon Sep 17 00:00:00 2001
+From: Al Bailey <Al.Bailey@windriver.com>
+Date: Thu, 24 Oct 2019 11:53:01 -0500
+Subject: [PATCH] Change group,passwd
+
+Porthing this patch from 'setup' package of CentOS. Removing the
+change of uidgid, because no such file in base-passwd, and Debian
+system. The file is installed into /usr/share/doc/setup-2.8.71/uidgid
+in CentOS, which is just a doc file, so ignore it.
+
+Signed-off-by: Andy Ning <andy.ning@windriver.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+---
+ group.master  | 19 ++++++++++++-------
+ passwd.master | 16 +++++++++++-----
+ 2 files changed, 23 insertions(+), 12 deletions(-)
+
+diff --git a/group.master b/group.master
+index ad1dd2d..748ca76 100644
+--- a/group.master
++++ b/group.master
+@@ -1,15 +1,11 @@
+ root:*:0:
+-daemon:*:1:
+-bin:*:2:
+ sys:*:3:
+ adm:*:4:
+ tty:*:5:
+ disk:*:6:
+-lp:*:7:
+ mail:*:8:
+ news:*:9:
+ uucp:*:10:
+-man:*:12:
+ proxy:*:13:
+ kmem:*:15:
+ dialout:*:20:
+@@ -19,7 +15,6 @@ cdrom:*:24:
+ floppy:*:25:
+ tape:*:26:
+ sudo:*:27:
+-audio:*:29:
+ dip:*:30:
+ www-data:*:33:
+ backup:*:34:
+@@ -30,10 +25,20 @@ src:*:40:
+ gnats:*:41:
+ shadow:*:42:
+ utmp:*:43:
+-video:*:44:
+ sasl:*:45:
+ plugdev:*:46:
+ staff:*:50:
+-games:*:60:
+ users:*:100:
+ nogroup:*:65534:
++postgres:x:120:
++nova:x:162:nova
++barbican:x:978:barbican
++keystone:x:42424:keystone
++neutron:x:164:neutron
++ceilometer:x:166:ceilometer
++sysinv:x:168:sysinv
++snmpd:x:169:snmpd,fm
++fm:x:195:fm
++libvirt:x:991:nova
++ironic:x:1874:ironic
++www:x:1877:www
+diff --git a/passwd.master b/passwd.master
+index f1e69a4..18f5e05 100644
+--- a/passwd.master
++++ b/passwd.master
+@@ -1,12 +1,7 @@
+ root:*:0:0:root:/root:/bin/bash
+-daemon:*:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+-bin:*:2:2:bin:/bin:/usr/sbin/nologin
+ sys:*:3:3:sys:/dev:/usr/sbin/nologin
+ sync:*:4:65534:sync:/bin:/bin/sync
+-games:*:5:60:games:/usr/games:/usr/sbin/nologin
+ man:*:6:12:man:/var/cache/man:/usr/sbin/nologin
+-lp:*:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+-mail:*:8:8:mail:/var/mail:/usr/sbin/nologin
+ news:*:9:9:news:/var/spool/news:/usr/sbin/nologin
+ uucp:*:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+ proxy:*:13:13:proxy:/bin:/usr/sbin/nologin
+@@ -16,3 +11,14 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+ irc:*:39:39:ircd:/run/ircd:/usr/sbin/nologin
+ gnats:*:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+ nobody:*:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
++postgres:x:120:120:PostgreSQL Server:/var/lib/pgsql:/bin/sh
++neutron:x:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
++sysinv:x:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
++snmpd:x:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
++fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
++barbican:x:982:978:Barbican Key Manager user account.:/var/lib/barbican:/sbin/nologin
++ceilometer:x:991:166:OpenStack ceilometer Daemons:/var/lib/ceilometer:/sbin/nologin
++keystone:x:42424:42424:OpenStack Keystone Daemons:/var/lib/keystone:/sbin/nologin
++nova:x:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
++ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
++www:x:1877:1877:www:/home/www:/sbin/nologin
+-- 
+2.25.1
+

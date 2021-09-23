@@ -1,0 +1,69 @@
+From a2a96fa28fe132e34185ab1646b1f1ea4baf4942 Mon Sep 17 00:00:00 2001
+From: Yue Tao <Yue.Tao@windriver.com>
+Date: Thu, 25 Nov 2021 10:14:45 +0800
+Subject: [PATCH] update-passwd.c: set walk to walk->next before removing
+
+update-passwd only removes once and exits even more
+than one items need to be removed. Root cause is walk
+is set to walk->next after remove_node(), in which the
+walk has been cleaned, so the while(walk) is terminated.
+
+Without the fix, the output of update-passwd
+$update-passwd --verbose
+Adding group "postgres" (120)
+Adding group "nova" (162)
+Adding group "barbican" (978)
+Adding group "keystone" (42424)
+Adding group "neutron" (164)
+Adding group "ceilometer" (166)
+Adding group "sysinv" (168)
+Adding group "snmpd" (169)
+Adding group "fm" (195)
+Adding group "libvirt" (991)
+Adding group "ironic" (1874)
+Adding group "www" (1877)
+Removing group "daemon" (1)
+Adding user "postgres" (120)
+Adding user "neutron" (164)
+Adding user "sysinv" (168)
+Adding user "snmpd" (169)
+Adding user "fm" (195)
+Adding user "barbican" (982)
+Adding user "ceilometer" (991)
+Adding user "keystone" (42424)
+Adding user "nova" (994)
+Adding user "ironic" (1874)
+Adding user "www" (1877)
+Removing user "daemon" (1)
+25 changes have been made, rewriting files
+Writing passwd-file to /etc/passwd
+Writing shadow-file to /etc/shadow
+Writing group-file to /etc/group
+
+Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
+---
+ update-passwd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/update-passwd.c b/update-passwd.c
+index 3f3dffa..1a56ed9 100644
+--- a/update-passwd.c
++++ b/update-passwd.c
+@@ -806,13 +806,13 @@ void process_old_entries(const struct _info* lst, struct _node** passwd, struct
+ 		free(id);
+ 	    }
+ 
++	    walk=walk->next;
+ 	    if (make_change) {
+ 		if (opt_verbose)
+ 		    printf("Removing %s \"%s\" (%u)\n", descr, oldnode->name, oldnode->id);
+ 		remove_node(passwd, oldnode);
+ 		flag_dirty++;
+ 	    }
+-	    walk=walk->next;
+ 	    continue;
+ 	}
+ 	walk=walk->next;
+-- 
+2.25.1
+
