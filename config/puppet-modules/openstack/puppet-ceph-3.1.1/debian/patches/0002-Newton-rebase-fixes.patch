@@ -1,0 +1,47 @@
+From e45ab36e8ea77500f80abd2f96cca2c6cf3a4b66 Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Tue, 7 Feb 2017 15:49:02 -0500
+Subject: [PATCH 2/5] Newton rebase fixes
+
+---
+ manifests/mon.pp | 9 ++++++---
+ manifests/osd.pp | 2 +-
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index cbf753a..eb5c125 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -99,10 +99,13 @@ define ceph::mon (
+       }
+     # Everything else that is supported by puppet-ceph should run systemd.
+     } else {
+-      $init = 'systemd'
++      $init = 'sysvinit'
+       Service {
+-        name   => "ceph-mon@${id}",
+-        enable => $mon_enable,
++        name     => "ceph-mon-${id}",
++        provider => $::ceph::params::service_provider,
++        start    => "service ceph start mon.${id}",
++        stop     => "service ceph stop mon.${id}",
++        status   => "service ceph status mon.${id}",
+       }
+     }
+ 
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index 7de3a53..1972caa 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -77,7 +77,7 @@ define ceph::osd (
+   $store_type = undef,
+   $exec_timeout = $ceph::params::exec_timeout,
+   $selinux_file_context = 'ceph_var_lib_t',
+-  $fsid = $ceph::profile::params::fsid,
++  $fsid = undef,
+   $dmcrypt = false,
+   $dmcrypt_key_dir = '/etc/ceph/dmcrypt-keys',
+   ) {
+-- 
+2.30.2
+
