@@ -1,0 +1,2 @@
+debian-depend-python3-oslo-concurrency.patch
+debian-disable-selftest.patch
