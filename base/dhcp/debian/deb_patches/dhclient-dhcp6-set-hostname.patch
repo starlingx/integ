@@ -1,0 +1,18 @@
+The dhcp upstream commit 9261cb141 introduces a function
+set_hostname() set host name, and the commit also implements
+the DHCPv6 Handlers, so insert the set_hostname to the
+BOUND6|RENEW6|REBIND6 implementation.
+
+Yue Tao <yue.tao@windriver.com>
+
+--- a/debian/dhclient-script.linux
++++ b/debian/dhclient-script.linux
+@@ -393,6 +393,8 @@ case "$reason" in
+         ;;
+ 
+     BOUND6|RENEW6|REBIND6)
++        set_hostname
++
+         if [ "${new_ip6_address}" ]; then
+             # set leased IP
+             ip -6 addr add ${new_ip6_address} \
