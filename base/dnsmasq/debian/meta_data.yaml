@@ -1,0 +1,6 @@
+---
+debver: 2.85-1
+archive: https://snapshot.debian.org/archive/debian/20211110T150056Z/pool/main/d/dnsmasq
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

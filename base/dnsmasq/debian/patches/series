@@ -1,0 +1,2 @@
+close-tftp-sockets-immediately.patch
+dnsmasq-update-ipv6-leases-from-config.patch
