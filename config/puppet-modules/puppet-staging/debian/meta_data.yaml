@@ -1,0 +1,10 @@
+---
+debname: puppet-module-nanliu-staging
+debver: 1.0.4-2
+dl_path:
+  name: puppet-module-nanliu-staging-1.0.4-2.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-nanliu-staging/-/archive/debian/1.0.4-2/puppet-module-nanliu-staging-debian-1.0.4-2.tar.gz
+  md5sum: 65fa449b052334dceef20c7824dacdc4
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
