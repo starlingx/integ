@@ -1,0 +1,5 @@
+LICENSE usr/share/puppet/modules.available/puppet-dnsmasq
+manifests usr/share/puppet/modules.available/puppet-dnsmasq
+metadata.json usr/share/puppet/modules.available/puppet-dnsmasq
+spec usr/share/puppet/modules.available/puppet-dnsmasq
+templates usr/share/puppet/modules.available/puppet-dnsmasq

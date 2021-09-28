@@ -1,0 +1,10 @@
+---
+debname: puppet-dnsmasq
+debver: 1.1.0-0
+dl_path:
+  name: puppet-dnsmasq-1.1.0-0.tar.gz
+  url: https://codeload.github.com/procore/puppet-dnsmasq/tar.gz/a06a9127799f7376d3df985bda346f29afa19328
+  md5sum: c103ed8e7fa2bc386454e03dc67fc2da
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
