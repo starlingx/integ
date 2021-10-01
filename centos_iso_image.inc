@@ -165,6 +165,9 @@ kubernetes-1.19.13-client
 kubernetes-1.20.9-node
 kubernetes-1.20.9-kubeadm
 kubernetes-1.20.9-client
+kubernetes-1.21.3-node
+kubernetes-1.21.3-kubeadm
+kubernetes-1.21.3-client
 containerd
 k8s-pod-recovery
 containernetworking-plugins
