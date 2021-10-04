@@ -1,0 +1,34 @@
+From 7d276fc48d468cc257bcfc7e957c18e3035f2503 Mon Sep 17 00:00:00 2001
+From: Bin Qian <bin.qian@windriver.com>
+Date: Wed, 29 Sep 2021 20:17:18 -0400
+Subject: [PATCH] relocate /pxeboot to /var/pxeboot
+
+---
+ SPECS/shim-signed.spec | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SPECS/shim-signed.spec b/SPECS/shim-signed.spec
+index c085104..6dd7b95 100755
+--- a/SPECS/shim-signed.spec
++++ b/SPECS/shim-signed.spec
+@@ -229,7 +229,7 @@ install -m 0700 shimia32.efi $RPM_BUILD_ROOT/boot/efi/EFI/BOOT/BOOTIA32.EFI
+ install -m 0700 fbia32.efi $RPM_BUILD_ROOT/boot/efi/EFI/BOOT/fbia32.efi
+ 
+ # pxeboot support
+-install -D -p -m 0755 shimx64.efi $RPM_BUILD_ROOT/pxeboot/EFI/shim.efi
++install -D -p -m 0755 shimx64.efi $RPM_BUILD_ROOT/var/pxeboot/EFI/shim.efi
+ %endif
+ 
+ cd mokutil-%{mokutil_version}
+@@ -246,7 +246,7 @@ make PREFIX=%{_prefix} LIBDIR=%{_libdir} DESTDIR=%{buildroot} install
+ /boot/efi/EFI/BOOT/fb%{efiarchlc}.efi
+ /boot/efi/EFI/BOOT/fallback.efi
+ /boot/efi/EFI/%{efidir}/shim.efi
+-%attr(755,root,root) /pxeboot/EFI/shim.efi
++%attr(755,root,root) /var/pxeboot/EFI/shim.efi
+ 
+ %ifarch x86_64
+ /boot/efi/EFI/%{efidir}/BOOT.CSV
+-- 
+2.29.2
+

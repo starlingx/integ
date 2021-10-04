@@ -1,0 +1,44 @@
+From e78aeedb002ddf204d0b970b8601ead55bf32f6f Mon Sep 17 00:00:00 2001
+From: Bin Qian <bin.qian@windriver.com>
+Date: Wed, 29 Sep 2021 16:49:47 -0400
+Subject: [PATCH] Relocate /pxeboot to /var/pxeboot
+
+Relocate writable directory /pxeboot to /var/pxeboot
+---
+ SOURCES/grub.macros  | 4 ++--
+ SOURCES/grub.patches | 1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
+index d52861a..fe88bf1 100644
+--- a/SOURCES/grub.macros
++++ b/SOURCES/grub.macros
+@@ -410,7 +410,7 @@ ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
+ 	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
+ install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}.unsigned \
+ install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3}.unsigned \
+-install -D -m 755 %{2} $RPM_BUILD_ROOT/pxeboot/EFI/%{2}         \
++install -D -m 755 %{2} $RPM_BUILD_ROOT/var/pxeboot/EFI/%{2}     \
+ install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
+ install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
+ install -D -m 700 unicode.pf2					\\\
+@@ -502,6 +502,6 @@ cd ..								\
+ /boot/efi/EFI/%{efidir}/%{grubeficdname}.unsigned               \
+ 								\
+ %{expand:%%files %{1}-pxeboot}                                  \
+-/pxeboot/EFI/%{grubefiname}                                     \
++/var/pxeboot/EFI/%{grubefiname}                                 \
+ 								\
+ %{nil}
+diff --git a/SOURCES/grub.patches b/SOURCES/grub.patches
+index ece014a..5ce9177 100644
+--- a/SOURCES/grub.patches
++++ b/SOURCES/grub.patches
+@@ -336,4 +336,3 @@ Patch1000: 1000_linux-mktitle-de-brand-the-grub.cfg-menu.patch
+ Patch1001: 1001-add-tboot.patch
+ Patch1002: 1002-Don-t-write-trailing-colon-when-populating-MAC-strin.patch
+ Patch1003: 1003-tftp-roll-over-block-counter-to-prevent-timeouts-wit.patch
+-
+-- 
+2.29.2
+

@@ -10,3 +10,4 @@
 0011-grub2-fix-str-for-6B-macs.patch
 0012-grub2-Don-t-strip-img-files-from-non-EFI-build.patch
 0013-tftp-roll-over-block-counter-to-prevent-timeouts-wit.patch
+0014-relocate-pxeboot-to-var-pxeboot-patch.patch
