@@ -1,1 +1,5 @@
 config/facter
+config/puppet-modules/puppet-dnsmasq
+config/puppet-modules/puppet-puppi
+config/puppet-modules/puppet-rabbitmq-8.5.0
+config/puppet-modules/puppet-staging
