@@ -1,0 +1,10 @@
+---
+debname: etcd
+debver: 3.3.25+dfsg-6
+dl_path:
+  name: etcd-debian-3.3.25+dfsg-6.tar.gz
+  url: https://salsa.debian.org/go-team/packages/etcd/-/archive/debian/3.3.25+dfsg-6/etcd-debian-3.3.25+dfsg-6.tar.gz
+  md5sum: 91df267a20b0f34a1ad1ff48a8815706
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
