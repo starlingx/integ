@@ -13,6 +13,7 @@ Source1: runc-1.0.0-rc95.tar.gz
 Source2: crictl-v1.21.0-linux-amd64.tar.gz
 Source3: crictl.yaml
 Patch1: 0001-customize-containerd-for-StarlingX.patch
+Patch2: 0002-CRI-Reduce-clutter-of-log-entries-during-process-exe.patch
 URL: https://www.starlingx.io
 Vendor: StarlingX
 Packager: StarlingX
@@ -57,6 +58,7 @@ low-level storage and network attachments, etc.
 %setup -q -c -n src -a 1
 %setup -q -c -T -D -n src -a 2
 %patch1 -p1
+%patch2 -p1
 
 %build
 # build containerd
