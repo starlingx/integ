@@ -9,7 +9,7 @@ to isolate them from the shared pool of CPUs.
 
 Infrastructure pods include any pods that belong to the kube-system,
 armada, cert-manager, vault, platform-deployment-manager, portieris,
-or notification namespaces.
+notification or flux-helm namespaces.
 
 The implementation is a bit simplistic, it is assumed that the
 "reserved" cpuset is large enough to handle all infrastructure pods
@@ -33,7 +33,7 @@ index e892d63641b..ab3206c5dc4 100644
  
 +// Define namespaces used by platform infrastructure pods
 +var infraNamespaces = [...]string{
-+	"kube-system", "armada", "cert-manager", "platform-deployment-manager", "portieris", "vault", "notification",
++	"kube-system", "armada", "cert-manager", "platform-deployment-manager", "portieris", "vault", "notification", "flux-helm",
 +}
 +
  // staticPolicy is a CPU manager policy that does not change CPU
