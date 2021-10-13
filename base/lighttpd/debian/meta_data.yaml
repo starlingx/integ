@@ -1,0 +1,9 @@
+debver: 1.4.55-1~bpo10+1
+debname: lighttpd
+dl_path:
+  name: lighttpd-debian-1.4.55-1_bpo10+1.tar.gz
+  url: https://salsa.debian.org/debian/lighttpd/-/archive/debian/1.4.55-1_bpo10+1/lighttpd-debian-1.4.55-1_bpo10+1.tar.gz
+  md5sum: 453d7710982ee44fb5ce41673c6bd0df
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT:
