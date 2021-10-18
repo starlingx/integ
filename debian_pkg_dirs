@@ -5,3 +5,4 @@ config/puppet-modules/puppet-rabbitmq-8.5.0
 config/puppet-modules/puppet-staging
 storage-drivers/trident-installer
 config/puppet-5.5.22
+filesystem/parted
