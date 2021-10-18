@@ -1,0 +1,521 @@
+#!/bin/bash --norc
+# New mkdumprd
+#
+# Copyright 2011 Red Hat, Inc.
+#
+# Written by Cong Wang <amwang@redhat.com>
+#
+
+. /lib/kdump/kdump-lib.sh
+export IN_KDUMP=1
+
+conf_file="/etc/kdump.conf"
+SSH_KEY_LOCATION="/root/.ssh/kdump_id_rsa"
+SAVE_PATH=$(grep ^path $conf_file| cut -d' '  -f2)
+[ -z "$SAVE_PATH" ] && SAVE_PATH=$DEFAULT_PATH
+# strip the duplicated "/"
+SAVE_PATH=$(echo $SAVE_PATH | tr -s /)
+
+is_wdt_addition_needed() {
+	local active
+
+	is_wdt_mod_omitted
+	[[ $? -eq 0 ]] && return 1
+	[[ -d /sys/class/watchdog/ ]] || return 1
+	for dir in /sys/class/watchdog/*; do
+		[[ -f "$dir/state" ]] || continue
+		active=$(< "$dir/state")
+		[[ "$active" =  "active" ]] && return 0
+	done
+	return 1
+}
+
+WDTCFG=""
+is_wdt_addition_needed
+[[ $? -eq 0 ]] && WDTCFG="-a watchdog"
+
+extra_modules=""
+dracut_args=("--hostonly" "--hostonly-cmdline" "--hostonly-i18n" "--hostonly-mode" "strict" "-o" "plymouth dash resume ifcfg" $WDTCFG)
+OVERRIDE_RESETTABLE=0
+
+add_dracut_arg() {
+    local arg qarg is_quoted=0
+    while [ $# -gt 0 ];
+    do
+        arg="${1//\'/\"}"
+        #Handle quoted substring properly for passing it to dracut_args array.
+        if [ $is_quoted -eq 0 ]; then
+            if [[ "$arg" == "\"" ]] || [[ $arg != ${arg#\"} ]]; then
+                is_quoted=1
+                arg=${arg#\"}
+            fi
+        fi
+        if [ $is_quoted -eq 1 ]; then
+            qarg="$qarg $arg"
+            if [[ "$arg" == "\"" ]] || [[ $arg != ${arg%\"} ]]; then
+                is_quoted=0
+                arg=${qarg%\"}
+                qarg=""
+            else
+                shift
+                continue
+            fi
+        fi
+        dracut_args+=("$arg")
+        shift
+    done
+}
+
+add_dracut_module() {
+    add_dracut_arg "--add" "$1"
+}
+
+add_dracut_mount() {
+    add_dracut_arg "--mount" "$1"
+}
+
+add_dracut_sshkey() {
+    add_dracut_arg "--sshkey" "$1"
+}
+
+# Generic substring function.  If $2 is in $1, return 0.
+strstr() { [[ $1 =~ $2 ]]; }
+
+# caller should ensure $1 is valid and mounted in 1st kernel
+to_mount() {
+    local _dev=$1 _source _target _fstype _options _mntopts _pdev
+
+    _source=$(findmnt -k -f -n -r -o SOURCE $_dev)
+    _target=$(get_mntpoint_from_target $_dev)
+    # mount under /sysroot if dump to root disk or mount under
+    #/kdumproot/$_target in other cases in 2nd kernel. systemd
+    #will be in charge to umount it.
+
+    if [ "$_target" = "/" ];then
+        _target="/sysroot"
+    else
+        _target="/kdumproot/$_target"
+    fi
+
+    _fstype=$(findmnt -k -f -n -r -o FSTYPE $_dev)
+    [[ -e /etc/fstab ]] && _options=$(findmnt --fstab -f -n -r -o OPTIONS $_dev)
+    [ -z "$_options" ] && _options=$(findmnt -k -f -n -r -o OPTIONS $_dev)
+    # with 'noauto' in fstab nfs and non-root disk mount will fail in 2nd
+    # kernel, filter it out here.
+    _options=$(echo $_options | sed 's/\bnoauto\b//')
+    #mount fs target as rw in 2nd kernel
+    _options=$(echo $_options | sed 's/\bro\b/rw/')
+
+    _mntopts="$_target $_fstype $_options"
+    #for non-nfs _dev converting to use udev persistent name
+    if [ -b "$_source" ]; then
+        _pdev="$(kdump_get_persistent_dev $_source $_fstype)"
+        if [ $? -ne 0 ]; then
+            return 1
+        fi
+
+    else
+        _pdev=$_dev
+    fi
+
+    echo "$_pdev $_mntopts"
+}
+
+is_readonly_mount() {
+    local _mnt
+    _mnt=$(findmnt -k -f -n -r -o OPTIONS $1)
+
+    #fs/proc_namespace.c: show_mountinfo():
+    #seq_puts(m, mnt->mnt_flags & MNT_READONLY ? " ro" : " rw");
+    [[ "$_mnt" =~ ^ro ]]
+}
+
+#Function: get_ssh_size
+#$1=dump target
+#called from while loop and shouldn't read from stdin, so we're using "ssh -n"
+get_ssh_size() {
+    local _opt _out _size
+    _opt="-i $SSH_KEY_LOCATION -o BatchMode=yes -o StrictHostKeyChecking=yes"
+    _out=$(ssh -q -n $_opt $1 "df -P $SAVE_PATH")
+    [ $? -ne 0 ] && {
+        perror_exit "checking remote ssh server available size failed."
+    }
+
+    #ssh output removed the line break, so print field NF-2
+    _size=$(echo -n $_out| awk '{avail=NF-2; print $avail}')
+    echo -n $_size
+}
+
+#mkdir if save path does not exist on ssh dump target
+#$1=ssh dump target
+#caller should ensure write permission on $DUMP_TARGET:$SAVE_PATH
+#called from while loop and shouldn't read from stdin, so we're using "ssh -n"
+mkdir_save_path_ssh()
+{
+    local _opt _dir
+    _opt="-i $SSH_KEY_LOCATION -o BatchMode=yes -o StrictHostKeyChecking=yes"
+    ssh -qn $_opt $1 mkdir -p $SAVE_PATH 2>&1 > /dev/null
+    _ret=$?
+    if [ $_ret -ne 0 ]; then
+        perror_exit "mkdir failed on $DUMP_TARGET:$SAVE_PATH"
+    fi
+
+    #check whether user has write permission on $SAVE_PATH/$DUMP_TARGET
+    _dir=$(ssh -qn $_opt $1 mktemp -dqp $SAVE_PATH 2>/dev/null)
+    _ret=$?
+    if [ $_ret -ne 0 ]; then
+        perror_exit "Could not create temporary directory on $DUMP_TARGET:$SAVE_PATH. Make sure user has write permission on destination"
+    fi
+    ssh -qn $_opt $1 rmdir $_dir
+
+    return 0
+}
+
+#Function: get_fs_size
+#$1=dump target
+get_fs_size() {
+    local _mnt=$(get_mntpoint_from_target $1)
+    echo -n $(df -P "${_mnt}/$SAVE_PATH"|tail -1|awk '{print $4}')
+}
+
+#Function: get_raw_size
+#$1=dump target
+get_raw_size() {
+        echo -n $(fdisk -s "$1")
+}
+
+#Function: check_size
+#$1: dump type string ('raw', 'fs', 'ssh')
+#$2: dump target
+check_size() {
+    local avail memtotal
+
+    memtotal=$(awk '/MemTotal/{print $2}' /proc/meminfo)
+    case "$1" in
+        raw)
+            avail=$(get_raw_size "$2")
+            ;;
+        ssh)
+            avail=$(get_ssh_size "$2")
+            ;;
+        fs)
+            avail=$(get_fs_size "$2")
+            ;;
+        *)
+            return
+    esac
+
+    if [ $? -ne 0 ]; then
+            perror_exit "Check dump target size failed"
+    fi
+
+    if [ $avail -lt $memtotal ]; then
+        echo "Warning: There might not be enough space to save a vmcore."
+        echo "         The size of $2 should be greater than $memtotal kilo bytes."
+    fi
+}
+
+# $1: core_collector config value
+verify_core_collector() {
+    if grep -q "^raw" $conf_file && [ "${1%% *}" != "makedumpfile" ]; then
+        echo "Warning: specifying a non-makedumpfile core collector, you will have to recover the vmcore manually."
+    fi
+    if is_ssh_dump_target || is_raw_dump_target; then
+        if [ "${1%% *}" = "makedumpfile" ]; then
+            ! strstr "$1" "-F" && {
+                perror_exit "The specified dump target needs makedumpfile \"-F\" option."
+            }
+        fi
+    fi
+}
+
+add_mount() {
+    local _mnt=$(to_mount "$1")
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    add_dracut_mount "$_mnt"
+}
+
+# get_maj_min <device>
+# Prints the major and minor of a device node.
+# Example:
+# $ get_maj_min /dev/sda2
+# 8:2
+get_maj_min() {
+    local _dev
+    _dev=$(stat -L -c '$((0x%t)):$((0x%T))' "$1" 2>/dev/null)
+    _dev=$(eval "echo $_dev")
+    echo $_dev
+}
+
+# ugly workaround for the lvm design
+# There is no volume group device,
+# so, there are no slave devices for volume groups.
+# Logical volumes only have the slave devices they really live on,
+# but you cannot create the logical volume without the volume group.
+# And the volume group might be bigger than the devices the LV needs.
+check_vol_slaves() {
+    local _lv _vg _pv
+    for i in /dev/mapper/*; do
+        _lv=$(get_maj_min $i)
+        if [[ $_lv = $2 ]]; then
+            _vg=$(lvm lvs --noheadings -o vg_name $i 2>/dev/null)
+            # strip space
+            _vg=$(echo $_vg)
+            if [[ $_vg ]]; then
+                for _pv in $(lvm vgs --noheadings -o pv_name "$_vg" 2>/dev/null)
+                do
+                    check_block_and_slaves $1 $(get_maj_min $_pv) && return 0
+                done
+            fi
+        fi
+    done
+    return 1
+}
+
+# Walk all the slave relationships for a given block device.
+# Stop when our helper function returns success
+# $1 = function to call on every found block device
+# $2 = block device in major:minor format
+check_block_and_slaves() {
+    local _x
+    [[ -b /dev/block/$2 ]] || return 1 # Not a block device? So sorry.
+    "$1" $2 && return
+    check_vol_slaves "$@" && return 0
+    if [[ -f /sys/dev/block/$2/../dev ]]; then
+        check_block_and_slaves $1 $(cat "/sys/dev/block/$2/../dev") && return 0
+    fi
+    [[ -d /sys/dev/block/$2/slaves ]] || return 1
+    for _x in /sys/dev/block/$2/slaves/*/dev; do
+        [[ -f $_x ]] || continue
+        check_block_and_slaves $1 $(cat "$_x") && return 0
+    done
+    return 1
+}
+
+#handle the case user does not specify the dump target explicitly
+handle_default_dump_target()
+{
+    local _target
+    local _mntpoint
+
+    is_user_configured_dump_target && return
+
+    check_save_path_fs $SAVE_PATH
+
+    _mntpoint=$(get_mntpoint_from_path $SAVE_PATH)
+    _target=$(get_target_from_path $SAVE_PATH)
+
+    if is_atomic && is_bind_mount $_mntpoint; then
+        SAVE_PATH=${SAVE_PATH##"$_mntpoint"}
+        # the real dump path in the 2nd kernel, if the mount point is bind mounted.
+        SAVE_PATH=$(get_bind_mount_directory $_mntpoint)/$SAVE_PATH
+        _mntpoint=$(get_mntpoint_from_target $_target)
+
+        # the absolute path in the 1st kernel
+        SAVE_PATH=$_mntpoint/$SAVE_PATH
+    fi
+
+    SAVE_PATH=${SAVE_PATH##"$_mntpoint"}
+    add_mount "$_target"
+    check_size fs $_target
+}
+
+get_override_resettable()
+{
+    local override_resettable
+
+    override_resettable=$(grep "^override_resettable" $conf_file)
+    if [ -n "$override_resettable" ]; then
+        OVERRIDE_RESETTABLE=$(echo $override_resettable | cut -d' '  -f2)
+        if [ "$OVERRIDE_RESETTABLE" != "0" ] && [ "$OVERRIDE_RESETTABLE" != "1" ];then
+            perror_exit "override_resettable value $OVERRIDE_RESETTABLE is invalid"
+        fi
+    fi
+}
+
+
+# $1: function name
+for_each_block_target()
+{
+    local dev majmin
+
+    for dev in $(get_kdump_targets); do
+        [ -b "$dev" ] || continue
+        majmin=$(get_maj_min $dev)
+        check_block_and_slaves $1 $majmin && return 1
+    done
+
+    return 0
+}
+
+
+
+#judge if a specific device with $1 is unresettable
+#return false if unresettable.
+is_unresettable()
+{
+    local path="/sys/$(udevadm info --query=all --path=/sys/dev/block/$1 | awk '/^P:/ {print $2}' | sed -e 's/\(cciss[0-9]\+\/\).*/\1/g' -e 's/\/block\/.*$//')/resettable"
+    local resettable=1
+
+    if [ -f "$path" ]
+    then
+        resettable="$(cat $path)"
+        [ $resettable -eq 0 -a "$OVERRIDE_RESETTABLE" -eq 0 ] && {
+            local device=$(udevadm info --query=all --path=/sys/dev/block/$1 | awk -F= '/DEVNAME/{print $2}')
+            echo "Error: Can not save vmcore because device $device is unresettable"
+            return 0
+        }
+    fi
+
+    return 1
+}
+
+#check if machine is resettable.
+#return true if resettable
+check_resettable()
+{
+    local _ret _target
+
+    get_override_resettable
+
+    for_each_block_target is_unresettable
+    _ret=$?
+
+    [ $_ret -eq 0 ] && return
+
+    return 1
+}
+
+# $1: maj:min
+is_crypt()
+{
+    local majmin=$1 dev line ID_FS_TYPE=""
+
+    line=$(udevadm info --query=property --path=/sys/dev/block/$majmin \
+            | grep "^ID_FS_TYPE")
+    eval "$line"
+    [[ "$ID_FS_TYPE" = "crypto_LUKS" ]] && {
+        dev=$(udevadm info --query=all --path=/sys/dev/block/$majmin | awk -F= '/DEVNAME/{print $2}')
+        echo "Device $dev is encrypted."
+        return 0
+    }
+    return 1
+}
+
+check_crypt()
+{
+    local _ret _target
+
+    for_each_block_target is_crypt
+    _ret=$?
+
+    [ $_ret -eq 0 ] && return
+
+    return 1
+}
+
+if ! check_resettable; then
+    exit 1
+fi
+
+if ! check_crypt; then
+    echo "Warning: Encrypted device is in dump path. User will prompted for password during second kernel boot."
+fi
+
+# firstly get right SSH_KEY_LOCATION
+keyfile=$(awk '/^sshkey/ {print $2}' $conf_file)
+if [ -f "$keyfile" ]; then
+    # canonicalize the path
+    SSH_KEY_LOCATION=$(/usr/bin/readlink -m $keyfile)
+fi
+
+if [ "$(uname -m)" = "s390x" ]; then
+    add_dracut_module "znet"
+fi
+
+while read config_opt config_val;
+do
+    # remove inline comments after the end of a directive.
+    config_val=$(strip_comments $config_val)
+    case "$config_opt" in
+    extra_modules)
+        extra_modules="$extra_modules $config_val"
+        ;;
+    ext[234]|xfs|btrfs|minix|nfs)
+        if ! findmnt $config_val >/dev/null; then
+            perror_exit "Dump target $config_val is probably not mounted."
+        fi
+
+        _absolute_save_path=$(make_absolute_save_path $config_val)
+        _mntpoint=$(get_mntpoint_from_path $_absolute_save_path)
+        if is_atomic && is_bind_mount $_mntpoint; then
+            SAVE_PATH=${_absolute_save_path##"$_mntpoint"}
+            # the real dump path in the 2nd kernel, if the mount point is bind mounted.
+            SAVE_PATH=$(get_bind_mount_directory $_mntpoint)/$SAVE_PATH
+        fi
+
+        add_mount "$config_val"
+        check_save_path_fs $_absolute_save_path
+        check_size fs $config_val
+        ;;
+    raw)
+        #checking raw disk writable
+        dd if=$config_val count=1 of=/dev/null > /dev/null 2>&1 || {
+            perror_exit "Bad raw disk $config_val"
+        }
+        _praw=$(kdump_get_persistent_dev $config_val "raw")
+        if [ $? -ne 0 ]; then
+            exit 1
+        fi
+        add_dracut_arg "--device" "$_praw"
+        check_size raw $config_val
+        ;;
+    ssh)
+        if strstr "$config_val" "@";
+        then
+            check_size ssh $config_val
+            mkdir_save_path_ssh $config_val
+            add_dracut_module "ssh-client"
+		add_dracut_sshkey "$SSH_KEY_LOCATION"
+        else
+            perror_exit "Bad ssh dump target $config_val"
+        fi
+        ;;
+    core_collector)
+        verify_core_collector "$config_val"
+        ;;
+    dracut_args)
+        add_dracut_arg $config_val
+        ;;
+    *)
+        if [ -n $(echo $config_opt | grep "^#.*$") ]
+        then
+            continue
+        fi
+        ;;
+    esac
+done < $conf_file
+
+handle_default_dump_target
+
+if [ -n "$extra_modules" ]
+then
+    add_dracut_arg "--add-drivers" "$extra_modules"
+fi
+
+if ! is_fadump_capable; then
+    # The 2nd rootfs mount stays behind the normal dump target mount,
+    # so it doesn't affect the logic of check_dump_fs_modified().
+    is_dump_to_rootfs && add_mount "$(to_dev_name $(get_root_fs_device))"
+
+    add_dracut_arg "--no-hostonly-default-device"
+fi
+
+dracut "${dracut_args[@]}" "$@"
+_rc=$?
+sync
+exit $_rc
