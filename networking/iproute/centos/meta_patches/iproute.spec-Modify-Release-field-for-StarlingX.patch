@@ -1,0 +1,27 @@
+From 36bc0ef90f0b05a91728c5f8633988131af8a0af Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Fri, 22 Oct 2021 16:37:34 -0400
+Subject: [PATCH] iproute.spec: Modify Release field for StarlingX
+
+This commit modifies the Release field of the iproute package's spec
+file for StarlingX.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ SPECS/iproute.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/iproute.spec b/SPECS/iproute.spec
+index 6ef0b529e0ce..b8f7ad1833df 100644
+--- a/SPECS/iproute.spec
++++ b/SPECS/iproute.spec
+@@ -1,5 +1,5 @@
+ %define rpmversion 5.9.0
+-%define specrelease 4%{?dist}
++%define specrelease 4%{?_tis_dist}.%{tis_patch_ver}
+ %define pkg_release %{specrelease}%{?buildid}
+ 
+ Summary:            Advanced IP routing and network device configuration tools
+-- 
+2.29.2
+
