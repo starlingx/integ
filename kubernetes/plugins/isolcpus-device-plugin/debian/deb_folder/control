@@ -1,0 +1,15 @@
+Source: isolcpus-device-plugin
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13) ,
+               dh-golang ,
+               golang-any
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: isolcpus-device-plugin
+Architecture: any
+Depends:  ${misc:Depends}, ${shlibs:Depends}
+Description: Expose isolated CPUs to Kubernetes cluster.
+ Expose isolated CPUs to Kubernetes as devices via the device plugin API.

@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	go build -mod=vendor -ldflags=-linkmode=external
+
+override_dh_auto_test:
+	echo "do nothing"
+
+override_dh_usrlocal:
+	echo "do nothing"
