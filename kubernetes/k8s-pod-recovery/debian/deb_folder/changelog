@@ -1,0 +1,5 @@
+k8s-pod-recovery (1.0-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Mihnea Saracin <mihnea.saracin@opendev.org>  Mon, 18 Oct 2021 12:51:12 +0000

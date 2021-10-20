@@ -1,0 +1,17 @@
+Source: k8s-pod-recovery
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <StarlingX-discuss@lists.StarlingX.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+Rules-Requires-Root: no
+
+Package: k8s-pod-recovery
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+ systemd
+Description: Kubernetes Pod Recovery Service
+ This service will recover k8s pods that are in bad states
+

@@ -1,0 +1,2 @@
+usr/local/sbin/k8s-pod-recovery
+lib/systemd/system/k8s-pod-recovery.service

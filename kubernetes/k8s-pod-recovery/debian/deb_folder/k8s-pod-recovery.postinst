@@ -1,0 +1,21 @@
+#!/bin/sh
+# see: dh_installdeb(1)
+
+set -e
+
+if [ "${1}" = "configure" ] ; then
+    # Package upgrade: reenable in case [Install] changes and restart to pick up
+    # new actions
+    if /usr/bin/systemctl --quiet is-enabled k8s-pod-recovery.service ; then
+        /usr/bin/systemctl reenable k8s-pod-recovery.service > /dev/null 2>&1 || :
+        /usr/bin/systemctl restart k8s-pod-recovery.service > /dev/null 2>&1 || :
+    else
+    # Package install: enable and start it
+        /usr/bin/systemctl enable k8s-pod-recovery.service > /dev/null 2>&1 || :
+        /usr/bin/systemctl start k8s-pod-recovery.service > /dev/null 2>&1 || :
+    fi
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -21,4 +21,5 @@ filesystem/drbd/drbd-tools
 filesystem/parted
 kubernetes/chartmuseum
 kubernetes/helm
+kubernetes/k8s-pod-recovery
 storage-drivers/trident-installer

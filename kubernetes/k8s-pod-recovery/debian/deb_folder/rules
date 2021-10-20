@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+
+DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
+
+
+%:
+	dh $@
+
+override_dh_auto_test:
+	echo
+
+override_dh_auto_install:
+	echo
+
+override_dh_install:
+	install -d ${DEBIAN_DESTDIR}/etc/k8s-post-recovery.d
+	install -d ${DEBIAN_DESTDIR}/usr/local/sbin
+	install -m 755 k8s-pod-recovery ${DEBIAN_DESTDIR}/usr/local/sbin/k8s-pod-recovery
+	install -p -D -m 644 k8s-pod-recovery.service ${DEBIAN_DESTDIR}/lib/systemd/system/k8s-pod-recovery.service
+	dh_install
+
+override_dh_usrlocal:
+	echo
