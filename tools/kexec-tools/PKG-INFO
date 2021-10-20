@@ -1,0 +1,19 @@
+Metadata-Version: 1.0
+Name: kexec-tools
+Version: 2.0.21
+Summary: The kexec/kdump userspace component.
+Home-page: https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git/
+Author:
+Author-email:
+License: GPLv2
+
+Description:
+/sbin/kexec is a user space utility for loading another kernel
+and asking the currently running kernel to do something with it.
+A currently running kernel may be asked to start the loaded
+kernel on reboot, or to start the loaded kernel after it panics.
+
+The panic case is useful for having an intact kernel for writing
+crash dumps.  But other uses may be imagined.
+
+Platform: UNKNOWN

@@ -1,0 +1,8 @@
+COPY_LIST="
+  $STX_BASE/downloads/kexec-tools-2.0.21.tar.xz \
+  $STX_BASE/downloads/makedumpfile-1.6.9.tar.gz \
+  $STX_BASE/downloads/eppic_050615.tar.gz \
+  $STX_BASE/downloads/kdump-anaconda-addon-003-29-g4c517c5.tar.gz \
+  $PKG_BASE/files/*
+  "
+TIS_PATCH_VER=PKG_GITREVCOUNT+1

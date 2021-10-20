@@ -94,3 +94,4 @@ python/python-daemon
 base/inih
 base/pf-bb-config
 gpu/gpu-operator
+tools/kexec-tools

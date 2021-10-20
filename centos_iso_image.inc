@@ -218,3 +218,6 @@ python-boto3
 
 # Pf bbdev configuration tool for ACC100 (Mt. Bryce)
 pf-bb-config
+
+# kexec-tools
+kexec-tools
