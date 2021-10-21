@@ -1,0 +1,14 @@
+Source: helm
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: helm
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Helm Kubernetes Package Manager
+ Helm is a tool for managing charts, which are packages of pre-configured
+ Kubernetes resources.

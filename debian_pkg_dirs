@@ -6,4 +6,6 @@ config/puppet-modules/puppet-rabbitmq-8.5.0
 config/puppet-modules/puppet-staging
 filesystem/drbd/drbd-tools
 filesystem/parted
+kubernetes/chartmuseum
+kubernetes/helm
 storage-drivers/trident-installer

@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+# export DH_VERBOSE = 1
+
+export CHARTMUSEUM_VERSION = 0.12.0
+export ROOT = debian/tmp
+export BINDIR = $(ROOT)/usr/bin
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	tar xfz chartmuseum-$(CHARTMUSEUM_VERSION).tar.gz
+
+override_dh_auto_clean:
+
+override_dh_auto_install:
+	install -d -m 755 $(BINDIR)
+	install -p -D -m 755 chartmuseum-v$(CHARTMUSEUM_VERSION)-amd64 $(BINDIR)/chartmuseum
+
+override_dh_auto_test:
