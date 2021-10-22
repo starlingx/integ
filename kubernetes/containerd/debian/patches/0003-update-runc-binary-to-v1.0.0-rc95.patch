@@ -1,0 +1,21 @@
+From 5ab8e65d580831184f6c10b40e479da9ce0e8b67 Mon Sep 17 00:00:00 2001
+From: Daniel Safta <daniel.safta@windriver.com>
+Date: Tue, 19 Oct 2021 13:17:46 +0000
+Subject: [PATCH] update runc binary to v1.0.0-rc95 Signed-off-by: Akihiro Suda
+ <akihiro.suda.cz@hco.ntt.co.jp> (cherry picked from commit 599127f)
+ Signed-off-by: Akihiro Suda <akihiro.suda.cz@hco.ntt.co.jp>
+
+---
+ script/setup/runc-version | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/script/setup/runc-version b/script/setup/runc-version
+index fd84c98..ded5e1b 100644
+--- a/script/setup/runc-version
++++ b/script/setup/runc-version
+@@ -1 +1 @@
+-v1.0.0-rc94
++v1.0.0-rc95
+-- 
+2.30.2
+
