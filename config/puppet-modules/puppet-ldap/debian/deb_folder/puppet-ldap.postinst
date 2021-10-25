@@ -1,0 +1,13 @@
+#!/bin/sh
+# see: dh_installdeb(1)
+
+set -e
+
+if [ "${1}" = "configure" ] ; then
+    update-alternatives --install /usr/share/puppet/modules/ldap puppet-module-ldap \
+        /usr/share/puppet/modules.available/puppet-ldap 500
+fi
+
+#DEBHELPER#
+
+exit 0
