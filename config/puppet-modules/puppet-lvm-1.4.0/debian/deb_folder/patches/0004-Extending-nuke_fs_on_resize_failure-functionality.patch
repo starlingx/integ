@@ -1,0 +1,34 @@
+From f2bfd68078f8eb2a09a2bbd2638f2e957b8397af Mon Sep 17 00:00:00 2001
+From: Stefan Dinescu <stefan.dinescu@windriver.com>
+Date: Wed, 6 Dec 2017 12:50:14 +0000
+Subject: [PATCH 4/6] Extending nuke_fs_on_resize_failure functionality
+
+---
+ lib/puppet/provider/logical_volume/lvm.rb | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/logical_volume/lvm.rb b/lib/puppet/provider/logical_volume/lvm.rb
+index 76c7ec0..6aa2989 100644
+--- a/lib/puppet/provider/logical_volume/lvm.rb
++++ b/lib/puppet/provider/logical_volume/lvm.rb
+@@ -276,7 +276,16 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+           exec_cmd('dd', 'if=/dev/zero', "of=#{path}", "bs=512", "count=16", "conv=notrunc")
+           blkid('-g')
+         end
+-        lvresize( '-f', '-L', "#{new_size}k", path) || fail( "Cannot reduce to size #{new_size} because lvresize failed." )
++        r = exec_cmd('lvresize', '-r', '-f', '-L', "#{new_size}k", path)
++        if r[:exit] != 0
++          if @resource[:nuke_fs_on_resize_failure]
++            exec_cmd('dd', 'if=/dev/zero', "of=#{path}", "bs=512", "count=16", "conv=notrunc")
++            blkid('-g')
++            lvresize( '-f', '-L', "#{new_size}k", path) || fail( "Cannot reduce to size #{new_size} because lvresize failed." )
++          else
++            fail( "Cannot reduce to size #{new_size} because lvresize failed." )
++          end
++        end
+       end
+     elsif new_size > current_size
+       if new_size % vg_extent_size != 0
+-- 
+2.16.6
+
