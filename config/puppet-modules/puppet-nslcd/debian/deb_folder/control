@@ -1,0 +1,16 @@
+Source: puppet-nslcd
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: puppet-nslcd
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+ puppet,
+ puppet-module-puppetlabs-stdlib
+Description: Puppet module named puppet-nslcd
+ A Puppet module for nslcd - local LDAP name service daemon
