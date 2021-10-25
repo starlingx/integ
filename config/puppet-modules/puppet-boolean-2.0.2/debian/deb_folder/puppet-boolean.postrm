@@ -1,0 +1,13 @@
+#!/bin/sh
+# see: dh_installdeb(1)
+
+set -e
+
+if [ "${1}" = "remove" ] || [ "${1}" = "disappear" ]; then
+    update-alternatives --remove puppet-module-boolean \
+        /usr/share/puppet/modules.available/puppet-boolean
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,5 @@
+puppet-boolean (2.0.2-0) unstable; urgency=medium
+
+  * Initial release
+
+ -- Dan Voiculeasa <dan.voiculeasa@windriver.com>  Wed, 08 Sep 2021 11:50:43 +0000
