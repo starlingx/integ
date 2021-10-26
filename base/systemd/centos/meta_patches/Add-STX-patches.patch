@@ -1,4 +1,4 @@
-From 8ca176c7d8a3d21b928db29744f950c3cb336658 Mon Sep 17 00:00:00 2001
+From b2c505a9b2a532974b5f69332bd87f03087d74a4 Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Wed, 21 Apr 2021 14:41:27 +0800
 Subject: [PATCH] Add STX patches
@@ -6,14 +6,14 @@ Subject: [PATCH] Add STX patches
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- SPECS/systemd.spec | 59 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 59 insertions(+)
+ SPECS/systemd.spec | 68 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 68 insertions(+)
 
 diff --git a/SPECS/systemd.spec b/SPECS/systemd.spec
-index 9ed7715..bd14767 100644
+index 07e022e..a9b6fe0 100644
 --- a/SPECS/systemd.spec
 +++ b/SPECS/systemd.spec
-@@ -884,6 +884,65 @@ Patch0842: 0842-core-don-t-update-unit-description-if-it-is-already-.patch
+@@ -884,6 +884,74 @@ Patch0842: 0842-core-don-t-update-unit-description-if-it-is-already-.patch
  Patch0843: 0843-unit-don-t-emit-PropertiesChanged-signal-if-adding-a.patch
  Patch0844: 0844-core-fix-unnecessary-fallback-to-the-rescue-mode-cau.patch
  Patch0845: 0845-core-Detect-initial-timer-state-from-serialized-data.patch
@@ -75,6 +75,15 @@ index 9ed7715..bd14767 100644
 +# upstream patches as unmodified as possible to facilitate maintaining them, so instead
 +# of individually changing them for compilation, we just have one patch at the end to do it.
 +Patch0921: 921-systemd-Fix-compiling-errors-when-merging-1819868.patch
++
++# This cluster of patches relates to fixing redhat bug #1968528
++# "fix rate-limiting of mount events"
++Patch0922: 922-sd-event-change-ordering-of-pending-ratelimited-even.patch
++Patch0923: 923-sd-event-drop-unnecessary-else.patch
++Patch0924: 924-sd-event-use-CMP-macro.patch
++Patch0925: 925-sd-event-use-usec_add.patch
++Patch0926: 926-sd-event-make-event_source_time_prioq_reshuffle-acce.patch
++Patch0927: 927-sd-event-always-reshuffle-time-prioq-on-changing-onl.patch
 +
  Patch9999: 9999-Update-kernel-install-script-by-backporting-fedora-p.patch
  
