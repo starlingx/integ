@@ -1,0 +1,43 @@
+From 281334baa2ea1b21abc9e70fe27980f81a19bca1 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Wed, 27 Oct 2021 14:45:36 -0400
+Subject: [PATCH] iptables.spec: Add a patch for compat. with older glibc
+
+This patch avoids the following compilation failures, which according to
+the description of the imported patch, occurs due to the older version
+of glibc in StarlingX:
+
+xtables-monitor.c:406:43: error: 'const struct tcphdr' has no member named 'th_sport'
+    printf("SPORT=%d DPORT=%d ", ntohs(tcph->th_sport), ntohs(tcph->th_dport));
+
+xtables-monitor.c:406:66: error: 'const struct tcphdr' has no member named 'th_dport'
+    printf("SPORT=%d DPORT=%d ", ntohs(tcph->th_sport), ntohs(tcph->th_dport));
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ SPECS/iptables.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/iptables.spec b/SPECS/iptables.spec
+index cb4ac571791e..befe5ec262f1 100644
+--- a/SPECS/iptables.spec
++++ b/SPECS/iptables.spec
+@@ -32,6 +32,7 @@ Source10: ebtables-config
+ %if 0%{?bootstrap}
+ Source11: %{url}/files/%{name}-%{version_old}.tar.bz2
+ Source12: 0003-extensions-format-security-fixes-in-libip-6-t_icmp.patch
++Source13: 0013-xtables-monitor-fix-build-with-older-glibc.patch
+ %endif
+ 
+ Patch01: 0001-iptables-apply-Use-mktemp-instead-of-tempfile.patch
+@@ -231,6 +232,7 @@ replacement of the legacy tool.
+ pushd bootstrap_ver
+ %{__tar} --strip-components=1 -xf %{SOURCE11}
+ %{__patch} -p1 <%{SOURCE12}
++%{__patch} -p1 <%{SOURCE13}
+ popd
+ %endif
+ 
+-- 
+2.29.2
+

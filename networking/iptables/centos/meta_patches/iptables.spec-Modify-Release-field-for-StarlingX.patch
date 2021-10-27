@@ -1,0 +1,29 @@
+From b64b3b0adc9391431fad330485993981fba5303c Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Wed, 27 Oct 2021 12:30:19 -0400
+Subject: [PATCH] iptables.spec: Modify Release field for StarlingX
+
+This commit modifies the Release field of the iptables package's spec
+file for StarlingX.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ SPECS/iptables.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/iptables.spec b/SPECS/iptables.spec
+index 58df10b96201..cb4ac571791e 100644
+--- a/SPECS/iptables.spec
++++ b/SPECS/iptables.spec
+@@ -17,7 +17,7 @@ Name: iptables
+ Summary: Tools for managing Linux kernel packet filtering capabilities
+ URL: http://www.netfilter.org/projects/iptables
+ Version: 1.8.4
+-Release: 21%{?dist}
++Release: 21%{?_tis_dist}.%{tis_patch_ver}
+ Source: %{url}/files/%{name}-%{version}.tar.bz2
+ Source1: iptables.init
+ Source2: iptables-config
+-- 
+2.29.2
+

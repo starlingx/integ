@@ -97,3 +97,5 @@ gpu/gpu-operator
 tools/kexec-tools
 tools/libbpf
 networking/iproute
+networking/iptables
+networking/libnftnl
