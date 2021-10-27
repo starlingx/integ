@@ -596,6 +596,7 @@ Requires:      util-linux
 Requires:      xfsprogs
 Requires:      which
 %if 0%{?fedora} || 0%{?rhel}
+Requires:      gdisk
 # The following is necessary due to tracker 36508 and can be removed once the
 # associated upstream bugs are resolved.
 %if 0%{with tcmalloc}
@@ -1468,7 +1469,6 @@ CMAKE=cmake3
 %else
 CMAKE=cmake
 %endif
-
 ${CMAKE} .. \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
     -DCMAKE_BUILD_TYPE=Release \
