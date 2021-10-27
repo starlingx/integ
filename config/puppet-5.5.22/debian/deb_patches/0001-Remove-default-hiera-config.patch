@@ -1,0 +1,49 @@
+From e04e7a99a049b3dadcf7f26db8198e01d25f1d5f Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Tue, 26 Oct 2021 11:54:45 -0400
+Subject: [PATCH] Remove default hiera config
+
+Remove the default puppet hiera.yaml so it wont conflict
+with the hiera.yaml shipped in the puppet-manifests
+package.
+
+Signed-off-by: Charles Short <charles.short@windriver.com>
+---
+ debian/puppet.install | 1 -
+ debian/rules          | 4 +++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/debian/puppet.install b/debian/puppet.install
+index 323c342f83..b338ec1191 100644
+--- a/debian/puppet.install
++++ b/debian/puppet.install
+@@ -3,5 +3,4 @@
+ /usr/lib/ruby/vendor_ruby/*
+ /usr/share/puppet/locale
+ ext/ldap/puppet.schema /etc/ldap/schema
+-debian/conffiles/hiera.yaml /etc/puppet
+ debian/conffiles/puppet.conf /etc/puppet
+diff --git a/debian/rules b/debian/rules
+index 60100a243a..c0eda262bd 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -19,13 +19,15 @@ override_dh_auto_install:
+ 	rm -vfr debian/tmp/usr/lib/ruby/vendor_ruby/puppet/vendor/rgen/
+ 	rm -vfr debian/tmp/usr/lib/ruby/vendor_ruby/puppet/vendor/deep_merge/
+ 	rm -vfr debian/tmp/usr/lib/ruby/vendor_ruby/puppet/vendor/pathspec/LICENSE
++	# We dont ship the default since it conflics with puppet-manifests
++	rm -vfr debian/tmp/etc/puppet/hiera.yaml
+ 
+ override_dh_auto_build:
+ 	dh_auto_build
+ 	HOME=$$(mktemp -d) LC_ALL=C.UTF-8 rake gen_manpages
+ 
+ override_dh_install:
+-	dh_install -Xusr/share/man
++	dh_install -Xusr/share/man -Xetc/puppet/hiera.yaml
+ 	mv debian/puppet-master-passenger/usr/share/puppet-master-passenger/example-passenger-vhost.conf \
+ 	  debian/puppet-master-passenger/usr/share/puppet-master-passenger/apache2.site.conf.tmpl
+ 
+-- 
+2.25.1
+
