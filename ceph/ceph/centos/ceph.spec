@@ -1484,7 +1484,6 @@ ${CMAKE} .. \
     -DWITH_MANPAGE=ON \
     -DWITH_PYTHON3=OFF \
     -DWITH_MGR_DASHBOARD_FRONTEND=OFF \
-    -DENABLE_GIT_VERSION=OFF \
 %if %{with python2}
     -DWITH_PYTHON2=ON \
 %else
@@ -1579,6 +1578,10 @@ ln -sf %{_sbindir}/mount.ceph %{buildroot}/sbin/mount.ceph
 
 # udev rules
 install -m 0644 -D udev/50-rbd.rules %{buildroot}%{_udevrulesdir}/50-rbd.rules
+install -m 0640 -D udev/60-ceph-by-parttypeuuid.rules %{buildroot}%{_udevrulesdir}/60-ceph-by-parttypeuuid.rules
+%if %{without stx}
+install -m 0644 -D udev/95-ceph-osd.rules %{buildroot}%{_udevrulesdir}/95-ceph-osd.rules
+%endif
 
 # sudoers.d
 install -m 0440 -D sudoers.d/ceph-osd-smartctl %{buildroot}%{_sysconfdir}/sudoers.d/ceph-osd-smartctl
@@ -1662,6 +1665,7 @@ rm -rf %{buildroot}
 %{_bindir}/osdmaptool
 %{_bindir}/ceph-kvstore-tool
 %{_bindir}/ceph-run
+%{_bindir}/ceph-detect-init
 %if %{with stx}
 %{_initrddir}/ceph
 %{_initrddir}/mgr-restful-plugin
@@ -1677,6 +1681,7 @@ rm -rf %{buildroot}
 %{_libexecdir}/systemd/system-preset/50-ceph.preset
 %endif
 %{_sbindir}/ceph-create-keys
+%{_sbindir}/ceph-disk
 %dir %{_libexecdir}/ceph
 %{_libexecdir}/ceph/ceph_common.sh
 %dir %{_libdir}/rados-classes
@@ -1706,6 +1711,15 @@ rm -rf %{buildroot}
 %if %{with stx}
 %{_unitdir}/ceph.service
 %{_unitdir}/mgr-restful-plugin.service
+%endif
+%if 0%{with python2}
+%{python_sitelib}/ceph_detect_init*
+%{python_sitelib}/ceph_disk*
+%else
+%if 0%{with python3}
+%{python3_sitelib}/ceph_detect_init*
+%{python3_sitelib}/ceph_disk*
+%endif
 %endif
 %if 0%{with python2}
 %dir %{python_sitelib}/ceph_volume
@@ -1744,11 +1758,11 @@ rm -rf %{buildroot}
 %if 0%{?suse_version}
 %fillup_only
 if [ $1 -eq 1 ] ; then
-/usr/bin/systemctl preset ceph.target ceph-crash.service >/dev/null 2>&1 || :
+/usr/bin/systemctl preset ceph-disk@\*.service ceph.target ceph-crash.service >/dev/null 2>&1 || :
 fi
 %endif
 %if 0%{?fedora} || 0%{?rhel}
-%systemd_post ceph.target ceph-crash.service
+%systemd_post ceph-disk@\*.service ceph.target ceph-crash.service
 %endif
 if [ $1 -eq 1 ] ; then
 /usr/bin/systemctl start ceph.target ceph-crash.service >/dev/null 2>&1 || :
@@ -1756,10 +1770,10 @@ fi
 
 %preun base
 %if 0%{?suse_version}
-%service_del_preun ceph.target ceph-crash.service
+%service_del_preun ceph-disk@\*.service ceph.target ceph-crash.service
 %endif
 %if 0%{?fedora} || 0%{?rhel}
-%systemd_preun ceph.target ceph-crash.service
+%systemd_preun ceph-disk@\*.service ceph.target ceph-crash.service
 %endif
 
 %postun base
@@ -1777,6 +1791,9 @@ if [ $1 -ge 1 ] ; then
   SYSCONF_CEPH=%{_sysconfdir}/sysconfig/ceph
   if [ -f $SYSCONF_CEPH -a -r $SYSCONF_CEPH ] ; then
     source $SYSCONF_CEPH
+  fi
+  if [ "X$CEPH_AUTO_RESTART_ON_UPGRADE" = "Xyes" ] ; then
+    /usr/bin/systemctl try-restart ceph-disk@\*.service > /dev/null 2>&1 || :
   fi
 fi
 %endif
@@ -2305,6 +2322,11 @@ fi
 %{_libexecdir}/ceph/ceph-osd-prestart.sh
 %{_sbindir}/ceph-volume
 %{_sbindir}/ceph-volume-systemd
+%dir %{_udevrulesdir}
+%{_udevrulesdir}/60-ceph-by-parttypeuuid.rules
+%if %{without stx}
+%{_udevrulesdir}/95-ceph-osd.rules
+%endif
 %if %{with man_pages}
 %{_mandir}/man8/ceph-clsinfo.8*
 %{_mandir}/man8/ceph-osd.8*
