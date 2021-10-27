@@ -1,0 +1,2 @@
+COPY_LIST="$STX_BASE/downloads/libbpf-0.5.0.tar.gz"
+TIS_PATCH_VER=PKG_GITREVCOUNT

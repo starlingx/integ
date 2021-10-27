@@ -48,6 +48,7 @@ kubernetes-v1.20.9.tar.gz#kubernetes-1.20.9#https://github.com/kubernetes/kubern
 kubernetes-v1.21.3.tar.gz#kubernetes-1.21.3#https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.21.3.tar.gz#http##
 kvm-unit-tests.git-4ea7633.tar.bz2#kvm-unit-tests#https://git.kernel.org/pub/scm/virt/kvm/kvm-unit-tests.git/snapshot/kvm-unit-tests-20171020.tar.gz#http##
 ldapscripts-2.0.8.tgz#ldapscripts-2.0.8#https://sourceforge.net/projects/ldapscripts/files/ldapscripts/ldapscripts-2.0.8/ldapscripts-2.0.8.tgz/download#http##
+libbpf-0.5.0.tar.gz#libbpf-0.5.0#https://github.com/libbpf/libbpf/archive/v0.5.0.tar.gz#https##
 libtpms-0.6.0-4f0d59d.tar.gz#libtpms-0.6.0#https://github.com/stefanberger/libtpms/tarball/c421ca0f4d00c0caceeda8d62c1efb2b7e47db04#http##
 lldpd-0.9.0.tar.gz#lldpd-0.9.0#https://media.luffy.cx/files/lldpd/lldpd-0.9.0.tar.gz#http##
 lua-1fce39c6397056db645718b8f5821571d97869a4.tar.gz#lua#https://api.github.com/repos/ceph/lua/tarball/1fce39c6397056db645718b8f5821571d97869a4#https##
