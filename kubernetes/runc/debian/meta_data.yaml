@@ -1,0 +1,10 @@
+---
+debname: runc
+debver: 1.0.0~rc95.86.g2f8e8e9d+ds1-1
+dl_path:
+  name: runc-debian-1.0.0_rc95.86.g2f8e8e9d+ds1-1.tar.gz
+  url: https://salsa.debian.org/go-team/packages/runc/-/archive/debian/1.0.0_rc95.86.g2f8e8e9d+ds1-1/runc-debian-1.0.0_rc95.86.g2f8e8e9d+ds1-1.tar.gz
+  md5sum: f7253b7f6e94ade7358ccb04566916a0
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
