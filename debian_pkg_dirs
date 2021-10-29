@@ -19,7 +19,16 @@ config/puppet-modules/puppet-rabbitmq-8.5.0
 config/puppet-modules/puppet-staging
 filesystem/drbd/drbd-tools
 filesystem/parted
+kubernetes/armada
+kubernetes/armada-helm-toolkit
 kubernetes/chartmuseum
+kubernetes/cni/plugins
+kubernetes/containerd
+kubernetes/crictl
+kubernetes/docker-distribution
+kubernetes/etcd
 kubernetes/helm
 kubernetes/k8s-pod-recovery
+kubernetes/plugins/isolcpus-device-plugin
+kubernetes/runc
 storage-drivers/trident-installer
