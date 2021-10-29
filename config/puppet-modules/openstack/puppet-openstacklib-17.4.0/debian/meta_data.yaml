@@ -1,0 +1,10 @@
+---
+debname: puppet-module-openstacklib
+debver: 17.4.0-2
+dl_path:
+  name: puppet-module-openstacklib-17.4.0-2.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-openstacklib/-/archive/debian/17.4.0-2/puppet-module-openstacklib-debian-17.4.0-2.tar.gz
+  md5sum: b7509751fe173ba20555859186fae36b
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
