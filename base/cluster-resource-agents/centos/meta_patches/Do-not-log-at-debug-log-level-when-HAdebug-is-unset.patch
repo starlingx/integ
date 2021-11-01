@@ -1,0 +1,34 @@
+From 8d4d5620ae40468e4aea4cdd42ace1c288bd4d58 Mon Sep 17 00:00:00 2001
+From: jmusico <joaopaulotavares.musico@windriver.com>
+Date: Fri, 8 Oct 2021 01:21:30 +0000
+Subject: [PATCH 1/1] Adding missed patch to not log at debug log level when
+ HA_debug is unset.
+
+Signed-off-by: jmusico <joaopaulotavares.musico@windriver.com>
+---
+ SPECS/resource-agents.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/resource-agents.spec b/SPECS/resource-agents.spec
+index 941cb8b..ea888a7 100644
+--- a/SPECS/resource-agents.spec
++++ b/SPECS/resource-agents.spec
+@@ -141,6 +141,7 @@ Patch28:	bz1641944-rabbitmq-cluster-monitor-mnesia-status.patch
+ Patch29:	bz1641946-1-rabbitmq-cluster-fail-in-minority-partition.patch
+ Patch30:	bz1641946-2-rabbitmq-cluster-fix-stop-regression.patch
+ Patch31:	bz1657138-rabbitmq-cluster-ensure-node-attribures-removed.patch
++Patch32:	Do-not-log-at-debug-log-level-when-HA_debug-is-unset.patch
+ # bundle patches
+ Patch1000:	bz1568588-7-gcp-bundled.patch
+ Patch1001:	bz1568588-8-google-cloud-sdk-fixes.patch
+@@ -369,6 +370,7 @@ exit 1
+ %patch29 -p1
+ %patch30 -p1
+ %patch31 -p1
++%patch32 -p1
+ 
+ # add SAPHana agents to Makefile.am
+ mv %{saphana_prefix}-%{saphana_hash}/SAPHana/ra/SAPHana* heartbeat
+-- 
+2.29.2
+
