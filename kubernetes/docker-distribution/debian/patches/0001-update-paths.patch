@@ -1,0 +1,150 @@
+From 8d41cb5a84e9d7a51a02e3e33289008bdf2a5491 Mon Sep 17 00:00:00 2001
+From: Daniel Safta <daniel.safta@windriver.com>
+Date: Wed, 3 Nov 2021 09:50:59 +0000
+Subject: [PATCH] code-patches
+
+---
+ Dockerfile                                    |  4 ++--
+ cmd/registry/config-example.yml               |  2 +-
+ contrib/docker-integration/docker-compose.yml | 22 +++++++++----------
+ .../registry-config-notls.yml                 |  2 +-
+ .../tokenserver-oauth/registry-config.yml     |  6 ++---
+ .../tokenserver/registry-config.yml           |  6 ++---
+ 6 files changed, 21 insertions(+), 21 deletions(-)
+
+diff --git a/Dockerfile b/Dockerfile
+index 9537817..5c92094 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -15,9 +15,9 @@ COPY . $DISTRIBUTION_DIR
+ RUN CGO_ENABLED=0 make PREFIX=/go clean binaries && file ./bin/registry | grep "statically linked"
+ 
+ FROM alpine
+-COPY cmd/registry/config-dev.yml /etc/docker/registry/config.yml
++COPY cmd/registry/config-dev.yml /etc/docker-distribution/registry/config.yml
+ COPY --from=build /go/src/github.com/docker/distribution/bin/registry /bin/registry
+ VOLUME ["/var/lib/registry"]
+ EXPOSE 5000
+ ENTRYPOINT ["registry"]
+-CMD ["serve", "/etc/docker/registry/config.yml"]
++CMD ["serve", "/etc/docker-distribution/registry/config.yml"]
+diff --git a/cmd/registry/config-example.yml b/cmd/registry/config-example.yml
+index d2aecbb..30c9f62 100644
+--- a/cmd/registry/config-example.yml
++++ b/cmd/registry/config-example.yml
+@@ -16,7 +16,7 @@ http:
+ auth:
+   htpasswd:
+     realm: basic-realm
+-    path: /etc/docker/registry
++    path: /etc/docker-distribution/registry
+ health:
+   storagedriver:
+     enabled: true
+diff --git a/contrib/docker-integration/docker-compose.yml b/contrib/docker-integration/docker-compose.yml
+index 374197a..74f203f 100644
+--- a/contrib/docker-integration/docker-compose.yml
++++ b/contrib/docker-integration/docker-compose.yml
+@@ -37,10 +37,10 @@ registryv2token:
+   ports:
+     - "5000"
+   volumes:
+-    - ./tokenserver/registry-config.yml:/etc/docker/registry/config.yml
+-    - ./tokenserver/certs/localregistry.cert:/etc/docker/registry/localregistry.cert
+-    - ./tokenserver/certs/localregistry.key:/etc/docker/registry/localregistry.key
+-    - ./tokenserver/certs/signing.cert:/etc/docker/registry/tokenbundle.pem
++    - ./tokenserver/registry-config.yml:/etc/docker-distribution/registry/config.yml
++    - ./tokenserver/certs/localregistry.cert:/etc/docker-distribution/registry/localregistry.cert
++    - ./tokenserver/certs/localregistry.key:/etc/docker-distribution/registry/localregistry.key
++    - ./tokenserver/certs/signing.cert:/etc/docker-distribution/registry/tokenbundle.pem
+ tokenserver:
+   build: "tokenserver"
+   command: "--debug -addr 0.0.0.0:5556 -issuer registry-test -passwd .htpasswd -tlscert tls.cert -tlskey tls.key -key sign.key -realm http://auth.localregistry:5556"
+@@ -51,17 +51,17 @@ registryv2tokenoauth:
+   ports:
+     - "5000"
+   volumes:
+-    - ./tokenserver-oauth/registry-config.yml:/etc/docker/registry/config.yml
+-    - ./tokenserver-oauth/certs/localregistry.cert:/etc/docker/registry/localregistry.cert
+-    - ./tokenserver-oauth/certs/localregistry.key:/etc/docker/registry/localregistry.key
+-    - ./tokenserver-oauth/certs/signing.cert:/etc/docker/registry/tokenbundle.pem
++    - ./tokenserver-oauth/registry-config.yml:/etc/docker-distribution/registry/config.yml
++    - ./tokenserver-oauth/certs/localregistry.cert:/etc/docker-distribution/registry/localregistry.cert
++    - ./tokenserver-oauth/certs/localregistry.key:/etc/docker-distribution/registry/localregistry.key
++    - ./tokenserver-oauth/certs/signing.cert:/etc/docker-distribution/registry/tokenbundle.pem
+ registryv2tokenoauthnotls:
+   image: golem-distribution:latest
+   ports:
+     - "5000"
+   volumes:
+-    - ./tokenserver-oauth/registry-config-notls.yml:/etc/docker/registry/config.yml
+-    - ./tokenserver-oauth/certs/signing.cert:/etc/docker/registry/tokenbundle.pem
++    - ./tokenserver-oauth/registry-config-notls.yml:/etc/docker-distribution/registry/config.yml
++    - ./tokenserver-oauth/certs/signing.cert:/etc/docker-distribution/registry/tokenbundle.pem
+ tokenserveroauth:
+   build: "tokenserver-oauth"
+   command: "--debug -addr 0.0.0.0:5559 -issuer registry-test -passwd .htpasswd -tlscert tls.cert -tlskey tls.key -key sign.key -realm http://auth.localregistry:5559 -enforce-class"
+@@ -84,7 +84,7 @@ docker:
+   environment:
+     DOCKER_GRAPHDRIVER:
+   volumes:
+-    - /etc/generated_certs.d:/etc/docker/certs.d
++    - /etc/generated_certs.d:/etc/docker-distribution/certs.d
+     - /var/lib/docker
+   links:
+     - nginx:localregistry
+diff --git a/contrib/docker-integration/tokenserver-oauth/registry-config-notls.yml b/contrib/docker-integration/tokenserver-oauth/registry-config-notls.yml
+index a700d08..bbde741 100644
+--- a/contrib/docker-integration/tokenserver-oauth/registry-config-notls.yml
++++ b/contrib/docker-integration/tokenserver-oauth/registry-config-notls.yml
+@@ -15,4 +15,4 @@ auth:
+         realm: "https://auth.localregistry:5559/token/"
+         issuer: "registry-test"
+         service: "registry-test"
+-        rootcertbundle: "/etc/docker/registry/tokenbundle.pem"
++        rootcertbundle: "/etc/docker-distribution/registry/tokenbundle.pem"
+diff --git a/contrib/docker-integration/tokenserver-oauth/registry-config.yml b/contrib/docker-integration/tokenserver-oauth/registry-config.yml
+index 226798b..253769f 100644
+--- a/contrib/docker-integration/tokenserver-oauth/registry-config.yml
++++ b/contrib/docker-integration/tokenserver-oauth/registry-config.yml
+@@ -8,8 +8,8 @@ storage:
+ http:
+     addr: 0.0.0.0:5000
+     tls:
+-        certificate: "/etc/docker/registry/localregistry.cert"
+-        key: "/etc/docker/registry/localregistry.key"
++        certificate: "/etc/docker-distribution/registry/localregistry.cert"
++        key: "/etc/docker-distribution/registry/localregistry.key"
+ compatibility:
+     schema1:
+         enabled: true
+@@ -18,4 +18,4 @@ auth:
+         realm: "https://auth.localregistry:5559/token/"
+         issuer: "registry-test"
+         service: "registry-test"
+-        rootcertbundle: "/etc/docker/registry/tokenbundle.pem"
++        rootcertbundle: "/etc/docker-distribution/registry/tokenbundle.pem"
+diff --git a/contrib/docker-integration/tokenserver/registry-config.yml b/contrib/docker-integration/tokenserver/registry-config.yml
+index b9efdd3..11be98e 100644
+--- a/contrib/docker-integration/tokenserver/registry-config.yml
++++ b/contrib/docker-integration/tokenserver/registry-config.yml
+@@ -8,8 +8,8 @@ storage:
+ http:
+     addr: 0.0.0.0:5000
+     tls:
+-        certificate: "/etc/docker/registry/localregistry.cert"
+-        key: "/etc/docker/registry/localregistry.key"
++        certificate: "/etc/docker-distribution/registry/localregistry.cert"
++        key: "/etc/docker-distribution/registry/localregistry.key"
+ compatibility:
+     schema1:
+         enabled: true
+@@ -18,4 +18,4 @@ auth:
+         realm: "https://auth.localregistry:5556/token/"
+         issuer: "registry-test"
+         service: "registry-test"
+-        rootcertbundle: "/etc/docker/registry/tokenbundle.pem"
++        rootcertbundle: "/etc/docker-distribution/registry/tokenbundle.pem"
+-- 
+2.30.2
+

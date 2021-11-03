@@ -1,0 +1,7 @@
+---
+debname: docker-registry
+debver: 2.7.1+ds2-7
+dl_hook: dl_hook
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
