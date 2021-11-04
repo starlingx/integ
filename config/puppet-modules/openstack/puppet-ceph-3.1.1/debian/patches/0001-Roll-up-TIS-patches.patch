@@ -1,0 +1,92 @@
+From 6a7e54f768b4f28a69ed5948a60765c10d5a4840 Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Tue, 10 Jan 2017 13:31:17 -0500
+Subject: [PATCH 1/5] Roll up TIS patches
+
+---
+ manifests/mon.pp | 13 ++++++++++---
+ manifests/osd.pp |  9 +++++++++
+ 2 files changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index f8dad43..cbf753a 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -65,6 +65,8 @@ define ceph::mon (
+   $authentication_type = 'cephx',
+   $key = undef,
+   $keyring  = undef,
++  $fsid = undef,
++  $service_ensure = 'running',
+   $exec_timeout = $ceph::params::exec_timeout,
+   ) {
+ 
+@@ -115,6 +117,9 @@ define ceph::mon (
+         if $key and $keyring {
+           fail("key (set to ${key}) and keyring (set to ${keyring}) are mutually exclusive")
+         }
++        if $fsid {
++           $fsid_option = "--fsid ${fsid}"
++	}
+         if $key {
+           $keyring_path = "/tmp/ceph-mon-keyring-${id}"
+ 
+@@ -176,7 +181,8 @@ if [ ! -d \$mon_data ] ; then
+               --setuser ceph --setgroup ceph \
+               --mkfs \
+               --id ${id} \
+-              --keyring ${keyring_path} ; then
++              --keyring ${keyring_path} \
++	      ${fsid_option} ; then
+             touch \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+             chown -h ceph:ceph \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+         else
+@@ -186,7 +192,8 @@ if [ ! -d \$mon_data ] ; then
+         if ceph-mon ${cluster_option} \
+               --mkfs \
+               --id ${id} \
+-              --keyring ${keyring_path} ; then
++              --keyring ${keyring_path} \
++              ${fsid_option} ; then
+             touch \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+         else
+             rm -fr \$mon_data
+@@ -203,7 +210,7 @@ test -d  \$mon_data
+         timeout   => $exec_timeout,
+       }
+       -> service { $mon_service:
+-        ensure => running,
++        ensure => $service_ennsure,
+       }
+ 
+       # if the service is running before we setup the configs, notify service
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index ac44a2c..7de3a53 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -70,6 +70,8 @@ define ceph::osd (
+   $ensure = present,
+   $journal = undef,
+   $cluster = undef,
++  $cluser_uuid = undef,
++  $uuid = undef,
+   $bluestore_wal = undef,
+   $bluestore_db = undef,
+   $store_type = undef,
+@@ -91,6 +93,13 @@ define ceph::osd (
+     }
+     $cluster_option = "--cluster ${cluster_name}"
+ 
++    if $cluster_uuid {
++	$cluster_uuid_option = "--cluster-uuid ${cluster_uuid}"
++    }
++    if $uuid {
++       $uuid_option = "--os-uuid ${uuid}"
++    }
++
+     if $store_type {
+       $osd_type = "--${store_type}"
+     } else {
+-- 
+2.30.2
+
