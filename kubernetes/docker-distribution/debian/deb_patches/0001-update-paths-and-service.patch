@@ -1,0 +1,68 @@
+From 922d937e24a4a0cd9d826579eeb9afed4f7c234c Mon Sep 17 00:00:00 2001
+From: Daniel Safta <daniel.safta@windriver.com>
+Date: Wed, 3 Nov 2021 09:48:45 +0000
+Subject: [PATCH] debian-patches
+
+---
+ debian/docker-registry.init     | 2 +-
+ debian/docker-registry.install  | 2 +-
+ debian/docker-registry.postinst | 2 +-
+ debian/docker-registry.service  | 7 ++++++-
+ 4 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/debian/docker-registry.init b/debian/docker-registry.init
+index c225130..c03a67a 100644
+--- a/debian/docker-registry.init
++++ b/debian/docker-registry.init
+@@ -13,7 +13,7 @@ set -e
+ BASE=docker-registry
+ 
+ BINARY=/usr/bin/$BASE
+-CONFIG=/etc/docker/registry/config.yml
++CONFIG=/etc/docker-distribution/registry/config.yml
+ EXECUSER=docker-registry
+ PIDFILE=/var/run/$BASE.pid
+ LOGFILE=/var/log/$BASE.log
+diff --git a/debian/docker-registry.install b/debian/docker-registry.install
+index ea1de25..6ed37e3 100755
+--- a/debian/docker-registry.install
++++ b/debian/docker-registry.install
+@@ -1,3 +1,3 @@
+ #!/usr/bin/dh-exec
+ usr/bin/registry => usr/bin/docker-registry
+-cmd/registry/config-example.yml => etc/docker/registry/config.yml
++cmd/registry/config-example.yml => etc/docker-distribution/registry/config.yml
+diff --git a/debian/docker-registry.postinst b/debian/docker-registry.postinst
+index 96ded3c..d179197 100755
+--- a/debian/docker-registry.postinst
++++ b/debian/docker-registry.postinst
+@@ -15,7 +15,7 @@ if [ "$1" = 'configure' ]; then
+ 	#  On a fresh install, $2 = '' and dpkg treat that as a
+ 	#  lower version, so the permissions get fixed too.
+ 	if dpkg --compare-versions "$2" le '2.4.1~ds1-1'; then
+-	    chmod 0755 /etc/docker
++	    chmod 0755 /etc/docker-distribution
+ 	fi
+ 
+ 	# ensure home directory ownership (logic borrowed from postgresql-common)
+diff --git a/debian/docker-registry.service b/debian/docker-registry.service
+index 066e38a..a2feaa6 100644
+--- a/debian/docker-registry.service
++++ b/debian/docker-registry.service
+@@ -4,7 +4,12 @@ After=network.target
+ 
+ [Service]
+ User=docker-registry
+-ExecStart=/usr/bin/docker-registry serve /etc/docker/registry/config.yml
++Type=simple
++Environment=REGISTRY_STORAGE_DELETE_ENABLED=true
++ExecStart=/usr/bin/docker-registry serve /etc/docker-distribution/registry/config.yml
++Restart=on-failure
++ExecStartPost=/bin/bash -c 'echo $MAINPID > /var/run/docker-distribution.pid'
++ExecStopPost=/bin/rm -f /var/run/docker-distribution.pid
+ 
+ [Install]
+ WantedBy=multi-user.target
+-- 
+2.30.2
+
