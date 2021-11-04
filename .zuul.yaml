@@ -167,8 +167,6 @@
     parent: openstack-tox-pylint
     required-projects:
       - starlingx/config
-      - starlingx/fault
-      - starlingx/update
 
 - job:
     name: stx-integ-upload-git-mirror
