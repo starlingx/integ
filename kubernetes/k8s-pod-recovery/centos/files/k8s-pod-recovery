@@ -19,7 +19,7 @@
 
 . /etc/platform/platform.conf
 
-export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/usr/local/sbin
 export KUBECONFIG=/etc/kubernetes/admin.conf
 CONF_DIR=/etc/k8s-post-recovery.d
 SLEEP_DELAY_SEC=15
@@ -72,6 +72,16 @@ function _wait_for_systemd {
         LOG "Waiting for systemd to finish booting..."
         sleep ${SLEEP_DELAY_SEC}
     done
+}
+
+function _do_cni_cache_cleanup {
+    # Cleanup any stale CNI cache files (not associated with any running pod)
+    # that are older than 1 hour old
+    LOG "Starting CNI cache cleanup..."
+    k8s-cni-cache-cleanup -o 1 -d
+    if [[ ${?} -ne 0 ]]; then
+        ERROR "Failed to run CNI cache cleanup."
+    fi
 }
 
 function _wait_for_pod_stabilization {
@@ -298,6 +308,7 @@ function start {
     _wait_for_systemd
     _examine_pods 'recover'
     _examine_pods 'verify'
+    _do_cni_cache_cleanup
 }
 
 function stop {

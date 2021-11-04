@@ -170,6 +170,7 @@ kubernetes-1.21.3-kubeadm
 kubernetes-1.21.3-client
 containerd
 k8s-pod-recovery
+k8s-cni-cache-cleanup
 containernetworking-plugins
 
 # resource-agents

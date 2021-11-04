@@ -1,0 +1,214 @@
+#!/bin/bash
+#
+# Copyright (c) 2021 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+NAME=$(basename $0)
+RESULTSDIR="/var/lib/cni/results"
+MULTUSDIR="/var/lib/cni/multus"
+PODS=$(crictl ps -v 2> /dev/null | grep -w -E 'PodID|pod.name')
+PODIDS=($(echo "$PODS" | grep PodID | awk '{print $2}'))
+PODNAMES=($(echo "$PODS" | grep -w pod.name | awk '{print $3}'))
+KUBELET_UPTIME_MINUTES=5
+POD_ID_LENGTH=64
+DELETE="no"
+OLDERTHANHOURS=1
+
+# Log info message to /var/log/daemon.log
+function LOG {
+    logger -p daemon.info -t "${NAME}($$): " "${@}"
+}
+
+# Log error message to /var/log/daemon.log
+function ERROR {
+    logger -p daemon.error -t "${NAME}($$): " "${@}"
+}
+
+# Determine the age of a file in hours.
+function file_age {
+    local file=${1}
+    local SECONDSPERHOUR=3600
+    now=$(date +%s)
+    old=$(stat -c %Z ${file})
+    diff=$(((${now} - ${old})/${SECONDSPERHOUR}))
+    echo ${diff}
+}
+
+# Determine the pod id associated with a result CNI cache file.
+function results_cni_cache_file_to_pod_id {
+    local path=${1}
+    local ret=""
+    file=$(basename ${path})
+
+    # A valid CNI cache results file looks like:
+    # type-pod_id-interface_name
+    RESULTS_REGEX='^.*-([0-9a-zA-Z]{64})-[0-9a-zA-Z]+$'
+
+    if [[ ${file} =~ ${RESULTS_REGEX} ]]; then
+        ret=${BASH_REMATCH[1]}
+    fi
+
+    echo ${ret}
+}
+
+# Determine the pod id associated with a multus CNI cache file.
+function multus_cni_cache_file_to_pod_id {
+    local path=${1}
+    local ret=""
+    file=$(basename ${path})
+
+    # A valid CNI cache multus file is simply the pod id
+    MULTUS_REGEX='^([0-9a-zA-Z]{64})$'
+
+    if [[ ${file} =~ ${MULTUS_REGEX} ]]; then
+        ret=${BASH_REMATCH[1]}
+    fi
+
+    echo ${ret}
+}
+
+# Determine the pod id associated with a CNI cache file.
+function cni_cache_file_to_pod_id {
+    local path=${1}
+    local ret=""
+    dir=$(dirname ${path})
+
+    if [[ "${dir}" == "${RESULTSDIR}" ]]; then
+        ret=$(results_cni_cache_file_to_pod_id ${path})
+    elif [[ "${dir}" == "${MULTUSDIR}" ]]; then
+        ret=$(multus_cni_cache_file_to_pod_id ${path})
+    fi
+
+    echo ${ret}
+}
+
+# Determine the original pod name from a CNI cache file (if any).
+function cache_file_to_pod_name {
+    local path=${1}
+    local ret="unknown"
+
+    grep -q "K8S_POD_NAME" ${path}
+    if [ ${?} -eq 0 ]; then
+        ret=$(cat ${path} | sed "s/.*K8S_POD_NAME\",\"//g" | cut -f1 -d"\"")
+    fi
+
+    echo ${ret}
+}
+
+# Given a CNI cache id, return the existing pod name (if any).
+function get_pod {
+    local cacheid=${1}
+    local ret=""
+
+    for i in ${!PODIDS[@]}; do
+        podid=${PODIDS[${i}]}
+        if  [[ "${podid}" == "${cacheid}" ]]; then
+            ret=${PODNAMES[${i}]}
+        fi
+    done
+
+    echo ${ret}
+}
+
+# Determine if the CNI cache file is old enough to process.
+function check_cache_file_age {
+    local age=${1}
+    local ret=""
+
+    if [ -n ${OLDERTHANHOURS} ]; then
+        if [[ ${age} -ge ${OLDERTHANHOURS} ]]; then
+            ret=${age}
+        fi
+    fi
+
+    echo ${ret}
+}
+
+# Determine how long kubelet has been up in minutes
+function kubelet_uptime {
+    local SECONDSPERMINUTE=60
+
+    kubelet_uptime=$(systemctl show kubelet --property WatchdogTimestamp | awk -F= '{print $2}')
+    [[ -n ${kubelet_uptime} ]]
+    if [ ${?} -ne 0 ]; then
+        ERROR "Failed to get kubelet uptime."
+        minutes=0
+    else
+        uptime=$(date --date="${kubelet_uptime}" +%s)
+        now=$(date +%s)
+        minutes=$(((${now}-${uptime})/${SECONDSPERMINUTE}))
+    fi
+
+    echo ${minutes}
+}
+
+# Wait for kubelet to be up for long enough to process CNI cache files.
+function check_kubelet {
+    local retries=0
+
+    while [ ${retries} -le 30 ]; do
+        uptime=$(kubelet_uptime)
+        if  [ ${uptime} -ge ${KUBELET_UPTIME_MINUTES} ]; then
+            return 0
+        fi
+        remaining=$((${KUBELET_UPTIME_MINUTES}-${uptime}))
+        LOG "Waiting for kubelet to be up for ${remaining} minutes ..."
+        retries=$((${retries}+1))
+        sleep 30
+    done
+
+    return 1
+}
+
+while getopts :o:d OPT; do
+    case ${OPT} in
+        o|--older-than)
+            OLDERTHANHOURS=${OPTARG}
+            ;;
+        d|+d)
+            DELETE="yes"
+            ;;
+        *)
+            echo "usage: ${0##*/} [-d] [-o older_than_hours]"
+            exit 2
+    esac
+done
+
+check_kubelet
+if [[ ${?} -ne 0 ]]; then
+    LOG "Kubelet must be up for a minimum of ${KUBELET_UPTIME_MINUTES} minutes.  Not running CNI cache cleanup."
+    exit 1
+fi
+
+for f in ${RESULTSDIR}/* ${MULTUSDIR}/*; do
+    cacheid=$(cni_cache_file_to_pod_id ${f})
+    if [[ ${#cacheid} -ne ${POD_ID_LENGTH} ]]; then
+        # Unrecognized file pattern, skip.
+        continue
+    fi
+
+    existing_podname=$(get_pod ${cacheid})
+    if [[ ${existing_podname} ]]; then
+        LOG "Pod ${existing_podname} exists.  Not cleaning up CNI cache file(s)."
+        continue
+    fi
+
+    age=$(file_age ${f})
+    if [[ ! $(check_cache_file_age ${age}) ]]; then
+        LOG "Stale CNI cache file ${f} detected. Cleanup to occur after $((${OLDERTHANHOURS} - ${age})) hour(s)."
+        continue
+    fi
+
+    if [[ "${DELETE}" == "yes" ]]; then
+        rm -f ${f}
+        action="Deleted"
+    else
+        action="Detected"
+    fi
+
+    cache_podname=$(cache_file_to_pod_name ${f})
+    LOG "${action} stale CNI cache file ${f}: [age: ${age} hours old, podname: ${cache_podname}]."
+done
+

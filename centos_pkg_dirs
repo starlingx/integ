@@ -66,6 +66,7 @@ kubernetes/chartmuseum
 kubernetes/armada-helm-toolkit
 kubernetes/armada
 kubernetes/k8s-pod-recovery
+kubernetes/k8s-cni-cache-cleanup
 kubernetes/plugins/isolcpus-device-plugin
 python/python-kubernetes
 grub/grubby
