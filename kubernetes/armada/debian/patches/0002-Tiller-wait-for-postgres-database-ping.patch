@@ -1,0 +1,66 @@
+From 96e49fcc6d6b988d03a61261511abf64a0af2e2a Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Tue, 11 May 2021 21:04:18 +0300
+Subject: [PATCH] Tiller wait for postgres database ping
+
+Networking might not be correctly initialized when tiller starts.
+
+Modify the pod command to wait for networking to be available before
+starting up tiller.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ charts/armada/templates/deployment-api.yaml | 31 +++++++++++++--------
+ 1 file changed, 19 insertions(+), 12 deletions(-)
+
+diff --git a/charts/armada/templates/deployment-api.yaml b/charts/armada/templates/deployment-api.yaml
+index 69036c0..3816366 100644
+--- a/charts/armada/templates/deployment-api.yaml
++++ b/charts/armada/templates/deployment-api.yaml
+@@ -167,24 +167,31 @@ spec:
+             - name: TILLER_HISTORY_MAX
+               value: {{ .Values.conf.tiller.history_max | quote }}
+           command:
+-            - /tiller
++            - sh
++            - -c
++            - |
++              /bin/sh <<'EOF'
+ {{- if .Values.conf.tiller.storage }}
+-            - --storage={{ .Values.conf.tiller.storage }}
+ {{- if and (eq .Values.conf.tiller.storage "sql") (.Values.conf.tiller.sql_dialect) (.Values.conf.tiller.sql_connection) }}
+-            - --sql-dialect={{ .Values.conf.tiller.sql_dialect }}
+-            - --sql-connection-string={{ .Values.conf.tiller.sql_connection }}
++              while ! /bin/busybox nc -vz -w 1 {{ .Values.conf.tiller.sql_endpoint_ip}} 5432; do continue; done;
+ {{- end }}
+ {{- end }}
+-            - -listen
+-            - ":{{ .Values.conf.tiller.port }}"
+-            - -probe-listen
+-            - ":{{ .Values.conf.tiller.probe_port }}"
+-            - -logtostderr
+-            - -v
+-            - {{ .Values.conf.tiller.verbosity | quote }}
++              /tiller \
++{{- if .Values.conf.tiller.storage }}
++              --storage={{ .Values.conf.tiller.storage }} \
++{{- if and (eq .Values.conf.tiller.storage "sql") (.Values.conf.tiller.sql_dialect) (.Values.conf.tiller.sql_connection) }}
++              --sql-dialect={{ .Values.conf.tiller.sql_dialect }} \
++              --sql-connection-string={{ .Values.conf.tiller.sql_connection }} \
++{{- end }}
++{{- end }}
++              -listen ":{{ .Values.conf.tiller.port }}" \
++              -probe-listen ":{{ .Values.conf.tiller.probe_port }}" \
++              -logtostderr \
++              -v {{ .Values.conf.tiller.verbosity | quote }} \
+ {{- if .Values.conf.tiller.trace }}
+-            - -trace
++              -trace
+ {{- end }}
++               EOF
+           lifecycle:
+             postStart:
+               exec:
+-- 
+2.30.0
+

@@ -1,0 +1,23 @@
+#!/bin/bash
+set -x
+
+PKG_BUILD_NAME=$1
+PKG="armada"
+PKG_BUILD_ROOT=$(realpath `pwd`/${PKG_BUILD_NAME})
+mkdir -p ${PKG_BUILD_ROOT}
+pushd ${PKG_BUILD_ROOT}
+
+# Local mirror workaround until CGCS_BASE mirror is supported.
+STX_MIRROR=$(realpath "/import/mirrors/starlingx")
+
+# Download armada helm source package.
+ARMADA_PKG="armada-7ef4b8643b5ec5216a8f6726841e156c0aa54a1a.tar.gz"
+ARMADA_SRC_PATH=$(realpath ${STX_MIRROR}/downloads/${ARMADA_PKG})
+cp ${ARMADA_SRC_PATH} ${PKG_BUILD_ROOT}
+
+# Extract the armada tar file.
+tar xfz ${ARMADA_PKG}
+cp -pr ${PKG}/charts ${PKG_BUILD_ROOT}
+
+rm -rf ${ARMADA_PKG}
+rm -rf ${PKG}

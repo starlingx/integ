@@ -1,0 +1,14 @@
+Source: armada
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), helm, chartmuseum, procps,armada-helm-toolkit
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: armada
+Architecture: any
+Depends:  ${misc:Depends}, ${shlibs:Depends}
+Description: An orchestrator for managing a collection of Kubernetes Helm charts.
+ Armada is a tool for managing multiple Helm charts with
+ dependencies by centralizing all configurations in a single Armada YAML.
