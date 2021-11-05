@@ -1,0 +1,18 @@
+#!/bin/bash
+set -x
+
+PKG_BUILD_NAME=$1
+PKG_BUILD_ROOT=$(realpath `pwd`/${PKG_BUILD_NAME})
+STX_BASE=$(realpath ${MY_REPO}/stx)
+SRC=$(realpath ${STX_BASE}/integ/kubernetes/helm/centos/files)
+
+mkdir ${PKG_BUILD_ROOT}
+pushd ${PKG_BUILD_ROOT}
+cp -pr ${SRC}/* ${PKG_BUILD_ROOT}/
+
+# Local mirror workaround until CGCS_BASE mirror is supported.
+STX_MIRROR=$(realpath "/import/mirrors/starlingx")
+
+# Download and extract helm source package.
+HELM_SOURCE=$(realpath ${STX_MIRROR}/downloads/helm-v3.2.1-linux-amd64.tar.gz)
+cp ${HELM_SOURCE} ${PKG_BUILD_ROOT}
