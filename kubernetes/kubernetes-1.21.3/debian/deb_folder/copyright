@@ -1,0 +1,470 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Kubernetes
+Source: https://github.com/kubernetes/kubernetes
+
+Files: *
+Copyright:
+    2011-2016 Google Inc
+    2014-2018 the Kubernetes Authors
+License: Apache-2.0
+Comment:
+  examples/storage/mysql-galera/README.md
+    Copyrights in the above file are fragments of the sample output to console.
+  examples/storage/hazelcast/README.md
+    Copyrights in the above file are fragments of the sample output to console.
+
+Files:
+    vendor/github.com/coreos/rkt/api/v1alpha/*
+Copyright:
+    2015 The rkt Authors
+License: Apache-2.0
+
+Files:
+    third_party/forked/golang/*
+Copyright:
+    2009, 2012-2013 The Go Authors
+License: BSD-3-Clause~Google
+
+Files:
+    third_party/protobuf/*
+Copyright: 2008 Google Inc.
+License: BSD-3-Clause~Google
+
+Files:
+    third_party/forked/shell2junit/*
+Copyright: 2009 Manolo Carrasco (Manuel Carrasco Moñino)
+License: Apache-2.0
+
+Files:
+    third_party/htpasswd/*
+Copyright:
+    2008 Eli Carter
+    2003-2013 Edgewall Software
+License: BSD-3-Clause
+
+Files:
+    third_party/intemp/*
+Copyright:
+    2015 Karl Isenberg
+License: Apache-2.0
+
+Files:
+    third_party/swagger-ui/*
+Copyright:
+    2014 Reverb Technologies, Inc.
+License: Apache-2.0
+
+Files:
+    debian/missing-sources/backbone.js
+    third_party/swagger-ui/lib/backbone-min.js
+Copyright:
+    2010-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+License: Expat
+
+Files:
+    debian/missing-sources/handlebars.runtime-v2.0.0.js
+    third_party/swagger-ui/lib/handlebars*.js
+Copyright:
+    2011-2014 Yehuda Katz
+License: Expat
+
+Files:
+    debian/missing-sources/highlight.js
+    third_party/swagger-ui/lib/highlight*.js
+Copyright:
+    2006, Ivan Sagalaev
+License: BSD-3-Clause
+
+Files:
+    debian/missing-sources/jquery.js
+    third_party/swagger-ui/lib/jquery-1.8.0.min.js
+Copyright:
+    2012 jQuery Foundation and other contributors
+License: Expat
+
+Files:
+    debian/missing-sources/jquery.ba-bbq.js
+    third_party/swagger-ui/lib/jquery.ba-bbq.min.js
+Copyright:
+    2010 "Cowboy" Ben Alman
+License: Expat
+Comment: Alternatively can be GPL-licensed.
+
+Files:
+    debian/missing-sources/jquery.slideto.js
+    third_party/swagger-ui/lib/jquery.slideto.min.js
+Copyright:
+    2015 Joakim Hedlund
+License: Expat
+Comment: https://github.com/Sleavely/jQuery-slideto/blob/master/LICENSE
+
+Files:
+    third_party/swagger-ui/lib/jquery.wiggle.min.js
+Copyright:
+    WonderGroup, Jordan Thomas
+License: Expat
+
+Files:
+    third_party/swagger-ui/lib/marked.js
+Copyright:
+    2011-2014 Christopher Jeffrey
+License: Expat
+
+Files:
+    debian/missing-sources/underscore.js
+    third_party/swagger-ui/lib/underscore-min.js
+Copyright:
+    2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+License: Expat
+
+Files:
+    third_party/swagger-ui/lib/shred.bundle.js
+    third_party/swagger-ui/lib/shred/content.js
+Copyright:
+    2012-2015 Panda Strike, LLC and Dan Yoder
+    Alexandru Marasteanu
+License: ISC
+
+Files:
+    vendor/bitbucket.org/bertimus9/systemstat/*
+Copyright:
+    2013 Phillip Bond
+License: Expat
+
+Files:
+    vendor/bitbucket.org/ww/goautoneg/*
+Copyright:
+    2011 Open Knowledge Foundation Ltd.
+License: BSD-3-Clause~OKF
+
+Files:
+    vendor/github.com/Azure/azure-sdk-for-go/*
+Copyright:
+    2016 Microsoft Corporation
+License: Apache-2.0
+
+Files:
+    vendor/github.com/Azure/go-autorest/*
+Copyright:
+    2015 Microsoft Corporation
+License: Apache-2.0
+
+Files:
+    vendor/github.com/chai2010/gettext-go/*
+Copyright:
+    2013 ChaiShushan <chaishushan@gmail.com>
+License: BSD-3-Clause~Google
+
+Files:
+    vendor/github.com/clusterhq/flocker-go/*
+Copyright:
+    2014-2016 ClusterHQ
+License: Apache-2.0
+
+Files:
+    vendor/github.com/containernetworking/cni/*
+Copyright:
+    2015-2016 CNI authors
+License: Apache-2.0
+
+Files:
+    vendor/github.com/codedellemc/goscaleio/*
+Copyright: Dell ???
+License: Apache-2.0
+Comment: https://github.com/thecodeteam/goscaleio/issues/32
+
+Files:
+    vendor/github.com/fatih/camelcase/*
+Copyright: 2015 Fatih Arslan
+License: Expat
+
+Files:
+    vendor/github.com/heketi/heketi/*
+Copyright:
+    2015-2016 The heketi Authors
+License: Apache-2.0 or LGPL-3+ or GPL-2
+
+Files:
+    vendor/github.com/libopenstorage/openstorage/*
+Copyright: 2015 Openstorage.org
+License: Apache-2.0
+
+Files:
+    vendor/github.com/rancher/go-rancher/*
+Copyright: 2014-2015 Rancher Labs, Inc.
+License: Apache-2.0
+
+Files:
+    vendor/github.com/rubiojr/go-vhd/*
+Copyright: 2015 Sergio Rubio
+License: Expat
+
+Files:
+    vendor/github.com/satori/uuid/*
+Copyright: 2013-2016 Maxim Bublis <b@codemonkey.ru>
+License: Expat
+
+Files:
+    vendor/github.com/dgrijalva/jwt-go/*
+Copyright:
+    2012 Dave Grijalva
+License: Expat
+
+Files:
+    vendor/github.com/docker/distribution/*
+Copyright:
+    2014-2016 Docker, Inc.
+License: Apache-2.0
+
+Files:
+    vendor/github.com/docker/docker/*
+Copyright:
+    2012-2016 Docker, Inc.
+License: Apache-2.0
+
+Files:
+    vendor/github.com/gogo/protobuf/*
+Copyright:
+    2008 Google Inc.
+    2010-2012, The Go Authors.
+    2013, Vastech SA (PTY) LTD.
+License: BSD-3-Clause
+
+Files:
+    vendor/github.com/golang/protobuf/*
+Copyright:
+    2008-2016, The Go Authors.
+    2008 Google Inc.
+License: BSD-3-Clause
+
+Files:
+    vendor/github.com/square/go-jose/*
+Copyright:
+    2014-2016 Square Inc.
+License: Apache-2.0
+
+Files:
+    vendor/github.com/square/go-jose/json/*
+Copyright:
+    2012 The Go Authors
+License: BSD-3-Clause
+Comment: The code is derived from the `encoding/json` package from Go 1.6
+
+Files:
+    vendor/github.com/storageos/go-api/*
+Copyright: 2015-2017 StorageOS
+License: Expat
+
+Files:
+    vendor/github.com/storageos/go-api/client_unix.go
+    vendor/github.com/storageos/go-api/client_windows.go
+Copyright:
+    2013-2017 go-dockerclient authors
+License: BSD-2-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+  * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files:
+    vendor/google.golang.org/grpc/*
+Copyright:
+    2014-2016 Google Inc.
+License: BSD-3-Clause
+
+Files:
+    debian/*
+Copyright:
+    2015-2019 Dmitry Smirnov <onlyjob@debian.org>
+    2017 Tim Potter <tpot@hpe.com>
+License: GPL-3+
+
+Files: debian/patches/*
+Copyright: 2015-2016 Dmitry Smirnov <onlyjob@debian.org>
+License: GPL-3+ or Apache-2.0
+Comment: patches can be licensed under the same terms as upstream.
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+ http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian systems, the complete text of the Apache version 2.0 license
+ can be found in "/usr/share/common-licenses/Apache-2.0".
+
+License: BSD-3-Clause~Google
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ .
+    * Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+ copyright notice, this list of conditions and the following disclaimer
+ in the documentation and/or other materials provided with the
+ distribution.
+    * Neither the name of Google Inc. nor the names of its
+ contributors may be used to endorse or promote products derived from
+ this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-3-Clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+     * Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+     * Neither the name of the <organization> nor the
+       names of its contributors may be used to endorse or promote products
+       derived from this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: GPL-3+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ ․
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ ․
+ The complete text of the GNU General Public License version 3
+ can be found in "/usr/share/common-licenses/GPL-3".
+
+License: BSD-3-Clause~OKF
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ .
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+    Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+ .
+    Neither the name of the Open Knowledge Foundation Ltd. nor the
+    names of its contributors may be used to endorse or promote
+    products derived from this software without specific prior written
+    permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: Expat
+ Permission is hereby granted, free of charge, to any person obtaining a copy of
+ this software and associated documentation files (the "Software"), to deal in
+ the Software without restriction, including without limitation the rights to
+ use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ the Software, and to permit persons to whom the Software is furnished to do so,
+ subject to the following conditions:
+ .
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+License: ISC
+ Permission to use, copy, modify, and/or distribute this software for
+ any purpose with or without fee is hereby granted, provided that the
+ above copyright notice and this permission notice appear in all
+ copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ PERFORMANCE OF THIS SOFTWARE.
+
+License: LGPL-3+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 3 of the License, or (at your option) any later version.
+ ․
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ ․
+ On Debian systems, the complete text of the GNU Lesser General Public
+ License Version 3 can be found in "/usr/share/common-licenses/LGPL-3".
+
+License: GPL-2
+ This program is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the Free
+ Software Foundation, version 2 of the License.
+ ․
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ ․
+ On Debian systems, the complete text of the GNU General Public
+ License Version 2 can be found in "/usr/share/common-licenses/GPL-2".

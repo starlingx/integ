@@ -39,4 +39,5 @@ kubernetes/helm
 kubernetes/k8s-pod-recovery
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/runc
+kubernetes/kubernetes-1.21.3
 storage-drivers/trident-installer
