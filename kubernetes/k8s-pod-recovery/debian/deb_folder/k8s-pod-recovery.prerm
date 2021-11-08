@@ -1,0 +1,13 @@
+#!/bin/sh
+# see: dh_installdeb(1)
+
+set -e
+
+if [ "${1}" = "remove" ] || [ "${1}" = "upgrade" || [ "${1}" = "deconfigure" ]; then
+    /usr/bin/systemctl stop k8s-pod-recovery.service > /dev/null 2>&1 || :
+    /usr/bin/systemctl disable k8s-pod-recovery.service > /dev/null 2>&1 || :
+fi
+
+#DEBHELPER#
+
+exit 0

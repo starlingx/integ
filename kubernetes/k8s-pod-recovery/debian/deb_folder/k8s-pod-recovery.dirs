@@ -1,0 +1,3 @@
+etc/k8s-post-recovery.d
+usr/local/sbin
+lib/systemd/system

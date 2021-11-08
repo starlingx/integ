@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -x
+
+PKG_BUILD_NAME=$1
+mkdir ${PKG_BUILD_NAME}
+
+FILES_SRC=$MY_REPO/stx/integ/kubernetes/k8s-pod-recovery/centos/files/*
+
+cp ${FILES_SRC} ${PKG_BUILD_NAME}
