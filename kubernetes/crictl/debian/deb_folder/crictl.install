@@ -1,0 +1,2 @@
+crictl /usr/bin/
+crictl.yaml /etc/

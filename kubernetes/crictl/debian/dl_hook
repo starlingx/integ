@@ -1,0 +1,16 @@
+#!/bin/bash
+set -x
+
+VERSION="v1.21.0"
+SOURCE=https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz
+PKG=crictl-$VERSION-linux-amd64.tar.gz
+
+wget $SOURCE
+tar -zxvf $PKG
+rm -rf $PKG
+
+PKG_BUILD_NAME=$1
+mkdir ${PKG_BUILD_NAME}
+mv crictl ${PKG_BUILD_NAME}
+
+pushd ${PKG_BUILD_NAME}

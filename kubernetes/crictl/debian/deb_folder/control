@@ -1,0 +1,15 @@
+Source: crictl
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: crictl
+Architecture: any
+Depends:  ${misc:Depends}, ${shlibs:Depends}
+Description: Provides a CLI for CRI-compatible container runtimes.
+ crictl provides a CLI for CRI-compatible container runtimes.
+ This allows the CRI runtime developers to debug their
+ runtime without needing to set up Kubernetes components.
