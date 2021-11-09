@@ -1,3 +1,4 @@
+base/lighttpd
 config/facter
 config/puppet-5.5.22
 config/puppet-modules/openstack/puppet-ceph-3.1.1
@@ -17,6 +18,7 @@ config/puppet-modules/puppet-nslcd
 config/puppet-modules/puppet-puppi
 config/puppet-modules/puppet-rabbitmq-8.5.0
 config/puppet-modules/puppet-staging
+docker/python-docker
 filesystem/drbd/drbd-tools
 filesystem/parted
 kubernetes/chartmuseum
