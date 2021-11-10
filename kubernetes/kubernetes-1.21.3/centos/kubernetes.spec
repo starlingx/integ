@@ -60,6 +60,7 @@ Patch4: kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 Patch5: kubeadm-create-platform-pods-with-zero-CPU-resources.patch
 Patch6: enable-support-for-kubernetes-to-ignore-isolcpus.patch
 Patch7: Revert-use-subpath-for-coredns-only-for-default-repo.patch
+Patch8: Change-log-level-to-Debug.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -854,6 +855,7 @@ install in production.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 #src/k8s.io/kubernetes/pkg/util/certificates
 # Patch the code to remove eliptic.P224 support
