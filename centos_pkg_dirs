@@ -36,7 +36,7 @@ config/puppet-modules/puppet-ldap
 config/puppet-modules/puppet-lvm
 config/puppet-modules/puppet-network
 config/puppet-modules/puppet-nslcd
-config/puppet-modules/puppet-postgresql-4.8.0
+config/puppet-modules/puppetlabs-postgresql-6.7.0
 config/puppet-modules/puppet-puppi
 config/puppet-modules/puppet-rabbitmq-5.5.0
 config/puppet-modules/puppet-staging
