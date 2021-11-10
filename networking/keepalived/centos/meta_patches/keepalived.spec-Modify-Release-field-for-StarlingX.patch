@@ -1,0 +1,29 @@
+From 63e4c62e7b642e273409b28bac8658af627553b6 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Wed, 10 Nov 2021 19:01:31 -0500
+Subject: [PATCH] keepalived.spec: Modify Release field for StarlingX
+
+This commit modifies the Release field of the keepalived package's spec
+file for StarlingX.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ SPECS/keepalived.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/keepalived.spec b/SPECS/keepalived.spec
+index b719d6cf2789..13650da79d64 100644
+--- a/SPECS/keepalived.spec
++++ b/SPECS/keepalived.spec
+@@ -10,7 +10,7 @@
+ Name: keepalived
+ Summary: High Availability monitor built upon LVS, VRRP and service pollers
+ Version: 2.1.5
+-Release: 6%{?dist}
++Release: 6%{?_tis_dist}.%{tis_patch_ver}
+ License: GPLv2+
+ URL: http://www.keepalived.org/
+ Group: System Environment/Daemons
+-- 
+2.29.2
+

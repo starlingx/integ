@@ -99,4 +99,5 @@ tools/kexec-tools
 tools/libbpf
 networking/iproute
 networking/iptables
+networking/keepalived
 networking/libnftnl

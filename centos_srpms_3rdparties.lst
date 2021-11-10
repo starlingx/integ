@@ -1,5 +1,6 @@
 iproute-5.12.0-4.el8.src.rpm#https://vault.centos.org/8-stream/BaseOS/Source/SPackages/iproute-5.12.0-4.el8.src.rpm
 iptables-1.8.4-21.el8.src.rpm#https://vault.centos.org/8-stream/BaseOS/Source/SPackages/iptables-1.8.4-21.el8.src.rpm
+keepalived-2.1.5-6.el8.src.rpm#http://vault.centos.org/8-stream/AppStream/Source/SPackages/keepalived-2.1.5-6.el8.src.rpm
 libnftnl-1.1.5-4.el8.src.rpm#https://vault.centos.org/8-stream/BaseOS/Source/SPackages/libnftnl-1.1.5-4.el8.src.rpm
 libvirt-python-4.7.0-1.fc28.src.rpm#https://libvirt.org/sources/python/libvirt-python-4.7.0-1.fc28.src.rpm
 linuxptp-3.1.1-1.el8.src.rpm#http://vault.centos.org/8-stream/AppStream/Source/SPackages/linuxptp-3.1.1-1.el8.src.rpm
