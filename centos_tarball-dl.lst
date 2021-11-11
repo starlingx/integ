@@ -61,7 +61,7 @@ puppet-filemapper-9b53310278e76827bbe12a36cc6470d77071abb2.tar.gz#packstack/pupp
 puppetlabs-create_resources-4639819a7f3a4fa9310d2ba583c63e467df7e2c3.tar.gz#packstack/puppet/modules/create_resources#https://github.com/puppetlabs/puppetlabs-create_resources/tarball/4639819a7f3a4fa9310d2ba583c63e467df7e2c3#http##
 puppetlabs-drbd-496b3ba9cd74a2d12636f9e90a718739a5451169.tar.gz#puppetlabs-drbd#https://github.com/voxpupuli/puppet-drbd/tarball/496b3ba9cd74a2d12636f9e90a718739a5451169#http##
 puppetlabs-lvm-d0283da637ae24550fb4ba109a48ef8d5d8c8b84.tar.gz#packstack/puppet/modules/lvm#https://github.com/puppetlabs/puppetlabs-lvm/tarball/d0283da637ae24550fb4ba109a48ef8d5d8c8b84#http##
-puppetlabs-postgresql-3f80054a342cccb5d368be4cea64c67e09a8d4d6.tar.gz#puppetlabs-postgresql#https://github.com/puppetlabs/puppetlabs-postgresql/tarball/3f80054a342cccb5d368be4cea64c67e09a8d4d6#http##
+puppetlabs-postgresql-d022a56b28b2174456fc0f6adc51a4b54493afad.tar.gz#puppetlabs-postgresql#https://github.com/puppetlabs/puppetlabs-postgresql/tarball/d022a56b28b2174456fc0f6adc51a4b54493afad#http##
 puppet-ldap-480f13af6d17d1d3fcf0dc7b4bd04b49fa4099e1.tar.gz#puppet-ldap-master#https://github.com/torian/puppet-ldap/tarball/480f13af6d17d1d3fcf0dc7b4bd04b49fa4099e1#http##
 puppet-network-7deacd5fdc22c0543455878a8d1872f2f5417c1d.tar.gz#packstack/puppet/modules/network#https://github.com/voxpupuli/puppet-network/tarball/7deacd5fdc22c0543455878a8d1872f2f5417c1d#http##
 puppet-nslcd-b8c19b1ada89865f2e50758e054583798ad8011a.tar.gz#packstack/puppet/modules/nslcd#https://github.com/jlyheden/puppet-nslcd/tarball/b8c19b1ada89865f2e50758e054583798ad8011a#http##

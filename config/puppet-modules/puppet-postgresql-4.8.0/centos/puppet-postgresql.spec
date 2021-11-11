@@ -1,9 +1,9 @@
-%global git_sha     3f80054a342cccb5d368be4cea64c67e09a8d4d6
+%global git_sha     d022a56b28b2174456fc0f6adc51a4b54493afad
 %global prefix      puppetlabs
 %global module_dir  postgresql
 
 Name:           puppet-%{module_dir}
-Version:        6.7.0
+Version:        4.8.0
 Release:        0%{?_tis_dist}.%{tis_patch_ver}
 Summary:        Puppet %{module_dir} module
 License:        Apache
