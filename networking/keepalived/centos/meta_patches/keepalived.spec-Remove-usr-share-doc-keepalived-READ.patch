@@ -1,0 +1,38 @@
+From e111abc4421d848c99b30f6aaf077d08aea61337 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Wed, 10 Nov 2021 21:34:32 -0500
+Subject: [PATCH] keepalived.spec: Remove /usr/share/doc/keepalived/README
+
+This commit removes the file "/usr/share/doc/keepalived/README" from the
+installation directory, because the same file is already installed into
+"/usr/share/doc/keepalived-<version>/README", and RPM reports the
+following error about the former file:
+
+  Checking for unpackaged file(s): /usr/lib/rpm/check-files \
+    /builddir/build/BUILDROOT/keepalived-2.1.5-6.tis.1.x86_64
+  RPM build errors:
+  error: Installed (but unpackaged) file(s) found:
+     /usr/share/doc/keepalived/README
+      Installed (but unpackaged) file(s) found:
+     /usr/share/doc/keepalived/README
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ SPECS/keepalived.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/keepalived.spec b/SPECS/keepalived.spec
+index 8087fd474585..44b5a3f06578 100644
+--- a/SPECS/keepalived.spec
++++ b/SPECS/keepalived.spec
+@@ -69,6 +69,7 @@ rm -rf %{buildroot}
+ make install DESTDIR=%{buildroot}
+ rm -rf %{buildroot}%{_initrddir}/
+ rm -rf %{buildroot}%{_sysconfdir}/keepalived/samples/
++rm  -f %{buildroot}%{_docdir}/%{name}/README
+ %{__install} -p -D -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/keepalived.service
+ mkdir -p %{buildroot}%{_libexecdir}/keepalived
+ 
+-- 
+2.29.2
+
