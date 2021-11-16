@@ -1,0 +1,5 @@
+0001-Add-Helm-v2-client-initialization-using-tiller-postS.patch
+0002-Tiller-wait-for-postgres-database-ping.patch
+0003-Update-the-liveness-probe-to-verify-postgres-connect.patch
+0004-Update-postgres-liveness-check-to-support-IPv6-addre.patch
+0005-Add-toleration-to-armada-api.patch
