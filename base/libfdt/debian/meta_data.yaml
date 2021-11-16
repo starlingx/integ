@@ -1,0 +1,9 @@
+debver: 1.4.4-1
+debname: libfdt
+dl_path:
+  name: dtc-1.4.4.tar.gz
+  url: https://www.kernel.org/pub/software/utils/dtc/dtc-1.4.4.tar.gz
+  md5sum: e558cd0e244f122bcb4ebaca166aea4e
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT:
