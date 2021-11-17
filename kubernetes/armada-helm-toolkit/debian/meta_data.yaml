@@ -1,7 +1,10 @@
 ---
 debname: armada-helm-toolkit
 debver: 1.0-1
-dl_hook: dl_hook
+dl_path:
+  name: openstack-helm-infra-c9d6676bf9a5aceb311dc31dadd07cba6a3d6392.tar.gz
+  url: https://github.com/openstack/openstack-helm-infra/archive/c9d6676bf9a5aceb311dc31dadd07cba6a3d6392.tar.gz
+  md5sum: 6b4ad40b343c346ee54443337edd2be3
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
