@@ -1,0 +1,9 @@
+---
+debver: 2.4.57+dfsg-3
+dl_path:
+  name: openldap-2.4.57+dfsg-3.tar.gz
+  url: https://salsa.debian.org/openldap-team/openldap/-/archive/2.4.57+dfsg-3/openldap-2.4.57+dfsg-3.tar.gz
+  md5sum: 85c7de35e79b8fe45b5d6aabba2b9a3d
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT:
