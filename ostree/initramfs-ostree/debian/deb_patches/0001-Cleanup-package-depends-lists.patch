@@ -1,0 +1,59 @@
+From 682c71d565d626eac52457f870595e0bb356d4ae Mon Sep 17 00:00:00 2001
+From: Yue Tao <yue.tao@windriver.com>
+Date: Fri, 19 Nov 2021 04:15:16 +0000
+Subject: [PATCH] Cleanup package depends lists
+
+to fix build issue:
+
+dh clean
+make: dh: No such file or directory
+make: *** [debian/rules:4: clean] Error 127
+
+And remove the dependence of essential packages of
+coreutils and util-linux to fix Lintian issues:
+
+E: initramfs-ostree source: build-depends-on-essential-package-without-using-version
+Build-Depends: coreutils
+
+E: initramfs-ostree: depends-on-essential-package-without-using-version
+Depends: util-linux
+
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+---
+ debian/compat  | 1 -
+ debian/control | 4 ++--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+ delete mode 100644 debian/compat
+
+diff --git a/debian/compat b/debian/compat
+deleted file mode 100644
+index f599e28..0000000
+--- a/debian/compat
++++ /dev/null
+@@ -1 +0,0 @@
+-10
+diff --git a/debian/control b/debian/control
+index 82388cc..b003f99 100644
+--- a/debian/control
++++ b/debian/control
+@@ -2,7 +2,7 @@ Source: initramfs-ostree
+ Section: utils
+ Priority: optional
+ Maintainer: root <root@3b917021b2df>
+-Build-Depends: coreutils
++Build-Depends: debhelper-compat (= 13)
+ Standards-Version: 4.5.1
+ Homepage: https://github.com/WindRiver-Labs/wr-ostree
+ #Vcs-Browser: https://salsa.debian.org/debian/initramfs-ostree
+@@ -11,7 +11,7 @@ Rules-Requires-Root: no
+ 
+ Package: initramfs-ostree
+ Architecture: all
+-Depends: util-linux, gdisk, e2fsprogs, ${misc:Depends}
++Depends: gdisk, e2fsprogs, ${misc:Depends}, ${shlibs:Depends}
+ Multi-Arch: foreign
+ Description: Basic init for initramfs to mount ostree and pivot root
+  Basic init for initramfs to mount ostree and pivot root
+-- 
+2.25.1
+

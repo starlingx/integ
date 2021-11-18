@@ -1,0 +1,160 @@
+From 1c0a29dab1f81bdcdeee7ee24a5415f95e39a1cd Mon Sep 17 00:00:00 2001
+From: Yue Tao <yue.tao@windriver.com>
+Date: Fri, 19 Nov 2021 04:38:51 +0000
+Subject: [PATCH] Update Copyright and License
+
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+---
+ debian/changelog |  4 ++--
+ debian/control   | 24 ++++++++++++++++-----
+ debian/copyright | 56 ++++++++++++++++++------------------------------
+ debian/rules     | 17 +++++++++++++++
+ 4 files changed, 59 insertions(+), 42 deletions(-)
+
+diff --git a/debian/changelog b/debian/changelog
+index 8853129..7b188ca 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,5 +1,5 @@
+ mttyexec (0.1-1) unstable; urgency=medium
+ 
+-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
++  * Initial release
+ 
+- -- root <root@3b917021b2df>  Wed, 07 Apr 2021 06:51:07 +0000
++ --  <>  Wed, 07 Apr 2021 06:51:07 +0000
+diff --git a/debian/control b/debian/control
+index 29b27bc..9f27a4e 100644
+--- a/debian/control
++++ b/debian/control
+@@ -1,13 +1,27 @@
++# Copyright (c) 2021 Wind River Systems, Inc.
++#
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements. The ASF licenses this
++# file to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
+ Source: mttyexec
+ Section: admin
+ Priority: optional
+-Maintainer: root <root@3b917021b2df>
++Maintainer: Hongxu Jia <hongxu.jia@windriver.com>
+ Standards-Version: 4.5.1
+ Build-Depends: debhelper-compat (= 13)
+-Homepage: https://github.com/WindRiver-Labs/wr-ostree
+-#Vcs-Browser: https://salsa.debian.org/debian/mttyexec
+-#Vcs-Git: https://salsa.debian.org/debian/mttyexec.git
+-Rules-Requires-Root: no
++Homepage: https://github.com/WindRiver-Labs/meta-lat
+ 
+ Package: mttyexec
+ Architecture: any
+diff --git a/debian/copyright b/debian/copyright
+index bfb9db1..c08f477 100644
+--- a/debian/copyright
++++ b/debian/copyright
+@@ -1,43 +1,29 @@
+ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+ Upstream-Name: mttyexec
+-Upstream-Contact: <preferred name and address to reach the upstream project>
+-Source: <url://example.com>
++Upstream-Contact: Hongxu Jia <hongxu.jia@windriver.com>
++Source: https://github.com/Wind-River/meta-lat
+ 
+ Files: *
+-Copyright: <years> <put author's name and email here>
+-           <years> <likewise for another author>
+-License: <special license>
+- <Put the license of the package here indented by 1 space>
+- <This follows the format of Description: lines in control file>
+- .
+- <Including paragraphs>
++Copyright: Copyright (c) 2021 Wind River
++License: MIT-License
+ 
+-# If you want to use GPL v2 or later for the /debian/* files use
+-# the following clauses, or change it to suit. Delete these two lines
+-Files: debian/*
+-Copyright: 2021 root <root@3b917021b2df>
+-License: GPL-2+
+- This package is free software; you can redistribute it and/or modify
+- it under the terms of the GNU General Public License as published by
+- the Free Software Foundation; either version 2 of the License, or
+- (at your option) any later version.
++License: MIT-License
++ Copyright (c) 2021 Wind River
+  .
+- This package is distributed in the hope that it will be useful,
+- but WITHOUT ANY WARRANTY; without even the implied warranty of
+- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- GNU General Public License for more details.
++ Permission is hereby granted, free of charge, to any person obtaining a copy
++ of this software and associated documentation files (the "Software"), to deal
++ in the Software without restriction, including without limitation the rights
++ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ copies of the Software, and to permit persons to whom the Software is
++ furnished to do so, subject to the following conditions:
+  .
+- You should have received a copy of the GNU General Public License
+- along with this program. If not, see <https://www.gnu.org/licenses/>
++ The above copyright notice and this permission notice shall be included in all
++ copies or substantial portions of the Software.
+  .
+- On Debian systems, the complete text of the GNU General
+- Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+-
+-# Please also look if there are files or directories which have a
+-# different copyright/license attached and list them here.
+-# Please avoid picking licenses with terms that are more restrictive than the
+-# packaged work, as it may make Debian's contributions unacceptable upstream.
+-#
+-# If you need, there are some extra license texts available in two places:
+-#   /usr/share/debhelper/dh_make/licenses/
+-#   /usr/share/common-licenses/
++ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ SOFTWARE.
+diff --git a/debian/rules b/debian/rules
+index 3bc6ead..c6441d9 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -1,4 +1,21 @@
+ #!/usr/bin/make -f
++#
++# Copyright (c) 2021 Wind River Systems, Inc.
++#
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements. The ASF licenses this
++# file to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
+ 
+ %:
+ 	dh $@
+-- 
+2.30.2
+
