@@ -5,6 +5,7 @@
 #
 
 %define debug_package %{nil}
+%define local_sbindir /usr/local/sbin
 
 %global _k8s_name kubernetes
 
@@ -34,6 +35,11 @@ Source1: %{con_repo}-v%{con_commit}.tar.gz
 
 # systemd resource control enable CPU and Memory accounting for cgroups
 Source2: kubernetes-accounting.conf
+
+# kubelet config overrides parameters
+Source3: kubelet_override.yaml
+
+Source4: upgrade_k8s_config.sh
 
 Patch1: kubelet-service-remove-docker-dependency.patch
 
@@ -89,6 +95,11 @@ install -v -d -m 0755 %{buildroot}%{_tmpfilesdir}
 install -v -p -m 0644 -t %{buildroot}/%{_tmpfilesdir} contrib/init/systemd/tmpfiles.d/kubernetes.conf
 mkdir -p %{buildroot}/run
 install -v -d -m 0755 %{buildroot}/run/%{_k8s_name}/
+install -p -D -m 644 %{SOURCE3} %{buildroot}%{_sysconfdir}/%{_k8s_name}/kubelet_override.yaml
+
+install -d %{buildroot}%{local_sbindir}
+# install execution scripts
+install -m 700 %{SOURCE4} %{buildroot}/%{local_sbindir}/upgrade_k8s_config.sh
 
 # install service files
 install -v -d -m 0755 %{buildroot}%{_unitdir}
@@ -107,6 +118,9 @@ install -v -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system.conf.d %{SOU
 %dir %{_curr_stage1}
 %dir %{_curr_stage2}
 
+# the following are execution scripts
+%{local_sbindir}/upgrade_k8s_config.sh
+
 # the following are symlinks
 %{_bindir}/kubeadm
 %{_bindir}/kubelet
@@ -123,6 +137,7 @@ install -v -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system.conf.d %{SOU
 %config(noreplace) %{_sysconfdir}/%{_k8s_name}/config
 %config(noreplace) %{_sysconfdir}/%{_k8s_name}/kubelet
 %config(noreplace) %{_sysconfdir}/%{_k8s_name}/kubelet.kubeconfig
+%config(noreplace) %{_sysconfdir}/%{_k8s_name}/kubelet_override.yaml
 %config(noreplace) %{_sysconfdir}/%{_k8s_name}/proxy
 %config(noreplace) %{_sysconfdir}/systemd/system.conf.d/kubernetes-accounting.conf
 %{_tmpfilesdir}/kubernetes.conf
