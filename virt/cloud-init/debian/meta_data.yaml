@@ -1,0 +1,9 @@
+debname: cloud-init
+debver: 20.4.1-2+deb11u1
+dl_path:
+  name: cloud-init-debian-20.4.1-2+deb11u1.tar.gz
+  url: https://salsa.debian.org/cloud-team/cloud-init/-/archive/debian/20.4.1-2+deb11u1/cloud-init-debian-20.4.1-2+deb11u1.tar.gz
+  md5sum: e125f0b7651386430cbf6a5e80789b8e
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
