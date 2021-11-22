@@ -1,0 +1,16 @@
+Source: kvm-timer-advance
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper (>= 13),
+ libsystemd-dev
+Standards-Version: 4.1.2
+Homepage: https://www.starlingx.io
+
+Package: kvm-timer-advance
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ qemu-kvm-tools-ev,
+ systemd
+Description: StarlingX KVM Timer Advance Package
+ This package handles StarlingX KVM Timer Advance Package
