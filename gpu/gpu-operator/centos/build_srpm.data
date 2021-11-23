@@ -1,4 +1,4 @@
-VERSION=1.6.0
+VERSION=1.8.1
 TAR_NAME=gpu-operator
 TAR="$TAR_NAME-$VERSION.tar.gz"
 COPY_LIST=" \

@@ -1,4 +1,4 @@
-From b968c69971a195aba4e0c03e8a70df074c128f69 Mon Sep 17 00:00:00 2001
+From 1094b6f1593ec454b3a6313ecf9fae53f8c66899 Mon Sep 17 00:00:00 2001
 From: Babak Sarashki <babak.sarashki@windriver.com>
 Date: Sat, 6 Mar 2021 00:22:40 +0000
 Subject: [PATCH 1/2] deployments: setup configmap with assets for volumemounts
@@ -8,17 +8,17 @@ export to the gpu-operator pod through configmap volumeMounts.
 
 Signed-off-by: Babak Sarashki <babak.sarashki@windriver.com>
 ---
- .../gpu-operator/templates/operator.yaml      | 45 +++++++++++++++++++
+ .../gpu-operator/templates/operator.yaml      | 44 +++++++++++++++++++
  .../templates/operator_configmap.yaml         | 36 +++++++++++++++
  deployments/gpu-operator/values.yaml          |  2 +
- 3 files changed, 83 insertions(+)
+ 3 files changed, 82 insertions(+)
  create mode 100644 deployments/gpu-operator/templates/operator_configmap.yaml
 
 diff --git a/deployments/gpu-operator/templates/operator.yaml b/deployments/gpu-operator/templates/operator.yaml
-index 50983b20..1dfd9dbc 100644
+index 1d81f74..c97b4b1 100644
 --- a/deployments/gpu-operator/templates/operator.yaml
 +++ b/deployments/gpu-operator/templates/operator.yaml
-@@ -50,6 +50,45 @@ spec:
+@@ -49,6 +49,44 @@ spec:
            - name: host-os-release
              mountPath: "/host-etc/os-release"
              readOnly: true
@@ -60,11 +60,10 @@ index 50983b20..1dfd9dbc 100644
 +            subPath: {{ printf "state_monitor_%s" (base $path) }}
 +          {{- end }}
 +          {{- end }}
-+ 
-         readinessProbe:
-           exec:
-             command: ["stat", "/tmp/operator-sdk-ready"]
-@@ -63,6 +102,12 @@ spec:
+         livenessProbe:
+           httpGet:
+             path: /healthz
+@@ -72,6 +110,12 @@ spec:
          - name: host-os-release
            hostPath:
              path: "/etc/os-release"
@@ -79,7 +78,7 @@ index 50983b20..1dfd9dbc 100644
          {{- toYaml . | nindent 8 }}
 diff --git a/deployments/gpu-operator/templates/operator_configmap.yaml b/deployments/gpu-operator/templates/operator_configmap.yaml
 new file mode 100644
-index 00000000..61f366e8
+index 0000000..61f366e
 --- /dev/null
 +++ b/deployments/gpu-operator/templates/operator_configmap.yaml
 @@ -0,0 +1,36 @@
@@ -120,18 +119,18 @@ index 00000000..61f366e8
 +{{- end }}
 +{{- end }}
 diff --git a/deployments/gpu-operator/values.yaml b/deployments/gpu-operator/values.yaml
-index 00d94195..8b43c59f 100644
+index 78a4757..6689636 100644
 --- a/deployments/gpu-operator/values.yaml
 +++ b/deployments/gpu-operator/values.yaml
-@@ -39,6 +39,8 @@ operator:
+@@ -70,6 +70,8 @@ operator:
                  values: [""]
    logging:
      timeEncoding: epoch
-+  # Set to "include_assets" to include assets/gpu-operator with the helm chart
++  # Set "include_assets" true to include assets/gpu-operator with the helm chart
 +  include_assets: ""
- 
- driver:
-   repository: nvcr.io/nvidia
+   resources:
+     limits:
+       cpu: 500m
 -- 
 2.17.1
 
