@@ -21,7 +21,10 @@ if [ -f ${SRC_DIR}/src/.git_version ]; then
     \rm  ${SRC_DIR}/src/.git_version
 fi
 
-TIS_BASE_SRCREV=02899bfda814146b021136e9d8e80eba494e1126
-TIS_PATCH_VER=GITREVCOUNT+PKG_GITREVCOUNT
+# Set the source rev to 14.2.22 tag
+TIS_BASE_SRCREV=ca74598065096e6fcbd8433c8779a2be0c889351
+# Subtract 43 to account for PKG_GITREVCOUNT changes prior to 14.2.22 (i.e.
+# reset PKG_GITREVCOUNT to 0)
+TIS_PATCH_VER=GITREVCOUNT+PKG_GITREVCOUNT-43
 BUILD_IS_BIG=40
 BUILD_IS_SLOW=26
