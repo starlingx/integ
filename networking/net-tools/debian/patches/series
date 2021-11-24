@@ -1,0 +1,2 @@
+net-tools-hostname-ipv6-shortname.patch
+net-tools-ifconfig-no-ifstate-on-flush.patch
