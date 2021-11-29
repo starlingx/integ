@@ -1,0 +1,79 @@
+From 370f15d95a91e8f85be2ff6ec64c3ba974ae6aed Mon Sep 17 00:00:00 2001
+From: Leonardo Fagundes Luz Serrano
+ <Leonardo.FagundesLuzSerrano@windriver.com>
+Date: Wed, 5 Jan 2022 11:51:06 -0300
+Subject: [PATCH] Build python wheel version of this package
+
+Adding instructions to build libvirt-python-wheel.
+
+Signed-off-by: Leonardo Fagundes Luz Serrano <Leonardo.FagundesLuzSerrano@windriver.com>
+---
+ debian/control                 |  9 +++++++++
+ debian/python3-libvirt.install |  1 +
+ debian/rules                   | 14 ++++++++++++++
+ 3 files changed, 24 insertions(+)
+ create mode 100644 debian/python3-libvirt.install
+
+diff --git a/debian/control b/debian/control
+index 8cd4ea7..e7ec45f 100644
+--- a/debian/control
++++ b/debian/control
+@@ -6,6 +6,8 @@ Build-Depends: debhelper-compat (=13),
+  dh-python,
+  pkg-config,
+  python3-all-dev,
++ python3-setuptools,
++ python3-wheel,
+  libvirt-dev (>= 4.5.0~),
+ Standards-Version: 4.4.0
+ Vcs-Git: https://salsa.debian.org/libvirt-team/libvirt-python.git
+@@ -24,3 +26,10 @@ Description: libvirt Python 3 bindings
+  supports QEMU, KVM, XEN, OpenVZ, LXC, and VirtualBox.
+  .
+  This package contains the Python 3 bindings for the libvirt library
++
++Package: libvirt-python-wheel
++Architecture: any
++Depends: ${misc:Depends}
++Description: Contains python wheels for python3-libvirt
++ This is the support package for the PEP 427 wheel version of the package,
++ required for using pip inside a virtual environment.
+diff --git a/debian/python3-libvirt.install b/debian/python3-libvirt.install
+new file mode 100644
+index 0000000..3272cd6
+--- /dev/null
++++ b/debian/python3-libvirt.install
+@@ -0,0 +1 @@
++usr/lib/python3/dist-packages/*
+diff --git a/debian/rules b/debian/rules
+index cb18dfa..f0867a4 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -1,6 +1,8 @@
+ #!/usr/bin/make -f
+ # -*- makefile -*-
+ 
++export PYBUILD_NAME=libvirt-python
++
+ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+ DPKG_EXPORT_BUILDFLAGS = 1
+ include /usr/share/dpkg/buildflags.mk
+@@ -10,3 +12,15 @@ include /usr/share/dpkg/buildflags.mk
+ 
+ %:
+ 	dh $@ --with python3 --buildsystem=pybuild
++
++override_dh_install:
++	python3 setup.py install -f --install-layout=deb --root=$(CURDIR)/debian/tmp
++
++	python3 setup.py bdist_wheel \
++		--universal \
++		-d $(CURDIR)/debian/libvirt-python-wheel/usr/share/python3-wheels
++
++	dh_install
++
++override_dh_auto_clean:
++	python3 setup.py clean
+-- 
+2.17.1
+

@@ -1,0 +1,9 @@
+debname: libvirt-python
+debver: 7.0.0-2
+dl_path:
+  name: libvirt-python-debian-7.0.0-2.tar.gz
+  url: https://salsa.debian.org/libvirt-team/libvirt-python/-/archive/debian/7.0.0-2/libvirt-python-debian-7.0.0-2.tar.gz
+  md5sum: 3053719493a919560d6929fc86bcf2b3
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

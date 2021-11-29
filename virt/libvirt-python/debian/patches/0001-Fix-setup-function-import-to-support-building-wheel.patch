@@ -1,0 +1,31 @@
+From 7852fd8ab1653363e33910571c4fad2bc0b3de21 Mon Sep 17 00:00:00 2001
+From: Leonardo Fagundes Luz Serrano
+ <Leonardo.FagundesLuzSerrano@windriver.com>
+Date: Wed, 5 Jan 2022 14:39:18 -0300
+Subject: [PATCH] Fix setup function import to support building wheel
+
+In order to build the python wheel version of the pkg,
+the setup function used should be provided by the
+setuptools library.
+
+Signed-off-by: Leonardo Fagundes Luz Serrano <Leonardo.FagundesLuzSerrano@windriver.com>
+---
+ setup.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index a02535d..0bcb83c 100755
+--- a/setup.py
++++ b/setup.py
+@@ -1,6 +1,7 @@
+ #!/usr/bin/env python3
+ 
+-from distutils.core import setup, Extension, Command
++from setuptools import setup
++from distutils.core import Extension, Command
+ from distutils.command.build import build
+ from distutils.command.clean import clean
+ from distutils.command.sdist import sdist
+-- 
+2.17.1
+
