@@ -770,7 +770,7 @@ class ServiceMonitor(object):
         try:
             self.run_with_timeout(
                 ['/usr/bin/ceph', 'config-key', 'get',
-                 'config/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity)],
+                 'config/mgr/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity)],
                 CONFIG.ceph_cli_timeout_sec)
             self.run_with_timeout(
                 ['/usr/bin/ceph', 'config-key', 'get',
@@ -778,7 +778,7 @@ class ServiceMonitor(object):
                 CONFIG.ceph_cli_timeout_sec)
             self.run_with_timeout(
                 ['/usr/bin/ceph', 'config-key', 'get',
-                 'config/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity)],
+                 'config/mgr/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity)],
                 CONFIG.ceph_cli_timeout_sec)
             self.run_with_timeout(
                 ['/usr/bin/ceph', 'config-key', 'get',
@@ -824,7 +824,7 @@ class ServiceMonitor(object):
                     out=err.output)
             self.run_with_timeout(
                 ['/usr/bin/ceph', 'config-key', 'set',
-                 'config/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity),
+                 'config/mgr/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity),
                  '-i', os.path.join(path, 'crt')],
                 CONFIG.ceph_cli_timeout_sec)
             self.run_with_timeout(
@@ -834,7 +834,7 @@ class ServiceMonitor(object):
                 CONFIG.ceph_cli_timeout_sec)
             self.run_with_timeout(
                 ['/usr/bin/ceph', 'config-key', 'set',
-                 'config/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity),
+                 'config/mgr/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity),
                  '-i', os.path.join(path, 'key')],
                 CONFIG.ceph_cli_timeout_sec)
             self.run_with_timeout(
@@ -891,7 +891,7 @@ class ServiceMonitor(object):
 
     def restful_plugin_get_certificate(self):
         command = ['/usr/bin/ceph', 'config-key', 'get',
-                   'config/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity)]
+                   'config/mgr/mgr/restful/{}/crt'.format(CONFIG.ceph_mgr_identity)]
         with open(os.devnull, 'wb') as null:
             certificate = self.run_with_timeout(
                 command, CONFIG.ceph_cli_timeout_sec, stderr=null)
