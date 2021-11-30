@@ -1,7 +1,10 @@
 ---
 debname: crictl
 debver: 1.0-1
-dl_hook: dl_hook
+dl_path:
+  name: crictl-v1.21.0-linux-amd64.tar.gz
+  url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.21.0/crictl-v1.21.0-linux-amd64.tar.gz
+  md5sum: 671e173f96f87aab18a4f9f8111cd4e6
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
