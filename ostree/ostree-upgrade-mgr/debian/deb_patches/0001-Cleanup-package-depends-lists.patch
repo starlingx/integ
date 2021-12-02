@@ -1,0 +1,57 @@
+From 414d8dab9fa53230b650d06becfbf31f58f634d9 Mon Sep 17 00:00:00 2001
+From: Yue Tao <yue.tao@windriver.com>
+Date: Fri, 19 Nov 2021 06:28:36 +0000
+Subject: [PATCH] Cleanup package depends lists
+
+to fix build issue:
+
+dh clean
+make: dh: No such file or directory
+make: *** [debian/rules:4: clean] Error 127
+
+And remove the dependence of essential packages of
+util-linux to fix Lintian issues:
+
+E: initramfs-ostree: depends-on-essential-package-without-using-version
+Depends: util-linux
+
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+---
+ debian/compat  | 1 -
+ debian/control | 5 +++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+ delete mode 100644 debian/compat
+
+diff --git a/debian/compat b/debian/compat
+deleted file mode 100644
+index f599e28..0000000
+--- a/debian/compat
++++ /dev/null
+@@ -1 +0,0 @@
+-10
+diff --git a/debian/control b/debian/control
+index adcf621..9bb4f7f 100644
+--- a/debian/control
++++ b/debian/control
+@@ -4,15 +4,16 @@ Priority: optional
+ Maintainer: root <root@3b917021b2df>
+ Standards-Version: 4.5.1
+ Homepage: https://github.com/WindRiver-Labs/wr-ostree
++Build-Depends: debhelper-compat (= 13)
+ Rules-Requires-Root: no
+ 
+ Package: ostree-upgrade-mgr
+ Architecture: all
+ Priority: standard
+ Depends:
+- util-linux,
+  watchdog,
+- ${misc:Depends}
++ ${misc:Depends},
++ ${shlibs:Depends}
+ Description: wrlinux ostree upgrade config manager
+  Example of how to run some postinstall and postrm
+  operations to complete a wrlinux upgrade with ostree
+-- 
+2.25.1
+

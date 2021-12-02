@@ -1,0 +1,49 @@
+From 84dcdb4d15e533c335486df9ea15459c07019fc0 Mon Sep 17 00:00:00 2001
+From: Yue Tao <yue.tao@windriver.com>
+Date: Fri, 19 Nov 2021 03:59:08 +0000
+Subject: [PATCH] Cleanup package depends lists
+
+to fix build issue:
+
+dh clean
+make: dh: No such file or directory
+make: *** [debian/rules:4: clean] Error 127
+
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+---
+ debian/compat  | 1 -
+ debian/control | 3 ++-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ delete mode 100644 debian/compat
+
+diff --git a/debian/compat b/debian/compat
+deleted file mode 100644
+index f599e28..0000000
+--- a/debian/compat
++++ /dev/null
+@@ -1 +0,0 @@
+-10
+diff --git a/debian/control b/debian/control
+index 169d4a4..39f991a 100644
+--- a/debian/control
++++ b/debian/control
+@@ -3,6 +3,7 @@ Section: admin
+ Priority: optional
+ Maintainer: root <root@3b917021b2df>
+ Standards-Version: 4.5.1
++Build-Depends: debhelper-compat (= 13)
+ Homepage: https://github.com/WindRiver-Labs/wr-ostree
+ #Vcs-Browser: https://salsa.debian.org/debian/mttyexec
+ #Vcs-Git: https://salsa.debian.org/debian/mttyexec.git
+@@ -10,7 +11,7 @@ Rules-Requires-Root: no
+ 
+ Package: mttyexec
+ Architecture: any
+-Depends: ${misc:Depends}
++Depends: ${misc:Depends}, ${shlibs:Depends}
+ Multi-Arch: foreign
+ Description: Multiplex serial ports and tty devices
+  Service funtion to multiplex one or more serial ports and
+-- 
+2.25.1
+

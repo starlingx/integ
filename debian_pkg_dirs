@@ -45,6 +45,10 @@ kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
 networking/lldpd
+ostree/initramfs-ostree
+ostree/mttyexec
+ostree/ostree
+ostree/ostree-upgrade-mgr
 security/keyrings.alt
 security/python-keyring
 storage-drivers/trident-installer
