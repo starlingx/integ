@@ -1,0 +1,125 @@
+From f6e8ace9a9783a1645cb6141ba5788790963cda3 Mon Sep 17 00:00:00 2001
+From: Yue Tao <Yue.Tao@windriver.com>
+Date: Mon, 15 Jan 2018 13:25:04 -0500
+Subject: [PATCH] Use Titanium certificate
+
+Signed-off-by: Scott Little <scott.little@windriver.com>
+Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
+---
+ Make.defaults |  6 ++++++
+ Makefile      | 33 +++++++++++++++++++--------------
+ 2 files changed, 25 insertions(+), 14 deletions(-)
+
+diff --git a/Make.defaults b/Make.defaults
+index a775083..656669d 100644
+--- a/Make.defaults
++++ b/Make.defaults
+@@ -56,6 +56,12 @@ CLANG_BUGS	= $(if $(findstring gcc,$(CC)),-maccumulate-outgoing-args,)
+ 
+ COMMIT_ID ?= $(shell if [ -e .git ] ; then git log -1 --pretty=format:%H ; elif [ -f commit ]; then cat commit ; else echo master; fi)
+ 
++# We compile a certificate into shim.  Usually this is a one-time generated
++# certificate (make-certs script) however we want to include a custom
++# certificate for which we have the key.  We use the key to sign the kernel and
++# grub down the road
++INTERNAL_CERT = tis-shim
++
+ ifeq ($(ARCH),x86_64)
+ 	ARCH_CFLAGS		?= -mno-mmx -mno-sse -mno-red-zone -nostdinc \
+ 				   $(CLANG_BUGS) -m64 \
+diff --git a/Makefile b/Makefile
+index 8c66459..919e002 100644
+--- a/Makefile
++++ b/Makefile
+@@ -37,9 +37,10 @@ TARGETS	+= $(MMNAME).signed $(FBNAME).signed
+ CFLAGS += -DENABLE_SHIM_CERT
+ else
+ TARGETS += $(MMNAME) $(FBNAME)
++CFLAGS += -DENABLE_SHIM_CERT
+ endif
+ OBJS	= shim.o mok.o netboot.o cert.o replacements.o tpm.o version.o errlog.o sbat.o sbat_data.o pe.o httpboot.o csv.o
+-KEYS	= shim_cert.h ocsp.* ca.* shim.crt shim.csr shim.p12 shim.pem shim.key shim.cer
++KEYS    = shim_cert.h ocsp.* ca.* $(INTERNAL_CERT).crt $(INTERNAL_CERT).csr $(INTERNAL_CERT).p12 $(INTERNAL_CERT).pem $(INTERNAL_CERT).key $(INTERNAL_CERT).cer
+ ORIG_SOURCES	= shim.c mok.c netboot.c replacements.c tpm.c errlog.c sbat.c pe.c httpboot.c shim.h version.h $(wildcard include/*.h)
+ MOK_OBJS = MokManager.o PasswordCrypt.o crypt_blowfish.o errlog.o sbat_data.o
+ ORIG_MOK_SOURCES = MokManager.c PasswordCrypt.c crypt_blowfish.c shim.h $(wildcard include/*.h)
+@@ -75,14 +76,18 @@ endif
+ update :
+ 	git submodule update --init --recursive
+ 
+-shim.crt:
+-	$(TOPDIR)/make-certs shim shim@xn--u4h.net all codesign 1.3.6.1.4.1.311.10.3.1 </dev/null
++# certificate is now provided in source.  To generate a random certificate,
++# uncomment this rule
++#$(INTERNAL_CERT).crt:
++#	$(TOPDIR)/make-certs $(INTERNAL_CERT) shim@xn--u4h.net all codesign 1.3.6.1.4.1.311.10.3.1 </dev/null
+ 
+-shim.cer: shim.crt
++$(INTERNAL_CERT).cer: $(INTERNAL_CERT).crt
+ 	$(OPENSSL) x509 -outform der -in $< -out $@
+ 
+ .NOTPARALLEL: shim_cert.h
+-shim_cert.h: shim.cer
++# name "shim_cert.h" rather than "$(INTERNAL_CERT).h" used so C files can just
++# use a fixed name for #include
++shim_cert.h: $(INTERNAL_CERT).cer
+ 	echo "static UINT8 shim_cert[] __attribute__((__unused__)) = {" > $@
+ 	$(HEXDUMP) -v -e '1/1 "0x%02x, "' $< >> $@
+ 	echo "};" >> $@
+@@ -93,15 +98,13 @@ version.c : $(TOPDIR)/version.c.in
+ 		-e "s,@@COMMIT@@,$(COMMIT_ID)," \
+ 		< $< > $@
+ 
+-certdb/secmod.db: shim.crt
++certdb/secmod.db: $(INTERNAL_CERT).crt
+ 	-mkdir certdb
+-	$(PK12UTIL) -d certdb/ -i shim.p12 -W "" -K ""
+-	$(CERTUTIL) -d certdb/ -A -i shim.crt -n shim -t u
++	$(PK12UTIL) -d certdb/ -i $(INTERNAL_CERT).p12 -W "" -K ""
++	$(CERTUTIL) -d certdb/ -A -i $(INTERNAL_CERT).crt -n shim -t u
+ 
+ shim.o: $(SOURCES)
+-ifneq ($(origin ENABLE_SHIM_CERT),undefined)
+ shim.o: shim_cert.h
+-endif
+ shim.o: $(wildcard $(TOPDIR)/*.h)
+ 
+ cert.o : $(TOPDIR)/cert.S
+@@ -267,10 +270,10 @@ endif
+ 		$< $@
+ 
+ ifneq ($(origin ENABLE_SBSIGN),undefined)
+-%.efi.signed: %.efi shim.key shim.crt
++%.efi.signed: %.efi $(INTERNAL_CERT).key $(INTERNAL_CERT).crt
+ 	@$(SBSIGN) \
+-		--key shim.key \
+-		--cert shim.crt \
++		--key $(INTERNAL_CERT).key \
++		--cert $(INTERNAL_CERT).crt \
+ 		--output $@ $<
+ else
+ %.efi.signed: %.efi certdb/secmod.db
+@@ -302,9 +305,11 @@ clean-lib-objs:
+ 	fi
+ 
+ clean-shim-objs:
++	@mv $(INTERNAL_CERT).crt $(INTERNAL_CERT).crt.back
+ 	@rm -rvf $(TARGET) *.o $(SHIM_OBJS) $(MOK_OBJS) $(FALLBACK_OBJS) $(KEYS) certdb $(BOOTCSVNAME)
+ 	@rm -vf *.debug *.so *.efi *.efi.* *.tar.* version.c buildid
+ 	@rm -vf Cryptlib/*.[oa] Cryptlib/*/*.[oa]
++	@mv $(INTERNAL_CERT).crt.back $(INTERNAL_CERT).crt
+ 	@if [ -d .git ] ; then git clean -f -d -e 'Cryptlib/OpenSSL/*'; fi
+ 
+ clean-openssl-objs:
+@@ -331,7 +336,7 @@ tag:
+ archive: tag
+ 	@./make-archive $(if $(call get-config,shim.origin),--origin "$(call get-config,shim.origin)") --release "$(VERSION)" "$(GITTAG)" "shim-$(GITTAG)"
+ 
+-.PHONY : install-deps shim.key
++.PHONY : install-deps $(INTERNAL_CERT).key
+ 
+ export ARCH CC CROSS_COMPILE LD OBJCOPY EFI_INCLUDE EFI_INCLUDES OPTIMIZATIONS
+ export FEATUREFLAGS WARNFLAGS WERRFLAGS
+-- 
+2.25.1
+
