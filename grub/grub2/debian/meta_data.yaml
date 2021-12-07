@@ -1,0 +1,5 @@
+---
+debver: 2.04-20
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
