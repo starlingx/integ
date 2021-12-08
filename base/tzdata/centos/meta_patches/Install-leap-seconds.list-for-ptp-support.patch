@@ -1,0 +1,28 @@
+From e5c32e5a5f80ce787dd169a7406d7e5436cb7d85 Mon Sep 17 00:00:00 2001
+Message-Id: <e5c32e5a5f80ce787dd169a7406d7e5436cb7d85.1638830541.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Mon, 6 Dec 2021 17:42:09 -0500
+Subject: [PATCH] Install leap-seconds.list for ptp support
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/tzdata.spec | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/SPECS/tzdata.spec b/SPECS/tzdata.spec
+index 8bfcc60..3e780ac 100644
+--- a/SPECS/tzdata.spec
++++ b/SPECS/tzdata.spec
+@@ -133,6 +133,9 @@ cp -prd javazi $RPM_BUILD_ROOT%{_datadir}/javazi
+ mkdir -p $RPM_BUILD_ROOT%{_datadir}/javazi-1.8
+ install -p -m 644 tzdb.dat $RPM_BUILD_ROOT%{_datadir}/javazi-1.8/
+ 
++# ptp requires the leap-seconds.list file
++install -p -m 644 leap-seconds.list $RPM_BUILD_ROOT%{_datadir}/zoneinfo
++
+ %clean
+ rm -rf $RPM_BUILD_ROOT
+ 
+-- 
+2.29.2
+
