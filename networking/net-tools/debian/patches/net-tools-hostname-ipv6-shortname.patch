@@ -1,0 +1,36 @@
+From 142ae27a708465920db6280fb7f89138a48e4cd1 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 16:42:24 -0400
+Subject: [PATCH] net-tools: hostname ipv6 shortname
+
+These are not supported for IPv6 so just consume the option
+and return the default hostname value
+
+Signed-off-by: Scott Little <scott.little@windriver.com>
+Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
+---
+ hostname.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/hostname.c b/hostname.c
+index 34e4ac7..fd3c5cb 100644
+--- a/hostname.c
++++ b/hostname.c
+@@ -344,8 +344,13 @@ int main(int argc, char **argv)
+ 	    break;
+ 	case 'a':
+ 	case 'f':
+-	case 'i':
+ 	case 's':
++	    /*
++	     * These are not supported for IPv6 so just consume the option
++	     * and return the default hostname value
++	     */
++	    break;
++	case 'i':
+ 	    what = 1;
+ 	    type = c;
+ 	    break;
+-- 
+2.25.1
+
