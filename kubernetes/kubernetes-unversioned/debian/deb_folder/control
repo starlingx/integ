@@ -1,0 +1,16 @@
+Source: kubernetes-unversioned
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <StarlingX-discuss@lists.StarlingX.io>
+Build-Depends: debhelper-compat (= 13), libsystemd-dev
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+Rules-Requires-Root: no
+
+Package: kubernetes-unversioned
+Architecture: any
+Depends: ${shlibs:Depends},
+ ${misc:Depends},
+ systemd
+Description: Kubernetes unversioned common config and current version symlinks
+ This package contains kubernetes config files and current version symlinks
