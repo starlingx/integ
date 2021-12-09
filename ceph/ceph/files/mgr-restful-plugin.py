@@ -725,7 +725,7 @@ class ServiceMonitor(object):
             with open(os.devnull, 'wb') as null:
                 out = self.run_with_timeout(
                     ['/usr/bin/ceph', 'config-key', 'get',
-                     'mgr/restful/server_port'],
+                     'config/mgr/mgr/restful/server_port'],
                     CONFIG.ceph_cli_timeout_sec, stderr=null)
             if out == str(CONFIG.restful_plugin_port):
                 return True
@@ -743,7 +743,7 @@ class ServiceMonitor(object):
         LOG.info('Set restful plugin port=%d', CONFIG.restful_plugin_port)
         self.run_with_timeout(
             ['/usr/bin/ceph', 'config-key', 'set',
-             'mgr/restful/server_port', str(CONFIG.restful_plugin_port)],
+             'config/mgr/mgr/restful/server_port', str(CONFIG.restful_plugin_port)],
             CONFIG.ceph_cli_timeout_sec)
 
     def restful_plugin_has_admin_key(self):
