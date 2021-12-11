@@ -1,7 +1,12 @@
 ---
 debname: helm
 debver: 3.2.1-1
-dl_hook: dl_hook
+src_path: centos/files
+dl_files:
+  helm-v3.2.1-linux-amd64.tar.gz:
+    topdir: linux-amd64
+    url: https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz
+    md5sum: 98764c2c0175bd306223cc985700d619
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
