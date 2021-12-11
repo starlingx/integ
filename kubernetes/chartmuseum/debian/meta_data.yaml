@@ -1,7 +1,15 @@
 ---
 debname: chartmuseum
 debver: 0.12.0-1
-dl_hook: dl_hook
+dl_path:
+  name: chartmuseum-0.12.0.tar.gz
+  url: https://github.com/helm/chartmuseum/archive/v0.12.0.tar.gz
+  md5sum: 5c4cadff25c20e3fc17f079a457bddd9
+dl_files:
+  chartmuseum-v0.12.0-amd64:
+    topdir: null
+    url: https://s3.amazonaws.com/chartmuseum/release/v0.12.0/bin/linux/amd64/chartmuseum
+    md5sum: fba48bf948c224e662e84e7b295899f2
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

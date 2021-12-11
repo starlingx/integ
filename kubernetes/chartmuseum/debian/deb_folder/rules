@@ -9,7 +9,6 @@ export BINDIR = $(ROOT)/usr/bin
 	dh $@
 
 override_dh_auto_build:
-	tar xfz chartmuseum-$(CHARTMUSEUM_VERSION).tar.gz
 
 override_dh_auto_clean:
 
