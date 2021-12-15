@@ -1,0 +1,6 @@
+0001-clock-Reset-state-when-switching-port-with-same-best.patch
+0002-clock-Reset-clock-check-on-best-clock-port-change.patch
+0003-port-Don-t-check-timestamps-from-non-slave-ports.patch
+0004-port-Don-t-renew-raw-transport.patch
+0005-clockcheck-Increase-minimum-interval.patch
+0006-Add-option-to-disable-default-port-selection-in-phc2.patch
