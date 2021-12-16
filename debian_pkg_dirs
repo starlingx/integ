@@ -4,6 +4,7 @@ base/dhcp
 base/dnsmasq
 base/libfdt
 base/lighttpd
+base/linuxptp
 base/pf-bb-config
 base/systemd
 base/watchdog
@@ -29,6 +30,7 @@ config/puppet-modules/puppet-staging
 docker/python-docker
 filesystem/drbd/drbd-tools
 filesystem/parted
+grub/grub2
 kubernetes/armada
 kubernetes/armada-helm-toolkit
 kubernetes/chartmuseum
@@ -46,10 +48,12 @@ kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
 networking/lldpd
+networking/net-tools
 ostree/initramfs-ostree
 ostree/mttyexec
 ostree/ostree
 ostree/ostree-upgrade-mgr
 security/keyrings.alt
 security/python-keyring
+security/shim-unsigned
 storage-drivers/trident-installer
