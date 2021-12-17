@@ -2,8 +2,14 @@
 
 LOCAL_DIR=$1
 PKGNAME=ostree-upgrade-mgr
-BASE_DIR=$STX_GIT_SRC_DIR/meta-lat/data/debian
-SRC_DIR=$BASE_DIR/$PKGNAME/sources
-DEB_DIR=$BASE_DIR/$PKGNAME/metadata/debian
-cp -Lr $SRC_DIR $LOCAL_DIR
-cp -Lr $DEB_DIR $LOCAL_DIR
+META_LAT_TARBALL=meta-lat.tar.gz
+META_LAT=meta-lat
+
+mkdir -p ${META_LAT}
+tar xzvf ${META_LAT_TARBALL} --strip-components 1 -C ${META_LAT}
+
+BASE_DIR=$(realpath ${META_LAT})
+SRC_DIR=${BASE_DIR}/data/debian/${PKGNAME}/sources
+DEB_DIR=${BASE_DIR}/data/debian/${PKGNAME}/metadata/debian
+cp -Lr ${SRC_DIR} ${LOCAL_DIR}
+cp -Lr ${DEB_DIR} ${LOCAL_DIR}

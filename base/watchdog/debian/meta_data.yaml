@@ -1,6 +1,12 @@
 ---
 debver: 5.16-1
 dl_hook: dl_hook
+archive: https://snapshot.debian.org/archive/debian/20200424T151944Z/pool/main/w/watchdog
+dl_files:
+  meta-lat.tar.gz:
+    topdir: null
+    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20211214.tar.gz
+    md5sum: 38103be48cc97171c0a0a3ecd6713ffe
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

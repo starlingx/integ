@@ -1,3 +1,12 @@
 ---
 debver: 2019.1-1
+dl_files:
+  meta-lat.tar.gz:
+    topdir: null
+    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20211214.tar.gz
+    md5sum: 38103be48cc97171c0a0a3ecd6713ffe
+  ostree.tar.gz:
+    topdir: null
+    url: https://salsa.debian.org/debian/ostree/-/archive/debian/2019.1-1/ostree-debian-2019.1-1.tar.gz
+    md5sum: 31b095f28ceb6278964f69198d3e8a03
 dl_hook: dl_hook
