@@ -50,6 +50,7 @@ ostree/initramfs-ostree
 ostree/mttyexec
 ostree/ostree
 ostree/ostree-upgrade-mgr
+python/python3-setuptools
 security/keyrings.alt
 security/python-keyring
 storage-drivers/trident-installer
