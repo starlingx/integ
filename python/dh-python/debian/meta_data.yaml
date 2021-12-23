@@ -1,0 +1,10 @@
+---
+debname: dh-python
+debver: 4.20201102+nmu1
+dl_path:
+  name: dh-python-4.20201102+nmu1.tar.gz
+  url: https://salsa.debian.org/python-team/tools/dh-python/-/archive/4.20201102+nmu1/dh-python-4.20201102+nmu1.tar.gz
+  md5sum: e8ffceb6618446cd57916d3063a326e3
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
