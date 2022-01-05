@@ -1,0 +1,108 @@
+From de653bd0823b248d623a39c17a3872e85ce952b0 Mon Sep 17 00:00:00 2001
+From: Chris Friesen <chris.friesen@windriver.com>
+Date: Fri, 3 Sep 2021 18:05:15 -0400
+Subject: [PATCH 5/7] kubeadm: create platform pods with zero CPU resources
+
+We want to specify zero CPU resources when creating the manifests
+for the static platform pods, as a workaround for the lack of
+separate resource tracking for platform resources.
+
+We also specify zero CPU resources for the coredns deployment.
+manifests.go appears to be the main file for this, not sure if the
+others are used but I changed them just in case.
+
+Signed-off-by: Daniel Safta <daniel.safta@windriver.com>
+---
+ cluster/addons/dns/coredns/coredns.yaml.base     | 2 +-
+ cluster/addons/dns/coredns/coredns.yaml.in       | 2 +-
+ cluster/addons/dns/coredns/coredns.yaml.sed      | 2 +-
+ cmd/kubeadm/app/phases/addons/dns/manifests.go   | 2 +-
+ cmd/kubeadm/app/phases/controlplane/manifests.go | 6 +++---
+ 5 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.base b/cluster/addons/dns/coredns/coredns.yaml.base
+index 4ee054f8ba5..d2b58f4af0e 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.base
++++ b/cluster/addons/dns/coredns/coredns.yaml.base
+@@ -138,7 +138,7 @@ spec:
+           limits:
+             memory: __DNS__MEMORY__LIMIT__
+           requests:
+-            cpu: 100m
++            cpu: 0
+             memory: 70Mi
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.in b/cluster/addons/dns/coredns/coredns.yaml.in
+index 1f791e447c9..ff03a801646 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.in
++++ b/cluster/addons/dns/coredns/coredns.yaml.in
+@@ -138,7 +138,7 @@ spec:
+           limits:
+             memory: 'dns_memory_limit'
+           requests:
+-            cpu: 100m
++            cpu: 0
+             memory: 70Mi
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.sed b/cluster/addons/dns/coredns/coredns.yaml.sed
+index 4d64278aaa4..38fc9196b28 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.sed
++++ b/cluster/addons/dns/coredns/coredns.yaml.sed
+@@ -138,7 +138,7 @@ spec:
+           limits:
+             memory: $DNS_MEMORY_LIMIT
+           requests:
+-            cpu: 100m
++            cpu: 0
+             memory: 70Mi
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+diff --git a/cmd/kubeadm/app/phases/addons/dns/manifests.go b/cmd/kubeadm/app/phases/addons/dns/manifests.go
+index 3ac6856bfc6..0763b4c63db 100644
+--- a/cmd/kubeadm/app/phases/addons/dns/manifests.go
++++ b/cmd/kubeadm/app/phases/addons/dns/manifests.go
+@@ -95,7 +95,7 @@ spec:
+           limits:
+             memory: 170Mi
+           requests:
+-            cpu: 100m
++            cpu: 0
+             memory: 70Mi
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+diff --git a/cmd/kubeadm/app/phases/controlplane/manifests.go b/cmd/kubeadm/app/phases/controlplane/manifests.go
+index 8181bea63a4..4c4b4448dd4 100644
+--- a/cmd/kubeadm/app/phases/controlplane/manifests.go
++++ b/cmd/kubeadm/app/phases/controlplane/manifests.go
+@@ -60,7 +60,7 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
+ 			LivenessProbe:   staticpodutil.LivenessProbe(staticpodutil.GetAPIServerProbeAddress(endpoint), "/livez", int(endpoint.BindPort), v1.URISchemeHTTPS),
+ 			ReadinessProbe:  staticpodutil.ReadinessProbe(staticpodutil.GetAPIServerProbeAddress(endpoint), "/readyz", int(endpoint.BindPort), v1.URISchemeHTTPS),
+ 			StartupProbe:    staticpodutil.StartupProbe(staticpodutil.GetAPIServerProbeAddress(endpoint), "/livez", int(endpoint.BindPort), v1.URISchemeHTTPS, cfg.APIServer.TimeoutForControlPlane),
+-			Resources:       staticpodutil.ComponentResources("250m"),
++			Resources:       staticpodutil.ComponentResources("0"),
+ 			Env:             kubeadmutil.GetProxyEnvVars(),
+ 		}, mounts.GetVolumes(kubeadmconstants.KubeAPIServer),
+ 			map[string]string{kubeadmconstants.KubeAPIServerAdvertiseAddressEndpointAnnotationKey: endpoint.String()}),
+@@ -72,7 +72,7 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
+ 			VolumeMounts:    staticpodutil.VolumeMountMapToSlice(mounts.GetVolumeMounts(kubeadmconstants.KubeControllerManager)),
+ 			LivenessProbe:   staticpodutil.LivenessProbe(staticpodutil.GetControllerManagerProbeAddress(cfg), "/healthz", kubeadmconstants.KubeControllerManagerPort, v1.URISchemeHTTPS),
+ 			StartupProbe:    staticpodutil.StartupProbe(staticpodutil.GetControllerManagerProbeAddress(cfg), "/healthz", kubeadmconstants.KubeControllerManagerPort, v1.URISchemeHTTPS, cfg.APIServer.TimeoutForControlPlane),
+-			Resources:       staticpodutil.ComponentResources("200m"),
++			Resources:       staticpodutil.ComponentResources("0"),
+ 			Env:             kubeadmutil.GetProxyEnvVars(),
+ 		}, mounts.GetVolumes(kubeadmconstants.KubeControllerManager), nil),
+ 		kubeadmconstants.KubeScheduler: staticpodutil.ComponentPod(v1.Container{
+@@ -83,7 +83,7 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
+ 			VolumeMounts:    staticpodutil.VolumeMountMapToSlice(mounts.GetVolumeMounts(kubeadmconstants.KubeScheduler)),
+ 			LivenessProbe:   staticpodutil.LivenessProbe(staticpodutil.GetSchedulerProbeAddress(cfg), "/healthz", kubeadmconstants.KubeSchedulerPort, v1.URISchemeHTTPS),
+ 			StartupProbe:    staticpodutil.StartupProbe(staticpodutil.GetSchedulerProbeAddress(cfg), "/healthz", kubeadmconstants.KubeSchedulerPort, v1.URISchemeHTTPS, cfg.APIServer.TimeoutForControlPlane),
+-			Resources:       staticpodutil.ComponentResources("100m"),
++			Resources:       staticpodutil.ComponentResources("0"),
+ 			Env:             kubeadmutil.GetProxyEnvVars(),
+ 		}, mounts.GetVolumes(kubeadmconstants.KubeScheduler), nil),
+ 	}
+-- 
+2.17.1
+
