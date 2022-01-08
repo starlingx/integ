@@ -41,7 +41,7 @@ kubernetes/docker-distribution
 kubernetes/etcd
 kubernetes/helm
 kubernetes/k8s-pod-recovery
-kubernetes/kubernetes-1.21.3
+kubernetes/kubernetes-1.21.8
 kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/runc

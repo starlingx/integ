@@ -1,4 +1,4 @@
-VERSION=1.21.3
+VERSION=1.21.8
 TAR_NAME=kubernetes
 TAR="$TAR_NAME-v$VERSION.tar.gz"
 COPY_LIST="${CGCS_BASE}/downloads/$TAR $FILES_BASE/*"

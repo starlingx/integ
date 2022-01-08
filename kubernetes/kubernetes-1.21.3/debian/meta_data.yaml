@@ -1,9 +1,0 @@
-debname: kubernetes
-debver: 1.21.3
-dl_path:
-  name: kubernetes-1.21.3.tar.gz
-  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.21.3.tar.gz
-  md5sum: fa28f2b262d496a08c0c3dad87846c48
-revision:
-  dist: $STX_DIST
-  PKG_GITREVCOUNT: true

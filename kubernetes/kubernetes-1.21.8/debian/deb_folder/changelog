@@ -1,4 +1,4 @@
-kubernetes (1.21.3-1) unstable; urgency=medium
+kubernetes (1.21.8-1) unstable; urgency=medium
 
   * Updated for stx debian packaging
 

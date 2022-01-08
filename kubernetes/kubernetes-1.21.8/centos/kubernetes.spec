@@ -23,12 +23,12 @@
 
 %global provider_prefix         %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path             k8s.io/kubernetes
-%global commit                  1.21.3
+%global commit                  1.21.8
 
-%global kube_version            1.21.3
+%global kube_version            1.21.8
 %global kube_git_version        v%{kube_version}
 
-%global go_version              1.16.6
+%global go_version              1.16.12
 %global go_path                 /usr/lib/golang-%{go_version}-%{go_version}/bin
 
 # Needed otherwise "version_ldflags=$(kube::version_ldflags)" doesn't work
@@ -903,7 +903,7 @@ pushd admin
 cp kube-apiserver.md kube-controller-manager.md kube-proxy.md kube-scheduler.md kubelet.md ..
 popd
 cp %{SOURCE33} genmanpages.sh
-bash genmanpages.sh
+#bash genmanpages.sh
 popd
 popd
 

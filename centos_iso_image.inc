@@ -165,9 +165,9 @@ kubernetes-1.19.13-client
 kubernetes-1.20.9-node
 kubernetes-1.20.9-kubeadm
 kubernetes-1.20.9-client
-kubernetes-1.21.3-node
-kubernetes-1.21.3-kubeadm
-kubernetes-1.21.3-client
+kubernetes-1.21.8-node
+kubernetes-1.21.8-kubeadm
+kubernetes-1.21.8-client
 containerd
 k8s-pod-recovery
 k8s-cni-cache-cleanup

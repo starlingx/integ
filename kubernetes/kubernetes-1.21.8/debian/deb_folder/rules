@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-kube_version := 1.21.3
+kube_version := 1.21.8
 kube_git_version := v${kube_version}
 name := kubernetes-${kube_version}
 go_version := 1.16.6
