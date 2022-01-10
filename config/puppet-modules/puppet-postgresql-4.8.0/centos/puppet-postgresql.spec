@@ -29,6 +29,8 @@ Requires:      puppet-concat
 %description
 A Puppet module for managing PostgreSQL databases
 
+%define local_bindir /usr/local/bin
+
 %prep
 %setup -n %{prefix}-%{module_dir}
 %patch0001  -p1
@@ -45,8 +47,10 @@ find . \( -name spec -o -name ext \) | xargs rm -rf
 rm -rf %{buildroot}
 install -d -m 0755 %{buildroot}/%{_datadir}/puppet/modules/%{module_dir}
 cp -rp * %{buildroot}/%{_datadir}/puppet/modules/%{module_dir}/
+install -d -m 0755 %{buildroot}%{local_bindir}/
+install -p -D -m 755 files/validate_postgresql_connection.sh %{buildroot}%{local_bindir}/
 
 %files
 %license %{_datadir}/puppet/modules/%{module_dir}/LICENSE
 %{_datadir}/puppet/modules/%{module_dir}
-
+%{local_bindir}/validate_postgresql_connection.sh

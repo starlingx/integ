@@ -1,0 +1,38 @@
+From afac530d7bd2754980d519e479777b918db18cd0 Mon Sep 17 00:00:00 2001
+From: Bin Qian <bin.qian@windriver.com>
+Date: Wed, 27 Apr 2022 22:06:27 +0000
+Subject: [PATCH] install ldapscripts files to /etc
+
+Deploy ldapscripts config files to /etc/ldapscripts as it was done
+originally. We no longer need to use sed to modify the path.
+
+Signed-off-by: Bin Qian <bin.qian@windriver.com>
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index d490f9e..ba1d93e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -30,7 +30,7 @@ VERSION = 2.0.8
+ # Default installation paths
+ SBINDIR = $(PREFIX)/sbin
+ MANDIR = $(PREFIX)/man
+-ETCDIR = $(PREFIX)/etc/$(NAME)
++ETCDIR = /etc/$(NAME)
+ LIBDIR = $(PREFIX)/lib/$(NAME)
+ 
+ # Files to install
+@@ -84,7 +84,7 @@ help:
+ configure:
+ 	@echo -n 'Configuring scripts... '
+ 	@sed 's|^BINDPWDFILE=.*|BINDPWDFILE="$(ETCDIR)/$(PWDFILE)"|g' 'etc/$(ETCFILE)' > 'etc/$(ETCFILE).patched'
+-	@sed '/^_CONFIGFILE=/s|^\(.*"\).*\(".*\)|\1$(ETCDIR)/$(ETCFILE)\2|g' 'lib/$(RUNFILE)' > 'lib/$(RUNFILE).patched'
++	@cp 'lib/$(RUNFILE)' 'lib/$(RUNFILE).patched'
+ 	@for i in $(SBINFILES) ; do \
+ 		sed 's|^_RUNTIMEFILE=.*|_RUNTIMEFILE="$(LIBDIR)/$(RUNFILE)"|g' "sbin/$$i" > "sbin/$$i.patched" ; \
+ 	done
+-- 
+2.30.2
+

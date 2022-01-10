@@ -1,2 +1,3 @@
 debian-install-cgcs-files.patch
 debian-align-permission-with-centos.patch
+install-ldapscripts-files-to-etc.patch
