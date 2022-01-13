@@ -1,0 +1,33 @@
+From 5cb0a79cadabe8659ba36c9ac794cd49fc4f41c1 Mon Sep 17 00:00:00 2001
+From: Leonardo Fagundes Luz Serrano
+ <Leonardo.FagundesLuzSerrano@windriver.com>
+Date: Wed, 5 Jan 2022 10:36:18 -0300
+Subject: [PATCH] For invoking parted w/o handling cmd prompts interactively
+
+From resizepart.sh:
+"This is a workaround to allow cloud-init to invoke parted
+without needing to handle command prompts interactively.
+Support for non-interactive parted commands
+are not supported on mounted partitions."
+
+Signed-off-by: Leonardo Fagundes Luz Serrano <Leonardo.FagundesLuzSerrano@windriver.com>
+---
+ cloudinit/config/cc_growpart.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cloudinit/config/cc_growpart.py b/cloudinit/config/cc_growpart.py
+index 9f338ad1..e70b0d1e 100644
+--- a/cloudinit/config/cc_growpart.py
++++ b/cloudinit/config/cc_growpart.py
+@@ -192,7 +192,7 @@ class ResizeGpart(object):
+ 
+         before = get_size(partdev)
+         try:
+-            subp.subp(["gpart", "resize", "-i", partnum, diskdev])
++            subp.subp(["resizepart.sh", diskdev, partnum])
+         except subp.ProcessExecutionError as e:
+             util.logexc(LOG, "Failed: gpart resize -i %s %s", partnum, diskdev)
+             raise ResizeFailedException(e) from e
+-- 
+2.17.1
+
