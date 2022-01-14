@@ -1,0 +1,27 @@
+From 2cb90e6a38fd8e0890c55ceab72926d2850c1872 Mon Sep 17 00:00:00 2001
+Message-Id: <2cb90e6a38fd8e0890c55ceab72926d2850c1872.1641936995.git.Jim.Somerville@windriver.com>
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Mon, 6 Dec 2021 16:42:24 -0500
+Subject: [PATCH] Update package versioning for TIS format
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+---
+ SPECS/tzdata.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SPECS/tzdata.spec b/SPECS/tzdata.spec
+index a25faf4..35161e5 100644
+--- a/SPECS/tzdata.spec
++++ b/SPECS/tzdata.spec
+@@ -3,7 +3,7 @@ Name: tzdata
+ Version: 2021e
+ %define tzdata_version 2021e
+ %define tzcode_version 2021e
+-Release: 1%{?dist}
++Release: 1.el7%{?_tis_dist}.%{tis_patch_ver}
+ License: Public Domain
+ Group: System Environment/Base
+ URL: https://www.iana.org/time-zones
+-- 
+2.29.2
+

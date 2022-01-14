@@ -39,4 +39,5 @@ sudo-1.8.23-10.el7_9.1.src.rpm
 systemd-219-78.el7_9.3.src.rpm
 tboot-1.9.6-3.el7.src.rpm
 tpm2-tools-3.0.4-2.el7.src.rpm
+tzdata-2021e-1.el7.src.rpm
 watchdog-5.13-12.el7.src.rpm
