@@ -1,0 +1,120 @@
+## See online installation and setup documentation at
+
+    http://ceph.com/docs/master/install/manual-deployment/
+
+-------- -------- --------
+
+## "systemd" requires manual activation of services:
+
+    ## MON
+    # systemctl start ceph-mon
+    # systemctl enable ceph-mon
+
+    ## OSD.0 (set other OSDs like this)
+    # systemctl start ceph-osd@0
+    # systemctl enable ceph-osd@0
+
+    ## MDS
+    # systemctl start ceph-mds
+    # systemctl enable ceph-mds
+
+    ## "ceph" meta-service (starts/stops all the above like old init script)
+    # systemctl start ceph
+    # systemctl enable ceph
+
+ The ceph cluster can be set in the "/etc/default/ceph" file
+ by setting the CLUSTER environment variable.
+
+-------- -------- --------
+
+## Upgrade procedure (0.72.2 to 0.80):
+
+ * Read "Upgrade Sequencing" in release notes:
+
+    http://ceph.com/docs/firefly/release-notes/
+
+ * Upgrade packages.
+
+ * Restart MONs.
+
+ * Restart all OSDs.
+
+ * Run `ceph osd crush tunables default`.
+
+ * (Restart MDSes).
+
+ * Consider setting the 'hashpspool' flag on your pools (new default):
+
+    ceph osd pool set {pool} hashpspool true
+
+    This changes the pool to use a new hashing algorithm for the distribution of
+    Placement Groups (PGs) to OSDs. This new algorithm ensures a better distribution
+    to all OSDs. Be aware that this change will temporarly put some of your PGs into
+    "misplaced" state and cause additional I/O until all PGs are moved to their new
+    location. See http://tracker.ceph.com/issues/4128 for the details about the new
+    algorithm.
+
+ Read more about tunables in
+
+    http://ceph.com/docs/master/rados/operations/crush-map/#tunables
+
+ Upgrading all OSDs and setting correct tunables is necessary to avoid the errors like:
+
+    ## rbdmap errors:
+    libceph: mon2 192.168.0.222:6789 socket error on read
+
+ Wrong tunables may produce the following error:
+
+    libceph: mon0 192.168.0.222:6789 socket error on read
+    libceph: mon2 192.168.0.250:6789 feature set mismatch, my 4a042a42 < server's 2004a042a42, missing 20000000000
+
+    ## MDS errors:
+    one or more OSDs do not support TMAP2OMAP; upgrade OSDs before starting MDS (or downgrade MDS)
+
+ See also:
+
+    http://ceph.com/docs/firefly/install/upgrading-ceph/
+
+-------- -------- --------
+
+ Jerasure pool(s) will bump requirements to Linux_3.15 (not yet released) for
+ kernel CephFS and RBD clients.
+
+-------- -------- --------
+
+ RBD kernel driver do not support authentication so the following setting
+ in "/etc/ceph/ceph.conf" may be used to relax client auth. requirements:
+
+    cephx cluster require signatures = true
+    cephx service require signatures = false
+
+-------- -------- --------
+
+> How to mount CephFS using fuse client from "/etc/fstab"?
+
+ Add (and modify) the following sample to "/etc/fstab":
+
+    mount.fuse.ceph#conf=/etc/ceph/ceph.conf,id=admin    /mnt/ceph     fuse     _netdev,noatime,allow_other     0    0
+
+ This is equivalent of running
+
+    ceph-fuse /mnt/ceph --id=admin -o noatime,allow_other
+
+ as root.
+
+-------- -------- --------
+
+ To avoid known issue with kernel FS client it is recommended to use
+ 'readdir_max_entries' mount option, for example:
+
+    mount -t ceph 1.2.3.4:/ /mnt/ceph -o readdir_max_entries=64
+
+-------- -------- --------
+
+ Beware of "mlocate" scanning of OSD file systems. To avoid problems add
+ "/var/lib/ceph" to PRUNEPATHS in the "/etc/updatedb.conf" like in the
+ following example:
+
+    PRUNEPATHS="/tmp /var/spool /media /mnt /var/lib/ceph"
+
+-------- -------- --------

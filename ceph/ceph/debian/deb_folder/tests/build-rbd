@@ -1,0 +1,24 @@
+#!/bin/sh
+# autopkgtest check: Build and run a program against librbd1 to 
+# validate that headers are installed and libraries exists
+
+set -e
+
+WORKDIR=$(mktemp -d)
+trap "rm -rf $WORKDIR" 0 INT QUIT ABRT PIPE TERM
+cd $WORKDIR
+cat <<EOF > rbdtest.c
+#include <rbd/librbd.h>
+
+int
+main(void)
+{
+    return(0);
+}
+EOF
+
+gcc -o rbdtest rbdtest.c -lrbd
+echo "build: OK"
+[ -x rbdtest ]
+./rbdtest
+echo "run: OK"

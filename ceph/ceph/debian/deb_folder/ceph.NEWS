@@ -1,0 +1,180 @@
+ceph (10.2.5-1) unstable; urgency=medium
+
+  ## Upgrades from Debian Jessie
+
+  Online upgrades from Ceph versions prior to Hammer (0.94.x) are not
+  supported by upstream. As Debian Jessie has Ceph Firefly (0.80.x) an
+  online upgrade from Jessie to Stretch is not possible. You have to first
+  shutdown all Ceph daemons on all nodes, upgrade everything to the new
+  version and start all daemons again.
+
+  Ceph daemons are not automatically restarted on upgrade to minimize
+  disruption. You have to manually restart them after the upgrade.
+
+ -- Gaudenz Steinlin <gaudenz@debian.org>  Sun, 08 Jan 2017 14:57:35 +0100
+
+ceph (9.2.0-1) experimental; urgency=medium
+
+  ## systemd Enablement
+
+  For all distributions that support systemd (Debian Jessie 8.x,
+  Ubuntu >= 16.04), Ceph daemons are now managed using upstream provided
+  systemd files instead of the legacy sysvinit scripts or distro provided
+  systemd files.  For example:
+
+    systemctl start ceph.target       # start all daemons
+    systemctl status ceph-osd@12      # check status of osd.12
+
+  To upgrade existing deployments that use the older systemd service
+  configurations (Ubuntu >= 15.04, Debian >= Jessie), you need to switch
+  to using the new ceph-mon@ service:
+
+    systemctl stop ceph-mon
+    systemctl disable ceph-mon
+
+    systemctl start ceph-mon@`hostname`
+    systemctl enable ceph-mon@`hostname`
+
+  and also enable the ceph target post upgrade:
+
+    systemctl enable ceph.target
+
+  The main notable distro that is *not* using systemd is Ubuntu 14.04
+  (The next Ubuntu LTS, 16.04, will use systemd instead of upstart).
+
+  ## Ceph daemons no longer run as root
+
+  Ceph daemons now run as user and group 'ceph' by default.  The
+  ceph user has a static UID assigned by Debian to ensure consistency
+  across servers within a Ceph deployment.
+
+  If your systems already have a ceph user, upgrading the package will cause
+  problems.  We suggest you first remove or rename the existing 'ceph' user
+  and 'ceph' group before upgrading.
+
+  When upgrading, administrators have two options:
+
+  1. Add the following line to 'ceph.conf' on all hosts:
+
+       setuser match path = /var/lib/ceph/$type/$cluster-$id
+
+     This will make the Ceph daemons run as root (i.e., not drop
+     privileges and switch to user ceph) if the daemon's data
+     directory is still owned by root.  Newly deployed daemons will
+     be created with data owned by user ceph and will run with
+     reduced privileges, but upgraded daemons will continue to run as
+     root.
+
+  2. Fix the data ownership during the upgrade.  This is the
+     preferred option, but it is more work and can be very time
+     consuming.  The process for each host is to:
+
+     1. Upgrade the ceph package.  This creates the ceph user and group.  For
+        example:
+
+          apt-get install ceph
+
+        NOTE: the permissions on /var/lib/ceph/mon will be set to ceph:ceph
+              as part of the package upgrade process on existing *systemd*
+              based installations; the ceph-mon systemd service will be
+              automatically restarted as part of the upgrade.  All other
+              filesystem permissions on systemd based installs will
+              remain unmodified by the upgrade.
+
+     2. Stop the daemon(s):
+
+          systemctl stop ceph-osd@*   # debian, ubuntu >= 15.04
+          stop ceph-all               # ubuntu 14.04
+
+     3. Fix the ownership:
+
+          chown -R ceph:ceph /var/lib/ceph
+
+     4. Restart the daemon(s):
+
+          start ceph-all                # ubuntu 14.04
+          systemctl start ceph.target   # debian, ubuntu >= 15.04
+
+     Alternatively, the same process can be done with a single daemon
+     type, for example by stopping only monitors and chowning only
+     '/var/lib/ceph/osd'.
+
+  ## KeyValueStore OSD on-disk format changes
+
+  The on-disk format for the experimental KeyValueStore OSD backend has
+  changed.  You will need to remove any OSDs using that backend before you
+  upgrade any test clusters that use it.
+
+  ## Deprecated commands
+
+  'ceph scrub', 'ceph compact' and 'ceph sync force' are now DEPRECATED.
+  Users should instead use 'ceph mon scrub', 'ceph mon compact' and
+  'ceph mon sync force'.
+
+  ## Full pool behaviour
+
+  When a pool quota is reached, librados operations now block indefinitely,
+  the same way they do when the cluster fills up.  (Previously they would
+  return -ENOSPC).  By default, a full cluster or pool will now block.  If
+  your librados application can handle ENOSPC or EDQUOT errors gracefully,
+  you can get error returns instead by using the new librados
+  OPERATION_FULL_TRY flag.
+
+ -- James Page <james.page@ubuntu.com>  Mon, 30 Nov 2015 09:23:09 +0000
+
+ceph (0.80.9-2) unstable; urgency=medium
+
+  ## CRUSH fixes in 0.80.9
+
+  The 0.80.9 point release fixes several issues with CRUSH that trigger excessive
+  data migration when adjusting OSD weights. These are most obvious when a very
+  small weight change (e.g., a change from 0 to .01) triggers a large amount of
+  movement, but the same set of bugs can also lead to excessive (though less
+  noticeable) movement in other cases.
+
+  However, because the bug may already have affected your cluster, fixing it
+  may trigger movement back to the more correct location. For this reason, you
+  must manually opt-in to the fixed behavior.
+
+  In order to set the new tunable to correct the behavior:
+
+      ceph osd crush set-tunable straw_calc_version 1
+
+  Note that this change will have no immediate effect. However, from this
+  point forward, any ‘straw’ bucket in your CRUSH map that is adjusted will get
+  non-buggy internal weights, and that transition may trigger some rebalancing.
+
+  You can estimate how much rebalancing will eventually be necessary on your
+  cluster with:
+
+      ceph osd getcrushmap -o /tmp/cm
+      crushtool -i /tmp/cm --num-rep 3 --test --show-mappings > /tmp/a 2>&1
+      crushtool -i /tmp/cm --set-straw-calc-version 1 -o /tmp/cm2
+      crushtool -i /tmp/cm2 --reweight -o /tmp/cm2
+      crushtool -i /tmp/cm2 --num-rep 3 --test --show-mappings > /tmp/b 2>&1
+      wc -l /tmp/a                          # num total mappings
+      diff -u /tmp/a /tmp/b | grep -c ^+    # num changed mappings
+
+  Divide the total number of lines in /tmp/a with the number of lines
+  changed.  We've found that most clusters are under 10%.
+
+  You can force all of this rebalancing to happen at once with:
+
+      ceph osd crush reweight-all
+
+  Otherwise, it will happen at some unknown point in the future when
+  CRUSH weights are next adjusted.
+
+  ## Mapping rbd devices with rbdmap on systemd systems
+
+  If you have setup rbd mappings in /etc/ceph/rbdmap and corresponding mounts
+  in /etc/fstab things might break with systemd because systemd waits for the
+  rbd device to appear before the legacy rbdmap init file has a chance to run
+  and drops into emergency mode if it times out.
+
+  This can be fixed by adding the nofail option in /etc/fstab to all rbd
+  backed mount points. With this systemd does not wait for the device and
+  proceeds with the boot process. After rbdmap mapped the device, systemd
+  detects the new device and mounts the file system.
+
+ -- Gaudenz Steinlin <gaudenz@debian.org>  Mon, 04 May 2015 22:49:48 +0200

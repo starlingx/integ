@@ -1,0 +1,108 @@
+---
+debname: ceph
+debver: 14.2.22
+dl_hook: dl_hook
+dl_files:
+  boost_1_72_0.tar.gz:
+    topdir: boost_1_72_0
+    url: https://boostorg.jfrog.io/artifactory/main/release/1.72.0/source/boost_1_72_0.tar.gz
+    md5sum: e2b0b1eac302880461bcbef097171758
+  ceph-object-corpus-e32bf8ca3dc6151ebe7f205ba187815bc18e1cef.tar.gz:
+    topdir: ceph-object-corpus
+    url: https://api.github.com/repos/ceph/ceph-object-corpus/tarball/e32bf8ca3dc6151ebe7f205ba187815bc18e1cef
+    md5sum:
+  civetweb-bb99e93da00c3fe8c6b6a98520fb17cf64710ce7.tar.gz:
+    topdir: civetweb
+    url: https://api.github.com/repos/ceph/civetweb/tarball/bb99e93da00c3fe8c6b6a98520fb17cf64710ce7
+    md5sum: a110885c75cac0435f57b56f8e32df57
+  jerasure-96c76b89d661c163f65a014b8042c9354ccf7f31.tar.gz:
+    topdir: jerasure
+    url: https://api.github.com/repos/ceph/jerasure/tarball/96c76b89d661c163f65a014b8042c9354ccf7f31
+    md5sum:
+  gf-complete-7e61b44404f0ed410c83cfd3947a52e88ae044e1.tar.gz:
+    topdir: gf-complete
+    url: https://api.github.com/repos/ceph/gf-complete/tarball/7e61b44404f0ed410c83cfd3947a52e88ae044e1
+    md5sum:
+  rocksdb-4c736f177851cbf9fb7a6790282306ffac5065f8.tar.gz:
+    topdir: rocksdb
+    url: https://api.github.com/repos/ceph/rocksdb/tarball/4c736f177851cbf9fb7a6790282306ffac5065f8
+    md5sum: 04631f16668bca46b7baf56ffc176ddd
+  ceph-erasure-code-corpus-2d7d78b9cc52e8a9529d8cc2d2954c7d375d5dd7.tar.gz:
+    topdir: ceph-erasure-code-corpus
+    url: https://api.github.com/repos/ceph/ceph-erasure-code-corpus/tarball/2d7d78b9cc52e8a9529d8cc2d2954c7d375d5dd7
+    md5sum:
+  spdk-fd292c568f72187e172b98074d7ccab362dae348.tar.gz:
+    topdir: spdk
+    url: https://api.github.com/repos/ceph/spdk/tarball/fd292c568f72187e172b98074d7ccab362dae348
+    md5sum: 36865710c40e9be09c86897e385a275f
+  xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz:
+    topdir: xxHash
+    url: https://api.github.com/repos/ceph/xxHash/tarball/1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9
+    md5sum:
+  isa-l-7e1a337433a340bc0974ed0f04301bdaca374af6.tar.gz:
+    topdir: isa-l
+    url: https://api.github.com/repos/ceph/isa-l/tarball/7e1a337433a340bc0974ed0f04301bdaca374af6
+    md5sum:
+  lua-1fce39c6397056db645718b8f5821571d97869a4.tar.gz:
+    topdir: lua
+    url: https://api.github.com/repos/ceph/lua/tarball/1fce39c6397056db645718b8f5821571d97869a4
+    md5sum:
+  blkin-f24ceec055ea236a093988237a9821d145f5f7c8.tar.gz:
+    topdir: blkin
+    url: https://api.github.com/repos/ceph/blkin/tarball/f24ceec055ea236a093988237a9821d145f5f7c8
+    md5sum:
+  rapidjson-f54b0e47a08782a6131cc3d60f94d038fa6e0a51.tar.gz:
+    topdir: rapidjson
+    url: https://api.github.com/repos/ceph/rapidjson/tarball/f54b0e47a08782a6131cc3d60f94d038fa6e0a51
+    md5sum:
+  googletest-fdb850479284e2aae047b87df6beae84236d0135.tar.gz:
+    topdir: googletest
+    url: https://api.github.com/repos/ceph/googletest/tarball/fdb850479284e2aae047b87df6beae84236d0135
+    md5sum:
+  isa-l_crypto-603529a4e06ac8a1662c13d6b31f122e21830352.tar.gz:
+    topdir: isa-l_crypto
+    url: https://api.github.com/repos/01org/isa-l_crypto/tarball/603529a4e06ac8a1662c13d6b31f122e21830352
+    md5sum:
+  zstd-b706286adbba780006a47ef92df0ad7a785666b6.tar.gz:
+    topdir: zstd
+    url: https://api.github.com/repos/facebook/zstd/tarball/b706286adbba780006a47ef92df0ad7a785666b6
+    md5sum: a7acf287326438fe7ad1fa5a23a0e037
+  dpdk-96fae0e24c9088d9690c38098b25646f861a664b.tar.gz:
+    topdir: dpdk-96fae0e24c9088d9690c38098b25646f861a664b
+    url: https://api.github.com/repos/spdk/dpdk/tarball/96fae0e24c9088d9690c38098b25646f861a664b
+    md5sum: f0fe4b97cfaa9e707b376e3bbf1f48bd
+  googletest-0a439623f75c029912728d80cb7f1b8b48739ca4.tar.gz:
+    topdir: googletest
+    url: https://api.github.com/repos/google/googletest/tarball/0a439623f75c029912728d80cb7f1b8b48739ca4
+    md5sum:
+  c-ares-fd6124c74da0801f23f9d324559d8b66fb83f533.tar.gz:
+    topdir: c-ares
+    url: https://api.github.com/repos/ceph/c-ares/tarball/fd6124c74da0801f23f9d324559d8b66fb83f533
+    md5sum: cb24a561f32368a75f62275a527bc2fe
+  dmclock-4496dbc6515db96e08660ac38883329c5009f3e9.tar.gz:
+    topdir: dmclock
+    url: https://api.github.com/repos/ceph/dmclock/tarball/4496dbc6515db96e08660ac38883329c5009f3e9
+    md5sum: dc7fab617c6b6ccf5fe8f2691a62ee5e
+  seastar-0cf6aa6b28d69210b271489c0778f226cde0f459.tar.gz:
+    topdir: seastar
+    url: https://api.github.com/repos/ceph/seastar/tarball/0cf6aa6b28d69210b271489c0778f226cde0f459
+    md5sum: 3ab003c2f88cb89e0ba9403ec75cd268
+  spawn-5f4742f647a5a33b9467f648a3968b3cd0a681ee.tar.gz:
+    topdir: spawn
+    url: https://api.github.com/repos/ceph/spawn/tarball/5f4742f647a5a33b9467f648a3968b3cd0a681ee
+    md5sum: d3aa90d751d53a369482cf8f7e1e9de5
+  intel-ipsec-mb-134c90c912ea9376460e9d949bb1319a83a9d839.tar.gz:
+    topdir: intel-ipsec-mb
+    url: https://api.github.com/repos/spdk/intel-ipsec-mb/tarball/134c90c912ea9376460e9d949bb1319a83a9d839
+    md5sum: 293068c170a663f52f9c713c74fa68f1
+  dpdk-a1774652fbbb1fe7c0ff392d5e66de60a0154df6.tar.gz:
+    topdir: dpdk-a1774652fbbb1fe7c0ff392d5e66de60a0154df6
+    url: https://api.github.com/repos/ceph/dpdk/tarball/a1774652fbbb1fe7c0ff392d5e66de60a0154df6
+    md5sum: a7460727977b6f093a15e7eb2c122b60
+  fmt-80021e25971e44bb6a6d187c0dac8a1823436d80.tar.gz:
+    topdir: fmt
+    url: https://api.github.com/repos/ceph/fmt/tarball/80021e25971e44bb6a6d187c0dac8a1823436d80
+    md5sum: 6fb91e16e92c5bc59f9074211bce2758
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

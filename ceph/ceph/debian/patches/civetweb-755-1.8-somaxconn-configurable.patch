@@ -1,0 +1,53 @@
+Description: Makes SOMAXCONN user-configurable.
+Author: Jesse Williamson <jesse.williamson@canonical.com>
+Origin: upstream, https://github.com/civetweb/civetweb/pull/776/commits/febab7dc38c9671577603425c54c20f841e27f97
+Bug: https://github.com/civetweb/civetweb/issues/775
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/ceph/+bug/1838109
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/civetweb/src/civetweb.c
++++ b/src/civetweb/src/civetweb.c
+@@ -1541,10 +1541,6 @@ typedef int socklen_t;
+ #define MSG_NOSIGNAL (0)
+ #endif
+ 
+-#if !defined(SOMAXCONN)
+-#define SOMAXCONN (100)
+-#endif
+-
+ /* Size of the accepted socket queue */
+ #if !defined(MGSQLEN)
+ #define MGSQLEN (20)
+@@ -2063,6 +2059,7 @@ enum {
+ 	SSL_CERTIFICATE,
+ 	SSL_CERTIFICATE_CHAIN,
+ 	NUM_THREADS,
++	SO_MAX_CONNECTIONS,
+ 	RUN_AS_USER,
+ 	URL_REWRITE_PATTERN,
+ 	HIDE_FILES,
+@@ -2165,6 +2162,7 @@ static struct mg_option config_options[]
+     {"ssl_certificate", CONFIG_TYPE_FILE, NULL},
+     {"ssl_certificate_chain", CONFIG_TYPE_FILE, NULL},
+     {"num_threads", CONFIG_TYPE_NUMBER, "50"},
++    {"max_connections", CONFIG_TYPE_NUMBER, "100"},
+     {"run_as_user", CONFIG_TYPE_STRING, NULL},
+     {"url_rewrite_patterns", CONFIG_TYPE_STRING_LIST, NULL},
+     {"hide_files_patterns", CONFIG_TYPE_EXT_PATTERN, NULL},
+@@ -13340,7 +13338,15 @@ set_ports_option(struct mg_context *ctx)
+ 			continue;
+ 		}
+ 
+-		if (listen(so.sock, SOMAXCONN) != 0) {
++		char *p = ctx->config[SO_MAX_CONNECTIONS];
++		long opt_max_connections = strtol(p, NULL, 10);
++		if(opt_max_connections > INT_MAX || opt_max_connections < 1) {
++			mg_cry(fc(ctx),
++			       "max_connections value \"%s\" is invalid", p);
++			continue;
++		}
++
++		if (listen(so.sock, (int)opt_max_connections) != 0) {
+ 
+ 			mg_cry(fc(ctx),
+ 			       "cannot listen to %.*s: %d (%s)",

@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+# Custom dpkg-maintscript-helper type function to deal with
+# nested /etc/default/ceph/ceph
+prepare_mv_ceph_defaults() {
+    local md5sum old_md5sum
+    md5sum="$(md5sum "/etc/default/ceph/ceph" | sed -e 's/ .*//')"
+    old_md5sum="$(dpkg-query -W -f='${Conffiles}' "ceph-common" | \
+        sed -n -e "\'^ /etc/default/ceph/ceph ' { s/ obsolete$//; s/.* //; p }")"
+    if [ "$md5sum" = "$old_md5sum" ]; then
+        mv -f "/etc/default/ceph/ceph" "/etc/default/ceph/ceph.dpkg-remove"
+        mv -f "/etc/default/ceph" "/etc/default/ceph.dpkg-backup"
+    fi
+}
+
+case "$1" in
+    upgrade|install)
+        if [ -d /etc/default/ceph ] && [ -n "$2" ] &&
+           dpkg --compare-versions -- "$2" le-nl 10.2.1-0ubuntu1; then
+            prepare_mv_ceph_defaults
+        fi
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

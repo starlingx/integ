@@ -1,0 +1,289 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# export DH_VERBOSE=1
+
+# Additional files
+SOURCE1 := ceph.sh
+SOURCE2 := mgr-restful-plugin.py
+SOURCE3 := ceph.conf.pmon
+SOURCE4 := ceph-init-wrapper.sh
+SOURCE5 := ceph.conf
+SOURCE6 := ceph-manage-journal.py
+SOURCE7 := ceph.service
+SOURCE8 := mgr-restful-plugin.service
+SOURCE9 := ceph-preshutdown.sh
+SOURCE10 := starlingx-docker-override.conf
+
+# Paths
+export DESTDIR = $(CURDIR)/debian/tmp
+export INITDIR = etc/init.d
+export LIBEXECDIR = usr/lib
+export SBINDIR = usr/sbin
+export SYSCONFDIR = etc
+export UDEVRULESDIR = lib/udev/rules.d
+export UNITDIR = lib/systemd/system
+
+export JAVA_HOME=/usr/lib/jvm/default-java
+## Set JAVAC to prevent FTBFS due to incorrect use of 'gcj' if found (see "m4/ac_prog_javac.m4").
+export JAVAC=javac
+
+DEB_HOST_ARCH_BITS ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_BITS)
+export DEB_BUILD_ARCH      ?= $(shell dpkg-architecture -qDEB_BUILD_ARCH)
+export DEB_HOST_ARCH      ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+
+# support ccache for faster build
+# cmake uses /usr/bin/c*
+ifeq (yes,$(findstring yes,$(shell test -L /usr/lib/ccache/c++ && test -L /usr/lib/ccache/cc && echo -n yes)))
+  extraopts += -DWITH_CCACHE=ON
+endif
+
+# try to save even more memory on some architectures
+# see #849657 for hints.
+# Reduce size of debug symbols to fix FTBFS due to the
+# 2GB/3GB address space limits on 32bit
+ifeq (32,$(DEB_HOST_ARCH_BITS))
+        export DEB_CFLAGS_MAINT_APPEND = -g1
+        export DEB_CXXFLAGS_MAINT_APPEND = -g1
+endif
+
+# we don't have NEON on armel.
+ifeq ($(DEB_HOST_ARCH),armel)
+    extraopts += -DHAVE_ARM_NEON=0
+endif
+
+# disable ceph-dencoder on 32bit except i386 to avoid g++ oom
+ifneq (,$(filter $(DEB_HOST_ARCH), armel armhf hppa m68k mips mipsel powerpc sh4 x32))
+    extraopts += -DDISABLE_DENCODER=1
+endif
+
+ifeq ($(shell dpkg-vendor --is Ubuntu && echo yes) $(DEB_HOST_ARCH), yes i386)
+   skip_packages = -Nceph -Nceph-base -Nceph-mds -Nceph-mgr -Nceph-mon -Nceph-osd
+endif
+
+# minimise needless linking and link to libatomic
+# The last is needed because long long atomic operations are not directly
+# supported by all processor architectures
+export DEB_LDFLAGS_MAINT_APPEND= -Wl,--as-needed -latomic
+
+# Enable hardening
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# STX CONFIG
+extraopts += -DCEPH_SYSTEMD_ENV_DIR=/etc/default
+extraopts += -DCMAKE_BUILD_TYPE=Release
+extraopts += -DCMAKE_INSTALL_INITCEPH=/$(INITDIR)
+extraopts += -DCMAKE_INSTALL_LIBEXECDIR=/$(LIBEXECDIR)
+extraopts += -DCMAKE_INSTALL_SYSCONFDIR=/$(SYSCONFDIR)
+extraopts += -DCMAKE_INSTALL_SYSTEMD_SERVICEDIR=/$(UNITDIR)
+extraopts += -DMGR_PYTHON_VERSION=3
+extraopts += -DWITH_BABELTRACE=OFF
+extraopts += -DWITH_CEPHFS=ON
+extraopts += -DWITH_CEPHFS_JAVA=ON
+extraopts += -DWITH_CEPHFS_SHELL=ON
+extraopts += -DWITH_CEPH_TEST_PACKAGE=OFF
+extraopts += -DWITH_CLIENT=ON
+extraopts += -DWITH_COVERAGE=OFF
+extraopts += -DWITH_CRYPTOPP=OFF
+extraopts += -DWITH_CYTHON=ON
+extraopts += -DWITH_DEBUG=OFF
+extraopts += -DWITH_EMBEDDED=OFF
+extraopts += -DWITH_EVENTFD=ON
+extraopts += -DWITH_FUSE=ON
+extraopts += -DWITH_GITVERSION=ON
+extraopts += -DWITH_GRAFANA=ON
+extraopts += -DWITH_JEMALLOC=OFF
+extraopts += -DWITH_KINETIC=OFF
+extraopts += -DWITH_LIBAIO=ON
+extraopts += -DWITH_LIBATOMIC_OPS=ON
+extraopts += -DWITH_LIBROCKSDB=OFF
+extraopts += -DWITH_LIBXFS=ON
+extraopts += -DWITH_LIBZFS=OFF
+extraopts += -DWITH_LTTNG=OFF
+extraopts += -DWITH_MAKE_CHECK=OFF
+extraopts += -DWITH_MAN_PAGES=OFF
+extraopts += -DWITH_MDS=ON
+extraopts += -DWITH_MGR_DASHBOARD_FRONTEND=OFF
+extraopts += -DWITH_MON=ON
+extraopts += -DWITH_NSS=ON
+extraopts += -DWITH_OCF=ON
+extraopts += -DWITH_OPENLDAP=ON
+extraopts += -DWITH_OSD=ON
+extraopts += -DWITH_PGREFDEBUGGING=OFF
+extraopts += -DWITH_PROFILER=OFF
+extraopts += -DWITH_PYTHON2=OFF
+extraopts += -DWITH_PYTHON3=ON
+extraopts += -DWITH_RADOS=ON
+extraopts += -DWITH_RADOSGW=ON
+extraopts += -DWITH_RADOSSTRIPER=ON
+extraopts += -DWITH_RBD=ON
+extraopts += -DWITH_SEASTAR=OFF
+extraopts += -DWITH_SELINUX=OFF
+extraopts += -DWITH_SERVER=ON
+# Disable SPDK as it generates a build which is no compatible
+# with older CPU's which are still supported by Ubuntu.
+extraopts += -DWITH_SPDK=OFF
+extraopts += -DWITH_SUBMAN=OFF
+extraopts += -DWITH_SYSTEMD=ON
+extraopts += -DWITH_SYSTEM_BOOST=ON
+extraopts += -DWITH_TCMALLOC=ON
+extraopts += -DWITH_TESTS=OFF
+extraopts += -DWITH_VALGRIND=OFF
+extraopts += -DWITH_XIO=OFF
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+  NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+  extraopts += -DBOOST_J=$(NUMJOBS)
+endif
+
+ifneq (,$(filter $(DEB_HOST_ARCH),s390x mips64el ia64 m68k ppc64 riscv64 sh4 sparc64 x32 alpha))
+  # beast depends on libboost_{context,coroutine} which is not supported on s390x
+  extraopts += -DWITH_BOOST_CONTEXT=OFF
+else
+  extraopts += -DWITH_BOOST_CONTEXT=ON
+endif
+
+MAX_PARALLEL ?= $(shell ./debian/calc-max-parallel.sh)
+
+%:
+	dh $@ --buildsystem=cmake --with javahelper,python3 $(MAX_PARALLEL)
+
+override_dh_auto_configure:
+	env | sort
+	dh_auto_configure --buildsystem=cmake -- $(extraopts)
+
+override_dh_auto_install:
+	dh_auto_install --buildsystem=cmake --destdir=$(DESTDIR)
+	if [ ! -f $(DESTDIR)/usr/bin/ceph-dencoder ]; then \
+	    cp debian/workarounds/ceph-dencoder-oom $(DESTDIR)/usr/bin/ceph-dencoder ;\
+	    chmod 755 $(DESTDIR)/usr/bin/ceph-dencoder ;\
+	fi
+
+	# udev rules
+	install -d -m 755 $(DESTDIR)/$(UDEVRULESDIR)/
+	install -D -m 644 udev/50-rbd.rules $(DESTDIR)/$(UDEVRULESDIR)/
+	install -D -m 640 udev/60-ceph-by-parttypeuuid.rules $(DESTDIR)/$(UDEVRULESDIR)/
+	# if %{without stx}
+	# install -D -m 644 udev/95-ceph-osd.rules $(DESTDIR)/$(UDEVRULESDIR)/
+
+	# sudoers.d
+	install -m 0440 -D sudoers.d/ceph-osd-smartctl $(DESTDIR)/etc/sudoers.d/ceph-osd-smartctl
+
+	install -D -m 640 src/etc-rbdmap $(DESTDIR)/etc/ceph/rbdmap
+	install -D -m 644 etc/sysctl/90-ceph-osd.conf $(DESTDIR)/etc/sysctl.d/30-ceph-osd.conf
+
+	# NOTE: ensure that any versioned erasure coding test code is dropped
+	#       from the package install - package ships unversioned modules.
+	rm -f $(CURDIR)/debian/tmp/usr/lib/*/ceph/erasure-code/libec_*.so.*
+	find $(CURDIR)/debian/tmp/usr/lib/*/ceph/erasure-code -type l -delete || :
+
+	# if %{with stx}
+	install -d -m 750 $(DESTDIR)/${SYSCONFDIR}/services.d/controller/
+	install -d -m 750 $(DESTDIR)/${SYSCONFDIR}/services.d/storage/
+	install -d -m 750 $(DESTDIR)/${SYSCONFDIR}/services.d/worker/
+	mkdir -p $(DESTDIR)/${INITDIR}/
+	mkdir -p $(DESTDIR)/${SYSCONFDIR}/ceph/
+	mkdir -p $(DESTDIR)/${UNITDIR}/
+	install -D -m 750 ${SOURCE1} $(DESTDIR)/${SYSCONFDIR}/services.d/controller/
+	install -D -m 750 ${SOURCE1} $(DESTDIR)/${SYSCONFDIR}/services.d/storage/
+	install -D -m 750 ${SOURCE1} $(DESTDIR)/${SYSCONFDIR}/services.d/worker/
+	install -D -m 750 ${SOURCE2} $(DESTDIR)/${INITDIR}/mgr-restful-plugin
+	install -D -m 750 ${SOURCE3} $(DESTDIR)/${SYSCONFDIR}/ceph/
+	install -D -m 750 ${SOURCE4} $(DESTDIR)/${INITDIR}/ceph-init-wrapper
+	install -D -m 640 ${SOURCE5} $(DESTDIR)/${SYSCONFDIR}/ceph/
+	install -D -m 700 ${SOURCE6} $(DESTDIR)/${SBINDIR}/ceph-manage-journal
+	install -D -m 644 ${SOURCE7} $(DESTDIR)/${UNITDIR}/ceph.service
+	install -D -m 644 ${SOURCE8} $(DESTDIR)/${UNITDIR}/mgr-restful-plugin.service
+	install -D -m 700 ${SOURCE9} $(DESTDIR)/${SBINDIR}/ceph-preshutdown.sh
+	install -D -m 644 ${SOURCE10} $(DESTDIR)/${UNITDIR}/docker.service.d/starlingx-docker-override.conf
+	install -m 750 src/init-radosgw $(DESTDIR)/${INITDIR}/ceph-radosgw
+	sed -i '/### END INIT INFO/a SYSTEMCTL_SKIP_REDIRECT=1' $(DESTDIR)/${INITDIR}/ceph-radosgw
+	install -m 750 src/init-rbdmap $(DESTDIR)/${INITDIR}/rbdmap
+	install -d -m 750 $(DESTDIR)/var/log/radosgw
+
+	# if %{without stx}
+	# install -m 0644 -D systemd/50-ceph.preset $(DESTDIR)/${LIBEXECDIR}/systemd/system-preset/50-ceph.preset
+
+# doc/changelog is a directory, which confuses dh_installchangelogs
+override_dh_installchangelogs:
+	dh_installchangelogs --exclude doc/changelog
+
+override_dh_installlogrotate:
+	cp src/logrotate.conf debian/ceph-common.logrotate
+	dh_installlogrotate -pceph-common
+
+override_dh_installinit:
+	cp src/init-radosgw debian/radosgw.init
+	dh_installinit --no-start
+	dh_installinit -pceph-common --name=rbdmap --no-start
+	dh_installinit -pceph-base --name ceph --no-start
+	# install the systemd stuff manually since we have funny service names
+	# and need to update the paths in all of the files post install
+	# systemd:ceph-common
+	install -d -m0755 debian/ceph-common/usr/lib/tmpfiles.d
+
+	# if %{without stx}
+	# install -m 0644 -D systemd/ceph.tmpfiles.d debian/ceph-common/usr/lib/tmpfiles.d/ceph.conf
+
+	# NOTE(jamespage): Install previous ceph-mon service from packaging for upgrades
+
+	# Excluded, as per "files mon" section in ceph.spec for when %{with stx} is on.
+	# install -d -m0755 debian/ceph-mon/lib/systemd/system
+	# install -m0644 debian/lib-systemd/system/ceph-mon.service debian/ceph-mon/lib/systemd/system
+
+	# Ensure Debian/Ubuntu specific systemd units are NOT automatically enabled and started
+	# Enable systemd targets only
+	dh_systemd_enable -Xceph-mon.service -Xceph-osd.service -X ceph-mds.service
+	# Start systemd targets only
+	dh_systemd_start --no-stop-on-upgrade --no-restart-after-upgrade
+
+override_dh_systemd_enable:
+	# systemd enable done as part of dh_installinit
+
+override_dh_systemd_start:
+	# systemd start done as part of dh_installinit
+
+override_dh_makeshlibs:
+	# exclude jni libraries in libcephfs-jni to avoid pointless ldconfig
+	# calls in maintainer scripts; exclude private erasure-code plugins.
+	dh_makeshlibs -V -X/usr/lib/jni -X/usr/lib/$(DEB_HOST_MULTIARCH)/ceph/erasure-code
+
+override_dh_auto_test:
+	# do not run tests
+
+override_dh_shlibdeps:
+	dh_shlibdeps -a --exclude=erasure-code --exclude=rados-classes --exclude=compressor
+
+override_dh_python3:
+	for binding in rados cephfs rbd rgw; do \
+		dh_python3 -p python3-$$binding --shebang=/usr/bin/python3;      \
+        done
+	dh_python3 -p python3-ceph-argparse --shebang=/usr/bin/python3
+	dh_python3 -p ceph-common --shebang=/usr/bin/python3
+	dh_python3 -p ceph-base --shebang=/usr/bin/python3
+	dh_python3 -p ceph-osd --shebang=/usr/bin/python3
+	dh_python3 -p ceph-mgr --shebang=/usr/bin/python3
+	dh_python3 -p cephfs-shell --shebang=/usr/bin/python3
+
+override_dh_builddeb:
+	dh_builddeb ${skip_packages}
+
+override_dh_gencontrol:
+	dh_gencontrol ${skip_packages}
+
+override_dh_fixperms:
+	dh_fixperms \
+	-Xceph.sh  \
+	-Xmgr-restful-plugin  \
+	-Xceph.conf.pmon  \
+	-Xceph-init-wrapper  \
+	-Xceph.conf  \
+	-Xceph-manage-journal  \
+	-Xceph.service  \
+	-Xmgr-restful-plugin.service  \
+	-Xceph-preshutdown.sh  \
+	-Xstarlingx-docker-override.conf  \
+	-Xceph-radosgw  \
+	-Xrbdmap  \
+	-Xradosgw  \
+	-X60-ceph-by-parttypeuuid.rules  \
+	-Xceph-osd-smartctl
