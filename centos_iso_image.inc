@@ -168,6 +168,9 @@ kubernetes-1.20.9-client
 kubernetes-1.21.8-node
 kubernetes-1.21.8-kubeadm
 kubernetes-1.21.8-client
+kubernetes-1.22.5-node
+kubernetes-1.22.5-kubeadm
+kubernetes-1.22.5-client
 containerd
 k8s-pod-recovery
 k8s-cni-cache-cleanup
