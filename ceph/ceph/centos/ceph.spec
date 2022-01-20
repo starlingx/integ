@@ -187,7 +187,7 @@
 #################################################################################
 %bcond_with python3
 %bcond_with make_check
-%bcond_without ceph_test_package
+%bcond_with ceph_test_package
 %ifarch s390 s390x
 %bcond_with tcmalloc
 %else
