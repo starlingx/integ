@@ -1,5 +1,6 @@
 ---
 debver: 2.04-20
+serial: true
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
