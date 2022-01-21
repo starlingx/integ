@@ -185,7 +185,7 @@
 # please read http://rpm.org/user_doc/conditional_builds.html for explanation of
 # bcond syntax!
 #################################################################################
-%bcond_with python3
+%bcond_without python3
 %bcond_with make_check
 %bcond_with ceph_test_package
 %ifarch s390 s390x
@@ -235,13 +235,7 @@
 %endif
 %endif
 %bcond_with seastar
-%if 0%{?fedora} >= 29 || 0%{?suse_version} >= 1500 || 0%{?rhel} >= 8
-# distros that need a py3 Ceph build
-%bcond_with python2
-%else
-# distros that need a py2 Ceph build
 %bcond_without python2
-%endif
 %bcond_with cephfs_shell
 %if 0%{without python2}
 %global _defined_if_python2_absent 1
@@ -1482,7 +1476,7 @@ ${CMAKE} .. \
     -DCMAKE_INSTALL_DOCDIR=%{_docdir}/ceph \
     -DCMAKE_INSTALL_INCLUDEDIR=%{_includedir} \
     -DWITH_MANPAGE=ON \
-    -DWITH_PYTHON3=OFF \
+    -DWITH_PYTHON3=ON \
     -DWITH_MGR_DASHBOARD_FRONTEND=OFF \
 %if %{with python2}
     -DWITH_PYTHON2=ON \
@@ -1646,9 +1640,7 @@ install -m 644 -D monitoring/prometheus/alerts/ceph_default_alerts.yml %{buildro
 %fdupes %{buildroot}%{_prefix}
 %endif
 
-%if 0%{?rhel} == 8
 %py_byte_compile %{__python3} %{buildroot}%{python3_sitelib}
-%endif
 
 %clean
 rm -rf %{buildroot}
