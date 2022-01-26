@@ -175,6 +175,7 @@ containerd
 k8s-pod-recovery
 k8s-cni-cache-cleanup
 containernetworking-plugins
+bond-cni
 
 # resource-agents
 resource-agents
