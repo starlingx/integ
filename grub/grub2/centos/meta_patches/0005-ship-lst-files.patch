@@ -1,14 +1,18 @@
-From 8fb898476d6a86b2b280bd63f1557dfe4d1360a4 Mon Sep 17 00:00:00 2001
+From f12ea9652df43eabd9c02489c6b733086382b72d Mon Sep 17 00:00:00 2001
+Message-Id: <f12ea9652df43eabd9c02489c6b733086382b72d.1643237526.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
+References: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Tue, 23 Jan 2018 09:24:16 -0500
-Subject: [PATCH] ship .lst files
+Subject: [PATCH 05/13] ship lst files
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/grub2.spec | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index 613f2e1..7e11008 100644
+index 38515ac..ffca6e9 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
 @@ -299,6 +299,8 @@ fi
@@ -21,5 +25,5 @@ index 613f2e1..7e11008 100644
  %dir %{_datarootdir}/grub/themes/
  %exclude %{_datarootdir}/grub/themes/*
 -- 
-2.7.4
+2.29.2
 

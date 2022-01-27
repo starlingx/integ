@@ -1,17 +1,21 @@
-From ca7e4edddd48b0ffd0520a2ccb271bbe036aa1e5 Mon Sep 17 00:00:00 2001
+From 99a034b900d55da90234fd56a00944a4721c1390 Mon Sep 17 00:00:00 2001
+Message-Id: <99a034b900d55da90234fd56a00944a4721c1390.1643237526.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
+References: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Tue, 23 Jan 2018 14:57:29 -0500
-Subject: add pxeboot package
+Subject: [PATCH 08/13] add pxeboot package
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SOURCES/grub.macros | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 5581deb..9ef91d6 100644
+index 539b5d5..c945920 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -242,6 +242,13 @@ Summary:    Unsigned versions of GRUB EFI binaries                      \
+@@ -224,6 +224,13 @@ Summary:    Unsigned versions of GRUB EFI binaries                      \
  %{expand:%%description %{1}-unsigned}                                   \
  This package contains unsigned version of GRUB EFI binaries.            \
                                                                          \
@@ -25,7 +29,7 @@ index 5581deb..9ef91d6 100644
  %{nil}
  
  %global do_common_setup()					\
-@@ -414,6 +421,7 @@ ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
+@@ -398,6 +405,7 @@ ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
  	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
  install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}.unsigned \
  install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3}.unsigned \
@@ -33,7 +37,7 @@ index 5581deb..9ef91d6 100644
  install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
  install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
  install -D -m 700 unicode.pf2					\\\
-@@ -505,4 +513,8 @@ cd ..								\
+@@ -489,4 +497,8 @@ cd ..								\
  %{expand:%%files %{1}-unsigned}                                 \
  /boot/efi/EFI/%{efidir}/%{grubefiname}.unsigned                 \
  /boot/efi/EFI/%{efidir}/%{grubeficdname}.unsigned               \
@@ -43,5 +47,5 @@ index 5581deb..9ef91d6 100644
 +								\
  %{nil}
 -- 
-2.7.4
+2.29.2
 

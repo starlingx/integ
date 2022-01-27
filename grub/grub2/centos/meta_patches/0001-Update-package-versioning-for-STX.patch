@@ -1,17 +1,19 @@
-From 008445e8d11202f53190da4a12386df338549000 Mon Sep 17 00:00:00 2001
+From 8b5576704440696a7c8f1b00735217bf1745b6a1 Mon Sep 17 00:00:00 2001
+Message-Id: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
 From: slin14 <shuicheng.lin@intel.com>
 Date: Fri, 17 Aug 2018 22:48:46 +0800
-Subject: [PATCH] Update-package-versioning-for-TIS-format
+Subject: [PATCH 01/13] Update package versioning for STX
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/grub2.spec | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index 12d34ad..88c6c09 100644
+index b5e268c..c323a2a 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -17,7 +17,7 @@
+@@ -16,7 +16,7 @@
  Name:           grub2
  Epoch:          1
  Version:        2.02
@@ -21,5 +23,5 @@ index 12d34ad..88c6c09 100644
  Group:          System Environment/Base
  License:        GPLv3+
 -- 
-2.7.4
+2.29.2
 

@@ -1,18 +1,22 @@
-From 2d237c31ea6d2fdfeaf61aef89b4755def0495a2 Mon Sep 17 00:00:00 2001
+From f51ca13eb123f7217426eb0b6d0c4a44b908725a Mon Sep 17 00:00:00 2001
+Message-Id: <f51ca13eb123f7217426eb0b6d0c4a44b908725a.1643237526.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
+References: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
 From: slin14 <shuicheng.lin@intel.com>
 Date: Fri, 17 Aug 2018 23:28:59 +0800
-Subject: [PATCH] remove-debug-pkgs
+Subject: [PATCH 03/13] remove debug pkgs
 
 Signed-off-by: slin14 <shuicheng.lin@intel.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SPECS/grub2.spec | 20 --------------------
  1 file changed, 20 deletions(-)
 
 diff --git a/SPECS/grub2.spec b/SPECS/grub2.spec
-index 88c6c09..11f6b0e 100644
+index c323a2a..38515ac 100644
 --- a/SPECS/grub2.spec
 +++ b/SPECS/grub2.spec
-@@ -187,7 +187,6 @@ rm -f grub-%{tarversion}/util/grub-setpassword.in.orig
+@@ -182,7 +182,6 @@ rm -f grub-%{tarversion}/util/grub-setpassword.in.orig
  %install
  set -e
  rm -fr $RPM_BUILD_ROOT
@@ -20,7 +24,7 @@ index 88c6c09..11f6b0e 100644
  %do_common_install
  %if 0%{with_efi_arch}
  %do_efi_install %{grubefiarch} %{grubefiname} %{grubeficdname}
-@@ -215,25 +214,6 @@ cat << EOF > ${RPM_BUILD_ROOT}%{_sysconfdir}/prelink.conf.d/grub2.conf
+@@ -210,25 +209,6 @@ cat << EOF > ${RPM_BUILD_ROOT}%{_sysconfdir}/prelink.conf.d/grub2.conf
  -b /usr/sbin/grub2-sparc64-setup
  EOF
  
@@ -47,5 +51,5 @@ index 88c6c09..11f6b0e 100644
  rm -rf $RPM_BUILD_ROOT
  
 -- 
-2.7.4
+2.29.2
 

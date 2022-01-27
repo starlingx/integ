@@ -1,17 +1,21 @@
-From fadbfe260a2678e1a6e79f8df4372b2eaee5dc9f Mon Sep 17 00:00:00 2001
+From a3c831a18efa931cafd680d8275232e874239f50 Mon Sep 17 00:00:00 2001
+Message-Id: <a3c831a18efa931cafd680d8275232e874239f50.1643237526.git.Jim.Somerville@windriver.com>
+In-Reply-To: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
+References: <8b5576704440696a7c8f1b00735217bf1745b6a1.1643237526.git.Jim.Somerville@windriver.com>
 From: root <root@yow-cgts4-lx.wrs.com>
 Date: Tue, 23 Jan 2018 14:46:01 -0500
-Subject: add unsigned package
+Subject: [PATCH 07/13] add unsigned package
 
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---
  SOURCES/grub.macros | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
 
 diff --git a/SOURCES/grub.macros b/SOURCES/grub.macros
-index 075727c..5581deb 100644
+index efe46cc..539b5d5 100644
 --- a/SOURCES/grub.macros
 +++ b/SOURCES/grub.macros
-@@ -235,6 +235,13 @@ Requires:	%{name}-common = %{evr}					\
+@@ -217,6 +217,13 @@ Requires:	%{name}-common = %{evr}					\
  %{expand:%%description %{1}-cdboot}					\
  %{desc}									\
  This subpackage provides optional components of grub used with removeable media on %{1} systems.\
@@ -25,7 +29,7 @@ index 075727c..5581deb 100644
  %{nil}
  
  %global do_common_setup()					\
-@@ -309,6 +316,8 @@ done								\
+@@ -291,6 +298,8 @@ done								\
  	-p /EFI/%{efidir} -d grub-core ${GRUB_MODULES}		\
  %{4}./grub-mkimage -O %{1} -o %{3}.orig				\\\
  	-p /EFI/BOOT -d grub-core ${GRUB_MODULES}		\
@@ -34,7 +38,7 @@ index 075727c..5581deb 100644
  %{expand:%%{pesign -s -i %{2}.orig -o %{2}.one -a %{5} -c %{6} -n %{7}}}	\
  %{expand:%%{pesign -s -i %{3}.orig -o %{3}.one -a %{5} -c %{6} -n %{7}}}	\
  %{expand:%%{pesign -s -i %{2}.one -o %{2} -a %{8} -c %{9} -n %{10}}}	\
-@@ -403,6 +412,8 @@ find $RPM_BUILD_ROOT -iname "*.module" -exec chmod a-x {} '\;'	\
+@@ -387,6 +396,8 @@ find $RPM_BUILD_ROOT -iname "*.module" -exec chmod a-x {} '\;'	\
  touch $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/grub.cfg		\
  ln -sf ../boot/efi/EFI/%{efidir}/grub.cfg			\\\
  	$RPM_BUILD_ROOT%{_sysconfdir}/%{name}-efi.cfg		\
@@ -43,7 +47,7 @@ index 075727c..5581deb 100644
  install -m 700 %{2} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{2}	\
  install -m 700 %{3} $RPM_BUILD_ROOT/boot/efi/EFI/%{efidir}/%{3} \
  install -D -m 700 unicode.pf2					\\\
-@@ -490,4 +501,8 @@ cd ..								\
+@@ -474,4 +485,8 @@ cd ..								\
  %defattr(-,root,root,-)						\
  %verify(not mtime) %attr(0700,root,root)/boot/efi/EFI/%{efidir}/%{3} \
  %verify(not mtime) %attr(0700,root,root)/boot/efi/EFI/%{efidir}/fonts \
@@ -53,5 +57,5 @@ index 075727c..5581deb 100644
 +/boot/efi/EFI/%{efidir}/%{grubeficdname}.unsigned               \
  %{nil}
 -- 
-2.7.4
+2.29.2
 
