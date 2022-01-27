@@ -1,0 +1,25 @@
+From 9700ac64bd0fb9a41693348882e0ccf3f4085953 Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Thu, 27 Jan 2022 19:53:54 +0000
+Subject: [PATCH] fix bullseye version detection
+
+Signed-off-by: Charles Short <charles.short@windriver.com>
+---
+ manifests/globals.pp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/manifests/globals.pp b/manifests/globals.pp
+index 9914a23..ebb7432 100644
+--- a/manifests/globals.pp
++++ b/manifests/globals.pp
+@@ -182,6 +182,7 @@ class postgresql::globals (
+         /^(jessie|8\.)/  => '9.4',
+         /^(stretch|9\.)/ => '9.6',
+         /^(buster|10\.)/ => '11',
++        /^(bullseye|11\.)/ => '13.5',
+         default => undef,
+       },
+       'Ubuntu' => $::operatingsystemrelease ? {
+-- 
+2.32.0
+
