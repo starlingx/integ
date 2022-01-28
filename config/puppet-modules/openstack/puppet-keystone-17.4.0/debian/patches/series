@@ -1,3 +1,4 @@
 0001-Adapt-first-set-of-legacy-patches.patch
 0002-Add-support-for-fernet-receipts.patch
 0003-Update-Barbican-admin-secret-s-user-project-IDs-duri.patch
+0004-Update-puppet-keystone-sync.patch

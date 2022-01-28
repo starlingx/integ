@@ -1,0 +1,30 @@
+From 727e6cce78eaaf19c104d42088ba770c8f3e659a Mon Sep 17 00:00:00 2001
+From: John Kung <john.kung@windriver.com>
+Date: Tue, 25 Jan 2022 14:14:46 -0600
+Subject: [PATCH] Update puppet-keystone-17.4.0 sync.pp patch
+
+Fix syntax error in sync.pp
+
+Story: 2009101
+Task: 44357
+Signed-off-by: John Kung <john.kung@windriver.com>
+---
+ manifests/db/sync.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/db/sync.pp b/manifests/db/sync.pp
+index 6dbc202..fbe7bc7 100644
+--- a/manifests/db/sync.pp
++++ b/manifests/db/sync.pp
+@@ -35,7 +35,7 @@ class keystone::db::sync(
+       Anchor['keystone::dbsync::begin']
+     ],
+     notify      => Anchor['keystone::dbsync::end'],
+-    tag         => ['keystone-exec', 'openstack-db']
++    tag         => ['keystone-exec', 'openstack-db'],
+     # Only do the db sync if both controllers are running the same software
+     # version. Avoids impacting mate controller during an upgrade.
+     onlyif      => "test $::controller_sw_versions_match = true",
+-- 
+2.30.1
+
