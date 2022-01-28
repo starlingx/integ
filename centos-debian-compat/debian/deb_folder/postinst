@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+
+echo "source /lib/lsb/init-functions" > /etc/init.d/functions
+
+#DEBHELPER#
