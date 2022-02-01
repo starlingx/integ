@@ -1,3 +1,4 @@
 0001-update-paths-and-service.patch
 0002-no-gecos.patch
 0003-Override-docker-registry-service.patch
+0004-Remove-User-directive-from-unit-file.patch
