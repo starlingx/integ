@@ -1,4 +1,4 @@
 etc/sudoers.d/helm
 usr/sbin/helm
-usr/sbin/helm-upload
-usr/sbin/helmv2-cli
+usr/local/sbin/helm-upload
+usr/local/sbin/helmv2-cli
