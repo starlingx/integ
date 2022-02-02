@@ -1,6 +1,7 @@
 usr/bin/kubeadm
 usr/bin/kubelet
 usr/bin/kubelet-cgroup-setup.sh
+usr/local/sbin/sanitize_kubelet_reserved_cpus.sh
 usr/bin/kubectl
 etc/systemd/system/kubelet.service.d/kubeadm.conf
 usr/share/bash-completion/completions/kubectl
