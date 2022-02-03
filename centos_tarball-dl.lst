@@ -90,3 +90,4 @@ inih-b1dbff4b0bd1e1f40d237e21011f6dee0ec2fa69.tar.gz#inih-44#https://github.com/
 pf-bb-config-d7d5f1ddd17b4c80e3e0d6ce87660926f58f8585.tar.gz#pf-bb-config-21.6#https://github.com/intel/pf-bb-config/tarball/d7d5f1ddd17b4c80e3e0d6ce87660926f58f8585#https##
 gpu-operator-1.8.1.tar.gz#gpu-operator-1.8.1#https://github.com/NVIDIA/gpu-operator/archive/v1.8.1.tar.gz##https##
 containernetworking-plugins-v0.9.1.tar.gz#containernetworking-plugins-v0.9.1#https://github.com/containernetworking/plugins/archive/refs/tags/v0.9.1.tar.gz#https##
+bond-cni-bff6422d7089d988dc1548e6abe0543601f6e1c7.tar.gz#bond-cni-bff6422d7089d988dc1548e6abe0543601f6e1c7#https://api.github.com/repos/k8snetworkplumbingwg/bond-cni/tarball/bff6422d7089d988dc1548e6abe0543601f6e1c7#https##
