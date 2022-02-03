@@ -1,0 +1,28 @@
+From: Robert Church <robert.church@windriver.com>
+Date: Sun, 30 Jan 2022 20:55:04 -0500
+Subject: Prevent auto-expansion of fluxdata partition
+
+Set VSZ=20480 to prevent the fluxdata parition from expanding to fill
+all free space on the root disk.
+
+For an AIO we want to provide free space for various customer driven
+provisioning scenarios.
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ init-ostree.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init-ostree.sh b/init-ostree.sh
+index 1702e55..3b043ea 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -32,7 +32,7 @@ ROOT_DELAY="0"
+ OSTREE_SYSROOT=""
+ OSTREE_BOOT_DEVICE="LABEL=otaboot"
+ OSTREE_LABEL_FLUXDATA="fluxdata"
+-VSZ=0
++VSZ=20480
+ SKIP_BOOT_DIFF=""
+ ALLOW_RM_VAR=1
+ # The timeout (tenth of a second) for rootfs on low speed device

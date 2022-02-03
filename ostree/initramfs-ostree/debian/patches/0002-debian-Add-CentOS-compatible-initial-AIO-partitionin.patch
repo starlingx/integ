@@ -1,0 +1,204 @@
+From: Robert Church <robert.church@windriver.com>
+Date: Mon, 31 Jan 2022 22:47:09 -0500
+Subject: debian: Add CentOS compatible initial AIO partitioning/formatting
+
+Add support for initial AIO partitioning and LVM formatting for AIO
+hosts.
+- Creates platform-backup partition
+- Creates default cgts-vg volume group and physical volume
+- Creates initial logical volumes for scratch-lv and log-lv
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ init-ostree-install.sh | 122 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 119 insertions(+), 3 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 55ece63..1d056a5 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -82,7 +82,9 @@ OPTIONAL:
+  BSZ=#				- MB size of boot partition
+  RSZ=#				- MB size of root partition
+  VSZ=#				- MB size of var partition (0 for auto expand)
+-
++ StarlingX
++ inststx=0                      - install StarlingX partitioning
++ personality=aio                - StarlingX install personality (aio,con,wor,sto)
+ EOF
+ }
+ 
+@@ -102,7 +104,7 @@ conflict_label() {
+ 	local op=$1
+ 	local 'label' 'd' 'devs' 'conflict' 'i' 'fstype'
+ 	conflict=1
+-	for label in otaefi otaboot otaboot_b otaroot otaroot_b fluxdata; do
++	for label in otaefi otaboot otaboot_b otaroot otaroot_b fluxdata platform_backup platform_pv; do
+ 		devs=$(blkid -t LABEL=$label -o device |grep -v $INSTDEV)
+ 		if [ "$devs" != "" ] ; then
+ 			i=0
+@@ -513,6 +515,8 @@ IP=""
+ MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE=60
+ OSTREE_KERNEL_ARGS=${OSTREE_KERNEL_ARGS=%OSTREE_KERNEL_ARGS%}
+ KS=""
++INSTSTX=${INSTSTX=""}
++PERSONALITY=${PERSONALITY=""}
+ 
+ if [ "$OSTREE_KERNEL_ARGS" = "%OSTREE_KERNEL_ARGS%" ] ; then
+ 	OSTREE_KERNEL_ARGS="ro rootwait"
+@@ -603,6 +607,10 @@ read_args() {
+ 				RSZ=$optarg ;;
+ 			VSZ=*)
+ 				VSZ=$optarg ;;
++			inststx=*)
++			    INSTSTX=$optarg ;;
++			personality=*)
++			    PERSONALITY=$optarg ;;
+ 		esac
+ 	done
+ 	# defaults if not set
+@@ -615,6 +623,9 @@ read_args() {
+ 	if [ "$INSTGPG" = "" ] ; then INSTGPG=1 ; fi
+ 	if [ "$INSTFLUX" = "" ] ; then INSTFLUX=1 ; fi
+ 	if [ "$INSTSBD" = "" ] ; then INSTSBD=2 ; fi
++	if [ "$INSTSTX" = "" ] ; then INSTSTX=0 ; fi
++	if [ "$PERSONALITY" = "" ] ; then PERSONALITY=aio ; fi
++
+ }
+ 
+ shell_start() {
+@@ -680,6 +691,40 @@ grub_partition() {
+ 		a=""
+ 		first=`sgdisk -F ${dev}|grep -v Creating`
+ 	else
++                ############################################
++                # StarlingX: Clean up the volume group
++                if [ "$INSTSTX" = 1 ] ; then
++                    if [ "$VSZ" = 0 ] ; then
++                        # /var using up the remainder of the disk
++                        echo "WARNING WARNING - No volume group info to clean up, /var will use the remainder of the disk"
++                    else
++                        case $PERSONALITY in
++                            aio)
++                                echo "AIO: Clean up the volume group so that the disk can be re-partitioned"
++                                vgremove -f cgts-vg
++
++                                # Find and wipe any existing PVs
++                                partitions=$(pvs -o pv_name --noheading | grep -v '\[unknown\]')
++                                for p in $partitions
++                                do
++                                    echo "Pre-wiping $p (pvs present)"
++                                    dd if=/dev/zero of=$p bs=512 count=34
++                                    dd if=/dev/zero of=$p bs=512 count=34 seek=$((`blockdev --getsz $p` - 34))
++                                    pvremove -f $p
++                                    wipefs -a $p
++                                done
++                                ;;
++                            con)
++                                ;;
++                            wor)
++                                ;;
++                            sto)
++                                ;;
++                        esac
++                    fi
++                fi
++                ############################################
++
+ 		sgdisk -Z ${dev}
+ 		first=`sgdisk -F ${dev}|grep -v Creating`
+ 		if [ "$BIOSPLUSEFI" = "1"  ] ; then
+@@ -730,6 +775,41 @@ grub_partition() {
+ 		fi
+ 		a="$a -n $p:$first:$end -c $p:fluxdata"
+ 	fi
++
++        ############################################
++        # StarlingX: Temp partitioning compatability
++        if [ "$INSTSTX" = 1 ] ; then
++            if [ "$VSZ" = 0 ] ; then
++                # /var using up the remainder of the disk
++                echo "WARNING WARNING - Can't allocate StarlingX partitions, /var will use the remainder of the disk"
++            else
++                grub_pt_update
++                case $PERSONALITY in
++                    aio)
++                        echo "Allocating StarlingX AIO host partitioning"
++                        CGCS_PV_SIZE=183296
++                        PLATFORM_BACKUP_SIZE=30000
++
++                        end=$(($first+($PLATFORM_BACKUP_SIZE*1024*1024/$lsz)-1))
++                        a="$a -n $p:$first:$end -c $p:platform_backup -t $p:FFFF"
++                        grub_pt_update
++                        end=$(($first+($CGCS_PV_SIZE*1024*1024/$lsz)-1))
++                        a="$a -n $p:$first:$end -c $p:platform_pv -t $p:8E00"
++                        ;;
++                    con)
++                        echo "WARNING WARNING: StarlingX standard controller host partitioning not supported"
++                        ;;
++                    wor)
++                        echo "WARNING WARNING: StarlingX worker host partitioning not supported"
++                        ;;
++                    sto)
++                        echo "WARNING WARNING: StarlingX storage host partitioning not supported"
++                        ;;
++                esac
++            fi
++        fi
++        ############################################
++
+ 	sgdisk $a -p ${dev}
+ }
+ 
+@@ -1016,7 +1096,7 @@ fi
+ udevadm settle --timeout=3
+ 
+ cnt=50
+-while [ $cnt ] ; do
++while [ "$cnt" -gt 0 ] ; do
+ 	blockdev --rereadpt ${dev} 2> /dev/null > /dev/null && break
+ 	sleep 0.1
+ 	cnt=$(($cnt - 1))
+@@ -1074,6 +1154,42 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
+ 			mkfs.ext4 -F -L fluxdata ${fs_dev}${FLUXPART}
+ 		fi
+ 	fi
++        ########################################
++        # StarlingX: Temp VG/PV/LV/FS formatting
++        if [ "$INSTSTX" = 1 ] ; then
++            if [ "$VSZ" = 0 ] ; then
++                echo "WARNING WARNING - Skipping StarlingX default LVM storage, /var will use the remainder of the disk"
++            else
++                case $PERSONALITY in
++                    aio)
++                        echo "Creating StarlingX AIO host default LVM storage"
++                        LOG_VOL_SIZE=8000
++                        SCRATCH_VOL_SIZE=16000
++
++                        pi=$((pi+2))
++                        mkfs.ext4 -F -L platform_backup ${fs_dev}${pi}
++
++                        pi=$((pi+1))
++                        vgcreate --force cgts-vg ${fs_dev}${pi}
++                        lvcreate -n log-lv --size "${LOG_VOL_SIZE}MB" cgts-vg
++                        mkfs.ext4 -F /dev/cgts-vg/log-lv
++                        lvcreate -n scratch-lv --size "${SCRATCH_VOL_SIZE}MB" cgts-vg
++                        mkfs.ext4 -F /dev/cgts-vg/scratch-lv
++
++                        ;;
++                    con)
++                        echo "WARNING WARNING: StarlingX standard controller host default LVM storage not supported"
++                        ;;
++                    wor)
++                        echo "WARNING WARNING: StarlingX worker host default LVM storage not supported"
++                        ;;
++                    sto)
++                        echo "WARNING WARNING: StarlingX storage host default LVM storage not supported"
++                        ;;
++                esac
++            fi
++        fi
++        ########################################
+ elif [ "$INSTFMT" != 0 ] ; then
+ 	if [ $INSTSF = 1 ] ; then
+ 		dosfslabel ${fs_dev}${p1} boot

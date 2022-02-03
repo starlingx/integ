@@ -1,0 +1,30 @@
+From d0aca679be610c4dbb8b3977be335f8d0dcd5e03 Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Tue, 1 Feb 2022 03:13:15 -0500
+Subject: [PATCH 3/3] Add lvm2 package to initramfs
+
+LVM will be used to set up the minimal StarlingX volume group. Include
+the package in the Depends list so that vgcreate, pvcreate, lvcreate
+commands are available for provisioning.
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ debian/control | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/control b/debian/control
+index 002f25a..899bbb2 100644
+--- a/debian/control
++++ b/debian/control
+@@ -25,7 +25,7 @@ Homepage: https://github.com/WindRiver-Labs/meta-lat
+ 
+ Package: initramfs-ostree
+ Architecture: all
+-Depends: gdisk, e2fsprogs, ${misc:Depends}, ${shlibs:Depends}
++Depends: gdisk, e2fsprogs, lvm2, ${misc:Depends}, ${shlibs:Depends}
+ Multi-Arch: foreign
+ Description: Init for initramfs to mount ostree
+  Basic init for initramfs to mount ostree and pivot root
+-- 
+2.16.6
+
