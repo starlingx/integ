@@ -1,4 +1,4 @@
-From c88fd4f11479590bbbb35f5ba87fb64112bd2e2c Mon Sep 17 00:00:00 2001
+From 0e556a83e756ba7d1c56e1df9737c3a1a99d1686 Mon Sep 17 00:00:00 2001
 From: Al Bailey <Al.Bailey@windriver.com>
 Date: Thu, 24 Oct 2019 11:53:01 -0500
 Subject: [PATCH] Change group,passwd
@@ -13,12 +13,12 @@ Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
 Signed-off-by: Yue Tao <yue.tao@windriver.com>
 Signed-off-by: Charles Short <charles.short@windriver.com>
 ---
- group.master  | 18 +++++++++++-------
- passwd.master | 15 ++++++++++-----
- 2 files changed, 21 insertions(+), 12 deletions(-)
+ group.master  | 17 ++++++++++-------
+ passwd.master | 14 +++++++++-----
+ 2 files changed, 19 insertions(+), 12 deletions(-)
 
 diff --git a/group.master b/group.master
-index ad1dd2d..be763b3 100644
+index ad1dd2d..5f540a9 100644
 --- a/group.master
 +++ b/group.master
 @@ -1,15 +1,11 @@
@@ -45,7 +45,7 @@ index ad1dd2d..be763b3 100644
  dip:*:30:
  www-data:*:33:
  backup:*:34:
-@@ -30,10 +25,19 @@ src:*:40:
+@@ -30,10 +25,18 @@ src:*:40:
  gnats:*:41:
  shadow:*:42:
  utmp:*:43:
@@ -56,7 +56,6 @@ index ad1dd2d..be763b3 100644
 -games:*:60:
  users:*:100:
  nogroup:*:65534:
-+postgres:x:120:
 +nova:x:162:nova
 +barbican:x:978:barbican
 +neutron:x:164:neutron
@@ -68,7 +67,7 @@ index ad1dd2d..be763b3 100644
 +ironic:x:1874:ironic
 +www:x:1877:www
 diff --git a/passwd.master b/passwd.master
-index f1e69a4..1033a78 100644
+index f1e69a4..f1276fe 100644
 --- a/passwd.master
 +++ b/passwd.master
 @@ -1,12 +1,7 @@
@@ -84,11 +83,10 @@ index f1e69a4..1033a78 100644
  news:*:9:9:news:/var/spool/news:/usr/sbin/nologin
  uucp:*:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
  proxy:*:13:13:proxy:/bin:/usr/sbin/nologin
-@@ -16,3 +11,13 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+@@ -16,3 +11,12 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
  irc:*:39:39:ircd:/run/ircd:/usr/sbin/nologin
  gnats:*:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
  nobody:*:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-+postgres:x:120:120:PostgreSQL Server:/var/lib/pgsql:/bin/sh
 +neutron:x:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
 +sysinv:x:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
 +snmpd:x:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
@@ -99,5 +97,5 @@ index f1e69a4..1033a78 100644
 +ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
 +www:x:1877:1877:www:/home/www:/sbin/nologin
 -- 
-2.30.2
+2.32.0
 
