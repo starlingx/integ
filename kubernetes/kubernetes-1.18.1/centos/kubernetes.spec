@@ -62,6 +62,7 @@ Patch7: kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 Patch8: Fix-exclusive-CPU-allocations-being-deleted-at-conta.patch
 Patch9: kubeadm-create-platform-pods-with-zero-CPU-resources.patch
 Patch10: add-option-to-disable-isolcpu-awareness.patch
+Patch11: kubernetes-make-isolcpus-allocation-SMT-aware.patch
 
 # It obsoletes cadvisor but needs its source code (literally integrated)
 Obsoletes:      cadvisor
@@ -858,6 +859,7 @@ install in production.
 %patch8 -p1
 %patch9 -p1
 %patch10 -p1
+%patch11 -p1
 
 #src/k8s.io/kubernetes/pkg/util/certificates
 # Patch the code to remove eliptic.P224 support
