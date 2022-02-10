@@ -1,11 +1,11 @@
 Summary: trident-installer
 Name: trident-installer
-Version: 21.04.1
+Version: 22.01.0
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 License: Apache-2.0
 Group: base
 Packager: Wind River <info@windriver.com>
-URL: https://github.com/NetApp/trident/releases/download/v21.04.1/trident-installer-21.04.1.tar.gz
+URL: https://github.com/NetApp/trident/releases/download/v22.01.0/trident-installer-22.01.0.tar.gz
 Source0: %{name}-%{version}.tar.gz
 
 Requires: nfs-utils
