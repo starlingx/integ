@@ -5,6 +5,7 @@
 
 _k8s_name := kubernetes
 _bindir := /usr/bin
+_local_sbindir := /usr/local/sbin
 _curr_stage1 := /usr/local/kubernetes/current/stage1
 _curr_stage2 := /usr/local/kubernetes/current/stage2
 
@@ -59,6 +60,10 @@ override_dh_install:
 	# enable CPU and Memory accounting
 	install -v -d -m 0755 ${DEBIAN_DESTDIR}/etc/systemd/system.conf.d
 	install -v -p -m 0644 -t ${DEBIAN_DESTDIR}/etc/systemd/system.conf.d debian/kubernetes-accounting.conf
+
+	# install scripts
+	install -v -m 0700 -d ${DEBIAN_DESTDIR}${_local_sbindir}
+	install -v -m 0700 -d ${DEBIAN_DESTDIR}${_local_sbindir}/sanitize_kubelet_reserved_cpus.sh
 
 	dh_install
 
