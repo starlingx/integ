@@ -8,7 +8,7 @@ ceph-object-corpus-e32bf8ca3dc6151ebe7f205ba187815bc18e1cef.tar.gz#ceph-object-c
 chartmuseum-0.12.0.tar.gz#chartmuseum#https://github.com/helm/chartmuseum/archive/v0.12.0.tar.gz#https##
 !chartmuseum-v0.12.0-amd64#chartmuseum-bin#https://s3.amazonaws.com/chartmuseum/release/v0.12.0/bin/linux/amd64/chartmuseum#https##
 civetweb-bb99e93da00c3fe8c6b6a98520fb17cf64710ce7.tar.gz#civetweb#https://api.github.com/repos/ceph/civetweb/tarball/bb99e93da00c3fe8c6b6a98520fb17cf64710ce7#https##
-containerd-1.4.6.tar.gz#containerd#https://github.com/containerd/containerd/archive/refs/tags/v1.4.6.tar.gz#https##
+containerd-v1.4.11.tar.gz#containerd#https://github.com/containerd/containerd/archive/v1.4.11.tar.gz#https##
 crictl-v1.21.0-linux-amd64.tar.gz#crictl#https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.21.0/crictl-v1.21.0-linux-amd64.tar.gz#https##
 dmclock-4496dbc6515db96e08660ac38883329c5009f3e9.tar.gz#dmclock#https://api.github.com/repos/ceph/dmclock/tarball/4496dbc6515db96e08660ac38883329c5009f3e9#https##
 docker-distribution-v2.7.1.tar.gz#docker-distribution-2.7.1#https://github.com/docker/distribution/archive/v2.7.1.tar.gz#http##
@@ -75,7 +75,7 @@ rapidjson-f54b0e47a08782a6131cc3d60f94d038fa6e0a51.tar.gz#rapidjson#https://api.
 Redfishtool-1.1.0.tar.gz#Redfishtool-1.1.0#https://github.com/DMTF/Redfishtool/archive/1.1.0.tar.gz#http##
 requests-toolbelt-0.9.1.tar.gz#requests-toolbelt-0.9.1#https://github.com/requests/toolbelt/archive/0.9.1.tar.gz#http##
 rocksdb-4c736f177851cbf9fb7a6790282306ffac5065f8.tar.gz#rocksdb#https://api.github.com/repos/ceph/rocksdb/tarball/4c736f177851cbf9fb7a6790282306ffac5065f8#https##
-runc-1.0.0-rc95.tar.gz#runc#https://github.com/opencontainers/runc/archive/v1.0.0-rc95.tar.gz#https##
+runc-1.0.2.tar.gz#runc#https://github.com/opencontainers/runc/archive/refs/tags/v1.0.2.tar.gz#https##
 !rt-setup-2.1-2.el8.src.rpm#rt-setup#https://git.centos.org/rpms/rt-setup#http_script#201aeb6d3d06c556cee369b9833539ecb67ce943#post-dl-script/rt-setup.sh
 # Sirupsen-logrus-55eb11d21d2a31a3cc93838241d04800f52e823d.tar.gz#Sirupsen-logrus#github.com/Sirupsen/logrus/archive/55eb11d21d2a31a3cc93838241d04800f52e823d.tar.gz#http##
 seastar-0cf6aa6b28d69210b271489c0778f226cde0f459.tar.gz#seastar#https://api.github.com/repos/ceph/seastar/tarball/0cf6aa6b28d69210b271489c0778f226cde0f459#https##

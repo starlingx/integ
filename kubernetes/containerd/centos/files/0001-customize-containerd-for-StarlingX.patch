@@ -1,6 +1,6 @@
-From a8466190118c114d5ddeec381bbafa8441d7e638 Mon Sep 17 00:00:00 2001
-From: Chris Friesen <chris.friesen@windriver.com>
-Date: Thu, 17 Jun 2021 10:27:09 -0400
+From ddd7b4af14c97fe14290ce422ccc103a799ea626 Mon Sep 17 00:00:00 2001
+From: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+Date: Tue, 1 Mar 2022 20:43:42 -0500
 Subject: [PATCH] customize containerd for StarlingX
 
 1. disable btrfs to avoid needing to pull in the devel package
@@ -8,13 +8,15 @@ Subject: [PATCH] customize containerd for StarlingX
 for token and will return 400. Switch to GET method to get token if
 StatusCode is 400.
 3. hardcode version info due to miss git info in tarball.
+
+Signed-off-by: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
 ---
  containerd/Makefile                     | 3 ++-
  containerd/remotes/docker/authorizer.go | 3 ++-
  2 files changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/containerd/Makefile b/containerd/Makefile
-index c0fecb9..44dd5ad 100644
+index c0fecb9a6..d8cef89d5 100644
 --- a/containerd/Makefile
 +++ b/containerd/Makefile
 @@ -20,7 +20,7 @@ ROOTDIR=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -22,7 +24,7 @@ index c0fecb9..44dd5ad 100644
  
  # Used to populate variables in version package.
 -VERSION=$(shell git describe --match 'v[0-9]*' --dirty='.m' --always)
-+VERSION=v1.4.6
++VERSION=v1.4.11
  REVISION=$(shell git rev-parse HEAD)$(shell if ! git diff --no-ext-diff --quiet --exit-code; then echo .m; fi)
  PACKAGE=github.com/containerd/containerd
  SHIM_CGO_ENABLED ?= 0
@@ -35,19 +37,19 @@ index c0fecb9..44dd5ad 100644
  GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) $(EXTRA_LDFLAGS)'
  SHIM_GO_LDFLAGS=-ldflags '-X $(PKG)/version.Version=$(VERSION) -X $(PKG)/version.Revision=$(REVISION) -X $(PKG)/version.Package=$(PACKAGE) -extldflags "-static" $(EXTRA_LDFLAGS)'
 diff --git a/containerd/remotes/docker/authorizer.go b/containerd/remotes/docker/authorizer.go
-index 001423a..2db8d60 100644
+index 2f459b70c..330971d5e 100644
 --- a/containerd/remotes/docker/authorizer.go
 +++ b/containerd/remotes/docker/authorizer.go
-@@ -366,7 +366,8 @@ func (ah *authHandler) fetchTokenWithOAuth(ctx context.Context, to tokenOptions)
+@@ -370,7 +370,8 @@ func (ah *authHandler) fetchTokenWithOAuth(ctx context.Context, to tokenOptions)
  	// Registries without support for POST may return 404 for POST /v2/token.
  	// As of September 2017, GCR is known to return 404.
  	// As of February 2018, JFrog Artifactory is known to return 401.
 -	if (resp.StatusCode == 405 && to.username != "") || resp.StatusCode == 404 || resp.StatusCode == 401 {
-+       // Registry in StarlingX 3.0 returns 400 for POST /v2/token.  Should check if still applicable.
++	// Registry in StarlingX 6.0 returns 400 for POST /v2/token.  Should check if still applicable.
 +	if (resp.StatusCode == 405 && to.username != "") || resp.StatusCode == 404 || resp.StatusCode == 401 || resp.StatusCode == 400 {
  		return ah.fetchToken(ctx, to)
  	} else if resp.StatusCode < 200 || resp.StatusCode >= 400 {
  		b, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 64000)) // 64KB
 -- 
-2.29.2
+2.25.1
 
