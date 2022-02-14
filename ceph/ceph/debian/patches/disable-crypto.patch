@@ -1,0 +1,16 @@
+Index: ceph/src/os/CMakeLists.txt
+===================================================================
+--- ceph.orig/src/os/CMakeLists.txt
++++ ceph/src/os/CMakeLists.txt
+@@ -110,8 +110,9 @@ endif()
+ target_link_libraries(os kv)
+ 
+ add_dependencies(os compressor_plugins)
+-add_dependencies(os crypto_plugins)
+-
++if(HAVE_INTEL AND HAVE_BETTER_YASM_ELF64 AND (NOT APPLE))
++    add_dependencies(os crypto_plugins)
++endif()
+ 
+ if(WITH_BLUESTORE)
+   add_executable(ceph-bluestore-tool

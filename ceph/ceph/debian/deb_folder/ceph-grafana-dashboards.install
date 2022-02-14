@@ -1,0 +1,3 @@
+etc/grafana/dashboards/ceph-dashboard/*
+monitoring/grafana/dashboards/README
+monitoring/grafana/README.md

@@ -1,0 +1,42 @@
+## install from source tree
+lib/systemd/system/ceph-crash.service
+usr/bin/ceph-crash
+usr/bin/ceph-kvstore-tool
+usr/bin/ceph-run
+usr/bin/crushtool
+usr/bin/monmaptool
+usr/bin/osdmaptool
+usr/lib/*/ceph/erasure-code/*
+usr/lib/*/rados-classes/*
+usr/lib/ceph/ceph_common.sh
+usr/sbin/ceph-create-keys
+usr/share/doc/ceph/sample.ceph.conf
+usr/share/man/man8/ceph-create-keys.8
+usr/share/man/man8/ceph-deploy.8
+usr/share/man/man8/ceph-kvstore-tool.8
+usr/share/man/man8/ceph-run.8
+usr/share/man/man8/crushtool.8
+usr/share/man/man8/monmaptool.8
+usr/share/man/man8/osdmaptool.8
+
+usr/bin/ceph-detect-init
+
+# if %{with stx}
+etc/init.d/ceph
+etc/init.d/mgr-restful-plugin
+etc/init.d/ceph-init-wrapper
+etc/ceph/ceph.conf.pmon
+etc/ceph/ceph.conf
+etc/services.d/*
+usr/sbin/ceph-preshutdown.sh
+lib/systemd/system/docker.service.d/starlingx-docker-override.conf
+lib/systemd/system/ceph.service
+lib/systemd/system/mgr-restful-plugin.service
+
+# if %{without stx}
+# usr/libexec/systemd/system-preset/50-ceph.preset
+
+usr/sbin/ceph-disk
+
+usr/lib/python3/dist-packages/ceph_detect_init*
+usr/lib/python3/dist-packages/ceph_disk*

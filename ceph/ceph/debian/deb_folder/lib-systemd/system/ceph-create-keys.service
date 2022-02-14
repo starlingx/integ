@@ -1,0 +1,9 @@
+[Unit]
+Description=Create Ceph client.admin key when possible
+PartOf=ceph-mon.service
+
+[Service]
+Environment=CLUSTER=ceph
+Environment=CONFIG=/etc/ceph/ceph.conf
+EnvironmentFile=-/etc/default/ceph
+ExecStart=/usr/sbin/ceph-create-keys --cluster ${CLUSTER} --id %H

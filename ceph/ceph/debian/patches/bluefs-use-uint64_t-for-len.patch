@@ -1,0 +1,58 @@
+From 10a953afc8f803e50c96354470fb114b33e62599 Mon Sep 17 00:00:00 2001
+From: Kefu Chai <kchai@redhat.com>
+Date: Fri, 28 Jun 2019 11:35:54 +0800
+Subject: [PATCH] os/bluestore/BlueFS: use uint64_t for `len`
+
+change the type of parameter `len` of `BlueFS::_read_random()` from
+`size_t` to `uint64_t`.
+
+i think the type of `size_t` comes from
+`rocksdb::RandomAccessFile::Read(uint64_t offset, size_t n,
+rocksdb::Slice* result, char* scratch)`. and when we implement this
+method, we continued using `n`'s type. but, we are using it with
+`std::min()`, for instance, where the template parameter type deduction
+fails if the lhs and rhs parameters' types are different. so probaly the
+better solution is to use `uint64_t` directly to avoid the the cast and
+specializing the template.
+
+Signed-off-by: Kefu Chai <kchai@redhat.com>
+---
+ src/os/bluestore/BlueFS.cc | 4 ++--
+ src/os/bluestore/BlueFS.h  | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+Index: ceph/src/os/bluestore/BlueFS.cc
+===================================================================
+--- ceph.orig/src/os/bluestore/BlueFS.cc
++++ ceph/src/os/bluestore/BlueFS.cc
+@@ -1678,7 +1678,7 @@ void BlueFS::_drop_link(FileRef file)
+ int64_t BlueFS::_read_random(
+   FileReader *h,         ///< [in] read from here
+   uint64_t off,          ///< [in] offset
+-  size_t len,            ///< [in] this many bytes
++  uint64_t len,          ///< [in] this many bytes
+   char *out)             ///< [out] optional: or copy it here
+ {
+   auto* buf = &h->buf;
+@@ -1710,7 +1710,7 @@ int64_t BlueFS::_read_random(
+       uint64_t x_off = 0;
+       auto p = h->file->fnode.seek(off, &x_off);
+       ceph_assert(p != h->file->fnode.extents.end());
+-      uint64_t l = std::min(p->length - x_off, static_cast<uint64_t>(len));
++      uint64_t l = std::min(p->length - x_off, len);
+       //hard cap to 1GB
+       l = std::min(l, uint64_t(1) << 30);
+       dout(20) << __func__ << " read random 0x"
+Index: ceph/src/os/bluestore/BlueFS.h
+===================================================================
+--- ceph.orig/src/os/bluestore/BlueFS.h
++++ ceph/src/os/bluestore/BlueFS.h
+@@ -422,7 +422,7 @@ private:
+   int64_t _read_random(
+     FileReader *h,   ///< [in] read from here
+     uint64_t offset, ///< [in] offset
+-    size_t len,      ///< [in] this many bytes
++    uint64_t len,    ///< [in] this many bytes
+     char *out);      ///< [out] optional: or copy it here
+ 
+   void _invalidate_cache(FileRef f, uint64_t offset, uint64_t length);

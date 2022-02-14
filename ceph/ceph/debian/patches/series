@@ -1,0 +1,24 @@
+update-java-source-target-flags.patch
+disable-crypto.patch
+32bit-avoid-overloading.patch
+32bit-avoid-size_t.patch
+# Ubuntu: civetweb max connections
+civetweb-755-1.8-somaxconn-configurable_conf.patch
+civetweb-755-1.8-somaxconn-configurable.patch
+civetweb-755-1.8-somaxconn-configurable_test.patch
+# Upstream: py3
+# Upstream: 32bit
+bluefs-use-uint64_t-for-len.patch
+debian-armel-armhf-buildflags.patch
+fix-bash-completion-location
+add-option-to-disable-ceph-dencoder.patch
+riscv64-link-pthread.patch
+mds-purgequeue-use_uint64_t.patch
+make-ceph-python-3.9-aware.patch
+cmake_define_BOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT_for_Boost.Asio_users.patch
+cmake_add_1.74_to_known_versions.patch
+another-cmakelists-fix.patch
+fix-ceph-osd-systemd-target.patch
+# allow-bgp-to-host.patch ## Not applicable to stx/14.2.22 version
+0001-Fix-error-related-to-src-.git_version.patch
+0002-Fix-src-CMakeLists.txts-DESTINATION-error.patch

@@ -1,0 +1,166 @@
+From 78afc426e6d37a39706c27305039467b4601cfa5 Mon Sep 17 00:00:00 2001
+From: Leonardo Fagundes Luz Serrano
+ <Leonardo.FagundesLuzSerrano@windriver.com>
+Date: Sun, 23 Jan 2022 17:51:26 -0300
+Subject: [PATCH] Fix src/CMakeLists.txts DESTINATION error
+
+Previous syntax would trigger this error:
+"install PROGRAMS given no DESTINATION!"
+
+Signed-off-by: Leonardo Fagundes Luz Serrano <Leonardo.FagundesLuzSerrano@windriver.com>
+---
+ src/CMakeLists.txt | 124 ++++++++++++++++++++++++++++++---------------
+ 1 file changed, 82 insertions(+), 42 deletions(-)
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index be06fe5016..9780ff9511 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -585,40 +585,71 @@ configure_file(ceph-crash.in
+   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-crash @ONLY)
+ 
+ if(WITH_TESTS)
+-  install(PROGRAMS
+-    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-debugpack
+-    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-coverage
+-    DESTINATION bin)
+-endif()
+-
+-install(PROGRAMS
+-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph
+-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-post-file
+-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-crash
+-  ${CMAKE_SOURCE_DIR}/src/ceph-run
+-  ${CMAKE_SOURCE_DIR}/src/ceph-clsinfo
+-  DESTINATION bin)
+-install(PROGRAMS
+-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/init-ceph
+-  DESTINATION ${CMAKE_INSTALL_INITCEPH}
+-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
+-  RENAME ceph)
+-
+-install(FILES
+-  ${CMAKE_SOURCE_DIR}/share/id_rsa_drop.ceph.com
+-  ${CMAKE_SOURCE_DIR}/share/id_rsa_drop.ceph.com.pub
+-  ${CMAKE_SOURCE_DIR}/share/known_hosts_drop.ceph.com
+-  DESTINATION ${CMAKE_INSTALL_DATADIR}/ceph)
+-
+-install(PROGRAMS
+-  ceph_common.sh
+-  ceph-osd-prestart.sh
+-  DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/ceph)
+-
+-install(PROGRAMS
+-  ${CMAKE_SOURCE_DIR}/src/ceph-create-keys
+-#  ${CMAKE_SOURCE_DIR}/src/ceph-disk
+-  DESTINATION sbin)
++  install(
++    PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-debugpack
++    DESTINATION bin
++  )
++  install(
++    PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-coverage
++    DESTINATION bin
++  )
++endif()
++
++install(
++  PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph
++  DESTINATION bin
++)
++install(
++  PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-post-file
++  DESTINATION bin
++)
++install(
++  PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ceph-crash
++  DESTINATION bin
++)
++install(
++  PROGRAMS ${CMAKE_SOURCE_DIR}/src/ceph-run
++  DESTINATION bin
++)
++install(
++  PROGRAMS ${CMAKE_SOURCE_DIR}/src/ceph-clsinfo
++  DESTINATION bin
++)
++
++install(
++  PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/init-ceph
++  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/init.d
++  RENAME ceph
++)
++
++install(
++  FILES ${CMAKE_SOURCE_DIR}/share/id_rsa_drop.ceph.com
++  DESTINATION ${CMAKE_INSTALL_DATADIR}/ceph
++)
++
++install(
++  FILES ${CMAKE_SOURCE_DIR}/share/id_rsa_drop.ceph.com.pub
++  DESTINATION ${CMAKE_INSTALL_DATADIR}/ceph
++)
++
++install(
++  FILES ${CMAKE_SOURCE_DIR}/share/known_hosts_drop.ceph.com
++  DESTINATION ${CMAKE_INSTALL_DATADIR}/ceph
++)
++
++install(
++  PROGRAMS ceph_common.sh
++  DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/ceph
++)
++install(
++  PROGRAMS ceph-osd-prestart.sh
++  DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/ceph
++)
++
++install(
++  PROGRAMS ${CMAKE_SOURCE_DIR}/src/ceph-create-keys
++  DESTINATION sbin
++)
+ 
+ add_subdirectory(bash_completion)
+ add_subdirectory(client)
+@@ -683,11 +714,19 @@ if(WITH_RBD)
+     add_subdirectory(rbd_fuse)
+   endif()
+ 
+-  install(PROGRAMS
+-    ${CMAKE_SOURCE_DIR}/src/ceph-rbdnamer
+-    ${CMAKE_SOURCE_DIR}/src/rbd-replay-many
+-    ${CMAKE_SOURCE_DIR}/src/rbdmap
+-    DESTINATION ${CMAKE_INSTALL_BINDIR})
++  install(
++    PROGRAMS ${CMAKE_SOURCE_DIR}/src/ceph-rbdnamer
++    DESTINATION ${CMAKE_INSTALL_BINDIR}
++  )
++  install(
++    PROGRAMS ${CMAKE_SOURCE_DIR}/src/rbd-replay-many
++    DESTINATION ${CMAKE_INSTALL_BINDIR}
++  )
++  install(
++    PROGRAMS ${CMAKE_SOURCE_DIR}/src/rbdmap
++    DESTINATION ${CMAKE_INSTALL_BINDIR}
++  )
++
+   add_subdirectory(rbd_replay)
+ endif(WITH_RBD)
+ 
+@@ -729,9 +768,10 @@ if(WITH_RADOSGW)
+ 
+ endif(WITH_RADOSGW)
+ 
+-install(FILES
+-  sample.ceph.conf
+-  DESTINATION ${CMAKE_INSTALL_DOCDIR})
++install(
++  FILES sample.ceph.conf
++  DESTINATION ${CMAKE_INSTALL_DOCDIR}
++)
+ 
+ # Now create a usable config.h
+ configure_file(
+-- 
+2.17.1
+

@@ -1,0 +1,17 @@
+Description: Adds max_connections to test display.
+Author: Jesse Williamson <jesse.williamson@canonical.com>
+Origin: upstream, https://github.com/civetweb/civetweb/pull/776/commits/3b8eb36676f70d06f8918ccf62029207c49cdda0
+Bug: https://github.com/civetweb/civetweb/issues/775
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/ceph/+bug/1838109
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/civetweb/test/page3.ssjs
++++ b/src/civetweb/test/page3.ssjs
+@@ -21,6 +21,7 @@ opts = [
+ "document_root",
+ "ssl_certificate",
+ "num_threads",
++"max_connections",
+ "run_as_user",
+ "url_rewrite_patterns",
+ "hide_files_patterns",
