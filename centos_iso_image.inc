@@ -156,15 +156,6 @@ memcached
 
 # kubernetes
 kubernetes-unversioned
-kubernetes-1.18.1-node
-kubernetes-1.18.1-kubeadm
-kubernetes-1.18.1-client
-kubernetes-1.19.13-node
-kubernetes-1.19.13-kubeadm
-kubernetes-1.19.13-client
-kubernetes-1.20.9-node
-kubernetes-1.20.9-kubeadm
-kubernetes-1.20.9-client
 kubernetes-1.21.8-node
 kubernetes-1.21.8-kubeadm
 kubernetes-1.21.8-client

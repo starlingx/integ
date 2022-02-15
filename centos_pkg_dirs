@@ -55,9 +55,6 @@ docker/python-docker
 kubernetes/containerd
 kubernetes/cni/plugins
 kubernetes/cni/bond-cni
-kubernetes/kubernetes-1.18.1
-kubernetes/kubernetes-1.19.13
-kubernetes/kubernetes-1.20.9
 kubernetes/kubernetes-1.21.8
 kubernetes/kubernetes-1.22.5
 kubernetes/kubernetes-unversioned
