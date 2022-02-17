@@ -32,6 +32,7 @@ docker/python-docker
 filesystem/drbd/drbd-tools
 filesystem/parted
 grub/grub2
+grub/grubby
 kubernetes/armada
 kubernetes/armada-helm-toolkit
 kubernetes/chartmuseum
