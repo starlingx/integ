@@ -1,0 +1,26 @@
+# System stuff
+enable ssh.service
+enable atd.*
+enable crond.*
+enable rpcbind.*
+enable avahi-daemon.*
+enable apparmor.*
+enable set-grub-install-device.*
+
+# The various syslog implementaitons
+enable syslog-ng.*
+
+# Network facing
+enable libvirtd.service
+
+# Storage
+enable multipathd.service
+enable libstoragemgmt.service
+enable lvm2-lvmpolld.socket
+enable lvm2-monitor.*
+enable lvm2-lvmetad.*
+enable dm-event.*
+enable dmraid-activation.service
+
+# Others
+enable virlogd.socket
