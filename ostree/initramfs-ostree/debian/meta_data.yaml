@@ -4,8 +4,8 @@ dl_hook: dl_hook
 dl_files:
   meta-lat.tar.gz:
     topdir: null
-    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20220213.tar.gz
-    md5sum: cb4e14179d424669082c5d451b1072f8
+    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20220220.tar.gz
+    md5sum: f5d7bb37170f9749f43f3a4ec1c158d1
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
