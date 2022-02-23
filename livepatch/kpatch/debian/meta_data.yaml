@@ -1,0 +1,9 @@
+---
+debver: 0.9.5-1
+dl_path:
+  name: kpatch.tar.gz
+  url: https://github.com/dynup/kpatch/archive/refs/tags/v0.9.5.tar.gz
+  md5sum: 0b0bf29ef3962ab2e1ac31b2b0e05181
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: True

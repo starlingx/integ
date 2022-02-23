@@ -1,0 +1,4 @@
+usr/bin/*
+usr/libexec/kpatch/*
+usr/share/kpatch/*
+usr/share/man/man1/kpatch-build.1*
