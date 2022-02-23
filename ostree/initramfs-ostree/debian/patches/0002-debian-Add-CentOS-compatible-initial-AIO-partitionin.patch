@@ -17,7 +17,7 @@ Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
  1 file changed, 117 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index c46650f..18af966 100644
+index c46650f..e7b1224 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
 @@ -86,7 +86,9 @@ OPTIONAL:
@@ -122,13 +122,13 @@ index c46650f..18af966 100644
 +                # /var using up the remainder of the disk
 +                echo "WARNING WARNING - Can't allocate StarlingX partitions, /var will use the remainder of the disk"
 +            else
-+                grub_pt_update
 +                case $PERSONALITY in
 +                    aio)
 +                        echo "Allocating StarlingX AIO host partitioning"
 +                        CGCS_PV_SIZE=183296
 +                        PLATFORM_BACKUP_SIZE=30000
 +
++                        grub_pt_update
 +                        end=$(($first+($PLATFORM_BACKUP_SIZE*1024*1024/$lsz)-1))
 +                        a="$a -n $p:$first:$end -c $p:platform_backup -t $p:FFFF"
 +                        grub_pt_update
@@ -168,7 +168,7 @@ index c46650f..18af966 100644
 +                        LOG_VOL_SIZE=8000
 +                        SCRATCH_VOL_SIZE=16000
 +
-+                        pi=$((pi+2))
++                        pi=$((pi+1))
 +                        mkfs.ext4 -F -L platform_backup ${fs_dev}${pi}
 +
 +                        pi=$((pi+1))
@@ -196,5 +196,5 @@ index c46650f..18af966 100644
  	if [ $INSTSF = 1 ] ; then
  		dosfslabel ${fs_dev}${p1} boot
 -- 
-2.25.1
+2.27.0
 
