@@ -17,7 +17,7 @@ Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
  1 file changed, 117 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index c46650f..e7b1224 100644
+index c46650f..0a84179 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
 @@ -86,7 +86,9 @@ OPTIONAL:
@@ -70,48 +70,7 @@ index c46650f..e7b1224 100644
  }
  
  shell_start() {
-@@ -720,6 +731,40 @@ grub_partition() {
- 		a=""
- 		first=`sgdisk -F ${dev}|grep -v Creating`
- 	else
-+                ############################################
-+                # StarlingX: Clean up the volume group
-+                if [ "$INSTSTX" = 1 ] ; then
-+                    if [ "$VSZ" = 0 ] ; then
-+                        # /var using up the remainder of the disk
-+                        echo "WARNING WARNING - No volume group info to clean up, /var will use the remainder of the disk"
-+                    else
-+                        case $PERSONALITY in
-+                            aio)
-+                                echo "AIO: Clean up the volume group so that the disk can be re-partitioned"
-+                                vgremove -f cgts-vg
-+
-+                                # Find and wipe any existing PVs
-+                                partitions=$(pvs -o pv_name --noheading | grep -v '\[unknown\]')
-+                                for p in $partitions
-+                                do
-+                                    echo "Pre-wiping $p (pvs present)"
-+                                    dd if=/dev/zero of=$p bs=512 count=34
-+                                    dd if=/dev/zero of=$p bs=512 count=34 seek=$((`blockdev --getsz $p` - 34))
-+                                    pvremove -f $p
-+                                    wipefs -a $p
-+                                done
-+                                ;;
-+                            con)
-+                                ;;
-+                            wor)
-+                                ;;
-+                            sto)
-+                                ;;
-+                        esac
-+                    fi
-+                fi
-+                ############################################
-+
- 		sgdisk -Z ${dev}
- 		first=`sgdisk -F ${dev}|grep -v Creating`
- 		if [ "$BIOSPLUSEFI" = "1"  ] ; then
-@@ -779,6 +824,40 @@ grub_partition() {
+@@ -779,6 +790,40 @@ grub_partition() {
  		fi
  	fi
  
@@ -130,7 +89,7 @@ index c46650f..e7b1224 100644
 +
 +                        grub_pt_update
 +                        end=$(($first+($PLATFORM_BACKUP_SIZE*1024*1024/$lsz)-1))
-+                        a="$a -n $p:$first:$end -c $p:platform_backup -t $p:FFFF"
++                        a="$a -n $p:$first:$end -c $p:platform_backup"
 +                        grub_pt_update
 +                        end=$(($first+($CGCS_PV_SIZE*1024*1024/$lsz)-1))
 +                        a="$a -n $p:$first:$end -c $p:platform_pv -t $p:8E00"
@@ -152,6 +111,47 @@ index c46650f..e7b1224 100644
  	sgdisk $a -p ${dev}
  }
  
+@@ -943,6 +988,40 @@ if [ -n "${KS}" ]; then
+ 	fi
+ fi
+ 
++############################################
++# StarlingX: Clean up the volume group
++if [ "$INSTSTX" = 1 ] ; then
++    if [ "$VSZ" = 0 ] ; then
++        # /var using up the remainder of the disk
++        echo "WARNING WARNING - No volume group info to clean up, /var will use the remainder of the disk"
++    else
++        case $PERSONALITY in
++            aio)
++                echo "AIO: Clean up the volume group so that the disk can be re-partitioned"
++                vgremove -f cgts-vg
++
++                # Find and wipe any existing PVs
++                partitions=$(pvs -o pv_name --noheading | grep -v '\[unknown\]')
++                for p in $partitions
++                do
++                    echo "Pre-wiping $p (pvs present)"
++                    dd if=/dev/zero of=$p bs=512 count=34
++                    dd if=/dev/zero of=$p bs=512 count=34 seek=$((`blockdev --getsz $p` - 34))
++                    pvremove -f $p
++                    wipefs -a $p
++                done
++                ;;
++            con)
++                ;;
++            wor)
++                ;;
++            sto)
++                ;;
++        esac
++    fi
++fi
++############################################
++
+ # Early curl exec
+ 
+ if [ "${ECURL}" != "" -a "${ECURL}" != "none" ] ; then
 @@ -1145,6 +1224,42 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
  			mkfs.ext4 -F -L fluxdata ${fs_dev}${FLUXPART}
  		fi
@@ -172,8 +172,8 @@ index c46650f..e7b1224 100644
 +                        mkfs.ext4 -F -L platform_backup ${fs_dev}${pi}
 +
 +                        pi=$((pi+1))
-+                        vgcreate --force cgts-vg ${fs_dev}${pi}
-+                        lvcreate -n log-lv --size "${LOG_VOL_SIZE}MB" cgts-vg
++                        vgcreate --yes --force cgts-vg ${fs_dev}${pi}
++                        lvcreate --yes -n log-lv --size "${LOG_VOL_SIZE}MB" cgts-vg
 +                        mkfs.ext4 -F /dev/cgts-vg/log-lv
 +                        lvcreate -n scratch-lv --size "${SCRATCH_VOL_SIZE}MB" cgts-vg
 +                        mkfs.ext4 -F /dev/cgts-vg/scratch-lv
