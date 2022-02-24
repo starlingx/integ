@@ -1,0 +1,53 @@
+From d5d3e40baedaba10335bc2f0ea801e9118e05d1c Mon Sep 17 00:00:00 2001
+From: Daniel Safta <daniel.safta@windriver.com>
+Date: Wed, 2 Feb 2022 12:07:51 +0000
+Subject: [PATCH 2/2] Update apiVersion authorization to v1
+
+These are the changes needed to upgrade
+the apiVersion in the resources used by armada.
+This is a subset of the upstream commit:
+https://github.com/openstack/openstack-helm-infra/commit/f4972121bcb41c8d74748917804d2b239ab757f9
+Signed-off-by: Daniel Safta <daniel.safta@windriver.com>
+---
+ .../templates/snippets/_kubernetes_pod_rbac_roles.tpl         | 4 ++--
+ podsecuritypolicy/templates/podsecuritypolicy.yaml            | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/helm-toolkit/templates/snippets/_kubernetes_pod_rbac_roles.tpl b/helm-toolkit/templates/snippets/_kubernetes_pod_rbac_roles.tpl
+index f9f48ef..44a31fd 100644
+--- a/helm-toolkit/templates/snippets/_kubernetes_pod_rbac_roles.tpl
++++ b/helm-toolkit/templates/snippets/_kubernetes_pod_rbac_roles.tpl
+@@ -21,7 +21,7 @@ limitations under the License.
+ {{- $saNamespace := index . 3 -}}
+ {{- $releaseName := $envAll.Release.Name }}
+ ---
+-apiVersion: rbac.authorization.k8s.io/v1beta1
++apiVersion: rbac.authorization.k8s.io/v1
+ kind: RoleBinding
+ metadata:
+   name: {{ $releaseName }}-{{ $saName }}
+@@ -35,7 +35,7 @@ subjects:
+     name: {{ $saName }}
+     namespace: {{ $saNamespace }}
+ ---
+-apiVersion: rbac.authorization.k8s.io/v1beta1
++apiVersion: rbac.authorization.k8s.io/v1
+ kind: Role
+ metadata:
+   name: {{ $releaseName }}-{{ $saNamespace }}-{{ $saName }}
+diff --git a/podsecuritypolicy/templates/podsecuritypolicy.yaml b/podsecuritypolicy/templates/podsecuritypolicy.yaml
+index 741c9a8..9e22c6e 100644
+--- a/podsecuritypolicy/templates/podsecuritypolicy.yaml
++++ b/podsecuritypolicy/templates/podsecuritypolicy.yaml
+@@ -20,7 +20,7 @@ limitations under the License.
+ {{/* Create one ClusterRole and PSP per PSP definition in values */}}
+ {{- range $pspName, $pspDetails := .Values.data }}
+ ---
+-apiVersion: extensions/v1beta1
++apiVersion: policy/v1beta1
+ kind: PodSecurityPolicy
+ metadata:
+   name: {{ $pspName }}
+-- 
+2.31.1
+
