@@ -22,7 +22,7 @@
 %global shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name: containernetworking-plugins
-Version: 0.9.1
+Version: 1.0.1
 Release: 1%{?_tis_dist}.%{tis_patch_ver}
 Summary: CNI network plugins
 License: ASL 2.0
@@ -123,6 +123,9 @@ install -p -m 0755 bin/* %{buildroot}/%{_libexecdir}/cni
 %{_libexecdir}/cni/*
 
 %changelog
+* Thu Feb 17 2022 Steven Webster <steven.webster@windriver.com> - 1.0.1
+- bump to v1.0.1
+
 * Sun Aug 08 2021 Steven Webster <steven.webster@windriver.com>
 - Support for compilation on StarlingX
 
