@@ -1,5 +1,5 @@
 From: Robert Church <robert.church@windriver.com>
-Date: Mon, 31 Jan 2022 22:47:09 -0500
+Date: Sun, 20 Feb 2022 14:50:05 +0800
 Subject: debian: Add CentOS compatible initial AIO partitioning/formatting
 
 Add support for initial AIO partitioning and LVM formatting for AIO
@@ -9,15 +9,18 @@ hosts.
 - Creates initial logical volumes for scratch-lv and log-lv
 
 Signed-off-by: Robert Church <robert.church@windriver.com>
+
+Rebase to meta-lat 20220220
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
 ---
- init-ostree-install.sh | 122 +++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 119 insertions(+), 3 deletions(-)
+ init-ostree-install.sh | 119 ++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 117 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 55ece63..1d056a5 100644
+index c46650f..18af966 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -82,7 +82,9 @@ OPTIONAL:
+@@ -86,7 +86,9 @@ OPTIONAL:
   BSZ=#				- MB size of boot partition
   RSZ=#				- MB size of root partition
   VSZ=#				- MB size of var partition (0 for auto expand)
@@ -28,7 +31,7 @@ index 55ece63..1d056a5 100644
  EOF
  }
  
-@@ -102,7 +104,7 @@ conflict_label() {
+@@ -108,7 +110,7 @@ conflict_label() {
  	local op=$1
  	local 'label' 'd' 'devs' 'conflict' 'i' 'fstype'
  	conflict=1
@@ -37,7 +40,7 @@ index 55ece63..1d056a5 100644
  		devs=$(blkid -t LABEL=$label -o device |grep -v $INSTDEV)
  		if [ "$devs" != "" ] ; then
  			i=0
-@@ -513,6 +515,8 @@ IP=""
+@@ -547,6 +549,8 @@ IP=""
  MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE=60
  OSTREE_KERNEL_ARGS=${OSTREE_KERNEL_ARGS=%OSTREE_KERNEL_ARGS%}
  KS=""
@@ -46,7 +49,7 @@ index 55ece63..1d056a5 100644
  
  if [ "$OSTREE_KERNEL_ARGS" = "%OSTREE_KERNEL_ARGS%" ] ; then
  	OSTREE_KERNEL_ARGS="ro rootwait"
-@@ -603,6 +607,10 @@ read_args() {
+@@ -643,6 +647,10 @@ read_args() {
  				RSZ=$optarg ;;
  			VSZ=*)
  				VSZ=$optarg ;;
@@ -57,7 +60,7 @@ index 55ece63..1d056a5 100644
  		esac
  	done
  	# defaults if not set
-@@ -615,6 +623,9 @@ read_args() {
+@@ -655,6 +663,9 @@ read_args() {
  	if [ "$INSTGPG" = "" ] ; then INSTGPG=1 ; fi
  	if [ "$INSTFLUX" = "" ] ; then INSTFLUX=1 ; fi
  	if [ "$INSTSBD" = "" ] ; then INSTSBD=2 ; fi
@@ -67,7 +70,7 @@ index 55ece63..1d056a5 100644
  }
  
  shell_start() {
-@@ -680,6 +691,40 @@ grub_partition() {
+@@ -720,6 +731,40 @@ grub_partition() {
  		a=""
  		first=`sgdisk -F ${dev}|grep -v Creating`
  	else
@@ -108,11 +111,10 @@ index 55ece63..1d056a5 100644
  		sgdisk -Z ${dev}
  		first=`sgdisk -F ${dev}|grep -v Creating`
  		if [ "$BIOSPLUSEFI" = "1"  ] ; then
-@@ -730,6 +775,41 @@ grub_partition() {
+@@ -779,6 +824,40 @@ grub_partition() {
  		fi
- 		a="$a -n $p:$first:$end -c $p:fluxdata"
  	fi
-+
+ 
 +        ############################################
 +        # StarlingX: Temp partitioning compatability
 +        if [ "$INSTSTX" = 1 ] ; then
@@ -150,16 +152,7 @@ index 55ece63..1d056a5 100644
  	sgdisk $a -p ${dev}
  }
  
-@@ -1016,7 +1096,7 @@ fi
- udevadm settle --timeout=3
- 
- cnt=50
--while [ $cnt ] ; do
-+while [ "$cnt" -gt 0 ] ; do
- 	blockdev --rereadpt ${dev} 2> /dev/null > /dev/null && break
- 	sleep 0.1
- 	cnt=$(($cnt - 1))
-@@ -1074,6 +1154,42 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
+@@ -1145,6 +1224,42 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
  			mkfs.ext4 -F -L fluxdata ${fs_dev}${FLUXPART}
  		fi
  	fi
@@ -202,3 +195,6 @@ index 55ece63..1d056a5 100644
  elif [ "$INSTFMT" != 0 ] ; then
  	if [ $INSTSF = 1 ] ; then
  		dosfslabel ${fs_dev}${p1} boot
+-- 
+2.25.1
+
