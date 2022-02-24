@@ -1,0 +1,49 @@
+From c165f09af0e4def19b12d0028033ec16fad80d2f Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Tue, 22 Feb 2022 16:05:06 -0500
+Subject: [PATCH 2/2] debian: Correctly install the StarlingX puppet.conf
+
+The upstream Debian package provides its own puppet.conf and hiera.yaml
+files. The puppet.conf file is being installed and is overwriting the
+desired patched puppet.conf file from the source patch
+0005-Set-strict-variables-and-basemodulepath-in-puppet.co.patch.
+
+Move the desired content to conffiles/puppet.conf and allow the existing
+install directives to install the StarlingX content.
+
+This packaging should be revisited in the future to update
+conffiles/hiera.yaml for what is required by StarlingX . This should
+install the hiera.yaml (converted to v5) from the stx-puppet package and
+drop the change from that package.
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ debian/conffiles/puppet.conf | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/debian/conffiles/puppet.conf b/debian/conffiles/puppet.conf
+index b50d304..a90f481 100644
+--- a/debian/conffiles/puppet.conf
++++ b/debian/conffiles/puppet.conf
+@@ -1,7 +1,13 @@
++# This file can be used to override the default puppet settings.
++# See the following links for more details on what settings are available:
++# - https://puppet.com/docs/puppet/latest/config_important_settings.html
++# - https://puppet.com/docs/puppet/latest/config_about_settings.html
++# - https://puppet.com/docs/puppet/latest/config_file_main.html
++# - https://puppet.com/docs/puppet/latest/configuration.html
+ [main]
+-ssldir = /var/lib/puppet/ssl
++# Prevent the use of undefined variables
++strict_variables = true
++ordering = title-hash
+ 
+-[master]
+-vardir = /var/lib/puppet
+-cadir  = /var/lib/puppet/ssl/ca
+-dns_alt_names = puppet
++# Set the path to StarlingX puppet modules
++basemodulepath = /usr/share/puppet/modules:/usr/share/openstack-puppet/modules
+-- 
+2.16.6
+
