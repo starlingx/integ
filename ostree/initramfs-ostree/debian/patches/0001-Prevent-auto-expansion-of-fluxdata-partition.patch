@@ -14,7 +14,7 @@ Signed-off-by: Robert Church <robert.church@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/init-ostree.sh b/init-ostree.sh
-index 1702e55..3b043ea 100644
+index 6017fcf..b6eacbf 100644
 --- a/init-ostree.sh
 +++ b/init-ostree.sh
 @@ -32,7 +32,7 @@ ROOT_DELAY="0"

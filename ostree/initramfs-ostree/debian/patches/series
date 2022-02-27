@@ -1,3 +1,4 @@
 0001-Prevent-auto-expansion-of-fluxdata-partition.patch
 0002-debian-Add-CentOS-compatible-initial-AIO-partitionin.patch
 0003-debian-Copy-sysroot-var-log-to-LVM-volume.patch
+0004-Wipe-signatures-and-zero-first-4KiB.patch

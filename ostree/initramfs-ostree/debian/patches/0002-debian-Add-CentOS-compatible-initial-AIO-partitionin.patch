@@ -13,7 +13,7 @@ Signed-off-by: Robert Church <robert.church@windriver.com>
 Rebase to meta-lat 20220220
 Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
 ---
- init-ostree-install.sh | 119 ++++++++++++++++++++++++++++++++++++++++-
+ init-ostree-install.sh | 119 ++++++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 117 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
@@ -195,6 +195,3 @@ index c46650f..0a84179 100644
  elif [ "$INSTFMT" != 0 ] ; then
  	if [ $INSTSF = 1 ] ; then
  		dosfslabel ${fs_dev}${p1} boot
--- 
-2.27.0
-

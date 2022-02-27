@@ -1,4 +1,3 @@
-From 5598e61c3471c0cf253e6d077f09ee2b1d438ea9 Mon Sep 17 00:00:00 2001
 From: Charles Short <charles.short@windriver.com>
 Date: Thu, 17 Feb 2022 15:21:03 -0500
 Subject: [PATCH 3/3] debian: Copy /sysroot/var/log to LVM volume
@@ -13,10 +12,10 @@ Signed-off-by: Charles Short <charles.short@windriver.com>
  1 file changed, 9 insertions(+)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 57e8f2d..f56b78d 100644
+index 0a84179..d777682 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -1468,6 +1468,15 @@ if [ -d ${PHYS_SYSROOT}/ostree/1/usr/homedirs/home ] ; then
+@@ -1512,6 +1512,15 @@ if [ -d ${PHYS_SYSROOT}/ostree/1/usr/homedirs/home ] ; then
  	tar --xattrs --xattrs-include='*' -xf - -C /var1/home 2> /dev/null
  fi
  
@@ -32,6 +31,3 @@ index 57e8f2d..f56b78d 100644
  if [ -n "${KS}" ]; then
  	rootfs=`ls ${PHYS_SYSROOT}/ostree/? -d`
  	if [ "$INSTAB" = 1 ] ; then
--- 
-2.25.1
-
