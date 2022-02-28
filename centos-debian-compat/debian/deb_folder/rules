@@ -2,3 +2,10 @@
 
 %:
 	dh $@
+
+override_dh_auto_install:
+	install -d debian/tmp/lib/systemd/system-preset
+	install -m 544 stx/systemd/99-default-disable.preset debian/tmp/lib/systemd/system-preset
+	install -m 544 stx/systemd/90-default.preset debian/tmp/lib/systemd/system-preset
+	install -m 544 stx/systemd/85-debpkg-issues.preset debian/tmp/lib/systemd/system-preset
+	dh_install

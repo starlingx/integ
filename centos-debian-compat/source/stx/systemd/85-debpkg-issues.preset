@@ -1,0 +1,139 @@
+# StarlingX specs are enabling/disabling services during install. Make sure the
+# debian packaging is correctly doing the same, then remove from this file
+#
+# Note: These service actions were based on personality and setup at package
+# install time for that host. We will need a different mechanism to enable a
+# subset of these services at runtime as we will have a unified ostree image
+# with all packages installed regardless of personality.
+
+# config-gate.spec
+enable config.service
+#enable worker-config.service
+
+# controllerconfig.spec
+enable controllerconfig.service
+
+# storageconfig.spec (Move to rutime enablement. Disable, not needed for AIO)
+#enable storageconfig.service
+
+# sysinv-agent.spec
+enable sysinv-agent.service
+
+# sysinv-fpga-agent.spec
+enable sysinv-fpga-agent.service
+enable sysinv-conf-watcher.service
+enable sysinv-conf-watcher.path
+
+# workerconfig.spec (Move to rutime enablement. Disable, not needed for AIO)
+#enable workerconfig.service
+
+# filesystem-scripts.spec
+enable uexportfs.service
+
+# haproxy-config.spec
+disable haproxy.service
+
+# initscripts-config.spec
+enable mountnfs.service
+
+# iptables-config.spec
+enable iptables.service
+enable ip6tables.service
+
+# iscsi-initiator-utils-config.spec
+disable iscsi-shutdown.service
+
+# mlx4-config.spec
+enable mlx4-config.service
+
+# nfs-utils-config.spec
+disable rpc-statd.service
+disable rpc-statd-notify.service
+disable nfs-lock.service
+disable nfslock.service
+enable nfscommon.service
+enable nfsserver.service
+
+# fm-rest-api.spec
+enable fm-api.service
+
+# sm-api.spec
+enable sm-api.service
+
+# sm-common.spec
+enable sm-watchdog.service
+enable sm-eru.service
+
+# sm.spec
+enable sm.service
+enable sm-shutdown.service
+
+# isolcpus-device-plugin.spec
+enable isolcpu_plugin.service
+
+# k8s-pod-recovery.spec
+enable k8s-pod-recovery.service
+
+# lldpd.spec
+enable lldpd.service
+
+# openvswitch.spec
+disable openvswitch.service
+
+# libvirt.spec (Package currently not included)
+
+# qemu-kvm.spec (Package currently not included)
+
+# mtce-compute.spec
+enable goenabled-worker.service
+enable qemu_clean.service
+
+# mtce-control.spec
+enable lighttpd.service
+enable qemu_clean.service
+enable hbsAgent.service
+
+# mtce-storage.spec (Move to rutime enablement. Disable, not needed for AIO)
+#enable goenabled-storage.service
+
+# mtce.spec
+enable fsmon.service
+enable mtcClient.service
+enable hbsClient.service
+enable mtclog.service
+enable iscsid.service
+enable rsync.service
+enable goenabled.service
+enable mtcalarm.service
+enable crashDumpMgr.service
+enable hostw.service
+enable pmon.service
+enable lmon.service
+
+# mtce-guest.spec
+enable guestServer.service
+
+# cgcs-patch.spec
+enable sw-patch-controller.service
+enable sw-patch-controller-daemon.service
+enable sw-patch-agent.service
+enable sw-patch.service
+
+# collect-engtools.spec (Move to rutime enablement. Typically not installed. Disable, not needed for AIO)
+#enable collect-engtools.service
+
+# logmgmt.spec
+enable logmgmt.service
+
+# nfscheck.spec (Move to rutime enablement. Disable, only on non-controllers)
+#enable nfscheck.service
+
+# pci-irq-affinity.spec
+enable pci-irq-affinity-agent.service
+
+# platform-util.spec (Move to rutime enablement. Disable, only on non-controllers)
+#enable opt-platform.service
+
+# worker-utils.spec (Move to rutime enablement. Disable, only on non-controllers)
+#enable affine-platform.sh.service
+#enable affine-tasks.service
