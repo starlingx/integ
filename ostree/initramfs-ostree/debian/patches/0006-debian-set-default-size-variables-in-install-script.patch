@@ -1,0 +1,35 @@
+From 52ad1b5821b76b26db2933338a46f478fadb3fcb Mon Sep 17 00:00:00 2001
+From: Hongxu Jia <hongxu.jia@windriver.com>
+Date: Tue, 1 Mar 2022 14:28:01 +0800
+Subject: [PATCH 5/5] debian: set default size variables in install script
+
+If don’t specify the size variables (FSZ BSZ RSZ VSZ) on the
+grub command line nor the --inst-flux option in the lat-disk command.
+
+Have default size variables in install script
+
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+---
+ init-ostree-install.sh | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 56f01c0..42091d4 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -509,9 +509,9 @@ fatal() {
+ # default values must match ostree-settings.inc
+ BLM=2506
+ FSZ=32
+-BSZ=200
+-RSZ=1400
+-VSZ=0
++BSZ=512
++RSZ=20480
++VSZ=20480
+ # end values from ostree-settings.inc
+ LUKS=0
+ BIOSPLUSEFI=0
+-- 
+2.25.1
+
