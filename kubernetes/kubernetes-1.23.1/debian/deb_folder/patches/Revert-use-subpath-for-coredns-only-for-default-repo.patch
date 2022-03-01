@@ -1,0 +1,113 @@
+From f9dd597f4e8c8c66f08d661efcbd29479e4e069d Mon Sep 17 00:00:00 2001
+From: Gleb Aronsky <gleb.aronsky@windriver.com>
+Date: Tue, 25 Jan 2022 13:56:30 -0500
+Subject: [PATCH] Revert "use subpath for coredns only for default  repository"
+
+This reverts commit 38a41e1557649a7cc763bf737779db9aa03ec75e.
+
+Co-authored-by: Jim Gauld <james.gauld@windriver.com>
+Signed-off-by: Gleb Aronsky <gleb.aronsky@windriver.com>
+
+diff --git a/cmd/kubeadm/app/constants/constants.go b/cmd/kubeadm/app/constants/constants.go
+index c2b8f6e64be..b00ccea315e 100644
+--- a/cmd/kubeadm/app/constants/constants.go
++++ b/cmd/kubeadm/app/constants/constants.go
+@@ -337,7 +337,7 @@ const (
+ 	CoreDNSDeploymentName = "coredns"
+ 
+ 	// CoreDNSImageName specifies the name of the image for CoreDNS add-on
+-	CoreDNSImageName = "coredns"
++	CoreDNSImageName = "coredns/coredns"
+ 
+ 	// CoreDNSVersion is the version of CoreDNS to be deployed if it is used
+ 	CoreDNSVersion = "v1.8.6"
+diff --git a/cmd/kubeadm/app/images/images.go b/cmd/kubeadm/app/images/images.go
+index ee55eb6c995..bdb61caa373 100644
+--- a/cmd/kubeadm/app/images/images.go
++++ b/cmd/kubeadm/app/images/images.go
+@@ -22,7 +22,6 @@ import (
+ 	"k8s.io/klog/v2"
+ 
+ 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+-	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
+ 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+ 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
+ )
+@@ -48,10 +47,6 @@ func GetDNSImage(cfg *kubeadmapi.ClusterConfiguration) string {
+ 	if cfg.DNS.ImageRepository != "" {
+ 		dnsImageRepository = cfg.DNS.ImageRepository
+ 	}
+-	// Handle the renaming of the official image from "k8s.gcr.io/coredns" to "k8s.gcr.io/coredns/coredns
+-	if dnsImageRepository == kubeadmapiv1beta2.DefaultImageRepository {
+-		dnsImageRepository = fmt.Sprintf("%s/coredns", dnsImageRepository)
+-	}
+ 	// DNS uses an imageTag that corresponds to the DNS version matching the Kubernetes version
+ 	dnsImageTag := constants.CoreDNSVersion
+ 
+diff --git a/cmd/kubeadm/app/images/images_test.go b/cmd/kubeadm/app/images/images_test.go
+index 2b8affce236..91cd4294351 100644
+--- a/cmd/kubeadm/app/images/images_test.go
++++ b/cmd/kubeadm/app/images/images_test.go
+@@ -22,7 +22,6 @@ import (
+ 	"testing"
+ 
+ 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+-	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
+ 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+ )
+ 
+@@ -227,51 +226,4 @@ func TestGetAllImages(t *testing.T) {
+ 	}
+ }
+ 
+-func TestGetDNSImage(t *testing.T) {
+-	var tests = []struct {
+-		expected string
+-		cfg      *kubeadmapi.ClusterConfiguration
+-	}{
+-		{
+-			expected: "foo.io/coredns:v1.8.6",
+-			cfg: &kubeadmapi.ClusterConfiguration{
+-				ImageRepository: "foo.io",
+-				DNS: kubeadmapi.DNS{
+-					Type: kubeadmapi.CoreDNS,
+-				},
+-			},
+-		},
+-		{
+-			expected: kubeadmapiv1beta2.DefaultImageRepository + "/coredns/coredns:v1.8.6",
+-			cfg: &kubeadmapi.ClusterConfiguration{
+-				ImageRepository: kubeadmapiv1beta2.DefaultImageRepository,
+-				DNS: kubeadmapi.DNS{
+-					Type: kubeadmapi.CoreDNS,
+-				},
+-			},
+-		},
+-		{
+-			expected: "foo.io/coredns/coredns:v1.8.6",
+-			cfg: &kubeadmapi.ClusterConfiguration{
+-				ImageRepository: "foo.io",
+-				DNS: kubeadmapi.DNS{
+-					Type: kubeadmapi.CoreDNS,
+-					ImageMeta: kubeadmapi.ImageMeta{
+-						ImageRepository: "foo.io/coredns",
+-					},
+-				},
+-			},
+-		},
+-	}
+-
+-	for _, test := range tests {
+-		actual := GetDNSImage(test.cfg)
+-		if actual != test.expected {
+-			t.Errorf(
+-				"failed to GetDNSImage:\n\texpected: %s\n\t actual: %s",
+-				test.expected,
+-				actual,
+-			)
+-		}
+-	}
+ }
+-- 
+2.25.1
+

@@ -55,6 +55,7 @@ kubernetes/etcd
 kubernetes/helm
 kubernetes/k8s-pod-recovery
 kubernetes/kubernetes-1.21.8
+kubernetes/kubernetes-1.23.1
 kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/runc

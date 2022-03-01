@@ -1,0 +1,138 @@
+#!/usr/bin/make -f
+
+kube_version := 1.23.1
+kube_git_version := v${kube_version}
+name := kubernetes-${kube_version}
+go_version := 1.17.5
+_stage1 := /usr/local/kubernetes/${kube_version}/stage1
+_stage2 := /usr/local/kubernetes/${kube_version}/stage2
+_bindir := /usr/bin
+output_path := src/k8s.io/kubernetes/_output/bin
+DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
+export DH_VERBOSE = 1
+export PATH := /usr/lib/go-1.17/bin:$(PATH)
+export KUBE_GIT_TREE_STATE="clean"
+export KUBE_GIT_COMMIT=${kube_version}
+export KUBE_GIT_VERSION=${kube_git_version}
+export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
+export PBR_VERSION=${kube_git_version}
+
+
+%:
+	dh $@ --with=bash-completion --builddirectory=src --without=build-stamp
+
+override_dh_auto_build:
+
+	mkdir -pv src/k8s.io/kubernetes/
+	mv -v $$(ls | grep -v "^src$$" | grep -v "^debian$$") src/k8s.io/kubernetes/.
+
+	go version
+	which go
+
+	cd src/k8s.io/kubernetes/ && make WHAT="cmd/kube-proxy cmd/kube-apiserver cmd/kube-controller-manager cmd/kubelet cmd/kubeadm cmd/kube-scheduler cmd/kubectl"
+
+	# TODO convert md to man
+	#./hack/generate-docs.sh || true
+	#pushd docs ;\
+	#pushd admin ;\
+	#cp kube-apiserver.md kube-controller-manager.md kube-proxy.md kube-scheduler.md kubelet.md .. ;\
+	#popd ;\
+	#bash genmanpages.sh ;\
+	#popd ;\
+	#popd ;\
+
+
+override_dh_install:
+
+	install -m 755 -d ${DEBIAN_DESTDIR}${_bindir}
+	install -m 755 -d ${DEBIAN_DESTDIR}${_stage1}${_bindir}
+	install -m 755 -d ${DEBIAN_DESTDIR}${_stage2}${_bindir}
+
+	echo "+++ INSTALLING kube-apiserver"
+	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_path}/kube-apiserver
+
+	echo "+++ INSTALLING kubeadm"
+	install -p -m 755 -t ${DEBIAN_DESTDIR}${_stage1}${_bindir} ${output_path}/kubeadm
+	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d
+	install -p -m 0644 -t ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d debian/kubeadm.conf
+
+	echo "+++ INSTALLING kubelet-cgroup-setup.sh"
+	install -p -m 0700 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} debian/kubelet-cgroup-setup.sh
+
+	echo "+++ INSTALLING kube-apiserver"\
+	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_path}/kube-apiserver
+
+	echo "+++ INSTALLING kube-controller-manager"
+	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_path}/kube-controller-manager
+
+	echo "+++ INSTALLING kube-scheduler"
+	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_path}/kube-scheduler
+
+	echo "+++ INSTALLING kube-proxy"
+	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_path}/kube-proxy
+
+	echo "+++ INSTALLING kubelet"
+	install -p -m 754 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_path}/kubelet
+
+	echo "+++ INSTALLING kubectl"
+	install -p -m 754 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_path}/kubectl
+
+	# install the bash completion
+	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/
+	${DEBIAN_DESTDIR}${_stage2}${_bindir}/kubectl completion bash > ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/kubectl
+
+	# install specific cluster addons for optional use
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons
+	# Addon: volumesnapshots
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/crd
+	install -m 0644 -t ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/crd src/k8s.io/kubernetes/cluster/addons/volumesnapshots/crd/*
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/volume-snapshot-controller
+	install -m 0644 -t ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/volume-snapshot-controller src/k8s.io/kubernetes/cluster/addons/volumesnapshots/volume-snapshot-controller/*
+
+	#TODO install manpages
+	#install -d ${DEBIAN_DESTDIR}/usr/share/man/man1
+	#install -p -m 644 docs/man/man1/* ${DEBIAN_DESTDIR}/usr/share/man/man1
+	#rm -Rf ${DEBIAN_DESTDIR}/usr/share/man/man1/cloud-controller-manager.*
+	# from k8s tarball copied docs/man/man1/*.1
+	#popd
+
+	#mv src/k8s.io/kubernetes/*.md .
+	#mv src/k8s.io/kubernetes/LICENSE .
+
+
+	# place files for unit-test rpm
+	install -d -m 0755 ${DEBIAN_DESTDIR}/var/lib/kubernetes-unit-test/
+	# basically, everything from the root directory is needed
+	# unit-tests needs source code
+	# integration tests needs docs and other files
+	# test-cmd.sh atm needs cluster, examples and other
+	cp -a src ${DEBIAN_DESTDIR}/var/lib/kubernetes-unit-test/
+	rm -rf ${DEBIAN_DESTDIR}/var/lib/kubernetes-unit-test/src/k8s.io/kubernetes/_output
+
+	#TODO with install manpages
+	#cp -a *.md ${DEBIAN_DESTDIR}/var/lib/kubernetes-unit-test/src/k8s.io/kubernetes/
+
+	dh_install
+
+override_dh_auto_test:
+
+	echo "******Testing the commands*****"
+	src/k8s.io/kubernetes/hack/test-cmd.sh
+
+	echo "******Benchmarking kube********"
+	src/k8s.io/kubernetes/hack/benchmark-go.sh
+
+	echo "******Testing the go code******"
+	src/k8s.io/kubernetes/hack/test-go.sh
+
+	echo "******Testing integration******"
+	src/k8s.io/kubernetes/hack/test-integration.sh --use_go_build
+
+override_dh_fixperms:
+	dh_fixperms -Xkube-apiserver -Xkubeadm -Xkubeadm.conf \
+		-Xkubelet-cgroup-setup.sh -Xkube-apiserver \
+		-Xkube-controller-manager -Xkube-scheduler \
+		-Xkube-proxy -Xkubelet -Xkubectl
+
+override_dh_usrlocal:
