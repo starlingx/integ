@@ -35,6 +35,10 @@ docker/python-docker
 filesystem/drbd/drbd-tools
 filesystem/parted
 golang-github-dev/golang-github-appc-cni
+golang-github-dev/golang-github-checkpoint-restore-go-criu-dev
+golang-github-dev/golang-github-cilium-ebpf-dev
+golang-github-dev/golang-github-coreos-go-systemd-dev
+golang-github-dev/golang-github-opencontainers-specs-dev
 golang-github-dev/golang-github-vishvananda-netlink
 grub/grub2
 grub/grubby
