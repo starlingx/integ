@@ -4,6 +4,7 @@ dl_path:
   name: base-passwd-debian-3.5.51.tar.gz
   url: https://salsa.debian.org/debian/base-passwd/-/archive/debian/3.5.51/base-passwd-debian-3.5.51.tar.gz
   md5sum: 2866586c3c11fb7bfb269b1bb2a005e9
+  sha256sum: 7dda1771ce9107290fea9fca0c11e69334385d614a7c21cbeb50ce9437dd561f
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

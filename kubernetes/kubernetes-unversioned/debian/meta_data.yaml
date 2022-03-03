@@ -4,6 +4,7 @@ dl_path:
   name: kubernetes-contrib-v1.18.1.tar.gz
   url: https://github.com/kubernetes-retired/contrib/tarball/89f6948e24578fed2a90a87871b2263729f90ac3
   md5sum: 9aa15af65ed89a7167b9520573bbdcd7
+  sha256sum: 97206b6c1ea8dc7cb6201f909c2d14fc68cf40faa4e2641cdefb8411e9403274
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

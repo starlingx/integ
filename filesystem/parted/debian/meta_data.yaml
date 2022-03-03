@@ -4,6 +4,7 @@ dl_path:
   name: parted-3.4-1.tar.gz
   url: https://salsa.debian.org/parted-team/parted/-/archive/debian/3.4-1/parted-debian-3.4-1.tar.gz
   md5sum: c2666a4dd24907de44c56cc54b35c569
+  sha256sum: 66acf6072f919fecd8c664619b8ab778a98d585774447f06093f51dc73f355cd
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

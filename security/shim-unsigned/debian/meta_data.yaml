@@ -5,6 +5,7 @@ dl_path:
   name: shim-debian-15.4-7.tar.gz
   url: https://salsa.debian.org/efi-team/shim/-/archive/debian/15.4-7/shim-debian-15.4-7.tar.gz
   md5sum: f2ceaa268acb6eb9bbe08b839371e04a
+  sha256sum: a4ec39a11c75c95f268403f27125dd002aaf8511afb4fe476bc2d89d97f41eb3
 src_files:
   - files/tis-shim.crt
 revision:

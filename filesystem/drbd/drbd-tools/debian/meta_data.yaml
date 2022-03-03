@@ -5,6 +5,7 @@ dl_path:
   name: drbd-utils-9.15.0-1.tar.gz
   url: https://salsa.debian.org/ha-team/drbd-utils/-/archive/debian/9.15.0-1/drbd-utils-debian-9.15.0-1.tar.gz
   md5sum: 84e55c54aa5223af1c2e3ed3f8fd6ad4
+  sha256sum: 109ae1268f2f6b1d4d32f8f6df69824c6f53921c5be99751fc441597053421ed
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

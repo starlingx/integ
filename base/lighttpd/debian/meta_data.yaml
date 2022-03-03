@@ -4,6 +4,7 @@ dl_path:
   name: lighttpd-debian-1.4.55-1_bpo10+1.tar.gz
   url: https://salsa.debian.org/debian/lighttpd/-/archive/debian/1.4.55-1_bpo10+1/lighttpd-debian-1.4.55-1_bpo10+1.tar.gz
   md5sum: 453d7710982ee44fb5ce41673c6bd0df
+  sha256sum: 34326941ba0f7c6ff6f2c72890e2a568d0924c11c2c3f3d4174c82a484be81d3
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT:

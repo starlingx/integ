@@ -5,11 +5,13 @@ dl_path:
   name: chartmuseum-0.12.0.tar.gz
   url: https://github.com/helm/chartmuseum/archive/v0.12.0.tar.gz
   md5sum: 5c4cadff25c20e3fc17f079a457bddd9
+  sha256sum: 61d3e6142b934eadeee23f22e5ee84e86e3d582ad27813cec655aa4ba40d485b
 dl_files:
   chartmuseum-v0.12.0-amd64:
     topdir: null
     url: https://s3.amazonaws.com/chartmuseum/release/v0.12.0/bin/linux/amd64/chartmuseum
     md5sum: fba48bf948c224e662e84e7b295899f2
+    sha256sum: 53402edf5ac9f736cb6da8f270f6bbf356dcbbe5592d8a09ee6f91a2dc30e4f6
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

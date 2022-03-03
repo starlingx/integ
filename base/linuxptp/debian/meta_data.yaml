@@ -4,6 +4,7 @@ dl_path:
   name: linuxptp-debian-3.1.1-2.tar.gz
   url: https://salsa.debian.org/multimedia-team/linuxptp/-/archive/debian/3.1.1-2/linuxptp-debian-3.1.1-2.tar.gz
   md5sum: 6b8a81cfe8dbb0fd031e892393db0519
+  sha256sum: f0600ecac31378dbb4e43fbed2219272a4faa1c99f44aed850dc165a6a30a754
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

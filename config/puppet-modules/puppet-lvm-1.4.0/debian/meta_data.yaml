@@ -5,6 +5,7 @@ dl_path:
     name: puppet-lvm-1.4.0.tar.gz
     url: https://github.com/puppetlabs/puppetlabs-lvm/archive/refs/tags/v1.4.0.tar.gz
     md5sum: c0309a7dfd408f16586310f9398408f0
+    sha256sum: a7ed6ad3b75acdaa13059559bf64ec7a2270078272e30ca9b1012ffbfdf8ecdf
 revision:
     dist: $STX_DIST
     PKG_GITREVCOUNT: true

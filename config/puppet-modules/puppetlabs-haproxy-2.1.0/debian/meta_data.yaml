@@ -5,6 +5,7 @@ dl_path:
   name: puppet-module-puppetlabs-haproxy-2.1.0-3.tar.gz
   url: https://salsa.debian.org/openstack-team/puppet/puppet-module-puppetlabs-haproxy/-/archive/debian/2.1.0-3/puppet-module-puppetlabs-haproxy-debian-2.1.0-3.tar.gz
   md5sum: 0e523b59292206194b3bacc28bd483e2
+  sha256sum: 80a7bbe94fbc6ffcdf922232ae0ed43f80aec4815a49370bc96439c56f7f616a
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

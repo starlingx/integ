@@ -5,8 +5,10 @@ dl_files:
     topdir: null
     url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20220213.tar.gz
     md5sum: cb4e14179d424669082c5d451b1072f8
+    sha256sum: de86927d7d5332778fb1beb1f21132405086249e93ac948d81f66f0dc599f67e
   ostree.tar.gz:
     topdir: null
     url: https://salsa.debian.org/debian/ostree/-/archive/debian/2019.1-1/ostree-debian-2019.1-1.tar.gz
     md5sum: 31b095f28ceb6278964f69198d3e8a03
+    sha256sum: 8446fd6e246bcd0a9e0d72d326547675d1ed14ba2f5cf52d0a5eee2867b0d3ba
 dl_hook: dl_hook

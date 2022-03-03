@@ -5,6 +5,7 @@ dl_path:
   name: crictl-v1.21.0-linux-amd64.tar.gz
   url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.21.0/crictl-v1.21.0-linux-amd64.tar.gz
   md5sum: 671e173f96f87aab18a4f9f8111cd4e6
+  sha256sum: 85c78a35584971625bf1c3bcd46e5404a90396f979d7586f18b11119cb623e24
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

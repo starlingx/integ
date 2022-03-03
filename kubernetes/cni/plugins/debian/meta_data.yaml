@@ -5,6 +5,7 @@ dl_path:
   name: golang-github-containernetworking-plugins-debian-0.9.0-1.tar.gz
   url: https://salsa.debian.org/go-team/packages/golang-github-containernetworking-plugins/-/archive/debian/0.9.0-1/golang-github-containernetworking-plugins-debian-0.9.0-1.tar.gz
   md5sum: 8e38d8a13f5dd5ddc17f1a1b21fd3f9d
+  sha256sum: 65ade9991a6a16dddb05271c430a0b45fa3b4a6aa5675efe6b729f74f73c35d8
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
