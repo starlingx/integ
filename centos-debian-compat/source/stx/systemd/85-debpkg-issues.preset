@@ -49,10 +49,17 @@ enable mlx4-config.service
 # nfs-utils-config.spec
 disable rpc-statd.service
 disable rpc-statd-notify.service
-disable nfs-lock.service
-disable nfslock.service
-enable nfscommon.service
-enable nfsserver.service
+#disable nfs-lock.service
+#disable nfslock.service
+#enable nfscommon.service
+#enable nfsserver.service
+
+# nfs debian
+enable nfs-blkmap.service
+enable nfs-idmapd.service
+enable nfs-mountd.service
+enable nfs-server.service
+enable nfs-client.target
 
 # fm-rest-api.spec
 enable fm-api.service
