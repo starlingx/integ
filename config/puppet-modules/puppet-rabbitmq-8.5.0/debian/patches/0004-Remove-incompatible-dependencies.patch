@@ -1,0 +1,34 @@
+From b3dc2a215a2183583a723e4bffdec2f9632c93eb Mon Sep 17 00:00:00 2001
+From: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Mon, 21 Mar 2022 11:01:47 +0000
+Subject: [PATCH] Remove incompatible dependencies
+
+Removed puppet-archive and camptocamp-systemd.
+
+Signed-off-by: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ metadata.json | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/metadata.json b/metadata.json
+index 039eba2..bfec5bd 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -63,14 +63,6 @@
+     {
+       "name": "puppetlabs/stdlib",
+       "version_requirement": ">= 4.13.1 < 6.0.0"
+-    },
+-    {
+-      "name": "puppet/archive",
+-      "version_requirement": ">= 2.0.0 < 4.0.0"
+-    },
+-    {
+-      "name": "camptocamp/systemd",
+-      "version_requirement": ">= 2.1.0 < 3.0.0"
+     }
+   ],
+   "tags": [
+-- 
+2.30.2
+
