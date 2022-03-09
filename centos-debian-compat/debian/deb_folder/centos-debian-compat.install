@@ -1,1 +1,1 @@
-/lib/systemd/system-preset/*
+/etc/systemd/system-preset/*

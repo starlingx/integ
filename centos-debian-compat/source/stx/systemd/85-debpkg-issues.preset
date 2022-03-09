@@ -7,7 +7,6 @@
 # with all packages installed regardless of personality.
 
 # config-gate.spec
-enable config.service
 #enable worker-config.service
 
 # controllerconfig.spec
