@@ -5,6 +5,7 @@ dl_path:
   name: puppet-module-puppetlabs-stdlib-5.0.0-1.tar.gz
   url: https://salsa.debian.org/puppet-team/puppet-module-puppetlabs-stdlib/-/archive/debian/5.0.0-1/puppet-module-puppetlabs-stdlib-debian-5.0.0-1.tar.gz
   md5sum: 4d3cd229312a12f64a434495011aee7c
+  sha256sum: 2970e549a1bd4834eeee134835f7c0e633a0bac6774e539d882c7e4fbc4afd61
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

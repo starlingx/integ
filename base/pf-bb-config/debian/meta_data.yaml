@@ -4,6 +4,7 @@ dl_path:
   name: pf-bb-config-21.6.tar.gz
   url: https://github.com/intel/pf-bb-config/archive/refs/tags/v21.6.tar.gz
   md5sum: c2269025d0060565147971cf86cdbb3c
+  sha256sum: 7a110f7d2171e68bfa9fc3fb13b382fb7dfb85ffcde228bbab219f06f278dde0
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

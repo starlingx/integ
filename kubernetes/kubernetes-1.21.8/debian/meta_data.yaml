@@ -4,6 +4,7 @@ dl_path:
   name: kubernetes-1.21.8.tar.gz
   url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.21.8.tar.gz
   md5sum: df0aad94387386d4c8a3412acf196ae3
+  sha256sum: b585d37fb145de9b91cc934669e64ffd0743f40298a2de970509ac182c70a67a
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

@@ -5,6 +5,7 @@ dl_path:
   name: dh-python-4.20201102+nmu1.tar.gz
   url: https://salsa.debian.org/python-team/tools/dh-python/-/archive/4.20201102+nmu1/dh-python-4.20201102+nmu1.tar.gz
   md5sum: e8ffceb6618446cd57916d3063a326e3
+  sha256sum: 878f1c0cd8f4ca368b90a86b378889d805cadc3ecd63db0fddbd9230f8722af8
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

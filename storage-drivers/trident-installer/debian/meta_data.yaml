@@ -5,6 +5,7 @@ dl_path:
   name: trident-installer-20.04.0.tar.gz
   url: https://github.com/NetApp/trident/releases/download/v20.04.0/trident-installer-20.04.0.tar.gz
   md5sum: a4517756893dc2f373a86048868c4b2f
+  sha256sum: 5e410f52bfa38dc50c375dd8132091c7861d2321fb934e22f7d67e228df2047b
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
