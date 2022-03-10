@@ -1,0 +1,4 @@
+lib usr/share/puppet/modules.available/puppet-ceph
+manifests usr/share/puppet/modules.available/puppet-ceph
+metadata.json usr/share/puppet/modules.available/puppet-ceph
+spec usr/share/puppet/modules.available/puppet-ceph
