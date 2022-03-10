@@ -324,7 +324,7 @@ cd -
 make %{?_smp_mflags} \
 %if %{with dpdk}
 %ifarch %{dpdkarches}
-  LDFLAGS="-libverbs -lmlx4 -lmlx5"
+  LDFLAGS="-libverbs -lmlx5"
 %endif
 %endif
 
