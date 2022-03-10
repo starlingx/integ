@@ -1,2 +1,3 @@
 0001-Remove-log_dir-from-conf-files.patch
 0002-Add-psycopg2-drivername-to-postgresql-settings.patch
+0003-Deactivate-deprecated-idle_timeout-parameter.patch
