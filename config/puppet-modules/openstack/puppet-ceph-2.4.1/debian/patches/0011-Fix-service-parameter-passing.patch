@@ -1,0 +1,65 @@
+1From 62732269d5537270f9d81fd1583431092eed2d2b Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Fri, 11 Mar 2022 16:33:41 +0200
+Subject: [PATCH] Fix service parameter passing
+
+On debian passing the parameters needs to a service call needs to
+happen after the '--' construct, otherwise not all parameters are
+passed.
+For example the logs showed attempts to start mon + osd when
+'service ceph start mon.<id>' was called, which led to failures
+bacause the disk for osd was not initialized yet.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ manifests/mon.pp              | 6 +++---
+ manifests/osd.pp              | 2 +-
+ spec/defines/ceph_osd_spec.rb | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index 62d5059..6d1294e 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -103,9 +103,9 @@ define ceph::mon (
+       Service {
+         name     => "ceph-mon-${id}",
+         provider => $::ceph::params::service_provider,
+-        start    => "service ceph start mon.${id}",
+-        stop     => "service ceph stop mon.${id}",
+-        status   => "service ceph status mon.${id}",
++        start    => "service ceph -- start mon.${id}",
++        stop     => "service ceph -- stop mon.${id}",
++        status   => "service ceph -- status mon.${id}",
+         restart  => "/etc/init.d/ceph-init-wrapper restart mon.${id}",
+         enable   => $mon_enable,
+       }
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index ab65924..8baa49a 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -232,7 +232,7 @@ if [ -z \"\$id\" ] ; then
+ fi
+ if [ \"\$id\" ] ; then
+   stop ceph-osd cluster=${cluster_name} id=\$id || true
+-  service ceph stop osd.\$id || true
++  service ceph -- stop osd.\$id || true
+   systemctl stop ceph-osd@\$id || true
+   ceph ${cluster_option} osd crush remove osd.\$id
+   ceph ${cluster_option} auth del osd.\$id
+diff --git a/spec/defines/ceph_osd_spec.rb b/spec/defines/ceph_osd_spec.rb
+index a0b917f..59f0352 100644
+--- a/spec/defines/ceph_osd_spec.rb
++++ b/spec/defines/ceph_osd_spec.rb
+@@ -338,7 +338,7 @@ if [ -z \"\$id\" ] ; then
+ fi
+ if [ \"\$id\" ] ; then
+   stop ceph-osd cluster=ceph id=\$id || true
+-  service ceph stop osd.\$id || true
++  service ceph -- stop osd.\$id || true
+   systemctl stop ceph-osd@$id || true
+   ceph --cluster ceph osd crush remove osd.\$id
+   ceph --cluster ceph auth del osd.\$id
+-- 
+2.30.0
+
