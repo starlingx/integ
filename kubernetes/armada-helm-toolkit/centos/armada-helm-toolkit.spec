@@ -20,6 +20,8 @@ Patch01: 0001-Allow-multiple-containers-per-daemonset-pod.patch
 Patch02: 0002-Add-imagePullSecrets-in-service-account.patch
 Patch04: 0004-Partial-revert-of-31e3469d28858d7b5eb6355e88b6f49fd6.patch
 Patch06: 0006-Fix-pod-restarts-on-all-workers-when-worker-added-re.patch
+Patch07: 0007-Update-apiVersion-to-networking.k8s.io.patch
+Patch08: 0008-Update-apiVersion-authorization-to-v1.patch
 
 BuildRequires: helm
 BuildRequires: chartmuseum
@@ -33,6 +35,8 @@ Openstack Helm Infra helm-toolkit chart
 %patch02 -p1
 %patch04 -p1
 %patch06 -p1
+%patch07 -p1
+%patch08 -p1
 
 
 %build
