@@ -19,6 +19,7 @@ config/puppet-modules/openstack/puppet-oslo-17.4.0
 config/puppet-modules/puppet-boolean-2.0.2
 config/puppet-modules/puppet-dnsmasq
 config/puppet-modules/puppet-drbd-0.5.2
+config/puppet-modules/puppet-etcd-1.12.3
 config/puppet-modules/puppetlabs-haproxy-2.1.0
 config/puppet-modules/puppetlabs-postgresql-6.7.0
 config/puppet-modules/puppetlabs-stdlib-5.0.0
