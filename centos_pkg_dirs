@@ -57,6 +57,7 @@ kubernetes/cni/plugins
 kubernetes/cni/bond-cni
 kubernetes/kubernetes-1.21.8
 kubernetes/kubernetes-1.22.5
+kubernetes/kubernetes-1.23.1
 kubernetes/kubernetes-unversioned
 kubernetes/docker-distribution
 kubernetes/etcd
