@@ -80,7 +80,7 @@ seastar-0cf6aa6b28d69210b271489c0778f226cde0f459.tar.gz#seastar#https://api.gith
 spawn-5f4742f647a5a33b9467f648a3968b3cd0a681ee.tar.gz#spawn#https://api.github.com/repos/ceph/spawn/tarball/5f4742f647a5a33b9467f648a3968b3cd0a681ee#https##
 spdk-fd292c568f72187e172b98074d7ccab362dae348.tar.gz#spdk#https://api.github.com/repos/ceph/spdk/tarball/fd292c568f72187e172b98074d7ccab362dae348#https##
 spectre-meltdown-checker-0.37+-5cc77741.tar.gz#spectre-meltdown-checker#https://github.com/speed47/spectre-meltdown-checker/tarball/5cc77741af1d2f52140aa9f89339f56b6c4b6783#http##
-trident-installer-21.04.1.tar.gz#trident-installer-21.04.1#https://github.com/NetApp/trident/releases/download/v21.04.1/trident-installer-21.04.1.tar.gz#https##
+trident-installer-22.01.0.tar.gz#trident-installer-22.01.0#https://github.com/NetApp/trident/releases/download/v22.01.0/trident-installer-22.01.0.tar.gz#https##
 !tss2-930.tar.gz#tss2-930#https://git.code.sf.net/p/ibmtpm20tss/tss#git#v930#
 xxHash-1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9.tar.gz#xxHash#https://api.github.com/repos/ceph/xxHash/tarball/1f40c6511fa8dd9d2e337ca8c9bc18b3e87663c9#https##
 zstd-b706286adbba780006a47ef92df0ad7a785666b6.tar.gz#zstd#https://api.github.com/repos/facebook/zstd/tarball/b706286adbba780006a47ef92df0ad7a785666b6#https##

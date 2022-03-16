@@ -1,3 +1,9 @@
+trident-installer (22.01.0-0) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Daian Cardoso Sganderlla <Daian.CardosoSganderlla@windriver.com>  Wed, 16 Mar 2022 08:41:00 -0400
+
 trident-installer (20.04.0-0) unstable; urgency=medium
 
   * Initial release.
