@@ -12,11 +12,6 @@
 # Description:       Enable Ceph distributed file system services.
 ### END INIT INFO
 
-# TODO: on FreeBSD/OSX, use equivalent script file
-if [ -e /lib/lsb/init-functions ]; then
-    . /lib/lsb/init-functions
-fi
-
 if [ `dirname $0` = "." ] && [ $PWD != "/etc/init.d" ]; then
     # looks like an autotools src dir build
     BINDIR=.
