@@ -32,6 +32,8 @@ config/puppet-modules/puppet-staging
 docker/python-docker
 filesystem/drbd/drbd-tools
 filesystem/parted
+golang-github-dev/golang-github-appc-cni
+golang-github-dev/golang-github-vishvananda-netlink
 grub/grub2
 grub/grubby
 kubernetes/armada
