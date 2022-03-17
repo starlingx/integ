@@ -13,6 +13,7 @@ import subprocess
 import sys
 
 DEVICE_NAME_NVME = "nvme"
+DEVICE_NAME_MPATH = "mpath"
 
 #########
 # Utils #
@@ -63,6 +64,17 @@ def device_path_to_device_node(device_path):
     return out
 
 
+def device_path_to_mpath_node(device_path):
+    try:
+        output, _, _ = command(["udevadm", "settle", "-E", device_path])
+        out, err, retcode = command(["find", "-L", "/dev/mapper/", "-samefile", device_path])
+        out = out.rstrip()
+    except Exception as e:
+        return None
+
+    return out
+
+
 ###########################################
 # Manage Journal Disk Partitioning Scheme #
 ###########################################
@@ -75,7 +87,10 @@ def is_partitioning_correct(disk_path, partition_sizes):
     """Validate the existence and size of journal partitions"""
 
     # Obtain the device node from the device path.
-    disk_node = device_path_to_device_node(disk_path)
+    if DEVICE_NAME_MPATH in disk_path:
+        disk_node = device_path_to_mpath_node(disk_path)
+    else:
+        disk_node = device_path_to_device_node(disk_path)
 
     # Check that partition table format is GPT
     output, _, _ = command(["udevadm", "settle", "-E", disk_node])
@@ -114,7 +129,10 @@ def create_partitions(disk_path, partition_sizes):
     """Recreate partitions"""
 
     # Obtain the device node from the device path.
-    disk_node = device_path_to_device_node(disk_path)
+    if DEVICE_NAME_MPATH in disk_path:
+        disk_node = device_path_to_mpath_node(disk_path)
+    else:
+        disk_node = device_path_to_device_node(disk_path)
 
     # Issue: After creating a new partition table on a device, Udev does not
     # always remove old symlinks (i.e. to previous partitions on that device).
@@ -187,7 +205,10 @@ def mount_data_partition(data_path, osdid):
     """Mount an OSD data partition and return the mounted path"""
 
     # Obtain the device node from the device path.
-    data_node = device_path_to_device_node(data_path)
+    if DEVICE_NAME_MPATH in data_path:
+        data_node = device_path_to_mpath_node(data_path)
+    else:
+        data_node = device_path_to_device_node(data_path)
 
     mount_path = OSD_PATH + "ceph-" + str(osdid)
     output, _, _ = command(['mount'])
@@ -197,7 +218,7 @@ def mount_data_partition(data_path, osdid):
         _, _, ret = command(cmd)
         params = {"node": data_node, "path": mount_path}
         if ret:
-            print("Failed to mount %(node)s to %(path), aborting" % params)
+            print("Failed to mount %(node)s to %(path)s, aborting" % params)
             exit(1)
         else:
             print("Mounted %(node)s to %(path)s" % params)
