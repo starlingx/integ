@@ -1,7 +1,7 @@
 # System stuff
 enable ssh.service
 enable atd.*
-enable crond.*
+enable cron.*
 enable rpcbind.*
 enable avahi-daemon.*
 enable apparmor.*
