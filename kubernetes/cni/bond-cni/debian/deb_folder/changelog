@@ -1,0 +1,5 @@
+bond-cni (1.0-bff6422d7089d988dc1548e6abe0543601f6e1c7) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Steven Webster <steven.webster@windriver.com>  Fri, 18 Mar 2022 20:41:30 +1000
