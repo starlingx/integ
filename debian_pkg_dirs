@@ -5,6 +5,7 @@ base/dnsmasq
 base/libfdt
 base/lighttpd
 base/linuxptp
+base/lsb
 base/pf-bb-config
 base/systemd
 base/watchdog
