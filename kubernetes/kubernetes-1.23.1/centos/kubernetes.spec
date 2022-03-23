@@ -53,7 +53,7 @@ Source5:        kubelet-cgroup-setup.sh
 
 Patch1: kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
 Patch2: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
-Patch3: kubelet-cpumanager-infrastructure-pods-use-system-re.patch
+Patch3: kubelet-cpumanager-infra-pods-use-system-reserved-CP.patch
 Patch4: kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 Patch5: kubeadm-create-platform-pods-with-zero-CPU-resources.patch
 Patch6: enable-support-for-kubernetes-to-ignore-isolcpus.patch
