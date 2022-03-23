@@ -12,6 +12,7 @@ Source0: containerd-v%{version}.tar.gz
 Source1: runc-1.0.2.tar.gz
 Source2: crictl-v1.21.0-linux-amd64.tar.gz
 Source3: crictl.yaml
+Source4: k8s-container-cleanup.sh
 Patch1: 0001-customize-containerd-for-StarlingX.patch
 Patch2: 0002-CRI-Reduce-clutter-of-log-entries-during-process-exe.patch
 URL: https://www.starlingx.io
@@ -43,6 +44,7 @@ Provides: containerd.io
 
 %global _missing_build_ids_terminate_build 0
 
+%define local_sbindir /usr/local/sbin
 %define CONTAINERD_DIR ${HOME}/go/src/github.com/containerd/containerd
 %define RUNC_DIR ${HOME}/go/src/github.com/opencontainers/runc
 
@@ -94,6 +96,8 @@ install -d %{buildroot}%{_sysconfdir}
 install -m 644 %{_sourcedir}/crictl.yaml %{buildroot}%{_sysconfdir}/crictl.yaml
 install -d %{buildroot}%{_unitdir}
 install -p -m 644 %{CONTAINERD_DIR}/containerd.service %{buildroot}%{_unitdir}/containerd.service
+install -d %{buildroot}%{local_sbindir}
+install -m 755 %{SOURCE4} %{buildroot}%{local_sbindir}/k8s-container-cleanup
 
 # list files owned by the package here
 %files
@@ -108,3 +112,4 @@ install -p -m 644 %{CONTAINERD_DIR}/containerd.service %{buildroot}%{_unitdir}/c
 %{_bindir}/crictl
 %{_sysconfdir}/crictl.yaml
 %{_unitdir}/containerd.service
+%{local_sbindir}/k8s-container-cleanup
