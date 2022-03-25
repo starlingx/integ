@@ -40,6 +40,7 @@ grub/grubby
 kubernetes/armada
 kubernetes/armada-helm-toolkit
 kubernetes/chartmuseum
+kubernetes/cni/bond-cni
 kubernetes/cni/plugins
 kubernetes/containerd
 kubernetes/crictl
