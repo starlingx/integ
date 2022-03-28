@@ -1,0 +1,26 @@
+From 7ec509189906c18d93470004a2d676f1a07484b8 Mon Sep 17 00:00:00 2001
+From: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Mon, 14 Mar 2022 17:46:12 +0000
+Subject: [PATCH] Allow use with stdlib-5.0.0
+
+Signed-off-by: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ metadata.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/metadata.json b/metadata.json
+index b052ad3..f237870 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -52,7 +52,7 @@
+ 	],
+ 	"dependencies": [{
+ 			"name": "puppetlabs/stdlib",
+-			"version_requirement": ">= 4.6.0 < 5.0.0"
++			"version_requirement": ">= 4.6.0 <= 5.0.0"
+ 		}
+ 	],
+ 	"tags": [ "etcd"
+-- 
+2.30.2
+
