@@ -42,9 +42,6 @@ enable ip6tables.service
 # iscsi-initiator-utils-config.spec
 disable iscsi-shutdown.service
 
-# mlx4-config.spec
-enable mlx4-config.service
-
 # nfs-utils-config.spec
 disable rpc-statd.service
 disable rpc-statd-notify.service
