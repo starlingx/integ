@@ -1,0 +1,42 @@
+From bf53ce258c7e06cc9dc0e315ee52f41e6a92a108 Mon Sep 17 00:00:00 2001
+From: Fabricio Henrique Ramos <fabriciohenrique.ramos@windriver.com>
+Date: Thu, 31 Mar 2022 14:59:12 -0300
+Subject: [PATCH] Debian: Fix issue on re-install
+
+There is an issue on Debian iso when re-installing which halts the
+bootstrap with the error:
+
+Failed to wipe signatures on logical volume cgts-vg/pgsql-lv.
+Aborting. Failed to wipe start of new LV.
+
+This commit fixes this issue.
+
+Signed-off-by: Fabricio Henrique Ramos <fabriciohenrique.ramos@windriver.com>
+---
+ lib/puppet/provider/logical_volume/lvm.rb | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/logical_volume/lvm.rb b/lib/puppet/provider/logical_volume/lvm.rb
+index df333f3..322c6e4 100644
+--- a/lib/puppet/provider/logical_volume/lvm.rb
++++ b/lib/puppet/provider/logical_volume/lvm.rb
+@@ -85,7 +85,7 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+   end
+ 
+   def create
+-    args = []
++    args = ['-y', '-Wy', '-Zy']
+ 
+     args.push('-n', @resource[:name]) unless @resource[:thinpool] == true
+ 
+@@ -174,6 +174,7 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+     else
+       args << @resource[:volume_group]
+     end
++    info("Calling lvcreate with args: #{args}")
+     lvcreate(*args)
+     lvzero
+   end
+-- 
+2.17.1
+
