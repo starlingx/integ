@@ -1,0 +1,4 @@
+# This is content to be distributed, and not a script to be run directly.  It
+# is OK for it to be non-executable.
+puppet-module-puppetlabs-postgresql binary: script-not-executable usr/share/puppet/modules.available/puppetlabs-postgresql/files/validate_postgresql_connection.sh
+

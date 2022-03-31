@@ -1,0 +1,34 @@
+Source: puppet-module-puppetlabs-postgresql
+Maintainer: Puppet Package Maintainers <pkg-puppet-devel@lists.alioth.debian.org>
+Uploaders:
+ Stig Sandbeck Mathisen <ssm@debian.org>,
+ Sebastien Badia <sbadia@debian.org>,
+Section: admin
+Priority: optional
+Build-Depends:
+ debhelper-compat (= 11),
+Rules-Requires-Root: no
+Standards-Version: 4.1.4
+Vcs-Browser: https://salsa.debian.org/puppet-team/puppet-module-puppetlabs-postgresql
+Vcs-Git: https://salsa.debian.org/puppet-team/puppet-module-puppetlabs-postgresql.git
+Homepage: https://forge.puppet.com/puppetlabs/postgresql
+
+Package: puppet-module-puppetlabs-postgresql
+Architecture: all
+Depends:
+ puppet (>= 4) | puppet-common (>= 3),
+ puppet-module-puppetlabs-apt,
+ puppet-module-puppetlabs-concat,
+ puppet-module-puppetlabs-stdlib,
+ ${misc:Depends},
+Suggests:
+ postgresql-client-common,
+Description: Puppet module for PostgreSQL database
+ Puppet lets you centrally manage every important aspect of your system
+ using a cross-platform specification language that manages all the
+ separate elements normally aggregated in different files, like users,
+ cron jobs, and hosts, along with obviously discrete elements like
+ packages, services, and files.
+ .
+ The PostgreSQL module allows you to easily manage postgres databases
+ with Puppet.
