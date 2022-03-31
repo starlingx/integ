@@ -1,3 +1,4 @@
 0001-save-result-file-to-var-run-network-to-allow-manipul.patch
 0002-set-provider-mode-when-formatting-interfaces-file.patch
 0003-set-routes-file-to-var-run-network-scripts.puppet.patch
+0004-Save-dir-path-variable-with-distinct-names.patch
