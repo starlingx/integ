@@ -1,0 +1,67 @@
+From fe9005f788bef3041a74cdada13dd903e7382c07 Mon Sep 17 00:00:00 2001
+From: Fabricio Henrique Ramos <fabriciohenrique.ramos@windriver.com>
+Date: Tue, 12 Apr 2022 17:25:09 -0300
+Subject: [PATCH] Allow masking of nonexistent systemd services
+
+See: https://github.com/puppetlabs/puppet/commit/e42922b50ec235a2779029a82e64caef1999a39d
+
+Signed-off-by: Fabricio Henrique Ramos <fabriciohenrique.ramos@windriver.com>
+---
+ lib/puppet/provider/service/systemd.rb     |  7 ++++++-
+ spec/unit/provider/service/systemd_spec.rb | 12 ++++++++++++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/service/systemd.rb b/lib/puppet/provider/service/systemd.rb
+index f6a280a..e1072ca 100644
+--- a/lib/puppet/provider/service/systemd.rb
++++ b/lib/puppet/provider/service/systemd.rb
+@@ -140,10 +140,15 @@ Puppet::Type.type(:service).provide :systemd, :parent => :base do
+   end
+ 
+   def mask
+-    self.disable
++    disable if exist?
+     systemctl_change_enable(:mask)
+   end
+ 
++  def exist?
++    result = execute([command(:systemctl), 'cat', '--', @resource[:name]], :failonfail => false)
++    result.exitstatus == 0
++  end
++
+   def unmask
+     systemctl_change_enable(:unmask)
+   end
+diff --git a/spec/unit/provider/service/systemd_spec.rb b/spec/unit/provider/service/systemd_spec.rb
+index b072e2e..7d0457c 100644
+--- a/spec/unit/provider/service/systemd_spec.rb
++++ b/spec/unit/provider/service/systemd_spec.rb
+@@ -289,6 +289,9 @@ Jun 14 21:43:23 foo.example.com systemd[1]: sshd.service lacks both ExecStart= a
+   describe "#mask" do
+     it "should run systemctl to disable and mask a service" do
+       provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service'))
++      expect(provider).to receive(:execute).
++	      with(['/bin/systemctl','cat', '--', 'sshd.service'], :failonfail => false).
++	      and_return(Puppet::Util::Execution::ProcessOutput.new("# /lib/systemd/system/sshd.service\n...", 0))
+       # :disable is the only call in the provider that uses a symbol instead of
+       # a string.
+       # This should be made consistent in the future and all tests updated.
+@@ -296,6 +299,15 @@ Jun 14 21:43:23 foo.example.com systemd[1]: sshd.service lacks both ExecStart= a
+       expect(provider).to receive(:systemctl).with(:mask, '--', 'sshd.service')
+       provider.mask
+     end
++
++    it "masks a service that doesn't exist" do
++      provider = provider_class.new(Puppet::Type.type(:service).new(:name => 'doesnotexist.service'))
++      expect(provider).to receive(:execute).
++	      with(['/bin/systemctl','cat', '--', 'doesnotexist.service'], :failonfail => false).
++	      and_return(Puppet::Util::Execution::ProcessOutput.new("No files found for doesnotexist.service.\n", 1))
++      expect(provider).to receive(:systemctl).with(:mask, '--', 'doesnotexist.service')
++      provider.mask
++    end
+   end
+ 
+   # Note: systemd provider does not care about hasstatus or a custom status
+-- 
+2.17.1
+

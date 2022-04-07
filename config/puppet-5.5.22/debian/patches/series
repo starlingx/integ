@@ -2,3 +2,4 @@
 0002-Set-hasstatus-to-false-by-default.patch
 0003-Update-getpid-function.patch
 0004-Block-enabling-of-services.patch
+0005-Allow-masking-of-nonexistent-systemd-services.patch
