@@ -26,9 +26,10 @@ License: ASL 2.0
 URL: https://%{provider_prefix}
 
 Source0: %{repo}-%{commit}.tar.gz
+Patch1: 0001-Add-explicit-vendor-module-dependencies.patch
 ExclusiveArch: aarch64 %{arm} ppc64le s390x x86_64 %{ix86}
 
-BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang >= 1.13}
+BuildRequires:  %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang = 1.17.5}
 Provides: bond-cni = %{version}-%{release}
 
 %description
@@ -37,7 +38,8 @@ bonding of containers and removing any allocated resources when the container
 is deleted.
 
 %prep
-%autosetup -n %{repo}-%{commit}
+%setup -n %{repo}-%{commit}
+%patch1 -p1
 
 %build
 export ORG_PATH="%{provider}.%{provider_tld}/%{project}"
