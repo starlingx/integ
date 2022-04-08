@@ -16,10 +16,10 @@ Signed-off-by: Robert Church <robert.church@windriver.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index d777682..f05f7ba 100644
+index a2ccf10..cc7a507 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -1241,9 +1241,9 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
+@@ -1257,9 +1257,9 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
  
                          pi=$((pi+1))
                          vgcreate --yes --force cgts-vg ${fs_dev}${pi}

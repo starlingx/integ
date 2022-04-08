@@ -12,10 +12,10 @@ Signed-off-by: Charles Short <charles.short@windriver.com>
  1 file changed, 9 insertions(+)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 0a84179..d777682 100644
+index 2988ba2..a2ccf10 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -1512,6 +1512,15 @@ if [ -d ${PHYS_SYSROOT}/ostree/1/usr/homedirs/home ] ; then
+@@ -1528,6 +1528,15 @@ if [ -d ${PHYS_SYSROOT}/ostree/1/usr/homedirs/home ] ; then
  	tar --xattrs --xattrs-include='*' -xf - -C /var1/home 2> /dev/null
  fi
  
