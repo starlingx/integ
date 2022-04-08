@@ -1,4 +1,4 @@
-Source: kubernetes
+Source: kubernetes-1.21.8
 Section: admin
 Priority: optional
 Maintainer: StarlingX Developers <StarlingX-discuss@lists.StarlingX.io>

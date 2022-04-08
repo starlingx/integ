@@ -1,3 +1,10 @@
+kubernetes-1.21.8 (1.21.8-2) unstable; urgency=medium
+
+  * Updated package name to be able to support multiple kubernetes versions on stx platform
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@opendev.org>  Fri, 29 Apr 2022 00:20:53 +0000
+
+
 kubernetes (1.21.8-1) unstable; urgency=medium
 
   * Updated for stx debian packaging

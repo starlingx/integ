@@ -1,4 +1,3 @@
-debname: kubernetes
 debver: 1.21.8
 dl_path:
   name: kubernetes-1.21.8.tar.gz
