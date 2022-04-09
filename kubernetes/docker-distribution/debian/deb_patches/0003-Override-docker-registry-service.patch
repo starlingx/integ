@@ -19,7 +19,7 @@ index 8383ccd..f02c9ef 100755
  	#DH_GOLANG_EXCLUDES='distribution/registry/handlers health/checks' dh_auto_test -- -test.short
  
 +override_dh_installsystemd:
-+	dh_installsystemd -p docker-registry --no-start docker-registry.service
++	dh_installsystemd -p docker-registry --no-enable docker-registry.service
 +
  %:
  	dh $@ --buildsystem=golang --with=golang
