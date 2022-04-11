@@ -62,6 +62,7 @@ ostree/mttyexec
 ostree/ostree
 ostree/ostree-upgrade-mgr
 python/dh-python
+python/python-nss
 python/python3-setuptools
 security/keyrings.alt
 security/python-keyring
