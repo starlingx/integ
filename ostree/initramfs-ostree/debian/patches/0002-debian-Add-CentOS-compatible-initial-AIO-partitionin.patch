@@ -17,10 +17,10 @@ Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
  1 file changed, 117 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index c46650f..0a84179 100644
+index 5f16ba9..2988ba2 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -86,7 +86,9 @@ OPTIONAL:
+@@ -85,7 +85,9 @@ OPTIONAL:
   BSZ=#				- MB size of boot partition
   RSZ=#				- MB size of root partition
   VSZ=#				- MB size of var partition (0 for auto expand)
@@ -31,7 +31,7 @@ index c46650f..0a84179 100644
  EOF
  }
  
-@@ -108,7 +110,7 @@ conflict_label() {
+@@ -107,7 +109,7 @@ conflict_label() {
  	local op=$1
  	local 'label' 'd' 'devs' 'conflict' 'i' 'fstype'
  	conflict=1
@@ -40,7 +40,7 @@ index c46650f..0a84179 100644
  		devs=$(blkid -t LABEL=$label -o device |grep -v $INSTDEV)
  		if [ "$devs" != "" ] ; then
  			i=0
-@@ -547,6 +549,8 @@ IP=""
+@@ -546,6 +548,8 @@ IP=""
  MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE=60
  OSTREE_KERNEL_ARGS=${OSTREE_KERNEL_ARGS=%OSTREE_KERNEL_ARGS%}
  KS=""
@@ -49,7 +49,7 @@ index c46650f..0a84179 100644
  
  if [ "$OSTREE_KERNEL_ARGS" = "%OSTREE_KERNEL_ARGS%" ] ; then
  	OSTREE_KERNEL_ARGS="ro rootwait"
-@@ -643,6 +647,10 @@ read_args() {
+@@ -642,6 +646,10 @@ read_args() {
  				RSZ=$optarg ;;
  			VSZ=*)
  				VSZ=$optarg ;;
@@ -60,7 +60,7 @@ index c46650f..0a84179 100644
  		esac
  	done
  	# defaults if not set
-@@ -655,6 +663,9 @@ read_args() {
+@@ -654,6 +662,9 @@ read_args() {
  	if [ "$INSTGPG" = "" ] ; then INSTGPG=1 ; fi
  	if [ "$INSTFLUX" = "" ] ; then INSTFLUX=1 ; fi
  	if [ "$INSTSBD" = "" ] ; then INSTSBD=2 ; fi
@@ -70,7 +70,7 @@ index c46650f..0a84179 100644
  }
  
  shell_start() {
-@@ -779,6 +790,40 @@ grub_partition() {
+@@ -778,6 +789,40 @@ grub_partition() {
  		fi
  	fi
  
@@ -111,7 +111,7 @@ index c46650f..0a84179 100644
  	sgdisk $a -p ${dev}
  }
  
-@@ -943,6 +988,40 @@ if [ -n "${KS}" ]; then
+@@ -958,6 +1003,40 @@ if [ -n "${KS}" ]; then
  	fi
  fi
  
@@ -152,7 +152,7 @@ index c46650f..0a84179 100644
  # Early curl exec
  
  if [ "${ECURL}" != "" -a "${ECURL}" != "none" ] ; then
-@@ -1145,6 +1224,42 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
+@@ -1161,6 +1240,42 @@ if [ "$BL" = "grub" -a "$INSTFMT" != "0" ] ; then
  			mkfs.ext4 -F -L fluxdata ${fs_dev}${FLUXPART}
  		fi
  	fi
