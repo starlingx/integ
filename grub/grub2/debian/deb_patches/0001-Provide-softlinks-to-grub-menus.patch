@@ -1,0 +1,26 @@
+From a781e6bfe6af44d3bc159c01c9f8df684c782185 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <jim.somerville@windriver.com>
+Date: Mon, 11 Apr 2022 22:02:21 +0000
+Subject: [PATCH] Provide softlinks to grub menus
+
+Allows tools such as grubby to locate them.
+
+Signed-off-by: Jim Somerville <jim.somerville@windriver.com>
+---
+ debian/grub2-common.links | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/debian/grub2-common.links b/debian/grub2-common.links
+index a082aa2..01d4ba8 100644
+--- a/debian/grub2-common.links
++++ b/debian/grub2-common.links
+@@ -4,3 +4,6 @@ usr/share/man/man8/update-grub.8	usr/share/man/man8/update-grub2.8
+ usr/share/bash-completion/completions/grub	usr/share/bash-completion/completions/grub-install
+ usr/share/bash-completion/completions/grub	usr/share/bash-completion/completions/grub-reboot
+ usr/share/bash-completion/completions/grub	usr/share/bash-completion/completions/grub-set-default
++
++boot/efi/EFI/BOOT/grub.cfg	etc/grub2-efi.cfg
++boot/grub2/grub.cfg		etc/grub2.cfg
+-- 
+2.30.2
+
