@@ -35,10 +35,6 @@ disable haproxy.service
 # initscripts-config.spec
 enable mountnfs.service
 
-# iptables-config.spec
-enable iptables.service
-enable ip6tables.service
-
 # iscsi-initiator-utils-config.spec
 disable iscsi-shutdown.service
 
