@@ -1,5 +1,16 @@
 #!/usr/bin/make -f
 
+#
+# Copyright (c) 2022 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This file based from upstream containerd_1.4.12/debian/rules,
+# modified to install k8s-container-cleanup.sh to /usr/local/sbin.
+
+DEBIAN_BUILDDIR := $(CURDIR)/debian/tmp
+
 include /usr/share/dpkg/default.mk
 
 PKG        := github.com/containerd/containerd
@@ -16,6 +27,11 @@ export DH_GOLANG_EXCLUDES    := $(EXCLUDES)
 
 %:
 	dh $@ --buildsystem=golang --with=golang --builddirectory=_build
+
+# want dh_userlocal to do nothing since proper debian packages have
+# only empty directories under /usr/local.
+override_dh_usrlocal:
+	# Do Nothing
 
 override_dh_auto_build:
 	dh_auto_build -- -tags '$(TAGS)' -ldflags '$(GO_LDFLAGS)'
@@ -41,3 +57,5 @@ override_dh_auto_test:
 
 override_dh_auto_install:
 	DH_GOLANG_EXCLUDES="$(EXCLUDES) $(CRI_FILE)" dh_auto_install
+	install -d $(DEBIAN_BUILDDIR)/usr/local/sbin/
+	install -m 755 -p -D k8s-container-cleanup.sh $(DEBIAN_BUILDDIR)/usr/local/sbin/

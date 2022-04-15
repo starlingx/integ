@@ -2,3 +2,5 @@ usr/bin
 debian/config.toml /etc/containerd/
 debian/bash-completion/ctr /usr/share/bash-completion/completions/
 debian/zsh-completion/_ctr /usr/share/zsh/vendor-completions/
+usr/local/sbin
+k8s-container-cleanup.sh usr/local/sbin/
