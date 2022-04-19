@@ -1,1 +1,2 @@
-dhclient-dhcp6-set-hostname.patch
+0001-dhclient-dhcp6-set-hostname.patch
+0002-Update-dn-and-dns-only-with-diff-upon-RENEW.patch
