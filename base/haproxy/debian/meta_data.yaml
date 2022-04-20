@@ -1,0 +1,10 @@
+---
+debver: 2.2.9-2+deb11u3
+dl_path:
+  name: haproxy-debian-2.2.9-2+deb11u3.tar.gz
+  url: https://salsa.debian.org/haproxy-team/haproxy/-/archive/debian/2.2.9-2+deb11u3/haproxy-debian-2.2.9-2+deb11u3.tar.gz
+  md5sum: 96c7273a58e42964cd4ffc0e2b3189d4
+  sha256sum: 6719658c7f47dbbd058999d089dd51d6ca38844c21f5ca7899bae729c2c5e09b
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

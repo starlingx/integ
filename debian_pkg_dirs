@@ -2,6 +2,7 @@ base/base-passwd
 base/cluster-resource-agents
 base/dhcp
 base/dnsmasq
+base/haproxy
 base/libfdt
 base/lighttpd
 base/linuxptp
