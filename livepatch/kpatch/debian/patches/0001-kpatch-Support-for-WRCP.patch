@@ -1,0 +1,190 @@
+From 5637fee8b42fbe7eed1b4957c670e868c60ed24c Mon Sep 17 00:00:00 2001
+From: Zhixiong Chi <zhixiong.chi@windriver.com>
+Date: Wed, 6 Apr 2022 11:18:07 +0800
+Subject: [PATCH] kpatch: Support for WRCP
+
+Adjust the kpatch-build workflow for WRCP platform, and add the example
+patch for livepatch function for WRCP.
+
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
+---
+ Makefile                                   |  2 +-
+ Makefile.inc                               |  1 +
+ contrib/kpatch.service                     |  1 +
+ kpatch-build/kpatch-build                  | 28 ++++++++++++++++++----
+ kpatch/Makefile                            |  1 +
+ kpatch/kpatch                              |  3 ++-
+ test/Makefile                              | 12 ++++++++++
+ test/integration/wrcp/meminfo-string.patch | 11 +++++++++
+ 8 files changed, 53 insertions(+), 6 deletions(-)
+ create mode 100644 test/Makefile
+ create mode 100644 test/integration/wrcp/meminfo-string.patch
+
+diff --git a/Makefile b/Makefile
+index 1153492..1f0e921 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ include Makefile.inc
+ 
+-SUBDIRS     = kpatch-build kpatch kmod man contrib
++SUBDIRS     = kpatch-build kpatch kmod man contrib test
+ BUILD_DIRS   = $(SUBDIRS:%=build-%)
+ INSTALL_DIRS = $(SUBDIRS:%=install-%)
+ UNINSTALL_DIRS = $(SUBDIRS:%=uninstall-%)
+diff --git a/Makefile.inc b/Makefile.inc
+index 15049f3..259127c 100644
+--- a/Makefile.inc
++++ b/Makefile.inc
+@@ -16,6 +16,7 @@ DATADIR    = $(DESTDIR)$(PREFIX)/share/kpatch
+ MANDIR     = $(DESTDIR)$(PREFIX)/share/man/man1
+ SYSTEMDDIR = $(DESTDIR)$(PREFIX)/lib/systemd/system
+ UPSTARTDIR = $(DESTDIR)/etc/init
++LOCALSTATEDIR = $(DESTDIR)/var
+ 
+ .PHONY: all install clean
+ .DEFAULT: all
+diff --git a/contrib/kpatch.service b/contrib/kpatch.service
+index 6240256..ede0382 100644
+--- a/contrib/kpatch.service
++++ b/contrib/kpatch.service
+@@ -8,6 +8,7 @@ Wants=network-pre.target
+ Type=oneshot
+ RemainAfterExit=yes
+ ExecStart=PREFIX/sbin/kpatch load --all
++ExecStop=PREFIX/sbin/kpatch unload --all
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/kpatch-build/kpatch-build b/kpatch-build/kpatch-build
+index eedf383..0cabe74 100755
+--- a/kpatch-build/kpatch-build
++++ b/kpatch-build/kpatch-build
+@@ -48,6 +48,7 @@ TEMPDIR="$CACHEDIR/tmp"
+ ENVFILE="$TEMPDIR/kpatch-build.env"
+ LOGFILE="$CACHEDIR/build.log"
+ RELEASE_FILE=/etc/os-release
++LINUXSRCDIR=/usr/src
+ DEBUG=0
+ SKIPCLEANUP=0
+ SKIPCOMPILERCHECK=0
+@@ -741,6 +742,7 @@ if [[ -n "$USERSRCDIR" ]]; then
+ elif [[ -e "$SRCDIR"/.config ]] && [[ -e "$VERSIONFILE" ]] && [[ "$(cat "$VERSIONFILE")" = "$ARCHVERSION" ]]; then
+ 	echo "Using cache at $SRCDIR"
+ 
++
+ else
+ 	if [[ "$DISTRO" = fedora ]] || [[ "$DISTRO" = rhel ]] || [[ "$DISTRO" = ol ]] || [[ "$DISTRO" = centos ]]; then
+ 
+@@ -793,7 +795,7 @@ else
+ 
+ 			# url may be changed for a different mirror
+ 			url="http://ftp.debian.org/debian/pool/main/l"
+-			sublevel="SUBLEVEL ="
++			sublevel="SUBLEVEL = 0"
+ 		fi
+ 
+ 		pkgname="$(dpkg-query -W -f='${Source}' "linux-image-$ARCHVERSION" | sed s/-signed//)"
+@@ -805,9 +807,25 @@ else
+ 		cd "$TEMPDIR" || die
+ 		echo "Downloading and unpacking the kernel source for $ARCHVERSION"
+ 		# Download source deb pkg
+-		(dget -u "$url/${pkgname}/${dscname}" 2>&1) | logger || die "dget: Could not fetch/unpack $url/${pkgname}/${dscname}"
+-		mv "${pkgname}-$KVER" "$SRCDIR" || die
+-		[[ -z "$CONFIGFILE" ]] && CONFIGFILE="/boot/config-${ARCHVERSION}"
++		# (dget -u "$url/${pkgname}/${dscname}" 2>&1) | logger || die "dget: Could not fetch/unpack $url/${pkgname}/${dscname}"
++		# mv "${pkgname}-$KVER" "$SRCDIR" || die
++
++		# Since the linux-yocto kernel version is used for wrcp project now, so need to ensure the linux-source package had
++		# already been installed. We don't dowanload the kernel source from the debian any more.
++		KSRCVER="${KVER%.*}"
++		KSRCNAME="$LINUXSRCDIR/linux-source-$KSRCVER.tar.xz"
++		if [[ -e "$KSRCNAME" ]]; then
++			tar xvf $KSRCNAME
++			mv "linux-source-$KSRCVER" "$SRCDIR" || die
++		fi
++		# Due to the ostree mechanism, we need add the prefix for kernel config here
++		CMDLINE="$(cat /proc/cmdline)"
++		TMP_PREFIX_CONFIG="${CMDLINE##*ostree=}"
++		PREFIX_CONFIG="${TMP_PREFIX_CONFIG%% *}"
++		[[ -z "$CONFIGFILE" ]] && CONFIGFILE="$PREFIX_CONFIG/boot/config-${ARCHVERSION}"
++		cp "$CONFIGFILE" "$SRCDIR/.config" || die
++		CONFIGFILE="$SRCDIR/.config"
++
+ 		if [[ "$ARCHVERSION" == *-* ]]; then
+ 			echo "-${ARCHVERSION#*-}" > "$SRCDIR/localversion" || die
+ 		fi
+@@ -869,6 +886,9 @@ else
+ 	KBUILD_EXTRA_SYMBOLS="$SYMVERSFILE"
+ fi
+ 
++# Fix the module signing configuration to work for building kernels.
++sed -i '/CONFIG_\(MODULE_SIG_\(ALL\|KEY\)\|SYSTEM_TRUSTED_KEYS\)[ =]/d' "$CONFIGFILE" || die
++
+ # optional kernel configs:
+ grep -q "CONFIG_PARAVIRT=y"     "$CONFIGFILE" && CONFIG_PARAVIRT=1
+ grep -q "CONFIG_UNWINDER_ORC=y" "$CONFIGFILE" && CONFIG_UNWINDER_ORC=1
+diff --git a/kpatch/Makefile b/kpatch/Makefile
+index 448968f..067792a 100644
+--- a/kpatch/Makefile
++++ b/kpatch/Makefile
+@@ -5,6 +5,7 @@ all:
+ install: all
+ 	$(INSTALL) -d $(SBINDIR)
+ 	$(INSTALL) kpatch $(SBINDIR)
++	$(INSTALL) -d $(LOCALSTATEDIR)/lib/kpatch
+ 
+ uninstall:
+ 	$(RM) $(SBINDIR)/kpatch
+diff --git a/kpatch/kpatch b/kpatch/kpatch
+index 7fecb23..e4624f5 100755
+--- a/kpatch/kpatch
++++ b/kpatch/kpatch
+@@ -584,7 +584,8 @@ case "$1" in
+ 	echo "uninstalling $PATCH ($KVER)"
+ 	rm -f "$MODULE" || die "failed to uninstall module $PATCH"
+ 	rmdir --ignore-fail-on-non-empty "$INSTALLDIR/$KVER" || die "failed to remove directory $INSTALLDIR/$KVER"
+-	rmdir --ignore-fail-on-non-empty "$INSTALLDIR" || die "failed to remove directory $INSTALLDIR"
++	# keep $INSTALLDIR directory for kpatch test build.
++	# rmdir --ignore-fail-on-non-empty "$INSTALLDIR" || die "failed to remove directory $INSTALLDIR"
+ 
+ 	;;
+ 
+diff --git a/test/Makefile b/test/Makefile
+new file mode 100644
+index 0000000..4ab6b23
+--- /dev/null
++++ b/test/Makefile
+@@ -0,0 +1,12 @@
++include ../Makefile.inc
++
++all:
++
++install: all
++	$(INSTALL) -d $(LOCALSTATEDIR)/lib/kpatch/test
++	$(INSTALL) integration/wrcp/*.patch $(LOCALSTATEDIR)/lib/kpatch/test
++
++uninstall:
++	$(RM) $(LOCALSTATEDIR)/lib/kpatch/test/*.patch
++
++clean:
+diff --git a/test/integration/wrcp/meminfo-string.patch b/test/integration/wrcp/meminfo-string.patch
+new file mode 100644
+index 0000000..5047a2e
+--- /dev/null
++++ b/test/integration/wrcp/meminfo-string.patch
+@@ -0,0 +1,11 @@
++--- src.orig/fs/proc/meminfo.c	2021-10-19 03:09:04.000000000 +0000
+++++ src/fs/proc/meminfo.c	2022-03-22 10:21:30.686845582 +0000
++@@ -119,7 +119,7 @@
++ 	seq_printf(m, "VmallocTotal:   %8lu kB\n",
++ 		   (unsigned long)VMALLOC_TOTAL >> 10);
++ 	show_val_kb(m, "VmallocUsed:    ", vmalloc_nr_pages());
++-	show_val_kb(m, "VmallocChunk:   ", 0ul);
+++	show_val_kb(m, "VMALLOCChunk:   ", 0ul);
++ 	show_val_kb(m, "Percpu:         ", pcpu_nr_pages());
++ 
++ #ifdef CONFIG_MEMORY_FAILURE
+--
+2.25.1
+

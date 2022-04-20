@@ -59,6 +59,7 @@ kubernetes/plugins/isolcpus-device-plugin
 kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
+livepatch/kpatch
 networking/lldpd
 networking/net-tools
 ostree/initramfs-ostree
