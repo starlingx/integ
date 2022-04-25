@@ -3,3 +3,4 @@
 0003-debian-Copy-sysroot-var-log-to-LVM-volume.patch
 0004-Wipe-signatures-and-zero-first-4KiB.patch
 0005-Make-boot-efi-mount-as-rw.patch
+0006-debian-set-default-size-variables-in-install-script.patch
