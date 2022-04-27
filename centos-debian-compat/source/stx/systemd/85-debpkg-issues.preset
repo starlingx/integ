@@ -127,9 +127,6 @@ enable logmgmt.service
 # nfscheck.spec (Move to rutime enablement. Disable, only on non-controllers)
 #enable nfscheck.service
 
-# pci-irq-affinity.spec
-enable pci-irq-affinity-agent.service
-
 # platform-util.spec (Move to rutime enablement. Disable, only on non-controllers)
 #enable opt-platform.service
 
