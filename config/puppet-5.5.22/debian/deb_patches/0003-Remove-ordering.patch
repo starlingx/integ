@@ -1,0 +1,42 @@
+From 6fedd90fceebb64a8af6b3e871e873058da4b816 Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Thu, 28 Apr 2022 11:37:51 +0000
+Subject: [PATCH 3/3] Remove ordering
+
+Changing ordering will become obsolete in puppet 6.
+
+Using title-hashing ordering, we see a puppet warning and 2 errors.
+- Warning: 2022-04-27 11:26:13 +0000 Setting ordering is deprecated.
+- drbdadm create-md drbd-pgsql -W--peer-max-bio-size=128k' returned 1
+instead of one of [0]
+- Could not prefetch keystone_role provider 'openstack'
+
+Use default ordering.
+
+[1]: https://puppet.com/docs/puppet/5.5/configuration.html#ordering
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ debian/conffiles/puppet.conf | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/debian/conffiles/puppet.conf b/debian/conffiles/puppet.conf
+index a90f481..db0234d 100644
+--- a/debian/conffiles/puppet.conf
++++ b/debian/conffiles/puppet.conf
+@@ -4,10 +4,11 @@
+ # - https://puppet.com/docs/puppet/latest/config_about_settings.html
+ # - https://puppet.com/docs/puppet/latest/config_file_main.html
+ # - https://puppet.com/docs/puppet/latest/configuration.html
++# Ordering is deprecated.
++# - https://puppet.com/docs/puppet/5.5/configuration.html#ordering
+ [main]
+ # Prevent the use of undefined variables
+ strict_variables = true
+-ordering = title-hash
+ 
+ # Set the path to StarlingX puppet modules
+ basemodulepath = /usr/share/puppet/modules:/usr/share/openstack-puppet/modules
+-- 
+2.30.2
+
