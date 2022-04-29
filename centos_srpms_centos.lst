@@ -18,6 +18,7 @@ openssh-7.4p1-21.el7.src.rpm
 parted-3.1-29.el7.src.rpm
 puppet-4.8.2-1.el7.src.rpm
 puppet-ceph-2.4.1-1.el7.src.rpm
+puppet-firewall-1.8.2-2.2f892e9git.el7.src.rpm
 puppet-haproxy-1.5.0-4.6ffcb07git.el7.src.rpm
 puppet-horizon-11.5.0-1.el7.src.rpm
 puppet-keystone-11.3.0-1.el7.src.rpm

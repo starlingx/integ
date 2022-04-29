@@ -1,0 +1,33 @@
+From 5df5c090b1a87421f567cc2f79046ec4852f9597 Mon Sep 17 00:00:00 2001
+From: Steven Webster <steven.webster@windriver.com>
+Date: Fri, 29 Apr 2022 14:57:50 -0400
+Subject: [PATCH] Add support for random fully flag
+
+Signed-off-by: Steven Webster <steven.webster@windriver.com>
+---
+ SPECS/puppet-firewall.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/puppet-firewall.spec b/SPECS/puppet-firewall.spec
+index f5925f1..87d0410 100644
+--- a/SPECS/puppet-firewall.spec
++++ b/SPECS/puppet-firewall.spec
+@@ -15,6 +15,7 @@ License:        ASL 2.0
+ URL:            http://github.com/puppetlabs/puppetlabs-firewall
+
+ Source0:        https://github.com/puppetlabs/%{upstream_name}/archive/%{commit}.tar.gz#/%{upstream_name}-%{shortcommit}.tar.gz
++Patch0001:      0001-Add-support-for-random-fully-flag.patch
+
+ BuildArch:      noarch
+
+@@ -25,6 +26,7 @@ Manages Firewalls such as iptables
+
+ %prep
+ %setup -q -n %{upstream_name}-%{upstream_version}
++%patch0001 -p1
+
+ find . -type f -name ".*" -exec rm {} +
+ find . -size 0 -exec rm {} +
+--
+2.29.2
+
