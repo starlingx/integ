@@ -77,8 +77,8 @@ for d in $PLUGINS; do
 done
 
 %install
-install -d -p %{buildroot}%{_libexecdir}/cni/
-install -p -m 0755 bin/* %{buildroot}/%{_libexecdir}/cni
+install -d -p %{buildroot}/opt/cni/bin
+install -p -m 0755 bin/* %{buildroot}/opt/cni/bin
 
 %check
 %if 0%{?with_check}
@@ -119,8 +119,8 @@ install -p -m 0755 bin/* %{buildroot}/%{_libexecdir}/cni
 %files
 %license LICENSE
 %doc *.md
-%dir %{_libexecdir}/cni
-%{_libexecdir}/cni/*
+%dir /opt/cni/bin
+/opt/cni/bin/*
 
 %changelog
 * Thu Feb 17 2022 Steven Webster <steven.webster@windriver.com> - 1.0.1

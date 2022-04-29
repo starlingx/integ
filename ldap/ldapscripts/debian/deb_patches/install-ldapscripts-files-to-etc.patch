@@ -1,0 +1,53 @@
+From c3f8f0bae32fb59eb9f7e4be7b88e9e8931a9711 Mon Sep 17 00:00:00 2001
+From: Bin Qian <bin.qian@windriver.com>
+Date: Wed, 27 Apr 2022 22:08:59 +0000
+Subject: [PATCH] install ldapscripts files to /etc
+
+Install ldapscripts files to /etc where they originally deployed to.
+As /usr needs to be readonly to support OSTree
+
+Signed-off-by: Bin Qian <bin.qian@windriver.com>
+---
+ debian/rules | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/debian/rules b/debian/rules
+index cad1a0f..1388e4c 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -9,14 +9,14 @@ override_dh_auto_install:
+ 	$(MAKE) install DESTDIR=debian/ldapscripts PREFIX=/usr ETCDIR=/etc/ldapscripts LIBDIR=/usr/share/ldapscripts MANDIR=/usr/share/man
+ 	cp debian/runtime.debian debian/ldapscripts/usr/share/ldapscripts
+ 	rm debian/ldapscripts/etc/ldapscripts/*.sample
+-	$(MAKE) install DESTDIR=debian/ldapscripts PREFIX=/usr ETCDIR=/usr/local/etc/ldapscripts
+-	install -m 644 ldapscripts.conf.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+-	install -m 644 ldapadduser.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+-	install -m 644 ldapaddgroup.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+-	install -m 644 ldapmoduser.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+-	install -m 644 ldapaddsudo.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+-	install -m 644 ldapmodsudo.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+-	install -m 600 ldapscripts.passwd debian/ldapscripts/usr/local/etc/ldapscripts
++	$(MAKE) install DESTDIR=debian/ldapscripts PREFIX=/usr ETCDIR=/etc/ldapscripts
++	install -m 644 ldapscripts.conf.cgcs debian/ldapscripts/etc/ldapscripts
++	install -m 644 ldapadduser.template.cgcs debian/ldapscripts/etc/ldapscripts
++	install -m 644 ldapaddgroup.template.cgcs debian/ldapscripts/etc/ldapscripts
++	install -m 644 ldapmoduser.template.cgcs debian/ldapscripts//etc/ldapscripts
++	install -m 644 ldapaddsudo.template.cgcs debian/ldapscripts/etc/ldapscripts
++	install -m 644 ldapmodsudo.template.cgcs debian/ldapscripts/etc/ldapscripts
++	install -m 600 ldapscripts.passwd debian/ldapscripts/etc/ldapscripts
+ 	rm -rf ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapaddmachine.template.sample
+ 
+ override_dh_installdocs:
+@@ -31,6 +31,6 @@ override_dh_installexamples:
+ override_dh_fixperms:
+ 	dh_fixperms --exclude etc/ldapscripts/ldapscripts.passwd
+ 	chmod 440 ./debian/ldapscripts/usr/lib/ldapscripts/runtime
+-	chmod 440 ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapaddgroup.template.sample
+-	chmod 440 ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapadduser.template.sample
+-	chmod 440 ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapscripts.conf.sample
++	chmod 440 ./debian/ldapscripts/etc/ldapscripts/ldapaddgroup.template.sample
++	chmod 440 ./debian/ldapscripts/etc/ldapscripts/ldapadduser.template.sample
++	chmod 440 ./debian/ldapscripts/etc/ldapscripts/ldapscripts.conf.sample
+-- 
+2.30.2
+

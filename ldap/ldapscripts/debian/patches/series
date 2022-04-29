@@ -4,3 +4,4 @@ log_timestamp.patch
 ldap-user-setup-support.patch
 allow-anonymous-bind-for-ldap-search.patch
 ldapscripts-templates.patch
+install-ldapscripts-files-to-etc.patch

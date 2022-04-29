@@ -37,7 +37,7 @@ BINDDN="cn=ldapadmin,dc=cgcs,dc=local"
 # The following file contains the raw password of the BINDDN
 # Create it with something like : echo -n 'secret' > $BINDPWDFILE
 # WARNING !!!! Be careful not to make this file world-readable
-BINDPWDFILE="/usr/local/etc/ldapscripts/ldapscripts.passwd"
+BINDPWDFILE="/etc/ldapscripts/ldapscripts.passwd"
 # For older versions of OpenLDAP, it is still possible to use
 # unsecure command-line passwords by defining the following option
 # AND commenting the previous one (BINDPWDFILE takes precedence)
@@ -144,9 +144,9 @@ GETENTGRCMD="getent group"
 #GTEMPLATE="/path/to/ldapaddgroup.template"
 #UTEMPLATE="/path/to/ldapadduser.template"
 #MTEMPLATE="/path/to/ldapaddmachine.template"
-GTEMPLATE="/usr/local/etc/ldapscripts/ldapaddgroup.template.cgcs"
-UTEMPLATE="/usr/local/etc/ldapscripts/ldapadduser.template.cgcs"
-UMTEMPLATE="/usr/local/etc/ldapscripts/ldapmoduser.template.cgcs"
-STEMPLATE="/usr/local/etc/ldapscripts/ldapaddsudo.template.cgcs"
-SMTEMPLATE="/usr/local/etc/ldapscripts/ldapmodsudo.template.cgcs"
+GTEMPLATE="/etc/ldapscripts/ldapaddgroup.template.cgcs"
+UTEMPLATE="/etc/ldapscripts/ldapadduser.template.cgcs"
+UMTEMPLATE="/etc/ldapscripts/ldapmoduser.template.cgcs"
+STEMPLATE="/etc/ldapscripts/ldapaddsudo.template.cgcs"
+SMTEMPLATE="/etc/ldapscripts/ldapmodsudo.template.cgcs"
 MTEMPLATE=""
