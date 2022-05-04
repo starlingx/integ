@@ -1,2 +1,3 @@
 0001-Remove-default-hiera-config.patch
 0002-debian-Correctly-install-the-StarlingX-puppet.conf.patch
+0003-Remove-ordering.patch
