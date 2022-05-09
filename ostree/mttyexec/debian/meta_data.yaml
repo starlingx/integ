@@ -4,9 +4,9 @@ dl_hook: dl_hook
 dl_files:
   meta-lat.tar.gz:
     topdir: null
-    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20220213.tar.gz
-    md5sum: cb4e14179d424669082c5d451b1072f8
-    sha256sum: de86927d7d5332778fb1beb1f21132405086249e93ac948d81f66f0dc599f67e
+    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20220508.tar.gz
+    md5sum: a4978e36e070aca2f5510ceac0768c84
+    sha256sum: 861ec6ad71991798a936369b9f0eda94210fe192841be81e9b8917666d8da707
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
