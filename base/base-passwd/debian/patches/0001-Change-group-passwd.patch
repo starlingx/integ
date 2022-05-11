@@ -1,7 +1,7 @@
-From 7deb684d4cd0d9d1f176941c0e0482f9668119d7 Mon Sep 17 00:00:00 2001
-From: Al Bailey <Al.Bailey@windriver.com>
-Date: Thu, 24 Oct 2019 11:53:01 -0500
-Subject: [PATCH 1/2] Change group,passwd
+From 657eec34d56f005f9c5e8adacb96d5c3d16c0d55 Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Wed, 13 Apr 2022 09:08:27 -0400
+Subject: [PATCH] Change group,passwd
 
 Porting this patch from 'setup' package of CentOS. Removing the
 change of uidgid, because no such file in base-passwd, and Debian
@@ -14,87 +14,32 @@ Signed-off-by: Yue Tao <yue.tao@windriver.com>
 Signed-off-by: Charles Short <charles.short@windriver.com>
 Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 ---
- group.master  | 16 +++++++++-------
- passwd.master | 13 ++++++++-----
- 2 files changed, 17 insertions(+), 12 deletions(-)
+ group.master  | 3 +++
+ passwd.master | 3 +++
+ 2 files changed, 6 insertions(+)
 
 diff --git a/group.master b/group.master
-index ad1dd2d..69f4fff 100644
+index ad1dd2d..0037352 100644
 --- a/group.master
 +++ b/group.master
-@@ -1,15 +1,11 @@
- root:*:0:
--daemon:*:1:
--bin:*:2:
- sys:*:3:
- adm:*:4:
- tty:*:5:
- disk:*:6:
--lp:*:7:
- mail:*:8:
- news:*:9:
- uucp:*:10:
--man:*:12:
- proxy:*:13:
- kmem:*:15:
- dialout:*:20:
-@@ -19,7 +15,6 @@ cdrom:*:24:
- floppy:*:25:
- tape:*:26:
- sudo:*:27:
--audio:*:29:
- dip:*:30:
- www-data:*:33:
- backup:*:34:
-@@ -30,10 +25,17 @@ src:*:40:
- gnats:*:41:
- shadow:*:42:
- utmp:*:43:
--video:*:44:
- sasl:*:45:
- plugdev:*:46:
- staff:*:50:
--games:*:60:
+@@ -37,3 +37,6 @@ staff:*:50:
+ games:*:60:
  users:*:100:
  nogroup:*:65534:
-+nova:x:162:nova
-+neutron:x:164:neutron
-+ceilometer:x:166:ceilometer
-+sysinv:x:168:sysinv
 +snmpd:x:169:snmpd,fm
 +fm:x:195:fm
-+libvirt:x:991:nova
-+ironic:x:1874:ironic
 +www:x:1877:www
 diff --git a/passwd.master b/passwd.master
-index f1e69a4..cea9d1b 100644
+index f1e69a4..31bdc28 100644
 --- a/passwd.master
 +++ b/passwd.master
-@@ -1,12 +1,7 @@
- root:*:0:0:root:/root:/bin/bash
--daemon:*:1:1:daemon:/usr/sbin:/usr/sbin/nologin
--bin:*:2:2:bin:/bin:/usr/sbin/nologin
- sys:*:3:3:sys:/dev:/usr/sbin/nologin
- sync:*:4:65534:sync:/bin:/bin/sync
--games:*:5:60:games:/usr/games:/usr/sbin/nologin
- man:*:6:12:man:/var/cache/man:/usr/sbin/nologin
--lp:*:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
--mail:*:8:8:mail:/var/mail:/usr/sbin/nologin
- news:*:9:9:news:/var/spool/news:/usr/sbin/nologin
- uucp:*:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
- proxy:*:13:13:proxy:/bin:/usr/sbin/nologin
-@@ -16,3 +11,11 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+@@ -16,3 +16,6 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
  irc:*:39:39:ircd:/run/ircd:/usr/sbin/nologin
  gnats:*:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
  nobody:*:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-+neutron:x:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
 +sysinv:x:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
 +snmpd:x:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
 +fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
-+ceilometer:x:991:166:OpenStack ceilometer Daemons:/var/lib/ceilometer:/sbin/nologin
-+nova:x:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
-+ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
-+www:x:1877:1877:www:/home/www:/sbin/nologin
 -- 
-2.30.0
+2.25.1
 
