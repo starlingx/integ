@@ -2,3 +2,4 @@
 0002-Changed-cipher-specification-to-open.patch
 0003-Remove-the-rabbitmq_nodename-fact.patch
 0004-Remove-incompatible-dependencies.patch
+0005-Adjust-puppet-rabbitmq-default-configuration.patch

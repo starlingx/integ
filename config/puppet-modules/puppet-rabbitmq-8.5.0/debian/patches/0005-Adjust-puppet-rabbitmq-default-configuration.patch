@@ -1,0 +1,58 @@
+From dfdbc429ece1393227c045356fe255982f71bf7a Mon Sep 17 00:00:00 2001
+From: Adriano Oliveira <adriano.oliveira@windriver.com>
+Date: Thu, 12 May 2022 13:30:49 -0700
+Subject: [PATCH] Adjust puppet rabbitmq default configuration
+
+Remove loopback users restriction and tcp_listen_options
+configuration
+
+Signed-off-by: Adriano Oliveira <adriano.oliveira@windriver.com>
+---
+ templates/rabbitmq.config.erb | 24 +-----------------------
+ 1 file changed, 1 insertion(+), 23 deletions(-)
+
+diff --git a/templates/rabbitmq.config.erb b/templates/rabbitmq.config.erb
+index af45aa8..51d5292 100644
+--- a/templates/rabbitmq.config.erb
++++ b/templates/rabbitmq.config.erb
+@@ -8,7 +8,7 @@
+ <%- if @heartbeat -%>
+     {heartbeat, <%=@heartbeat%>},
+ <% end -%>
+-    {loopback_users, [<%= @loopback_users.map { |u| "<<\"#{u}\">>" }.join(', ') %>]},
++    {loopback_users, []},
+ <% if @auth_backends -%>
+     {auth_backends, [<%= @auth_backends.map { |v| "#{v}" }.join(', ') %>]},
+ <% elsif @ldap_auth -%>
+@@ -18,28 +18,6 @@
+     {cluster_nodes, {[<%= @cluster_nodes.map { |n| "\'rabbit@#{n}\'" }.join(', ') %>], <%= @cluster_node_type %>}},
+     {cluster_partition_handling, <%= @cluster_partition_handling %>},
+ <% end -%>
+-    {tcp_listen_options, [
+-         <%- unless @config_ranch -%>
+-         binary,
+-         {packet,        raw},
+-         {reuseaddr,     true},
+-         <%- end -%>
+-         <%- if @tcp_keepalive -%>
+-         {keepalive,     true},
+-         <%- end -%>
+-         <%- if @tcp_backlog -%>
+-         {backlog,       <%= @tcp_backlog %>},
+-         <%- end -%>
+-         <%- if @tcp_sndbuf -%>
+-         {sndbuf,       <%= @tcp_sndbuf %>},
+-         <%- end -%>
+-         <%- if @tcp_recbuf -%>
+-         {recbuf,       <%= @tcp_recbuf %>},
+-         <%- end -%>
+-         {nodelay,       true},
+-         {linger,        {true, 0}},
+-         {exit_on_close, false}
+-    ]},
+ <%- if @collect_statistics_interval -%>
+     {collect_statistics_interval, <%= @collect_statistics_interval %>},
+ <%- end -%>
+-- 
+2.17.1
+
