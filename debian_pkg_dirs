@@ -16,6 +16,7 @@ config/facter
 config/puppet-5.5.22
 config/puppet-modules/openstack/puppet-ceph-2.4.1
 config/puppet-modules/openstack/puppet-keystone-17.4.0
+config/puppet-modules/openstack/puppet-horizon-17.4.0
 config/puppet-modules/openstack/puppet-openstacklib-17.4.0
 config/puppet-modules/openstack/puppet-oslo-17.4.0
 config/puppet-modules/puppet-boolean-2.0.2
