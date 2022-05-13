@@ -177,6 +177,9 @@ resource-agents
 # isolcpus device plugin for K8s
 isolcpus-device-plugin
 
+# kubectl-cert-manager
+kubectl-cert-manager
+
 # haproxy
 haproxy
 

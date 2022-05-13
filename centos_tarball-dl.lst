@@ -39,6 +39,7 @@ jerasure-96c76b89d661c163f65a014b8042c9354ccf7f31.tar.gz#jerasure#https://api.gi
 kexec-tools-2.0.21.tar.xz#kexec-tools-2.0.21#https://www.kernel.org/pub/linux/utils/kernel/kexec/kexec-tools-2.0.21.tar.xz#https##
 !kdump-anaconda-addon-003-29-g4c517c5.tar.gz#kexec-tools#https://vault.centos.org/7.6.1810/os/Source/SPackages/kexec-tools-2.0.15-21.el7.src.rpm#https##
 keycodemapdb-16e5b07.tar.gz#keycodemapdb#https://github.com/CendioOssman/keycodemapdb/tarball/16e5b0787687d8904dad2c026107409eb9bfcb95#http##
+kubectl-cert_manager-linux-amd64.tar.gz#LICENSES#https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/kubectl-cert_manager-linux-amd64.tar.gz#https##
 kubernetes-contrib-v1.18.1.tar.gz#kubernetes-contrib-1.18.1#https://github.com/kubernetes-retired/contrib/tarball/89f6948e24578fed2a90a87871b2263729f90ac3#http##
 kubernetes-v1.21.8.tar.gz#kubernetes-1.21.8#https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.21.8.tar.gz#http##
 kubernetes-v1.22.5.tar.gz#kubernetes-1.22.5#https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.5.tar.gz#http##
