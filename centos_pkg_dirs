@@ -68,6 +68,7 @@ kubernetes/armada
 kubernetes/k8s-pod-recovery
 kubernetes/k8s-cni-cache-cleanup
 kubernetes/plugins/isolcpus-device-plugin
+kubernetes/plugins/kubectl-cert-manager
 python/python-kubernetes
 grub/grubby
 base/dpkg
