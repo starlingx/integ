@@ -1,0 +1,7 @@
+usr/share/man/man8/oscap-chroot.8
+usr/share/man/man8/oscap-docker.8
+usr/share/man/man8/oscap-podman.8
+usr/share/man/man8/oscap-ssh.8
+usr/share/man/man8/oscap-vm.8
+usr/share/man/man8/autotailor.8
+usr/share/man/man8/scap-as-rpm.8

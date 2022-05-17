@@ -1,0 +1,11 @@
+---
+debname: openscap
+debver: 1.3.5-1
+dl_path:
+  name: openscap-1.3.5.tar.gz
+  url: https://github.com/OpenSCAP/openscap/releases/download/1.3.5/openscap-1.3.5.tar.gz
+  md5sum: 4725085cd876c952ca15de48b0bc340c
+  sha256sum: 7c3e540b757fe35de15f21a849f1afa4d3776ee3279276ada4ddd3506c3679c2
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: True

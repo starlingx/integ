@@ -1,0 +1,8 @@
+usr/bin/oscap-chroot
+usr/bin/oscap-docker
+usr/bin/oscap-podman
+usr/bin/oscap-run-sce-script
+usr/bin/oscap-ssh
+usr/bin/oscap-vm
+usr/bin/autotailor
+usr/bin/scap-as-rpm

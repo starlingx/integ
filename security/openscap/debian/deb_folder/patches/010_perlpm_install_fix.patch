@@ -1,0 +1,14 @@
+Index: openscap/swig/perl/CMakeLists.txt
+===================================================================
+--- openscap.orig/swig/perl/CMakeLists.txt
++++ openscap/swig/perl/CMakeLists.txt
+@@ -20,7 +20,7 @@ if (APPLE OR (${CMAKE_SYSTEM_NAME} STREQ
+                 DESTINATION ${CMAKE_INSTALL_DATADIR}/perl5/vendor_perl)
+ else()
+         install(TARGETS ${SWIG_MODULE_openscap_pm_REAL_NAME}
+-               DESTINATION ${PERL_VENDORLIB})
++               DESTINATION ${CMAKE_INSTALL_LIBDIR}/perl5/${PERL_VERSION})
+         install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/openscap_pm.pm
+-               DESTINATION ${PERL_VENDORARCH})
++               DESTINATION ${CMAKE_INSTALL_DATADIR}/perl5/)
+ endif()

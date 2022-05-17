@@ -1,0 +1,4 @@
+usr/include/*
+usr/lib/*/libopenscap.so
+usr/lib/*/libopenscap_sce.so
+usr/lib/*/pkgconfig/*

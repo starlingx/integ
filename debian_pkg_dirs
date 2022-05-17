@@ -74,4 +74,5 @@ python/python3-setuptools
 security/keyrings.alt
 security/python-keyring
 security/shim-unsigned
+security/openscap
 storage-drivers/trident-installer

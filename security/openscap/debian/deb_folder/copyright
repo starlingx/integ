@@ -1,0 +1,33 @@
+This package was debianized by Pierre Chifflier <pollux@debian.org> on
+Thu, 02 Apr 2009 10:30:16 +0200.
+
+It was downloaded from http://www.open-scap.org/
+
+Upstream Authors:
+
+    Peter Vrabec    <pvrabec@redhat.com>
+    Tomas Heinrich  <theinric@redhat.com>
+    Brandon Dixon   <Brandon.Dixon@g2-inc.com>
+    Brian Kolbay    <Brian.Kolbay@g2-inc.com>
+    Lukas Kuklinek  <lkuklinek@redhat.com>
+    Riley C. Porter <Riley.Porter@g2-inc.com>
+    Dan Kopecek     <dkopecek@redhat.com>
+
+Copyright:
+
+    Copyright 2008 Red Hat Inc., Durham, North Carolina.
+
+License:
+
+    OpenSCAP is licensed under the GNU Lesser General Public License
+    version 2.1 of the License, or (at your option) any later version.
+
+See  `/usr/share/common-licenses/LGPL-2.1'.
+
+The Debian packaging is:
+
+    Copyright (C) 2009 Pierre Chifflier <pollux@debian.org>
+
+and is licensed under the GPL version 3, 
+see `/usr/share/common-licenses/GPL-3'.
+
