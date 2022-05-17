@@ -1,24 +1,43 @@
-From d50bcc4bb667e6b63e55ae4b788391c78a162d9f Mon Sep 17 00:00:00 2001
+From be107484af12c6c4875febd6fe1a6b987ecec587 Mon Sep 17 00:00:00 2001
 From: Scott Little <scott.little@windriver.com>
 Date: Mon, 2 Oct 2017 15:12:59 -0400
-Subject: [PATCH] WRS: Patch1111: pgsql.patch
+Subject: [PATCH 06/13] Patch postgresql environment for Debian
 
+Adapt CentOS patch to Debian.
+
+Signed-off-by: Scott Little <scott.little@windriver.com>
+Signed-off-by: Charles Short <charles.short@windriver.com>
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 ---
- heartbeat/pgsql | 23 ++++++++++++++++++++---
- 1 file changed, 20 insertions(+), 3 deletions(-)
+ heartbeat/pgsql | 29 +++++++++++++++++++++++------
+ 1 file changed, 23 insertions(+), 6 deletions(-)
 
 diff --git a/heartbeat/pgsql b/heartbeat/pgsql
-index cce4e1c..38949eb 100755
+index cce4e1c..87bc486 100755
 --- a/heartbeat/pgsql
 +++ b/heartbeat/pgsql
-@@ -46,6 +46,7 @@ get_pgsql_param() {
- OCF_RESKEY_pgctl_default=/usr/bin/pg_ctl
+@@ -43,9 +43,10 @@ get_pgsql_param() {
+ }
+ 
+ # Defaults
+-OCF_RESKEY_pgctl_default=/usr/bin/pg_ctl
++OCF_RESKEY_pgctl_default=/usr/lib/postgresql/13/bin/pg_ctl
  OCF_RESKEY_psql_default=/usr/bin/psql
- OCF_RESKEY_pgdata_default=/var/lib/pgsql/data
+-OCF_RESKEY_pgdata_default=/var/lib/pgsql/data
++OCF_RESKEY_pgdata_default=/var/lib/postgresql/13/main/
 +OCF_RESKEY_pgconf_default=/etc/postgresql
  OCF_RESKEY_pgdba_default=postgres
  OCF_RESKEY_pghost_default=""
  OCF_RESKEY_pgport_default=5432
+@@ -54,7 +55,7 @@ OCF_RESKEY_start_opt_default=""
+ OCF_RESKEY_ctl_opt_default=""
+ OCF_RESKEY_pgdb_default=template1
+ OCF_RESKEY_logfile_default=/dev/null
+-OCF_RESKEY_socketdir_default=""
++OCF_RESKEY_socketdir_default="/var/run/postgresql"
+ OCF_RESKEY_stop_escalate_default=90
+ OCF_RESKEY_monitor_user_default=""
+ OCF_RESKEY_monitor_password_default=""
 @@ -79,11 +80,12 @@ OCF_RESKEY_replication_slot_name_default=""
  : ${OCF_RESKEY_pgctl=${OCF_RESKEY_pgctl_default}}
  : ${OCF_RESKEY_psql=${OCF_RESKEY_psql_default}}
@@ -61,7 +80,7 @@ index cce4e1c..38949eb 100755
          fi
      fi
  
-+    # WRS: Create an unversioned symlink under /var/run so SM can easily
++    # STX: Create an unversioned symlink under /var/run so SM can easily
 +    # find the PID file.
 +    if [ ! -h $PIDFILE_SYMLINK ]; then
 +      /bin/ln -s $PIDFILE $PIDFILE_SYMLINK
@@ -84,5 +103,5 @@ index cce4e1c..38949eb 100755
  USE_STANDBY_SIGNAL=false
  
 -- 
-2.17.1
+2.36.1
 
