@@ -1,0 +1,5 @@
+usr/bin/pf_bb_config
+usr/share/pf-bb-config/acc100/acc100_config_1vf_4g5g.cfg
+usr/share/pf-bb-config/acc100/acc100_config_vf_5g.cfg
+usr/share/pf-bb-config/fpga_5gnr/fpga_5gnr_config_vf.cfg
+usr/share/pf-bb-config/README.md
