@@ -1,0 +1,252 @@
+From d6b8917a04b72bc59c641b7a6fdce27e160e9b31 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Javier=20Fernandez-Sanguino=20Pe=C3=B1a?= <jfs@debian.org>
+Date: Thu, 19 May 2022 10:11:21 -0300
+Subject: [PATCH] Accept netmask or prefix-length on /etc/network/routes file
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This change adds support for both netmask or prefix-length on the
+routes file. Internally "route" command is deprecated in favor of
+"ip route" as it support better newer kernels
+
+Signed-off-by: Andre Fernando Zanella Kantek <AndreFernandoZanella.Kantek@windriver.com>
+---
+ debian/ifupdown-extra.networking-routes.init | 61 +++++++++++++++++---
+ debian/network-routes                        | 12 +++-
+ if-up-scripts/static-routes                  | 50 ++++++++++++++--
+ 3 files changed, 107 insertions(+), 16 deletions(-)
+
+diff --git a/debian/ifupdown-extra.networking-routes.init b/debian/ifupdown-extra.networking-routes.init
+index c10b658..db1254d 100755
+--- a/debian/ifupdown-extra.networking-routes.init
++++ b/debian/ifupdown-extra.networking-routes.init
+@@ -55,6 +55,32 @@ ROUTEFILE="/etc/network/routes"
+ VERBOSITY=${VERBOSITY:-0}
+ 
+ 
++function get_prefix_length {
++    netmask=$1
++    if [[ ${netmask} =~ .*:.* ]]; then
++        # IPv6
++        awk -F: '{
++            split($0, octets)
++                for (i in octets) {
++                    decval = strtonum("0x"octets[i])
++                    mask += 16 - log(2**16 - decval)/log(2);
++                }
++            print "/" mask
++        }' <<< ${netmask}
++    elif [[ ${netmask} =~ .*\..* ]]; then
++        # IPv4
++        awk -F. '{
++            split($0, octets)
++            for (i in octets) {
++                mask += 8 - log(2**8 - octets[i])/log(2);
++            }
++            print "/" mask
++        }' <<< ${netmask}
++    elif [[ ${netmask} =~ ^[0-9]+$ ]]; then
++        echo "/${netmask}"
++    fi
++}
++
+ # Functions to read the route file and process it
+ 
+ 
+@@ -92,17 +118,19 @@ del_global_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
++                local prefix_len
++                prefix_len=$(get_prefix_length ${netmask})
+                 if [ "$gateway" != "reject" ] ; then
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting global route for $network / $netmask through gateway $gateway"
+                     if [ "$interface" != "any" ] ; then
+-                        run_route del $network/$netmask via $gateway dev $interface 
++                        run_route del ${network}${prefix_len} via ${gateway} dev ${interface}
+                     else
+-                        run_route del $network/$netmask via $gateway 
++                        run_route del ${network}${prefix_len} via ${gateway}
+                     fi
+                     [ $? -ne 0 ] && ret=$?
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting reject route for $network / $netmask"
+-                    run_route del $network/$netmask reject
++                    run_route del ${network}${prefix_len} reject
+                     [ $? -ne 0 ] && ret=$?
+                 fi
+ 
+@@ -119,17 +147,19 @@ add_global_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
++                local prefix_len
++                prefix_len=$(get_prefix_length ${netmask})
+                 if [ "$gateway" != "reject" ] ; then
+ 		    [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding global route for $network / $netmask through gateway $gateway"
+                     if [ "$interface" != "any" ] ; then
+-                        run_route add $network/$netmask via $gateway dev $interface
++                        run_route add ${network}${prefix_len} via ${gateway} dev ${interface}
+                     else
+-                        run_route add $network/$netmask via $gateway 
++                        run_route add ${network}${prefix_len} via ${gateway}
+                     fi
+                     [ $? -ne 0 ] && ret=$?
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding global reject route for $network / $netmask"
+-                    run_route add $network/$netmask reject
++                    run_route add ${network}${prefix_len} reject
+                     [ $? -ne 0 ] && ret=$?
+                 fi
+ 
+@@ -146,14 +176,29 @@ check_global_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
++                local af='--inet'
+                 if [ "$gateway" != "reject" ] ; then
+                     if [ "$interface" != "any" ] ; then
+-                         if ! route | egrep -q "^${network}\s+${gateway}\s+${netmask}.*${interface}" ; then
++                         local search_str="^${network}\s+${gateway}\s+${netmask}.*${interface}"
++                         if [[ ${network} =~ .*:.* ]]; then
++                             local prefix_len
++                             prefix_len=$(get_prefix_length ${netmask})
++                             af='--inet6';
++                             search_str="${network}${prefix_len}\s+${gateway}.*${interface}"
++                         fi
++                         if ! route ${af} -n | egrep -q ${search_str} ; then
+                             ret=1
+                             log_failure_msg "Route to network ${network}/${netmask} via ${gateway} is not configured in interface ${interface}"
+                          fi
+                     else
+-                         if ! route | egrep -q "^${network}\s+${gateway}\s+${netmask}" ; then
++                         local search_str="^${network}\s+${gateway}\s+${netmask}"
++                         if [[ ${network} =~ .*:.* ]]; then
++                             local prefix_len
++                             prefix_len=$(get_prefix_length ${netmask})
++                             af='--inet6';
++                             search_str="${network}${prefix_len}\s+${gateway}"
++                         fi
++                         if ! route ${af} -n | egrep -q ${search_str} ; then
+                             log_failure_msg "Route to network ${network}/${netmask} via ${gateway} is not configured"
+                             ret=1
+                          fi
+diff --git a/debian/network-routes b/debian/network-routes
+index 78de41a..789c51d 100644
+--- a/debian/network-routes
++++ b/debian/network-routes
+@@ -7,10 +7,18 @@
+ #
+ # This file includes a list of routes for different networks following
+ # the format: # Network Netmask Gateway Interface
++# Netmask can be set as the mask or the prefix length
+ #
+ # Example:
+-# 172.1.1.0 255.255.255.0 192.168.0.1 eth0
+-#
++#   IPv4:
++#       172.1.1.0 255.255.255.0 192.168.0.1 eth0
++#        or
++#       172.1.1.0 24 192.168.0.1 eth0
++#
++#   IPv6:
++#       2001:2002:2003:: ffff:ffff:ffff:ffff:: fd00::1 eth0
++#        or
++#       2001:2002:2003:: 64 fd00::1 eth0
+ # 
+ # If you want to add a route that will be added regardless of interfaces
+ # you will have to use the 'any' interface. This can be handy if you want
+diff --git a/if-up-scripts/static-routes b/if-up-scripts/static-routes
+index 3db5f29..867303d 100755
+--- a/if-up-scripts/static-routes
++++ b/if-up-scripts/static-routes
+@@ -59,6 +59,32 @@ VERBOSITY=${VERBOSITY:-0}
+ # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=901612
+ if [ ${IFACE} = "--all" ]; then IFACE="[[:alnum:]]+"; fi
+ 
++function get_prefix_length {
++    netmask=$1
++    if [[ ${netmask} =~ .*:.* ]]; then
++        # IPv6
++        awk -F: '{
++            split($0, octets)
++                for (i in octets) {
++                    decval = strtonum("0x"octets[i])
++                    mask += 16 - log(2**16 - decval)/log(2);
++                }
++            print "/" mask
++        }' <<< ${netmask}
++    elif [[ ${netmask} =~ .*\..* ]]; then
++        # IPv4
++        awk -F. '{
++            split($0, octets)
++            for (i in octets) {
++                mask += 8 - log(2**8 - octets[i])/log(2);
++            }
++            print "/" mask
++        }' <<< ${netmask}
++    elif [[ ${netmask} =~ ^[0-9]+$ ]]; then
++        echo "/${netmask}"
++    fi
++}
++
+ del_static_routes() {
+ 	# NOTE: We actually don't have to remove routes if downing an interface
+ 	# since they will be removed nevertheless. In any case, this 
+@@ -67,12 +93,14 @@ del_static_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*[[:space:]]${IFACE}[[:space:]]*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
++                local prefix_len
++                prefix_len=$(get_prefix_length ${netmask})
+                 if [ "$gateway" != "reject" ] ; then
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting route for $network / $netmask through gateway $gateway at $interface"
+-                    route del -net $network netmask $netmask gw $gateway dev $interface
++                    ip route del ${network}${prefix_len} via ${gateway} dev ${interface}
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting reject route for $network / $netmask when bringing up $interface"
+-                    route del -net $network netmask $netmask reject
++                    ip route del ${network}${prefix_len} reject
+                 fi
+ 
+             else
+@@ -85,12 +113,14 @@ add_static_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*[[:space:]]${IFACE}[[:space:]]*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
++                local prefix_len
++                prefix_len=$(get_prefix_length ${netmask})
+                 if [ "$gateway" != "reject" ] && [ "$gateway" != "blackhole" ] ; then
+-		    [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding route for $network / $netmask through gateway $gateway at $interface"
+-        	    route add -net $network netmask $netmask gw $gateway dev $interface
++                    [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding route for $network / $netmask through gateway $gateway at $interface"
++                    ip route add ${network}${prefix_len} via ${gateway} dev ${interface}
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding reject/blackhole route for $network / $netmask when bringing up $interface"
+-                    ip route add blackhole  $network/$netmask 
++                    ip route add blackhole ${network}${prefix_len}
+                 fi
+ 
+             else
+@@ -103,8 +133,16 @@ check_static_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*[[:space:]]${IFACE}[[:space:]]*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
++                local af='--inet'
+                 if [ "$gateway" != "reject" ] ; then
+-                    if ! route -n | egrep -q "${network}\s+${gateway}\s+${netmask}.*${interface}"; then
++                    local search_str="${network}\s+${gateway}\s+${netmask}.*${interface}"
++                    if [[ ${network} =~ .*:.* ]]; then
++                        local prefix_len
++                        prefix_len=$(get_prefix_length ${netmask})
++                        af='--inet6';
++                        search_str="${network}${prefix_len}\s+${gateway}.*${interface}"
++                    fi
++                    if ! route ${af} -n | egrep -q ${search_str}; then
+                         echo "ERROR: Route '$network $netmask $gateway $interface' defined in $ROUTEFILE is not configured"
+                     fi
+                 fi
+-- 
+2.17.1
+
