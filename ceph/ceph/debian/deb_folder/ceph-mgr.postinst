@@ -19,8 +19,8 @@ set -e
 # the debian-policy package
 
 [ -f "/etc/default/ceph" ] && . /etc/default/ceph
-[ -z "$SERVER_USER" ] && SERVER_USER=ceph
-[ -z "$SERVER_GROUP" ] && SERVER_GROUP=ceph
+[ -z "$SERVER_USER" ] && SERVER_USER=root
+[ -z "$SERVER_GROUP" ] && SERVER_GROUP=root
 
 case "$1" in
     configure)

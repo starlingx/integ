@@ -4,8 +4,8 @@ set -e
 
 if [ "${1}" = "configure" ] ; then
 	[ -f "/etc/default/ceph" ] && . /etc/default/ceph
-	[ -z "$SERVER_USER" ] && SERVER_USER=ceph
-	[ -z "$SERVER_GROUP" ] && SERVER_GROUP=ceph
+	[ -z "$SERVER_USER" ] && SERVER_USER=root
+	[ -z "$SERVER_GROUP" ] && SERVER_GROUP=root
 	if ! dpkg-statoverride --list /var/lib/ceph/radosgw >/dev/null; then
 		chown $SERVER_USER:$SERVER_GROUP /var/lib/ceph/radosgw
 	fi
