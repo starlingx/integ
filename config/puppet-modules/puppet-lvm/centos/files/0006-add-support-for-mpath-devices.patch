@@ -1,0 +1,35 @@
+From e603e6bc5a72c2dc0760471df08bcf6079abb789 Mon Sep 17 00:00:00 2001
+From: Jackie Huang <jackie.huang@windriver.com>
+Date: Mon, 14 Mar 2022 04:28:55 +0000
+Subject: [PATCH] add support for mpath devices
+
+The device path in /dev/disk/by-path can not be used directly
+for mpath devices, /dev/disk/by-id/dm-uuid-mpath-<WWID> will
+be used instead.
+
+Signed-off-by: Jackie Huang <jackie.huang@windriver.com>
+---
+ .../modules/lvm/lib/puppet/provider/volume_group/lvm.rb    | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/packstack/puppet/modules/lvm/lib/puppet/provider/volume_group/lvm.rb b/packstack/puppet/modules/lvm/lib/puppet/provider/volume_group/lvm.rb
+index fd467e1..7170fa6 100644
+--- a/packstack/puppet/modules/lvm/lib/puppet/provider/volume_group/lvm.rb
++++ b/packstack/puppet/modules/lvm/lib/puppet/provider/volume_group/lvm.rb
+@@ -81,7 +81,12 @@ Puppet::Type.type(:volume_group).provide :lvm do
+ 
+     def physical_volumes
+         if @resource[:createonly].to_s == "false" || ! vgs(@resource[:name])
+-          lines = `pvs -o pv_name,vg_name --separator ',' | awk -F ',' 'NR>1{cmd="find -L /dev/disk/by-path/ -samefile" $1; cmd | getline $1;print $1 "," $2; next};{print}'`
++          pv_name = `pvs -o pv_name | tail -1`
++          if pv_name.include? "mpath"
++            lines = `pvs -o pv_name,vg_name --separator ',' | awk -F ',' 'NR>1{cmd="find -L /dev/disk/by-id/dm-uuid* -samefile" $1; cmd | getline $1;print $1 "," $2; next};{print}'`
++          else
++            lines = `pvs -o pv_name,vg_name --separator ',' | awk -F ',' 'NR>1{cmd="find -L /dev/disk/by-path/ -samefile" $1; cmd | getline $1;print $1 "," $2; next};{print}'`
++          end
+           lines.split(/\n/).grep(/,#{@resource[:name]}$/).map { |s|
+             s.split(/,/)[0].strip
+           }
+-- 
+2.29.2
+
