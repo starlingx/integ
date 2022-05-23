@@ -24,3 +24,6 @@ skip-some-testcases.patch
 925-sd-event-use-usec_add.patch
 926-sd-event-make-event_source_time_prioq_reshuffle-acce.patch
 927-sd-event-always-reshuffle-time-prioq-on-changing-onl.patch
+
+# Keep NIC naming in sync with CentOS
+0014-Introduce-and-use-custom-NIC-naming-scheme.patch
