@@ -1,0 +1,3 @@
+011_remove_custom_rpath.patch
+010_perlpm_install_fix.patch
+001_fix_kfreebsd_probe.patch

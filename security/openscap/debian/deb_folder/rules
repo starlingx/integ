@@ -1,0 +1,49 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+export DEB_BUILD_MAINT_OPTIONS := hardening=+all
+
+DEFAULTPY=$(shell py3versions -v -d)
+PYVERSIONS=$(shell py3versions -v -r)
+ALLPY=$(PYVERSIONS)
+PERL_VERSION:=$(shell perl -e 'my @ver=split /\./, sprintf("%vd", $$^V); print("$$ver[0].$$ver[1]");')
+CMAKE_OPTS=-DENABLE_DOCS=ON =DOEPNSCAP_PROBE_UNIX_GCONF=OFF -DGCONF_LIBRARY=
+
+override_dh_auto_configure: $(ALLPY:%=override_dh_auto_configure-%)
+
+override_dh_auto_configure-%:
+	dh_auto_configure -Bbuild-python-$* -- --enable-sce --enable-perl -DPERL_VERSION=$(PERL_VERSION) PYTHON=/usr/bin/python$* $(CMAKE_OPTS)
+
+override_dh_auto_build: $(ALLPY:%=override_dh_auto_build-%)
+
+override_dh_auto_build-%:
+	dh_auto_build -Bbuild-python-$*
+
+override_dh_auto_install: $(ALLPY:%=override_dh_auto_install-%)
+	find debian/tmp -name "*.la" -delete
+	rm -f debian/libopenscap-dev/usr/share/doc/libopenscap-dev/html/jquery.js
+	mv debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/perl5/$(PERL_VERSION)* debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/perl5/$(PERL_VERSION)
+	chrpath -d debian/tmp/usr/bin/oscap
+	chrpath -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libopenscap.so.*
+	chrpath -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libopenscap_sce.so.*
+	chrpath -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/perl5/5.*/openscap_pm.so
+	chmod 0644 debian/tmp/usr/lib/python3/dist-packages/openscap_py.py
+	chmod 0644 debian/tmp/usr/lib/python3/dist-packages/openscap_api.py
+
+override_dh_auto_install-%:
+	dh_auto_install -Bbuild-python-$* --destdir=debian/tmp
+
+override_dh_strip:
+	dh_strip -popenscap-scanner --dbgsym-migration='libopenscap8-dbg (<< 1.3.4-1.1~)'
+	dh_strip -plibopenscap25 --dbgsym-migration='libopenscap8-dbg (<< 1.3.4-1.1~)'
+	dh_strip -ppython3-openscap --dbgsym-migration='libopenscap8-dbg (<< 1.3.4-1.1~)'
+	dh_strip -plibopenscap-perl --dbgsym-migration='libopenscap8-dbg (<< 1.3.4-1.1~)'
+
+override_dh_auto_clean:
+	rm -rf build-*
+
+%:
+	dh $@ --with python3

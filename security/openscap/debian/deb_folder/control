@@ -1,0 +1,193 @@
+Source: openscap
+Priority: optional
+Maintainer: Pierre Chifflier <pollux@debian.org>
+Uploaders: Philippe Thierry <philou@debian.org>
+Build-Depends: debhelper-compat (= 13),
+    cmake,
+    libpcre3-dev,
+    libxml2-dev,
+    libxslt1-dev,
+    swig,
+    python3-all-dev,
+    libperl-dev,
+    libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
+    libgcrypt-dev,
+    libapt-pkg-dev,
+    libselinux1-dev [linux-any],
+    libcap-dev [linux-any],
+    libattr1-dev,
+    libldap2-dev,
+    libbz2-dev,
+    libacl1-dev,
+    libblkid-dev,
+    libglib2.0-dev,
+    libyaml-dev,
+    librpm-dev,
+    libpopt-dev,
+    libprocps-dev,
+    libopendbx1-dev,
+    libxmlsec1-dev,
+    doxygen, graphviz,
+    asciidoc,
+    pkg-config,
+    dh-python,
+    chrpath,
+    libdbus-1-dev
+Section: admin
+X-Python3-Version: >= 3.9
+Standards-Version: 4.5.1
+Homepage: https://www.open-scap.org/
+
+Package: libopenscap-dev
+Section: libdevel
+Architecture: linux-any
+Depends: libopenscap25 (= ${binary:Version}), ${misc:Depends}, ${python3:Depends}, libjs-jquery
+Description: Set of libraries enabling integration of the SCAP line of standards
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains the development files for OpenSCAP.
+
+Package: libopenscap25
+Section: libs
+Architecture: linux-any
+Conflicts: libopenscap0, libopenscap1, libopenscap3, libopenscap8,
+Replaces: libopenscap0, libopenscap1, libopenscap3, libopenscap8,
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends},
+Description: Set of libraries enabling integration of the SCAP line of standards
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains libraries for OpenSCAP.
+
+Package: python3-openscap
+Section: python
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}, libopenscap25 (= ${binary:Version})
+X-Python3-Version: ${python3:Versions}
+Provides: ${python3:Provides}
+Description: Set of libraries enabling integration of the SCAP line of standards
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains the Python bindings for OpenSCAP.
+
+Package: libopenscap-perl
+Section: perl
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}, libopenscap25 (= ${binary:Version})
+Description: Set of libraries enabling integration of the SCAP line of standards
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains the Perl bindings for OpenSCAP.
+
+Package: openscap-scanner
+Architecture: linux-any
+Depends: libopenscap25 (= ${binary:Version}),
+         ${shlibs:Depends}, ${misc:Depends},
+Recommends: openscap-common (= ${binary:Version}),
+Description: OpenScap Scanner Tool (oscap)
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains oscap command-line tool, configuration and
+ vulnerability scanner. It can use for compliance checking with SCAP contents.
+
+Package: openscap-utils
+Architecture: linux-any
+Depends: openscap-scanner (= ${binary:Version}), ${python3:Depends},
+         ${shlibs:Depends}, ${misc:Depends}, rpm,
+Recommends: openscap-common (= ${binary:Version}),
+Description: OpenSCAP utilities
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains command line utilities.
+
+Package: openscap-common
+Architecture: all
+Depends: ${misc:Depends},
+Description: OpenSCAP schema files
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains schema files.
