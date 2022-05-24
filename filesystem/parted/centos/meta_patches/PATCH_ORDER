@@ -1,3 +1,4 @@
 syscalls.patch
 0001-Update-package-versioning-for-TIS-format.patch
 0003-fix-dev-nodes-getting-removed-for-100-to-300-ms-on-p.patch
+0004-enable-device-mapper.patch
