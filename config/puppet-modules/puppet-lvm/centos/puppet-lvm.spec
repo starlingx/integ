@@ -18,6 +18,7 @@ Patch2:         0003-US94222-Persistent-Dev-Naming.patch
 Patch3:         0004-extendind-nuke_fs_on_resize_failure-functionality.patch
 Patch4:         Fix-the-logical-statement-for-nuke_fs_on_resize.patch
 Patch5:         0005-Wipe-10MB-after-we-lvextend-the-partitions.patch
+Patch6:         0006-add-support-for-mpath-devices.patch
 
 BuildArch:      noarch
 
@@ -38,6 +39,7 @@ A Puppet module for Logical Resource Management (LVM)
 %patch3  -p1
 %patch4  -p1
 %patch5  -p1
+%patch6  -p1
 
 %install
 install -d -m 0755 %{buildroot}/%{_datadir}/puppet/modules/%{module_dir}
