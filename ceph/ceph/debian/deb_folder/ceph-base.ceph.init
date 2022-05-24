@@ -36,7 +36,7 @@ else
     else
 	BINDIR=/usr/bin
 	SBINDIR=/usr/sbin
-	LIBDIR=/usr/lib64/ceph
+	LIBDIR=/usr/lib/ceph
 	LIBEXECDIR=$LIBDIR
 	ETCDIR=/etc/ceph
 	ASSUME_DEV=0

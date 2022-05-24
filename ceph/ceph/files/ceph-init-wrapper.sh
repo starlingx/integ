@@ -45,7 +45,11 @@ CEPH_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_status_failure.txt"
 
 BINDIR=/usr/bin
 SBINDIR=/usr/sbin
-LIBDIR=/usr/lib64/ceph
+if grep -q "Debian" /etc/os-release; then
+    LIBDIR=/usr/lib/ceph
+elif grep -q "CentOS" /etc/os-release; then
+    LIBDIR=/usr/lib64/ceph
+fi
 ETCDIR=/etc/ceph
 source $LIBDIR/ceph_common.sh
 
@@ -185,7 +189,11 @@ log_and_kill_hung_procs ()
                 date=$(date "+%Y-%m-%d_%H-%M-%S")
                 log_file="$LOG_PATH/hang_trace_${name}_${pid}_${date}.log"
                 wlog $name "INFO" "Dumping stack trace to: $log_file"
-                $(pstack $pid >$log_file) &
+                if grep -q "Debian" /etc/os-release; then
+                    $(eu-stack -p $pid >$log_file) &
+                elif grep -q "CentOS" /etc/os-release; then
+                    $(pstack $pid >$log_file) &
+                fi
             fi
             let monitoring-=1
             sleep 1
