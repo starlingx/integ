@@ -1,0 +1,5 @@
+k8s-cni-cache-cleanup (1.0-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Andre Kantek <AndreFernandoZanella.Kantek@windriver.com>  Wed, 24 May 2022 08:50:58 -0300
