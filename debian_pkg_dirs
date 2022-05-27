@@ -55,6 +55,7 @@ kubernetes/crictl
 kubernetes/docker-distribution
 kubernetes/etcd
 kubernetes/helm
+kubernetes/k8s-cni-cache-cleanup
 kubernetes/k8s-pod-recovery
 kubernetes/kubernetes-1.21.8
 kubernetes/kubernetes-1.23.1
