@@ -1,1 +1,1 @@
-bond /usr/libexec/cni/
+bond /opt/cni/bin/

@@ -58,8 +58,8 @@ echo "Building bond-cni plugin"
 %gobuild -o "${PWD}/bin/bond" "${PWD}/bond/"
 
 %install
-install -d -p %{buildroot}%{_libexecdir}/cni/
-install -p -m 0755 bin/* %{buildroot}/%{_libexecdir}/cni
+install -d -p %{buildroot}/opt/cni/bin
+install -p -m 0755 bin/* %{buildroot}/opt/cni/bin
 
 #define license tag if not already defined
 %{!?_licensedir:%global license %doc}
@@ -67,9 +67,11 @@ install -p -m 0755 bin/* %{buildroot}/%{_libexecdir}/cni
 %files
 %license LICENSE
 %doc *.md
-%dir %{_libexecdir}/cni
-%{_libexecdir}/cni/*
+%dir /opt/cni/bin
+/opt/cni/bin/*
 
 %changelog
+* Fri May 27 2022 Steven Webster <steven.webster@windriver.com>
+- Update install directory to /opt/cni/bin.
 * Fri Jan 21 2022 Steven Webster <steven.webster@windriver.com>
 - Initial package, based on v1.0 + 14 additional commits.
