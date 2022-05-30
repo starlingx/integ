@@ -1,0 +1,4 @@
+0001-Revert-Add-strict-pattern-matching-on-response-when-.patch
+0002-ping-Move-ping_rts-multicast.patch
+0003-ping-Print-reply-from-Subnet-Router-anycast-address.patch
+0004-ping-Print-reply-with-wrong-source-with-warning.patch
