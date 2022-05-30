@@ -1,0 +1,11 @@
+---
+debname: puppet-module-puppetlabs-mysql
+debver: 8.1.0-5
+dl_path:
+  name: puppet-module-puppetlabs-mysql-8.1.0-5.tar.gz
+  url: https://salsa.debian.org/puppet-team/puppet-module-puppetlabs-mysql/-/archive/debian/8.1.0-5/puppet-module-puppetlabs-mysql-debian-8.1.0-5.tar.gz
+  md5sum: 76d6c1b74c73057dc45434d18b484406
+  sha256sum: 1136f9e0fb010533c685b610644861e00e49efe97e23d927f870ed9129519f3a
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
