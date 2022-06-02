@@ -1,0 +1,28 @@
+From b99170f7253066b85fb319e0f7a6efed4876d18d Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Thu, 2 Jun 2022 10:43:05 -0400
+Subject: [PATCH] Fix containerd shutdown shim-v2
+
+Fix the container-shim shutdown on debian.
+
+Signed-off-by: Charles Short <charles.short@windriver.com>
+---
+ containerd.service | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/containerd.service b/containerd.service
+index e4c082b..ffb1698 100644
+--- a/containerd.service
++++ b/containerd.service
+@@ -23,7 +23,7 @@ ExecStart=/usr/local/bin/containerd
+ 
+ Type=notify
+ Delegate=yes
+-KillMode=process
++KillMode=mixed
+ Restart=always
+ RestartSec=5
+ # Having non-zero Limit*s causes performance problems due to accounting overhead
+-- 
+2.25.1
+
