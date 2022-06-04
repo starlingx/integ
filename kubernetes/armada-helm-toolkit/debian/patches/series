@@ -2,3 +2,5 @@
 0002-Add-imagePullSecrets-in-service-account.patch
 0004-Partial-revert-of-31e3469d28858d7b5eb6355e88b6f49fd6.patch
 0006-Fix-pod-restarts-on-all-workers-when-worker-added-re.patch
+0007-Update-apiVersion-to-networking.k8s.io.patch
+0008-Update-apiVersion-authorization-to-v1.patch
