@@ -1,2 +1,3 @@
 0001-Adapt-first-set-of-legacy-patches.patch
 0002-Replace-deprecated-hiera-function.patch
+0003-Adjust-puppetlabs-postgresql-version-requirement.patch
