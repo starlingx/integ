@@ -1,2 +1,3 @@
 0001-revert-to-v1.4.11.patch
 0002-customize-containerd-for-StarlingX.patch
+0003-Fix-containerd-shutdown-shim-v2.patch
