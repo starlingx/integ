@@ -77,8 +77,8 @@ for d in $PLUGINS; do
 done
 
 %install
-install -d -p %{buildroot}/opt/cni/bin
-install -p -m 0755 bin/* %{buildroot}/opt/cni/bin
+install -d -p %{buildroot}/var/opt/cni/bin
+install -p -m 0755 bin/* %{buildroot}/var/opt/cni/bin
 
 %check
 %if 0%{?with_check}
@@ -119,10 +119,13 @@ install -p -m 0755 bin/* %{buildroot}/opt/cni/bin
 %files
 %license LICENSE
 %doc *.md
-%dir /opt/cni/bin
-/opt/cni/bin/*
+%dir /var/opt/cni/bin
+/var/opt/cni/bin/*
 
 %changelog
+* Mon Jun 06 2022 Dan Voiculeasa <dan.voiculeasa@windriver.com>
+- Update install directory to /var/opt/cni/bin.
+
 * Thu Feb 17 2022 Steven Webster <steven.webster@windriver.com> - 1.0.1
 - bump to v1.0.1
 

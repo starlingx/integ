@@ -58,8 +58,8 @@ echo "Building bond-cni plugin"
 %gobuild -o "${PWD}/bin/bond" "${PWD}/bond/"
 
 %install
-install -d -p %{buildroot}/opt/cni/bin
-install -p -m 0755 bin/* %{buildroot}/opt/cni/bin
+install -d -p %{buildroot}/var/opt/cni/bin
+install -p -m 0755 bin/* %{buildroot}/var/opt/cni/bin
 
 #define license tag if not already defined
 %{!?_licensedir:%global license %doc}
@@ -67,10 +67,12 @@ install -p -m 0755 bin/* %{buildroot}/opt/cni/bin
 %files
 %license LICENSE
 %doc *.md
-%dir /opt/cni/bin
-/opt/cni/bin/*
+%dir /var/opt/cni/bin
+/var/opt/cni/bin/*
 
 %changelog
+* Mon Jun 06 2022 Dan Voiculeasa <dan.voiculeasa@windriver.com>
+- Update install directory to /var/opt/cni/bin.
 * Fri May 27 2022 Steven Webster <steven.webster@windriver.com>
 - Update install directory to /opt/cni/bin.
 * Fri Jan 21 2022 Steven Webster <steven.webster@windriver.com>
