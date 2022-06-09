@@ -1,0 +1,150 @@
+From 77241783e710b28fa898da48e9aa0bef2db7971d Mon Sep 17 00:00:00 2001
+From: Petr Vorel <pvorel@suse.cz>
+Date: Fri, 15 Oct 2021 17:38:51 +0200
+Subject: [PATCH] ping: Print reply with wrong source with warning
+
+5e052ad ("ping: discard packets with wrong source address") correctly
+hid replies with wrong source address to comply RFC 1122 (Section
+3.2.1.3: "The IP source address in an ICMP Echo Reply MUST be the same
+as the specific-destination address").
+
+This caused to hide reply when pinging Subnet-Router anycast address.
+Although it was fixed in the previous commit, relax this to admit the
+reply but print warning "DIFFERENT ADDRESS!". ping is diagnostic program,
+with insisting on RFC we force people to use tcpdump to see replies.
+
+Link: https://github.com/iputils/iputils/issues/371
+
+Reviewed-by: Matteo Croce <mcroce@microsoft.com>
+Signed-off-by: Petr Vorel <pvorel@suse.cz>
+(cherry picked from commit 5f6bec5ab57cc8beaa78f5756a0ffbdf01f28d36)
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ ping/ping.c         | 10 ++++++----
+ ping/ping.h         |  3 ++-
+ ping/ping6_common.c | 13 ++++++++-----
+ ping/ping_common.c  |  6 +++++-
+ 4 files changed, 21 insertions(+), 11 deletions(-)
+
+diff --git a/ping/ping.c b/ping/ping.c
+index 6fcb44f2d7f5..3bd9e3179459 100644
+--- a/ping/ping.c
++++ b/ping/ping.c
+@@ -1504,6 +1504,7 @@ int ping4_parse_reply(struct ping_rts *rts, struct socket_st *sock,
+ 	int reply_ttl;
+ 	uint8_t *opts, *tmp_ttl;
+ 	int olen;
++	int wrong_source = 0;
+ 
+ 	/* Check the IP header */
+ 	ip = (struct iphdr *)buf;
+@@ -1544,15 +1545,16 @@ int ping4_parse_reply(struct ping_rts *rts, struct socket_st *sock,
+ 	csfailed = in_cksum((unsigned short *)icp, cc, 0);
+ 
+ 	if (icp->type == ICMP_ECHOREPLY) {
+-		if (!rts->broadcast_pings && !rts->multicast &&
+-		    from->sin_addr.s_addr != rts->whereto.sin_addr.s_addr)
+-			return 1;
+ 		if (!is_ours(rts, sock, icp->un.echo.id))
+ 			return 1;			/* 'Twas not our ECHO */
++
++		if (!rts->broadcast_pings && !rts->multicast &&
++		    from->sin_addr.s_addr != rts->whereto.sin_addr.s_addr)
++			wrong_source = 1;
+ 		if (gather_statistics(rts, (uint8_t *)icp, sizeof(*icp), cc,
+ 				      ntohs(icp->un.echo.sequence),
+ 				      reply_ttl, 0, tv, pr_addr(rts, from, sizeof *from),
+-				      pr_echo_reply, rts->multicast)) {
++				      pr_echo_reply, rts->multicast, wrong_source)) {
+ 			fflush(stdout);
+ 			return 0;
+ 		}
+diff --git a/ping/ping.h b/ping/ping.h
+index e357d73a9a10..a5f05f4f0e36 100644
+--- a/ping/ping.h
++++ b/ping/ping.h
+@@ -389,7 +389,8 @@ extern void common_options(int ch);
+ extern int gather_statistics(struct ping_rts *rts, uint8_t *icmph, int icmplen,
+ 			     int cc, uint16_t seq, int hops,
+ 			     int csfailed, struct timeval *tv, char *from,
+-			     void (*pr_reply)(uint8_t *ptr, int cc), int multicast);
++			     void (*pr_reply)(uint8_t *ptr, int cc), int multicast,
++			     int wrong_source);
+ extern void print_timestamp(struct ping_rts *rts);
+ void fill(struct ping_rts *rts, char *patp, unsigned char *packet, size_t packet_size);
+ 
+diff --git a/ping/ping6_common.c b/ping/ping6_common.c
+index d0d2d8489a26..4712928b9c75 100644
+--- a/ping/ping6_common.c
++++ b/ping/ping6_common.c
+@@ -802,6 +802,7 @@ int ping6_parse_reply(struct ping_rts *rts, socket_st *sock,
+ 	struct cmsghdr *c;
+ 	struct icmp6_hdr *icmph;
+ 	int hops = -1;
++	int wrong_source = 0;
+ 
+ 	for (c = CMSG_FIRSTHDR(msg); c; c = CMSG_NXTHDR(msg, c)) {
+ 		if (c->cmsg_level != IPPROTO_IPV6)
+@@ -828,16 +829,18 @@ int ping6_parse_reply(struct ping_rts *rts, socket_st *sock,
+ 	}
+ 
+ 	if (icmph->icmp6_type == ICMP6_ECHO_REPLY) {
+-		if (!rts->multicast && !rts->subnet_router_anycast &&
+-		    memcmp(&from->sin6_addr.s6_addr, &rts->whereto6.sin6_addr.s6_addr, 16))
+-			return 1;
+ 		if (!is_ours(rts, sock, icmph->icmp6_id))
+ 			return 1;
++
++		if (!rts->multicast && !rts->subnet_router_anycast &&
++		    memcmp(&from->sin6_addr.s6_addr, &rts->whereto6.sin6_addr.s6_addr, 16))
++			wrong_source = 1;
++
+ 		if (gather_statistics(rts, (uint8_t *)icmph, sizeof(*icmph), cc,
+ 				      ntohs(icmph->icmp6_seq),
+ 				      hops, 0, tv, pr_addr(rts, from, sizeof *from),
+ 				      pr_echo_reply,
+-				      rts->multicast)) {
++				      rts->multicast, wrong_source)) {
+ 			fflush(stdout);
+ 			return 0;
+ 		}
+@@ -850,7 +853,7 @@ int ping6_parse_reply(struct ping_rts *rts, socket_st *sock,
+ 				      seq,
+ 				      hops, 0, tv, pr_addr(rts, from, sizeof *from),
+ 				      pr_niquery_reply,
+-				      rts->multicast))
++				      rts->multicast, 0))
+ 			return 0;
+ 	} else {
+ 		int nexthdr;
+diff --git a/ping/ping_common.c b/ping/ping_common.c
+index 357c39d79013..03362590ce18 100644
+--- a/ping/ping_common.c
++++ b/ping/ping_common.c
+@@ -711,7 +711,8 @@ int main_loop(struct ping_rts *rts, ping_func_set_st *fset, socket_st *sock,
+ int gather_statistics(struct ping_rts *rts, uint8_t *icmph, int icmplen,
+ 		      int cc, uint16_t seq, int hops,
+ 		      int csfailed, struct timeval *tv, char *from,
+-		      void (*pr_reply)(uint8_t *icmph, int cc), int multicast)
++		      void (*pr_reply)(uint8_t *icmph, int cc), int multicast,
++		      int wrong_source)
+ {
+ 	int dupflag = 0;
+ 	long triptime = 0;
+@@ -804,10 +805,13 @@ restamp:
+ 				printf(_(" time=%ld.%03ld ms"), triptime / 1000,
+ 				       triptime % 1000);
+ 		}
++
+ 		if (dupflag && (!multicast || rts->opt_verbose))
+ 			printf(_(" (DUP!)"));
+ 		if (csfailed)
+ 			printf(_(" (BAD CHECKSUM!)"));
++		if (wrong_source)
++			printf(_(" (DIFFERENT ADDRESS!)"));
+ 
+ 		/* check the data */
+ 		cp = ((unsigned char *)ptr) + sizeof(struct timeval);
+-- 
+2.29.2
+

@@ -1,0 +1,120 @@
+From e7384da3a54416a8f3ef6cab187452b165ef9aa1 Mon Sep 17 00:00:00 2001
+From: Petr Vorel <pvorel@suse.cz>
+Date: Thu, 15 Apr 2021 07:48:03 +0200
+Subject: [PATCH] Revert "Add strict pattern matching on response when pattern
+ was provided"
+
+This reverts commit f7710a17c4d5994313a64583f511bcdb9559f2a9.
+
+Commit broke report of truncated packets:
+$ ping -c2 -s100 google.com
+PING google.com (142.250.185.238) 100(128) bytes of data.
+
+Running ping from both s20161105 (which does not contain f7710a1) and
+reverted f7710a1 on master reports truncated packets:
+
+$ ping -c2 -s100 google.com
+PING google.com (142.250.185.238) 100(128) bytes of data.
+76 bytes from fra16s53-in-f14.1e100.net (142.250.185.238): icmp_seq=1 ttl=116 (truncated)
+76 bytes from fra16s53-in-f14.1e100.net (142.250.185.238): icmp_seq=2 ttl=116 (truncated)
+
+There was unreachable code in gather_statistics() because
+contains_pattern_in_payload() added in f7710a1 always found a mismatch
+first. Due that all of these did not work:
+* updating counters for statistics generation
+* keeping track of timestamps and time-of-flight using the first section
+  of the payload
+* checking for duplicate replies and report them
+* printing basic info about the reply
+* printing "(truncated)" if the reply was truncated
+* checking the checksum
+* validating the rest of the payload (bytes 17 and above) against the
+  ICMP request that was sent, and report any differences
+
+Fixes: f7710a1 ("Add strict pattern matching on response when pattern was provided")
+Closes: https://github.com/iputils/iputils/issues/320
+Closes: https://github.com/iputils/iputils/pull/331
+
+Reported-by: Paul Swirhun <paulswirhun@gmail.com>
+Suggested-by: Paul Swirhun <paulswirhun@gmail.com>
+Reviewed-by: Noah Meyerhans <noahm@debian.org>
+Signed-off-by: Petr Vorel <pvorel@suse.cz>
+(cherry picked from commit dff5d82dadab1b04400b2f9e1eb10a0d124868ed)
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ ping/ping.c         |  2 --
+ ping/ping.h         |  1 -
+ ping/ping6_common.c |  2 --
+ ping/ping_common.c  | 18 ------------------
+ 4 files changed, 23 deletions(-)
+
+diff --git a/ping/ping.c b/ping/ping.c
+index 38012c2c262c..6fcb44f2d7f5 100644
+--- a/ping/ping.c
++++ b/ping/ping.c
+@@ -1549,8 +1549,6 @@ int ping4_parse_reply(struct ping_rts *rts, struct socket_st *sock,
+ 			return 1;
+ 		if (!is_ours(rts, sock, icp->un.echo.id))
+ 			return 1;			/* 'Twas not our ECHO */
+-		if (!contains_pattern_in_payload(rts, (uint8_t *)(icp + 1)))
+-			return 1;			/* 'Twas really not our ECHO */
+ 		if (gather_statistics(rts, (uint8_t *)icp, sizeof(*icp), cc,
+ 				      ntohs(icp->un.echo.sequence),
+ 				      reply_ttl, 0, tv, pr_addr(rts, from, sizeof *from),
+diff --git a/ping/ping.h b/ping/ping.h
+index c8bbcf6a8728..86652bf6774f 100644
+--- a/ping/ping.h
++++ b/ping/ping.h
+@@ -380,7 +380,6 @@ int is_ours(struct ping_rts *rts, socket_st *sock, uint16_t id);
+ extern int pinger(struct ping_rts *rts, ping_func_set_st *fset, socket_st *sock);
+ extern void sock_setbufs(struct ping_rts *rts, socket_st *, int alloc);
+ extern void setup(struct ping_rts *rts, socket_st *);
+-extern int contains_pattern_in_payload(struct ping_rts *rts, uint8_t *ptr);
+ extern int main_loop(struct ping_rts *rts, ping_func_set_st *fset, socket_st*,
+ 		     uint8_t *packet, int packlen);
+ extern int finish(struct ping_rts *rts);
+diff --git a/ping/ping6_common.c b/ping/ping6_common.c
+index 459f63e26bbf..fcb48beb065a 100644
+--- a/ping/ping6_common.c
++++ b/ping/ping6_common.c
+@@ -823,8 +823,6 @@ int ping6_parse_reply(struct ping_rts *rts, socket_st *sock,
+ 			return 1;
+ 		if (!is_ours(rts, sock, icmph->icmp6_id))
+ 			return 1;
+-	       if (!contains_pattern_in_payload(rts, (uint8_t *)(icmph + 1)))
+-			return 1;	/* 'Twas really not our ECHO */
+ 		if (gather_statistics(rts, (uint8_t *)icmph, sizeof(*icmph), cc,
+ 				      ntohs(icmph->icmp6_seq),
+ 				      hops, 0, tv, pr_addr(rts, from, sizeof *from),
+diff --git a/ping/ping_common.c b/ping/ping_common.c
+index 33e6003366c3..357c39d79013 100644
+--- a/ping/ping_common.c
++++ b/ping/ping_common.c
+@@ -553,24 +553,6 @@ void setup(struct ping_rts *rts, socket_st *sock)
+ 	}
+ }
+ 
+-/*
+- * Return 0 if pattern in payload point to be ptr did not match the pattern that was sent  
+- */
+-int contains_pattern_in_payload(struct ping_rts *rts, uint8_t *ptr)
+-{
+-	size_t i;
+-	uint8_t *cp, *dp;
+- 
+-	/* check the data */
+-	cp = ((u_char *)ptr) + sizeof(struct timeval);
+-	dp = &rts->outpack[8 + sizeof(struct timeval)];
+-	for (i = sizeof(struct timeval); i < rts->datalen; ++i, ++cp, ++dp) {
+-		if (*cp != *dp)
+-			return 0;
+-	}
+-	return 1;
+-}
+-
+ int main_loop(struct ping_rts *rts, ping_func_set_st *fset, socket_st *sock,
+ 	      uint8_t *packet, int packlen)
+ {
+-- 
+2.29.2
+

@@ -5,3 +5,6 @@ puppet
 drbd-tools
 parted
 trident-installer
+iputils-arping
+iputils-ping
+iputils-tracepath
