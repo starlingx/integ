@@ -2,3 +2,4 @@
 0002-set-provider-mode-when-formatting-interfaces-file.patch
 0003-set-routes-file-to-var-run-network-scripts.puppet.patch
 0004-Save-dir-path-variable-with-distinct-names.patch
+0005-Add-options-content-to-routes-file.patch

@@ -1,0 +1,52 @@
+From bb0bbacc137b769b5cac246ad95cb73fda8e2cd4 Mon Sep 17 00:00:00 2001
+From: Andre Fernando Zanella Kantek
+ <AndreFernandoZanella.Kantek@windriver.com>
+Date: Tue, 7 Jun 2022 09:00:18 -0300
+Subject: [PATCH] Add options content to routes file
+
+For Debian the contents of options was not added to the routes file
+in /var/run/network-scripts-puppet/. Also making clear that the
+contents of the file are managed by puppet
+
+Signed-off-by: Andre Fernando Zanella Kantek <AndreFernandoZanella.Kantek@windriver.com>
+---
+ lib/puppet/provider/network_route/routes.rb | 6 +++---
+ lib/puppet/type/network_route.rb            | 5 +++++
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/lib/puppet/provider/network_route/routes.rb b/lib/puppet/provider/network_route/routes.rb
+index 0575a2a..0874b1d 100644
+--- a/lib/puppet/provider/network_route/routes.rb
++++ b/lib/puppet/provider/network_route/routes.rb
+@@ -117,9 +117,9 @@ Puppet::Type.type(:network_route).provide(:routes) do
+   def self.header
+     str = <<-HEADER
+ # HEADER: This file is being managed by puppet. Changes to
+-# HEADER: routes that are not being managed by puppet will persist;
+-# HEADER: however changes to routes that are being managed by puppet will
+-# HEADER: be overwritten. In addition, file order is NOT guaranteed.
++# HEADER: routes that are not being managed by puppet will not persist;
++# HEADER: however changes to routes that are being managed by puppet will.
++# HEADER: In addition, file order is NOT guaranteed.
+ # HEADER: Last generated at: #{Time.now}
+ HEADER
+     str
+diff --git a/lib/puppet/type/network_route.rb b/lib/puppet/type/network_route.rb
+index 0328926..dceb942 100644
+--- a/lib/puppet/type/network_route.rb
++++ b/lib/puppet/type/network_route.rb
+@@ -6,6 +6,11 @@ Puppet::Type.newtype(:network_route) do
+ 
+   include PuppetX::Voxpupuli::Utils
+ 
++  feature :provider_options, <<-EOD
++    The provider can accept a hash of arbitrary options. The semantics of
++    these options will depend on the provider.
++  EOD
++
+   ensurable
+ 
+   newparam(:name) do
+-- 
+2.17.1
+
