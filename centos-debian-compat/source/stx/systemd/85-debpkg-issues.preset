@@ -130,6 +130,6 @@ enable logmgmt.service
 # platform-util.spec (Move to rutime enablement. Disable, only on non-controllers)
 #enable opt-platform.service
 
-# worker-utils.spec (Move to rutime enablement. Disable, only on non-controllers)
-#enable affine-platform.sh.service
-#enable affine-tasks.service
+# worker-utils.spec
+enable affine-platform.sh.service
+enable affine-tasks.service
