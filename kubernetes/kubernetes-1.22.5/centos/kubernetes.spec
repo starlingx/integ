@@ -39,6 +39,8 @@
 %global _stage1 %{_exec_prefix}/local/kubernetes/%{kube_version}/stage1
 %global _stage2 %{_exec_prefix}/local/kubernetes/%{kube_version}/stage2
 
+%global local_sbindir /usr/local/sbin
+
 ##############################################
 Name:           kubernetes-%{kube_version}
 Version:        %{kube_version}
@@ -50,6 +52,7 @@ ExclusiveArch:  x86_64 aarch64 ppc64le s390x
 Source0:        %{project}-v%{kube_version}.tar.gz
 Source4:        kubeadm.conf
 Source5:        kubelet-cgroup-setup.sh
+Source6:        update-k8s-feature-gates.sh
 
 Patch1: kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
 Patch2: kubelet-cpumanager-keep-normal-containers-off-reserv.patch
@@ -923,6 +926,7 @@ output_path="${KUBE_OUTPUT_BINPATH}/$(kube::golang::host_platform)"
 install -m 755 -d %{buildroot}%{_bindir}
 install -m 755 -d %{buildroot}%{_stage1}%{_bindir}
 install -m 755 -d %{buildroot}%{_stage2}%{_bindir}
+install -d %{buildroot}%{local_sbindir}
 
 echo "+++ INSTALLING kube-apiserver"
 install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
@@ -934,6 +938,9 @@ install -p -m 0644 -t %{buildroot}%{_stage2}%{_sysconfdir}/systemd/system/kubele
 
 echo "+++ INSTALLING kubelet-cgroup-setup.sh"
 install -p -m 0700 -t %{buildroot}%{_stage2}%{_bindir} %{SOURCE5}
+
+echo "+++ INSTALLING update-k8s-feature-gates.sh"
+install -m 0700 %{SOURCE6} %{buildroot}/%{local_sbindir}/update-k8s-feature-gates.sh
 
 echo "+++ INSTALLING kube-apiserver"
 install -p -m 754 -t %{buildroot}%{_bindir} ${output_path}/kube-apiserver
@@ -1054,6 +1061,7 @@ fi
 %license LICENSE
 %{_stage2}%{_bindir}/kubelet
 %{_stage2}%{_bindir}/kubelet-cgroup-setup.sh
+%{local_sbindir}/update-k8s-feature-gates.sh
 
 ##############################################
 %files kubeadm
