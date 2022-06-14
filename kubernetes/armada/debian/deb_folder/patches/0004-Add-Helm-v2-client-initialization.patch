@@ -1,7 +1,7 @@
-From 0dad89825be15c596d5678d8daafa671f859f4f6 Mon Sep 17 00:00:00 2001
+From 1c73f6739eb672b330669fda5e427099c08c3490 Mon Sep 17 00:00:00 2001
 From: Thiago Brito <thiago.brito@windriver.com>
 Date: Thu, 22 Apr 2021 20:00:51 -0300
-Subject: [PATCH] Add Helm v2 client initialization
+Subject: [PATCH 4/8] Add Helm v2 client initialization
 
 This adds helm v2 client initialization using the tiller
 container postStart exec to access helm v2 binary.
@@ -108,5 +108,5 @@ index 3a4427e..da45810 100644
              # Should be the `$HOME/.kube` of the `runAsUser` above
              # as this is where tiller's kubernetes client roots its cache dir.
 -- 
-2.25.1
+2.34.1
 

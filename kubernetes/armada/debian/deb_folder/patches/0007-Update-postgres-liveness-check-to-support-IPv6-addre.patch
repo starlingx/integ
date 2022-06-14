@@ -1,7 +1,7 @@
-From e13416638b103fde04feb31027c3148c9685cf7f Mon Sep 17 00:00:00 2001
+From c5a117faafbe1cc6de4200315ba400bdc0c83e40 Mon Sep 17 00:00:00 2001
 From: Robert Church <robert.church@windriver.com>
 Date: Sat, 15 May 2021 16:16:41 -0400
-Subject: [PATCH 4/4] Update postgres liveness check to support IPv6 addresses
+Subject: [PATCH 7/8] Update postgres liveness check to support IPv6 addresses
 
 Templating will add square brackets for IPv6 addresses which are
 interpreted as an array vs. a string. Quote this so that it interpreted
@@ -26,5 +26,5 @@ index 2b65494..5c4825c 100644
  {{- end }}
  
 -- 
-2.16.6
+2.34.1
 

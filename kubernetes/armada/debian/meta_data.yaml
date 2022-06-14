@@ -2,10 +2,10 @@
 debname: armada
 debver: 0.2.0-0
 dl_path:
-  name: armada-7ef4b8643b5ec5216a8f6726841e156c0aa54a1a.tar.gz
-  url: https://github.com/airshipit/armada/tarball/7ef4b8643b5ec5216a8f6726841e156c0aa54a1a
-  md5sum: 58e2ee93d7e177e96e2cf0de1873ccce
-  sha256sum: fb3763d28430f5602136a23de0abf1880273c804fe7f13696d8078cea615f7b4
+  name: armada-ddbdd7256c20f138737f6cbd772312f7a19f58b8.tar.gz
+  url: https://github.com/airshipit/armada/tarball/ddbdd7256c20f138737f6cbd772312f7a19f58b8
+  md5sum: fd8563e106a48b912b56ac82e8a5d4ee
+  sha256sum: 4f4db518837f7e89e3d65e024353f49ea341c530533cb986ff50d0781f39bee6
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

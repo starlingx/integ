@@ -1,7 +1,7 @@
-From a2e44bc741366c39ebae7add1564a8ac67f13895 Mon Sep 17 00:00:00 2001
+From 9a5b91d35923272c55e998f21ff096b5c0268ad2 Mon Sep 17 00:00:00 2001
 From: Enzo Candotti <enzo.candotti@windriver.com>
 Date: Wed, 6 Oct 2021 18:25:10 -0300
-Subject: [PATCH] Add toleration to armada-api
+Subject: [PATCH 8/8] Add toleration to armada-api
 
 Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
 ---
@@ -54,5 +54,5 @@ index da45810..3644706 100644
      type: apparmor
      armada-api:
 -- 
-2.25.1
+2.34.1
 

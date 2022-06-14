@@ -1,7 +1,7 @@
-From 96e49fcc6d6b988d03a61261511abf64a0af2e2a Mon Sep 17 00:00:00 2001
+From 0cd23c208587d86ce8b2083bf4f42dadf03e28e2 Mon Sep 17 00:00:00 2001
 From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 Date: Tue, 11 May 2021 21:04:18 +0300
-Subject: [PATCH] Tiller wait for postgres database ping
+Subject: [PATCH 5/8] Tiller wait for postgres database ping
 
 Networking might not be correctly initialized when tiller starts.
 
@@ -14,7 +14,7 @@ Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
  1 file changed, 19 insertions(+), 12 deletions(-)
 
 diff --git a/charts/armada/templates/deployment-api.yaml b/charts/armada/templates/deployment-api.yaml
-index 69036c0..3816366 100644
+index 69036c0..bf23fb2 100644
 --- a/charts/armada/templates/deployment-api.yaml
 +++ b/charts/armada/templates/deployment-api.yaml
 @@ -167,24 +167,31 @@ spec:
@@ -62,5 +62,5 @@ index 69036c0..3816366 100644
              postStart:
                exec:
 -- 
-2.30.0
+2.34.1
 

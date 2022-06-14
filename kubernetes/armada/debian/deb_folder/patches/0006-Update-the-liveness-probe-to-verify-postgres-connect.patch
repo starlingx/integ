@@ -1,7 +1,7 @@
-From be3167e5342f2730ef43012d8fe4f3782c6ef468 Mon Sep 17 00:00:00 2001
+From 3e34ec8c87ec5cbac79f6299e63fa1c06a75692e Mon Sep 17 00:00:00 2001
 From: Robert Church <robert.church@windriver.com>
 Date: Wed, 12 May 2021 02:38:52 -0400
-Subject: [PATCH 3/3] Update the liveness probe to verify postgres connectivity
+Subject: [PATCH 6/8] Update the liveness probe to verify postgres connectivity
 
 Change the tillerLivenessProbeTemplate to test the connectivity to the
 postgres backend. We will override the periodSeconds and
@@ -41,5 +41,5 @@ index bf23fb2..2b65494 100644
  
  {{- if .Values.manifests.deployment_api }}
 -- 
-2.16.6
+2.34.1
 
