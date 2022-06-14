@@ -1,1 +1,1 @@
-bond /var/opt/cni/bin/
+usr/bin/* /var/opt/cni/bin/
