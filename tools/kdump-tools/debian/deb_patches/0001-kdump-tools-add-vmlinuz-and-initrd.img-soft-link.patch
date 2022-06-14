@@ -1,0 +1,33 @@
+From bc657ad181e105e225849a78fd08ddcb630cb9e9 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 12 Jun 2022 23:54:50 -0700
+Subject: [PATCH] kdump-tools: add vmlinuz and initrd.img soft link.
+
+Default vmlinuz is in the folder /boot, but our vmlinuz is in /boot/1.
+so create the soft link for vmlinuz and initrd.img.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/kdump-config.in | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/debian/kdump-config.in b/debian/kdump-config.in
+index 564ab94..eb23da1 100755
+--- a/debian/kdump-config.in
++++ b/debian/kdump-config.in
+@@ -494,6 +494,12 @@ kernel_version=$1
+ 		exit 1
+ 	fi
+ 
++	if [ ! -e "/boot/vmlinux-${kernel_version}" ] && [ ! -e "/boot/vmlinuz-${kernel_version}" ]; then
++		ln -s /boot/1/vmlinuz-${kernel_version} /boot/vmlinuz-${kernel_version}
++	fi
++	if [ ! -f "${KDUMP_DIR}/initrd.img-${kernel_version}" ]; then
++		ln -s /boot/1/initramfs /var/lib/kdump/initrd.img-${kernel_version}
++	fi
+ 	if [ -e "/boot/vmlinux-${kernel_version}" ] || [ -e "/boot/vmlinuz-${kernel_version}" ]; then
+ 		create_symlink vmlinuz "$kernel_version"
+ 
+-- 
+2.34.1
+
