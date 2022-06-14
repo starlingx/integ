@@ -1,2 +1,3 @@
 0001-kpatch-Support-for-WRCP.patch
 0002-kpatch-Add-the-signature-for-livepatch-kernel-module.patch
+0003-kpatch-Adjust-the-kpatch-build-to-support-the-multik.patch
