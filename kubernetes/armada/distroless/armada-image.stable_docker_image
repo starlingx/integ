@@ -1,0 +1,7 @@
+BUILDER=script
+LABEL=armada-image
+SOURCE_REPO=https://github.com/airshipit/armada
+SOURCE_REF=ddbdd7256c20f138737f6cbd772312f7a19f58b8
+COMMAND=bash
+SCRIPT=build-armada-image.sh
+ARGS="armada-image"
