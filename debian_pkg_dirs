@@ -6,6 +6,7 @@ base/haproxy
 base/libfdt
 base/lighttpd
 base/linuxptp
+base/lvm2
 base/lsb
 base/pf-bb-config
 base/systemd
