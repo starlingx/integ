@@ -31,6 +31,8 @@ URL: https://%{provider_prefix}
 Source0: %{project}-%{repo}-v%{version}.tar.gz
 ExclusiveArch: aarch64 %{arm} ppc64le s390x x86_64 %{ix86}
 
+Patch0001: 0001-Allow-setting-sysctls-on-a-particular-interface.patch
+
 %if 0%{?fedora}
 BuildRequires: %{?go_compiler:compiler(go-compiler)}%{!?go_compiler:golang}
 %else
@@ -51,7 +53,8 @@ when the container is deleted.
 %{?enable_gotoolset110}
 
 %prep
-%autosetup -n %{project}-%{repo}-v%{version}
+%setup -q -n %{project}-%{repo}-v%{version}
+%patch0001 -p1
 rm -rf plugins/main/windows
 
 %build
@@ -123,6 +126,9 @@ install -p -m 0755 bin/* %{buildroot}/var/opt/cni/bin
 /var/opt/cni/bin/*
 
 %changelog
+* Mon Jun 27 2022 Steven Webster <steven.webster@windriver.com>
+- tuning: Support for IFNAME key
+
 * Mon Jun 06 2022 Dan Voiculeasa <dan.voiculeasa@windriver.com>
 - Update install directory to /var/opt/cni/bin.
 
