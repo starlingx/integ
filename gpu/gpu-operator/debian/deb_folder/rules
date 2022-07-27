@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+export HELM_VER = v3
+export PKG_VERSION = 1.8.1
+export DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	mkdir -p deployments/gpu-operator/assets/state-driver/
+	mkdir -p deployments/gpu-operator/assets/state-operator-validation/
+	cp assets/state-driver/0500_daemonset.yaml deployments/gpu-operator/assets/state-driver/0500_daemonset.yaml
+	cp assets/state-operator-validation/0500_daemonset.yaml deployments/gpu-operator/assets/state-operator-validation/0500_daemonset.yaml
+	helm lint deployments/gpu-operator
+	mkdir build_results
+	helm package --version ${HELM_VER}-${PKG_VERSION} --app-version v${PKG_VERSION} -d build_results deployments/gpu-operator
+
+override_dh_auto_install:
+	# Install the app tar file.
+	install -d -m 755 ${DEBIAN_DESTDIR}/opt/extracharts
+	install -p -D -m 644 build_results/gpu-operator-${HELM_VER}-${PKG_VERSION}.tgz ${DEBIAN_DESTDIR}/opt/extracharts
+	dh_install
