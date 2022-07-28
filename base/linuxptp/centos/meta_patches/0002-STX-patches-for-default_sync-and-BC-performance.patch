@@ -4,7 +4,7 @@ In-Reply-To: <da79b26cb5749800112c38cb55b1135f78c3433a.1630421052.git.Jim.Somerv
 References: <da79b26cb5749800112c38cb55b1135f78c3433a.1630421052.git.Jim.Somerville@windriver.com>
 From: Cole Walker <cole.walker@windriver.com>
 Date: Wed, 23 Jun 2021 13:21:58 -0400
-Subject: [PATCH 2/2] STX patches for default_sync and BC performance
+Subject: [PATCH 2/3] STX patches for default_sync and BC performance
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 ---

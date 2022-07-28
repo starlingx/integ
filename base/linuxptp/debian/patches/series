@@ -4,3 +4,7 @@
 0004-port-Don-t-renew-raw-transport.patch
 0005-clockcheck-Increase-minimum-interval.patch
 0006-Add-option-to-disable-default-port-selection-in-phc2.patch
+0007-sysoff-Change-sysoff_measure-to-return-errno.patch
+0008-sysoff-Change-log-level-of-ioctl-error-messages.patch
+0009-sysoff-Retry-on-EBUSY-when-probing-supported-ioctls.patch
+0010-phc2sys-Don-t-exit-when-reading-of-PHC-fails-with-EB.patch
