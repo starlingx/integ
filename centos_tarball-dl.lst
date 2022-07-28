@@ -33,6 +33,7 @@ googletest-fdb850479284e2aae047b87df6beae84236d0135.tar.gz#googletest#https://ap
 # gorilla-mux-456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#gorilla-mux#https://github.com/gorilla/mux/archive/456bcfa82d672db7cae587c9b541463f65bc2718.tar.gz#http##
 helm-v3.2.1-linux-amd64.tar.gz#linux-amd64#https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz#http##
 !helm-2to3-0.10.0.tar.gz#helm-2to3-0.10.0#https://github.com/helm/helm-2to3/releases/download/v0.10.0/helm-2to3_0.10.0_linux_amd64.tar.gz#https##
+!helm-mapkubeapis_0.3.0.tar.gz#helm-mapkubeapis_0.3.0#https://github.com/helm/helm-mapkubeapis/releases/download/v0.3.0/helm-mapkubeapis_0.3.0_linux_amd64.tar.gz#https##
 intel-ipsec-mb-134c90c912ea9376460e9d949bb1319a83a9d839.tar.gz#intel-ipsec-mb#https://api.github.com/repos/spdk/intel-ipsec-mb/tarball/134c90c912ea9376460e9d949bb1319a83a9d839#https##
 isa-l-7e1a337433a340bc0974ed0f04301bdaca374af6.tar.gz#isa-l#https://api.github.com/repos/ceph/isa-l/tarball/7e1a337433a340bc0974ed0f04301bdaca374af6#https##
 isa-l_crypto-603529a4e06ac8a1662c13d6b31f122e21830352.tar.gz#isa-l_crypto#https://api.github.com/repos/01org/isa-l_crypto/tarball/603529a4e06ac8a1662c13d6b31f122e21830352#https##

@@ -11,6 +11,7 @@ Source1: helm-upload
 Source2: helm.sudo
 Source3: helmv2-cli.sh
 Source4: helm-2to3-0.10.0.tar.gz
+Source5: helm-mapkubeapis_0.3.0.tar.gz
 
 Requires: /bin/bash
 
@@ -23,8 +24,10 @@ Requires: /bin/bash
 # Extract helm plugins
 mkdir -p ./2to3
 tar zxvf %{SOURCE4} -C ./2to3
+mkdir -p ./mapkubeapis
+tar zxvf %{SOURCE5} -C ./mapkubeapis
 
-# The plugin needs to be slightly adjusted
+# helm-2to3 plugin needs to be slightly adjusted
 mkdir -p ./2to3/bin
 mv ./2to3/2to3 ./2to3/bin
 
@@ -43,6 +46,7 @@ install -d %{buildroot}/usr/local/share/helm/plugins
 
 # Install helm plugin 2to3
 cp -R 2to3 %{buildroot}/usr/local/share/helm/plugins/
+cp -R mapkubeapis %{buildroot}/usr/local/share/helm/plugins/
 
 %files
 %defattr(-,root,root,-)
@@ -51,3 +55,4 @@ cp -R 2to3 %{buildroot}/usr/local/share/helm/plugins/
 /usr/local/sbin/helmv2-cli
 %{_sysconfdir}/sudoers.d/helm
 /usr/local/share/helm/plugins/2to3/*
+/usr/local/share/helm/plugins/mapkubeapis/*
