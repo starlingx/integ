@@ -1,0 +1,10 @@
+---
+debver: 0.9.11-1
+dl_path:
+  name: nss-pam-ldapd-0.9.11-1.tar.gz
+  url: https://salsa.debian.org/debian/nss-pam-ldapd/-/archive/debian/0.9.11-1/nss-pam-ldapd-debian-0.9.11-1.tar.gz
+  md5sum: ca281003d23e3258dcd56e7be3ecb7f2
+  sha256sum: 4f90fc01666524d8607381ed8eef2fb7444a8298cfe76ae9c5009a9e7743be6e
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT:
