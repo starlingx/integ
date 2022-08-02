@@ -2,7 +2,7 @@ From 0389752e3aecf8d2b2743f16ce1408a58088bea9 Mon Sep 17 00:00:00 2001
 Message-Id: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:52 +0200
-Subject: [PATCH 1/6] clock: Reset state when switching port with same best
+Subject: [PATCH 1/10] clock: Reset state when switching port with same best
  clock.
 
 When the best port is changed, but the ID of the best clock doesn't
