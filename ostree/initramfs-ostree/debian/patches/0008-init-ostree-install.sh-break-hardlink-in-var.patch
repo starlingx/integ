@@ -1,0 +1,43 @@
+From c4eaf35440afe4ef0473b90b32566a05f99dfbd6 Mon Sep 17 00:00:00 2001
+From: Zhang Xiao <xiao.zhang@windriver.com>
+Date: Sat, 6 Aug 2022 12:39:16 +0000
+Subject: [PATCH] init-ostree-install.sh: break hardlinks in /var
+
+Here the root filesystem is managed by OSTree. OSTree is designed to
+manage/deploy read-only filesystem. For read-only filesystem, hardlink
+all files with same content is safe and can save disk space. It is a
+good principle for readonly folders like /bin, /lib and so on. While
+"/var" is somehow special that it is designed to store variable data
+files, it can not be read-only, it must be read-write. Files in
+"/var" should not be hardlinked together like other folders, break
+them to make it.
+
+Do the same for /usr/homedirs/home as it gets mounted at /var/home
+at runtime.
+
+Signed-off-by: Zhang Xiao <xiao.zhang@windriver.com>
+---
+ init-ostree-install.sh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 0e5b8f3..f66224d 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -1478,11 +1478,11 @@ else
+ 	mount -o $mount_flags LABEL=fluxdata /var1
+ fi
+ if [ -d ${PHYS_SYSROOT}/ostree/1/var ] ; then
+-	tar -C ${PHYS_SYSROOT}/ostree/1/var/ --xattrs --xattrs-include='*' -cf - . | \
++	tar -C ${PHYS_SYSROOT}/ostree/1/var/ --hard-dereference --xattrs --xattrs-include='*' -cf - . | \
+ 	tar --xattrs --xattrs-include='*' -xf - -C /var1 2> /dev/null
+ fi
+ if [ -d ${PHYS_SYSROOT}/ostree/1/usr/homedirs/home ] ; then
+-	tar -C ${PHYS_SYSROOT}/ostree/1/usr/homedirs/home --xattrs --xattrs-include='*' -cf - . | \
++	tar -C ${PHYS_SYSROOT}/ostree/1/usr/homedirs/home --hard-dereference --xattrs --xattrs-include='*' -cf - . | \
+ 	tar --xattrs --xattrs-include='*' -xf - -C /var1/home 2> /dev/null
+ fi
+ 
+-- 
+2.32.0
+
