@@ -5,3 +5,4 @@
 0005-Make-boot-efi-mount-as-rw.patch
 0006-debian-set-default-size-variables-in-install-script.patch
 0007-Wait-for-devices-to-be-configured-after-boot.patch
+0008-init-ostree-install.sh-break-hardlink-in-var.patch
