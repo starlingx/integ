@@ -1,0 +1,867 @@
+From 65ac63ca1bc8517f3f0c3560498de758149a3800 Mon Sep 17 00:00:00 2001
+From: Babak Sarashki <babak.sarashki@windriver.com>
+Date: Sun, 7 Mar 2021 17:19:08 +0000
+Subject: [PATCH] enablement: support on starlingx cloud platform
+
+StarlingX is a cloud infrastructure software stack for edge.
+It has an immutable file system, and system configruation. For
+instance changes to set containerd runtime by the gpu-operator
+will be overriden and must be avoided.
+
+This commit enables gpu-operator on Starlingx (starlingx.io).
+The changes to the gpu-operator include bundling modified assets
+and a modified version of the nvidia-driver build script with the
+helm charts.
+
+The modifications include host-mounting the kernel headers and
+kernel build directory onto the respective mount points inside
+the driver pod namespace; modifying the nvidia-driver to account
+for pre-installed kernel packages; and pre-installing the nvidia-
+toolkit version 1.7.1-ubi8. The defaultRuntime is expected to
+be containerd.
+
+To load the operator on starlingx:
+
+$ source /etc/platform/openrc
+[...(keystone_admin)]$ system service-parameter-add \
+  platform container_runtime \
+  custom_container_runtime=nvidia:/path/to/nvidia-container-runtime
+
+[...(keystone_admin)]$ system host-lock 1; system host-unlock 1
+
+Signed-off-by: Babak Sarashki <babak.sarashki@windriver.com>
+---
+ assets/state-driver/0500_daemonset.yaml       |  47 ++-
+ .../0500_daemonset.yaml                       |  18 ++
+ deployments/gpu-operator/Chart.yaml           |   3 +
+ .../charts/stx-toolkit-installer/.helmignore  |  23 ++
+ .../charts/stx-toolkit-installer/Chart.yaml   |   6 +
+ .../templates/_helpers.tpl                    |   6 +
+ .../templates/toolkit.yaml                    |  71 +++++
+ .../charts/stx-toolkit-installer/values.yaml  |   8 +
+ .../templates/build_configmap.yaml            | 291 ++++++++++++++++++
+ .../gpu-operator/templates/clusterpolicy.yaml |   4 +-
+ .../gpu-operator/templates/operator.yaml      |  52 +++-
+ .../templates/operator_confimap.yaml          |  61 ++++
+ deployments/gpu-operator/values.yaml          |  15 +-
+ 13 files changed, 583 insertions(+), 22 deletions(-)
+ create mode 100644 deployments/gpu-operator/charts/stx-toolkit-installer/.helmignore
+ create mode 100644 deployments/gpu-operator/charts/stx-toolkit-installer/Chart.yaml
+ create mode 100644 deployments/gpu-operator/charts/stx-toolkit-installer/templates/_helpers.tpl
+ create mode 100644 deployments/gpu-operator/charts/stx-toolkit-installer/templates/toolkit.yaml
+ create mode 100644 deployments/gpu-operator/charts/stx-toolkit-installer/values.yaml
+ create mode 100644 deployments/gpu-operator/templates/build_configmap.yaml
+ create mode 100644 deployments/gpu-operator/templates/operator_confimap.yaml
+
+diff --git a/assets/state-driver/0500_daemonset.yaml b/assets/state-driver/0500_daemonset.yaml
+index 4cd1617..c8aefd2 100644
+--- a/assets/state-driver/0500_daemonset.yaml
++++ b/assets/state-driver/0500_daemonset.yaml
+@@ -35,7 +35,6 @@ spec:
+               valueFrom:
+                 fieldRef:
+                   fieldPath: spec.nodeName
+-            # always use runc for driver containers
+             - name: NVIDIA_VISIBLE_DEVICES
+               value: void
+           securityContext:
+@@ -72,8 +71,14 @@ spec:
+       - image: "FILLED BY THE OPERATOR"
+         imagePullPolicy: IfNotPresent
+         name: nvidia-driver-ctr
+-        command: ["nvidia-driver"]
+-        args: ["init"]
++        command: ["/bin/bash"]
++        args:
++        - "-c"
++        - "--"
++        - >
++           tar -C /usr/host-include -c . -f - | tar -C /usr/include -xvf -;
++           ln -rfs /usr/lib64/libelf.so.1 /usr/lib/libelf.so;
++           /usr/local/bin/nvidia-driver init;
+         securityContext:
+           privileged: true
+           seLinuxOptions:
+@@ -94,6 +99,22 @@ spec:
+           - name: run-mellanox-drivers
+             mountPath: /run/mellanox/drivers
+             mountPropagation: HostToContainer
++          - name: host-modules
++            mountPath: /lib/modules
++            readOnly: false
++          - name: host-include
++            mountPath: /usr/host-include
++            readOnly: false
++          - name: host-kernel-devel
++            mountPath: /usr/src/kernels
++            readOnly: true
++          - name: host-usr-src
++            mountPath: /usr/host-src
++            readOnly: false
++          - name: vol11
++            mountPath: /usr/local/bin/nvidia-driver
++            subPath: nvidia-driver-build-script
++            readOnly: true
+       - image: "FILLED BY THE OPERATOR"
+         imagePullPolicy: IfNotPresent
+         name: nvidia-peermem-ctr
+@@ -157,4 +178,22 @@ spec:
+           hostPath:
+             path: /run/nvidia/validations
+             type: DirectoryOrCreate
+-          
++        - name: host-modules
++          hostPath:
++            path: /lib/modules
++        - name: host-kernel-devel
++          hostPath:
++            path: /usr/src/kernels/
++        - name: host-include
++          hostPath:
++            path: /usr/include
++        - name: host-usr-src
++          hostPath:
++            path: /usr/src
++        - name: vol11
++          configMap:
++            name: nvidia-driver
++            defaultMode: 0777
++            items:
++              - key: nvidia-driver-build-script
++                path: nvidia-driver-build-script
+diff --git a/assets/state-operator-validation/0500_daemonset.yaml b/assets/state-operator-validation/0500_daemonset.yaml
+index 266c9d6..ce226fa 100644
+--- a/assets/state-operator-validation/0500_daemonset.yaml
++++ b/assets/state-operator-validation/0500_daemonset.yaml
+@@ -75,6 +75,10 @@ spec:
+             - name: run-nvidia-validations
+               mountPath: /run/nvidia/validations
+               mountPropagation: Bidirectional
++            - name: vol12
++              mountPath: /var/nvidia/manifests/cuda-workload-validation.yaml
++              subPath: cuda-workload-validation.yaml
++              readOnly: true
+         - name: plugin-validation
+           image: "FILLED_BY_OPERATOR"
+           command: ['sh', '-c']
+@@ -98,6 +102,10 @@ spec:
+             - name: run-nvidia-validations
+               mountPath: /run/nvidia/validations
+               mountPropagation: Bidirectional
++            - name: vol12
++              mountPath: /var/nvidia/manifests/plugin-workload-validation.yaml
++              subPath: plugin-workload-validation.yaml
++              readOnly: true
+       containers:
+         - image: "FILLED_BY_OPERATOR"
+           name: nvidia-operator-validator
+@@ -113,6 +121,7 @@ spec:
+             - name: run-nvidia-validations
+               mountPath: "/run/nvidia/validations"
+               mountPropagation: Bidirectional
++      terminationGracePeriodSeconds: 60
+       volumes:
+         - name: run-nvidia-validations
+           hostPath:
+@@ -121,3 +130,12 @@ spec:
+         - name: driver-install-path
+           hostPath:
+             path: /run/nvidia/driver
++        - name: vol12
++          configMap:
++            name: nvidia-validator
++            defaultMode: 0444
++            items:
++              - key: cuda-workload-validation.yaml
++                path: cuda-workload-validation.yaml
++              - key: plugin-workload-validation.yaml
++                path: plugin-workload-validation.yaml
+diff --git a/deployments/gpu-operator/Chart.yaml b/deployments/gpu-operator/Chart.yaml
+index 0b379a3..7b743e4 100644
+--- a/deployments/gpu-operator/Chart.yaml
++++ b/deployments/gpu-operator/Chart.yaml
+@@ -22,3 +22,6 @@ dependencies:
+     version: 0.8.2
+     repository: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+     condition: nfd.enabled
++  - name: stx-toolkit-installer
++    version: 0.1.0
++    condition: toolkit-installer.enabled
+diff --git a/deployments/gpu-operator/charts/stx-toolkit-installer/.helmignore b/deployments/gpu-operator/charts/stx-toolkit-installer/.helmignore
+new file mode 100644
+index 0000000..0e8a0eb
+--- /dev/null
++++ b/deployments/gpu-operator/charts/stx-toolkit-installer/.helmignore
+@@ -0,0 +1,23 @@
++# Patterns to ignore when building packages.
++# This supports shell glob matching, relative path matching, and
++# negation (prefixed with !). Only one pattern per line.
++.DS_Store
++# Common VCS dirs
++.git/
++.gitignore
++.bzr/
++.bzrignore
++.hg/
++.hgignore
++.svn/
++# Common backup files
++*.swp
++*.bak
++*.tmp
++*.orig
++*~
++# Various IDEs
++.project
++.idea/
++*.tmproj
++.vscode/
+diff --git a/deployments/gpu-operator/charts/stx-toolkit-installer/Chart.yaml b/deployments/gpu-operator/charts/stx-toolkit-installer/Chart.yaml
+new file mode 100644
+index 0000000..c195c58
+--- /dev/null
++++ b/deployments/gpu-operator/charts/stx-toolkit-installer/Chart.yaml
+@@ -0,0 +1,6 @@
++apiVersion: v2
++appVersion: v0.1.0
++name: stx-toolkit-installer
++description: "Standalone nvidia toolkit installer for starlingx"
++type: application
++version: 1.7.1-ubi8
+diff --git a/deployments/gpu-operator/charts/stx-toolkit-installer/templates/_helpers.tpl b/deployments/gpu-operator/charts/stx-toolkit-installer/templates/_helpers.tpl
+new file mode 100644
+index 0000000..b6f6274
+--- /dev/null
++++ b/deployments/gpu-operator/charts/stx-toolkit-installer/templates/_helpers.tpl
+@@ -0,0 +1,6 @@
++{{/*
++Full image name with tag
++*/}}
++{{- define "toolkit-installer.fullimage" -}}
++{{- .Values.toolkit.repository -}}/{{- .Values.toolkit.image -}}:{{- .Values.toolkit.version | default .Chart.AppVersion -}}
++{{- end }}
+diff --git a/deployments/gpu-operator/charts/stx-toolkit-installer/templates/toolkit.yaml b/deployments/gpu-operator/charts/stx-toolkit-installer/templates/toolkit.yaml
+new file mode 100644
+index 0000000..3cbec11
+--- /dev/null
++++ b/deployments/gpu-operator/charts/stx-toolkit-installer/templates/toolkit.yaml
+@@ -0,0 +1,71 @@
++apiVersion: apps/v1
++kind: DaemonSet
++metadata:
++  name: toolkit-installer
++  namespace: kube-system
++  labels:
++    app.kubernetes.io/component: "toolkit-installer"
++    {{ $.Release.labels }}
++spec:
++  selector:
++    matchLabels:
++      {{ $.Release.labels }}
++      app.kubernetes.io/component: "toolkit-installer"
++      app: "toolkit-installer"
++  template:
++    metadata:
++      labels:
++        {{ $.Release.labels }}
++        app.kubernetes.io/component: "toolkit-installer"
++        app: "toolkit-installer"
++    spec:
++      containers:
++      - name: toolkit-daemon
++        image: {{ include "toolkit-installer.fullimage" . }}
++        lifecycle:
++          preStop:
++            exec:
++              command:
++              - "/bin/sh"
++              - "-c"
++              - "--"
++              - >
++                if [ $toolkit_force_clean == "true" ] ; then 
++                   while [[ -f /var/run/nvidia/validations/cuda-ready ]] || 
++                      [[ -f /var/run/nvidia/validations/driver-ready ]] ||
++                      [[ -f /var/run/nvidia/validations/plugin-ready ]] ||
++                      [[ -f /var/run/nvidia/validations/toolkit-ready ]] ; 
++                          do 
++                          echo "waiting for gpu pods to exit"
++                          sleep 10;
++                          done;
++                   sleep 60;
++                   rm -rf /usr/local/nvidia/toolkit;
++                fi;
++        command: ["/bin/bash"]
++        args:
++        - "-c"
++        - "--"
++        - >
++           ./toolkit install /usr/local/nvidia/toolkit;
++           sleep infinity;
++        env:
++          - name: toolkit_force_clean
++            value: {{ quote  .Values.global.toolkit_force_clean }}
++        volumeMounts:
++        - name: toolkitdest
++          mountPath: /usr/local/nvidia
++          readOnly: false
++        - name: varrunnvidia
++          mountPath: /var/run/nvidia
++          readOnly: true
++      {{ if (.Values.global.toolkit_force_clean) and (eq .Values.gobal.toolkit_force_clean "true") }}
++      terminationGracePeriodSeconds: 120
++      {{- end }}
++      volumes:
++      - name: toolkitdest
++        hostPath:
++          path: /usr/local/nvidia
++      - name: varrunnvidia
++        hostPath:
++          path: /var/run/nvidia
+diff --git a/deployments/gpu-operator/charts/stx-toolkit-installer/values.yaml b/deployments/gpu-operator/charts/stx-toolkit-installer/values.yaml
+new file mode 100644
+index 0000000..b898dc2
+--- /dev/null
++++ b/deployments/gpu-operator/charts/stx-toolkit-installer/values.yaml
+@@ -0,0 +1,8 @@
++toolkit:
++  repository: nvidia
++  image: container-toolkit
++  version: 1.7.1-ubi8
++  imagePullPolicy: IfNotPresent
++  imagePullSecrets: []
++  priorityClassName: system-node-critical
++  defaultRuntime: containerd
+diff --git a/deployments/gpu-operator/templates/build_configmap.yaml b/deployments/gpu-operator/templates/build_configmap.yaml
+new file mode 100644
+index 0000000..a7453a4
+--- /dev/null
++++ b/deployments/gpu-operator/templates/build_configmap.yaml
+@@ -0,0 +1,291 @@
++{{ if (.Values.operator.include_assets) and (eq .Values.operator.include_assets "True") }}
++apiVersion: v1
++kind: Namespace
++metadata:
++  name: "gpu-operator-resources"
++---
++apiVersion: v1
++kind: ConfigMap
++metadata:
++  name: nvidia-driver
++  namespace: gpu-operator-resources
++data:
++  nvidia-driver-build-script: |
++    #! /bin/bash
++    # Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
++    # Copyright (c) 2021 Wind River Systems, Inc. SPDX-License-Identifier:
++    # Apache-2.0.
++    # This script is from: https://gitlab.com/nvidia/container-images/driver.
++    # It is modified and included under configmap for platforms that require
++    # pre-installed packages. Such platforms have the option to modify the
++    # entrypoint in 0500_daemonset.yaml, or the nvidia-driver script here for
++    # further customizations.
++
++    set -eu
++
++    RUN_DIR=/run/nvidia
++    PID_FILE=${RUN_DIR}/${0##*/}.pid
++    DRIVER_VERSION=${DRIVER_VERSION:?"Missing driver version"}
++    KERNEL_UPDATE_HOOK=/run/kernel/postinst.d/update-nvidia-driver
++    KERNEL_VERSION="$(uname -r)"
++
++    _install_tools() {
++        yum clean all
++        yum install -y centos-release-scl
++        yum install -y epel-release
++        yum install -y devtoolset-8-build devtoolset-8-binutils devtoolset-8-gcc devtoolset-8-make
++    }
++
++    # Load the kernel modules and start persistenced.
++    _load_driver() {
++        echo "Loading IPMI kernel module..."
++        modprobe ipmi_msghandler
++
++        echo "Loading NVIDIA driver kernel modules..."
++        modprobe -a nvidia nvidia-uvm nvidia-modeset
++
++        echo "Starting NVIDIA persistence daemon..."
++        nvidia-persistenced --persistence-mode
++    }
++
++    # Stop persistenced and unload the kernel modules if they are currently loaded.
++    _unload_driver() {
++        local rmmod_args=()
++        local nvidia_deps=0
++        local nvidia_refs=0
++        local nvidia_uvm_refs=0
++        local nvidia_modeset_refs=0
++
++        echo "Stopping NVIDIA persistence daemon..."
++        if [ -f /var/run/nvidia-persistenced/nvidia-persistenced.pid ]; then
++            local pid=$(< /var/run/nvidia-persistenced/nvidia-persistenced.pid)
++
++            kill -SIGTERM "${pid}"
++            for i in $(seq 1 10); do
++                kill -0 "${pid}" 2> /dev/null || break
++                sleep 0.1
++            done
++            if [ $i -eq 10 ]; then
++                echo "Could not stop NVIDIA persistence daemon" >&2
++                return 1
++            fi
++        fi
++
++        echo "Unloading NVIDIA driver kernel modules..."
++        if [ -f /sys/module/nvidia_modeset/refcnt ]; then
++            nvidia_modeset_refs=$(< /sys/module/nvidia_modeset/refcnt)
++            rmmod_args+=("nvidia-modeset")
++            ((++nvidia_deps))
++        fi
++        if [ -f /sys/module/nvidia_uvm/refcnt ]; then
++            nvidia_uvm_refs=$(< /sys/module/nvidia_uvm/refcnt)
++            rmmod_args+=("nvidia-uvm")
++            ((++nvidia_deps))
++        fi
++        if [ -f /sys/module/nvidia/refcnt ]; then
++            nvidia_refs=$(< /sys/module/nvidia/refcnt)
++            rmmod_args+=("nvidia")
++        fi
++        if [ ${nvidia_refs} -gt ${nvidia_deps} ] || [ ${nvidia_uvm_refs} -gt 0 ] || [ ${nvidia_modeset_refs} -gt 0 ]; then
++            echo "Could not unload NVIDIA driver kernel modules, driver is in use" >&2
++            return 1
++        fi
++
++        if [ ${#rmmod_args[@]} -gt 0 ]; then
++            rmmod ${rmmod_args[@]}
++        fi
++        return 0
++    }
++
++    # Link and install the kernel modules from a precompiled package using the nvidia-installer.
++    _install_driver() {
++        local install_args=()
++    
++        # Default is standard kernel.
++        if [ ! -z ${IGNORE_PREEMPT_RT_PRESENCE+x} ] ; then
++            echo "WARN: IGNORE_PREEMPT_RT_PRESENCE set"
++            echo "Build Target PREEMPT_RT best effort"
++        fi;
++
++        _install_tools
++        export PATH=/opt/rh/devtoolset-8/root/usr/bin${PATH:+:${PATH}}
++        export PCP_DIR=/opt/rh/devtoolset-8/root
++
++        echo "Installing NVIDIA driver kernel modules..."
++        cd /usr/src/nvidia-${DRIVER_VERSION}
++        # rm -rf /lib/modules/${KERNEL_VERSION}/video
++
++        if [ "${ACCEPT_LICENSE}" = "yes" ]; then
++            install_args+=("--accept-license")
++        fi
++        nvidia-installer --kernel-module-only --no-drm --ui=none --no-nouveau-check ${install_args[@]+"${install_args[@]}"}
++    }
++
++    # Mount the driver rootfs into the run directory with the exception of sysfs.
++    _mount_rootfs() {
++        echo "Mounting NVIDIA driver rootfs..."
++        mount --make-runbindable /sys
++        mount --make-private /sys
++        mkdir -p ${RUN_DIR}/driver
++        mount --rbind / ${RUN_DIR}/driver
++    }
++
++    # Unmount the driver rootfs from the run directory.
++    _unmount_rootfs() {
++        echo "Unmounting NVIDIA driver rootfs..."
++        if findmnt -r -o TARGET | grep "${RUN_DIR}/driver" > /dev/null; then
++            umount -l -R ${RUN_DIR}/driver
++        fi
++    }
++
++    init() {
++        echo -e "\n========== NVIDIA Software Installer ==========\n"
++        echo -e "Starting installation of NVIDIA driver version ${DRIVER_VERSION} for Linux kernel version ${KERNEL_VERSION}\n"
++
++        exec 3> ${PID_FILE}
++        if ! flock -n 3; then
++            echo "An instance of the NVIDIA driver is already running, aborting"
++            exit 1
++        fi
++        echo $$ >&3
++
++        trap "echo 'Caught signal'; exit 1" HUP INT QUIT PIPE TERM
++        trap "_shutdown" EXIT
++
++        _unload_driver || exit 1
++        _unmount_rootfs
++
++        (
++        [ ! -f /lib/modules/$(uname -r)/kernel/drivers/video/nvidia.ko ] ||
++        [ ! -f /lib/modules/$(uname -r)/kernel/drivers/video/nvidia-uvm.ko ] ||
++        [ ! -f /lib/modules/$(uname -r)/kernel/drivers/video/nvidia-modeset.ko ]
++        ) && _install_driver
++
++        _load_driver
++        _mount_rootfs
++
++        echo "Done, now waiting for signal"
++        sleep infinity &
++        trap "echo 'Caught signal'; _shutdown && { kill $!; exit 0; }" HUP INT QUIT PIPE TERM
++        trap - EXIT
++        while true; do wait $! || continue; done
++        exit 0
++    }
++
++    usage() {
++        cat >&2 <<EOF
++    Usage: $0 COMMAND [ARG...]
++
++    Commands:
++      init   [-a | --accept-license]
++    EOF
++        exit 1
++    }
++
++    if [ $# -eq 0 ]; then
++        usage
++    fi
++    command=$1; shift
++    case "${command}" in
++        init) options=$(getopt -l accept-license -o a -- "$@") ;;
++        *) usage ;;
++    esac
++    if [ $? -ne 0 ]; then
++        usage
++    fi
++    eval set -- "${options}"
++
++    ACCEPT_LICENSE=""
++    KERNEL_VERSION=$(uname -r)
++    PRIVATE_KEY=""
++    PACKAGE_TAG=""
++
++    for opt in ${options}; do
++        case "$opt" in
++        -a | --accept-license) ACCEPT_LICENSE="yes"; shift 1 ;;
++        --) shift; break ;;
++        esac
++    done
++    if [ $# -ne 0 ]; then
++        usage
++    fi
++    $command;
++---
++apiVersion: v1
++kind: ConfigMap
++metadata:
++  name: nvidia-validator
++  namespace: gpu-operator-resources
++data:
++  cuda-workload-validation.yaml: |
++    apiVersion: v1
++    kind: Pod
++    metadata:
++      labels:
++        app: nvidia-cuda-validator
++      generateName: nvidia-cuda-validator-
++      namespace: gpu-operator-resources
++    spec:
++      tolerations:
++        - key: nvidia.com/gpu
++          operator: Exists
++          effect: NoSchedule
++      readOnlyRootFilesystem: true
++      restartPolicy: OnFailure
++      serviceAccount: nvidia-operator-validator
++      runtimeClassName: nvidia
++      initContainers:
++      - name: cuda-validation
++        image: "FILLED_BY_VALIDATOR"
++        imagePullPolicy: IfNotPresent
++        command: ['sh', '-c']
++        args: ["vectorAdd"]
++        securityContext:
++          allowPrivilegeEscalation: false
++      containers:
++        - name: nvidia-cuda-validator
++          image: "FILLED_BY_VALIDATOR"
++          imagePullPolicy: IfNotPresent
++          # override command and args as validation is already done by initContainer
++          command: ['sh', '-c']
++          args: ["echo cuda workload validation is successful"]
++          securityContext:
++            allowPrivilegeEscalation: false
++  plugin-workload-validation.yaml: |
++    apiVersion: v1
++    kind: Pod
++    metadata:
++      labels:
++        app: nvidia-device-plugin-validator
++      generateName: nvidia-device-plugin-validator-
++      namespace: gpu-operator-resources
++    spec:
++      tolerations:
++        - key: nvidia.com/gpu
++          operator: Exists
++          effect: NoSchedule
++      readOnlyRootFilesystem: true
++      restartPolicy: OnFailure
++      serviceAccount: nvidia-operator-validator
++      runtimeClassName: nvidia
++      initContainers:
++      - name: plugin-validation
++        image: "FILLED_BY_VALIDATOR"
++        imagePullPolicy: IfNotPresent
++        command: ['sh', '-c']
++        args: ["vectorAdd"]
++        securityContext:
++          allowPrivilegeEscalation: false
++        resources:
++          limits:
++            "FILLED_BY_VALIDATOR": 1
++      containers:
++        - name: nvidia-device-plugin-validator
++          image: "FILLED_BY_VALIDATOR"
++          imagePullPolicy: IfNotPresent
++          # override command and args as validation is already done by initContainer
++          command: ['sh', '-c']
++          args: ["echo device-plugin workload validation is successful"]
++          securityContext:
++            allowPrivilegeEscalation: false
++{{- end }}
+diff --git a/deployments/gpu-operator/templates/clusterpolicy.yaml b/deployments/gpu-operator/templates/clusterpolicy.yaml
+index c819a2e..a33cffb 100644
+--- a/deployments/gpu-operator/templates/clusterpolicy.yaml
++++ b/deployments/gpu-operator/templates/clusterpolicy.yaml
+@@ -152,7 +152,7 @@ spec:
+     args: {{ toYaml .Values.driver.args | nindent 6 }}
+     {{- end }}
+   toolkit:
+-    enabled: {{ .Values.toolkit.enabled }}
++    enabled: false
+     {{- if .Values.toolkit.repository }}
+     repository: {{ .Values.toolkit.repository }}
+     {{- end }}
+@@ -354,4 +354,4 @@ spec:
+     {{- end }}
+     {{- if .Values.nodeStatusExporter.args }}
+     args: {{ toYaml .Values.nodeStatusExporter.args | nindent 6 }}
+-    {{- end }}
+\ No newline at end of file
++    {{- end }}
+diff --git a/deployments/gpu-operator/templates/operator.yaml b/deployments/gpu-operator/templates/operator.yaml
+index c97b4b1..32234d8 100644
+--- a/deployments/gpu-operator/templates/operator.yaml
++++ b/deployments/gpu-operator/templates/operator.yaml
+@@ -50,29 +50,41 @@ spec:
+             mountPath: "/host-etc/os-release"
+             readOnly: true
+ 
+-          {{- if eq .Values.operator.include_assets "include_assets" }}
++          {{ if (.Values.operator.include_assets) and (eq .Values.operator.include_assets "True") }}
+           {{- range $path, $_ := .Files.Glob "assets/gpu-feature-discovery/*" }}
+           - name: assets
+             mountPath: {{ printf "/opt/gpu-operator/gpu-feature-discovery/%s" (base $path) }}
+             subPath: {{ printf "gfd_%s" (base $path) }}
+           {{- end }}
+ 
++          {{- range $path, $_ := .Files.Glob "assets/pre-requisites//*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/pre-requisites/%s" (base $path) }}
++            subPath: {{ printf "pre_requisites_%s" (base $path) }}
++          {{- end }}
++
+           {{- range $path, $_ := .Files.Glob "assets/state-container-toolkit/*" }}
+           - name: assets
+             mountPath: {{ printf "/opt/gpu-operator/state-container-toolkit/%s" (base $path) }}
+             subPath: {{ printf "state_container_toolkit_%s" (base $path) }}
+           {{- end }}
+ 
+-          {{- range $path, $_ := .Files.Glob "assets/state-device-plugin/*" }}
++          {{- range $path, $_ := .Files.Glob "assets/state-dcgm-exporter/*" }}
+           - name: assets
+-            mountPath: {{ printf "/opt/gpu-operator/state-device-plugin/%s" (base $path) }}
+-            subPath: {{ printf "state_device_%s" (base $path) }}
++            mountPath: {{ printf "/opt/gpu-operator/state-dcgm-exporter/%s" (base $path) }}
++            subPath: {{ printf "state_dcgm_exporter_%s" (base $path) }}
+           {{- end }}
+ 
+-          {{- range $path, $_ := .Files.Glob "assets/state-device-plugin-validation/*" }}
++          {{- range $path, $_ := .Files.Glob "assets/state-dcgm/*" }}
+           - name: assets
+-            mountPath: {{ printf "/opt/gpu-operator/state-device-plugin-validation/%s" (base $path) }}
+-            subPath: {{ printf "state_device_validation_%s" (base $path) }}
++            mountPath: {{ printf "/opt/gpu-operator/state-dcgm/%s" (base $path) }}
++            subPath: {{ printf "state_dcgm_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-device-plugin/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-device-plugin/%s" (base $path) }}
++            subPath: {{ printf "state_device_plugin_%s" (base $path) }}
+           {{- end }}
+ 
+           {{- range $path, $_ := .Files.Glob "assets/state-driver/*" }}
+@@ -81,10 +93,28 @@ spec:
+             subPath: {{ printf "state_driver_%s" (base $path) }}
+           {{- end }}
+ 
+-          {{- range $path, $_ := .Files.Glob "assets/state-monitoring/*" }}
++          {{- range $path, $_ := .Files.Glob "assets/state-mig-manager/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-mig-manager/%s" (base $path) }}
++            subPath: {{ printf "state_mig_manager_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-node-status-exporter/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-node-status-exporter/%s" (base $path) }}
++            subPath: {{ printf "state_node_status_exporter_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-operator-metrics/*" }}
++          - name: assets
++            mountPath: {{ printf "/opt/gpu-operator/state-operator-metrics/%s" (base $path) }}
++            subPath: {{ printf "state_operator_metrics_%s" (base $path) }}
++          {{- end }}
++
++          {{- range $path, $_ := .Files.Glob "assets/state-operator-validation/*" }}
+           - name: assets
+-            mountPath: {{ printf "/opt/gpu-operator/state-monitoring/%s" (base $path) }}
+-            subPath: {{ printf "state_monitor_%s" (base $path) }}
++            mountPath: {{ printf "/opt/gpu-operator/state-operator-validation/%s" (base $path) }}
++            subPath: {{ printf "state_operator_validation_%s" (base $path) }}
+           {{- end }}
+           {{- end }}
+         livenessProbe:
+@@ -110,7 +140,7 @@ spec:
+         - name: host-os-release
+           hostPath:
+             path: "/etc/os-release"
+-        {{- if eq .Values.operator.include_assets "include_assets" }}
++        {{ if (.Values.operator.include_assets) and (eq .Values.operator.include_assets "True") }}
+         - name: assets
+           configMap:
+             name: operator-configmap
+diff --git a/deployments/gpu-operator/templates/operator_confimap.yaml b/deployments/gpu-operator/templates/operator_confimap.yaml
+new file mode 100644
+index 0000000..6303960
+--- /dev/null
++++ b/deployments/gpu-operator/templates/operator_confimap.yaml
+@@ -0,0 +1,61 @@
++{{ if (.Values.operator.include_assets) and (eq .Values.operator.include_assets "True") }}
++apiVersion: v1
++kind: ConfigMap
++metadata:
++  name: operator-configmap
++data:
++{{- range $path, $_ := .Files.Glob "assets/gpu-feature-discovery/*" }}
++{{ printf "gfd_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/pre-requisites//*" }}
++{{ printf "pre_requisites_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-container-toolkit/*" }}
++{{ printf "state_container_toolkit_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-dcgm-exporter/*" }}
++{{ printf "state_dcgm_exporter_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-dcgm/*" }}
++{{ printf "state_dcgm_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-device-plugin/*" }}
++{{ printf "state_device_plugin_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-driver/*" }}
++{{ printf "state_driver_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-mig-manager/*" }}
++{{ printf "state_mig_manager_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-node-status-exporter/*" }}
++{{ printf "state_node_status_exporter_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-operator-metrics/*" }}
++{{ printf "state_operator_metrics_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++
++{{- range $path, $_ := .Files.Glob "assets/state-operator-validation/*" }}
++{{ printf "state_operator_validation_%s" (base $path) | indent 2 }}: |-
++{{ $.Files.Get $path | indent 4 }}
++{{- end }}
++{{- end }}
+diff --git a/deployments/gpu-operator/values.yaml b/deployments/gpu-operator/values.yaml
+index 6689636..e8157a1 100644
+--- a/deployments/gpu-operator/values.yaml
++++ b/deployments/gpu-operator/values.yaml
+@@ -11,6 +11,9 @@ nfd:
+ psp:
+   enabled: false
+ 
++toolkit-installer:
++  enabled: true
++
+ daemonsets:
+   priorityClassName: system-node-critical
+   tolerations:
+@@ -45,7 +48,7 @@ operator:
+   imagePullPolicy: IfNotPresent
+   imagePullSecrets: []
+   priorityClassName: system-node-critical
+-  defaultRuntime: docker
++  defaultRuntime: containerd
+   runtimeClass: nvidia
+   initContainer:
+     image: cuda
+@@ -70,8 +73,7 @@ operator:
+                 values: [""]
+   logging:
+     timeEncoding: epoch
+-  # Set "include_assets" true to include assets/gpu-operator with the helm chart
+-  include_assets: ""
++  include_assets: "True"
+   resources:
+     limits:
+       cpu: 500m
+@@ -127,10 +129,10 @@ driver:
+     config: ""
+ 
+ toolkit:
+-  enabled: true
++  enabled: false
+   repository: nvcr.io/nvidia/k8s
+   image: container-toolkit
+-  version: 1.6.0-ubuntu18.04
++  version: 1.7.1-ubi8
+   imagePullPolicy: IfNotPresent
+   imagePullSecrets: []
+   env: []
+@@ -255,3 +257,6 @@ node-feature-discovery:
+ 
+   serviceAccount:
+     name: node-feature-discovery
++
++global:
++  toolkit_force_clean: false
+-- 
+2.17.1
+

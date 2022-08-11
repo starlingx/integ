@@ -1,0 +1,14 @@
+Source: gpu-operator
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), helm
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: gpu-operator
+Architecture: any
+Depends:  ${misc:Depends}, ${shlibs:Depends}
+Description: The NVIDIA GPU Operator uses the operator framework within
+ Kubernetes to automate the management of all NVIDIA software components
+ needed to provision GPU

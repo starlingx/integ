@@ -45,6 +45,7 @@ golang-github-dev/golang-github-cilium-ebpf-dev
 golang-github-dev/golang-github-coreos-go-systemd-dev
 golang-github-dev/golang-github-opencontainers-specs-dev
 golang-github-dev/golang-github-vishvananda-netlink
+gpu/gpu-operator
 grub/grub2
 grub/grubby
 kubernetes/armada
