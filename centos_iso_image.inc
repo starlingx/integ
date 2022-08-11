@@ -26,10 +26,6 @@ libvirt-daemon-driver-lxc
 libvirt-client
 
 
-# python-ryu
-python2-ryu
-python-ryu-common
-
 # lldpd
 lldpd
 
