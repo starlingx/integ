@@ -1,0 +1,29 @@
+From 3623134b09353d8d43575cb2ab8ed240a268202f Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Tue, 2 Aug 2022 08:25:36 -0400
+Subject: [PATCH] Install 00check-network-cable in the correct spot
+
+Update debian/rules to install the 00check-network-cable in the
+correct spot.
+
+Signed-off-by: Charles Short <charles.short@windriver.com>
+---
+ debian/rules | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index 32ae425..6dee5a7 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -18,7 +18,7 @@ override_dh_install:
+ 	install -m644 debian/network-routes  $(CURDIR)/debian/ifupdown-extra/etc/network/routes
+ 	install -m644 debian/network-test-default  $(CURDIR)/debian/ifupdown-extra/etc/default/network-test
+ 	# Network scripts for ifupdown
+-	install -m755 if-up-scripts/check-network-cable  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/00check-network-cable
++	install -m755 if-up-scripts/check-network-cable  $(CURDIR)/debian/ifupdown-extra/etc/network/if-pre-up.d/00check-network-cable
+ 	install -m755 if-up-scripts/check-duplicate-ip  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/10check-duplicate-ip
+ 	install -m755 if-up-scripts/check-duplicate-ip6  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/10check-duplicate-ip6
+ 	install -m755 if-up-scripts/static-routes  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/20static-routes
+-- 
+2.25.1
+
