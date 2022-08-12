@@ -1,0 +1,25 @@
+From 8c348fc679099f928002d185aaabe0b2d5142cc3 Mon Sep 17 00:00:00 2001
+From: Fabiano Mercer <fabiano.correamercer@windriver.com>
+Date: Wed, 3 Aug 2022 14:53:38 -0300
+Subject: [PATCH] Ignore lo interfaces for nslcd script
+
+---
+ debian/nslcd.if-up | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/nslcd.if-up b/debian/nslcd.if-up
+index 11befba..fb9aaff 100644
+--- a/debian/nslcd.if-up
++++ b/debian/nslcd.if-up
+@@ -27,7 +27,7 @@ NSLCD_STATEDIR=/var/run/nslcd
+ NSLCD_PIDFILE=$NSLCD_STATEDIR/nslcd.pid
+ 
+ # ignore lo interface
+-[ "$IFACE" = "lo" ] && exit 0
++[[ "$IFACE" = lo* ]] && exit 0
+ 
+ # only do things when starting the interface
+ [ "$MODE" != "start" ] && exit 0
+-- 
+2.17.1
+

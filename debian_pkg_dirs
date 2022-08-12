@@ -66,6 +66,7 @@ kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/runc
 ldap/ldapscripts
+ldap/nss-pam-ldapd
 ldap/openldap
 livepatch/kpatch
 networking/ifupdown-extra

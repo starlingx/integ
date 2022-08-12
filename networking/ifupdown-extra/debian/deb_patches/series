@@ -1,2 +1,3 @@
 0001-Accept-netmask-or-prefix-length-on-etc-network-route.patch
 0002-Install-00check-network-cable-in-the-correct-spot.patch
+0003-ignore-IFACE-all-for-ifupdown-scripts.patch
