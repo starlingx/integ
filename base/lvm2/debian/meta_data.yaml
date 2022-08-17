@@ -4,8 +4,8 @@ debver: 2.03.11-2
 dl_path:
   name: lvm2-2.03.11-2.tar.gz
   url: https://salsa.debian.org/lvm-team/lvm2/-/archive/debian/2.03.11-2/lvm2-debian-2.03.11-2.tar.gz
-  md5sum: 07f9094c926a96977edc43ea0d665e2a
-  sha256sum: 6bd5c31725f30e573bdf583204833ca36ac0f5e9a05f043ee8ebfe41142af59a
+  md5sum: b7bc4d2c5f017060a10069dc3ac1ce8b
+  sha256sum: 59a5f1c91c8aed892dcd46f0f9a3056104367ea85b3f8a587ced3634c005b73a
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

@@ -5,7 +5,7 @@ dl_path:
   name: openstack-helm-infra-c9d6676bf9a5aceb311dc31dadd07cba6a3d6392.tar.gz
   url: https://github.com/openstack/openstack-helm-infra/archive/c9d6676bf9a5aceb311dc31dadd07cba6a3d6392.tar.gz
   md5sum: 6b4ad40b343c346ee54443337edd2be3
-  sha256sum: 0eb3ce229cd7ed52881ca4d7bec8b047108b24a26fcebbf91d07a50f5c8771eb
+  sha256sum: e3c9899489b17305dd324ad1fe78df4752eb0fe5c622abba31e67f50bdca378c
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
