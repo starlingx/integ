@@ -1,7 +1,7 @@
-From 6ba5057d343410d5b5f810974d9f4388cb7a9418 Mon Sep 17 00:00:00 2001
+From b03d8485ebf90da8bdf70d51e022dff738cc0107 Mon Sep 17 00:00:00 2001
 From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 Date: Wed, 18 May 2022 13:20:33 +0300
-Subject: [PATCH 14/14] Introduce and use custom NIC naming scheme
+Subject: [PATCH] Introduce and use custom NIC naming scheme
 
 To add some context we start by referencing [1].
 More lab tests are enabled now, which reveal more systemd naming
@@ -34,77 +34,85 @@ udev-builtin-net_id.c#L204-L207
 
 Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 ---
- src/shared/netif-naming-scheme.c | 3 +++
- src/shared/netif-naming-scheme.h | 6 ++++++
- src/udev/udev-builtin-net_id.c   | 6 +++---
- 3 files changed, 12 insertions(+), 3 deletions(-)
+ src/shared/netif-naming-scheme.c |  2 ++
+ src/shared/netif-naming-scheme.h |  8 ++++++
+ src/udev/udev-builtin-net_id.c   |  6 ++--
+ 4 files changed, 54 insertions(+), 10 deletions(-)
 
 diff --git a/src/shared/netif-naming-scheme.c b/src/shared/netif-naming-scheme.c
-index df520ab..150fe0d 100644
+index e95072e..dcb233d 100644
 --- a/src/shared/netif-naming-scheme.c
 +++ b/src/shared/netif-naming-scheme.c
-@@ -14,6 +14,9 @@ static const NamingScheme naming_schemes[] = {
-         { "v245", NAMING_V245 },
-         { "v247", NAMING_V247 },
-         /* … add more schemes here, as the logic to name devices is updated … */
-+        /* Need a custom naming scheme to keep naming the same as on CentOS.
-+         * At least for initial release, until upgrade logic is implemented. */
+@@ -24,6 +24,8 @@ static const NamingScheme naming_schemes[] = {
+         { "v249", NAMING_V249 },
+         { "v250", NAMING_V250 },
+         { "v251", NAMING_V251 },
 +        { "vSTX7_0", NAMING_VSTX7_0 },
- };
++
+         /* … add more schemes here, as the logic to name devices is updated … */
  
- static const NamingScheme* naming_scheme_from_name(const char *name) {
+         EXTRA_NET_NAMING_MAP
 diff --git a/src/shared/netif-naming-scheme.h b/src/shared/netif-naming-scheme.h
-index 503a74e..5c90416 100644
+index 5303348..907b3d2 100644
 --- a/src/shared/netif-naming-scheme.h
 +++ b/src/shared/netif-naming-scheme.h
-@@ -33,6 +33,8 @@ typedef enum NamingSchemeFlags {
-         NAMING_NSPAWN_LONG_HASH    = 1 << 8, /* Shorten nspawn interfaces by including 24bit hash, instead of simple truncation  */
-         NAMING_BRIDGE_NO_SLOT      = 1 << 9, /* Don't use PCI hotplug slot information if the corresponding device is a PCI bridge */
+@@ -38,6 +38,9 @@ typedef enum NamingSchemeFlags {
+         NAMING_XEN_VIF                   = 1 << 13, /* Generate names for Xen netfront devices */
+         NAMING_BRIDGE_MULTIFUNCTION_SLOT = 1 << 14, /* Use PCI hotplug slot information associated with bridge, but only if PCI device is multifunction */
  
 +        NAMING_VSTX7_0 = NAMING_BRIDGE_NO_SLOT,
++
 +
          /* And now the masks that combine the features above */
          NAMING_V238 = 0,
          NAMING_V239 = NAMING_V238 | NAMING_SR_IOV_V | NAMING_NPAR_ARI,
-@@ -55,3 +57,7 @@ const NamingScheme* naming_scheme(void);
+@@ -63,10 +66,15 @@ typedef struct NamingScheme {
+ const NamingScheme* naming_scheme_from_name(const char *name);
+ const NamingScheme* naming_scheme(void);
+ 
++
  static inline bool naming_scheme_has(NamingSchemeFlags flags) {
          return FLAGS_SET(naming_scheme()->flags, flags);
  }
-+
+ 
 +static inline bool naming_scheme_is(NamingSchemeFlags flags) {
 +        return naming_scheme()->flags == flags;
 +}
++
+ typedef enum NamePolicy {
+         NAMEPOLICY_KERNEL,
+         NAMEPOLICY_KEEP,
 diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
-index d06a8c7..825e9f8 100644
+index f2ea2a7..755a3f7 100644
 --- a/src/udev/udev-builtin-net_id.c
 +++ b/src/udev/udev-builtin-net_id.c
-@@ -201,7 +201,7 @@ static int dev_pci_onboard(sd_device *dev, struct netnames *names) {
+@@ -208,7 +208,7 @@ static int dev_pci_onboard(sd_device *dev, const LinkInfo *info, NetNames *names
          s = names->pci_onboard;
          l = sizeof(names->pci_onboard);
          l = strpcpyf(&s, l, "o%lu", idx);
--        if (port_name)
-+        if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
-                 l = strpcpyf(&s, l, "n%s", port_name);
+-        if (!isempty(info->phys_port_name))
++        if (!isempty(info->phys_port_name) && !naming_scheme_is(NAMING_VSTX7_0))
+                 /* kernel provided front panel port name for multiple port PCI device */
+                 l = strpcpyf(&s, l, "n%s", info->phys_port_name);
          else if (dev_port > 0)
-                 l = strpcpyf(&s, l, "d%lu", dev_port);
-@@ -318,7 +318,7 @@ static int dev_pci_slot(sd_device *dev, struct netnames *names) {
+@@ -385,7 +385,7 @@ static int dev_pci_slot(sd_device *dev, const LinkInfo *info, NetNames *names) {
          l = strpcpyf(&s, l, "p%us%u", bus, slot);
          if (func > 0 || is_pci_multifunction(names->pcidev))
                  l = strpcpyf(&s, l, "f%u", func);
--        if (port_name)
-+        if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
-                 l = strpcpyf(&s, l, "n%s", port_name);
+-        if (!isempty(info->phys_port_name))
++        if (!isempty(info->phys_port_name) && !naming_scheme_is(NAMING_VSTX7_0))
+                 /* kernel provided front panel port name for multi-port PCI device */
+                 l = strpcpyf(&s, l, "n%s", info->phys_port_name);
          else if (dev_port > 0)
-                 l = strpcpyf(&s, l, "d%lu", dev_port);
-@@ -388,7 +388,7 @@ static int dev_pci_slot(sd_device *dev, struct netnames *names) {
-                 l = strpcpyf(&s, l, "s%d", hotplug_slot);
+@@ -480,7 +480,7 @@ static int dev_pci_slot(sd_device *dev, const LinkInfo *info, NetNames *names) {
+                 l = strpcpyf(&s, l, "s%"PRIu32, hotplug_slot);
                  if (func > 0 || is_pci_multifunction(names->pcidev))
-                         l = strpcpyf(&s, l, "f%d", func);
--                if (port_name)
-+                if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
-                         l = strpcpyf(&s, l, "n%s", port_name);
+                         l = strpcpyf(&s, l, "f%u", func);
+-                if (!isempty(info->phys_port_name))
++                if (!isempty(info->phys_port_name) && !naming_scheme_is(NAMING_VSTX7_0))
+                         l = strpcpyf(&s, l, "n%s", info->phys_port_name);
                  else if (dev_port > 0)
                          l = strpcpyf(&s, l, "d%lu", dev_port);
 -- 
-2.36.1
+2.25.1
 
