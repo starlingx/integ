@@ -20,6 +20,8 @@ Tool to show a consolidated view of system physical disks and logical volume
 groups data.
 """
 
+from __future__ import absolute_import
+
 import os
 import sys
 import argparse
@@ -150,16 +152,9 @@ def get_system_creds():
 
     for line in proc.stdout:
         key, _, value = line.partition("=")
-        if key == 'OS_USERNAME':
-            d['os_username'] = value.strip()
-        elif key == 'OS_PASSWORD':
-            d['os_password'] = value.strip()
-        elif key == 'OS_TENANT_NAME':
-            d['os_tenant_name'] = value.strip()
-        elif key == 'OS_AUTH_URL':
-            d['os_auth_url'] = value.strip()
-        elif key == 'OS_REGION_NAME':
-            d['os_region_name'] = value.strip()
+        # Scrape env credentials using shared prefix
+        if key.startswith('OS_'):
+            d[key.lower()] = value.strip()
 
     proc.communicate()
     return d
@@ -421,9 +416,9 @@ def main():
                 raise exc.CommandError("You must provide a password via "
                                        "env[OS_PASSWORD]")
 
-        if not cgts_client_creds['os_tenant_name']:
-            raise exc.CommandError("You must provide a tenant_id via "
-                                   "env[OS_TENANT_NAME]")
+        if not cgts_client_creds['os_project_name']:
+            raise exc.CommandError("You must provide a project_id via "
+                                   "env[OS_PROJECT_NAME]")
 
         if not cgts_client_creds['os_auth_url']:
             raise exc.CommandError("You must provide a auth url via "
