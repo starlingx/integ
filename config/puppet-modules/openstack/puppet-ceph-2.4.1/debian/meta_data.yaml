@@ -4,7 +4,8 @@ debname: puppet-module-ceph
 dl_path:
     name: puppet-module-ceph-debian-2.4.1-1.tar.gz
     url: https://salsa.debian.org/openstack-team/puppet/puppet-module-ceph/-/archive/2.4.1/puppet-module-ceph-2.4.1.tar.gz
-    md5sum: 63e1c4e7174631957f96126b32c60360
+    md5sum: b603337d6862327c241526ae3e5dfda8
+    sha256sum: 168fdec8b38e755e3c37e790cab5473d077d9b1294da40ea3ab411a391e7e34b
 revision:
     dist: $STX_DIST
     PKG_GITREVCOUNT: true

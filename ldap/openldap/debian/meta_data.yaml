@@ -3,8 +3,8 @@ debver: 2.4.57+dfsg-3+deb11u1
 dl_path:
   name: openldap-2.4.57+dfsg-3+deb11u1.tar.gz
   url: https://salsa.debian.org/openldap-team/openldap/-/archive/2.4.57+dfsg-3+deb11u1/openldap-2.4.57+dfsg-3+deb11u1.tar.gz
-  md5sum: eeda0e02cba40c553d6dfc5fa690d5a5
-  sha256sum: ee82b1a22f0b1ff81567def39db2661284f44c2c717e54d7a4cffdb1d3bfc3b0
+  md5sum: da9dfefcd48f1715c9381d86ab5c071c
+  sha256sum: d59d4f5114e6e0991618adc5ae458eab53a8b76b74ffcf7d1355bc3886349a49
 dl_files:
   ppolicy-check-password-debian-stretch.zip:
     topdir: null

@@ -4,8 +4,8 @@ debver: 1.8.1
 dl_path:
   name: gpu-operator-v1.8.1.tar.gz
   url: https://github.com/NVIDIA/gpu-operator/archive/refs/tags/v1.8.1.tar.gz
-  md5sum: 03c7346c724774ecd63d33ba7d8e110a
-  sha256sum: 42e08c95ce5b558a296cb31c98a6beeef3b551d47d236fa082db7fa5c44ad471
+  md5sum: 17577b61fbcef6799a6057a957bd5f3c
+  sha256sum: c8550ae48143e68861c09f4d374c3607597337c7d7c6f27ef7a1091ccd16496f
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
