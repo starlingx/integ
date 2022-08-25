@@ -1,5 +1,6 @@
 # STX Patches
 851-inject-millisec-in-syslog-date.patch
+disable-default-presets.patch
 
 # This cluster of patches relates to fixing redhat bug #1819868
 # "systemd excessively reads mountinfo and udev in dense container environments"
