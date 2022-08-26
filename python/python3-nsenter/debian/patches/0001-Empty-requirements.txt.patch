@@ -1,0 +1,23 @@
+From 6ea9709c2477a41ff310255c5da42c4766b3fc22 Mon Sep 17 00:00:00 2001
+From: Adriano Oliveira <adriano.oliveira@windriver.com>
+Date: Tue, 13 Sep 2022 07:42:52 -0700
+Subject: [PATCH] Empty requirements.txt
+
+In python 3 pathlib, contextlib and argparse are included
+
+Signed-off-by: Adriano Oliveira <adriano.oliveira@windriver.com>
+---
+ requirements.txt | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/requirements.txt b/requirements.txt
+index 60e8060..e69de29 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,3 +0,0 @@
+-pathlib
+-contextlib2
+-argparse
+-- 
+2.17.1
+
