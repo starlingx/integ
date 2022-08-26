@@ -67,10 +67,12 @@ kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
 livepatch/kpatch
+networking/dpdk
 networking/ifupdown-extra
 networking/iputils
 networking/lldpd
 networking/net-tools
+networking/openvswitch
 ostree/initramfs-ostree
 ostree/mttyexec
 ostree/ostree
