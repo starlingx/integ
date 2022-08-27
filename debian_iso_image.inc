@@ -3,7 +3,7 @@
 facter
 kdump-tools
 puppet
-drbd-tools
+drbd-utils
 parted
 lvm2
 trident-installer
