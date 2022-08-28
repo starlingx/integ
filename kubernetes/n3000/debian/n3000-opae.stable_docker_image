@@ -1,0 +1,4 @@
+BUILDER=docker
+LABEL=n3000-opae
+DOCKER_FILE=./Dockerfile
+DOCKER_CONTEXT=../docker
