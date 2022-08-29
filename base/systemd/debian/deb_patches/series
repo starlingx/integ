@@ -1,1 +1,2 @@
-0001-Update-symbols-file-for-libsystemd0.patch
+0001-Revert-upstream-commit-9a2a552.patch
+0002-Revert-upstream-commit-a8a310c5e6.patch
