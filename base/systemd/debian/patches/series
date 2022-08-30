@@ -1,7 +1,29 @@
 # STX Patches
 851-inject-millisec-in-syslog-date.patch
 
-# skip-some-testcases.patch
+# This cluster of patches relates to fixing redhat bug #1819868
+# "systemd excessively reads mountinfo and udev in dense container environments"
+
+# Patch (3) for solving #1819868
+909-sd-event-split-clock-data-allocation-out-of-sd_event.patch
+# Patch (4) for solving #1819868
+910-sd-event-split-out-code-to-add-remove-timer-event-so.patch
+# Patch (6) for solving #1819868
+913-sd-event-remove-earliest_index-latest_index-into-com.patch
+# Patch (9) for solving #1819868
+919-sd-event-add-ability-to-ratelimit-event-sources.patch
+# Patch (10) for solving #1819868
+920-core-prevent-excessive-proc-self-mountinfo-parsing.patch
+skip-some-testcases.patch
+
+# This cluster of patches relates to fixing redhat bug #1968528
+# "fix rate-limiting of mount events"
+922-sd-event-change-ordering-of-pending-ratelimited-even.patch
+923-sd-event-drop-unnecessary-else.patch
+924-sd-event-use-CMP-macro.patch
+925-sd-event-use-usec_add.patch
+926-sd-event-make-event_source_time_prioq_reshuffle-acce.patch
+927-sd-event-always-reshuffle-time-prioq-on-changing-onl.patch
 
 # Keep NIC naming in sync with CentOS
 0014-Introduce-and-use-custom-NIC-naming-scheme.patch

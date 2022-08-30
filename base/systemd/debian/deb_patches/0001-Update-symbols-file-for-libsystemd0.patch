@@ -1,0 +1,52 @@
+From 2818847c832ad5e11c501b9cb7110aec5e534582 Mon Sep 17 00:00:00 2001
+From: Yue Tao <Yue.Tao@windriver.com>
+Date: Tue, 9 Nov 2021 23:19:48 -0800
+Subject: [PATCH] Update symbols file for libsystemd0
+
+Introduce 3 new functions by porting upstream commit
+b6d5481b3d9f7c9b1198ab54b54326ec73e855bf.
+
+See source patch 919-sd-event-add-ability-to-ratelimit-event-sources.patch
+
+Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
+---
+ debian/libsystemd0.symbols | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/debian/libsystemd0.symbols b/debian/libsystemd0.symbols
+index fdd6adebb1..9bd312e355 100644
+--- a/debian/libsystemd0.symbols
++++ b/debian/libsystemd0.symbols
+@@ -28,6 +28,7 @@ libsystemd.so.0 libsystemd0 #MINVER#
+  LIBSYSTEMD_245@LIBSYSTEMD_245 245
+  LIBSYSTEMD_246@LIBSYSTEMD_246 246
+  LIBSYSTEMD_247@LIBSYSTEMD_247 247
++ LIBSYSTEMD_248@LIBSYSTEMD_248 248
+  sd_booted@LIBSYSTEMD_209 0
+  sd_bus_add_fallback@LIBSYSTEMD_221 221
+  sd_bus_add_fallback_vtable@LIBSYSTEMD_221 221
+@@ -434,11 +435,13 @@ libsystemd.so.0 libsystemd0 #MINVER#
+  sd_event_source_get_io_revents@LIBSYSTEMD_221 221
+  sd_event_source_get_pending@LIBSYSTEMD_221 221
+  sd_event_source_get_priority@LIBSYSTEMD_221 221
++ sd_event_source_get_ratelimit@LIBSYSTEMD_248 248
+  sd_event_source_get_signal@LIBSYSTEMD_221 221
+  sd_event_source_get_time@LIBSYSTEMD_221 221
+  sd_event_source_get_time_accuracy@LIBSYSTEMD_221 221
+  sd_event_source_get_time_clock@LIBSYSTEMD_221 221
+  sd_event_source_get_userdata@LIBSYSTEMD_221 221
++ sd_event_source_is_ratelimited@LIBSYSTEMD_248 248
+  sd_event_source_ref@LIBSYSTEMD_221 221
+  sd_event_source_send_child_signal@LIBSYSTEMD_245 245
+  sd_event_source_set_child_pidfd_own@LIBSYSTEMD_245 245
+@@ -453,6 +456,7 @@ libsystemd.so.0 libsystemd0 #MINVER#
+  sd_event_source_set_io_fd_own@LIBSYSTEMD_237 237
+  sd_event_source_set_prepare@LIBSYSTEMD_221 221
+  sd_event_source_set_priority@LIBSYSTEMD_221 221
++ sd_event_source_set_ratelimit@LIBSYSTEMD_248 248
+  sd_event_source_set_time@LIBSYSTEMD_221 221
+  sd_event_source_set_time_accuracy@LIBSYSTEMD_221 221
+  sd_event_source_set_time_relative@LIBSYSTEMD_247 247
+-- 
+2.31.1
+
