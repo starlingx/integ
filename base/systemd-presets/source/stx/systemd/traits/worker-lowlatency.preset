@@ -1,0 +1,152 @@
+# 00-mtce-storage.preset
+disable goenabled-storage.service
+
+# 00-cgcs-patch.preset
+disable sw-patch-controller.service
+disable sw-patch-controller-daemon.service
+enable sw-patch-agent.service
+enable sw-patch.service
+
+# 00-controllerconfig.preset
+enable config.service
+
+# 00-controllerconfig.preset
+disable controllerconfig.service
+
+# 00-filesystem-scripts.preset
+enable uexportfs.service
+
+# 00-fm-rest-api.preset
+disable fm-api.service
+
+# 00-haproxy-config.preset
+disable haproxy.service
+
+# 00-iscsi-initiator-utils-config.preset
+enable iscsi-shutdown.service
+
+# 00-mtce-compute.preset
+enable goenabled-worker.service
+
+# 00-mtce-control.preset
+disable hbsAgent.service
+
+# 00-nfs-utils-config.preset
+disable rpc-statd.service
+disable rpc-statd-notify.service
+enable nfs-common.service
+
+# 00-sm-api.preset
+disable sm-api.service
+
+# 00-sm-common.preset
+disable sm-watchdog.service
+
+# 00-sm-eru.preset
+enable sm-eru.service
+
+# 00-sm.preset
+disable sm.service
+disable sm-shutdown.service
+
+# 00-sysinv-agent.preset
+enable sysinv-agent.service
+
+# 00-sysinv-fpga-agent.preset
+enable sysinv-fpga-agent.service
+enable sysinv-conf-watcher.service
+enable sysinv-conf-watcher.path
+
+# 00-tuned-config.preset
+enable tuned.service
+
+# 85-debpkg-issues.preset
+enable mountnfs.service
+
+# nfs debian
+enable nfs-blkmap.service
+enable nfs-idmapd.service
+enable nfs-mountd.service
+enable nfs-server.service
+enable nfs-client.target
+
+# isolcpus-device-plugin.spec
+enable isolcpu_plugin.service
+
+# k8s-pod-recovery.spec
+disable k8s-pod-recovery.service
+
+# lldpd.spec
+enable lldpd.service
+
+# openvswitch.spec
+disable openvswitch.service
+
+# libvirt.spec (Package currently not included)
+
+# qemu-kvm.spec (Package currently not included)
+enable qemu_clean.service
+
+# mtce-storage.spec (Move to rutime enablement. Disable, not needed for AIO)
+#enable goenabled-storage.service
+
+# mtce.spec
+enable mtcClient.service
+enable hbsClient.service
+enable fsmon.service
+enable mtclog.service
+enable iscsid.service
+enable rsync.service
+enable goenabled.service
+enable mtcalarm.service
+enable crashDumpMgr.service
+enable hostw.service
+enable pmon.service
+enable lmon.service
+
+# mtce-guest.spec
+enable guestServer.service
+
+# collect-engtools.spec (Move to rutime enablement. Typically not installed. Disable, not needed for AIO)
+#enable collect-engtools.service
+
+# logmgmt.spec
+enable logmgmt.service
+
+# nfscheck.spec (Move to rutime enablement. Disable, only on non-controllers)
+enable nfscheck.service
+
+# platform-util.spec (Move to rutime enablement. Disable, only on non-controllers)
+enable opt-platform.mount
+enable opt-platform.service
+
+# worker-utils.spec
+enable affine-platform.sh.service
+enable affine-tasks.service
+
+# worker personality
+disable ceph-manager.service
+disable dcmanager-api.service
+disable dcmanager-audit-worker.service
+disable dcmanager-audit.service
+disable dcmanager-manager.service
+disable dcmanager-orchestrator.service
+disable dcorch-api.service
+disable dcorch-engine.service
+disable dcorch-identity-api-proxy.service
+disable dcorch-sysinv-api-proxy.service
+disable drbd.service
+disable fminit.service
+disable lighttpd.service
+disable memcached.service
+disable guestAgent.service
+disable slapd.service
+disable barbican-api.service
+disable barbican-keystone-listener.service
+disable barbican-worker.service
+disable keystone.service
+disable postgresql.service
+disable storageconfig.service
+enable kvm_timer_advance_setup.service
+enable worker-config-gate.service
+enable workerconfig.service

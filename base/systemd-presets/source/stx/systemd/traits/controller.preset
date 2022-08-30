@@ -1,0 +1,136 @@
+# 00-mtce-storage.preset
+disable goenabled-storage.service
+
+# 00-cgcs-patch.preset
+enable sw-patch-controller.service
+enable sw-patch-controller-daemon.service
+enable sw-patch-agent.service
+enable sw-patch.service
+
+# 00-config-gate-worker.preset
+enable config.service
+
+# 00-controllerconfig.preset
+enable controllerconfig.service
+
+# 00-filesystem-scripts.preset
+enable uexportfs.service
+
+# 00-fm-rest-api.preset
+enable fm-api.service
+
+# 00-haproxy-config.preset
+disable haproxy.service
+
+# 00-iscsi-initiator-utils-config.preset
+enable iscsi-shutdown.service
+
+# 00-mtce-compute.preset
+disable goenabled-worker.service
+
+# 00-mtce-control.preset
+enable hbsAgent.service
+
+# 00-nfs-utils-config.preset
+disable rpc-statd.service
+disable rpc-statd-notify.service
+enable nfs-common.service
+enable nfs-server.service
+
+# 00-sm-api.preset
+enable sm-api.service
+
+# 00-sm-common.preset
+enable sm-watchdog.service
+
+# 00-sm-eru.preset
+enable sm-eru.service
+
+# 00-sm.preset
+enable sm.service
+enable sm-shutdown.service
+
+# 00-sysinv-agent.preset
+enable sysinv-agent.service
+
+# 00-sysinv-fpga-agent.preset
+disable sysinv-fpga-agent.service
+disable sysinv-conf-watcher.service
+disable sysinv-conf-watcher.path
+
+# 00-tuned-config.preset
+enable tuned.service
+
+# 85-debpkg-issues.preset
+enable mountnfs.service
+
+# nfs debian
+enable nfs-blkmap.service
+enable nfs-idmapd.service
+enable nfs-mountd.service
+enable nfs-client.target
+
+# isolcpus-device-plugin.spec
+disable isolcpu_plugin.service
+
+# k8s-pod-recovery.spec
+enable k8s-pod-recovery.service
+
+# lldpd.spec
+enable lldpd.service
+
+# openvswitch.spec
+disable openvswitch.service
+
+# libvirt.spec (Package currently not included)
+
+# qemu-kvm.spec (Package currently not included)
+
+# qemu-clean
+enable qemu_clean.service
+
+# lightttpd
+enable lighttpd.service
+
+# mtce-storage.spec (Move to rutime enablement. Disable, not needed for AIO)
+#enable goenabled-storage.service
+
+# mtce.spec
+enable fsmon.service
+enable mtcClient.service
+enable hbsClient.service
+enable mtclog.service
+enable iscsid.service
+enable rsync.service
+enable goenabled.service
+enable mtcalarm.service
+enable crashDumpMgr.service
+enable hostw.service
+enable pmon.service
+enable lmon.service
+
+# mtce-guest.spec
+disable guestServer.service
+
+
+# collect-engtools.spec (Move to rutime enablement. Typically not installed. Disable, not needed for AIO)
+#enable collect-engtools.service
+
+# logmgmt.spec
+enable logmgmt.service
+
+# nfscheck.spec (Move to rutime enablement. Disable, only on non-controllers)
+disable nfscheck.service
+
+# platform-util.spec (Move to rutime enablement. Disable, only on non-controllers)
+disable opt-platform.mount
+disable opt-platform.service
+
+# worker-utils.spec
+disable affine-platform.sh.service
+disable affine-tasks.service
+
+disable worker-config-gate.service
+disable storageconfig.service
+disable workerconfig.service
+disable kvm_timer_advance_setup.service

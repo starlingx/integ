@@ -10,6 +10,7 @@ base/lvm2
 base/lsb
 base/pf-bb-config
 base/systemd
+base/systemd-presets
 base/watchdog
 centos-debian-compat
 ceph/ceph
