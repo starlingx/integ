@@ -60,7 +60,6 @@ enable fm-api.service
 enable sm-api.service
 
 # sm-common.spec
-enable sm-watchdog.service
 enable sm-eru.service
 
 # sm.spec
