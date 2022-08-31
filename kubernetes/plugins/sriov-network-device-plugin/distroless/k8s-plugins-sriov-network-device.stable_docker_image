@@ -1,7 +1,0 @@
-BUILDER=script
-LABEL=k8s-plugins-sriov-network-device
-SOURCE_REPO=https://github.com/intel/sriov-network-device-plugin.git
-SOURCE_REF=e112960e14df5013083def2aeb14f73b72f0a301
-COMMAND=bash
-SCRIPT=build-sriov-network-device-plugin-image.sh
-ARGS="sriov-device-plugin"
