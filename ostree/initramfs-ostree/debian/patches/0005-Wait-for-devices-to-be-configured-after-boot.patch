@@ -1,7 +1,6 @@
-From 97ae81f83a1e98b84aeaf6cfc64f79ac9ea99315 Mon Sep 17 00:00:00 2001
 From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 Date: Tue, 19 Jul 2022 10:32:46 +0300
-Subject: [PATCH] Wait for devices to be configured after boot
+Subject: Wait for devices to be configured after boot
 
 It was observed that dhcp requests happen too soon after boot.
 It may happen that the NIC driver won't rename the interface
@@ -17,10 +16,10 @@ Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 9bfcd2a..5442391 100644
+index a302abc..4dc3079 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -965,7 +965,9 @@ if [ "$INSTSH" = 1 -o "$INSTSH" = 3 -o "$INSTSH" = 4 ] ; then
+@@ -920,7 +920,9 @@ if [ "$INSTSH" = 1 -o "$INSTSH" = 3 -o "$INSTSH" = 4 ] ; then
  	lreboot
  fi
  
@@ -31,6 +30,3 @@ index 9bfcd2a..5442391 100644
  
  if [ "$INSTNAME" = "" ] ; then
  	fatal "Error no remote archive name, need kernel argument: instname=..."
--- 
-2.34.1
-
