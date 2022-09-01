@@ -1,0 +1,33 @@
+From 45595a9851a6e09d17a6fc9006b7ddb3b8539756 Mon Sep 17 00:00:00 2001
+From: Andre Fernando Zanella Kantek
+ <AndreFernandoZanella.Kantek@windriver.com>
+Date: Thu, 1 Sep 2022 10:26:19 -0300
+Subject: [PATCH] Set the default prefix length to 64
+
+Since the StarlingX internode communication happens without a L3 router,
+the hosts will not be able to see each other with prefix length of 128.
+
+This commit sets the default value to 64
+
+
+Signed-off-by: Andre Fernando Zanella Kantek <AndreFernandoZanella.Kantek@windriver.com>
+---
+ includes/site.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/includes/site.h b/includes/site.h
+index 2ef69e4..ca2ec6a 100644
+--- a/includes/site.h
++++ b/includes/site.h
+@@ -285,7 +285,7 @@
+    is a host address and doesn't include any on-link information.
+    64 indicates that the first 64 bits are the subnet or on-link
+    prefix. */
+-#define DHCLIENT_DEFAULT_PREFIX_LEN 128
++#define DHCLIENT_DEFAULT_PREFIX_LEN 64
+ 
+ /* Enable the gentle shutdown signal handling.  Currently this
+    means that on SIGINT or SIGTERM a client will release its
+-- 
+2.17.1
+

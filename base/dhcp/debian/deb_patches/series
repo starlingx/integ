@@ -1,2 +1,3 @@
 0001-dhclient-dhcp6-set-hostname.patch
 0002-Update-dn-and-dns-only-with-diff-upon-RENEW.patch
+0003-Use-prefixlen-for-IPv6-address-operations.patch
