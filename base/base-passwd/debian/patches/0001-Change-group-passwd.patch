@@ -1,4 +1,4 @@
-From 7deb684d4cd0d9d1f176941c0e0482f9668119d7 Mon Sep 17 00:00:00 2001
+From 78ad07ad266124cb5dad021e7bdc9d7ec5edc8f8 Mon Sep 17 00:00:00 2001
 From: Al Bailey <Al.Bailey@windriver.com>
 Date: Thu, 24 Oct 2019 11:53:01 -0500
 Subject: [PATCH 1/2] Change group,passwd
@@ -13,13 +13,14 @@ Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
 Signed-off-by: Yue Tao <yue.tao@windriver.com>
 Signed-off-by: Charles Short <charles.short@windriver.com>
 Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Luis Eduardo Bonatti <LuizEduardo.Bonatti@windriver.com>
 ---
- group.master  | 16 +++++++++-------
- passwd.master | 13 ++++++++-----
- 2 files changed, 17 insertions(+), 12 deletions(-)
+ group.master  | 17 ++++++++++-------
+ passwd.master | 14 +++++++++-----
+ 2 files changed, 19 insertions(+), 12 deletions(-)
 
 diff --git a/group.master b/group.master
-index ad1dd2d..69f4fff 100644
+index ad1dd2d..5ab0d52 100644
 --- a/group.master
 +++ b/group.master
 @@ -1,15 +1,11 @@
@@ -46,7 +47,7 @@ index ad1dd2d..69f4fff 100644
  dip:*:30:
  www-data:*:33:
  backup:*:34:
-@@ -30,10 +25,17 @@ src:*:40:
+@@ -30,10 +25,18 @@ src:*:40:
  gnats:*:41:
  shadow:*:42:
  utmp:*:43:
@@ -66,8 +67,9 @@ index ad1dd2d..69f4fff 100644
 +libvirt:x:991:nova
 +ironic:x:1874:ironic
 +www:x:1877:www
++keystone:x:42424:keystone
 diff --git a/passwd.master b/passwd.master
-index f1e69a4..cea9d1b 100644
+index f1e69a4..c3a3ebc 100644
 --- a/passwd.master
 +++ b/passwd.master
 @@ -1,12 +1,7 @@
@@ -83,7 +85,7 @@ index f1e69a4..cea9d1b 100644
  news:*:9:9:news:/var/spool/news:/usr/sbin/nologin
  uucp:*:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
  proxy:*:13:13:proxy:/bin:/usr/sbin/nologin
-@@ -16,3 +11,11 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+@@ -16,3 +11,12 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
  irc:*:39:39:ircd:/run/ircd:/usr/sbin/nologin
  gnats:*:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
  nobody:*:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
@@ -95,6 +97,7 @@ index f1e69a4..cea9d1b 100644
 +nova:x:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
 +ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
 +www:x:1877:1877:www:/home/www:/sbin/nologin
++keystone:x:42424:42424:OpenStack Keystone Daemons:/var/lib/keystone:/sbin/nologin
 -- 
-2.30.0
+2.17.1
 
