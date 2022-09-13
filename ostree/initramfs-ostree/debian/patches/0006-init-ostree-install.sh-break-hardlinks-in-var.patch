@@ -1,7 +1,6 @@
-From c4eaf35440afe4ef0473b90b32566a05f99dfbd6 Mon Sep 17 00:00:00 2001
 From: Zhang Xiao <xiao.zhang@windriver.com>
 Date: Sat, 6 Aug 2022 12:39:16 +0000
-Subject: [PATCH] init-ostree-install.sh: break hardlinks in /var
+Subject: init-ostree-install.sh: break hardlinks in /var
 
 Here the root filesystem is managed by OSTree. OSTree is designed to
 manage/deploy read-only filesystem. For read-only filesystem, hardlink
@@ -21,10 +20,10 @@ Signed-off-by: Zhang Xiao <xiao.zhang@windriver.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 0e5b8f3..f66224d 100644
+index 4dc3079..41bae2a 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -1478,11 +1478,11 @@ else
+@@ -1480,11 +1480,11 @@ else
  	mount -o $mount_flags LABEL=fluxdata /var1
  fi
  if [ -d ${PHYS_SYSROOT}/ostree/1/var ] ; then
@@ -38,6 +37,3 @@ index 0e5b8f3..f66224d 100644
  	tar --xattrs --xattrs-include='*' -xf - -C /var1/home 2> /dev/null
  fi
  
--- 
-2.32.0
-
