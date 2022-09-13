@@ -1,0 +1,152 @@
+From 946aea4142d5d0acea03c3f72509fd2285f7f73f Mon Sep 17 00:00:00 2001
+From: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+Date: Tue, 13 Sep 2022 11:02:35 -0300
+Subject: [PATCH] Handle default route creation
+
+Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+---
+ debian/ifupdown-extra.networking-routes.init | 34 ++++++++++++++------
+ if-up-scripts/static-routes                  | 30 ++++++++++++-----
+ 2 files changed, 46 insertions(+), 18 deletions(-)
+
+diff --git a/debian/ifupdown-extra.networking-routes.init b/debian/ifupdown-extra.networking-routes.init
+index db1254d..e9097d1 100755
+--- a/debian/ifupdown-extra.networking-routes.init
++++ b/debian/ifupdown-extra.networking-routes.init
+@@ -81,6 +81,20 @@ function get_prefix_length {
+     fi
+ }
+ 
++# if route is default, remove prefix_len
++function get_linux_network {
++    network=$1
++    netmask=$2
++    local prefix_len
++    local linux_network
++    prefix_len=$(get_prefix_length ${netmask})
++    linux_network="${network}${prefix_len}"
++    if [ "${network}" == "default" ]; then
++        linux_network="${network}"
++    fi
++    echo "${linux_network}"
++}
++
+ # Functions to read the route file and process it
+ 
+ 
+@@ -118,19 +132,19 @@ del_global_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
+-                local prefix_len
+-                prefix_len=$(get_prefix_length ${netmask})
++                local linux_network
++                linux_network=$(get_linux_network ${network} ${netmask})
+                 if [ "$gateway" != "reject" ] ; then
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting global route for $network / $netmask through gateway $gateway"
+                     if [ "$interface" != "any" ] ; then
+-                        run_route del ${network}${prefix_len} via ${gateway} dev ${interface}
++                        run_route del ${linux_network} via ${gateway} dev ${interface}
+                     else
+-                        run_route del ${network}${prefix_len} via ${gateway}
++                        run_route del ${linux_network} via ${gateway}
+                     fi
+                     [ $? -ne 0 ] && ret=$?
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting reject route for $network / $netmask"
+-                    run_route del ${network}${prefix_len} reject
++                    run_route del ${linux_network} reject
+                     [ $? -ne 0 ] && ret=$?
+                 fi
+ 
+@@ -147,19 +161,19 @@ add_global_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
+-                local prefix_len
+-                prefix_len=$(get_prefix_length ${netmask})
++                local linux_network
++                linux_network=$(get_linux_network ${network} ${netmask})
+                 if [ "$gateway" != "reject" ] ; then
+ 		    [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding global route for $network / $netmask through gateway $gateway"
+                     if [ "$interface" != "any" ] ; then
+-                        run_route add ${network}${prefix_len} via ${gateway} dev ${interface}
++                        run_route add ${linux_network} via ${gateway} dev ${interface}
+                     else
+-                        run_route add ${network}${prefix_len} via ${gateway}
++                        run_route add ${linux_network} via ${gateway}
+                     fi
+                     [ $? -ne 0 ] && ret=$?
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding global reject route for $network / $netmask"
+-                    run_route add ${network}${prefix_len} reject
++                    run_route add ${linux_network} reject
+                     [ $? -ne 0 ] && ret=$?
+                 fi
+ 
+diff --git a/if-up-scripts/static-routes b/if-up-scripts/static-routes
+index 867303d..1341f43 100755
+--- a/if-up-scripts/static-routes
++++ b/if-up-scripts/static-routes
+@@ -85,6 +85,20 @@ function get_prefix_length {
+     fi
+ }
+ 
++# if route is default, remove prefix_len
++function get_linux_network {
++    network=$1
++    netmask=$2
++    local prefix_len
++    local linux_network
++    prefix_len=$(get_prefix_length ${netmask})
++    linux_network="${network}${prefix_len}"
++    if [ "${network}" == "default" ]; then
++        linux_network="${network}"
++    fi
++    echo "${linux_network}"
++}
++
+ del_static_routes() {
+ 	# NOTE: We actually don't have to remove routes if downing an interface
+ 	# since they will be removed nevertheless. In any case, this 
+@@ -93,14 +107,14 @@ del_static_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*[[:space:]]${IFACE}[[:space:]]*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
+-                local prefix_len
+-                prefix_len=$(get_prefix_length ${netmask})
++                local linux_network
++                linux_network=$(get_linux_network ${network} ${netmask})
+                 if [ "$gateway" != "reject" ] ; then
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting route for $network / $netmask through gateway $gateway at $interface"
+-                    ip route del ${network}${prefix_len} via ${gateway} dev ${interface}
++                    ip route del ${linux_network} via ${gateway} dev ${interface}
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Deleting reject route for $network / $netmask when bringing up $interface"
+-                    ip route del ${network}${prefix_len} reject
++                    ip route del ${linux_network} reject
+                 fi
+ 
+             else
+@@ -113,14 +127,14 @@ add_static_routes() {
+ 	cat $ROUTEFILE | egrep "^[^#].*[[:space:]]${IFACE}[[:space:]]*$" | 
+ 	while read network netmask gateway interface ; do
+             if [ -n "$interface" ] && [ -n "$network" ] && [ -n "$netmask" ] && [ -n "$gateway" ] ; then
+-                local prefix_len
+-                prefix_len=$(get_prefix_length ${netmask})
++                local linux_network
++                linux_network=$(get_linux_network ${network} ${netmask})
+                 if [ "$gateway" != "reject" ] && [ "$gateway" != "blackhole" ] ; then
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding route for $network / $netmask through gateway $gateway at $interface"
+-                    ip route add ${network}${prefix_len} via ${gateway} dev ${interface}
++                    ip route add ${linux_network} via ${gateway} dev ${interface}
+                 else
+                     [ "$VERBOSITY" -eq 1 ] && echo "DEBUG: Adding reject/blackhole route for $network / $netmask when bringing up $interface"
+-                    ip route add blackhole ${network}${prefix_len}
++                    ip route add blackhole ${linux_network}
+                 fi
+ 
+             else
+-- 
+2.17.1
+
