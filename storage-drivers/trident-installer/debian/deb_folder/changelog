@@ -1,3 +1,9 @@
+trident-installer (22.07.0-0) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Mauricio Carmelo <Mauricio.BiasiDoMonteCarmelo@windriver.com>  Mon, 26 Sep 2022 18:04:00 -0400
+
 trident-installer (22.01.0-0) unstable; urgency=medium
 
   * Initial release.
