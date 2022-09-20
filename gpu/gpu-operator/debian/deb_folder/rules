@@ -17,7 +17,4 @@ override_dh_auto_build:
 	helm package --version ${HELM_VER}-${PKG_VERSION} --app-version v${PKG_VERSION} -d build_results deployments/gpu-operator
 
 override_dh_auto_install:
-	# Install the app tar file.
-	install -d -m 755 ${DEBIAN_DESTDIR}/opt/extracharts
-	install -p -D -m 644 build_results/gpu-operator-${HELM_VER}-${PKG_VERSION}.tgz ${DEBIAN_DESTDIR}/opt/extracharts
 	dh_install
