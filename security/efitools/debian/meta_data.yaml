@@ -1,0 +1,14 @@
+---
+debver: 1.9.2-1
+debname: efitools
+dl_path:
+  name: efitools-debian-1.9.2-1.tar.gz
+  url: "https://salsa.debian.org/efi-team/efitools/-/archive/debian/\
+        1.9.2-1/efitools-debian-1.9.2-1.tar.gz"
+  md5sum: e81aa4822cfcbca81074c9cb07951e75
+  sha256sum: 69f02c5b588b666075ed4d390655cf3bfe7f7e2daae643423cd052e081e1368a
+src_files:
+  - debian/uefi_sb_keys
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
