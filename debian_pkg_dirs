@@ -45,6 +45,7 @@ golang-github-dev/golang-github-coreos-go-systemd-dev
 golang-github-dev/golang-github-opencontainers-specs-dev
 golang-github-dev/golang-github-vishvananda-netlink
 gpu/gpu-operator
+grub/grub-efi
 grub/grub2
 grub/grubby
 kubernetes/armada
@@ -78,6 +79,7 @@ ostree/ostree-upgrade-mgr
 python/dh-python
 python/python-nss
 python/python3-setuptools
+security/efitools
 security/keyrings.alt
 security/python-keyring
 security/shim-unsigned
