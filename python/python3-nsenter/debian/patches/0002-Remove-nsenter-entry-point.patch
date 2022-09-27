@@ -1,0 +1,33 @@
+From 17cd3519838741e2bcb5285a8f6f1acbc8c78048 Mon Sep 17 00:00:00 2001
+From: Adriano Oliveira <adriano.oliveira@windriver.com>
+Date: Thu, 15 Sep 2022 13:59:58 -0700
+Subject: [PATCH] Remove nsenter entry point
+
+The original nsenter entry point conflicts with /usr/bin/nsenter
+binary.
+
+Signed-off-by: Adriano Oliveira <adriano.oliveira@windriver.com>
+---
+ setup.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index 69ca693..b88117e 100644
+--- a/setup.py
++++ b/setup.py
+@@ -39,10 +39,10 @@ def setup_package():
+             'Operating System :: POSIX :: Linux',
+             'License :: OSI Approved :: Apache Software License'],
+         test_suite='tests',
+-        setup_requires=['flake8'],
+         install_requires=get_install_requirements('requirements.txt'),
+         packages=setuptools.find_packages(exclude=['tests', 'tests.*']),
+-        entry_points={'console_scripts': ['nsenter = nsenter:main']}
++        entry_points={
++        }
+     )
+ 
+ if __name__ == '__main__':
+-- 
+2.17.1
+
