@@ -1,0 +1,9 @@
+debver: 1.24.4
+dl_path:
+  name: kubernetes-1.24.4.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.24.4.tar.gz
+  md5sum: 4798c96475ce89c6354317f7b4ec08ca
+  sha256sum: 16e7112d8efa46c0a36976b001efe335eea4b9e1dd721824c9c2c064ae7f6bbe
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
