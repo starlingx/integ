@@ -1,7 +1,7 @@
 From de653bd0823b248d623a39c17a3872e85ce952b0 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Fri, 3 Sep 2021 18:05:15 -0400
-Subject: [PATCH 5/7] kubeadm: create platform pods with zero CPU resources
+Subject: [PATCH] kubeadm: create platform pods with zero CPU resources
 
 We want to specify zero CPU resources when creating the manifests
 for the static platform pods, as a workaround for the lack of
