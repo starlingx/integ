@@ -230,7 +230,7 @@ function parse_iostats_data {
             while IFS= read -r current; do
                 if test "${current#*Linux}" != "$current"
                 then
-           # Skip the line that contains the word "Linux"
+                    # Skip the line that contains the word "Linux"
                     continue
                 else
                     if test "${current#*$DEVICE}" == "$current"
