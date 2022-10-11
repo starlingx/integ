@@ -13,7 +13,7 @@ Build-Depends: debhelper-compat (= 13),
                golang-github-coreos-go-iptables-dev (>= 0.4.5~),
                golang-github-safchain-ethtool-dev,
                golang-golang-x-sys-dev,
-XS-Go-Import-Path: github.com/bond
+XS-Go-Import-Path: github.com/intel/bond-cni
 
 Package: bond-cni
 Architecture: any
