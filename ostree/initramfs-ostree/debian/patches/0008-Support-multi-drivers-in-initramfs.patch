@@ -1,0 +1,38 @@
+From 21919ca120e0693419c3b97fb442edf040f660f2 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 15 Sep 2022 02:48:39 -0700
+Subject: [PATCH] Support multi-drivers in initramfs.
+
+Remove the network drivers ice, i40e and iavf if multi-drivers-switch
+is set in cmdline,  which ensures that ice, i40e and iavf drivers will
+not be loaded during initramfs stage.
+
+pxe-network-installer will not be impacted because the parameter
+multi-drivers-switch is not set in this stage.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ init-ostree.sh | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/init-ostree.sh b/init-ostree.sh
+index 6017fcf..b0d46a1 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -167,6 +167,13 @@ fatal() {
+ 
+ early_setup
+ 
++if grep -s -q '\smulti-drivers-switch=' /proc/cmdline ; then
++        rm -r /lib/modules/*/updates/ice
++        rm -r /lib/modules/*/updates/i40e
++        rm -r /lib/modules/*/updates/iavf
++        echo "Removed network drivers ice, i40e and iavf"
++fi
++
+ read_args
+ 
+ [ -z "$CONSOLE" ] && CONSOLE="/dev/console"
+-- 
+2.35.1
+
