@@ -1,0 +1,9 @@
+kubelet-cpumanager-disable-CFS-quota-throttling-for-.patch
+kubelet-cpumanager-keep-normal-containers-off-reserv.patch
+kubelet-cpumanager-infrastructure-pods-use-system-re.patch
+kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
+kubeadm-create-platform-pods-with-zero-CPU-resources.patch
+Revert-use-subpath-for-coredns-only-for-default-repo.patch
+enable-support-for-kubernetes-to-ignore-isolcpus.patch
+kubernetes-make-isolcpus-allocation-SMT-aware.patch
+kubelet-sort-isolcpus-allocation-when-SMT-enabled.patch
