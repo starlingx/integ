@@ -1,0 +1,119 @@
+From 42c1abc4763c795b0c9bfb65b1ceba1fd2fa3427 Mon Sep 17 00:00:00 2001
+From: Jim Gauld <James.Gauld@windriver.com>
+Date: Wed, 12 Oct 2022 14:00:47 -0400
+Subject: [PATCH 5/5] Revert "kubeadm: delete the old "master" label during
+ upgrade"
+
+This reverts commit c0871b4433783a30c97e204b2011cf17d0457a62.
+---
+ cmd/kubeadm/app/cmd/join.go                   |  2 +-
+ cmd/kubeadm/app/cmd/upgrade/apply.go          |  7 +++----
+ cmd/kubeadm/app/phases/upgrade/health.go      | 21 +++++++++++++++++--
+ cmd/kubeadm/app/phases/upgrade/postupgrade.go | 10 ++++++---
+ 4 files changed, 30 insertions(+), 10 deletions(-)
+
+diff --git a/cmd/kubeadm/app/cmd/join.go b/cmd/kubeadm/app/cmd/join.go
+index fa0b07e3631..934a0951ff3 100644
+--- a/cmd/kubeadm/app/cmd/join.go
++++ b/cmd/kubeadm/app/cmd/join.go
+@@ -64,7 +64,7 @@ var (
+ 
+ 		* Certificate signing request was sent to apiserver and approval was received.
+ 		* The Kubelet was informed of the new secure connection details.
+-		* Control plane label and taint were applied to the new node.
++		* Control plane (master) label and taint were applied to the new node.
+ 		* The Kubernetes control plane instances scaled up.
+ 		{{.etcdMessage}}
+ 
+diff --git a/cmd/kubeadm/app/cmd/upgrade/apply.go b/cmd/kubeadm/app/cmd/upgrade/apply.go
+index 3644146d804..d49859aab9d 100644
+--- a/cmd/kubeadm/app/cmd/upgrade/apply.go
++++ b/cmd/kubeadm/app/cmd/upgrade/apply.go
+@@ -156,10 +156,9 @@ func runApply(flags *applyFlags, args []string) error {
+ 	}
+ 
+ 	// TODO: https://github.com/kubernetes/kubeadm/issues/2200
+-	fmt.Printf("[upgrade/postupgrade] Removing the deprecated label %s='' from all control plane Nodes. "+
+-		"After this step only the label %s='' will be present on control plane Nodes.\n",
+-		kubeadmconstants.LabelNodeRoleOldControlPlane, kubeadmconstants.LabelNodeRoleControlPlane)
+-	if err := upgrade.RemoveOldControlPlaneLabel(client); err != nil {
++	fmt.Printf("[upgrade/postupgrade] Applying label %s='' to Nodes with label %s='' (deprecated)\n",
++		kubeadmconstants.LabelNodeRoleControlPlane, kubeadmconstants.LabelNodeRoleOldControlPlane)
++	if err := upgrade.LabelOldControlPlaneNodes(client); err != nil {
+ 		return err
+ 	}
+ 
+diff --git a/cmd/kubeadm/app/phases/upgrade/health.go b/cmd/kubeadm/app/phases/upgrade/health.go
+index 55acdf865a6..b14bc6f3bbd 100644
+--- a/cmd/kubeadm/app/phases/upgrade/health.go
++++ b/cmd/kubeadm/app/phases/upgrade/health.go
+@@ -212,17 +212,34 @@ func deleteHealthCheckJob(client clientset.Interface, ns, jobName string) error
+ 
+ // controlPlaneNodesReady checks whether all control-plane Nodes in the cluster are in the Running state
+ func controlPlaneNodesReady(client clientset.Interface, _ *kubeadmapi.ClusterConfiguration) error {
++	// list nodes labeled with a "master" node-role
++	selectorOldControlPlane := labels.SelectorFromSet(labels.Set(map[string]string{
++		constants.LabelNodeRoleOldControlPlane: "",
++	}))
++	nodesWithOldLabel, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
++		LabelSelector: selectorOldControlPlane.String(),
++	})
++	if err != nil {
++		return errors.Wrapf(err, "could not list nodes labeled with %q", constants.LabelNodeRoleOldControlPlane)
++	}
++
++	// list nodes labeled with a "control-plane" node-role
+ 	selectorControlPlane := labels.SelectorFromSet(labels.Set(map[string]string{
+ 		constants.LabelNodeRoleControlPlane: "",
+ 	}))
+-	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
++	nodesControlPlane, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
+ 		LabelSelector: selectorControlPlane.String(),
+ 	})
+ 	if err != nil {
+ 		return errors.Wrapf(err, "could not list nodes labeled with %q", constants.LabelNodeRoleControlPlane)
+ 	}
+ 
+-	notReadyControlPlanes := getNotReadyNodes(nodes.Items)
++	nodes := append(nodesWithOldLabel.Items, nodesControlPlane.Items...)
++	if len(nodes) == 0 {
++		return errors.New("failed to find any nodes with a control-plane role")
++	}
++
++	notReadyControlPlanes := getNotReadyNodes(nodes)
+ 	if len(notReadyControlPlanes) != 0 {
+ 		return errors.Errorf("there are NotReady control-planes in the cluster: %v", notReadyControlPlanes)
+ 	}
+diff --git a/cmd/kubeadm/app/phases/upgrade/postupgrade.go b/cmd/kubeadm/app/phases/upgrade/postupgrade.go
+index fa215bfedf8..36e884195bc 100644
+--- a/cmd/kubeadm/app/phases/upgrade/postupgrade.go
++++ b/cmd/kubeadm/app/phases/upgrade/postupgrade.go
+@@ -214,9 +214,10 @@ func rollbackFiles(files map[string]string, originalErr error) error {
+ 	return errors.Errorf("couldn't move these files: %v. Got errors: %v", files, errorsutil.NewAggregate(errs))
+ }
+ 
+-// RemoveOldControlPlaneLabel finds all nodes with the legacy node-role label and removes it
++// LabelOldControlPlaneNodes finds all nodes with the legacy node-role label and also applies
++// the "control-plane" node-role label to them.
+ // TODO: https://github.com/kubernetes/kubeadm/issues/2200
+-func RemoveOldControlPlaneLabel(client clientset.Interface) error {
++func LabelOldControlPlaneNodes(client clientset.Interface) error {
+ 	selectorOldControlPlane := labels.SelectorFromSet(labels.Set(map[string]string{
+ 		kubeadmconstants.LabelNodeRoleOldControlPlane: "",
+ 	}))
+@@ -228,8 +229,11 @@ func RemoveOldControlPlaneLabel(client clientset.Interface) error {
+ 	}
+ 
+ 	for _, n := range nodesWithOldLabel.Items {
++		if _, hasNewLabel := n.ObjectMeta.Labels[kubeadmconstants.LabelNodeRoleControlPlane]; hasNewLabel {
++			continue
++		}
+ 		err = apiclient.PatchNode(client, n.Name, func(n *v1.Node) {
+-			delete(n.ObjectMeta.Labels, kubeadmconstants.LabelNodeRoleOldControlPlane)
++			n.ObjectMeta.Labels[kubeadmconstants.LabelNodeRoleControlPlane] = ""
+ 		})
+ 		if err != nil {
+ 			return err
+-- 
+2.25.1
+

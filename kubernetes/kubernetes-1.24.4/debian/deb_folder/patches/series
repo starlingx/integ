@@ -1,3 +1,8 @@
+Revert-e2e-framework-test_context-add-control-plane-.patch
+Revert-kubeadm-apply-the-new-control-plane-taint-dur.patch
+Revert-kubeadm-apply-the-new-control-plane-taint-on-.patch
+Revert-kubeadm-only-apply-the-new-control-plane-labe.patch
+Revert-kubeadm-delete-the-old-master-label-during-up.patch
 kubeadm-create-platform-pods-with-zero-CPU-resources.patch
 Revert-use-subpath-for-coredns-only-for-default-repo.patch
 kubernetes-make-isolcpus-allocation-SMT-aware.patch

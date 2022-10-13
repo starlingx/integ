@@ -1,0 +1,32 @@
+From a218316fb35a2ec67b7c8ad0fc2e8df537ee3434 Mon Sep 17 00:00:00 2001
+From: Jim Gauld <James.Gauld@windriver.com>
+Date: Wed, 12 Oct 2022 13:57:45 -0400
+Subject: [PATCH 1/5] Revert "e2e/framework/test_context: add "control-plane"
+ to non-blocking-taints"
+
+This reverts commit 8641897057431d6c89a716d86c997f29049df0f7.
+---
+ test/e2e/framework/test_context.go | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/test/e2e/framework/test_context.go b/test/e2e/framework/test_context.go
+index b4c4743b6ea..8bc5827d89a 100644
+--- a/test/e2e/framework/test_context.go
++++ b/test/e2e/framework/test_context.go
+@@ -311,12 +311,7 @@ func RegisterCommonFlags(flags *flag.FlagSet) {
+ 	flags.StringVar(&TestContext.SystemdServices, "systemd-services", "docker", "The comma separated list of systemd services the framework will dump logs for.")
+ 	flags.BoolVar(&TestContext.DumpSystemdJournal, "dump-systemd-journal", false, "Whether to dump the full systemd journal.")
+ 	flags.StringVar(&TestContext.ImageServiceEndpoint, "image-service-endpoint", "", "The image service endpoint of cluster VM instances.")
+-	// TODO: remove the node-role.kubernetes.io/master taint in 1.25 or later.
+-	// The change will likely require an action for some users that do not
+-	// use k8s originated tools like kubeadm or kOps for creating clusters
+-	// and taint their control plane nodes with "master", expecting the test
+-	// suite to work with this legacy non-blocking taint.
+-	flags.StringVar(&TestContext.NonblockingTaints, "non-blocking-taints", `node-role.kubernetes.io/control-plane,node-role.kubernetes.io/master`, "Nodes with taints in this comma-delimited list will not block the test framework from starting tests. The default taint 'node-role.kubernetes.io/master' is DEPRECATED and will be removed from the list in a future release.")
++	flags.StringVar(&TestContext.NonblockingTaints, "non-blocking-taints", `node-role.kubernetes.io/master`, "Nodes with taints in this comma-delimited list will not block the test framework from starting tests.")
+ 
+ 	flags.BoolVar(&TestContext.ListImages, "list-images", false, "If true, will show list of images used for runnning tests.")
+ 	flags.BoolVar(&TestContext.ListConformanceTests, "list-conformance-tests", false, "If true, will show list of conformance tests.")
+-- 
+2.25.1
+
