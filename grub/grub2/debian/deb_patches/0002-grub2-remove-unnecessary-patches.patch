@@ -1,0 +1,82 @@
+From 215aa0657ab2f7b52c7b7eebec465ffdda1ff0d1 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Wed, 31 Aug 2022 13:53:19 +0800
+Subject: [PATCH 2/4] grub2: remove unnecessary patches
+
+Clean the patches from debian release to get a clean grub source
+and only keep 2 patches necessary for debian packages' build.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/patches/series | 59 -------------------------------------------
+ 1 file changed, 59 deletions(-)
+
+diff --git a/debian/patches/series b/debian/patches/series
+index 748318a..0478754 100644
+--- a/debian/patches/series
++++ b/debian/patches/series
+@@ -1,61 +1,2 @@
+-olpc-prefix-hack.patch
+-core-in-fs.patch
+-dpkg-version-comparison.patch
+-grub-legacy-0-based-partitions.patch
+-disable-floppies.patch
+-grub.cfg-400.patch
+-gfxpayload-keep-default.patch
+-install-stage2-confusion.patch
+-mkrescue-efi-modules.patch
+-mkconfig-loopback.patch
+ restore-mkdevicemap.patch
+-gettext-quiet.patch
+-install-efi-fallback.patch
+-mkconfig-ubuntu-recovery.patch
+-install-locale-langpack.patch
+-mkconfig-nonexistent-loopback.patch
+-default-grub-d.patch
+-blacklist-1440x900x32.patch
+-mkconfig-ubuntu-distributor.patch
+-linuxefi.patch
+-mkconfig-signed-kernel.patch
+-install-signed.patch
+-wubi-no-windows.patch
+-maybe-quiet.patch
+-install-efi-adjust-distributor.patch
+-quick-boot.patch
+-quick-boot-lvm.patch
+-gfxpayload-dynamic.patch
+-vt-handoff.patch
+-probe-fusionio.patch
+-ignore-grub_func_test-failures.patch
+-mkconfig-recovery-title.patch
+-install-powerpc-machtypes.patch
+-ieee1275-clear-reset.patch
+-ppc64el-disable-vsx.patch
+-grub-install-pvxen-paths.patch
+-insmod-xzio-and-lzopio-on-xen.patch
+-grub-install-extra-removable.patch
+-mkconfig-other-inits.patch
+-zpool-full-device-name.patch
+-net-read-bracketed-ipv6-addr.patch
+-bootp-new-net_bootp6-command.patch
+-efinet-uefi-ipv6-pxe-support.patch
+-bootp-process-dhcpack-http-boot.patch
+-efinet-set-network-from-uefi-devpath.patch
+-efinet-set-dns-from-uefi-proto.patch
+-fix-lockdown.patch
+-skip-grub_cmd_set_date.patch
+-bash-completion-drop-have-checks.patch
+-at_keyboard-module-init.patch
+-uefi-secure-boot-cryptomount.patch
+-efi-variable-storage-minimise-writes.patch
+-grub-install-removable-shim.patch
+ dejavu-font-path.patch
+-xen-no-xsm-policy-in-non-xsm-options.patch
+-pc-verifiers-module.patch
+-debug_verifiers.patch
+-mkimage-fix-section-sizes.patch
+-tpm-unknown-error-non-fatal.patch
+-xfs-fix-v4-superblock.patch
+-tests-ahci-update-qemu-device-name.patch
+-- 
+2.17.1
+
