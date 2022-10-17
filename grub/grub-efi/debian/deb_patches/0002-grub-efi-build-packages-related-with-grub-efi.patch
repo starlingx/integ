@@ -1,0 +1,760 @@
+From a26ab5dfcde0a92011bb5422e745d92d79ba4630 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 15 Sep 2022 09:55:13 +0800
+Subject: [PATCH 2/2] grub-efi: build packages related with grub-efi
+
+Grub-efi is ported from layers meta-lat\meta-secure-core of yocto,
+so that it can be compiled out of lat.
+
+What are done for this purpose:
+(1) Build grub-efi using debian grub2 source code.
+Change the source name "grub2" to "grub-efi" to set up grub-efi recipe;
+Remove all the packages in control file except those related to
+grub-efi.
+(2) Remove any build about grub-pc because it is used for the
+traditional PC/BIOS and some patches for secure boot can cause failure
+when building grub-pc;
+(3) Patches for secure boot can cause warnings for ia32 platform, so
+remove it because ia32 isn't in use here;
+(4) Those unmet dependencies happen because we separate grub-efi's
+build from grub2:
+[
+ The following packages have unmet dependencies:
+ grub-efi-amd64 :
+ Depends: grub2-common (= 2.06-1.stx.27) but 2.06-1.stx.6 is to be
+          installed
+ Conflicts: grub-pc but 2.06-1.stx.6 is to be installed
+ grub-efi-amd64-bin :
+ Depends: grub-common (= 2.06-1.stx.27) but 2.06-1.stx.6 is to be
+          installed
+]
+Remove grub-efi-amd64's conflict with grub-pc to make them install
+to rootfs together;
+Remove the limit that grub-efi-amd64(-bin) and grub2-common should
+be compiled from the same module.
+(5) Create and install customized images according to yocto layers.
+Remove linuxefi because it belongs to debian specific patches, which
+have been removed;
+Customize files under /boot/efi/EFI/BOOT for package grub-efi-amd64.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/build-efi-images |   1 -
+ debian/changelog        |   2 +-
+ debian/control          | 520 +---------------------------------------
+ debian/rules            |  58 +++--
+ 4 files changed, 51 insertions(+), 530 deletions(-)
+
+diff --git a/debian/build-efi-images b/debian/build-efi-images
+index 5ac6676..1c5df95 100755
+--- a/debian/build-efi-images
++++ b/debian/build-efi-images
+@@ -148,7 +148,6 @@ case $platform in
+     x86_64-efi|i386-efi)
+ 	CD_MODULES="$CD_MODULES
+ 	cpuid
+-	linuxefi
+ 	play
+ 	tpm
+ 	"
+diff --git a/debian/changelog b/debian/changelog
+index 519a692..1663a8a 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,4 +1,4 @@
+-grub2 (2.06-1) unstable; urgency=medium
++grub-efi (2.06-1) unstable; urgency=medium
+ 
+   * Use "command -v" in maintainer scripts rather than "which".
+   * New upstream release.
+diff --git a/debian/control b/debian/control
+index 591394f..caea0c3 100644
+--- a/debian/control
++++ b/debian/control
+@@ -1,4 +1,4 @@
+-Source: grub2
++Source: grub-efi
+ Section: admin
+ Priority: optional
+ Maintainer: GRUB Maintainers <pkg-grub-devel@alioth-lists.debian.net>
+@@ -41,274 +41,18 @@ Vcs-Git: https://salsa.debian.org/grub-team/grub.git
+ Vcs-Browser: https://salsa.debian.org/grub-team/grub
+ Rules-Requires-Root: no
+ 
+-Package: grub2
+-Section: oldlibs
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: grub-pc (= ${binary:Version}) [any-i386 any-amd64] | grub-ieee1275 (= ${binary:Version}) [any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64], ${misc:Depends}
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (dummy package)
+- This is a dummy transitional package to handle GRUB 2 upgrades.  It can be
+- safely removed.
+-
+-Package: grub-linuxbios
+-Section: oldlibs
+-Architecture: any-i386 any-amd64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: grub-coreboot (= ${binary:Version}), ${misc:Depends}
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (dummy package)
+- This is a dummy transitional package that depends on grub-coreboot.
+-
+ Package: grub-efi
+ Architecture: any-i386 any-amd64 any-arm64 any-ia64 any-arm
+ Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${misc:Depends}, grub-efi-ia32 (= ${binary:Version}) [any-i386], grub-efi-amd64 (= ${binary:Version}) [any-amd64], grub-efi-arm64 (= ${binary:Version}) [any-arm64], grub-efi-ia64 (= ${binary:Version}) [any-ia64], grub-efi-arm (= ${binary:Version}) [any-arm]
++Depends: ${misc:Depends}, grub-efi-amd64 (= ${binary:Version}) [any-amd64], grub-efi-arm64 (= ${binary:Version}) [any-arm64], grub-efi-ia64 (= ${binary:Version}) [any-ia64], grub-efi-arm (= ${binary:Version}) [any-arm]
+ Multi-Arch: foreign
+ Description: GRand Unified Bootloader, version 2 (dummy package)
+  This is a dummy package that depends on the grub-efi-$ARCH package most likely
+  to be appropriate for each architecture.
+ 
+-Package: grub-common
+-Architecture: any
+-Depends: ${shlibs:Depends}, ${misc:Depends}, gettext-base, ${lsb-base-depends}
+-Replaces: grub-pc (<< 2.00-4), grub-ieee1275 (<< 2.00-4), grub-efi (<< 1.99-1), grub-coreboot (<< 2.00-4), grub-linuxbios (<< 1.96+20080831-1), grub-efi-ia32 (<< 2.00-4), grub-efi-amd64 (<< 2.00-4), grub-efi-ia64 (<< 2.00-4), grub-yeeloong (<< 2.00-4), init-select
+-Recommends: os-prober (>= 1.33)
+-Suggests: multiboot-doc, grub-emu [any-i386 any-amd64 any-powerpc], mtools [any-i386 any-amd64 any-ia64 any-arm any-arm64], xorriso (>= 0.5.6.pl00), desktop-base (>= 4.0.6), console-setup
+-Conflicts: init-select
+-# mdadm: See bugs #435983 and #455746
+-Breaks: mdadm (<< 2.6.7-2), lupin-support (<< 0.55), friendly-recovery (<< 0.2.13), apport (<< 2.1.1)
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader (common files)
+- This package contains common files shared by the distinct flavours of GRUB.
+- It is shared between GRUB Legacy and GRUB 2, although a number of files
+- specific to GRUB 2 are here as long as they do not break GRUB Legacy.
+- .
+- grub-mkrescue needs the suggested packages mtools (for UEFI targets) and
+- xorriso.
+-
+-Package: grub2-common
+-# Not Architecture: any because this package contains some things which are
+-# only built when there is a real platform (e.g. grub-install), and the rest
+-# of the package is not very useful in a utilities-only build.
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64
+-Depends: grub-common (= ${binary:Version}), dpkg (>= 1.15.4) | install-info, ${shlibs:Depends}, ${misc:Depends}
+-Replaces: grub, grub-legacy, ${legacy-doc-br}, grub-common (<< 1.99-1), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
+-Conflicts: grub-legacy
+-Breaks: grub (<< 0.97-54), ${legacy-doc-br}, shim (<< 0.9+1474479173.6c180c6-0ubuntu1~), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader (common files for version 2)
+- This package contains common files shared by the distinct flavours of GRUB.
+- The files in this package are specific to GRUB 2, and would break GRUB
+- Legacy if installed on the same system.
+-
+-Package: grub-emu
+-Architecture: any-i386 any-amd64 any-powerpc
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub-common (<= 1.97~beta3-1)
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (emulated version)
+- This package contains grub-emu, an emulated version of GRUB.  It is only
+- provided for debugging purposes.
+-
+-Package: grub-emu-dbg
+-Section: debug
+-Architecture: any-i386 any-amd64 any-powerpc
+-Depends: ${misc:Depends}, grub-emu (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (emulated debug files)
+- This package contains debugging files for grub-emu.  You only need these if
+- you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-pc-bin
+-Architecture: any-i386 any-amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-pc (<< 1.99-1)
+-Suggests: desktop-base (>= 4.0.6)
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (PC/BIOS modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+-  - VESA-based graphical mode with background image support and complete 24-bit
+-    color set.
+-  - Support for extended charsets.  Users can write UTF-8 text to their menu
+-    entries.
+- .
+- This package contains GRUB modules that have been built for use with the
+- traditional PC/BIOS architecture.  It can be installed in parallel with
+- other flavours, but will not automatically install GRUB as the active boot
+- loader nor automatically update grub.cfg on upgrade unless grub-pc is also
+- installed.
+-
+-Package: grub-pc-dbg
+-Section: debug
+-Architecture: any-i386 any-amd64
+-Depends: ${misc:Depends}, grub-pc-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (PC/BIOS debug files)
+- This package contains debugging files for grub-pc-bin.  You only need these
+- if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-pc
+-Architecture: any-i386 any-amd64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-pc-bin (= ${binary:Version}), ucf, freebsd-utils (>= 8.0-4) [kfreebsd-any], ${gfxpayload-depends}
+-Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275
+-Conflicts: grub (<< 0.97-54), grub-legacy, grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (PC/BIOS version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+-  - VESA-based graphical mode with background image support and complete 24-bit
+-    color set.
+-  - Support for extended charsets.  Users can write UTF-8 text to their menu
+-    entries.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use with the traditional PC/BIOS architecture.  Installing this package
+- indicates that this version of GRUB should be the active boot loader.
+-
+-Package: grub-rescue-pc
+-Architecture: any-i386 any-amd64
+-Depends: ${misc:Depends}
+-Multi-Arch: foreign
+-Description: GRUB bootable rescue images, version 2 (PC/BIOS version)
+- This package contains three GRUB rescue images that have been built for use
+- with the traditional PC/BIOS architecture:
+- .
+-  - grub-rescue-floppy.img: floppy image.
+-  - grub-rescue-cdrom.iso: El Torito CDROM image.
+-  - grub-rescue-usb.img: USB image.
+-
+-Package: grub-coreboot-bin
+-Architecture: any-i386 any-amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-linuxbios, grub-coreboot (<< 1.99-1)
+-Conflicts: grub-linuxbios (<< ${source:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Coreboot modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use with
+- platforms running the Coreboot firmware.  It can be installed in parallel
+- with other flavours, but will not automatically install GRUB as the active
+- boot loader nor automatically update grub.cfg on upgrade unless
+- grub-coreboot is also installed.
+-
+-Package: grub-coreboot-dbg
+-Section: debug
+-Architecture: any-i386 any-amd64
+-Depends: ${misc:Depends}, grub-coreboot-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Coreboot debug files)
+- This package contains debugging files for grub-coreboot-bin.  You only need
+- these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-coreboot
+-Architecture: any-i386 any-amd64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-coreboot-bin (= ${binary:Version}), ucf
+-Replaces: grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-linuxbios, grub-efi-amd64, grub-efi-ia32, grub-pc, grub-ieee1275
+-Conflicts: grub (<< 0.97-54), grub-legacy, grub-linuxbios (<< ${source:Version}), grub-efi-amd64, grub-efi-ia32, grub-pc, grub-ieee1275, grub-xen
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Coreboot version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use with platforms running the Coreboot firmware.  Installing this package
+- indicates that this version of GRUB should be the active boot loader.
+-
+-Package: grub-efi-ia32-bin
+-Architecture: any-i386 any-amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Recommends: grub-efi-ia32-signed [i386], efibootmgr [linux-any]
+-Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi, grub-efi-ia32 (<< 1.99-1)
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (EFI-IA32 modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use with the
+- EFI-IA32 architecture, as used by Intel Macs (unless a BIOS interface has
+- been activated).  It can be installed in parallel with other flavours, but
+- will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-ia32 is also
+- installed.
+-
+-Package: grub-efi-ia32-dbg
+-Section: debug
+-Architecture: any-i386 any-amd64
+-Depends: ${misc:Depends}, grub-efi-ia32-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (EFI-IA32 debug files)
+- This package contains debugging files for grub-efi-ia32-bin.  You only need
+- these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-efi-ia32
+-Architecture: any-i386 any-amd64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-efi-ia32-bin (= ${binary:Version}), ucf
+-Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi, grub-efi-amd64, grub-pc, grub-coreboot, grub-ieee1275
+-Conflicts: grub (<< 0.97-54), grub-legacy, grub-efi-amd64, grub-pc, grub-coreboot, grub-ieee1275, grub-xen, elilo
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (EFI-IA32 version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use with the EFI-IA32 architecture, as used by Intel Macs (unless a BIOS
+- interface has been activated).  Installing this package indicates that this
+- version of GRUB should be the active boot loader.
+-
+-Package: grub-efi-ia32-signed-template
+-Architecture: i386
+-Description: GRand Unified Bootloader, version 2 (EFI-IA32 signing template)
+- This package contains template files for grub-efi-ia32-signed.
+- This is only needed for Secure Boot signing.
+-
+ Package: grub-efi-amd64-bin
+ Architecture: i386 kopensolaris-i386 any-amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
++Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common
+ Recommends: grub-efi-amd64-signed [amd64], efibootmgr [linux-any]
+ Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64 (<< 1.99-1)
+ Multi-Arch: foreign
+@@ -342,9 +86,9 @@ Description: GRand Unified Bootloader, version 2 (EFI-AMD64 debug files)
+ Package: grub-efi-amd64
+ Architecture: i386 kopensolaris-i386 any-amd64
+ Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-efi-amd64-bin (= ${binary:Version}), ucf
+-Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-pc, grub-efi-ia32, grub-coreboot, grub-ieee1275
+-Conflicts: grub, grub-legacy, grub-efi-ia32, grub-pc, grub-coreboot, grub-ieee1275, grub-xen, elilo
++Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common, grub-efi-amd64-bin, ucf
++Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-pc, grub-coreboot, grub-ieee1275
++Conflicts: grub, grub-legacy, grub-coreboot, grub-ieee1275, grub-xen, elilo
+ Multi-Arch: foreign
+ Description: GRand Unified Bootloader, version 2 (EFI-AMD64 version)
+  GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+@@ -522,255 +266,3 @@ Architecture: arm64
+ Description: GRand Unified Bootloader, version 2 (ARM64 UEFI signing template)
+  This package contains template files for grub-efi-arm64-signed.
+  This is only needed for Secure Boot signing.
+-
+-Package: grub-ieee1275-bin
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-ieee1275 (<< 1.99-1)
+-Suggests: genisoimage [any-powerpc any-ppc64 any-ppc64el]
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Open Firmware modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use with Open
+- Firmware implementations.  It can be installed in parallel with other
+- flavours, but will not automatically install GRUB as the active boot loader
+- nor automatically update grub.cfg on upgrade unless grub-ieee1275 is also
+- installed.
+-
+-Package: grub-ieee1275-dbg
+-Section: debug
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64
+-Depends: ${misc:Depends}, grub-ieee1275-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Open Firmware debug files)
+- This package contains debugging files for grub-ieee1275-bin.  You only
+- need these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-ieee1275
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-ieee1275-bin (= ${binary:Version}), ucf, powerpc-ibm-utils (>= 1.2.12-1) [any-powerpc any-ppc64 any-ppc64el], powerpc-utils [any-powerpc any-ppc64 any-ppc64el]
+-Replaces: grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-pc
+-Conflicts: grub (<< 0.97-54), grub-legacy, grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-pc, grub-xen
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Open Firmware version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use with Open Firmware implementations.  Installing this package indicates
+- that this version of GRUB should be the active boot loader.
+-
+-Package: grub-firmware-qemu
+-Architecture: any-i386 any-amd64
+-Depends: ${misc:Depends}
+-Recommends: qemu-system-x86
+-Enhances: qemu-system-x86
+-Multi-Arch: foreign
+-Description: GRUB firmware image for QEMU
+- This package contains a binary of GRUB that has been built for use as
+- firmware for QEMU.  It can be used as a replacement for other PC BIOS
+- images provided by seabios, bochsbios, and so on.
+- .
+- In order to make QEMU use this firmware, simply add `-bios grub.bin' when
+- invoking it.
+- .
+- This package behaves in the same way as GRUB for coreboot, but doesn't
+- contain any code from coreboot itself, and is only suitable for QEMU. If
+- you want to install GRUB as firmware on real hardware, you need to use the
+- grub-coreboot package, and manually combine that with coreboot.
+-
+-Package: grub-uboot-bin
+-Architecture: any-arm
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (ARM U-Boot modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use with ARM
+- systems with U-Boot.  It can be installed in parallel with other flavours,
+- but will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-uboot is also
+- installed.
+-
+-Package: grub-uboot-dbg
+-Section: debug
+-Architecture: any-arm
+-Depends: ${misc:Depends}, grub-uboot-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (ARM U-Boot debug files)
+- This package contains debugging files for grub-uboot-bin.  You only need
+- these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-uboot
+-Architecture: any-arm
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-uboot-bin (= ${binary:Version}), ucf
+-Conflicts: grub-efi-arm
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (ARM U-Boot version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use with ARM systems with U-Boot.  Installing this package indicates that
+- this version of GRUB should be the active boot loader.
+-
+-Package: grub-xen-bin
+-Architecture: i386 amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Xen modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use with the
+- Xen hypervisor (i.e. PV-GRUB).  It can be installed in parallel with other
+- flavours, but will not automatically install GRUB as the active boot loader
+- nor automatically update grub.cfg on upgrade unless grub-xen is also
+- installed.
+-
+-Package: grub-xen-dbg
+-Section: debug
+-Architecture: i386 amd64
+-Depends: ${misc:Depends}, grub-xen-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Xen debug files)
+- This package contains debugging files for grub-xen-bin.  You only need
+- these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-xen
+-Architecture: i386 amd64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-xen-bin (= ${binary:Version}), ucf
+-Conflicts: grub (<< 0.97-54), grub-legacy, grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-pc
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Xen version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use with the Xen hypervisor (i.e. PV-GRUB).  Installing this package
+- indicates that this version of GRUB should be the active boot loader.
+-
+-Package: grub-xen-host
+-Architecture: i386 amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-xen-bin (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Xen host version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package arranges for GRUB binary images which can be used to boot a Xen
+- guest (i.e. PV-GRUB) to be present in the control domain filesystem.
+-
+-Package: grub-yeeloong-bin
+-Architecture: any-mipsel
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub-common (<< 1.98+20100617-2), grub-yeeloong (<< 1.99-1)
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Yeeloong modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use with the
+- Lemote Yeeloong laptop.  It can be installed in parallel with other
+- flavours, but will not automatically install GRUB as the active boot loader
+- nor automatically update grub.cfg on upgrade unless grub-yeeloong is also
+- installed.
+-
+-Package: grub-yeeloong-dbg
+-Section: debug
+-Architecture: any-mipsel
+-Depends: ${misc:Depends}, grub-yeeloong-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Yeeloong debug files)
+- This package contains debugging files for grub-yeeloong-bin.  You only
+- need these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-yeeloong
+-Architecture: any-mipsel
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-yeeloong-bin (= ${binary:Version}), ucf
+-Replaces: grub-common (<< 1.98+20100617-2)
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (Yeeloong version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use with the Lemote Yeeloong laptop.  Installing this package indicates
+- that this version of GRUB should be the active boot loader.
+-
+-Package: grub-theme-starfield
+-# Could be Architecture: any, but in practice this package is useless in a
+-# utilities-only build.
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64
+-Depends: ${misc:Depends}, grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (starfield theme)
+- This is the default theme for GRUB's graphical menu.
+-
+-Package: grub-mount-udeb
+-Package-Type: udeb
+-Section: debian-installer
+-Architecture: linux-any kfreebsd-any
+-Depends: ${shlibs:Depends}, ${misc:Depends}
+-Description: export GRUB filesystems using FUSE
+diff --git a/debian/rules b/debian/rules
+index be8f870..c22ba5a 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -55,7 +55,7 @@ BUILD_PACKAGES := $(strip $(shell dh_listpackages))
+ # REAL_PACKAGES build an actual grub variant (and therefore have both configure
+ # and build stages). EXTRA_PACKAGES do not build grub but may depend on a
+ # REAL_PACKAGE (and therefore only have a build stage)
+-REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
++REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
+ EXTRA_PACKAGES = grub-rescue-pc grub-xen-host
+ 
+ ifneq (,$(filter i386 amd64,$(DEB_HOST_ARCH_CPU)))
+@@ -111,8 +111,6 @@ DEFAULT_HIDDEN_TIMEOUT_BOOL := false
+ endif
+ 
+ # Secure Boot
+-debian/stamps/build-grub-efi-ia32 install/grub-efi-ia32: export SB_PLATFORM := i386-efi
+-debian/stamps/build-grub-efi-ia32 install/grub-efi-ia32: export SB_EFI_NAME := ia32
+ debian/stamps/build-grub-efi-amd64 install/grub-efi-amd64: export SB_PLATFORM := x86_64-efi
+ debian/stamps/build-grub-efi-amd64 install/grub-efi-amd64: export SB_EFI_NAME := x64
+ debian/stamps/build-grub-efi-arm64 install/grub-efi-arm64: export SB_PLATFORM := arm64-efi
+@@ -169,10 +167,10 @@ override_dh_autoreconf:
+ 		PYTHON=python3 \
+ 		dh_autoreconf -- ./autogen.sh
+ 
+-debian/stamps/configure-grub-common: debian/stamps/configure-grub-$(COMMON_PLATFORM)
++debian/stamps/configure-grub-common:
+ 	touch $@
+ 
+-debian/stamps/build-grub-common: debian/stamps/build-grub-$(COMMON_PLATFORM)
++debian/stamps/build-grub-common:
+ 	touch $@
+ 
+ debian/stamps/configure-grub-none debian/stamps/configure-grub-pc debian/stamps/configure-grub-ieee1275 debian/stamps/configure-grub-coreboot debian/stamps/configure-grub-emu debian/stamps/configure-grub-uboot debian/stamps/configure-grub-yeeloong:
+@@ -181,10 +179,6 @@ debian/stamps/configure-grub-none debian/stamps/configure-grub-pc debian/stamps/
+ 	touch $@
+ 
+ # This name scheme leaves room for things like amd32 someday
+-debian/stamps/configure-grub-efi-ia32:
+-	mkdir -p debian/stamps obj/$(package)
+-	dh_auto_configure -- $(confflags) --with-platform=efi --target=i386-pe --program-prefix=""
+-	touch $@
+ debian/stamps/configure-grub-efi-amd64:
+ 	mkdir -p debian/stamps $(subst debian/stamps/configure-,obj/,$@)
+ 	dh_auto_configure -- $(confflags) --with-platform=efi --target=amd64-pe --program-prefix=""
+@@ -214,7 +208,7 @@ debian/stamps/build-grub-none debian/stamps/build-grub-efi-ia64 debian/stamps/bu
+ 	dh_auto_build
+ 	touch $@
+ 
+-debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64: debian/stamps/build-%: debian/stamps/configure-% debian/stamps/build-grub-$(COMMON_PLATFORM)
++debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64: debian/stamps/build-%: debian/stamps/configure-%
+ 	dh_auto_build
+ 	grub_dir=`mktemp -d` ; \
+ 	sed -e "s/@DEB_VERSION@/$(deb_version)/g" \
+@@ -222,7 +216,7 @@ debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-amd64 debian/stam
+ 		<debian/sbat.$(SB_EFI_VENDOR).csv.in \
+ 		>$${grub_dir}/sbat.$(SB_EFI_VENDOR).csv; \
+ 	debian/build-efi-images \
+-		obj/grub-$(COMMON_PLATFORM)/grub-mkimage \
++		obj/$(package)/grub-mkimage \
+ 		obj/$(package)/grub-core \
+ 		obj/monolithic/$(package) \
+ 		$(DEB_HOST_ARCH) $(SB_PLATFORM) $(SB_EFI_NAME) \
+@@ -350,7 +344,20 @@ install/grub-none:
+ 	# files.
+ 	mkdir -p debian/tmp-$(package)/usr/share/locale
+ 
+-install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
++D_PACKAGE := debian/grub-efi-amd64/
++EFI_BOOT_PATH := /boot/efi/EFI/BOOT
++DISTRO_NAME := StarlingX
++DISTRO_VERSION :=
++OSTREE_GRUB_PW_FILE := ./boot_cfg_pw
++OSTREE_GRUB_USER := root
++OSTREE_CONSOLE := console=ttyS0,115200
++GRUB_BUILDIN := boot linux ext2 fat serial part_msdos part_gpt normal efi_gop iso9660 configfile search loadenv test tftp efinet reboot chain regexp efivar
++GRUB_SECURE_BUILDIN := tftp reboot chain efivar password_pbkdf2 pgp gcry_rsa gcry_sha256 gcry_sha512 --pubkey ./boot_pub_key
++GRUB_TARGET := x86_64
++GRUB_PREFIX_DIR := /EFI/BOOT
++OBJ_DIR := ./obj/grub-efi-amd64
++
++install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
+ 	set -e ; \
+ 	if [ "$@" = "install/grub-xen" ] ; then \
+ 		dh_auto_install -Bobj/grub-xen-i386 --destdir=debian/tmp-$(package); \
+@@ -470,6 +477,30 @@ install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia
+ 	# files.
+ 	mkdir -p debian/tmp-$(package)/usr/share/locale
+ 
++	if [ "$@" = "install/grub-efi-amd64" ] ; then \
++		install -d $(D_PACKAGE)/$(EFI_BOOT_PATH) ; \
++		install -m 0600 ./grub-runtime.cfg $(D_PACKAGE)$(EFI_BOOT_PATH)/grub.cfg ; \
++		sed -i "s#%DISTRO_NAME%#$(DISTRO_NAME)#g" "$(D_PACKAGE)$(EFI_BOOT_PATH)/grub.cfg" ; \
++		sed -i "s#%DISTRO_VERSION%#$(DISTRO_VERSION)#g" "$(D_PACKAGE)$(EFI_BOOT_PATH)/grub.cfg" ; \
++		echo -n "password_pbkdf2 $(OSTREE_GRUB_USER) " > ./pw ; \
++		cat "$(OSTREE_GRUB_PW_FILE)" >> ./pw ; \
++		sed -i "s#%OSTREE_GRUB_USER%#$(OSTREE_GRUB_USER)#g" "$(D_PACKAGE)$(EFI_BOOT_PATH)/grub.cfg" ; \
++		str_pw=`cat ./pw` ; \
++		sed -i "s#%OSTREE_GRUB_PW%#$${str_pw}#g" "$(D_PACKAGE)$(EFI_BOOT_PATH)/grub.cfg" ; \
++		sed -i "s#%OSTREE_CONSOLE%#$(OSTREE_CONSOLE)#g" "$(D_PACKAGE)$(EFI_BOOT_PATH)/grub.cfg" ; \
++		$(OBJ_DIR)/grub-mkimage -c ./cfg_nosecure -p "$(GRUB_PREFIX_DIR)" -d "$(OBJ_DIR)/grub-core" \
++			-O "$(GRUB_TARGET)-efi" -o "./bootx64-nosig.efi" \
++			$(GRUB_BUILDIN) ; \
++		install -m 0644 ./bootx64-nosig.efi $(D_PACKAGE)$(EFI_BOOT_PATH)/bootx64-nosig.efi ; \
++		$(OBJ_DIR)/grub-editenv "$(D_PACKAGE)$(EFI_BOOT_PATH)/grubenv" create ; \
++		install -d $(D_PACKAGE)$(EFI_BOOT_PATH)/$(GRUB_TARGET)-efi ; \
++		$(OBJ_DIR)/grub-mkimage -c ./cfg -p "$(GRUB_PREFIX_DIR)" -d "$(OBJ_DIR)/grub-core" \
++			-O "$(GRUB_TARGET)-efi" -o "./grubx64.efi" \
++			$(GRUB_BUILDIN) $(GRUB_SECURE_BUILDIN) ; \
++		install -m 0644 ./grubx64.efi $(D_PACKAGE)$(EFI_BOOT_PATH)/grubx64.efi ; \
++		install -m 0644 $(OBJ_DIR)/grub-core/*.mod $(D_PACKAGE)$(EFI_BOOT_PATH)/$(GRUB_TARGET)-efi ; \
++	fi
++
+ common_subst = \
+ 	if [ -e debian/grub-common.$(1) ]; then \
+ 		sed 's/@COMMON_PLATFORM@/$(COMMON_PLATFORM)/g' \
+@@ -495,13 +526,12 @@ endif
+ 
+ NON_PLATFORM_PACKAGES = $(filter grub2 grub-linuxbios grub-efi grub-rescue-pc grub-firmware-qemu grub-xen-host,$(BUILD_PACKAGES))
+ COMMON_PLATFORM_PACKAGES = $(filter grub-common grub2-common grub-theme-starfield grub-mount-udeb,$(BUILD_PACKAGES))
+-PLATFORM_PACKAGES = $(filter grub-pc grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
++PLATFORM_PACKAGES = $(filter grub-pc grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
+ 
+ override_dh_install:
+ ifneq (,$(NON_PLATFORM_PACKAGES))
+ 	dh_install $(patsubst %,-p%,$(NON_PLATFORM_PACKAGES))
+ endif
+-	dh_install $(patsubst %,-p%,$(COMMON_PLATFORM_PACKAGES)) --sourcedir=debian/tmp-grub-$(COMMON_PLATFORM)
+ 	rm -f debian/grub2-common/usr/share/info/dir*
+ 	rm -f debian/grub-theme-starfield/usr/share/grub/themes/starfield/COPYING.CC-BY-SA-3.0
+ ifneq (,$(PLATFORM_PACKAGES))
+-- 
+2.17.1
+

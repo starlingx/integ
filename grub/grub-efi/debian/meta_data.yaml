@@ -1,0 +1,27 @@
+---
+debver: 2.06-1
+debname: grub-efi
+serial: true
+dl_hook: dl_hook
+dl_files:
+  grub2_2.06.orig.tar.xz:
+    topdir: null
+    url:
+      "https://snapshot.debian.org/archive/debian/20211128T160803Z/\
+       pool/main/g/grub2/grub2_2.06.orig.tar.xz"
+    sha256sum: b79ea44af91b93d17cd3fe80bdae6ed43770678a9a5ae192ccea803ebb657ee1
+  grub2_2.06-1.debian.tar.xz:
+    topdir: null
+    url:
+      "https://snapshot.debian.org/archive/debian/20211128T160803Z/\
+       pool/main/g/grub2/grub2_2.06-1.debian.tar.xz"
+    sha256sum: 16a1a89d93abf8beb148dc30738be1bda05ed3c09cfffd4a1f5e1a0328c74b26
+src_files:
+  - debian/files/boot_cfg_pw
+  - debian/files/boot_pub_key
+  - debian/files/cfg
+  - debian/files/cfg_nosecure
+  - debian/files/grub-runtime.cfg
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
