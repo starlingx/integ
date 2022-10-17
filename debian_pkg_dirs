@@ -47,6 +47,7 @@ golang-github-dev/golang-github-opencontainers-specs-dev
 golang-github-dev/golang-github-vishvananda-netlink
 golang-github-dev/golang-github-networkplumbing-go-nft-dev
 gpu/gpu-operator
+grub/grub-efi
 grub/grub2
 grub/grubby
 kubernetes/armada
@@ -85,6 +86,7 @@ python/dh-python
 python/python-nss
 python/python3-nsenter
 python/python3-setuptools
+security/efitools
 security/keyrings.alt
 security/python-keyring
 security/shim-unsigned
