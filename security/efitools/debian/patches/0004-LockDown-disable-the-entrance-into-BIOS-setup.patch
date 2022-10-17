@@ -1,0 +1,49 @@
+From d3d22b8a9e415d343e58a2502cb4865e65ad21e1 Mon Sep 17 00:00:00 2001
+From: Lans Zhang <jia.zhang@windriver.com>
+Date: Wed, 15 Feb 2017 14:52:07 +0800
+Subject: [PATCH 4/5] LockDown: disable the entrance into BIOS setup
+
+Disable the entrance into BIOS setup to re-enable secure boot.
+In most cases, this step is not necessary.
+
+Signed-off-by: Lans Zhang <jia.zhang@windriver.com>
+[lz: Adapt git log and do some minor wording cleanups.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ LockDown.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/LockDown.c b/LockDown.c
+index 090d48f..c8b89bd 100644
+--- a/LockDown.c
++++ b/LockDown.c
+@@ -19,6 +19,11 @@ efi_main (EFI_HANDLE image, EFI_SYSTEM_TABLE *systab)
+ 	EFI_STATUS efi_status;
+ 	UINT8 SecureBoot, SetupMode;
+ 	UINTN DataSize = sizeof(SetupMode);
++	/* This controls whether it is required to enter BIOS setup in
++	 * order to re-enable UEFI secure boot. This operation is unnecessary
++	 * in most cases.
++	 */
++	UINTN NeedSetAttempt = 0;
+ 
+ 	InitializeLib(image, systab);
+ 
+@@ -104,12 +109,12 @@ efi_main (EFI_HANDLE image, EFI_SYSTEM_TABLE *systab)
+ 	 * UEFI secure boot in BIOS setup.
+ 	 */
+ 	Print(L"Prepare to execute system warm reset after 3 seconds ...\n");
+-	if (!SecureBoot)
++	if (NeedSetAttempt && !SecureBoot)
+ 	        Print(L"After warm reset, enter BIOS setup to enable UEFI Secure Boot.\n");
+ 
+ 	BS->Stall(3000000);
+ 
+-	if (!SecureBoot)
++	if (NeedSetAttempt && !SecureBoot)
+ 	        SETOSIndicationsAndReboot(EFI_OS_INDICATIONS_BOOT_TO_FW_UI);
+ 	else
+ 	        RT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+-- 
+2.17.1
+
