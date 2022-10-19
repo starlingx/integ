@@ -28,3 +28,6 @@ skip-some-testcases.patch
 
 # Keep NIC naming in sync with CentOS
 0014-Introduce-and-use-custom-NIC-naming-scheme.patch
+
+# Fix SAS paths for multiple disks
+0015-Port-udev-old-sas-paths-creation-from-RHEL.patch
