@@ -1,3 +1,9 @@
+pf-bb-config (22.07) UNRELEASED; urgency=low
+
+  * Upversion to 22.07
+
+ -- Teresa Ho  <teresa.ho@windriver.com>  Wed, 17 Oct 2022 10:30:12 +0000
+
 pf-bb-config (21.6) UNRELEASED; urgency=low
 
   * Initial release
