@@ -1,1 +1,2 @@
 0001-kdump-tools-add-vmlinuz-and-initrd.img-soft-link.patch
+0002-kdump-tools-adapt-check_secure_boot-checking.patch
