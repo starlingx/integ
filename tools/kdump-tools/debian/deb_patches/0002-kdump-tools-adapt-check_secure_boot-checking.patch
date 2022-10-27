@@ -1,0 +1,45 @@
+From 5de1965d635d43d8d7d88074e7ebc9e73287c11f Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Tue, 25 Oct 2022 13:07:35 +0800
+Subject: [PATCH] kdump-tools: adapt check_secure_boot checking
+
+The kdump-config uses files under /sys/firmware/efi/efivars to detect
+secure boot status. But efivars isn't in use because
+CONFIG_EFIVAR_FS is not set. We don't want to enable it because
+when applying the preempt_rt patch to the Linux kernel,
+EFI variables at runtime are disabled by default due to
+high latencies
+(https://www.spinics.net/lists/linux-rt-users/msg19980.html).
+
+So change to use /sys/kernel/security/lockdown to detect secure
+boot status because it is set to 'integrity' in the debian patch
+[efi: Lock down the kernel if booted in secure boot mode] which is
+in use by us.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/kdump-config.in | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/debian/kdump-config.in b/debian/kdump-config.in
+index eb23da1..543bab4 100755
+--- a/debian/kdump-config.in
++++ b/debian/kdump-config.in
+@@ -351,7 +351,13 @@ check_securelevel()
+ check_secure_boot()
+ {
+ 	# shellcheck disable=SC2039
+-	local sb_path sb sm
++	local sb_path sb sm sb_lock
++
++	sb_lock=$(cat /sys/kernel/security/lockdown | cut -d '[' -f2 | cut -d ']' -f1)
++	echo "Kernel security lockdown: ${sb_lock}"
++	if [ "${sb_lock}" != "none" ] ; then
++		return 0
++	fi
+ 
+ 	sb_path=$(find /sys/firmware/efi/efivars -name 'SecureBoot-*' 2>/dev/null)
+ 	sm_path=$(find /sys/firmware/efi/efivars -name 'SetupMode-*' 2>/dev/null)
+-- 
+2.25.1
+
