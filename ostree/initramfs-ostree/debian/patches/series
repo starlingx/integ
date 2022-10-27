@@ -6,3 +6,4 @@
 0006-init-ostree-install.sh-break-hardlinks-in-var.patch
 0007-Add-support-for-StarlingX-partitioning-formatting.patch
 0008-Support-multi-drivers-in-initramfs.patch
+0009-Switch-drivers-in-initramfs.patch
