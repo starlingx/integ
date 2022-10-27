@@ -3,7 +3,7 @@ Upstream-Name: kubernetes-unversioned
 Source: https://opendev.org/starlingx/integ/src/branch/master/kubernetes/kubernetes-unversioned
 
 Files: *
-Copyright: (c) 2021 Wind River Systems, Inc
+Copyright: (c) 2022 Wind River Systems, Inc
            (c) Others (See individual files for more details)
 License: Apache-2
  Licensed under the Apache License, Version 2.0 (the "License");
