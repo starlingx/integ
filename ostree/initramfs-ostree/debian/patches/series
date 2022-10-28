@@ -1,5 +1,4 @@
 0001-Prevent-auto-expansion-of-fluxdata-partition.patch
-0002-debian-Copy-sysroot-var-log-to-LVM-volume.patch
 0003-Make-boot-efi-mount-as-rw.patch
 0004-debian-set-default-size-variables-in-install-script.patch
 0005-Wait-for-devices-to-be-configured-after-boot.patch
