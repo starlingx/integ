@@ -2,3 +2,4 @@
 0002-kpatch-Add-the-signature-for-livepatch-kernel-module.patch
 0003-kpatch-Adjust-the-kpatch-build-to-support-the-multik.patch
 0004-kpatch-Fix-the-build-failure-when-the-cache-src-dire.patch
+0005-kpatch-Support-the-customized-order-for-module-load.patch
