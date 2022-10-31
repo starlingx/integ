@@ -1,0 +1,39 @@
+From 2e53239f58b4faeeca9f1ae279207edb3aa4f30c Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: qemu dpdk custom config
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ configure | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index e90a4e8fe0..77c0321b5f 100755
+--- a/configure
++++ b/configure
+@@ -1111,6 +1111,8 @@ for opt do
+   --dpdkdir=*) rte_sdk="$optarg"
+                dpdk="yes"
+   ;;
++  --dpdktarget=*) rte_target="$optarg"
++  ;;
+   --disable-tcg-interpreter) tcg_interpreter="no"
+   ;;
+   --enable-tcg-interpreter) tcg_interpreter="yes"
+@@ -6005,9 +6007,10 @@ if test "$dpdk" = "yes"; then
+   fi
+   echo "CONFIG_ENABLE_DPDK=y" >> $config_host_mak
+   echo "dpdk_dir=`eval echo $rte_sdk`" >> $config_host_mak
+-  echo "dpdk_lib_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/lib" >> $config_host_mak
+-  echo "dpdk_inc_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/include" >> $config_host_mak
+   echo "" >> $config_host_mak
++  echo "dpdk_target=`eval echo $rte_target`" >> $config_host_mak
++  echo "dpdk_lib_dir=\$(dpdk_dir)/\$(dpdk_target)/lib" >> $config_host_mak
++  echo "dpdk_inc_dir=\$(dpdk_dir)/\$(dpdk_target)/include" >> $config_host_mak
+   echo "dpdk_libs=\$(dpdk_lib_dir)/librte_eal.a \\" >> $config_host_mak
+   echo "   \$(dpdk_lib_dir)/libethdev.a \\" >> $config_host_mak
+   echo "   \$(dpdk_lib_dir)/librte_cmdline.a \\" >> $config_host_mak
+-- 
+2.25.1

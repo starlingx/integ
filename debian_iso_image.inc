@@ -10,3 +10,8 @@ trident-installer
 iputils-arping
 iputils-ping
 iputils-tracepath
+qemu-block-extra
+qemu-guest-agent
+qemu-system-common
+qemu-system-data
+qemu-system-x86

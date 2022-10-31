@@ -1,0 +1,41 @@
+From 95ba02087f976256a91045286628fb797e3f0af1 Mon Sep 17 00:00:00 2001
+From: Amy Fong <amy.fong@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: add libdl
+
+qemu/dpdk 1.7* compile errors
+
+In dpdk 1.7.*, librte_eal needs -ldl, otherwise, we'll
+get errors like:
+
+LINK  x86_64-softmmu/qemu-system-x86_64
+/usr/bin/ld:
+.../x86_64-ivshmem-linuxapp-gcc/lib/librte_eal.a(eal.o):
+undefined reference to symbol 'dlopen@@GLIBC_2.2.5'
+/usr/bin/ld: note: 'dlopen@@GLIBC_2.2.5' is defined in DSO
+/lib64/libdl.so.2 so try adding it to the linker command line
+/lib64/libdl.so.2: could not read symbols: Invalid operation
+collect2: error: ld returned 1 exit status
+
+Signed-off-by: Amy Fong <amy.fong@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ configure | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index d0c4b79446..e90a4e8fe0 100755
+--- a/configure
++++ b/configure
+@@ -6017,7 +6017,7 @@ if test "$dpdk" = "yes"; then
+   echo "   \$(dpdk_lib_dir)/librte_mempool.a \\" >> $config_host_mak
+   echo "   \$(dpdk_lib_dir)/librte_ring.a \\" >> $config_host_mak
+   echo "   \$(dpdk_lib_dir)/librte_malloc.a" >> $config_host_mak
+-  LIBS="\$(dpdk_libs) $LIBS"
++  LIBS="\$(dpdk_libs) -ldl $LIBS"
+   QEMU_INCLUDES="-I\$(dpdk_inc_dir) $QEMU_INCLUDES"
+ fi
+ if test "$vde" = "yes" ; then
+-- 
+2.25.1

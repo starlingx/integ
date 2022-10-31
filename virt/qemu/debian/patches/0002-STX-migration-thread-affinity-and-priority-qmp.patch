@@ -1,0 +1,272 @@
+From 049547fec5faedf6127cd7bf3c6e72f5a2fc16ab Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: migration thread affinity and priority qmp
+
+This includes de-blacklisting the scheduler and affinity
+setting syscalls.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Update hmp-commands struc ]
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ hmp-commands.hx        | 30 ++++++++++++++++++++++++
+ include/monitor/hmp.h  |  2 ++
+ migration/migration.c  | 53 ++++++++++++++++++++++++++++++++++++++++++
+ monitor/hmp-cmds.c     | 26 +++++++++++++++++++++
+ qapi/misc.json         | 30 ++++++++++++++++++++++++
+ softmmu/qemu-seccomp.c |  5 ----
+ softmmu/trace-events   |  1 +
+ 7 files changed, 142 insertions(+), 5 deletions(-)
+
+diff --git a/hmp-commands.hx b/hmp-commands.hx
+index ff2d7aa8f3..c5db85593b 100644
+--- a/hmp-commands.hx
++++ b/hmp-commands.hx
+@@ -1103,6 +1103,36 @@ SRST
+   once migration finished successfully.  Only implemented for SPICE.
+ ERST
+ 
++    {
++        .name       = "migrate_set_thread_cpumask",
++        .args_type  = "value:o",
++        .params     = "value",
++        .help       = "Set CPU mask for the migration thread."
++                      "Defaults to CPU 0 if no mask is specified",
++        .cmd        = hmp_migrate_set_thread_cpumask,
++    },
++
++SRST
++``migrate_set_thread_cpumask`` *value*
++  Set CPU mask for the migration thread
++ERST
++
++    {
++        .name       = "migrate_set_thread_priority",
++        .args_type  = "value:o",
++        .params     = "value",
++        .help       = "Set real time priority for the the migration thread."
++                      "Defaults to no change migration thread priority if not"
++                      "specified or out of range. Range [1-99].Scheduling"
++                      "policy will always be- SCHED_FIFO",
++        .cmd        = hmp_migrate_set_thread_priority,
++    },
++
++SRST
++``migrate_set_thread_priority`` *value*
++  Set real time priority for the the migration thread
++ERST
++
+     {
+         .name       = "dump-guest-memory",
+         .args_type  = "paging:-p,detach:-d,windmp:-w,zlib:-z,lzo:-l,snappy:-s,filename:F,begin:l?,length:l?",
+diff --git a/include/monitor/hmp.h b/include/monitor/hmp.h
+index ed2913fd18..85100cd33d 100644
+--- a/include/monitor/hmp.h
++++ b/include/monitor/hmp.h
+@@ -72,6 +72,8 @@ void hmp_migrate_set_cache_size(Monitor *mon, const QDict *qdict);
+ void hmp_client_migrate_info(Monitor *mon, const QDict *qdict);
+ void hmp_migrate_start_postcopy(Monitor *mon, const QDict *qdict);
+ void hmp_x_colo_lost_heartbeat(Monitor *mon, const QDict *qdict);
++void hmp_migrate_set_thread_cpumask(Monitor *mon, const QDict *qdict);
++void hmp_migrate_set_thread_priority(Monitor *mon, const QDict *qdict);
+ void hmp_set_password(Monitor *mon, const QDict *qdict);
+ void hmp_expire_password(Monitor *mon, const QDict *qdict);
+ void hmp_change(Monitor *mon, const QDict *qdict);
+diff --git a/migration/migration.c b/migration/migration.c
+index 87a9b59f83..b7415a52ca 100644
+--- a/migration/migration.c
++++ b/migration/migration.c
+@@ -39,6 +39,7 @@
+ #include "qapi/qapi-visit-migration.h"
+ #include "qapi/qapi-visit-sockets.h"
+ #include "qapi/qapi-commands-migration.h"
++#include "qapi/qapi-commands-misc.h"
+ #include "qapi/qapi-events-migration.h"
+ #include "qapi/qmp/qerror.h"
+ #include "qapi/qmp/qnull.h"
+@@ -56,6 +57,16 @@
+ #include "net/announce.h"
+ #include "qemu/queue.h"
+ #include "multifd.h"
++#include <sched.h>
++
++/* #define DEBUG */
++
++#ifdef DEBUG
++#define DPRINTF(fmt, ...) \
++        printf(fmt, ## __VA_ARGS__)
++#else
++#define DPRINTF(fmt, ...)
++#endif
+ 
+ #ifdef CONFIG_VFIO
+ #include "hw/vfio/vfio-common.h"
+@@ -118,6 +129,11 @@
+ static NotifierList migration_state_notifiers =
+     NOTIFIER_LIST_INITIALIZER(migration_state_notifiers);
+ 
++/* variables for pinning the migration thread to a CPU and assigning the
++ * realtime priority to it */
++static uint64_t migrate_thread_cpumask=0;
++static uint64_t migrate_thread_priority=0;
++
+ static bool deferred_incoming;
+ 
+ /* Messages sent on the return path from destination to source */
+@@ -2215,6 +2231,30 @@ void qmp_migrate_set_cache_size(int64_t value, Error **errp)
+     qmp_migrate_set_parameters(&p, errp);
+ }
+ 
++void qmp_migrate_set_thread_cpumask(int64_t value, Error **errp)
++{
++    /* Check for truncation */
++    if (value != (size_t)value) {
++        error_setg(errp, "Migration thread CPU Mask exceeding address space");
++        return;
++    }
++    /*resize the value */
++    value >>= 20; /*Magic */
++    migrate_thread_cpumask = value;
++}
++
++void qmp_migrate_set_thread_priority(int64_t value, Error **errp)
++{
++    /* Check for truncation */
++    if (value != (size_t)value) {
++        error_setg(errp, "Migration thread Priority exceeding address space");
++        return;
++    }
++    /*resize the value */
++    value >>= 20;
++    migrate_thread_priority = value;
++}
++
+ int64_t qmp_query_migrate_cache_size(Error **errp)
+ {
+     return migrate_xbzrle_cache_size();
+@@ -3540,6 +3580,19 @@ static void *migration_thread(void *opaque)
+         qemu_savevm_send_postcopy_advise(s->to_dst_file);
+     }
+ 
++    /* Bind Migration thread to the processor specified by the user */
++    if (sched_setaffinity(0, sizeof(migrate_thread_cpumask), (cpu_set_t *)&migrate_thread_cpumask) <0) {
++        DPRINTF("Error setting user input affinity. Switching to default.\n");
++    }
++
++    /* Change the realtime priority of the migration thread specified by the user */
++    struct sched_param schedp;
++    memset(&schedp, 0, sizeof(schedp));
++    schedp.sched_priority = migrate_thread_priority;
++    if (sched_setscheduler(0, SCHED_FIFO, &schedp) < 0) {
++         DPRINTF("Error setting user input priority. Switching to default.\n");
++    }
++
+     if (migrate_colo_enabled()) {
+         /* Notify migration destination that we enable COLO */
+         qemu_savevm_send_colo_enable(s->to_dst_file);
+diff --git a/monitor/hmp-cmds.c b/monitor/hmp-cmds.c
+index 65d8ff4849..a079ec3ace 100644
+--- a/monitor/hmp-cmds.c
++++ b/monitor/hmp-cmds.c
+@@ -1471,6 +1471,32 @@ void hmp_x_colo_lost_heartbeat(Monitor *mon, const QDict *qdict)
+     hmp_handle_error(mon, err);
+ }
+ 
++void hmp_migrate_set_thread_cpumask(Monitor *mon, const QDict *qdict)
++{
++    int64_t value = qdict_get_int(qdict, "value");
++    Error *err = NULL;
++
++    qmp_migrate_set_thread_cpumask(value, &err);
++    if (err) {
++        monitor_printf(mon, "%s\n", error_get_pretty(err));
++        error_free(err);
++        return;
++    }
++}
++
++void hmp_migrate_set_thread_priority(Monitor *mon, const QDict *qdict)
++{
++    int64_t value = qdict_get_int(qdict, "value");
++    Error *err = NULL;
++
++    qmp_migrate_set_thread_priority(value, &err);
++    if (err) {
++        monitor_printf(mon, "%s\n", error_get_pretty(err));
++        error_free(err);
++        return;
++    }
++}
++
+ void hmp_set_password(Monitor *mon, const QDict *qdict)
+ {
+     const char *protocol  = qdict_get_str(qdict, "protocol");
+diff --git a/qapi/misc.json b/qapi/misc.json
+index 40df513856..1c75d85126 100644
+--- a/qapi/misc.json
++++ b/qapi/misc.json
+@@ -238,6 +238,36 @@
+   'returns': 'str',
+   'features': [ 'savevm-monitor-nodes' ] }
+ 
++##
++# @migrate_set_thread_cpumask:
++#
++# Set migration thread CPU mask.
++#
++# @value: CPU mask.
++#
++# Returns: nothing on success
++#
++# Notes: A value lesser than zero will be automatically round up to zero.
++#
++# Since: 0.14.0
++##
++{ 'command': 'migrate_set_thread_cpumask', 'data': {'value': 'int'} }
++
++##
++# @migrate_set_thread_priority:
++#
++# Set migration thread Real Timer priority mask.
++#
++# @value: Thread Priority.
++#
++# Returns: nothing on success
++#
++# Notes: A value lesser than zero will be automatically round up to zero.
++#
++# Since: 0.14.0
++##
++{ 'command': 'migrate_set_thread_priority', 'data': {'value': 'int'} }
++
+ ##
+ # @change:
+ #
+diff --git a/softmmu/qemu-seccomp.c b/softmmu/qemu-seccomp.c
+index 8325ecb766..b1b8431eb3 100644
+--- a/softmmu/qemu-seccomp.c
++++ b/softmmu/qemu-seccomp.c
+@@ -101,11 +101,6 @@ static const struct QemuSeccompSyscall blacklist[] = {
+     { SCMP_SYS(setpriority),            QEMU_SECCOMP_SET_RESOURCECTL },
+     { SCMP_SYS(sched_setparam),         QEMU_SECCOMP_SET_RESOURCECTL },
+     { SCMP_SYS(sched_getparam),         QEMU_SECCOMP_SET_RESOURCECTL },
+-    { SCMP_SYS(sched_setscheduler),     QEMU_SECCOMP_SET_RESOURCECTL,
+-      ARRAY_SIZE(sched_setscheduler_arg), sched_setscheduler_arg },
+-    { SCMP_SYS(sched_getscheduler),     QEMU_SECCOMP_SET_RESOURCECTL },
+-    { SCMP_SYS(sched_setaffinity),      QEMU_SECCOMP_SET_RESOURCECTL },
+-    { SCMP_SYS(sched_getaffinity),      QEMU_SECCOMP_SET_RESOURCECTL },
+     { SCMP_SYS(sched_get_priority_max), QEMU_SECCOMP_SET_RESOURCECTL },
+     { SCMP_SYS(sched_get_priority_min), QEMU_SECCOMP_SET_RESOURCECTL },
+ };
+diff --git a/softmmu/trace-events b/softmmu/trace-events
+index b80ca042e1..b0210d70c3 100644
+--- a/softmmu/trace-events
++++ b/softmmu/trace-events
+@@ -26,3 +26,4 @@ runstate_set(int current_state, const char *current_state_str, int new_state, co
+ system_wakeup_request(int reason) "reason=%d"
+ qemu_system_shutdown_request(int reason) "reason=%d"
+ qemu_system_powerdown_request(void) ""
++migrate_thread(uint64_t migrate_thread_cpumask, uint64_t migrate_thread_priority) "migration Thread pinned to %" PRIu64 "with Priority %" PRIu64
+-- 
+2.25.1

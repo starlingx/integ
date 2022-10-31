@@ -1,0 +1,102 @@
+From f06fb5c1bf146f661fdca218943018fcf25c5ca6 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: realtime uses mlock instead of mlockall
+
+This enhances qemu to use mlock() instead of mlockall() when
+'-realtime mlock=on' is specified, so that memory is engineerable.
+
+mlockall() is not practically engineerable since it requires significant
+4K reserved memory per process. It will lock pages of the code, data and
+stack segment, shared libraries, user space kernel data, shared memory,
+and memory-mapped files.  This easily translates to >> 1GiB when you
+consider [heap] segment of 225MiB and VmData near 500 MiB to 900 MiB.
+
+Using mlock() only in ram_block_add(), we no longer lock stack / data,
+shared libraries, and heap.
+
+NOTE: This degrades the guarantee provided by '-realtime mlock=on'
+since we may end up delaying the instance to fault in code pages from
+disk or allocate memory, thus breaking any realtime guarantees.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ softmmu/physmem.c | 13 ++++++++++++-
+ softmmu/vl.c      |  8 ++++----
+ 2 files changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/softmmu/physmem.c b/softmmu/physmem.c
+index 3027747c03..e63fad9b13 100644
+--- a/softmmu/physmem.c
++++ b/softmmu/physmem.c
+@@ -1464,6 +1464,7 @@ static void *file_ram_alloc(RAMBlock *block,
+                             Error **errp)
+ {
+     void *area;
++    int flags;
+ 
+     block->page_size = qemu_fd_getpagesize(fd);
+     if (block->mr->align % block->page_size) {
+@@ -1510,8 +1511,13 @@ static void *file_ram_alloc(RAMBlock *block,
+         perror("ftruncate");
+     }
+ 
++    /* WRS - enable mlock */
++    flags = block->flags & RAM_SHARED;
++    if (enable_mlock) {
++        flags |= MAP_LOCKED;
++    }
+     area = qemu_ram_mmap(fd, memory, block->mr->align,
+-                         block->flags & RAM_SHARED, block->flags & RAM_PMEM);
++                         flags, block->flags & RAM_PMEM);
+     if (area == MAP_FAILED) {
+         error_setg_errno(errp, errno,
+                          "unable to map backing store for guest RAM");
+@@ -1937,6 +1943,11 @@ static void ram_block_add(RAMBlock *new_block, Error **errp, bool shared)
+                          QEMU_MADV_DONTFORK);
+         }
+         ram_block_notify_add(new_block->host, new_block->max_length);
++        if (enable_mlock) {
++            if (mlock(new_block->host, new_block->max_length) < 0) {
++                perror("mlock");
++            }
++        }
+     }
+ }
+ 
+diff --git a/softmmu/vl.c b/softmmu/vl.c
+index a398697d0d..527fe4e961 100644
+--- a/softmmu/vl.c
++++ b/softmmu/vl.c
+@@ -2,6 +2,7 @@
+  * QEMU System Emulator
+  *
+  * Copyright (c) 2003-2008 Fabrice Bellard
++ * Copyright (c) 2013-2016 Wind River Systems, Inc. All rights reserved.
+  *
+  * Permission is hereby granted, free of charge, to any person obtaining a copy
+  * of this software and associated documentation files (the "Software"), to deal
+@@ -38,6 +39,7 @@
+ #include "sysemu/tcg.h"
+ #include "sysemu/xen.h"
+ 
++#include "qemu-common.h"
+ #include "qemu/error-report.h"
+ #include "qemu/sockets.h"
+ #include "sysemu/accel.h"
+@@ -1111,10 +1113,8 @@ static QemuOptsList qemu_smp_opts = {
+ static void realtime_init(void)
+ {
+     if (enable_mlock) {
+-        if (os_mlock() < 0) {
+-            error_report("locking memory failed");
+-            exit(1);
+-        }
++        /* WRS - do not call os_mlock(), prevent call to mlockall */
++        ;
+     }
+ }
+ 
+-- 
+2.25.1

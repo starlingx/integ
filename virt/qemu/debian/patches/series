@@ -1,0 +1,11 @@
+0001-STX-Add-support-statement-to-help-output.patch
+0002-STX-migration-thread-affinity-and-priority-qmp.patch
+0003-STX-qemu-dpdk-changes-for-openvswitch-dpdk.patch
+0004-STX-qemu-add-enable-dpdk-runtime-flag.patch
+0005-STX-qemu-add-compile-define-for-CONFIG_DPDK.patch
+0006-STX-add-libdl.patch
+0007-STX-qemu-dpdk-custom-config.patch
+0008-STX-realtime-uses-mlock-instead-of-mlockall.patch
+0009-STX-Suspend-Resume-for-VMs-with-PCIPT-Virtio.patch
+0010-STX-Modify-live-migration-auto-converge-threshold.patch
+0011-STX-virtio-serial-don-t-touch-virtqueue-if-vm-is-sto.patch

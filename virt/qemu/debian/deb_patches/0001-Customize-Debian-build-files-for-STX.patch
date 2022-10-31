@@ -1,0 +1,419 @@
+From 33716964e8381628d575160b6a015a3f8ba68640 Mon Sep 17 00:00:00 2001
+From: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+Date: Fri, 18 Nov 2022 16:59:35 -0300
+Subject: [PATCH] Customize Debian build files for STX
+
+Change the Debian build files to generate qemu Debian packages as
+they are needed for StarlingX qemu use case.
+Building the upstream qemu was taking ~30 minutes and generating
+an output directory with 30 packages and ~1.1G in size. Removing
+the unnecessary packages resulted in a build that takes ~15min and
+in an output directory with only 10 needed packages and ~320M.
+
+We mainly remove UI/Graphical modules and focus on building
+qemu-system-x86 only. We do not need other qemu-system-* packages
+for different architectures neither the build dependencies for
+cross-compiling those packages.
+
+Removed packages:
+* qemu-system-gui
+* qemu-system-[misc|arm|mips|ppc|sparc]
+* qemu-user
+* qemu-user-static
+* qemu-user-binftmt
+
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ debian/control | 215 +++----------------------------------------------
+ debian/rules   |  80 +-----------------
+ 2 files changed, 14 insertions(+), 281 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 6534765..7cc0fb4 100644
+--- a/debian/control
++++ b/debian/control
+@@ -21,14 +21,10 @@ Build-Depends: debhelper-compat (= 12),
+  libcapstone-dev (>> 4.0.2~),
+ # --enable-linux-aio	linux-*
+  libaio-dev [linux-any],
+-# --audio-drv-list=pa,alsa,oss	linux-*
+-# --audio-drv-list=pa,oss	kfreebsd-*
+- libpulse-dev,
+- libasound2-dev [linux-any],
+ # for virtfs (now in libc6)
+ # --enable-attr
+-# --enable-brlapi
+- libbrlapi-dev,
++# --disable-brlapi
++# libbrlapi-dev,
+ # --enable-virtfs	linux-*
+ # needed for virtfs
+ # --enable-cap-ng	linux-*
+@@ -85,8 +81,8 @@ Build-Depends: debhelper-compat (= 12),
+ # vde is debian-only since ubuntu/vde2 is in universe
+ # --enable-vde
+  libvdeplug-dev,
+-# --enable-xen	linux-amd64|linux-i386
+- libxen-dev [linux-amd64 linux-i386],
++# --disable-xen	linux-amd64|linux-i386
++# libxen-dev [linux-amd64 linux-i386],
+ # --enable-nettle
+  nettle-dev,
+ ## always enabled: --enable-uuid
+@@ -114,18 +110,18 @@ Build-Depends: debhelper-compat (= 12),
+ ## auth-pam - for auth for vnc&Co using PAM
+ ## gio-2.0 - for -display=spice-app
+ Build-Depends-Indep:
+- gcc-s390x-linux-gnu,
++# gcc-s390x-linux-gnu,
+ # libc6.1-dev-alpha-cross isn't really needed but the code,
+ # for whatever reason, #include's string.h which needs libc6.1-dev
+  gcc-alpha-linux-gnu, libc6.1-dev-alpha-cross,
+ # skiboot firmware, openbios
+- gcc-powerpc64-linux-gnu,
++# gcc-powerpc64-linux-gnu,
+ # openbios
+- gcc-sparc64-linux-gnu, fcode-utils, xsltproc,
++# gcc-sparc64-linux-gnu, fcode-utils, xsltproc,
+ # hppa-firmware
+- gcc-hppa-linux-gnu,
++# gcc-hppa-linux-gnu,
+ # opensbi
+- gcc-riscv64-linux-gnu,
++# gcc-riscv64-linux-gnu,
+ Build-Conflicts: oss4-dev
+ Standards-Version: 4.5.1
+ Homepage: http://www.qemu.org/
+@@ -218,141 +214,12 @@ Description: QEMU full system emulation binaries (common files)
+  This package provides common files needed for target-specific
+  full system emulation (qemu-system-*) packages.
+ 
+-Package: qemu-system-gui
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: same
+-Depends: ${misc:Depends}, ${shlibs:Depends},
+-         qemu-system-x86 (= ${binary:Version}) | qemu-system-arm (= ${binary:Version}) | qemu-system-mips (= ${binary:Version}) | qemu-system-ppc (= ${binary:Version}) | qemu-system-sparc (= ${binary:Version}) | qemu-system-misc (= ${binary:Version}) | qemu-system-s390x (= ${binary:Version}) | qemu-system-x86-xen (= ${binary:Version}),
+-Description: QEMU full system emulation binaries (user interface and audio support)
+- This package provides local graphical user interface (currently GTK)
+- and audio backends for full system emulation (qemu-system-*) packages.
+-
+-Package: qemu-system-misc
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: foreign
+-Depends: ${shlibs:Depends}, ${misc:Depends}, qemu-system-common (>> ${source:Version}~), qemu-system-data (>> ${source:Version}~),
+-Recommends: qemu-system-gui (= ${binary:Version}), qemu-utils,
+-# alpha uses vgabios
+-# alpha m68k sh4 uses bootroms
+- seabios, ipxe-qemu (>= 1.0.0+git-20131111.c3d1e78-1~)
+-Suggests: samba, vde2, qemu-block-extra (= ${binary:Version}),
+-Provides: ${sysprovides:misc}
+-Description: QEMU full system emulation binaries (miscellaneous)
+- QEMU is a fast processor emulator: currently the package supports
+- ARM, CRIS, M68k (ColdFire), MicroBlaze, and SH4
+- emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides the full system emulation binaries to emulate
+- various other hardware which did not made into separate packages.
+- Emulators for the following architectures are provided:
+-  ${sysarch:misc}.
+- .
+- In system emulation mode QEMU emulates a full system, including a processor
+- and various peripherals.  It enables easier testing and debugging of system
+- code.  It can also be used to provide virtual hosting of several virtual
+- machines on a single server.
+-
+-Package: qemu-system-arm
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: foreign
+-Depends: ${shlibs:Depends}, ${misc:Depends}, qemu-system-common (>> ${source:Version}~), qemu-system-data (>> ${source:Version}~),
+-Recommends: qemu-system-gui (= ${binary:Version}), qemu-utils,
+-# aarch64 arm uses bootroms
+- ipxe-qemu (>= 1.0.0+git-20131111.c3d1e78-1~),
+- qemu-efi-aarch64, qemu-efi-arm
+-Suggests: samba, vde2, qemu-block-extra (= ${binary:Version}),
+-Provides: qemu-kvm [linux-arm64 linux-armhf linux-armel], ${sysprovides:arm}
+-Breaks:   qemu-kvm [linux-arm64 linux-armhf linux-armel]
+-Replaces: qemu-kvm [linux-arm64 linux-armhf linux-armel]
+-Description: QEMU full system emulation binaries (arm)
+- QEMU is a fast processor emulator: currently the package supports
+- ARM emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides the full system emulation binaries to emulate
+- the following arm hardware: ${sysarch:arm}.
+- .
+- In system emulation mode QEMU emulates a full system, including a processor
+- and various peripherals.  It enables easier testing and debugging of system
+- code.  It can also be used to provide virtual hosting of several virtual
+- machines on a single server.
+-
+-Package: qemu-system-mips
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: foreign
+-Depends: ${shlibs:Depends}, ${misc:Depends}, qemu-system-common (>> ${source:Version}~), qemu-system-data (>> ${source:Version}~),
+-Recommends: qemu-system-gui (= ${binary:Version}), qemu-utils,
+-# all mips targets uses vgabios and bootroms
+- seabios, ipxe-qemu (>= 1.0.0+git-20131111.c3d1e78-1~)
+-Suggests: samba, vde2, qemu-block-extra (= ${binary:Version}),
+-Provides: ${sysprovides:mips}
+-Description: QEMU full system emulation binaries (mips)
+- QEMU is a fast processor emulator: currently the package supports
+- MIPS emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides the full system emulation binaries to emulate
+- the following mips hardware: ${sysarch:mips}.
+- .
+- In system emulation mode QEMU emulates a full system, including a processor
+- and various peripherals.  It enables easier testing and debugging of system
+- code.  It can also be used to provide virtual hosting of several virtual
+- machines on a single server.
+-
+-Package: qemu-system-ppc
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: foreign
+-Depends: ${shlibs:Depends}, ${misc:Depends}, qemu-system-common (>> ${source:Version}~), qemu-system-data (>> ${source:Version}~),
+-Suggests: samba, vde2, qemu-block-extra (= ${binary:Version}),
+-Recommends: qemu-system-gui (= ${binary:Version}), qemu-utils,
+-# ppc targets use vgabios-stdvga and bootroms
+- seabios, ipxe-qemu (>= 1.0.0+git-20131111.c3d1e78-1~)
+-Provides: qemu-kvm [linux-ppc64 linux-ppc64el linux-powerpc], ${sysprovides:ppc}
+-Breaks:   qemu-kvm [linux-ppc64 linux-ppc64el linux-powerpc]
+-Replaces: qemu-kvm [linux-ppc64 linux-ppc64el linux-powerpc]
+-Description: QEMU full system emulation binaries (ppc)
+- QEMU is a fast processor emulator: currently the package supports
+- PowerPC emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides the full system emulation binaries to emulate
+- the following PowerPC hardware: ${sysarch:ppc}.
+- .
+- In system emulation mode QEMU emulates a full system, including a processor
+- and various peripherals.  It enables easier testing and debugging of system
+- code.  It can also be used to provide virtual hosting of several virtual
+- machines on a single server.
+-
+-Package: qemu-system-sparc
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: foreign
+-Depends: ${shlibs:Depends}, ${misc:Depends}, qemu-system-common (>> ${source:Version}~), qemu-system-data (>> ${source:Version}~),
+-Recommends: qemu-system-gui (= ${binary:Version}), qemu-utils,
+-# sparc64 uses vgabios-stdvga and bootroms
+- seabios, ipxe-qemu (>= 1.0.0+git-20131111.c3d1e78-1~)
+-Suggests: samba, vde2, qemu-block-extra (= ${binary:Version}),
+-Provides: ${sysprovides:sparc}
+-Description: QEMU full system emulation binaries (sparc)
+- QEMU is a fast processor emulator: currently the package supports
+- SPARC emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides the full system emulation binaries to emulate
+- the following sparc hardware: ${sysarch:sparc}.
+- .
+- In system emulation mode QEMU emulates a full system, including a processor
+- and various peripherals.  It enables easier testing and debugging of system
+- code.  It can also be used to provide virtual hosting of several virtual
+- machines on a single server.
+-
+ Package: qemu-system-x86
+ Architecture: amd64 arm arm64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+ Multi-Arch: foreign
+ Depends: ${shlibs:Depends}, ${misc:Depends}, qemu-system-common (>> ${source:Version}~), qemu-system-data (>> ${source:Version}~),
+  seabios (>= 1.10.2-1~), ipxe-qemu (>= 1.0.0+git-20131111.c3d1e78-1~)
+-Recommends: qemu-system-gui (= ${binary:Version}), qemu-utils,
+- ovmf,
++Recommends: qemu-utils, ovmf
+ Suggests: samba, vde2, qemu-block-extra (= ${binary:Version}),
+  sgabios,
+ Provides: qemu-kvm [linux-amd64 linux-i386], ${sysprovides:x86}
+@@ -374,68 +241,6 @@ Description: QEMU full system emulation binaries (x86)
+  On x86 host hardware this package also enables KVM kernel virtual machine
+  usage on systems which supports it.
+ 
+-Package: qemu-user
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: foreign
+-Depends: ${shlibs:Depends}, ${misc:Depends}
+-Recommends: qemu-user-binfmt
+-Description: QEMU user mode emulation binaries
+- QEMU is a fast processor emulator: currently the package supports
+- ARM, CRIS, i386, M68k (ColdFire), MicroBlaze, MIPS, PowerPC, SH4,
+- SPARC and x86-64 emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides the user mode emulation binaries. In this mode
+- QEMU can launch Linux processes compiled for one CPU on another CPU.
+- .
+- If qemu-user-binfmt package is also installed, it will register binary
+- format handlers from this qemu-user package with the kernel so it will
+- be possible to run foreign binaries directly.  However, this might not
+- be suitable for using inside foreign chroots, in which case it is
+- possible to use qemu-user-static package instead of qemu-user-binmft, --
+- qemu-user-static will register statically linked binfmt handlers instead.
+-
+-Package: qemu-user-static
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Built-Using: ${built-using}
+-Multi-Arch: foreign
+-Depends: ${misc:Depends}
+-Recommends: binfmt-support
+-Breaks: binfmt-support (<< 2.1.7~)
+-Provides: qemu-user-binfmt
+-Conflicts: qemu-user-binfmt
+-Suggests: sudo
+-Description: QEMU user mode emulation binaries (static version)
+- QEMU is a fast processor emulator: currently the package supports
+- ARM, CRIS, i386, M68k (ColdFire), MicroBlaze, MIPS, PowerPC, SH4,
+- SPARC and x86-64 emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides the user mode emulation binaries, built
+- statically. In this mode QEMU can launch Linux processes compiled for
+- one CPU on another CPU.
+- .
+- qemu-user-static package will register binary formats which the provided
+- emulators can handle, so that it will be possible to run foreign binaries
+- directly.
+-
+-Package: qemu-user-binfmt
+-Architecture: amd64 arm arm64 armel armhf i386 ia64 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+-Multi-Arch: foreign
+-Depends: ${misc:Depends}, qemu-user (= ${binary:Version}), binfmt-support
+-Breaks: binfmt-support (<< 2.1.7~)
+-Conflicts: qemu-user-static
+-Description: QEMU user mode binfmt registration for qemu-user
+- QEMU is a fast processor emulator: currently the package supports
+- ARM, CRIS, i386, M68k (ColdFire), MicroBlaze, MIPS, PowerPC, SH4,
+- SPARC and x86-64 emulation. By using dynamic translation it achieves
+- reasonable speed while being easy to port on new host CPUs.
+- .
+- This package provides binfmt support registration for the user mode
+- emulation binaries from qemu-user.  This is an empty package, it does
+- not contain any additional files, only registration scripts which run
+- at install and remove times.
+-
+ Package: qemu-utils
+ Architecture: amd64 arm arm64 armel armhf hppa i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel mips64 mips64el powerpc powerpcspe ppc64 ppc64el riscv64 s390x sparc sparc64 x32
+ Multi-Arch: foreign
+diff --git a/debian/rules b/debian/rules
+index 9d9f18f..d6778c3 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -72,14 +72,11 @@ endif
+ ifeq (${enable_system},enable)
+ 
+ # list of system (softmmu) targets, from ./configure
+-system_targets = \
+- i386 x86_64 alpha aarch64 arm avr cris hppa m68k microblaze microblazeel \
+- mips mipsel mips64 mips64el moxie nios2 or1k ppc ppc64 riscv32 riscv64 rx \
+- sh4 sh4eb sparc sparc64 s390x tricore xtensa xtensaeb
++system_targets = i386 x86_64
+ 
+ # qemu-system subpackages, from d/control
+ sys_systems = arm mips ppc sparc x86 $(if $(filter ${VENDOR},UBUNTU),s390x,)
+-systems = ${sys_systems} misc
++systems = x86
+ sysarch_arm   = $(filter aarch64 arm,${system_targets})
+ sysarch_mips  = $(filter mips mipsel mips64 mips64el,${system_targets})
+ sysarch_ppc   = $(filter ppc ppc64,${system_targets})
+@@ -348,9 +345,11 @@ endif	# enable_linux_user
+ 
+ 	dh_install -a
+ 	dh_missing --list-missing
++ifeq ($(enable_linux_user),enable)
+ 	dh_installdocs -a -Nqemu-user-binfmt
+ 	dh_installchangelogs -a -Nqemu-user-binfmt -XChangelog
+ 	dh_installdocs -a -pqemu-user-binfmt --link-doc=qemu-user
++endif
+ 	dh_installman -a
+ 	dh_installudev -a
+ ifeq (${enable_system},enable)
+@@ -393,35 +392,6 @@ debian/control: debian/control-in debian/rules
+ 	chmod -w $@
+ endif
+ 
+-### openbios rules
+-b/openbios/config-host.mak:
+-	mkdir -p b/openbios
+-	cd b/openbios && ../../roms/openbios/config/scripts/switch-arch builtin-ppc builtin-sparc32 builtin-sparc64
+-build-openbios: $(addprefix b/openbios/obj-, $(addsuffix /.built, ppc sparc32 sparc64))
+-b/openbios/obj-%/.built: b/openbios/config-host.mak
+-	${MAKE} -C ${@D} V=${V} EXTRACFLAGS="-ffreestanding -fno-pic -fno-stack-protector"
+-	@touch $@
+-install-openbios: build-openbios
+-	install -m 0644 b/openbios/obj-ppc/openbios-qemu.elf "${sysdatadir}/openbios-ppc"
+-	install -m 0644 b/openbios/obj-sparc32/openbios-builtin.elf "${sysdatadir}/openbios-sparc32"
+-	install -m 0644 b/openbios/obj-sparc64/openbios-builtin.elf "${sysdatadir}/openbios-sparc64"
+-	install -m 0644 -t "${sysdatadir}" \
+-		b/openbios/obj-sparc32/QEMU,tcx.bin \
+-		b/openbios/obj-sparc32/QEMU,cgthree.bin \
+-		b/openbios/obj-sparc64/QEMU,VGA.bin
+-sysdata-components += openbios
+-
+-### powernv firmware in roms/skiboot
+-build-skiboot: b/skiboot/skiboot.lid
+-b/skiboot/skiboot.lid:
+-	mkdir -p b/skiboot
+-	${MAKE} -C b/skiboot -f ${CURDIR}/roms/skiboot/Makefile \
+-	  SRC=${CURDIR}/roms/skiboot \
+-	  CROSS_COMPILE=${PPC64_CROSSPFX} V=${V}
+-install-skiboot: b/skiboot/skiboot.lid
+-	install -m 0644 -t "${sysdatadir}" $<
+-sysdata-components += skiboot
+-
+ ### x86 optionrom
+ build-x86-optionrom: b/optionrom/built
+ b/optionrom/built:
+@@ -471,48 +441,6 @@ install-palcode-clipper: b/qemu-palcode/palcode-clipper
+ 	install -m 0644 $< ${sysdatadir}/palcode-clipper
+ sysdata-components += palcode-clipper
+ 
+-### SLOF
+-build-slof: b/SLOF/boot_rom.bin
+-b/SLOF/boot_rom.bin:
+-	cp -al roms/SLOF b/
+-	env -u LDFLAGS -u CFLAGS $(MAKE) -C b/SLOF qemu CROSS="powerpc64-linux-gnu-" V=${V}
+-install-slof: b/SLOF/boot_rom.bin
+-	install -m 0644 $< ${sysdatadir}/slof.bin
+-sysdata-components += slof
+-
+-### s390x firmware in pc-bios/s390-ccw
+-build-s390x-fw: b/s390fw/built
+-b/s390fw/built:
+-	mkdir -p b/s390fw
+-	${MAKE} -f debian/s390fw.mak OUT=b/s390fw/
+-	touch $@
+-install-s390x-fw: build-s390x-fw
+-	install -m 0644 -t "${sysdatadir}" b/s390fw/s390*.img
+-sysdata-components += s390x-fw
+-
+-### hppa-firmware (roms/seabios-hppa)
+-build-hppa-fw: b/hppafw/hppa-firmware.img
+-b/hppafw/hppa-firmware.img: | b
+-	mkdir -p b/hppafw
+-	${MAKE} -C roms/seabios-hppa OUT=../../b/hppafw/ PYTHON=python3 parisc
+-	hppa-linux-gnu-strip -R.note -R.comment $@
+-install-hppa-fw: b/hppafw/hppa-firmware.img
+-	install -m 0644 $< ${sysdatadir}
+-sysdata-components += hppa-fw
+-
+-### opensbi (riscv firmware)
+-# we only build v64 variants, not v32
+-build-opensbi: b/opensbi/.built
+-b/opensbi/.built: | b
+-	mkdir -p b/opensbi
+-	${MAKE} -C roms/opensbi O=../../b/opensbi CROSS_COMPILE=riscv64-linux-gnu- V=${V} PLATFORM=generic
+-	riscv64-linux-gnu-strip --strip-unneeded -R.comment -R.note b/opensbi/platform/generic/firmware/fw_dynamic.elf
+-	touch $@
+-install-opensbi: build-opensbi
+-	install -m 0644 b/opensbi/platform/generic/firmware/fw_dynamic.bin ${sysdatadir}/opensbi-riscv64-generic-fw_dynamic.bin
+-	install -m 0644 b/opensbi/platform/generic/firmware/fw_dynamic.elf ${sysdatadir}/opensbi-riscv64-generic-fw_dynamic.elf
+-sysdata-components += opensbi
+-
+ build-indep: $(addprefix build-, ${sysdata-components})
+ 
+ b/install-indep-prep.stamp:
+-- 
+2.25.1
+

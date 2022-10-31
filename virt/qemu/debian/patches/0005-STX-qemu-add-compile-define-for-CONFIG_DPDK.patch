@@ -1,0 +1,32 @@
+From 93451fe51ab37bf8663a766ce1d77d3ac883ee1f Mon Sep 17 00:00:00 2001
+From: Paul Barrette <paul.barrette@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: qemu: add compile define for CONFIG_DPDK
+
+Dpdk build linkage will be detected if --dpdkdir is specified at
+configure time, which is the default.  In the dpdk=yes section, add a
+compile time define that can be used internally.
+
+Signed-off-by: Paul Barrette <paul.barrette@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ configure | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/configure b/configure
+index cb6d3c08fc..d0c4b79446 100755
+--- a/configure
++++ b/configure
+@@ -6003,7 +6003,8 @@ if test "$dpdk" = "yes"; then
+     echo "No dpdkdir given"
+     exit 1
+   fi
+-  echo  "dpdk_dir=`eval echo $rte_sdk`" >> $config_host_mak
++  echo "CONFIG_ENABLE_DPDK=y" >> $config_host_mak
++  echo "dpdk_dir=`eval echo $rte_sdk`" >> $config_host_mak
+   echo "dpdk_lib_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/lib" >> $config_host_mak
+   echo "dpdk_inc_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/include" >> $config_host_mak
+   echo "" >> $config_host_mak
+-- 
+2.25.1

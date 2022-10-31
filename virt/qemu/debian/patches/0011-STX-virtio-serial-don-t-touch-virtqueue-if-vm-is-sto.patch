@@ -1,0 +1,41 @@
+From 80c5f13e549cb59adc781335c4d6a8f81f578615 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: virtio-serial: don't touch virtqueue if vm is stopped
+ Candidate for upstreaming.
+
+During migration there is a window where virtio-serial
+data has been transmitted to the receiving side, but
+the region caches haven't been initialized there yet.
+This causes an assertion fail crash.
+
+The fix is inspired by:
+
+70e53e6 virtio-net: don't touch virtqueue if vm is stopped
+
+We remove the call to virtio_queue_ready as it is covered
+by the call to virtio_queue_empty already, and replace it
+with a test to ensure that the vm is running.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Trimmed the shortlog ]
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ hw/char/virtio-serial-bus.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hw/char/virtio-serial-bus.c b/hw/char/virtio-serial-bus.c
+index cf08ef9728..9b4b258413 100644
+--- a/hw/char/virtio-serial-bus.c
++++ b/hw/char/virtio-serial-bus.c
+@@ -311,7 +311,7 @@ size_t virtio_serial_guest_ready(VirtIOSerialPort *port)
+     VirtQueue *vq = port->ivq;
+     unsigned int bytes;
+ 
+-    if (!virtio_queue_ready(vq) ||
++    if (!vdev->vm_running ||
+         !(vdev->status & VIRTIO_CONFIG_S_DRIVER_OK) ||
+         virtio_queue_empty(vq)) {
+         return 0;
+-- 
+2.25.1

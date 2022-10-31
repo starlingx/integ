@@ -1,0 +1,7 @@
+---
+debname: qemu
+debver: 5.2+dfsg-11+deb11u2
+archive: https://snapshot.debian.org/archive/debian/20221109T211529Z/pool/main/q/qemu/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

@@ -1,0 +1,32 @@
+From 862773099be4c599cf2885cb8b0f706b01964157 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: Modify live migration auto-converge threshold
+
+Currently the live migration auto-converge can throttle a VM
+vcpus time to 99%. This value for "max cpu trottling percentage"
+causes some detaches to fail. Based on characterization results,
+we set this value to 92.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Trimmed the shortlog ]
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ softmmu/cpu-throttle.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/softmmu/cpu-throttle.c b/softmmu/cpu-throttle.c
+index 2ec4b8e0bc..211c074f8d 100644
+--- a/softmmu/cpu-throttle.c
++++ b/softmmu/cpu-throttle.c
+@@ -35,7 +35,7 @@ static QEMUTimer *throttle_timer;
+ static unsigned int throttle_percentage;
+ 
+ #define CPU_THROTTLE_PCT_MIN 1
+-#define CPU_THROTTLE_PCT_MAX 99
++#define CPU_THROTTLE_PCT_MAX 92
+ #define CPU_THROTTLE_TIMESLICE_NS 10000000
+ 
+ static void cpu_throttle_thread(CPUState *cpu, run_on_cpu_data opaque)
+-- 
+2.25.1

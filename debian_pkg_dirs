@@ -94,3 +94,4 @@ security/shim-unsigned
 security/openscap
 storage-drivers/trident-installer
 tools/kdump-tools
+virt/qemu

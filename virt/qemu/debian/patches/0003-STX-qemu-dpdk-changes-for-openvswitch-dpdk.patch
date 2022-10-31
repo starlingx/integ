@@ -1,0 +1,197 @@
+From 31ae2e35caa16dcf4cc1fa2ff5e3c1aa825b5352 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: qemu dpdk changes for openvswitch dpdk
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ configure           | 26 ++++++++++++++++++
+ hw/net/virtio-net.c |  5 ++++
+ softmmu/vl.c        | 67 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 98 insertions(+)
+
+diff --git a/configure b/configure
+index 18c26e0389..cb6d3c08fc 100755
+--- a/configure
++++ b/configure
+@@ -1106,6 +1106,11 @@ for opt do
+   ;;
+   --enable-whpx) whpx="enabled"
+   ;;
++  --disable-dpdk) dpdk="no"
++  ;;
++  --dpdkdir=*) rte_sdk="$optarg"
++               dpdk="yes"
++  ;;
+   --disable-tcg-interpreter) tcg_interpreter="no"
+   ;;
+   --enable-tcg-interpreter) tcg_interpreter="yes"
+@@ -5993,6 +5998,27 @@ if test "$guest_agent" = "yes" ; then
+   echo "CONFIG_GUEST_AGENT=y" >> $config_host_mak
+ fi
+ echo "CONFIG_SMBD_COMMAND=\"$smbd\"" >> $config_host_mak
++if test "$dpdk" = "yes"; then
++  if test "${rte_sdk+set}" != set; then
++    echo "No dpdkdir given"
++    exit 1
++  fi
++  echo  "dpdk_dir=`eval echo $rte_sdk`" >> $config_host_mak
++  echo "dpdk_lib_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/lib" >> $config_host_mak
++  echo "dpdk_inc_dir=\$(dpdk_dir)/x86_64-default-linuxapp-gcc/include" >> $config_host_mak
++  echo "" >> $config_host_mak
++  echo "dpdk_libs=\$(dpdk_lib_dir)/librte_eal.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/libethdev.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/librte_cmdline.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/librte_hash.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/librte_lpm.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/librte_mbuf.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/librte_mempool.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/librte_ring.a \\" >> $config_host_mak
++  echo "   \$(dpdk_lib_dir)/librte_malloc.a" >> $config_host_mak
++  LIBS="\$(dpdk_libs) $LIBS"
++  QEMU_INCLUDES="-I\$(dpdk_inc_dir) $QEMU_INCLUDES"
++fi
+ if test "$vde" = "yes" ; then
+   echo "CONFIG_VDE=y" >> $config_host_mak
+   echo "VDE_LIBS=$vde_libs" >> $config_host_mak
+diff --git a/hw/net/virtio-net.c b/hw/net/virtio-net.c
+index 9179013ac4..a25381c452 100644
+--- a/hw/net/virtio-net.c
++++ b/hw/net/virtio-net.c
+@@ -2,6 +2,7 @@
+  * Virtio Network Device
+  *
+  * Copyright IBM, Corp. 2007
++ * Copyright 2012-2013 Intel Corporation All Rights Reserved.
+  *
+  * Authors:
+  *  Anthony Liguori   <aliguori@us.ibm.com>
+@@ -1509,6 +1510,7 @@ static void receive_header(VirtIONet *n, const struct iovec *iov, int iov_cnt,
+     }
+ }
+ 
++#if 0
+ static int receive_filter(VirtIONet *n, const uint8_t *buf, int size)
+ {
+     static const uint8_t bcast[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+@@ -1559,6 +1561,7 @@ static int receive_filter(VirtIONet *n, const uint8_t *buf, int size)
+ 
+     return 0;
+ }
++#endif
+ 
+ static uint8_t virtio_net_get_hash_type(bool isip4,
+                                         bool isip6,
+@@ -1687,8 +1690,10 @@ static ssize_t virtio_net_receive_rcu(NetClientState *nc, const uint8_t *buf,
+         return 0;
+     }
+ 
++    #if 0
+     if (!receive_filter(n, buf, size))
+         return size;
++    #endif
+ 
+     offset = i = 0;
+ 
+diff --git a/softmmu/vl.c b/softmmu/vl.c
+index 27ce96f671..5f556f1a0e 100644
+--- a/softmmu/vl.c
++++ b/softmmu/vl.c
+@@ -2445,6 +2445,35 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
+     return popt;
+ }
+ 
++#ifdef CONFIG_ENABLE_DPDK
++static const QEMUOption *quick_scan_opt(int argc, char **argv, int *poptind)
++{
++    const QEMUOption *popt;
++    int optind = *poptind;
++    char *r = argv[optind];
++
++    loc_set_cmdline(argv, optind, 1);
++    optind++;
++    /* Treat --foo the same as -foo.  */
++    if (r[1] == '-')
++        r++;
++    popt = qemu_options;
++    for(;;) {
++        /* need to ignore non qemu args, e.g. dpdk args */
++        if (!popt->name) {
++            *poptind = optind;
++            return NULL;
++        }
++        if (!strcmp(popt->name, r + 1))
++            break;
++        popt++;
++    }
++
++    *poptind = optind;
++    return popt;
++}
++#endif
++
+ static MachineClass *select_machine(void)
+ {
+     GSList *machines = object_class_get_list(TYPE_MACHINE, false);
+@@ -2901,6 +2930,10 @@ void qemu_init(int argc, char **argv, char **envp)
+     FILE *vmstate_dump_file = NULL;
+     Error *main_loop_err = NULL;
+     Error *err = NULL;
++#ifdef CONFIG_ENABLE_DPDK
++    bool use_dpdk = false;
++    int retval;
++#endif
+     bool list_data_dirs = false;
+     char **dirs;
+     const char *mem_path = NULL;
+@@ -2922,6 +2955,37 @@ void qemu_init(int argc, char **argv, char **envp)
+     atexit(qemu_run_exit_notifiers);
+     qemu_init_exec_dir(argv[0]);
+ 
++#ifdef CONFIG_ENABLE_DPDK
++    /* need to check for -enable-dpdk before calling rte_eal_init.  If
++     * it is not found, don't call  rte_eal_init */
++    optind = 1;
++    while (optind < argc) {
++        if (argv[optind][0] != '-') {
++            /* disk image */
++            optind++;
++            continue;
++        } else {
++            const QEMUOption *popt;
++            popt = quick_scan_opt(argc, argv, &optind);
++            if (popt) {
++                switch (popt->index) {
++                    case QEMU_OPTION_enable_dpdk:
++                        use_dpdk = true;
++                        break;
++                }
++            }
++        }
++    }
++
++    if (use_dpdk) {
++        if ((retval = rte_eal_init(argc, argv)) < 0)
++            return -1;
++
++        argc -= retval;
++        argv += retval;
++    }
++#endif
++
+     module_call_init(MODULE_INIT_QOM);
+     module_call_init(MODULE_INIT_MIGRATION);
+ 
+@@ -3869,6 +3933,9 @@ void qemu_init(int argc, char **argv, char **envp)
+ 
+     user_register_global_props();
+ 
++    extern int
++    rte_eal_init(int argc, char **argv);
++
+     replay_configure(icount_opts);
+ 
+     if (incoming && !preconfig_exit_requested) {
+-- 
+2.25.1

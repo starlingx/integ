@@ -1,0 +1,95 @@
+From ad19f7aad9e2ff9a007eddbd9a19b61a9c1af769 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com
+Date: Fri, 26 Apr 2019 17:41:04 -0300
+Subject: [PATCH] STX: Suspend/Resume for VMs with PCIPT+Virtio
+
+When we have a Passthrough or a SR-IOV device, the plug/unplug of these
+devices causes the guest memory map to change.
+
+When the vhost code in qemu detects that the guest memory map changed,
+it verifies that the virtio vring mappings into its own address space
+did not change and sends the vhost backend the VHOST_SET_MEM_TABLE
+message so that the backend can update its mapping based on the new
+guest memory map.
+
+If this guest memory map change happens after the virtio device has
+been initialized and started, we get into the situation where ports
+are brought down as part of the VHOST_SET_MEM_TABLE message handling
+and has nothing to restart the device.
+
+The root cause of this issue was that the mappings for the vring was
+changing when we get a new VHOST_USER_SET_MEM_TABLE message and we
+were trying to restart the device with the old vring mapping.
+
+The correct fix is to send a VHOST_SET_VRING_ADDR message from qemu
+which will force the mapping to be recalculated based on the new
+memory map.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Trimmed the shortlog ]
+Signed-off-by: Rafael Falcao <Rafael.VieiraFalcao@windriver.com>
+---
+ hw/virtio/vhost.c | 26 +++++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/hw/virtio/vhost.c b/hw/virtio/vhost.c
+index 614ccc2bcb..05c045925a 100644
+--- a/hw/virtio/vhost.c
++++ b/hw/virtio/vhost.c
+@@ -61,6 +61,10 @@ bool vhost_has_free_slot(void)
+     return slots_limit > used_memslots;
+ }
+ 
++static int vhost_virtqueue_set_addr(struct vhost_dev *dev,
++                                    struct vhost_virtqueue *vq,
++                                    unsigned idx, bool enable_log);
++
+ static void vhost_dev_sync_region(struct vhost_dev *dev,
+                                   MemoryRegionSection *section,
+                                   uint64_t mfirst, uint64_t mlast,
+@@ -448,6 +452,21 @@ static void vhost_begin(MemoryListener *listener)
+     dev->n_tmp_sections = 0;
+ }
+ 
++static void vhost_update_backend_ring_mappings(struct vhost_dev *dev)
++{
++    int i,r;
++
++    if(dev->vhost_ops->backend_type != VHOST_BACKEND_TYPE_USER) {
++        return;
++    }
++
++    for (i = 0; i < dev->nvqs; ++i) {
++        r = vhost_virtqueue_set_addr(dev, dev->vqs + i, i, dev->log_enabled);
++        assert(r >= 0);
++    }
++    return;
++}
++
+ static void vhost_commit(MemoryListener *listener)
+ {
+     struct vhost_dev *dev = container_of(listener, struct vhost_dev,
+@@ -524,7 +543,7 @@ static void vhost_commit(MemoryListener *listener)
+         if (r < 0) {
+             VHOST_OPS_DEBUG("vhost_set_mem_table failed");
+         }
+-        goto out;
++        goto vring_mapping;
+     }
+     log_size = vhost_get_log_size(dev);
+     /* We allocate an extra 4K bytes to log,
+@@ -543,6 +562,11 @@ static void vhost_commit(MemoryListener *listener)
+         vhost_dev_log_resize(dev, log_size);
+     }
+ 
++vring_mapping:
++    /* For vhost-user backend, update the vring mappings after we sent a new
++     * guest memory map. */
++    vhost_update_backend_ring_mappings(dev);
++
+ out:
+     /* Deref the old list of sections, this must happen _after_ the
+      * vhost_set_mem_table to ensure the client isn't still using the
+-- 
+2.25.1
+
