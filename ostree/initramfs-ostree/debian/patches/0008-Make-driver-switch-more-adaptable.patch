@@ -1,0 +1,83 @@
+From e5f3bfdb1bf1438d4d1c4b2625eb8830b554cf69 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 3 Nov 2022 20:39:50 -0700
+Subject: [PATCH] Make driver switch more adaptable
+
+This commit makes it flexible to address future requirements.
+It will load drivers based on multi-drivers-switch=version, if the
+legacy drivers are put into /lib/modules/$(uname -r)/extra/.
+That means we do not need to modify initramfs if we need to support
+more drivers in the future.
+
+Legacy drivers:
+ls /lib/modules/$(uname -r)/extra/
+i40e-cvl-2.54  iavf-cvl-2.54  ice-cvl-2.54
+i40e-cvl-x.xx  iavf-cvl-x.xx  ice-cvl-x.xx
+
+Latest drivers:
+/lib/modules/$(uname -r)/updates/
+i40e-cvl-4.0.1  iavf-cvl-4.0.1  ice-cvl-4.0.1
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ init-ostree.sh | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/init-ostree.sh b/init-ostree.sh
+index b6eacbf..d0b0dda 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -64,6 +64,22 @@ do_mount_fs() {
+ 	mount -t "$1" "$1" "$2"
+ }
+ 
++network_modules() {
++	if grep -s -q '\smulti-drivers-switch=' /proc/cmdline ; then
++		if [ -d /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}" ]; then
++			insmod /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}"/ice.ko
++			insmod /lib/modules/"$(uname -r)"/extra/i40e-"${DRIVER_VERSION}"/i40e.ko
++			insmod /lib/modules/"$(uname -r)"/extra/iavf-"${DRIVER_VERSION}"/iavf.ko
++			echo "Legacy NIC ${DRIVER_VERSION} drivers have been activated"
++		elif [ -d /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}" ]; then
++			insmod /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}"/ice.ko
++			insmod /lib/modules/"$(uname -r)"/updates/i40e-"${DRIVER_VERSION}"/i40e.ko
++			insmod /lib/modules/"$(uname -r)"/updates/iavf-"${DRIVER_VERSION}"/iavf.ko
++			echo "NIC ${DRIVER_VERSION} drivers have been activated"
++		fi
++        fi
++}
++
+ early_setup() {
+ 
+ 	do_mount_fs proc /proc
+@@ -72,6 +88,9 @@ early_setup() {
+ 	do_mount_fs tmpfs /tmp
+ 	do_mount_fs tmpfs /run
+ 
++	read_args
++	network_modules
++
+ 	$_UDEV_DAEMON --daemon
+ 	udevadm trigger --action=add
+ 
+@@ -103,6 +122,8 @@ read_args() {
+ 				DEBUGFATAL=1 ;;
+ 			flux=*)
+ 				OSTREE_LABEL_FLUXDATA=$optarg ;;
++			multi-drivers-switch=*)
++				DRIVER_VERSION=$optarg ;;
+ 		esac
+ 	done
+ }
+@@ -167,8 +188,6 @@ fatal() {
+ 
+ early_setup
+ 
+-read_args
+-
+ [ -z "$CONSOLE" ] && CONSOLE="/dev/console"
+ [ -z "$INIT" ] && INIT="/sbin/init"
+ 
+-- 
+2.35.1
+
