@@ -2,4 +2,5 @@ usr/sbin/kpatch
 usr/share/man/man1/kpatch.1*
 usr/lib/systemd/system/kpatch.service lib/systemd/system/
 etc/init/kpatch.conf
+etc/kpatch-load.conf
 var/lib/kpatch/*
