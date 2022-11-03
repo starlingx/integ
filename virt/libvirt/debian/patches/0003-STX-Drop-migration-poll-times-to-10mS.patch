@@ -1,0 +1,29 @@
+From fdf5e7a69587cebdccf1608f3de48fbdaa8ee7ef Mon Sep 17 00:00:00 2001
+From: Ludovic Beliveau <ludovic.beliveau@windriver.com>
+Date: Mon, 21 Mar 2016 18:15:20 -0400
+Subject: [PATCH] STX: Drop migration poll times to 10mS
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/qemu/qemu_migration.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/qemu/qemu_migration.c b/src/qemu/qemu_migration.c
+index 5353c7ee0..741ab986a 100644
+--- a/src/qemu/qemu_migration.c
++++ b/src/qemu/qemu_migration.c
+@@ -1846,8 +1846,8 @@ qemuMigrationSrcWaitForCompletion(virQEMUDriverPtr driver,
+                 return -2;
+             }
+         } else {
+-            /* Poll every 50ms for progress & to allow cancellation */
+-            struct timespec ts = { .tv_sec = 0, .tv_nsec = 50 * 1000 * 1000ull };
++            /* Poll every 10ms for progress & to allow cancellation */
++            struct timespec ts = { .tv_sec = 0, .tv_nsec = 10 * 1000 * 1000ull };
+ 
+             virObjectUnlock(vm);
+             nanosleep(&ts, NULL);
+-- 
+2.25.1
+

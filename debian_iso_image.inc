@@ -5,6 +5,13 @@ kdump-tools
 puppet
 drbd-utils
 parted
+libvirt0
+libvirt-clients
+libvirt-daemon
+libvirt-daemon-driver-lxc
+libvirt-daemon-driver-qemu
+libvirt-daemon-driver-storage-gluster
+libvirt-login-shell
 lvm2
 trident-installer
 iputils-arping

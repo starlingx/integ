@@ -1,0 +1,47 @@
+From fbc79d575f283055d5c19fce96e97f1e27038922 Mon Sep 17 00:00:00 2001
+From: Ludovic Beliveau <ludovic.beliveau@windriver.com>
+Date: Mon, 21 Mar 2016 18:12:32 -0400
+Subject: [PATCH] STX: System Logging: set group read permission on log files
+
+Commit carried over from pre-CentOS
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/qemu/qemu_domain.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/qemu/qemu_domain.c b/src/qemu/qemu_domain.c
+index 0765dc72d..72cccd1e9 100644
+--- a/src/qemu/qemu_domain.c
++++ b/src/qemu/qemu_domain.c
+@@ -6339,7 +6339,7 @@ qemuDomainLogContextPtr qemuDomainLogContextNew(virQEMUDriverPtr driver,
+         if (ctxt->writefd < 0)
+             goto error;
+     } else {
+-        if ((ctxt->writefd = open(ctxt->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR)) < 0) {
++        if ((ctxt->writefd = open(ctxt->path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP)) < 0) {
+             virReportSystemError(errno, _("failed to create logfile %s"),
+                                  ctxt->path);
+             goto error;
+@@ -6506,7 +6506,7 @@ qemuDomainLogAppendMessage(virQEMUDriverPtr driver,
+                                              vm->def->name, path, message, 0) < 0)
+             goto cleanup;
+     } else {
+-        if ((writefd = open(path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR)) < 0) {
++        if ((writefd = open(path, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP)) < 0) {
+             virReportSystemError(errno, _("failed to create logfile %s"),
+                                  path);
+             goto cleanup;
+@@ -11060,7 +11060,7 @@ virQEMUFileOpenAs(uid_t fallback_uid,
+             goto error;
+         }
+     } else {
+-        if ((fd = virFileOpenAs(path, oflags, S_IRUSR | S_IWUSR, uid, gid,
++        if ((fd = virFileOpenAs(path, oflags, S_IRUSR | S_IWUSR | S_IRGRP, uid, gid,
+                                 vfoflags | VIR_FILE_OPEN_NOFORK)) < 0) {
+             /* If we failed as root, and the error was permission-denied
+                (EACCES or EPERM), assume it's on a network-connected share
+-- 
+2.25.1
+

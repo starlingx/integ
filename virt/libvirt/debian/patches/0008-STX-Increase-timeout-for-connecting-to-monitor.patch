@@ -1,0 +1,38 @@
+From c49366803061c7fdac854cee5920bc91ce3552ba Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Fri, 2 Feb 2018 13:20:24 -0500
+Subject: [PATCH] STX: Increase timeout for connecting to monitor
+
+When launching a large number of VMs concurrently on a
+single host, eg. 10, it can take a while
+for them to zero memory and attach to the monitor.  After
+measuring many such delays in this concurrent launch
+stress test, we conclude that an extra minute
+of waiting should suffice.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/qemu/qemu_process.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/qemu/qemu_process.c b/src/qemu/qemu_process.c
+index 202d86728..6dae07215 100644
+--- a/src/qemu/qemu_process.c
++++ b/src/qemu/qemu_process.c
+@@ -2024,6 +2024,12 @@ qemuConnectMonitor(virQEMUDriverPtr driver, virDomainObjPtr vm, int asyncJob,
+      * 1GiB of guest RAM. */
+     timeout = vm->def->mem.total_memory / (1024 * 1024);
+ 
++    /* STX: When launching a number of large VMs concurrently on
++     * a single host, the above timeout may not be good enough.
++     * Pad the timeout to deal with delays seen under stress testing.
++     */
++    timeout = timeout + 60; /* Wait for a full extra minute */
++
+     ignore_value(virTimeMillisNow(&priv->monStart));
+ 
+     mon = qemuMonitorOpen(vm,
+-- 
+2.25.1
+

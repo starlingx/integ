@@ -1,0 +1,35 @@
+From dedd074269d21f5eb5114705baac1ae43a166e8a Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Tue, 19 Dec 2017 16:50:34 -0500
+Subject: [PATCH] STX: Stop processing memory stats if balloon fails
+
+We were seeing deadlock on the second query because the VM
+had already been destroyed.  In that case, the first query
+fails but unfortunately we ignore the return code and charge
+ahead anyway and do the second query which then hangs.  We
+now respect the return code if it indicates failure on the
+first query.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Trimmed the shortlog ]
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/qemu/qemu_monitor_json.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/qemu/qemu_monitor_json.c b/src/qemu/qemu_monitor_json.c
+index 8a75a2734..d2a21ebbd 100644
+--- a/src/qemu/qemu_monitor_json.c
++++ b/src/qemu/qemu_monitor_json.c
+@@ -2260,6 +2260,8 @@ int qemuMonitorJSONGetMemoryStats(qemuMonitorPtr mon,
+     int got = 0;
+ 
+     ret = qemuMonitorJSONGetBalloonInfo(mon, &mem);
++    if (ret < 0)
++        goto cleanup;
+     if (ret == 1 && (got < nr_stats)) {
+         stats[got].tag = VIR_DOMAIN_MEMORY_STAT_ACTUAL_BALLOON;
+         stats[got].val = mem;
+-- 
+2.25.1
+

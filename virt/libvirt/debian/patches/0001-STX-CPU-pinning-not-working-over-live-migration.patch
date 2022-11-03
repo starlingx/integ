@@ -1,0 +1,35 @@
+From 2721c79b6cd8caf0f7d1796c2316567cd44b2caa Mon Sep 17 00:00:00 2001
+From: Ludovic Beliveau <ludovic.beliveau@windriver.com>
+Date: Mon, 21 Mar 2016 17:46:41 -0400
+Subject: [PATCH] STX: CPU pinning not working over live-migration
+
+Commit carried over from pre-CentOS
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/conf/domain_conf.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/conf/domain_conf.c b/src/conf/domain_conf.c
+index 01b718763..70d29475d 100644
+--- a/src/conf/domain_conf.c
++++ b/src/conf/domain_conf.c
+@@ -23184,10 +23184,14 @@ virDomainDefCheckABIStabilityFlags(virDomainDefPtr src,
+         goto error;
+     }
+ 
++    /* STX: Disable this check since it is problematic.
++        - Note that disabling this check is not critical since
++          this section is regenerated at destination.
+     for (i = 0; i < src->nconsoles; i++)
+         if (!virDomainConsoleDefCheckABIStability(src->consoles[i],
+                                                   dst->consoles[i]))
+             goto error;
++    */
+ 
+     if (src->nhubs != dst->nhubs) {
+         virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+-- 
+2.25.1
+

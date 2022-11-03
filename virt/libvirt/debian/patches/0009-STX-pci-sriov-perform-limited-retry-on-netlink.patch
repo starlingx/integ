@@ -1,0 +1,163 @@
+From 0d92d8a0f0b53c32490ce9623e1a402eb369a7d4 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Sun, 25 Feb 2018 11:32:54 -0500
+Subject: [PATCH] STX: pci-sriov perform limited retry on netlink
+
+We now also perform retries on other netlink errors that previously
+would have just done an immediate bailout.
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Trimmed shortlog ]
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/util/virnetdev.c | 100 +++++++++++++++++++++++++++----------------
+ 1 file changed, 62 insertions(+), 38 deletions(-)
+
+diff --git a/src/util/virnetdev.c b/src/util/virnetdev.c
+index a73e5f72f..f787b4919 100644
+--- a/src/util/virnetdev.c
++++ b/src/util/virnetdev.c
+@@ -36,6 +36,7 @@
+ # include <sys/ioctl.h>
+ #endif
+ #include <fcntl.h>
++#include <time.h>
+ 
+ #ifdef __linux__
+ # include <linux/sockios.h>
+@@ -1533,6 +1534,8 @@ static struct nla_policy ifla_vfstats_policy[IFLA_VF_STATS_MAX+1] = {
+     [IFLA_VF_STATS_MULTICAST]   = { .type = NLA_U64 },
+ };
+ 
++#define VIR_NET_DEV_NUM_RETRY 3
++#define VIR_NET_DEV_DELAY_NS  250000000
+ 
+ static int
+ virNetDevSetVfConfig(const char *ifname, int vf,
+@@ -1540,6 +1543,7 @@ virNetDevSetVfConfig(const char *ifname, int vf,
+                      bool *allowRetry)
+ {
+     int rc = -1;
++    int i;
+     char macstr[VIR_MAC_STRING_BUFLEN];
+     g_autofree struct nlmsghdr *resp = NULL;
+     struct nlmsgerr *err;
+@@ -1602,50 +1606,53 @@ virNetDevSetVfConfig(const char *ifname, int vf,
+     nla_nest_end(nl_msg, vfinfo);
+     nla_nest_end(nl_msg, vfinfolist);
+ 
+-    if (virNetlinkCommand(nl_msg, &resp, &recvbuflen, 0, 0,
+-                          NETLINK_ROUTE, 0) < 0)
+-        goto cleanup;
+-
+-    if (recvbuflen < NLMSG_LENGTH(0) || resp == NULL)
+-        goto malformed_resp;
++    for (i=0; i<VIR_NET_DEV_NUM_RETRY; i++) {
++        if (virNetlinkCommand(nl_msg, &resp, &recvbuflen, 0, 0,
++                              NETLINK_ROUTE, 0) < 0)
++            goto cleanup;
+ 
+-    switch (resp->nlmsg_type) {
+-    case NLMSG_ERROR:
+-        err = (struct nlmsgerr *)NLMSG_DATA(resp);
+-        if (resp->nlmsg_len < NLMSG_LENGTH(sizeof(*err)))
++        if (recvbuflen < NLMSG_LENGTH(0) || resp == NULL)
+             goto malformed_resp;
+ 
+-        /* if allowRetry is true and the error was EINVAL, then
+-         * silently return a failure so the caller can retry with a
+-         * different MAC address
+-         */
+-        if (err->error == -EINVAL && *allowRetry &&
+-            macaddr && !virMacAddrCmp(macaddr, &zeroMAC)) {
+-            goto cleanup;
+-        } else if (err->error) {
+-            /* other errors are permanent */
+-            virReportSystemError(-err->error,
+-                                 _("Cannot set interface MAC/vlanid to %s/%d "
+-                                   "for ifname %s vf %d"),
+-                                 (macaddr
+-                                  ? virMacAddrFormat(macaddr, macstr)
+-                                  : "(unchanged)"),
+-                                 vlanid,
+-                                 ifname ? ifname : "(unspecified)",
+-                                 vf);
+-            *allowRetry = false; /* no use retrying */
+-            goto cleanup;
+-        }
+-        break;
++        switch (resp->nlmsg_type) {
++        case NLMSG_ERROR:
++            err = (struct nlmsgerr *)NLMSG_DATA(resp);
++            if (resp->nlmsg_len < NLMSG_LENGTH(sizeof(*err)))
++                goto malformed_resp;
+ 
+-    case NLMSG_DONE:
+-        break;
++            /* if allowRetry is true and the error was EINVAL, then
++             * silently return a failure so the caller can retry with a
++             * different MAC address
++             */
++            if (err->error == -EINVAL && *allowRetry &&
++                macaddr && !virMacAddrCmp(macaddr, &zeroMAC)) {
++                goto cleanup;
++            } else if (err->error) {
++                /* other errors are permanent */
++                virReportSystemError(-err->error,
++                                     _("Cannot set interface MAC/vlanid to %s/%d "
++                                       "for ifname %s vf %d"),
++                                     (macaddr
++                                      ? virMacAddrFormat(macaddr, macstr)
++                                      : "(unchanged)"),
++                                     vlanid,
++                                     ifname ? ifname : "(unspecified)",
++                                     vf);
++                *allowRetry = false; /* no use retrying */
++                /* STX: but we do attempt local retry here within this procedure
++                 * goto cleanup; */
++                goto retry;
++            }
++            break;
+ 
+-    default:
+-        goto malformed_resp;
+-    }
++        case NLMSG_DONE:
++            break;
++
++        default:
++            goto malformed_resp;
++        }
+ 
+-    rc = 0;
++        rc = 0;
+  cleanup:
+     VIR_DEBUG("RTM_SETLINK %s vf %d MAC=%s vlanid=%d - %s",
+               ifname, vf,
+@@ -1664,6 +1671,23 @@ virNetDevSetVfConfig(const char *ifname, int vf,
+     virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
+                    _("allocated netlink buffer is too small"));
+     goto cleanup;
++
++ /*STX: local retry logic*/
++ retry:
++    VIR_ERROR(_("Retry: %u"), i);
++    {
++        static struct timespec delay = {
++          .tv_sec = 0,
++          .tv_nsec = VIR_NET_DEV_DELAY_NS };
++
++        if (nanosleep(&delay, NULL) < 0) {
++            virReportSystemError(errno, "%s", _("Failed to sleep"));
++            goto cleanup;
++        }
++    }
++
++    } /* End of local retry loop */
++    goto cleanup; /* we exhausted our local retries */
+ }
+ 
+ /**
+-- 
+2.25.1
+

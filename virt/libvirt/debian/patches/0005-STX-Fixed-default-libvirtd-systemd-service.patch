@@ -1,0 +1,39 @@
+From 28b73b8bcb7f010f3d7ff026056d1284b6172e8c Mon Sep 17 00:00:00 2001
+From: Ludovic Beliveau <ludovic.beliveau@windriver.com>
+Date: Tue, 29 Mar 2016 19:51:01 -0400
+Subject: [PATCH] STX: Fixed default libvirtd systemd service
+
+- 'Restart=no' (pmond will monitor the process)
+- 'PIDFile=/var/run/libvirtd.pid' (pmond uses the pidfile to monitor the
+  processes)
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/remote/libvirtd.service.in | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/remote/libvirtd.service.in b/src/remote/libvirtd.service.in
+index cc0d4e369..19e9526a5 100644
+--- a/src/remote/libvirtd.service.in
++++ b/src/remote/libvirtd.service.in
+@@ -32,7 +32,7 @@ EnvironmentFile=-@sysconfdir@/sysconfig/libvirtd
+ ExecStart=@sbindir@/libvirtd $LIBVIRTD_ARGS
+ ExecReload=/bin/kill -HUP $MAINPID
+ KillMode=process
+-Restart=on-failure
++Restart=no
+ # At least 1 FD per guest, often 2 (eg qemu monitor + qemu agent).
+ # eg if we want to support 4096 guests, we'll typically need 8192 FDs
+ # If changing this, also consider virtlogd.service & virtlockd.service
+@@ -49,6 +49,7 @@ TasksMax=32768
+ # with program takes 12k per guest.  After rounding up we will get 64M to
+ # support 4096 guests.
+ LimitMEMLOCK=64M
++PIDFile=/var/run/libvirtd.pid
+
+ [Install]
+ WantedBy=multi-user.target
+--
+2.25.1
+

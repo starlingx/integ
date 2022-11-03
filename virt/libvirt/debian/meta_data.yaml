@@ -1,0 +1,16 @@
+---
+debname: libvirt
+debver: 7.0.0-3
+dl_path:
+  name: libvirt-debian-7.0.0-3.tar.gz
+  url: https://salsa.debian.org/libvirt-team/libvirt/-/archive/debian/7.0.0-3/libvirt-debian-7.0.0-3.tar.gz
+  md5sum: 371673c35fda957748ce3a19a0cd8539
+  sha256sum: 6f6acf34b2ae20ec9cfa64e89c3245ccf44321c86cd5606abe718ca25e443b2f
+src_files:
+  - libvirt/libvirt.logrotate
+  - libvirt/libvirt.lxc
+  - libvirt/libvirt.qemu
+  - libvirt/hooks/qemu
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

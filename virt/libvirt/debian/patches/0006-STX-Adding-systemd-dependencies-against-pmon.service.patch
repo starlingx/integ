@@ -1,0 +1,27 @@
+From d8b544aca712c9a84839100a6d61506fc0f7a16e Mon Sep 17 00:00:00 2001
+From: Don Penney <don.penney@windriver.com>
+Date: Sun, 2 Oct 2016 18:12:51 -0400
+Subject: [PATCH] STX: Adding systemd dependencies against pmon.service
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Trimmed the shortlog ]
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/remote/libvirtd.service.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/remote/libvirtd.service.in b/src/remote/libvirtd.service.in
+index 19e9526a5..b12bad4d9 100644
+--- a/src/remote/libvirtd.service.in
++++ b/src/remote/libvirtd.service.in
+@@ -21,6 +21,7 @@ After=local-fs.target
+ After=remote-fs.target
+ After=systemd-logind.service
+ After=systemd-machined.service
++Before=pmon.service
+ After=xencommons.service
+ Conflicts=xendomains.service
+ Documentation=man:libvirtd(8)
+--
+2.25.1
+

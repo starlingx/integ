@@ -1,0 +1,351 @@
+From e4c5a64fb4134ce2a57fe5263824ed5e85ec97eb Mon Sep 17 00:00:00 2001
+From: Ludovic Beliveau <ludovic.beliveau@windriver.com>
+Date: Tue, 22 Mar 2016 09:58:36 -0400
+Subject: [PATCH] STX: DPDK parms handling
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[ Removed deprecated macros ]
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ src/conf/domain_conf.c  | 152 ++++++++++++++++++++++++++++++++++++++++
+ src/conf/domain_conf.h  |  25 +++++++
+ src/qemu/qemu.conf      |   4 +-
+ src/qemu/qemu_command.c |  35 +++++++++
+ 4 files changed, 214 insertions(+), 2 deletions(-)
+
+diff --git a/src/conf/domain_conf.c b/src/conf/domain_conf.c
+index 70d29475d..e760e61fb 100644
+--- a/src/conf/domain_conf.c
++++ b/src/conf/domain_conf.c
+@@ -1195,6 +1195,14 @@ VIR_ENUM_IMPL(virDomainVsockModel,
+               "virtio-non-transitional",
+ );
+ 
++/* STX: DPDK Customization */
++VIR_ENUM_IMPL(virDomainDpdkProcess,
++              VIR_DOMAIN_DPDK_PROCTYPE_LAST,
++              "auto",
++              "primary",
++              "secondary",
++);
++
+ VIR_ENUM_IMPL(virDomainDiskDiscard,
+               VIR_DOMAIN_DISK_DISCARD_LAST,
+               "default",
+@@ -1612,6 +1620,103 @@ virBlkioDeviceArrayClear(virBlkioDevicePtr devices,
+         VIR_FREE(devices[i].path);
+ }
+ 
++/**
++ * STX: virDomainDpdkParamsDefPtr
++ *
++ * this function parses a XML node:
++ *
++ *   <dpdk>
++ *     <process type='secondary'/>
++ *     <file prefix='vs'/>
++ *     <memory channels='4'/>
++ *     <cpu list='0,2-3'/>
++ *   </dpdk>
++ *
++ * and fills a virDpdkParams struct.
++ */
++static int
++virDomainDpdkParamsParseXML(xmlNodePtr ctxt,
++                            virDomainDpdkParamsDefPtr dpdk)
++{
++    char *channels = NULL;
++    char *process_type = NULL;
++    char *file_prefix = NULL;
++    char *cpu_list = NULL;
++    xmlNodePtr cur;
++    int ret = -EINVAL;
++
++    cur = ctxt->children;
++    while (cur != NULL) {
++        if (cur->type == XML_ELEMENT_NODE) {
++            if (!process_type && xmlStrEqual(cur->name, BAD_CAST "process")) {
++                process_type = virXMLPropString(cur, "type");
++            }
++            if (!file_prefix && xmlStrEqual(cur->name, BAD_CAST "file")) {
++                file_prefix = virXMLPropString(cur, "prefix");
++            }
++            if (!cpu_list && xmlStrEqual(cur->name, BAD_CAST "cpu")) {
++                cpu_list = virXMLPropString(cur, "list");
++            }
++            if (!channels && xmlStrEqual(cur->name, BAD_CAST "memory")) {
++                channels = virXMLPropString(cur, "channels");
++            }
++        }
++        cur = cur->next;
++    }
++
++    if (!process_type) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
++                       _("missing DPDK process type"));
++        goto error;
++    }
++    if (!file_prefix) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
++                       _("missing DPDK file prefix"));
++        goto error;
++    }
++    if (!cpu_list) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
++                       _("missing DPDK CPU list"));
++        goto error;
++    }
++    if (!channels) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
++                       _("missing DPDK memory channel count"));
++        goto error;
++    }
++
++    dpdk->process_type = virDomainDpdkProcessTypeFromString(process_type);
++    if (virStrToLong_ui(channels, NULL, 10, &dpdk->nchannels) < 0) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
++                       _("could not parse DPDK memory channels %s"),
++                       channels);
++        goto error;
++    }
++    if (virBitmapParse(cpu_list, &dpdk->cpumask, 128) < 0) {
++        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
++                       _("could not parse DPDK CPU list %s"),
++                       cpu_list);
++        goto error;
++    }
++    if (!(dpdk->file_prefix = g_strdup(file_prefix))) {
++        goto error;
++    }
++
++    ret = 0;
++
++cleanup:
++    VIR_FREE(process_type);
++    VIR_FREE(file_prefix);
++    VIR_FREE(cpu_list);
++    VIR_FREE(channels);
++
++    return ret;
++error:
++    virDomainDpdkParamsDefFree(dpdk);
++    ret = -EINVAL;
++    goto cleanup;
++}
++
+ /**
+  * virDomainBlkioDeviceParseXML
+  *
+@@ -3221,6 +3326,16 @@ virDomainClockDefClear(virDomainClockDefPtr def)
+     VIR_FREE(def->timers);
+ }
+ 
++/* STX: DPDK Customization */
++void
++virDomainDpdkParamsDefFree(virDomainDpdkParamsDefPtr dpdk)
++{
++    if (!dpdk)
++        return;
++
++    virBitmapFree(dpdk->cpumask);
++    VIR_FREE(dpdk->file_prefix);
++}
+ 
+ static bool
+ virDomainIOThreadIDArrayHasPin(virDomainDefPtr def)
+@@ -3397,6 +3512,10 @@ void virDomainDefFree(virDomainDefPtr def)
+         virDomainVcpuDefFree(def->vcpus[i]);
+     VIR_FREE(def->vcpus);
+ 
++    /* STX: DPDK Customization */
++    virDomainDpdkParamsDefFree(def->dpdk);
++    VIR_FREE(def->dpdk);
++
+     /* hostdevs must be freed before nets (or any future "intelligent
+      * hostdevs") because the pointer to the hostdev is really
+      * pointing into the middle of the higher level device's object,
+@@ -19786,6 +19905,15 @@ virDomainDefParseMemory(virDomainDefPtr def,
+     if (virXPathBoolean("boolean(./memoryBacking/discard)", ctxt))
+         def->mem.discard = VIR_TRISTATE_BOOL_YES;
+ 
++    /* STX: Extract dpdk parameters */
++    if ((node = virXPathNode("./dpdk", ctxt))) {
++        def->dpdk = (virDomainDpdkParamsDefPtr)calloc(1, sizeof(*(def->dpdk)));
++        if (def->dpdk == NULL)
++            goto error;
++        if (virDomainDpdkParamsParseXML(node, def->dpdk) < 0)
++            goto error;
++    }
++
+     return 0;
+ 
+  error:
+@@ -28466,6 +28594,8 @@ virDomainDefFormatInternalSetRootName(virDomainDefPtr def,
+     unsigned char *uuid;
+     char uuidstr[VIR_UUID_STRING_BUFLEN];
+     const char *type = NULL;
++    /* STX: DPDK Customization */
++    char *cpu_list = NULL;
+     int n;
+     size_t i;
+ 
+@@ -28511,6 +28641,28 @@ virDomainDefFormatInternalSetRootName(virDomainDefPtr def,
+     virBufferEscapeString(buf, "<description>%s</description>\n",
+                           def->description);
+ 
++    /* STX: DPDK Customization */
++    if (def->dpdk) {
++        virBufferAsprintf(buf, "  <dpdk>\n");
++        if (!(type = virDomainDpdkProcessTypeToString(def->dpdk->process_type))) {
++            virReportError(VIR_ERR_INTERNAL_ERROR,
++                           _("unexpected DPDK process type %d"),
++                           def->dpdk->process_type);
++            return -1;
++        }
++        if (!(cpu_list = virBitmapFormat(def->dpdk->cpumask))) {
++            virReportError(VIR_ERR_INTERNAL_ERROR,
++                           _("unexpected CPU CPU list"));
++            return -1;
++        }
++        virBufferAsprintf(buf, "    <process type='%s'/>\n", type);
++        virBufferAsprintf(buf, "    <file prefix='%s'/>\n", def->dpdk->file_prefix);
++        virBufferAsprintf(buf, "    <cpu list='%s'/>\n", cpu_list);
++        virBufferAsprintf(buf, "    <memory channels='%u'/>\n", def->dpdk->nchannels);
++        virBufferAsprintf(buf, "  </dpdk>\n");
++        VIR_FREE(cpu_list);
++    }
++
+     if (def->metadata) {
+         g_autoptr(xmlBuffer) xmlbuf = NULL;
+         int oldIndentTreeOutput = xmlIndentTreeOutput;
+diff --git a/src/conf/domain_conf.h b/src/conf/domain_conf.h
+index ec43bbe18..c5a0a16d3 100644
+--- a/src/conf/domain_conf.h
++++ b/src/conf/domain_conf.h
+@@ -2143,6 +2143,24 @@ struct _virDomainOSDef {
+     virDomainBIOSDef bios;
+ };
+ 
++/* STX: DPDK Customization */
++enum virDomainDpdkProcessType {
++    VIR_DOMAIN_DPDK_PROCTYPE_AUTO,
++    VIR_DOMAIN_DPDK_PROCTYPE_PRIMARY,
++    VIR_DOMAIN_DPDK_PROCTYPE_SECONDARY,
++
++    VIR_DOMAIN_DPDK_PROCTYPE_LAST
++};
++
++typedef struct _virDomainDpdkParamsDef virDomainDpdkParamsDef;
++typedef virDomainDpdkParamsDef *virDomainDpdkParamsDefPtr;
++struct _virDomainDpdkParamsDef {
++    enum virDomainDpdkProcessType process_type;
++    char *file_prefix;
++    unsigned nchannels;
++    virBitmapPtr cpumask;
++};
++
+ typedef enum {
+     VIR_DOMAIN_TIMER_NAME_PLATFORM = 0,
+     VIR_DOMAIN_TIMER_NAME_PIT,
+@@ -2569,6 +2587,9 @@ struct _virDomainDef {
+     char *title;
+     char *description;
+ 
++    /* STX: DPDK Customization */
++    virDomainDpdkParamsDefPtr dpdk;
++
+     virDomainBlkiotune blkio;
+     virDomainMemtune mem;
+ 
+@@ -3062,6 +3083,8 @@ int virDomainObjWaitUntil(virDomainObjPtr vm,
+ 
+ void virDomainPanicDefFree(virDomainPanicDefPtr panic);
+ void virDomainResourceDefFree(virDomainResourceDefPtr resource);
++/* STX: DPDK Customization */
++void virDomainDpdkParamsDefFree(virDomainDpdkParamsDefPtr dpdk);
+ void virDomainGraphicsDefFree(virDomainGraphicsDefPtr def);
+ const char *virDomainInputDefGetPath(virDomainInputDefPtr input);
+ void virDomainInputDefFree(virDomainInputDefPtr def);
+@@ -3711,6 +3734,8 @@ VIR_ENUM_DECL(virDomainRNGBackend);
+ VIR_ENUM_DECL(virDomainTPMModel);
+ VIR_ENUM_DECL(virDomainTPMBackend);
+ VIR_ENUM_DECL(virDomainTPMVersion);
++/* STX: DPDK Customization */
++VIR_ENUM_DECL(virDomainDpdkProcess);
+ VIR_ENUM_DECL(virDomainMemoryModel);
+ VIR_ENUM_DECL(virDomainMemoryBackingModel);
+ VIR_ENUM_DECL(virDomainMemorySource);
+diff --git a/src/qemu/qemu.conf b/src/qemu/qemu.conf
+index 0c1054f19..754161254 100644
+--- a/src/qemu/qemu.conf
++++ b/src/qemu/qemu.conf
+@@ -516,11 +516,11 @@
+ #       user = "+0"     # Super user (uid=0)
+ #       user = "100"    # A user named "100" or a user with uid=100
+ #
+-#user = "root"
++user = "root"
+ 
+ # The group for QEMU processes run by the system instance. It can be
+ # specified in a similar way to user.
+-#group = "root"
++group = "root"
+ 
+ # Whether libvirt should dynamically change file ownership
+ # to match the configured user/group above. Defaults to 1.
+diff --git a/src/qemu/qemu_command.c b/src/qemu/qemu_command.c
+index 6f970a312..4f2908085 100644
+--- a/src/qemu/qemu_command.c
++++ b/src/qemu/qemu_command.c
+@@ -1873,6 +1873,35 @@ qemuCommandAddExtDevice(virCommandPtr cmd,
+     return 0;
+ }
+ 
++/* STX: DPDK Customization */
++static int
++qemuBuildDpdkArgStr(virCommandPtr cmd,
++                    const virDomainDpdkParamsDefPtr dpdk)
++{
++    char *cpumask;
++
++    if (!dpdk) {
++        return 0;
++    }
++
++    cpumask = virBitmapToString(dpdk->cpumask);
++    if (!cpumask) {
++        virReportError(VIR_ERR_INTERNAL_ERROR,
++                       _("Unable to format DPDK cpumask as string"));
++        return -1;
++    }
++
++    virCommandAddArgFormat(cmd, "-c %s", cpumask);
++    virCommandAddArgFormat(cmd, "-n %u", dpdk->nchannels);
++    virCommandAddArgFormat(cmd, "--proc-type=%s", "secondary");
++    virCommandAddArgFormat(cmd, "--file-prefix=%s", dpdk->file_prefix);
++    virCommandAddArg(cmd, "--");
++    virCommandAddArg(cmd, "-enable-dpdk");
++    VIR_FREE(cpumask);
++
++    return 0;
++}
++
+ static int
+ qemuBuildFloppyCommandLineControllerOptions(virCommandPtr cmd,
+                                             const virDomainDef *def,
+@@ -9816,6 +9845,12 @@ qemuBuildCommandLine(virQEMUDriverPtr driver,
+         virCommandAddEnvXDG(cmd, priv->libDir);
+     }
+ 
++    /* STX: DPDK Customization */
++    if (def->dpdk) {
++        if (qemuBuildDpdkArgStr(cmd, def->dpdk) < 0)
++            return NULL;
++    }
++
+     if (qemuBuildNameCommandLine(cmd, cfg, def, qemuCaps) < 0)
+         return NULL;
+ 
+-- 
+2.25.1
+
