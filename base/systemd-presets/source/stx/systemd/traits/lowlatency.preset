@@ -50,11 +50,6 @@ enable sm-shutdown.service
 # 00-sysinv-agent.preset
 enable sysinv-agent.service
 
-# 00-sysinv-fpga-agent.preset
-enable sysinv-fpga-agent.service
-enable sysinv-conf-watcher.service
-enable sysinv-conf-watcher.path
-
 # 00-tuned-config.preset
 enable tuned.service
 

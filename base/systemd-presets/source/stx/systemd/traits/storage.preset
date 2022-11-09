@@ -52,11 +52,6 @@ disable sm-shutdown.service
 # 00-sysinv-agent.preset
 enable sysinv-agent.service
 
-# 00-sysinv-fpga-agent.preset
-disable sysinv-fpga-agent.service
-disable sysinv-conf-watcher.service
-disable sysinv-conf-watcher.path
-
 # 00-tuned-config.preset
 enable tuned.service
 
