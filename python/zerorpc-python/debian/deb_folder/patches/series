@@ -1,0 +1,7 @@
+0001-Use-eventlet-instead-of-gevent.patch
+0002-Add-option-for-custom-msgpack-encoder-decoder.patch
+0003-Allow-usage-of-kwargs.patch
+0004-Implement-wait_and_ignore-to-emulate-gevent-join-beh.patch
+0005-Fix-kwargs-when-internal-opts-are-present.patch
+0006-Refactor-the-use-of-triggers-in-tests.patch
+0007-Add-IPV6-support.patch
