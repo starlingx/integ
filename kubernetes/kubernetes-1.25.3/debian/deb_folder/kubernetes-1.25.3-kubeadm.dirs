@@ -1,0 +1,1 @@
+usr/local/kubernetes/1.25.3/stage2/etc/systemd/system/kubelet.service.d/

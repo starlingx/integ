@@ -1,0 +1,9 @@
+debver: 1.25.3
+dl_path:
+  name: kubernetes-1.25.3.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.25.3.tar.gz
+  md5sum: 595ce52826e10827086a1c0f1c0dcef2
+  sha256sum: 957428759c846ed6a71453ce39b9bd7a91501209c222dcae5d73348b90d68ced
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
