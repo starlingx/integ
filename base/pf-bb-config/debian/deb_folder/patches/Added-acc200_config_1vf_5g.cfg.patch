@@ -1,0 +1,59 @@
+From 3d2da09d14dc4adefd79a2eee50d43556e618f0b Mon Sep 17 00:00:00 2001
+From: Teresa Ho <teresa.ho@windriver.com>
+Date: Mon, 14 Nov 2022 13:51:51 -0500
+Subject: [PATCH] Added acc200_config_1vf_5g.cfg
+
+Added config file for ACC200 specifying 1 VF and 5G.
+
+Signed-off-by: Teresa Ho <teresa.ho@windriver.com>
+---
+ acc200/acc200_config_1vf_5g.cfg | 37 +++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+ create mode 100644 acc200/acc200_config_1vf_5g.cfg
+
+diff --git a/acc200/acc200_config_1vf_5g.cfg b/acc200/acc200_config_1vf_5g.cfg
+new file mode 100644
+index 0000000..d4375ab
+--- /dev/null
++++ b/acc200/acc200_config_1vf_5g.cfg
+@@ -0,0 +1,37 @@
++; SPDX-License-Identifier: Apache-2.0
++; Copyright(c) 2020 Intel Corporation
++
++[MODE]
++pf_mode_en = 0
++
++[VFBUNDLES]
++num_vf_bundles = 1
++
++[MAXQSIZE]
++max_queue_size = 1024
++
++[QUL4G]
++num_qgroups = 0
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QDL4G]
++num_qgroups = 0
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QUL5G]
++num_qgroups = 4
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QDL5G]
++num_qgroups = 4
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QFFT]
++num_qgroups = 4
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
+-- 
+2.25.1
+
