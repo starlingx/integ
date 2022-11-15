@@ -1,0 +1,25 @@
+From a1fc1732602377846f1c94111b624e33053336c0 Mon Sep 17 00:00:00 2001
+From: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+Date: Thu, 20 Oct 2022 17:43:37 -0300
+Subject: [PATCH] Add IPV6 support
+
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+---
+ zerorpc/events.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/zerorpc/events.py b/zerorpc/events.py
+index f24cc2f..a0de3f0 100644
+--- a/zerorpc/events.py
++++ b/zerorpc/events.py
+@@ -252,6 +252,7 @@ class Events(ChannelBase):
+         self._zmq_socket_type = zmq_socket_type
+         self._context = context or Context.get_instance()
+         self._socket = self._context.socket(zmq_socket_type)
++        self._socket.setsockopt(zmq.IPV6, True)
+         self._encoder = encoder
+         self._decoder = decoder
+
+--
+2.25.1
+

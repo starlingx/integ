@@ -1,0 +1,30 @@
+Source: zerorpc-python
+Section: libs
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools,
+ python3-wheel,
+Standards-Version: 4.5.1
+
+Package: zerorpc-python
+Section: libs
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends},
+ libzmq5,
+ python3-eventlet,
+ python3-future,
+ python3-greenlet,
+ python3-msgpack,
+ python3-zmq
+Description: Zerorpc is a flexible RPC implementation based on zeromq and messagepack.
+
+Package: zerorpc-python-wheel
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3-wheel
+Description: Zerorpc is a flexible RPC implementation based on zeromq and messagepack.
+ .
+ This is the support package for the PEP 427 wheel version of the package,
+ required for using pip inside a virtual environment.
