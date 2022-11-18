@@ -1,0 +1,83 @@
+From e90857af6b969e6507c727335c12a19c1a2ef2c4 Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Wed, 16 Nov 2022 15:07:07 -0600
+Subject: Allow specifying boot/root devices for installs
+
+This adds the capability to set specific root devices for A/B
+boot/root devices that will control where ostree installation occurs.
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ init-ostree-install.sh | 24 ++++++++++++++++++++----
+ 1 file changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 98cfb2b..d54185a 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -95,6 +95,10 @@ OPTIONAL:
+ 
+  inststx=1			- Skip LAT partitioning scheme (StarlingX).
+ 				  Only call %part ks hook to partition
++ inst_ostree_boot=DEVICE	- Specify the ostree boot device
++ inst_ostree_boot_b=DEVICE	- Specify the ostree boot_b device
++ inst_ostree_root=DEVICE	- Specify the ostree root device
++ inst_ostree_root_b=DEVICE	- Specify the ostree root_b device
+ EOF
+ }
+ 
+@@ -572,6 +576,10 @@ KERNEL_PARAMS=""
+ IP=""
+ MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE=60
+ OSTREE_KERNEL_ARGS=${OSTREE_KERNEL_ARGS=%OSTREE_KERNEL_ARGS%}
++OSTREE_BOOT_DEVICE=${OSTREE_BOOT_DEVICE="LABEL=otaboot"}
++OSTREE_ROOT_DEVICE=${OSTREE_ROOT_DEVICE="LABEL=otaroot"}
++OSTREE_BOOT_B_DEVICE=${OSTREE_BOOT_B_DEVICE="LABEL=otaboot_b"}
++OSTREE_ROOT_B_DEVICE=${OSTREE_ROOT_B_DEVICE="LABEL=otaroot_b"}
+ KS=""
+ 
+ if [ "$OSTREE_KERNEL_ARGS" = "%OSTREE_KERNEL_ARGS%" ] ; then
+@@ -677,6 +685,16 @@ read_args() {
+ 				VSZ=$optarg ;;
+ 			inststx=*)
+ 				INSTSTX=$optarg ;;
++			instiso=*)
++				ISO_INSTLABEL=$optarg ;;
++			inst_ostree_boot=*)
++				OSTREE_BOOT_DEVICE=$optarg ;;
++			inst_ostree_root=*)
++				OSTREE_ROOT_DEVICE=$optarg ;;
++			inst_ostree_boot_b=*)
++				OSTREE_BOOT_B_DEVICE=$optarg ;;
++			inst_ostree_root_b=*)
++				OSTREE_ROOT_B_DEVICE=$optarg ;;
+ 		esac
+ 	done
+ 	# defaults if not set
+@@ -1283,8 +1301,6 @@ fi
+ # OSTree deploy
+ 
+ PHYS_SYSROOT="/sysroot"
+-OSTREE_BOOT_DEVICE="LABEL=otaboot"
+-OSTREE_ROOT_DEVICE="LABEL=otaroot"
+ mount_flags="rw,noatime"
+ if [ -x /init.ima ] ; then
+ 	mount --help 2>&1 |grep -q BusyBox
+@@ -1385,7 +1401,7 @@ fi
+ 
+ if [ "$INSTAB" = "1" ] ; then
+ 	mkdir -p ${PHYS_SYSROOT}_b
+-	mount -o $mount_flags "${OSTREE_ROOT_DEVICE}_b" "${PHYS_SYSROOT}_b"  || fatal "Error mouting ${OSTREE_ROOT_DEVICE}_b"
++	mount -o ${mount_flags} "${OSTREE_ROOT_B_DEVICE}" "${PHYS_SYSROOT}_b"  || fatal "Error mounting ${OSTREE_ROOT_B_DEVICE}"
+ 
+ 	ostree admin --sysroot=${PHYS_SYSROOT}_b init-fs ${PHYS_SYSROOT}_b
+ 	ostree admin --sysroot=${PHYS_SYSROOT}_b os-init ${INSTOS}
+@@ -1395,7 +1411,7 @@ if [ "$INSTAB" = "1" ] ; then
+ 		mkdir -p ${PHYS_SYSROOT}_b/boot
+ 	fi
+ 
+-	mount "${OSTREE_BOOT_DEVICE}_b" "${PHYS_SYSROOT}_b/boot" || fatal "Error mouting ${OSTREE_BOOT_DEVICE}_b"
++	mount "${OSTREE_BOOT_B_DEVICE}" "${PHYS_SYSROOT}_b/boot" || fatal "Error mounting ${OSTREE_BOOT_B_DEVICE}"
+ 
+ 
+ 	mkdir -p ${PHYS_SYSROOT}_b/boot/efi

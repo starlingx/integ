@@ -16,7 +16,7 @@ Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 7f7f925..a302abc 100644
+index 51fb6a0..79496e0 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
 @@ -528,9 +528,9 @@ fatal() {

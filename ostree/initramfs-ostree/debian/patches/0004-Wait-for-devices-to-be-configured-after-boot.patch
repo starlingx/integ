@@ -16,7 +16,7 @@ Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index a302abc..4dc3079 100644
+index 79496e0..befeac7 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
 @@ -920,7 +920,9 @@ if [ "$INSTSH" = 1 -o "$INSTSH" = 3 -o "$INSTSH" = 4 ] ; then

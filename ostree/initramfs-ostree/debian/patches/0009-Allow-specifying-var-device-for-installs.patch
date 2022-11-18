@@ -1,0 +1,176 @@
+From 2e02c84c83014bb647763898f6ab14c68f452fa2 Mon Sep 17 00:00:00 2001
+From: Robert Church <robert.church@windriver.com>
+Date: Thu, 17 Nov 2022 01:57:53 -0600
+Subject: Allow specifying /var device for installs
+
+To enable a logical volume based /var filesystem, add support to the
+installer scripts to allow specifying a device to mount instead of just
+looking for LABEL=fluxdata.
+
+For the init script add option 'ostree_var' to specify the device to
+mount and provide from grub boot options.
+
+Update the lat-installer to pass a device for /var as this was hardcoded
+as 'LABEL=fluxdata' and update the install script accordingly.
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ init-ostree-install.sh | 33 +++++++++++++++++++++++----------
+ init-ostree.sh         | 13 ++++++++++---
+ lat-installer.sh       |  8 +++++++-
+ 3 files changed, 40 insertions(+), 14 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index d54185a..9f145ec 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -99,6 +99,7 @@ OPTIONAL:
+  inst_ostree_boot_b=DEVICE	- Specify the ostree boot_b device
+  inst_ostree_root=DEVICE	- Specify the ostree root device
+  inst_ostree_root_b=DEVICE	- Specify the ostree root_b device
++ inst_ostree_var=DEVICE 	- Specify the ostree var device
+ EOF
+ }
+ 
+@@ -580,6 +581,7 @@ OSTREE_BOOT_DEVICE=${OSTREE_BOOT_DEVICE="LABEL=otaboot"}
+ OSTREE_ROOT_DEVICE=${OSTREE_ROOT_DEVICE="LABEL=otaroot"}
+ OSTREE_BOOT_B_DEVICE=${OSTREE_BOOT_B_DEVICE="LABEL=otaboot_b"}
+ OSTREE_ROOT_B_DEVICE=${OSTREE_ROOT_B_DEVICE="LABEL=otaroot_b"}
++OSTREE_VAR_DEVICE=${OSTREE_VAR_DEVICE="LABEL=fluxdata"}
+ KS=""
+ 
+ if [ "$OSTREE_KERNEL_ARGS" = "%OSTREE_KERNEL_ARGS%" ] ; then
+@@ -695,6 +697,8 @@ read_args() {
+ 				OSTREE_BOOT_B_DEVICE=$optarg ;;
+ 			inst_ostree_root_b=*)
+ 				OSTREE_ROOT_B_DEVICE=$optarg ;;
++			inst_ostree_var=*)
++				OSTREE_VAR_DEVICE=$optarg ;;
+ 		esac
+ 	done
+ 	# defaults if not set
+@@ -1509,18 +1513,22 @@ fi
+ # Modify fstab if not using fluxdata
+ # Caution... If someone resets the /etc/fstab with OSTree this change is lost...
+ mkdir /var1
+-if [ "$INSTFLUX" != "1" ] ; then
+-	if [ "$BL" = "grub" -o "$BL" = "ufsd" ] ; then
+-		sed -i -e "s#^LABEL=fluxdata.*#${PHYS_SYSROOT}/ostree/deploy/${INSTOS}/var /var none bind 0 0#" ${PHYS_SYSROOT}/ostree/?/etc/fstab
+-		if [ "$INSTAB" = 1 ] ; then
+-			sed -i -e "s#^LABEL=fluxdata.*#${PHYS_SYSROOT}/ostree/deploy/${INSTOS}/var /var none bind 0 0#" ${PHYS_SYSROOT}_b/ostree/?/etc/fstab
++if [ "${INSTSTX}" = 1 ]; then
++	mount -o ${mount_flags} ${OSTREE_VAR_DEVICE} /var1 || fatal "Error mounting ${OSTREE_BOOT_VAR}"
++else
++	if [ "${INSTFLUX}" != "1" ] ; then
++		if [ "${BL}" = "grub" -o "${BL}" = "ufsd" ] ; then
++			sed -i -e "s#^${OSTREE_VAR_DEVICE}.*#${PHYS_SYSROOT}/ostree/deploy/${INSTOS}/var /var none bind 0 0#" ${PHYS_SYSROOT}/ostree/?/etc/fstab
++			if [ "${INSTAB}" = 1 ] ; then
++				sed -i -e "s#^${OSTREE_VAR_DEVICE}.*#${PHYS_SYSROOT}/ostree/deploy/${INSTOS}/var /var none bind 0 0#" ${PHYS_SYSROOT}_b/ostree/?/etc/fstab
++			fi
++		else
++			fatal "Error: bl=${BL} is not supported"
+ 		fi
++		mount --bind ${PHYS_SYSROOT}/ostree/deploy/${INSTOS}/var /var1
+ 	else
+-		fatal "Error: bl=$BL is not supported"
++		mount -o ${mount_flags} LABEL=fluxdata /var1
+ 	fi
+-	mount --bind ${PHYS_SYSROOT}/ostree/deploy/${INSTOS}/var /var1
+-else
+-	mount -o $mount_flags LABEL=fluxdata /var1
+ fi
+ if [ -d ${PHYS_SYSROOT}/ostree/1/var ] ; then
+ 	tar -C ${PHYS_SYSROOT}/ostree/1/var/ --hard-dereference --xattrs --xattrs-include='*' -cf - . | \
+@@ -1543,7 +1551,12 @@ if [ -n "${KS}" ]; then
+ 			fatal "Run Kickstart Set network failed in ${root}"
+ 		fi
+ 
+-		./lat-installer.sh post-install --root=${root} -v --instflux=${INSTFLUX} --instos=${INSTOS}
++		if [ "${INSTSTX}" = 1 ]; then
++			./lat-installer.sh post-install --root=${root} -v --instflux=${INSTFLUX} --fluxdev=/dev/mapper/cgts--vg-var--lv --instos=${INSTOS}
++		else
++			./lat-installer.sh post-install --root=${root} -v --instflux=${INSTFLUX} --instos=${INSTOS}
++		fi
++
+ 		if [ $? -ne 0 ]; then
+ 			fatal "Run Kickstart Post Install Script failed in ${root}"
+ 		fi
+diff --git a/init-ostree.sh b/init-ostree.sh
+index d0b0dda..f0217c0 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -31,6 +31,7 @@ UMOUNT="/bin/umount"
+ ROOT_DELAY="0"
+ OSTREE_SYSROOT=""
+ OSTREE_BOOT_DEVICE="LABEL=otaboot"
++OSTREE_VAR_DEVICE=""
+ OSTREE_LABEL_FLUXDATA="fluxdata"
+ VSZ=20480
+ SKIP_BOOT_DIFF=""
+@@ -124,6 +125,8 @@ read_args() {
+ 				OSTREE_LABEL_FLUXDATA=$optarg ;;
+ 			multi-drivers-switch=*)
+ 				DRIVER_VERSION=$optarg ;;
++			ostree_var=*)
++				OSTREE_VAR_DEVICE=${optarg} ;;
+ 		esac
+ 	done
+ }
+@@ -289,7 +292,7 @@ while [ 1 ] ; do
+ 	fi
+ done
+ 
+-[ $VSZ = 0 ] && expand_fluxdata
++[ -z "${OSTREE_VAR_DEVICE}" ] && [ "${VSZ}" = 0 ] && expand_fluxdata
+ 
+ [ -x /init.luks-ostree ] && {
+ 	/init.luks-ostree $OSTREE_LABEL_ROOT $OSTREE_LABEL_FLUXDATA || fatal "Couldn't init LUKS."
+@@ -334,9 +337,13 @@ sed "/LABEL=otaboot[\t ]*\/boot[\t ]/s/LABEL=otaboot/${OSTREE_BOOT_DEVICE}/g" -i
+ sed "/LABEL=otaboot_b[\t ]*\/boot[\t ]/s/LABEL=otaboot_b/${OSTREE_BOOT_DEVICE}/g" -i ${ROOT_MOUNT}/etc/fstab
+ noflux=`ostree config --repo=/sysroot/ostree/repo get upgrade.noflux 2> /dev/null`
+ if [ "$noflux" = 1 ] ; then
+-    sed "s/^LABEL=fluxdata.*//" -i ${ROOT_MOUNT}/etc/fstab
++	sed "s/^LABEL=fluxdata.*//" -i ${ROOT_MOUNT}/etc/fstab
+ else
+-    sed "/LABEL=fluxdata[\t ]*\/var[\t ]/s/LABEL=fluxdata/LABEL=${OSTREE_LABEL_FLUXDATA}/g" -i ${ROOT_MOUNT}/etc/fstab
++	if [ -z "${OSTREE_VAR_DEVICE}" ] ; then
++		sed "/LABEL=fluxdata[\t ]*\/var[\t ]/s/LABEL=fluxdata/LABEL=${OSTREE_LABEL_FLUXDATA}/g" -i ${ROOT_MOUNT}/etc/fstab
++	else
++		sed "/LABEL=fluxdata[\t ]*\/var[\t ]/s#LABEL=fluxdata#${OSTREE_VAR_DEVICE}#g" -i ${ROOT_MOUNT}/etc/fstab
++	fi
+ fi
+ 
+ # If we pass args to bash, it will assume they are text files
+diff --git a/lat-installer.sh b/lat-installer.sh
+index c4462ca..dc03535 100755
+--- a/lat-installer.sh
++++ b/lat-installer.sh
+@@ -34,6 +34,7 @@ target_rootfs=""
+ ks_file="${lat_tmp}/lat-installer.ks"
+ 
+ INSTFLUX="1"
++FLUX_DEVICE="LABEL=fluxdata"
+ INSTOS="lat-os"
+ 
+ fatal() {
+@@ -512,7 +513,7 @@ post_install() {
+   mount --bind /sysroot/boot ${target_rootfs}/boot
+   mount --bind /sysroot/boot/efi ${target_rootfs}/boot/efi
+   if [ "${INSTFLUX}" = 1 ] ; then
+-    mount LABEL=fluxdata ${target_rootfs}/var
++    mount ${FLUX_DEVICE} ${target_rootfs}/var
+   else
+     mount --bind /sysroot/ostree/deploy/${INSTOS}/var ${target_rootfs}/var
+   fi
+@@ -620,6 +621,11 @@ while [ $# -gt 0 ]; do
+       shift
+       continue
+       ;;
++    --fluxdev=*)
++      FLUX_DEVICE=${val}
++      shift
++      continue
++      ;;
+     --instos=*)
+       INSTOS=$val
+       shift

@@ -8,10 +8,10 @@ Signed-off-by: Jim Somerville <jim.somerville@windriver.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 1a53f3c..7f7f925 100644
+index 0e5b8f3..51fb6a0 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
-@@ -1549,6 +1549,12 @@ if [ -d /sys/firmware/efi/efivars ] ;then
+@@ -1540,6 +1540,12 @@ if [ -d /sys/firmware/efi/efivars ] ;then
      fi
  fi
  
