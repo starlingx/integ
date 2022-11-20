@@ -37,6 +37,9 @@ disable rpc-statd-notify.service
 enable nfs-common.service
 enable nfs-server.service
 
+# 00-pxe-network-installer.preset
+enable pxeboot-feed.service
+
 # 00-sm-api.preset
 enable sm-api.service
 
