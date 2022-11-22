@@ -1,7 +1,9 @@
 0001-Prevent-auto-expansion-of-fluxdata-partition.patch
-0003-Make-boot-efi-mount-as-rw.patch
-0004-debian-set-default-size-variables-in-install-script.patch
-0005-Wait-for-devices-to-be-configured-after-boot.patch
-0006-init-ostree-install.sh-break-hardlinks-in-var.patch
-0007-Add-support-for-StarlingX-partitioning-formatting.patch
-0008-Make-driver-switch-more-adaptable.patch
+0002-Make-boot-efi-mount-as-rw.patch
+0003-debian-set-default-size-variables-in-install-script.patch
+0004-Wait-for-devices-to-be-configured-after-boot.patch
+0005-init-ostree-install.sh-break-hardlinks-in-var.patch
+0006-Add-support-for-StarlingX-partitioning-formatting.patch
+0007-Make-driver-switch-more-adaptable.patch
+0008-Allow-specifying-boot-root-devices-for-installs.patch
+0009-Allow-specifying-var-device-for-installs.patch

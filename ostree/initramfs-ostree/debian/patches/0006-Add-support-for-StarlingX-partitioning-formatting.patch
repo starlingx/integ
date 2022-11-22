@@ -20,7 +20,7 @@ Signed-off-by: Robert Church <robert.church@windriver.com>
  1 file changed, 93 insertions(+), 66 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 41bae2a..2c6fd57 100644
+index 46a0c08..98cfb2b 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
 @@ -93,6 +93,8 @@ OPTIONAL:

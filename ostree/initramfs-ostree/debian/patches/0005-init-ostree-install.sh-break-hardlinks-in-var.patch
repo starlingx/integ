@@ -20,7 +20,7 @@ Signed-off-by: Zhang Xiao <xiao.zhang@windriver.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/init-ostree-install.sh b/init-ostree-install.sh
-index 4dc3079..41bae2a 100644
+index befeac7..46a0c08 100644
 --- a/init-ostree-install.sh
 +++ b/init-ostree-install.sh
 @@ -1480,11 +1480,11 @@ else

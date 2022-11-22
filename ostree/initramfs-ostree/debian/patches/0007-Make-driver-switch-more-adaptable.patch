@@ -1,7 +1,6 @@
-From e5f3bfdb1bf1438d4d1c4b2625eb8830b554cf69 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Thu, 3 Nov 2022 20:39:50 -0700
-Subject: [PATCH] Make driver switch more adaptable
+Subject: Make driver switch more adaptable
 
 This commit makes it flexible to address future requirements.
 It will load drivers based on multi-drivers-switch=version, if the
@@ -78,6 +77,3 @@ index b6eacbf..d0b0dda 100644
  [ -z "$CONSOLE" ] && CONSOLE="/dev/console"
  [ -z "$INIT" ] && INIT="/sbin/init"
  
--- 
-2.35.1
-
