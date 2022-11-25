@@ -27,7 +27,7 @@ Homepage: http://github.com/dynup/kpatch
 Package: kpatch
 Architecture: linux-amd64
 Multi-Arch: foreign
-Depends: ${misc:Depends}, ${shlibs:Depends}, linux-headers-5.10.0-6-amd64
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Runtime tools for Kpatch
  kpatch is a Linux dynamic kernel patching tool which allows you to patch a
  running kernel without rebooting or restarting any processes.  It enables
@@ -38,7 +38,7 @@ Description: Runtime tools for Kpatch
 
 Package: kpatch-build
 Architecture: linux-amd64
-Depends: ${shlibs:Depends}, ${misc:Depends}, dpkg-dev, linux-source-5.10, kernel-wedge, gawk, bc
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: ccache
 Description: Build Tools for Kpatch and Livepatch
  kpatch-build is a tool that can build both kpatch and livepatch modules from
