@@ -7,3 +7,5 @@
 0007-Make-driver-switch-more-adaptable.patch
 0008-Allow-specifying-boot-root-devices-for-installs.patch
 0009-Allow-specifying-var-device-for-installs.patch
+0010-Add-Installer-and-Init-Multipath-support.patch
+0011-Add-H-W-Settle-time-to-installer-init.patch
