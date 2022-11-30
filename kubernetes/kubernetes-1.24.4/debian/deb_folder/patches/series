@@ -13,3 +13,4 @@ kubelet-cpumanager-infra-pods-use-system-reserved-CP.patch
 kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 enable-support-for-kubernetes-to-ignore-isolcpus.patch
 cpumanager-policy-static-test-refactor.patch
+kubelet-CFS-quota-throttling-for-non-integer-cpulimit.patch
