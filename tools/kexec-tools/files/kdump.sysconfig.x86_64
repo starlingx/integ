@@ -17,7 +17,7 @@ KDUMP_COMMANDLINE=""
 # This variable lets us remove arguments from the current kdump commandline
 # as taken from either KDUMP_COMMANDLINE above, or from /proc/cmdline
 # NOTE: some arguments such as crashkernel will always be removed
-KDUMP_COMMANDLINE_REMOVE="hugepages hugepagesz slub_debug kaslr"
+KDUMP_COMMANDLINE_REMOVE="hugepages hugepagesz slub_debug kaslr irqaffinity isolcpus nohz_full rcu_nocbs kthread_cpus"
 
 # This variable lets us append arguments to the current kdump commandline
 # after processed by KDUMP_COMMANDLINE_REMOVE
