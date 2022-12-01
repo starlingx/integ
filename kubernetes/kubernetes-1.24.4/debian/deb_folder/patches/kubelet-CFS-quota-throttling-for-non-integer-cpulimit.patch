@@ -1,0 +1,30 @@
+From 2e957044cbcde858abb9c46d177d5cf4ae1407df Mon Sep 17 00:00:00 2001
+From: Boovan Rajendran <boovan.rajendran@windriver.com>
+Date: Wed, 30 Nov 2022 04:17:19 -0500
+Subject: [PATCH] kubelet CFS quota throttling for non integer cpulimit
+
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+---
+ pkg/kubelet/cm/internal_container_lifecycle_linux.go | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/pkg/kubelet/cm/internal_container_lifecycle_linux.go b/pkg/kubelet/cm/internal_container_lifecycle_linux.go
+index 75406dd8564..05366ab6fcb 100644
+--- a/pkg/kubelet/cm/internal_container_lifecycle_linux.go
++++ b/pkg/kubelet/cm/internal_container_lifecycle_linux.go
+@@ -39,7 +39,11 @@ func (i *internalContainerLifecycleImpl) PreCreateContainer(pod *v1.Pod, contain
+       // Disable cgroup CFS throttle at the container level.
+       // /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/<container>/cpu.cfs_quota_us
+       // /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/<container>/cpu.cfs_period_us
+-      if i.cpuManager.GetCPUPolicy() == "static" && v1qos.GetPodQOS(pod) == v1.PodQOSGuaranteed {
++      // We can only set CpuQuota to -1 if we're allocating the entire CPU.
++      // For fractional CPUs the CpuQuota is needed to enforce the limit.
++      cpuQuantity := container.Resources.Requests[v1.ResourceCPU]
++      fractionalCpuQuantity := cpuQuantity.MilliValue()%1000
++      if i.cpuManager.GetCPUPolicy() == "static" && v1qos.GetPodQOS(pod) == v1.PodQOSGuaranteed && fractionalCpuQuantity == 0 {
+               containerConfig.Linux.Resources.CpuPeriod = int64(100000)
+               containerConfig.Linux.Resources.CpuQuota = int64(-1)
+       }
+-- 
+2.25.1
+
