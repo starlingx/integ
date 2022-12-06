@@ -67,6 +67,75 @@ function get_kubeadm_configmap {
     fi
 }
 
+# Remove the "RemoveSelfLink=false" kube-apiserver feature gate from the service parameters.
+# This is needed to ensure that a backup taken after the upgrade to K8s 1.24 will be
+# properly restored without this feature gate.  (K8s 1.24 no longer supports this feature gate.)
+function update_feature_gates_service_param_v1_24 {
+
+    # Enable authentication.
+    source /etc/platform/openrc
+
+    # Check if any kube-apiserver feature gates are specified in the service parameters.
+    TMP=`system service-parameter-list|grep kube_apiserver|grep feature-gates`
+    if [ $? -ne 0 ]; then
+        # no feature-gates specified, nothing to do
+        LOG "No kube-apiserver feature-gates service param specified, nothing to do."
+        return
+    fi
+
+    # Get the actual feature gates.
+    # The xargs call here strips any whitespace.
+    FEATURE_GATES=`echo ${TMP}|cut -d'|' -f6|xargs`
+    if [ -z "${FEATURE_GATES}" ]; then
+        # No feature-gates, nothing to do.  Really shouldn't hit this, just being paranoid.
+        LOG "No kube-apiserver feature-gates specified, nothing to do."
+        return
+    fi
+
+    # Check if the specific feature gate we care about is specified.
+    echo ${FEATURE_GATES}|grep -q "RemoveSelfLink=false"
+    if [ $? -ne 0 ]; then
+        # RemoveSelfLink=false is not specified, nothing to do
+        LOG "RemoveSelfLink=false kube-apiserver feature gate not specified, nothing to do."
+        return
+    fi
+
+    # Remove "RemoveSelfLink=false" from the feature gates.
+    # We need to handle the case where it could be at the beginning of the string
+    # with other entries after it, or at the end of the string with other entries
+    # before it, in the middle of the string, or by itself.
+    NEW_FEATURE_GATES=${FEATURE_GATES//'RemoveSelfLink=false,'/}
+    NEW_FEATURE_GATES=${NEW_FEATURE_GATES//',RemoveSelfLink=false'/}
+    NEW_FEATURE_GATES=${NEW_FEATURE_GATES//'RemoveSelfLink=false'/}
+
+    if [ -z "${NEW_FEATURE_GATES}" ]; then
+        # no other feature gates, so delete the service parameter rather than modify it
+        UUID=`echo ${TMP}|cut -d'|' -f2`
+        system service-parameter-delete ${UUID}
+        if [ $? -eq 0 ]; then
+            LOG "Successfully deleted RemoveSelfLink=false feature gate service parameter ${UUID}"
+        else
+            LOG "Failed to delete RemoveSelfLink=false feature gate service parameter ${UUID}"
+        fi
+    else
+        # need to modify the service parameter with the new feature gates
+        system service-parameter-modify kubernetes kube_apiserver feature-gates=${NEW_FEATURE_GATES}
+        if [ $? -eq 0 ]; then
+            LOG "Successfully modified kube-apiserver feature gate service parameter."
+        else
+            LOG "Failed to modify kube-apiserver feature gate service parameter."
+        fi
+    fi
+}
+
+# This needs to edit a yaml file, so we call out to a python helper.
+function update_kube_extra_config_bootstrap_v1_24 {
+    /usr/local/sbin/sanitize_feature_gates.py
+    if [ $? -ne 0 ]; then
+        LOG "Problem running sanitize_feature_gates.py, may cause problems with backup/restore."
+    fi
+}
+
 # Update feature gates for version 1.24
 function update_feature_gates_v1_24 {
 
@@ -156,6 +225,8 @@ until  [ ${counter} -gt ${RETRIES} ]; do
     if [[ "${K8S_VERSION}" == "v1.21.8" ]]; then
         update_feature_gates_v1_22
     elif [[ "${K8S_VERSION}" == "v1.23.1" ]]; then
+        update_feature_gates_service_param_v1_24
+        update_kube_extra_config_bootstrap_v1_24
         update_feature_gates_v1_24
     else
         LOG "No update required for kubeadm configmap"
