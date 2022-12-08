@@ -8,3 +8,4 @@ etc/systemd/system.conf.d/kubernetes-accounting.conf
 usr/lib/tmpfiles.d/kubernetes.conf
 usr/local/sbin/sanitize_kubelet_reserved_cpus.sh
 usr/local/sbin/upgrade_k8s_config.sh
+usr/local/sbin/sanitize_feature_gates.py

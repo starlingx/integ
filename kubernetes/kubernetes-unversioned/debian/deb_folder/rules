@@ -66,6 +66,7 @@ override_dh_install:
 	install -v -m 0700 -d ${DEBIAN_DESTDIR}${_local_sbindir}
 	install -v -m 0700 -t ${DEBIAN_DESTDIR}${_local_sbindir} debian/sanitize_kubelet_reserved_cpus.sh
 	install -v -m 0700 -t ${DEBIAN_DESTDIR}${_local_sbindir} debian/upgrade_k8s_config.sh
+	install -v -m 0700 -t ${DEBIAN_DESTDIR}${_local_sbindir} debian/sanitize_feature_gates.py
 
 	dh_install
 
