@@ -1,3 +1,2 @@
 usr/local/kubernetes/1.22.5/stage2/usr/bin/kubelet
 usr/local/kubernetes/1.22.5/stage2/usr/bin/kubelet-cgroup-setup.sh
-usr/local/kubernetes/1.22.5/stage2/usr/local/sbin/update-k8s-feature-gates.sh
