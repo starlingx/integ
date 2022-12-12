@@ -61,9 +61,6 @@ override_dh_install:
 	echo "+++ INSTALLING kubelet-cgroup-setup.sh"
 	install -p -m 0700 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} debian/kubelet-cgroup-setup.sh
 
-	echo "+++ INSTALLING update-k8s-feature-gates.sh"
-	install -p -m 0700 -t ${DEBIAN_DESTDIR}${_stage2}${_local_sbindir} debian/update-k8s-feature-gates.sh
-
 	echo "+++ INSTALLING kube-apiserver"\
 	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_path}/kube-apiserver
 

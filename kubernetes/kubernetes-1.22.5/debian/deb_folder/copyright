@@ -5,7 +5,6 @@ Source: https://github.com/kubernetes/kubernetes
 Files:
     debian/kubeadm.conf
     debian/kubelet-cgroup-setup.sh
-    debian/update-k8s-feature-gates.sh
 Copyright:
     2022 Wind River Systems, Inc.
 License: Apache-2.0
