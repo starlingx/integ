@@ -63,6 +63,7 @@ function LOG {
 }
 function ERROR {
     MSG="ERROR"
+    echo "${MSG} $@" >&2
     LOG "${MSG} $@"
 }
 
