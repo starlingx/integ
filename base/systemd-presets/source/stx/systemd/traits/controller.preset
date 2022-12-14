@@ -17,7 +17,7 @@ enable controllerconfig.service
 enable uexportfs.service
 
 # 00-fm-rest-api.preset
-enable fm-api.service
+disable fm-api.service
 
 # 00-haproxy-config.preset
 disable haproxy.service
