@@ -120,6 +120,9 @@ disable affine-tasks.service
 disable epmd.service
 disable epmd.socket
 
+# sssd
+enable sssd.service
+
 # storage personality
 disable ceph-manager.service
 disable dcmanager-api.service
@@ -146,4 +149,3 @@ enable storageconfig.service
 enable kvm_timer_advance_setup.service
 disable worker-config-gate.service
 disable workerconfig.service
-

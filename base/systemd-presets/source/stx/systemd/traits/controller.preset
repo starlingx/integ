@@ -124,6 +124,9 @@ disable nfscheck.service
 disable opt-platform.mount
 disable opt-platform.service
 
+# sssd
+enable sssd.service
+
 # worker-utils.spec
 disable affine-platform.sh.service
 disable affine-tasks.service

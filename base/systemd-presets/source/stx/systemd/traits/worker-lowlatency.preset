@@ -115,6 +115,9 @@ enable nfscheck.service
 enable opt-platform.mount
 enable opt-platform.service
 
+# sssd
+enable sssd.service
+
 # worker-utils.spec
 enable affine-platform.sh.service
 enable affine-tasks.service
