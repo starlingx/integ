@@ -130,15 +130,29 @@ function check_cache_file_age {
 function kubelet_uptime {
     local SECONDSPERMINUTE=60
 
-    kubelet_uptime=$(systemctl show kubelet --property WatchdogTimestamp | awk -F= '{print $2}')
-    [[ -n ${kubelet_uptime} ]]
-    if [ ${?} -ne 0 ]; then
-        ERROR "Failed to get kubelet uptime."
-        minutes=0
+    # Check if the kubelet service is active
+    kubelet_status=$(systemctl is-active kubelet)
+    if [ "${kubelet_status}" = "active" ]; then
+        kubelet_ts_property=$(systemctl show kubelet --property ActiveEnterTimestamp)
+        RC=${?}
+        if [ "${RC}" -eq 0 ]; then
+            kubelet_uptime=$( echo "${kubelet_ts_property}" | awk -F= '{print $2}' )
+            if [ -z "${kubelet_uptime}" ]; then
+                ERROR "Failed to get kubelet uptime, kubelet_uptime=${kubelet_uptime}"
+                minutes=0
+            else
+                uptime=$(date --date="${kubelet_uptime}" +%s)
+                now=$(date +%s)
+                minutes=$(((${now}-${uptime})/${SECONDSPERMINUTE}))
+            fi
+        else
+            ERROR "Failed to get kubelet uptime, RC=${RC}"
+            minutes=0
+        fi
     else
-        uptime=$(date --date="${kubelet_uptime}" +%s)
-        now=$(date +%s)
-        minutes=$(((${now}-${uptime})/${SECONDSPERMINUTE}))
+        # Log an error message if the kubelet service is not active
+        ERROR "The kubelet service is not active."
+        minutes=0
     fi
 
     echo ${minutes}
