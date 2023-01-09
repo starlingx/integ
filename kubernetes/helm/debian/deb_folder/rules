@@ -36,6 +36,8 @@ override_dh_auto_install:
 	install -d -m 755 $(ROOT)/usr/local/share/helm
 	install -d -m 755 $(ROOT)/usr/local/share/helm/plugins
 	cp -R 2to3 $(ROOT)/usr/local/share/helm/plugins/
+	install -d -m 755 $(ROOT)/usr/local/share/helm/plugins/2to3/bin
+	mv $(ROOT)/usr/local/share/helm/plugins/2to3/2to3 $(ROOT)/usr/local/share/helm/plugins/2to3/bin
 	cp -R mapkubeapis $(ROOT)/usr/local/share/helm/plugins/
 
 override_dh_usrlocal:
