@@ -12,3 +12,4 @@ ipaddr2_if_down.patch
 ipaddr2_ignore_lo_if_state.patch
 ipaddr2-avoid-failing-svc-if-down.patch
 ipaddr2-use-host-scope-for-addresses-on-loopback.patch
+ipaddr2-add-logs-to-debug-RTNETLINK-errors.patch

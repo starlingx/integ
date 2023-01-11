@@ -1,0 +1,52 @@
+From d5f1d87d8016e907cc2d849a1cd648f4fe9d4325 Mon Sep 17 00:00:00 2001
+From: Fabiano Mercer <fabiano.correamercer@windriver.com>
+Date: Wed, 11 Jan 2023 09:41:01 -0300
+Subject: [PATCH] ipaddr2 add logs to debug RTNETLINK errors
+
+Log link state and IP address of device if add_interface fails
+Log the IP address deletion from device
+
+Signed-off-by: Fabiano Mercer <fabiano.correamercer@windriver.com>
+---
+ heartbeat/IPaddr2 | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/heartbeat/IPaddr2 b/heartbeat/IPaddr2
+index 814f722..9a06c82 100755
+--- a/heartbeat/IPaddr2
++++ b/heartbeat/IPaddr2
+@@ -616,6 +616,7 @@ delete_interface () {
+ 	netmask="$3"
+ 
+ 	CMD="$IP2UTIL -f $FAMILY addr delete $ipaddr/$netmask dev $iface"
++	ocf_log info "Deleting ${FAMILY} address ${ipaddr}/${netmask} from device ${iface}"
+ 
+ 	ocf_run $CMD || return $OCF_ERR_GENERIC
+ 
+@@ -685,7 +686,13 @@ add_interface () {
+ 	fi
+ 
+ 	ocf_log info "$msg"
+-	ocf_run $cmd || return $OCF_ERR_GENERIC
++	ocf_run ${cmd}
++	rc=$?
++	if [ ${rc} -ne 0 ]; then
++		DEVICE_IPS=$(${IP2UTIL} addr show dev ${iface})
++		ocf_log warn "'${IP2UTIL} addr add' returned: ${rc}. IPs of ${iface}: ${DEVICE_IPS}"
++		return ${OCF_ERR_GENERIC}
++	fi
+ 
+ 	msg="Bringing device $iface up"
+ 	cmd="$IP2UTIL link set $iface up"
+@@ -1136,7 +1143,7 @@ ip_stop() {
+ 	
+ 	if [ "$ip_del_if" = "yes" ]; then
+ 		delete_interface $OCF_RESKEY_ip $NIC $NETMASK
+-		if [ $? -ne 0 ]; then
++		if [ $? -ne ${OCF_SUCCESS} ]; then
+ 			ocf_exit_reason "Unable to remove IP [${OCF_RESKEY_ip} from interface [ $NIC ]"
+ 			exit $OCF_ERR_GENERIC
+ 		fi
+-- 
+2.17.1
+
