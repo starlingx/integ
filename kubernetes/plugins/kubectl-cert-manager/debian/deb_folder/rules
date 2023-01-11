@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+# vim: set expandtab!
+# export DH_VERBOSE = 1
+
+export CERT_MANAGER_PKG = kubectl-cert-manager-linux-amd64.tar.gz
+export ROOT = debian/tmp
+export SBIN_DIR = $(ROOT)/usr/sbin
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Extract the third party kubectl-cert-manager package downloaded in files folder
+	tar -xvf $(CERT_MANAGER_PKG)
+
+override_dh_auto_install:
+	install -d -m 755 $(SBIN_DIR)
+	install -p -D -m 755 kubectl-cert_manager $(SBIN_DIR)
+
+override_dh_usrlocal:
+	# Do Nothing

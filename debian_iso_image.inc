@@ -169,6 +169,9 @@ k8s-pod-recovery
 #k8s-cni-cache-cleanup
 k8s-cni-cache-cleanup
 
+#kubectl-cert-manager
+kubectl-cert-manager
+
 # lvm2
 dmeventd
 dmsetup

@@ -1,0 +1,13 @@
+---
+debname: kubectl-cert-manager
+debver: 1.7.1-1
+src_path: null
+dl_files:
+  kubectl-cert-manager-linux-amd64.tar.gz:
+    topdir: null
+    url: https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/kubectl-cert_manager-linux-amd64.tar.gz
+    md5sum: 661909b84c3ef582a0d941f7ff3d9be7
+    sha256sum: f5a2741db8f5f5db4ab7ad041561b4c541a1ae35923053deadb0afb0e8c16cef
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
