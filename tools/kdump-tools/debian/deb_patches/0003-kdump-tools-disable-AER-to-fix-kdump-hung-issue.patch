@@ -1,0 +1,29 @@
+From 88e8f23536d60aa163c72ffdbe453315c5102d3c Mon Sep 17 00:00:00 2001
+From: Peng Zhang <Peng.Zhang2@windriver.com>
+Date: Thu, 15 Dec 2022 00:09:32 -0800
+Subject: [PATCH] kdump-tools: disable AER to fix kdump hung issue
+
+We don't need pci AER functionality enabled in the kdump kernel,
+and it causes some boards to hang in certain situations. So just
+disable it.
+
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
+---
+ rules | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index 72b7d6d..b428331 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -14,7 +14,7 @@ ifeq ($(DEB_HOST_ARCH),arm64)
+ else ifeq ($(DEB_HOST_ARCH),ppc64el)
+       KDUMP_CMDLINE_APPEND += maxcpus=1 irqpoll noirqdistrib nousb
+ else
+-	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll nousb ata_piix.prefer_ms_hyperv=0
++	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll nousb ata_piix.prefer_ms_hyperv=0 pci=noaer
+ endif
+
+ %:
+--
+2.34.1
