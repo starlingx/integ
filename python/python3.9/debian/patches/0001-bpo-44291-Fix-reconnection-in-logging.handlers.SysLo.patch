@@ -1,0 +1,148 @@
+From a28b8e4a9adeccdd0f68df07b29d5eba8c3d313d Mon Sep 17 00:00:00 2001
+From: Kirill Pinchuk <192182+cybergrind@users.noreply.github.com>
+Date: Thu, 5 Aug 2021 16:58:16 +0300
+Subject: [PATCH] bpo-44291: Fix reconnection in logging.handlers.SysLogHandler
+ (GH-26490)
+
+ Right now SocketHandler and DatagramHandler implement such behavior:
+
+ 1 - On close set self.socket = None
+ 2 - When trying to send - make socket when it is None
+
+ SysLogHandler doesn't implement this behavior and when you close
+ the socket for some reason (eg. restart of uWSGI server on code change)
+ it leaves it in the closed state, then raises an error when you try to
+ send any message because it is closed.
+
+ --- Logging error ---
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/logging/handlers.py", line 959, in emit
+    self.socket.sendto(msg, self.address)
+OSError: [Errno 9] Bad file descriptor
+
+This patch adds reconnection logic for UDP/TCP sockets as well as UNIX
+sockets.
+
+Signed-off-by: Enzo Candotti <enzo.candotti@windriver.com>
+---
+ Lib/logging/handlers.py  | 63 ++++++++++++++++++++++++----------------
+ Lib/test/test_logging.py |  8 +++++
+ 2 files changed, 46 insertions(+), 25 deletions(-)
+
+diff --git a/Lib/logging/handlers.py b/Lib/logging/handlers.py
+index 867ef4ebc7..ff8f9e534f 100644
+--- a/Lib/logging/handlers.py
++++ b/Lib/logging/handlers.py
+@@ -829,6 +829,36 @@ class SysLogHandler(logging.Handler):
+         self.address = address
+         self.facility = facility
+         self.socktype = socktype
++        self.socket = None
++        self.createSocket()
++
++    def _connect_unixsocket(self, address):
++        use_socktype = self.socktype
++        if use_socktype is None:
++            use_socktype = socket.SOCK_DGRAM
++        self.socket = socket.socket(socket.AF_UNIX, use_socktype)
++        try:
++            self.socket.connect(address)
++            # it worked, so set self.socktype to the used type
++            self.socktype = use_socktype
++        except OSError:
++            self.socket.close()
++            if self.socktype is not None:
++                # user didn't specify falling back, so fail
++                raise
++            use_socktype = socket.SOCK_STREAM
++            self.socket = socket.socket(socket.AF_UNIX, use_socktype)
++            try:
++                self.socket.connect(address)
++                # it worked, so set self.socktype to the used type
++                self.socktype = use_socktype
++            except OSError:
++                self.socket.close()
++                raise
++
++    def createSocket(self):
++        address = self.address
++        socktype = self.socktype
+ 
+         if isinstance(address, str):
+             self.unixsocket = True
+@@ -865,30 +895,6 @@ class SysLogHandler(logging.Handler):
+             self.socket = sock
+             self.socktype = socktype
+ 
+-    def _connect_unixsocket(self, address):
+-        use_socktype = self.socktype
+-        if use_socktype is None:
+-            use_socktype = socket.SOCK_DGRAM
+-        self.socket = socket.socket(socket.AF_UNIX, use_socktype)
+-        try:
+-            self.socket.connect(address)
+-            # it worked, so set self.socktype to the used type
+-            self.socktype = use_socktype
+-        except OSError:
+-            self.socket.close()
+-            if self.socktype is not None:
+-                # user didn't specify falling back, so fail
+-                raise
+-            use_socktype = socket.SOCK_STREAM
+-            self.socket = socket.socket(socket.AF_UNIX, use_socktype)
+-            try:
+-                self.socket.connect(address)
+-                # it worked, so set self.socktype to the used type
+-                self.socktype = use_socktype
+-            except OSError:
+-                self.socket.close()
+-                raise
+-
+     def encodePriority(self, facility, priority):
+         """
+         Encode the facility and priority. You can pass in strings or
+@@ -908,7 +914,10 @@ class SysLogHandler(logging.Handler):
+         """
+         self.acquire()
+         try:
+-            self.socket.close()
++            sock = self.socket
++            if sock:
++                self.socket = None
++                sock.close()
+             logging.Handler.close(self)
+         finally:
+             self.release()
+@@ -948,6 +957,10 @@ class SysLogHandler(logging.Handler):
+             # Message is a string. Convert to bytes as required by RFC 5424
+             msg = msg.encode('utf-8')
+             msg = prio + msg
++
++            if not self.socket:
++                self.createSocket()
++
+             if self.unixsocket:
+                 try:
+                     self.socket.send(msg)
+diff --git a/Lib/test/test_logging.py b/Lib/test/test_logging.py
+index a6cd291c9a..e795533775 100644
+--- a/Lib/test/test_logging.py
++++ b/Lib/test/test_logging.py
+@@ -1931,6 +1931,14 @@ class SysLogHandlerTest(BaseTest):
+         self.handled.wait()
+         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
+ 
++    def test_udp_reconnection(self):
++        logger = logging.getLogger("slh")
++        self.sl_hdlr.close()
++        self.handled.clear()
++        logger.error("sp\xe4m")
++        self.handled.wait(0.1)
++        self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
++
+ @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
+ class UnixSysLogHandlerTest(SysLogHandlerTest):
+ 
+-- 
+2.25.1
+

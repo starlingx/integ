@@ -362,6 +362,9 @@ python3-nsenter
 python3-pkg-resources
 python3-setuptools
 
+#python3.9
+python3.9
+
 #openscap
 libopenscap25
 openscap-common
