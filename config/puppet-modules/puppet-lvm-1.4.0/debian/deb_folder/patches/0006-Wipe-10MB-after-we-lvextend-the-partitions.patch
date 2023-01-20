@@ -1,7 +1,6 @@
-From 90f502417268230528dd8fb855b8a4a9b236e96e Mon Sep 17 00:00:00 2001
 From: Mihnea Saracin <mihnea.saracin@windriver.com>
 Date: Fri, 21 May 2021 13:34:41 -0400
-Subject: [PATCH 6/6] Wipe 10MB after we lvextend the partitions
+Subject: Wipe 10MB after we lvextend the partitions
 
 ---
  lib/puppet/provider/logical_volume/lvm.rb | 1 +
@@ -19,6 +18,3 @@ index 70037e2..df333f3 100644
        exec_cmd('umount', path)
        exec_cmd('fsadm', '-y', 'check', path )
        r = exec_cmd('fsadm', '-y', 'resize', path, "#{new_size}k")
--- 
-2.16.6
-

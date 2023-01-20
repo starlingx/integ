@@ -1,7 +1,6 @@
-From 16802f9ad304e5aa286a1466ee42cd69c976cfb9 Mon Sep 17 00:00:00 2001
 From: Kristine Bujold <kristine.bujold@windriver.com>
 Date: Fri, 15 Jul 2016 16:55:16 -0400
-Subject: [PATCH 2/6] US80802 - PXE Installation changes for UEFI support.
+Subject: US80802 - PXE Installation changes for UEFI support. 
  Fixing pvcreate issue.
 
 ---
@@ -42,6 +41,3 @@ index 3d92a55..ff2f94c 100644
    def destroy
      pvremove(@resource[:name])
    end
--- 
-2.16.6
-
