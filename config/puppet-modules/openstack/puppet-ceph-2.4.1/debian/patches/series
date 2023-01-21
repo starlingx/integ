@@ -8,3 +8,4 @@
 0009-fix-ceph-osd-disk-partition-for-nvme-disks.patch
 0010-wipe-unprepared-disks.patch
 0011-Fix-service-parameter-passing.patch
+0012-Add-multipath-disk-support.patch
