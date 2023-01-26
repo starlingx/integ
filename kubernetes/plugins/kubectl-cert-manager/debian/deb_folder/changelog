@@ -1,0 +1,5 @@
+kubectl-cert-manager (1.7.1-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Junfeng Li <junfeng.li@windriver.com>  Tue, 19 Oct 2021 07:46:42 +0000

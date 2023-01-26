@@ -1,0 +1,12 @@
+Source: kubectl-cert-manager
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: kubectl-cert-manager
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Kubernetes Cert Manager Plugin
