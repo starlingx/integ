@@ -4,3 +4,4 @@
 0004-Save-dir-path-variable-with-distinct-names.patch
 0005-Add-options-content-to-routes-file.patch
 0006-Use-prefix_len-for-default-routes.patch
+0007-Prevent-MTU-value-from-duplicating.patch
