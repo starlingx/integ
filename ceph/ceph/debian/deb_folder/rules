@@ -6,13 +6,15 @@
 SOURCE1 := ceph.sh
 SOURCE2 := mgr-restful-plugin.py
 SOURCE3 := ceph.conf.pmon
-SOURCE4 := ceph-init-wrapper.sh
-SOURCE5 := ceph.conf
-SOURCE6 := ceph-manage-journal.py
-SOURCE7 := ceph.service
-SOURCE8 := mgr-restful-plugin.service
-SOURCE9 := ceph-preshutdown.sh
-SOURCE10 := starlingx-docker-override.conf
+SOURCE4 := ceph-mds.conf.pmon
+SOURCE5 := ceph-init-wrapper.sh
+SOURCE6 := ceph.conf
+SOURCE7 := ceph-manage-journal.py
+SOURCE8 := ceph.service
+SOURCE9 := mgr-restful-plugin.service
+SOURCE10 := ceph-preshutdown.sh
+SOURCE11 := starlingx-docker-override.conf
+
 
 # Paths
 export DESTDIR = $(CURDIR)/debian/tmp
@@ -188,13 +190,14 @@ override_dh_auto_install:
 	install -D -m 750 ${SOURCE1} $(DESTDIR)/${SYSCONFDIR}/services.d/worker/
 	install -D -m 750 ${SOURCE2} $(DESTDIR)/${INITDIR}/mgr-restful-plugin
 	install -D -m 750 ${SOURCE3} $(DESTDIR)/${SYSCONFDIR}/ceph/
-	install -D -m 750 ${SOURCE4} $(DESTDIR)/${INITDIR}/ceph-init-wrapper
-	install -D -m 640 ${SOURCE5} $(DESTDIR)/${SYSCONFDIR}/ceph/
-	install -D -m 700 ${SOURCE6} $(DESTDIR)/${SBINDIR}/ceph-manage-journal
-	install -D -m 644 ${SOURCE7} $(DESTDIR)/${UNITDIR}/ceph.service
-	install -D -m 644 ${SOURCE8} $(DESTDIR)/${UNITDIR}/mgr-restful-plugin.service
-	install -D -m 700 ${SOURCE9} $(DESTDIR)/${SBINDIR}/ceph-preshutdown.sh
-	install -D -m 644 ${SOURCE10} $(DESTDIR)/${UNITDIR}/docker.service.d/starlingx-docker-override.conf
+	install -D -m 750 ${SOURCE4} $(DESTDIR)/${SYSCONFDIR}/ceph/
+	install -D -m 750 ${SOURCE5} $(DESTDIR)/${INITDIR}/ceph-init-wrapper
+	install -D -m 640 ${SOURCE6} $(DESTDIR)/${SYSCONFDIR}/ceph/
+	install -D -m 700 ${SOURCE7} $(DESTDIR)/${SBINDIR}/ceph-manage-journal
+	install -D -m 644 ${SOURCE8} $(DESTDIR)/${UNITDIR}/ceph.service
+	install -D -m 644 ${SOURCE9} $(DESTDIR)/${UNITDIR}/mgr-restful-plugin.service
+	install -D -m 700 ${SOURCE10} $(DESTDIR)/${SBINDIR}/ceph-preshutdown.sh
+	install -D -m 644 ${SOURCE11} $(DESTDIR)/${UNITDIR}/docker.service.d/starlingx-docker-override.conf
 	install -m 750 src/init-radosgw $(DESTDIR)/${INITDIR}/ceph-radosgw
 	sed -i '/### END INIT INFO/a SYSTEMCTL_SKIP_REDIRECT=1' $(DESTDIR)/${INITDIR}/ceph-radosgw
 	install -m 750 src/init-rbdmap $(DESTDIR)/${INITDIR}/rbdmap
@@ -275,6 +278,7 @@ override_dh_fixperms:
 	-Xceph.sh  \
 	-Xmgr-restful-plugin  \
 	-Xceph.conf.pmon  \
+	-Xceph-mds.conf.pmon  \
 	-Xceph-init-wrapper  \
 	-Xceph.conf  \
 	-Xceph-manage-journal  \

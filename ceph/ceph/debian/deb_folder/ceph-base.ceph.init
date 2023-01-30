@@ -612,8 +612,10 @@ stop_daemon() {
 
 ## command line options
 options=
+IFS=" " read -r -a args <<< "$@"
+wlog "-" INFO "$@"
 
-OPTS=$(${GETOPT} -n 'init-ceph' -o 'hvam:c:' -l 'help,verbose,valgrind,novalgrind,allhosts,restart,norestart,btrfs,nobtrfs,fsmount,nofsmount,btrfsumount,fsumount,conf:,cluster:,hostname:' -- "$@")
+OPTS=$(${GETOPT} -n 'init-ceph' -o 'hvam:c:' -l 'help,verbose,valgrind,novalgrind,allhosts,restart,norestart,btrfs,nobtrfs,fsmount,nofsmount,btrfsumount,fsumount,conf:,cluster:,hostname:' -- "${args[@]}")
 if [ $? != 0 ]
 then
     exit 1
@@ -735,10 +737,50 @@ if [ "$command" = "stop" -o "$command" = "onestop" ]; then
     what="$new_order"
 fi
 
-# Check if the monitors are up before starting any mds
-# This is needed only for Standard deployments
 
 . /etc/platform/platform.conf
+
+
+# When this is a AIO-DX pmon is monitoring ceph-mds process.
+# If ceph-mon is not running, ceph-mds will hang when starting.
+# Check if we are trying to bring up ceph-mds and ceph-mon is not ready yet
+if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
+    if [ "${command}" = "start" -o "${command}" = "onestart" ]; then
+        what_out=
+        what_mds=
+        re="\s*mon"
+        if [[ ${what} =~ ${re} ]]; then
+            has_mon=1
+        else
+            has_mon=0
+            CEPH_STATUS=''
+            execute_ceph_cmd CEPH_STATUS "ceph status" "ceph -s"
+            if [ $? -eq 0 ]; then
+                has_mon=1
+            fi
+        fi
+        for name in ${what}; do
+            type=$(echo "${name}" | cut -c 1-3)
+            if [ "${type}" == "mds" ]; then
+                what_mds="${name}"
+                continue
+            fi
+            what_out+=" ${name}"
+        done
+        if [ ${has_mon} -eq 1 ] && [ ! -z "${what_mds}" ]; then
+            what_out+=" ${what_mds}"
+        fi
+        what="${what_out}"
+    fi
+    # If the variable 'what' is empty, then it was trying to bring up ceph-mds but ceph-mon is not active.
+    # When ceph-mon is not active, we cannot execute ceph-mds yet, thus returning error.
+    if [ -z "${what}" ]; then
+        EXIT_STATUS=1
+    fi
+fi
+
+# Check if the monitors are up before starting any mds
+# This is needed only for Standard deployments
 
 if [ "$system_type" == "Standard" ]; then
     CEPH_STATUS=''
@@ -999,8 +1041,15 @@ EOF
 	    [ -n "$post_stop" ] && do_cmd "$post_stop"
 	    [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
 	    # flush journal to data disk in background
-	    if [ "$type" = "osd" ];then
-	        $(/usr/bin/ceph-osd -i $id --flush-journal) &
+	    if [ "${type}" = "osd" ];then
+                CMD_OUTPUT=''
+                execute_ceph_cmd CMD_OUTPUT "Ceph Status" "ceph -s"
+                if [ $? == 0 ]; then
+                    wlog "${name}" "INFO" "Flushing journal"
+                    $(/usr/bin/ceph-osd -i $id --flush-journal) &
+                else
+                    wlog "${name}" "INFO" "Skipping journal flush"
+                fi
 	    fi
 	    wlog $name "INFO" "Process stopped, setting state to $ST_STOPPED"
 	    save_proc_state $name $ST_STOPPED
