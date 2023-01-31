@@ -374,14 +374,8 @@ python3-openscap
 
 #openvswitch
 openvswitch-common
-openvswitch-dbg
-openvswitch-dev
-openvswitch-ipsec
-openvswitch-pki
 openvswitch-switch-dpdk
 openvswitch-switch
-openvswitch-testcontroller
-openvswitch-vtep
 
 #qemu
 qemu-block-extra
