@@ -1,0 +1,16 @@
+Source: synce4l
+Section: admin
+Priority: optional
+Maintainer: Starlingx Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: synce4l
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: synce4l is a software implementation of Synchronous Ethernet (SyncE)
+ according to ITU-T Recommendation G.8264. The design goal is to provide logic to
+ supported hardware by processing Ethernet Synchronization Messaging Channel (ESMC)
+ and control Ethernet Equipment Clock (EEC) on Network Card Interface (NIC).

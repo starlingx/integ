@@ -9,6 +9,7 @@ base/linuxptp
 base/lvm2
 base/lsb
 base/pf-bb-config
+base/synce4l
 base/systemd
 base/systemd-presets
 base/watchdog
