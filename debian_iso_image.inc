@@ -392,6 +392,9 @@ runc
 shim-helpers-amd64-signed-template
 shim-unsigned
 
+#synce4l
+synce4l
+
 #systemd
 libnss-myhostname
 #libnss-mymachines  # not used

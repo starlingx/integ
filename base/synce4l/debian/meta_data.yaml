@@ -1,0 +1,10 @@
+---
+debver: 0.8.0
+dl_path:
+  name: synce4l-0.8.0.tar.gz
+  url: https://github.com/intel/synce4l/archive/refs/tags/0.8.0.tar.gz
+  md5sum: e048742e7bf947c41a45414bbecd594d
+  sha256sum: 1f437775b7957326b37536531fbb3f248abfe8cc227ab54a4c039f44ce70e3f9
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

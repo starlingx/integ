@@ -1,0 +1,17 @@
+Metadata-Version: 1.1
+Name: synce4l
+Version: 0.8.0
+Summary: synce4l
+Home-page: https://github.com/intel/synce4l
+Author:
+Author-email:
+License: GPLv2
+
+Description:
+synce4l is a software implementation of Synchronous Ethernet (SyncE)
+according to ITU-T Recommendation G.8264. The design goal is to provide
+logic to supported hardware by processing Ethernet Synchronization
+Messaging Channel (ESMC) and control Ethernet Equipment Clock (EEC) on
+Network Card Interface (NIC).
+
+Platform: UNKNOWN
