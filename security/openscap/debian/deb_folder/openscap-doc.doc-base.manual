@@ -1,0 +1,11 @@
+Document: openscap-manual
+Title: OpenSCAP user manual
+Abstract: This documentation provides information about OpenSCAP and its most
+ common operations. With OpenSCAP, you can check security configuration
+ settings of a system, and examine the system for signs of a compromise by
+ using rules based on standards and specifications.
+Section: System/Security
+
+Format: HTML
+Index: /usr/share/doc/openscap/manual/manual.html
+Files: /usr/share/doc/openscap/manual/*

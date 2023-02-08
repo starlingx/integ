@@ -1,0 +1,42 @@
+From: =?utf-8?b?IkjDpXZhcmQgRi4gQWFzZW4i?= <havard.f.aasen@pfft.no>
+Date: Sat, 30 Jul 2022 07:57:36 +0200
+Subject: run a minor testsuite
+
+Forwarded: not-needed
+---
+ tests/CMakeLists.txt | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index ae8c4f2..fa78bd5 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -22,20 +22,20 @@ endfunction()
+ 
+ configure_file("test_common.sh.in" "test_common.sh" @ONLY)
+ 
+-add_subdirectory("API")
++#add_subdirectory("API")
+ add_subdirectory("bindings")
+-add_subdirectory("bz2")
++#add_subdirectory("bz2")
+ add_subdirectory("codestyle")
+-add_subdirectory("curl")
++#add_subdirectory("curl")
+ add_subdirectory("CPE")
+-add_subdirectory("DS")
++#add_subdirectory("DS")
+ add_subdirectory("mitre")
+-add_subdirectory("nist")
++#add_subdirectory("nist")
+ add_subdirectory("oscap_string")
+ add_subdirectory("oval_details")
+-add_subdirectory("probes")
+-add_subdirectory("report")
+-add_subdirectory("sce")
++#add_subdirectory("probes")
++#add_subdirectory("report")
++#add_subdirectory("sce")
+ add_subdirectory("schemas")
+ add_subdirectory("sources")
+ add_subdirectory("utils")

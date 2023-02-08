@@ -1,0 +1,8 @@
+Document: openscap-api
+Title: OpenSCAP API documentation
+Abstract: Leverage the OpenSCAP Base C API for your application.
+Section: Programming/C
+
+Format: HTML
+Index: /usr/share/doc/openscap/html/index.html
+Files: /usr/share/doc/openscap/html/*

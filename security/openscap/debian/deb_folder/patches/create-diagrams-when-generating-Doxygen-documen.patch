@@ -1,0 +1,63 @@
+From: Håvard F. Aasen <havard.f.aasen@pfft.no>
+Date: Tue, 12 Jul 2022 07:29:02 +0200
+Subject: [PATCH] docs: Create diagrams when generating Doxygen documentation
+
+If we enable documentation and CMake finds Doxygen and 'dot' in path,
+diagrams will be generated.
+
+CMake searches for 'dot' at the same time as Doxygen.
+
+'dot' is a tool found in graphviz.
+
+Forwarded: https://github.com/OpenSCAP/openscap/pull/1872
+---
+ CMakeLists.txt      | 1 +
+ docs/CMakeLists.txt | 6 ++++++
+ docs/Doxyfile.in    | 2 +-
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 61c57d7a3..45380539c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -469,6 +469,7 @@ message(STATUS " ")
+ message(STATUS "Documentation:")
+ message(STATUS "enabled: ${ENABLE_DOCS}")
+ message(STATUS "doxygen: ${DOXYGEN_EXECUTABLE}")
++message(STATUS "graphviz: ${DOXYGEN_DOT_EXECUTABLE}")
+ message(STATUS "asciidoc: ${ASCIIDOC_EXECUTABLE}")
+ 
+ # ---------- PATHS
+diff --git a/docs/CMakeLists.txt b/docs/CMakeLists.txt
+index b8c5bc5ba..0a5e627c2 100644
+--- a/docs/CMakeLists.txt
++++ b/docs/CMakeLists.txt
+@@ -8,6 +8,12 @@ if(ENABLE_DOCS)
+         set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+         set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+ 
++        # configure for graphviz
++        set(DOXYGEN_DIAGRAM "NO")
++        if(DOXYGEN_DOT_FOUND)
++            set(DOXYGEN_DIAGRAM "YES")
++        endif()
++
+         # request to configure the file
+         configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+ 
+diff --git a/docs/Doxyfile.in b/docs/Doxyfile.in
+index f48a3e763..7a2e88601 100644
+--- a/docs/Doxyfile.in
++++ b/docs/Doxyfile.in
+@@ -1220,7 +1220,7 @@ HIDE_UNDOC_RELATIONS   = YES
+ # toolkit from AT&T and Lucent Bell Labs. The other options in this section 
+ # have no effect if this option is set to NO (the default)
+ 
+-HAVE_DOT               = NO
++HAVE_DOT               = @DOXYGEN_DIAGRAM@
+ 
+ # By default doxygen will write a font called FreeSans.ttf to the output 
+ # directory and reference it in all dot files that doxygen generates. This 
+-- 
+2.35.1
+

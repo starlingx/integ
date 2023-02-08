@@ -1,2 +1,2 @@
-usr/bin/oscap
 etc/bash_completion.d/oscap usr/share/bash-completion/completions/
+usr/bin/oscap
