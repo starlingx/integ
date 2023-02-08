@@ -1,11 +1,11 @@
 ---
 debname: openvswitch
-debver: 2.15.0+ds1-2+deb11u1
+debver: 2.15.0+ds1-2+deb11u2
 dl_path:
-    name: openvswitch-debian-bullseye.tar.gz
-    url: https://salsa.debian.org/openstack-team/third-party/openvswitch/-/archive/debian/bullseye/openvswitch-debian-bullseye.tar.gz
-    md5sum: 2764434e018f1c37eb90fea49d0d1011
-    sha256sum: b0475615132bb2ab30933b8449ac714e21ab347db73098782de88a06639339da
+    name: openvswitch-debian-2.15.0+ds1-2+deb11u2.tar.gz
+    url: https://salsa.debian.org/openstack-team/third-party/openvswitch/-/archive/debian/2.15.0+ds1-2+deb11u2/openvswitch-debian-2.15.0+ds1-2+deb11u2.tar.gz
+    md5sum: 1df5943cd57810cb577781f054f92f3b
+    sha256sum: 7514a10ba2d144feb29e09b5e2d4ca506bda023d75aba9387f8681fe2aabee52
 revision:
     dist: $STX_DIST
     PKG_GITREVCOUNT: true
