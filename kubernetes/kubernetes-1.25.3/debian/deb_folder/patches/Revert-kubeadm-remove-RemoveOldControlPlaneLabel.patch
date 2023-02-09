@@ -1,0 +1,50 @@
+From dbf1b405fd31c548992fb73bafcb44c8ffe208ee Mon Sep 17 00:00:00 2001
+From: Boovan Rajendran <boovan.rajendran@windriver.com>
+Date: Wed, 15 Feb 2023 02:47:26 -0500
+Subject: [PATCH] Revert "kubeadm: remove RemoveOldControlPlaneLabel"
+
+This reverts commit 80e5bcae9b885179446fa27fa3b4da0992c1b8a8.
+
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+---
+ cmd/kubeadm/app/phases/upgrade/postupgrade.go | 24 +++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/cmd/kubeadm/app/phases/upgrade/postupgrade.go b/cmd/kubeadm/app/phases/upgrade/postupgrade.go
+index d6a5394ccde..eb67ccffaf8 100644
+--- a/cmd/kubeadm/app/phases/upgrade/postupgrade.go
++++ b/cmd/kubeadm/app/phases/upgrade/postupgrade.go
+@@ -208,6 +208,30 @@ func rollbackFiles(files map[string]string, originalErr error) error {
+ 	return errors.Errorf("couldn't move these files: %v. Got errors: %v", files, errorsutil.NewAggregate(errs))
+ }
+ 
++// RemoveOldControlPlaneLabel finds all nodes with the legacy node-role label and removes it
++// TODO: https://github.com/kubernetes/kubeadm/issues/2200
++func RemoveOldControlPlaneLabel(client clientset.Interface) error {
++	selectorOldControlPlane := labels.SelectorFromSet(labels.Set(map[string]string{
++		kubeadmconstants.LabelNodeRoleOldControlPlane: "",
++	}))
++	nodesWithOldLabel, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
++		LabelSelector: selectorOldControlPlane.String(),
++	})
++	if err != nil {
++		return errors.Wrapf(err, "could not list nodes labeled with %q", kubeadmconstants.LabelNodeRoleOldControlPlane)
++	}
++
++	for _, n := range nodesWithOldLabel.Items {
++		err = apiclient.PatchNode(client, n.Name, func(n *v1.Node) {
++			delete(n.ObjectMeta.Labels, kubeadmconstants.LabelNodeRoleOldControlPlane)
++		})
++		if err != nil {
++			return err
++		}
++	}
++	return nil
++}
++
+ // RemoveOldControlPlaneTaint finds all nodes with the new "control-plane" node-role label
+ // and removes the old "control-plane" taint to them.
+ // TODO: https://github.com/kubernetes/kubeadm/issues/2200
+-- 
+2.25.1
+
