@@ -8,7 +8,7 @@ dl_path:
   md5sum: eb6db0c9b8b4257d77ed07a81cd3a7b8
   sha256sum: 06341378fc89836ee3355ff9ade263105a9ab445de8b065c0989eec8c55769c8
 src_files:
-  - files/tis-shim.der
+  - ${MY_REPO}/public-keys/tis-shim.der
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

@@ -39,3 +39,4 @@ then
     exit 1
 fi
 cp ../local_debian/files/* ./
+cp ${MY_REPO}/public-keys/boot_pub_key ./
