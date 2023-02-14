@@ -390,6 +390,7 @@ qemu-guest-agent
 qemu-system-common
 qemu-system-data
 qemu-system-x86
+qemu-utils
 
 #runc
 #golang-github-opencontainers-runc-dev  # not used
