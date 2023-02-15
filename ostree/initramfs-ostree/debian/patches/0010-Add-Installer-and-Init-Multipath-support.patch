@@ -1,0 +1,324 @@
+From 2b8fee64668186e4db7e6f63fc26348dafb8607b Mon Sep 17 00:00:00 2001
+From: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Tue, 14 Feb 2023 11:19:20 -0300
+Subject: Add Installer and Init Multipath support
+
+In order to support multipath installation:
+
+Installer:
+ - instmpath=0/1 option is provided (default is 0) for when inststx=0 to
+   enable a non-StarlingX debug env. By default both INSTSTX and now
+   INSTMPATH are enabled by default for StarlingX.
+ - The multipath-tools-boot are started to coalesce any multipath devices
+   present.
+ - Based on the selected install device after kickstart partitioning is
+   completed, kpartx (for multipath dm devices) or
+   blockdev (HDD/SDD/NVMe devices) is called to re-read partition
+   information.
+
+Init:
+ - multipath=0/1 option is provided (default is 1) to enable coalescing
+   of multipath devices. Can update bootline to disable if desired after
+   install if problems are suspected.
+   - Wait for the root volume to be located for proper booting
+ - Add '-q' option to mdadm call to limit noise produced from not
+   finding related devices. This is not supported by StarlingX at this
+   time.
+ - early_setup moved to after CONSOLE is set to support calls to fatal()
+
+Common:
+ - Provide ordered recognition of multipath then LVM devices
+   so that non coalesced multipath devices that contain LVM volumes are
+   not prematurely recognized. Ordering is as follows
+   - Disable LVM devices via the global filter
+   - Trigger udev and wait for initial device recognition
+   - Activate multipath daemon to coalesce the multipath devices
+   - Trigger any udev device changes based on the coalescing
+   - Enable the LVM devices via the global_filter and trigger a udev add
+     action to add any new device mapper devices
+
+Signed-off-by: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ init-ostree-install.sh | 74 +++++++++++++++++++++++++++++++++---
+ init-ostree.sh         | 86 ++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 151 insertions(+), 9 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 9f145ec..a630a00 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -93,6 +93,7 @@ OPTIONAL:
+  RSZ=#				- MB size of root partition
+  VSZ=#				- MB size of var partition (0 for auto expand)
+ 
++ instmpath=0			- enable multipath device support
+  inststx=1			- Skip LAT partitioning scheme (StarlingX).
+ 				  Only call %part ks hook to partition
+  inst_ostree_boot=DEVICE	- Specify the ostree boot device
+@@ -473,6 +474,14 @@ do_mount_fs() {
+ 	mount -t "$1" "$1" "$2" || fatal "Error mounting $2"
+ }
+ 
++disable_lvm() {
++	sed -i "s#^\(\t*\)\# global_filter = \[.*#\1global_filter = [ \"r|.*|\" ]#" /etc/lvm/lvm.conf
++}
++
++enable_lvm() {
++	sed -i "s#^\(\t*\)global_filter = \[.*#\1\# global_filter = [ \"a|.*|\" ]#" /etc/lvm/lvm.conf
++}
++
+ early_setup() {
+ 	do_mount_fs proc /proc
+ 	read_args
+@@ -483,8 +492,15 @@ early_setup() {
+ 	do_mount_fs tmpfs /tmp
+ 	do_mount_fs tmpfs /run
+ 
++	# disable lvm to ensure multipath devices, if used in the system, can
++	# coalesce later when enabled
++	disable_lvm
+ 	$_UDEV_DAEMON --daemon
+ 	udevadm trigger --action=add
++	retval=$?
++	if [ ${retval} -ne 0 ]; then
++		echo "Post disable_lvm 'udevadm trigger --action=add' failed with return code: ${retval}. Continuing anyway"
++	fi
+ 
+ 	if [ -x /sbin/mdadm ]; then
+ 		/sbin/mdadm -v --assemble --scan --auto=md
+@@ -685,6 +701,8 @@ read_args() {
+ 				RSZ=$optarg ;;
+ 			VSZ=*)
+ 				VSZ=$optarg ;;
++			instmpath=*)
++				INSTMPATH=$optarg ;;
+ 			inststx=*)
+ 				INSTSTX=$optarg ;;
+ 			instiso=*)
+@@ -711,7 +729,8 @@ read_args() {
+ 	if [ "$INSTGPG" = "" ] ; then INSTGPG=1 ; fi
+ 	if [ "$INSTFLUX" = "" ] ; then INSTFLUX=1 ; fi
+ 	if [ "$INSTSBD" = "" ] ; then INSTSBD=2 ; fi
+-	if [ "$INSTSTX" = "" ] ; then INSTSTX=1 ; fi
++	if [ "${INSTMPATH}" = "" ] ; then INSTMPATH=0 ; fi
++	if [ "${INSTSTX}" = "" ] ; then INSTSTX=1 ; INSTMPATH=1 ; fi
+ }
+ 
+ shell_start() {
+@@ -947,10 +966,6 @@ if [ "$INSTSH" = 1 -o "$INSTSH" = 3 -o "$INSTSH" = 4 ] ; then
+ 	lreboot
+ fi
+ 
+-echo "Waiting up to 5 minutes for devices to be properly configured."
+-udevadm settle --timeout=300 || fatal "udevadm settle timed out after 300 seconds"
+-echo "Devices should be properly configured."
+-
+ if [ "$INSTNAME" = "" ] ; then
+ 	fatal "Error no remote archive name, need kernel argument: instname=..."
+ fi
+@@ -970,6 +985,10 @@ if [ "$INSTDATE" != "" ] ; then
+ 	fi
+ fi
+ 
++echo "Waiting up to 5 minutes for devices to be properly configured."
++udevadm settle --timeout=300 || fatal "udevadm settle timed out after 300 seconds"
++echo "Devices should be properly configured."
++
+ # Customize here for network
+ if [ "$IP" != "" ] ; then
+ 	if [ "$IP" = "dhcp" ] ; then
+@@ -986,6 +1005,40 @@ if [ "$INSTNET" = dhcp -o "$INSTNET" = dhcp6 ] ; then
+ 	do_dhcp
+ fi
+ 
++# Coalesce multipath devices after udev/network is done, and trigger udev to set
++# up any device links
++if [ "${INSTMPATH}" = 1 ] ; then
++	service multipath-tools-boot start
++	retval=$?
++	if [ ${retval} -ne 0 ]; then
++		echo "'service multipath-tools-boot start' failed with return code: ${retval}. Continuing anyway"
++	fi
++	udevadm trigger --action=change
++	retval=$?
++	if [ ${retval} -ne 0 ]; then
++		echo "'udevadm trigger --action=change' failed with return code: ${retval}. Continuing anyway"
++	fi
++	udevadm settle
++	retval=$?
++	if [ ${retval} -ne 0 ]; then
++		echo "'udevadm settle' failed with return code: ${retval}. Continuing anyway"
++	fi
++fi
++
++# If any existing volume groups are present, find them and populate the device
++# mapper
++enable_lvm
++udevadm trigger --action=add
++retval=$?
++if [ ${retval} -ne 0 ]; then
++	echo "Post enable_lvm 'udevadm trigger --action=add' failed with return code: ${retval}. Continuing anyway"
++fi
++udevadm settle
++retval=$?
++if [ ${retval} -ne 0 ] ; then
++	echo "WARNING: Early setup: udev events still queued for add action. code: ${retval}. Continuing anyway"
++fi
++
+ # If local kickstart is not available
+ if [ "${KS::7}" = "file://" -a ! -e "${KS:7}" ]; then
+   # Try to find local kickstart from instboot partition
+@@ -1188,9 +1241,18 @@ fi
+ 
+ udevadm settle --timeout=3
+ 
++case $(readlink -f ${dev}) in
++	*"dm-"*)
++		part_update_cmd='kpartx -a -p -part'
++	;;
++	*)
++		part_update_cmd='blockdev --rereadpt'
++	;;
++esac
++
+ cnt=50
+ while [ "$cnt" -gt 0 ] ; do
+-	blockdev --rereadpt ${dev} 2> /dev/null > /dev/null && break
++	${part_update_cmd} ${dev} 2> /dev/null > /dev/null && break
+ 	sleep 0.1
+ 	cnt=$(($cnt - 1))
+ done
+diff --git a/init-ostree.sh b/init-ostree.sh
+index f0217c0..dadf39d 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -33,6 +33,7 @@ OSTREE_SYSROOT=""
+ OSTREE_BOOT_DEVICE="LABEL=otaboot"
+ OSTREE_VAR_DEVICE=""
+ OSTREE_LABEL_FLUXDATA="fluxdata"
++MULTIPATH=1
+ VSZ=20480
+ SKIP_BOOT_DIFF=""
+ ALLOW_RM_VAR=1
+@@ -81,6 +82,25 @@ network_modules() {
+         fi
+ }
+ 
++disable_lvm() {
++	sed -i "s#^\(\t*\)\# global_filter = \[.*#\1global_filter = [ \"r|.*|\" ]#" /etc/lvm/lvm.conf
++	sed -i "s#^\(\t*\)external_device_info_source = \"none\"#\1external_device_info_source = \"udev\"#" /etc/lvm/lvm.conf
++}
++
++enable_lvm() {
++	sed -i "s#^\(\t*\)global_filter = \[.*#\1global_filter = [ \"a|.*|\" ]#" /etc/lvm/lvm.conf
++}
++
++activate_multipath() {
++	service multipath-tools-boot start
++	retval=$?
++	if [ ${retval} -ne 0 ]; then
++		echo "'service multipath-tools-boot start' failed with return code: ${retval}. Continuing anyway"
++	else
++		echo "Multipath activation: SUCCESS"
++	fi
++}
++
+ early_setup() {
+ 
+ 	do_mount_fs proc /proc
+@@ -92,11 +112,70 @@ early_setup() {
+ 	read_args
+ 	network_modules
+ 
++	# disable lvm to ensure multipath devices, if used in the system, can
++	# coalesce later when enabled
++	disable_lvm
+ 	$_UDEV_DAEMON --daemon
+ 	udevadm trigger --action=add
++	retval=$?
++	if [ ${retval} -ne 0 ]; then
++		echo "Post disable_lvm 'udevadm trigger --action=add' failed with return code: ${retval}. Continuing anyway"
++	fi
++	udevadm settle --timeout=${MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE}
++	retval=$?
++	if [ ${retval} -ne 0 ] ; then
++		echo "WARNING: Early setup: udev events still queued for add action. code: ${retval}. Continuing anyway"
++	fi
++
++	# Coalesce multipath devices after udev/network is done, and trigger
++	# udev to set up any device links
++	if [ "${MULTIPATH}" = 1  ] ; then
++		activate_multipath
++		udevadm trigger --action=change
++		retval=$?
++		if [ ${retval} -ne 0 ]; then
++			echo "'udevadm trigger --action=change' failed with return code: ${retval}. Continuing anyway"
++		fi
++		udevadm settle --timeout=${MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE}
++		retval=$?
++		if [ ${retval} -ne 0 ] ; then
++			echo "WARNING: Early setup: udev events still queued for add action. code: ${retval}. Continuing anyway"
++		fi
++	fi
++
++	# If any existing volume groups are present, find them and populate the
++	# device mapper
++	enable_lvm
++	udevadm trigger --action=add
++	retval=$?
++	if [ ${retval} -ne 0 ]; then
++		echo "Post enable_lvm 'udevadm trigger --action=add' failed with return code: ${retval}. Continuing anyway"
++	fi
++	udevadm settle --timeout=${MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE}
++	retval=$?
++	if [ ${retval} -ne 0 ] ; then
++		echo "WARNING: Early setup: udev events still queued for add action. code: ${retval}. Continuing anyway"
++	fi
++
++	chkcmd_1="-e /dev/mapper/cgts--vg-root--lv"
++	timeout=$((${MAX_TIMEOUT_FOR_WAITING_LOWSPEED_DEVICE}))
++	do_echo=1
++
++	until [ ${chkcmd_1} ] ; do
++		[ ${do_echo} = 1 ] && echo "Waiting for cgts--vg to become available" && do_echo=0
++		sleep 1
++		timeout=$((${timeout} - 1))
++		if [ ${timeout} = 0 ] ; then
++			fatal "Failed to bring up cgts--vg"
++		fi
++	done
+ 
+ 	if [ -x /sbin/mdadm ]; then
+-		/sbin/mdadm -v --assemble --scan --auto=md
++		/sbin/mdadm -v -q --assemble --scan --auto=md
++		retval=$?
++		if [ ${retval} -ne 0 ]; then
++			echo "'/sbin/mdadm -v -q --assemble --scan --auto=md' failed with return code: ${retval}. Continuing anyway"
++		fi
+ 	fi
+ }
+ 
+@@ -123,6 +202,8 @@ read_args() {
+ 				DEBUGFATAL=1 ;;
+ 			flux=*)
+ 				OSTREE_LABEL_FLUXDATA=$optarg ;;
++			multipath=*)
++				MULTIPATH=$optarg ;;
+ 			multi-drivers-switch=*)
+ 				DRIVER_VERSION=$optarg ;;
+ 			ostree_var=*)
+@@ -189,9 +270,8 @@ fatal() {
+ 
+ #######################################
+ 
+-early_setup
+-
+ [ -z "$CONSOLE" ] && CONSOLE="/dev/console"
++early_setup
+ [ -z "$INIT" ] && INIT="/sbin/init"
+ 
+ udevadm settle --timeout=3
+-- 
+2.37.1
+
