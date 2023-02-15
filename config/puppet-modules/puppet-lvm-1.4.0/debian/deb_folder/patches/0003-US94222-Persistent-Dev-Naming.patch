@@ -1,7 +1,6 @@
-From 96e0b83a1f3131b66188ce1c2c9060e243c02ce3 Mon Sep 17 00:00:00 2001
 From: Robert Church <robert.church@windriver.com>
 Date: Wed, 1 Mar 2017 09:12:34 +0000
-Subject: [PATCH 3/6] US94222: Persistent Dev Naming
+Subject: US94222: Persistent Dev Naming
 
 ---
  lib/puppet/provider/volume_group/lvm.rb | 2 +-
@@ -20,6 +19,3 @@ index 4d6e426..a6d4a70 100644
        lines.split(%r{\n}).grep(%r{,#{@resource[:name]}$}).map do |s|
          s.split(%r{,})[0].strip
        end
--- 
-2.16.6
-

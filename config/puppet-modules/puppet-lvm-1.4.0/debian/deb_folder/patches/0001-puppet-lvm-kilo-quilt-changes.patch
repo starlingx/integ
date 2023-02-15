@@ -1,7 +1,6 @@
-From 73bbdf3003296ba8b7d4f71b182e58fdb7a04fbd Mon Sep 17 00:00:00 2001
 From: Al Bailey <al.bailey@windriver.com>
 Date: Tue, 7 Jun 2016 10:36:17 -0400
-Subject: [PATCH 1/6] puppet-lvm kilo quilt changes
+Subject: puppet-lvm kilo quilt changes
 
 ---
  lib/puppet/provider/logical_volume/lvm.rb          | 168 ++++++++++++++-------
@@ -630,6 +629,3 @@ index 7ad3ed6..24017e8 100644
            @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', 'myvg')
            @provider.create
            @provider.expects(:lvs).with('--noheading', '--unit', 'g', '/dev/myvg/mylv').returns(' 1.00g').at_least_once
--- 
-2.16.6
-

@@ -1,7 +1,6 @@
-From f2bfd68078f8eb2a09a2bbd2638f2e957b8397af Mon Sep 17 00:00:00 2001
 From: Stefan Dinescu <stefan.dinescu@windriver.com>
 Date: Wed, 6 Dec 2017 12:50:14 +0000
-Subject: [PATCH 4/6] Extending nuke_fs_on_resize_failure functionality
+Subject: Extending nuke_fs_on_resize_failure functionality
 
 ---
  lib/puppet/provider/logical_volume/lvm.rb | 11 ++++++++++-
@@ -29,6 +28,3 @@ index 76c7ec0..6aa2989 100644
        end
      elsif new_size > current_size
        if new_size % vg_extent_size != 0
--- 
-2.16.6
-
