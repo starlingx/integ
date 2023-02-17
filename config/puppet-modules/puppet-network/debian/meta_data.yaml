@@ -8,4 +8,6 @@ dl_path:
   sha256sum: 14dcaff86641f0e9751f8d328a918e8be16fbbe1ffb9d83de0b6fff531a790ad
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 44548f62cf82f1126ecc0cd17506f44907cacbb8
+    SRC_DIR: ${MY_REPO}/stx/integ/config/puppet-modules/puppet-network
