@@ -67,29 +67,6 @@ function get_kubeadm_configmap {
     fi
 }
 
-# Update feature gates for version 1.24
-function update_feature_gates_v1_24 {
-
-    if grep -q 'RemoveSelfLink=false' "${KUBEADM_CONFIGMAP_TMPFILE}"; then
-        LOG "Updating kube-apiserver feature-gates in retrieved kubeadm-config"
-        if sed -i '/feature-gates/d' "${KUBEADM_CONFIGMAP_TMPFILE}"; then
-            if ! grep -q 'RemoveSelfLink=false' "${KUBEADM_CONFIGMAP_TMPFILE}";
-            then
-                LOG "Successfully updated retrieved kubeadm-config"
-            else
-                ERROR 'Failed to update kube-apiserver feature-gates with an unknown error'
-                cleanup_and_exit 1
-            fi
-        else
-            RC=$?
-            ERROR "Failed to update ${KUBEADM_CONFIGMAP_TMPFILE} with error code: [${RC}]"
-            cleanup_and_exit ${RC}
-        fi
-    else
-        LOG "Kubeadm configmap was already updated with RemoveSelfLink=false removed. Nothing to do."
-    fi
-}
-
 # Update feature gates for version 1.22
 function update_feature_gates_v1_22 {
     LOG "Updating kube-apiserver feature-gates in retrieved kubeadm-config"
@@ -155,8 +132,6 @@ until  [ ${counter} -gt ${RETRIES} ]; do
     get_kubeadm_configmap
     if [[ "${K8S_VERSION}" == "v1.21.8" ]]; then
         update_feature_gates_v1_22
-    elif [[ "${K8S_VERSION}" == "v1.23.1" ]]; then
-        update_feature_gates_v1_24
     else
         LOG "No update required for kubeadm configmap"
         break
