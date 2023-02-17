@@ -8,4 +8,6 @@ dl_path:
   sha256sum: cb9182eb19f907899ec75494c17a93a3d8437123c0055311e40c233e3fe15764
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT:
+  GITREVCOUNT:
+    BASE_SRCREV: fcfb04d6214669cc89d55181527c24edcb38c149
+    SRC_DIR: ${MY_REPO}/stx/integ/base/cluster-resource-agents
