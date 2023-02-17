@@ -5,3 +5,5 @@ src_path: centos/files
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
+  SRC_GITREVCOUNT:
+    SRC_BASE_SRCREV: b23d4c84c2f24f5c53c44b460752fcead2d1c8e7
