@@ -216,6 +216,10 @@ kubernetes-1.24.4-node
 kubernetes-1.25.3-client
 kubernetes-1.25.3-kubeadm
 kubernetes-1.25.3-node
+#kubernetes-1.26.1
+kubernetes-1.26.1-client
+kubernetes-1.26.1-kubeadm
+kubernetes-1.26.1-node
 
 #kubernetes-unversioned
 kubernetes-unversioned
