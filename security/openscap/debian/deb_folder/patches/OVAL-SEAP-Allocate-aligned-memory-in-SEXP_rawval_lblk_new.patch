@@ -1,0 +1,52 @@
+From: Evgeny Kolesnikov <ekolesni@redhat.com>
+Date: Thu, 28 Jul 2022 14:05:55 +0200
+Subject: OVAL/SEAP: Allocate aligned memory in SEXP_rawval_lblk_new
+
+The lblk pointer is affected by 2-bit LSB magic SEAP uses
+for reference-counting. On 32-bit platforms it requires extra
+alignment.
+
+Origin: upstream, https://github.com/OpenSCAP/openscap/commit/13e04d95e1ddee11c5b76336df83aea26d9ff065
+---
+ src/OVAL/probes/SEAP/sexp-value.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/src/OVAL/probes/SEAP/sexp-value.c b/src/OVAL/probes/SEAP/sexp-value.c
+index b8b3ed6..baa2354 100644
+--- a/src/OVAL/probes/SEAP/sexp-value.c
++++ b/src/OVAL/probes/SEAP/sexp-value.c
+@@ -106,8 +106,10 @@ uintptr_t SEXP_rawval_lblk_new (uint8_t sz)
+ {
+         _A(sz < 16);
+ 
+-	struct SEXP_val_lblk *lblk = malloc(sizeof(struct SEXP_val_lblk));
+-	lblk->memb = malloc(sizeof(SEXP_t) * (1 << sz));
++        struct SEXP_val_lblk *lblk = oscap_aligned_malloc(
++                sizeof(struct SEXP_val_lblk),
++                SEXP_LBLK_ALIGN);
++        lblk->memb = malloc(sizeof(SEXP_t) * (1 << sz));
+ 
+         lblk->nxsz = ((uintptr_t)(NULL) & SEXP_LBLKP_MASK) | ((uintptr_t)sz & SEXP_LBLKS_MASK);
+         lblk->refs = 1;
+@@ -517,8 +519,8 @@ void SEXP_rawval_lblk_free (uintptr_t lblkp, void (*func) (SEXP_t *))
+                         func (lblk->memb + lblk->real);
+                 }
+ 
+-		free(lblk->memb);
+-		free(lblk);
++                free(lblk->memb);
++                oscap_aligned_free(lblk);
+ 
+                 if (next != NULL)
+                         SEXP_rawval_lblk_free ((uintptr_t)next, func);
+@@ -539,8 +541,8 @@ void SEXP_rawval_lblk_free1 (uintptr_t lblkp, void (*func) (SEXP_t *))
+                         func (lblk->memb + lblk->real);
+                 }
+ 
+-		free(lblk->memb);
+-		free(lblk);
++                free(lblk->memb);
++                oscap_aligned_free(lblk);
+         }
+ 
+         return;

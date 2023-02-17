@@ -1,3 +1,0 @@
-# build from OpenSCAP xccdf ressources
-openscap source: source-is-missing xsl/xccdf-resources/openscap.js line length is 263 characters (>256)
-openscap source: source-is-missing xsl/xccdf-resources/bootstrap.min.js

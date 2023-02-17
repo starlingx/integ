@@ -1,3 +1,9 @@
-011_remove_custom_rpath.patch
 010_perlpm_install_fix.patch
-001_fix_kfreebsd_probe.patch
+create-diagrams-when-generating-Doxygen-documen.patch
+create-Doxygen-diagrams-as-svg.patch
+update-whatis-entry.patch
+remove-superfluous-strdup.patch
+add-missing-free.patch
+OVAL-SEAP-Allocate-aligned-memory-in-SEXP_rawval_lblk_new.patch
+run-a-minor-testsuite.patch
+use-correct-includes.patch

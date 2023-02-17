@@ -2,39 +2,50 @@
 # -*- makefile -*-
 
 # Uncomment this to turn on verbose mode.
-export DH_VERBOSE=1
+#export DH_VERBOSE=1
 
 export DEB_BUILD_MAINT_OPTIONS := hardening=+all
 
-DEFAULTPY=$(shell py3versions -v -d)
-PYVERSIONS=$(shell py3versions -v -r)
-ALLPY=$(PYVERSIONS)
+PYVERS=$(shell py3versions --supported --version)
 PERL_VERSION:=$(shell perl -e 'my @ver=split /\./, sprintf("%vd", $$^V); print("$$ver[0].$$ver[1]");')
-CMAKE_OPTS=-DENABLE_DOCS=ON =DOEPNSCAP_PROBE_UNIX_GCONF=OFF -DGCONF_LIBRARY=
+CMAKE_OPTS = -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON \
+	     -DENABLE_DOCS=ON \
+	     -DENABLE_PERL=ON \
+	     -DOPENSCAP_PROBE_UNIX_GCONF=OFF \
+	     -DGCONF_LIBRARY= \
+	     -DPERL_VERSION=$(PERL_VERSION) \
+	     -DPYTHON_EXECUTABLE=/usr/bin/python$$V
 
-override_dh_auto_configure: $(ALLPY:%=override_dh_auto_configure-%)
+override_dh_auto_clean:
+	for V in $(PYVERS); do \
+		dh_auto_clean --builddir=build-py$$V ; \
+	done
 
-override_dh_auto_configure-%:
-	dh_auto_configure -Bbuild-python-$* -- --enable-sce --enable-perl -DPERL_VERSION=$(PERL_VERSION) PYTHON=/usr/bin/python$* $(CMAKE_OPTS)
+override_dh_auto_configure:
+	for V in $(PYVERS); do \
+		dh_auto_configure --builddir=build-py$$V -- \
+			$(CMAKE_OPTS) ; \
+	done
 
-override_dh_auto_build: $(ALLPY:%=override_dh_auto_build-%)
+override_dh_auto_build:
+	for V in $(PYVERS); do \
+		dh_auto_build --builddir=build-py$$V ; \
+	done
 
-override_dh_auto_build-%:
-	dh_auto_build -Bbuild-python-$*
+override_dh_auto_install:
+	# Move Python files to separate folders so they don't overwrite
+	# each other at install time.
+	for V in $(PYVERS); do \
+		dh_auto_install --builddir=build-py$$V ; \
+		mv ${CURDIR}/debian/tmp/usr/lib/python3 ${CURDIR}/debian/tmp/usr/lib/python$$V ; \
+		chmod 0644 ${CURDIR}/debian/tmp/usr/lib/python$$V/dist-packages/openscap_py.py ; \
+		chmod 0644 ${CURDIR}/debian/tmp/usr/lib/python$$V/dist-packages/openscap_api.py ; \
+	done
 
-override_dh_auto_install: $(ALLPY:%=override_dh_auto_install-%)
 	find debian/tmp -name "*.la" -delete
-	rm -f debian/libopenscap-dev/usr/share/doc/libopenscap-dev/html/jquery.js
 	mv debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/perl5/$(PERL_VERSION)* debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/perl5/$(PERL_VERSION)
-	chrpath -d debian/tmp/usr/bin/oscap
-	chrpath -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libopenscap.so.*
-	chrpath -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libopenscap_sce.so.*
-	chrpath -d debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/perl5/5.*/openscap_pm.so
-	chmod 0644 debian/tmp/usr/lib/python3/dist-packages/openscap_py.py
-	chmod 0644 debian/tmp/usr/lib/python3/dist-packages/openscap_api.py
-
-override_dh_auto_install-%:
-	dh_auto_install -Bbuild-python-$* --destdir=debian/tmp
+	$(RM) $(CURDIR)/debian/tmp/usr/share/doc/openscap/html/*.md5 \
+	      $(CURDIR)/debian/tmp/usr/share/doc/openscap/html/*.map
 
 override_dh_strip:
 	dh_strip -popenscap-scanner --dbgsym-migration='libopenscap8-dbg (<< 1.3.4-1.1~)'
@@ -42,8 +53,22 @@ override_dh_strip:
 	dh_strip -ppython3-openscap --dbgsym-migration='libopenscap8-dbg (<< 1.3.4-1.1~)'
 	dh_strip -plibopenscap-perl --dbgsym-migration='libopenscap8-dbg (<< 1.3.4-1.1~)'
 
-override_dh_auto_clean:
-	rm -rf build-*
+override_dh_python3:
+	dh_python3 -popenscap-utils -ppython3-openscap --shebang=/usr/bin/python3
+
+override_dh_installchangelogs:
+	dh_installchangelogs NEWS
+
+override_dh_auto_test:
+	for V in $(PYVERS); do \
+		dh_auto_test --builddir=build-py$$V ; \
+	done
+
+execute_before_dh_missing:
+	$(RM) $(CURDIR)/debian/tmp/lib/systemd/system/oscap-remediate.service \
+	      $(CURDIR)/debian/tmp/usr/bin/oscap-remediate-offline \
+	      $(CURDIR)/debian/tmp/usr/libexec/oscap-remediate \
+	      $(CURDIR)/debian/tmp/usr/share/man/man8/oscap-remediate-offline.8
 
 %:
 	dh $@ --with python3

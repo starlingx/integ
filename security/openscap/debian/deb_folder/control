@@ -1,48 +1,52 @@
 Source: openscap
-Priority: optional
-Maintainer: Pierre Chifflier <pollux@debian.org>
-Uploaders: Philippe Thierry <philou@debian.org>
-Build-Depends: debhelper-compat (= 13),
-    cmake,
-    libpcre3-dev,
-    libxml2-dev,
-    libxslt1-dev,
-    swig,
-    python3-all-dev,
-    libperl-dev,
-    libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
-    libgcrypt-dev,
-    libapt-pkg-dev,
-    libselinux1-dev [linux-any],
-    libcap-dev [linux-any],
-    libattr1-dev,
-    libldap2-dev,
-    libbz2-dev,
-    libacl1-dev,
-    libblkid-dev,
-    libglib2.0-dev,
-    libyaml-dev,
-    librpm-dev,
-    libpopt-dev,
-    libprocps-dev,
-    libopendbx1-dev,
-    libxmlsec1-dev,
-    doxygen, graphviz,
-    asciidoc,
-    pkg-config,
-    dh-python,
-    chrpath,
-    libdbus-1-dev
 Section: admin
-X-Python3-Version: >= 3.9
-Standards-Version: 4.5.1
+Priority: optional
+Maintainer: Håvard F. Aasen <havard.f.aasen@pfft.no>
+Build-Depends: cmake,
+               debhelper-compat (= 13),
+               dh-python,
+               libacl1-dev,
+               libapt-pkg-dev,
+               libattr1-dev,
+               libblkid-dev,
+               libbz2-dev,
+               libcap-dev [linux-any],
+               libcurl4-openssl-dev | libcurl4-gnutls-dev,
+               libdbus-1-dev,
+               libgcrypt-dev,
+               libglib2.0-dev,
+               libldap2-dev,
+               libopendbx1-dev,
+               libpcre3-dev,
+               libperl-dev,
+               libpopt-dev,
+               librpm-dev,
+               libselinux1-dev [linux-any],
+               libxml-parser-perl <!nocheck>,
+               libxml-xpath-perl <!nocheck>,
+               libxml2-dev,
+               libxmlsec1-dev,
+               libxslt1-dev,
+               libyaml-dev,
+               pkg-config,
+               python3-all-dev,
+               swig,
+Build-Depends-Indep: asciidoc,
+                     doxygen,
+                     graphviz,
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
 Homepage: https://www.open-scap.org/
+Vcs-Browser: https://salsa.debian.org/debian/openscap
+Vcs-Git: https://salsa.debian.org/debian/openscap.git
 
 Package: libopenscap-dev
 Section: libdevel
 Architecture: linux-any
-Depends: libopenscap25 (= ${binary:Version}), ${misc:Depends}, ${python3:Depends}, libjs-jquery
-Description: Set of libraries enabling integration of the SCAP line of standards
+Depends: libopenscap25 (= ${binary:Version}),
+         ${misc:Depends},
+Suggests: openscap-doc,
+Description: libraries enabling integration of the SCAP line of standards - Development files
  OpenSCAP is a set of open source libraries providing an easier path
  for integration of the SCAP line of standards. SCAP is a line of
  standards managed by NIST with the goal of providing a standard language
@@ -62,11 +66,12 @@ Description: Set of libraries enabling integration of the SCAP line of standards
 Package: libopenscap25
 Section: libs
 Architecture: linux-any
-Conflicts: libopenscap0, libopenscap1, libopenscap3, libopenscap8,
-Replaces: libopenscap0, libopenscap1, libopenscap3, libopenscap8,
-Pre-Depends: ${misc:Pre-Depends}
-Depends: ${shlibs:Depends}, ${misc:Depends},
-Description: Set of libraries enabling integration of the SCAP line of standards
+Conflicts: libopenscap8,
+Replaces: libopenscap8,
+Pre-Depends: ${misc:Pre-Depends},
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: libraries enabling integration of the SCAP line of standards
  OpenSCAP is a set of open source libraries providing an easier path
  for integration of the SCAP line of standards. SCAP is a line of
  standards managed by NIST with the goal of providing a standard language
@@ -86,10 +91,13 @@ Description: Set of libraries enabling integration of the SCAP line of standards
 Package: python3-openscap
 Section: python
 Architecture: linux-any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}, libopenscap25 (= ${binary:Version})
-X-Python3-Version: ${python3:Versions}
-Provides: ${python3:Provides}
-Description: Set of libraries enabling integration of the SCAP line of standards
+Depends: libopenscap25 (= ${binary:Version}),
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends},
+Suggests: openscap-doc,
+Provides: ${python3:Provides},
+Description: libraries enabling integration of the SCAP line of standards - Python 3 bindings
  OpenSCAP is a set of open source libraries providing an easier path
  for integration of the SCAP line of standards. SCAP is a line of
  standards managed by NIST with the goal of providing a standard language
@@ -109,8 +117,12 @@ Description: Set of libraries enabling integration of the SCAP line of standards
 Package: libopenscap-perl
 Section: perl
 Architecture: linux-any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}, libopenscap25 (= ${binary:Version})
-Description: Set of libraries enabling integration of the SCAP line of standards
+Depends: libopenscap25 (= ${binary:Version}),
+         ${misc:Depends},
+         ${perl:Depends},
+         ${shlibs:Depends},
+Suggests: openscap-doc,
+Description: libraries enabling integration of the SCAP line of standards - Perl bindings
  OpenSCAP is a set of open source libraries providing an easier path
  for integration of the SCAP line of standards. SCAP is a line of
  standards managed by NIST with the goal of providing a standard language
@@ -130,8 +142,10 @@ Description: Set of libraries enabling integration of the SCAP line of standards
 Package: openscap-scanner
 Architecture: linux-any
 Depends: libopenscap25 (= ${binary:Version}),
-         ${shlibs:Depends}, ${misc:Depends},
-Recommends: openscap-common (= ${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: openscap-common (= ${source:Version}),
+Suggests: openscap-doc,
 Description: OpenScap Scanner Tool (oscap)
  OpenSCAP is a set of open source libraries providing an easier path
  for integration of the SCAP line of standards. SCAP is a line of
@@ -152,10 +166,14 @@ Description: OpenScap Scanner Tool (oscap)
 
 Package: openscap-utils
 Architecture: linux-any
-Depends: openscap-scanner (= ${binary:Version}), ${python3:Depends},
-         ${shlibs:Depends}, ${misc:Depends}, rpm,
-Recommends: openscap-common (= ${binary:Version}),
-Description: OpenSCAP utilities
+Depends: openscap-scanner (= ${binary:Version}),
+         rpm,
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends},
+Recommends: openscap-common (= ${source:Version}),
+Suggests: openscap-doc,
+Description: libraries enabling integration of the SCAP line of standards - Utility programs
  OpenSCAP is a set of open source libraries providing an easier path
  for integration of the SCAP line of standards. SCAP is a line of
  standards managed by NIST with the goal of providing a standard language
@@ -174,7 +192,10 @@ Description: OpenSCAP utilities
 
 Package: openscap-common
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends},
+Breaks: libopenscap8 (<< 1.3.5),
+Replaces: libopenscap8 (<< 1.3.5),
 Description: OpenSCAP schema files
  OpenSCAP is a set of open source libraries providing an easier path
  for integration of the SCAP line of standards. SCAP is a line of
@@ -191,3 +212,25 @@ Description: OpenSCAP schema files
   * Open Vulnerability and Assessment Language (OVAL)
  .
  This package contains schema files.
+
+Package: openscap-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends},
+Description: libraries enabling integration of the SCAP line of standards - Documentation
+ OpenSCAP is a set of open source libraries providing an easier path
+ for integration of the SCAP line of standards. SCAP is a line of
+ standards managed by NIST with the goal of providing a standard language
+ for the expression of Computer Network Defense related information.
+ .
+ The intended scope of this project is to implement working interface
+ wrappers for parsing and querying SCAP content including:
+  * Common Vulnerabilities and Exposures (CVE)
+  * Common Configuration Enumeration (CCE)
+  * Common Platform Enumeration (CPE)
+  * Common Vulnerability Scoring System (CVSS)
+  * Extensible Configuration Checklist Description Format (XCCDF)
+  * Open Vulnerability and Assessment Language (OVAL)
+ .
+ This package contains documentation.

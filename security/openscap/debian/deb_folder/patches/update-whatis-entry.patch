@@ -1,0 +1,21 @@
+From: Håvard F. Aasen <havard.f.aasen@pfft.no>
+Date: Mon, 11 Jul 2022 08:40:52 +0200
+Subject: [PATCH] Update whatis entry
+
+Origin: upstream, https://github.com/OpenSCAP/openscap/commit/39663ed27e175677260936a4670d79f1e536f132
+---
+ utils/scap-as-rpm.8 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/utils/scap-as-rpm.8 b/utils/scap-as-rpm.8
+index 3a41331eea..b871594c69 100644
+--- a/utils/scap-as-rpm.8
++++ b/utils/scap-as-rpm.8
+@@ -1,6 +1,6 @@
+ .TH scap-as-rpm "8" "November 2013" "scap-as-rpm" "System Administration Utilities"
+ .SH NAME
+-scap-as-rpm \- manual page for scap-as-rpm
++scap-as-rpm \- takes given SCAP input(s) and packs them in an RPM package
+ .SH DESCRIPTION
+ usage: scap\-as\-rpm [\-h] [\-\-pkg\-name PKG_NAME] [\-\-pkg\-version PKG_VERSION]
+ .IP
