@@ -6,4 +6,6 @@ dl_path:
   sha256sum: 9ea0605901282e280b500f22a10f5428ef9c874ad55ad6c2aa1eb7bd71686606
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: a2e4e02ae4f1b7c3d51e3b2217f2274c012c0515
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.22.5

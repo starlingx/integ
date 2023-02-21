@@ -8,4 +8,6 @@ dl_path:
   sha256sum: c1303c274a3bb83fca94fa862454c7110ed131323d54e5614f401b62f3665e3f
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 4493a3146c752e2d3cd11ea8fa964a9399dd8b52
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/etcd

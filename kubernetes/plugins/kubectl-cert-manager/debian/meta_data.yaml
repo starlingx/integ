@@ -10,4 +10,6 @@ dl_files:
     sha256sum: f5a2741db8f5f5db4ab7ad041561b4c541a1ae35923053deadb0afb0e8c16cef
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: fd88bc4684bebbdb5ed9593e6e05749ccb8109fc
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/plugins/kubectl-cert-manager

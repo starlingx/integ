@@ -14,4 +14,6 @@ dl_files:
     sha256sum: 53402edf5ac9f736cb6da8f270f6bbf356dcbbe5592d8a09ee6f91a2dc30e4f6
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: f98b1a5b40c01f54e407d1aaa1a5945c6beeb6c5
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/chartmuseum

@@ -8,4 +8,6 @@ dl_path:
   sha256sum: ce3d08c990c390b3927e9f62a8eb1beff4d49b60da7e997f3a886fc49cf3d911
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 7a094af9d56e05d5ef15bbc41978d376818b8150
+    SRC_DIR: ${MY_REPO}/stx/integ/config/puppet-modules/puppet-etcd-1.12.3
