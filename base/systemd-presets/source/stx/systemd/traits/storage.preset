@@ -68,6 +68,9 @@ enable nfs-client.target
 # isolcpus-device-plugin.spec
 disable isolcpu_plugin.service
 
+# kernel
+enable kdump-tools.service
+
 # k8s-pod-recovery.spec
 disable k8s-pod-recovery.service
 
