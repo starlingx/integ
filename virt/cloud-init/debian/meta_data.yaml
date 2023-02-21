@@ -1,3 +1,4 @@
+---
 debname: cloud-init
 debver: 20.4.1-2+deb11u1
 dl_path:
@@ -6,4 +7,6 @@ dl_path:
   md5sum: e125f0b7651386430cbf6a5e80789b8e
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 6d1244bda94fafc5817aec1848d86ed48f259ca5
+    SRC_DIR: ${MY_REPO}/stx/integ/virt/cloud-init
