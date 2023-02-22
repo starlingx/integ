@@ -5,3 +5,4 @@
 0005-Fix-kwargs-when-internal-opts-are-present.patch
 0006-Refactor-the-use-of-triggers-in-tests.patch
 0007-Add-IPV6-support.patch
+0008-Change-unable-to-route-event-message-log-level-to-de.patch
