@@ -130,4 +130,6 @@ dl_files:
     sha256sum: 23e1465d4aef16349bfb500a5bc7b8d08138b085716c0f2c18d708ea3f326449
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 83065c529895eedd7491662908eb27e7e4beb1ae
+    SRC_DIR: ${MY_REPO}/stx/integ/ceph/ceph
