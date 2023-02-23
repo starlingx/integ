@@ -13,4 +13,6 @@ src_files:
   - libvirt/hooks/qemu
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 1f37f8b5d4c953a71070410745195f33d58a7a60
+    SRC_DIR: ${MY_REPO}/stx/integ/virt/libvirt

@@ -1,3 +1,4 @@
+---
 debname: libvirt-python
 debver: 7.0.0-2
 dl_path:
@@ -6,4 +7,6 @@ dl_path:
   md5sum: 3053719493a919560d6929fc86bcf2b3
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 6420a976d31c90b4f5b6f3d698a7dc2811d1b62b
+    SRC_DIR: ${MY_REPO}/stx/integ/virt/libvirt-python
