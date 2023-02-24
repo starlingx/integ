@@ -1,5 +1,5 @@
 ---
-ver: 4.0.2-1
+debver: 4.0.2-1
 dl_path:
   name: keyrings.alt-debian-4.0.2-1.tar.gz
   url: https://salsa.debian.org/python-team/packages/keyrings.alt/-/archive/debian/4.0.2-1/keyrings.alt-debian-4.0.2-1.tar.gz
@@ -7,4 +7,5 @@ dl_path:
   sha256sum: 2204421931893aab191d78e21a849a269c301681a6911193d2852bb4e77e9ffc
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT:
+  GITREVCOUNT:
+    BASE_SRCREV: de2af4d74df8d7b1d37d07d5f7dbc990e2fda390

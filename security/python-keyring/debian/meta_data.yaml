@@ -7,4 +7,5 @@ dl_path:
   md5sum: b75d88573226d73cc9dbefa0128bb042
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: de2af4d74df8d7b1d37d07d5f7dbc990e2fda390
