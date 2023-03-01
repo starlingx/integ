@@ -1,0 +1,55 @@
+From 45fa2de1f17dd421ac34f3485162b59c981f057c Mon Sep 17 00:00:00 2001
+From: Alan Bandeira <Alan.PortelaBandeira@windriver.com>
+Date: Tue, 28 Mar 2023 12:16:32 -0300
+Subject: [PATCH] Update ldapsetpasswd error message
+
+Signed-off-by: Alan Bandeira <Alan.PortelaBandeira@windriver.com>
+---
+ sbin/ldapsetpasswd | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/sbin/ldapsetpasswd b/sbin/ldapsetpasswd
+index 4cde4d7..452ed0c 100755
+--- a/sbin/ldapsetpasswd
++++ b/sbin/ldapsetpasswd
+@@ -19,6 +19,21 @@
+ #  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+ #  USA.
+ 
++# Password creation rules message
++_BADPASSWDMESSAGE=$(cat << EOF
++BAD PASSWORD!
++Password must comply with the following rules:
++* The password must be at least 7 characters long
++* You cannot reuse the last password in history
++* Every password must differ from its previous one by at least 3 characters
++* The password must contain:
++  - at least 1 lower-case character
++  - at least 1 upper-case character
++  - at least 1 numeric character
++  - at least 1 special character
++EOF
++)
++
+ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]
+ then
+   echo "Usage : $0 <username | uid> [encoded password]"
+@@ -41,13 +56,13 @@ then
+   [ -z "$_PASSWORD" ] && end_die "Invalid password, please try again"
+   # Change user's password
+   _changepassword "$_PASSWORD" "$_ENTRY"
+-  [ $? -eq 0 ] || end_die "Error setting password for user $_ENTRY"
++  [ $? -eq 0 ] || end_die "${_BADPASSWDMESSAGE}"
+   end_ok "Successfully set password for user $_ENTRY"
+ else # Have to use the *encoded* password given on the command line
+   # Use LDIF info to modify the password
+   _PASSWORD="$2"
+   _extractldif 2 | _filterldif | _utf8encode | _ldapmodify
+-  [ $? -eq 0 ] || end_die "Error setting encoded password for user $_ENTRY"
++  [ $? -eq 0 ] || end_die "${_BADPASSWDMESSAGE}"
+   end_ok "Successfully set encoded password for user $_ENTRY"
+ fi
+ 
+-- 
+2.25.1
+

@@ -6,3 +6,4 @@ allow-anonymous-bind-for-ldap-search.patch
 ldapscripts-templates.patch
 install-ldapscripts-files-to-etc.patch
 0001-Reset-password-after-user-is-added.patch
+0001-Update-ldapsetpasswd-error-message.patch
