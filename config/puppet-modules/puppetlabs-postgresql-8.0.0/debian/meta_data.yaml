@@ -8,4 +8,4 @@ dl_path:
     sha256sum: e0abbc0e39d12abff49d0f72e7765c3114276c5b2a430692fdc049d268789fd9
 revision:
     dist: $STX_DIST
-    PKG_GITREVCOUNT: True
+    PKG_GITREVCOUNT: true

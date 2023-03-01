@@ -6,4 +6,4 @@ dl_path:
   md5sum: 0b0bf29ef3962ab2e1ac31b2b0e05181
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: True
+  PKG_GITREVCOUNT: true
