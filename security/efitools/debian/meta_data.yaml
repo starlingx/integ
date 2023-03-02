@@ -9,6 +9,7 @@ dl_path:
   sha256sum: 69f02c5b588b666075ed4d390655cf3bfe7f7e2daae643423cd052e081e1368a
 src_files:
   - debian/uefi_sb_keys
+  - ${MY_REPO}/public-keys/tis-boot.crt
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
