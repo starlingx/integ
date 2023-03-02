@@ -108,19 +108,18 @@ libfacter3.14.12
 #gpu-operator
 gpu-operator
 
+#grub-efi
+#grub-efi-amd64-bin  # not used
+#grub-efi-amd64-dbg  # not used
+#grub-efi-amd64-signed-template  # not used
+grub-efi-amd64
+#grub-efi  # not used
+
 #grub2
 grub-common
 #grub-coreboot-bin  # not used
 #grub-coreboot-dbg  # not used
 #grub-coreboot  # not used
-#grub-efi-amd64-bin  # not used
-#grub-efi-amd64-dbg  # not used
-#grub-efi-amd64-signed-template  # not used
-#grub-efi-amd64  # not used
-#grub-efi-ia32-bin  # not used
-#grub-efi-ia32-dbg  # not used
-#grub-efi-ia32  # not used
-#grub-efi  # not used
 #grub-emu-dbg  # not used
 #grub-emu  # not used
 #grub-firmware-qemu  # not used
