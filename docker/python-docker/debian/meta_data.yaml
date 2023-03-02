@@ -7,4 +7,6 @@ dl_path:
   sha256sum: 339b7d5cbec3c053701940dd3f384bfc1c19a1ef7a2a528adb4b3a4fce7eb0dc
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 999fcb6e5979b5d749b8cba7fb840616389ffa69
+    SRC_DIR: ${MY_REPO}/stx/integ/docker/python-docker

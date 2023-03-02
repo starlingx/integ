@@ -4,4 +4,6 @@ debver: 2.7.1+ds2-7
 archive: https://snapshot.debian.org/archive/debian/20210529T084123Z/pool/main/d/docker-registry
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: b9d28e3c568a843f4707dd8ca58e388f7b7dea04
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/docker-distribution

@@ -8,4 +8,6 @@ dl_path:
   sha256sum: 85c78a35584971625bf1c3bcd46e5404a90396f979d7586f18b11119cb623e24
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: f7309453d401f387f86ead7918bcba2aa7d81f68
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/crictl

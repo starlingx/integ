@@ -8,4 +8,6 @@ dl_path:
   sha256sum: 4f4db518837f7e89e3d65e024353f49ea341c530533cb986ff50d0781f39bee6
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: db16f48a952e3c5da8b2efea7acc723107b2c0a2
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/armada
