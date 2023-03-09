@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019 Wind River Systems, Inc.
+# Copyright (c) 2019-2023 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,8 +14,8 @@
 # "/var/run/.ceph_started" when ceph is running and remove it when
 # is not.
 #
-# The script also extracts  one or more ceph process names  that are
-# reported as 'not running' or 'dead' or 'failed'  by '/etc/intit.d/ceph status'
+# The script also extracts  one or more ceph process names that are
+# reported as 'not running' or 'dead' or 'failed' by '/etc/init.d/ceph status'
 # and writes the names to a text file: /tmp/ceph_status_failure.txt for
 # pmond to access. The pmond adds the text to logs and alarms. Example of text
 # samples written to file by this script are:
@@ -24,7 +24,7 @@
 #   'mon.storage-0'
 #   'mon.storage-0, osd.2'
 #
-# Moreover, for processes that are reported as 'hung' by '/etc/intit.d/ceph status'
+# Moreover, for processes that are reported as 'hung' by '/etc/init.d/ceph status'
 # the script will try increase their logging to 'debug' for a configurable interval.
 # With logging increased it will outputs a few stack traces then, at the end of this
 # interval, it dumps its stack core and kills it.
@@ -42,6 +42,14 @@ CEPH_FILE="$VOLATILE_PATH/.ceph_started"
 CEPH_GET_MON_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_mon_status"
 CEPH_GET_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_osd_status"
 CEPH_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_status_failure.txt"
+
+# For All-in-one duplex, set some variables
+if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
+    CEPH_MON_LIB_PATH=/var/lib/ceph/mon
+    CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_controller_0"
+    CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_controller_1"
+    CEPH_LAST_ACTIVE_CONTROLLER_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_${HOSTNAME/-/_}"
+fi
 
 BINDIR=/usr/bin
 SBINDIR=/usr/sbin
@@ -84,6 +92,114 @@ if [ ! -z $ARGS ]; then
     IFS=";" read -r -a new_args <<< "$ARGS"
     args+=("${new_args[@]}")
 fi
+
+# Verify if drbd-cephmon is in sync, checking the output of 'drbdadm dstate'
+# Return 0 on success and 1 if drbd-cephmon is not ready
+is_drbd_cephmon_in_sync ()
+{
+    local DRBD_CEPHMON_STATUS=$(drbdadm dstate drbd-cephmon)
+    wlog "-" INFO "drbd-cephmon status: ${DRBD_CEPHMON_STATUS}"
+    if [ "${DRBD_CEPHMON_STATUS}" == "UpToDate/UpToDate" ]; then
+        return 0
+    fi
+    return 1
+}
+
+# Verify if drbd-cephmon role is primary, checking the output of 'drbdadm role'
+# Return 0 on success and 1 if drbd-cephmon is not primary
+is_drbd_cephmon_primary ()
+{
+    drbdadm role drbd-cephmon | grep -q 'Primary/'
+    if [ $? -eq 0 ]; then
+        wlog "-" INFO "drbd-cephmon role is Primary"
+        return 0
+    fi
+    wlog "-" INFO "drbd-cephmon role is NOT Primary"
+    return 1
+}
+
+# Verify if drbd-cephmon partition is mounted.
+# Return 0 on success and 1 if drbd-cephmon partition is not mounted
+is_drbd_cephmon_mounted ()
+{
+    findmnt -no SOURCE "${CEPH_MON_LIB_PATH}" | grep -q drbd
+    if [ $? -eq 0 ]; then
+        wlog "-" INFO "drbd-cephmon partition is mounted"
+        return 0
+    fi
+    wlog "-" INFO "drbd-cephmon partition is NOT mounted"
+    return 1
+}
+
+# Verify if ceph mon can be started on AIO-DX configuration.
+# This function must be called only on AIO-DX.
+# Return 0 on success and 1 if ceph mon cannot be started
+can_start_ceph_mon ()
+{
+    local times=""
+
+    # Verify if drbd-cephmon has role Primary
+    # Retries 10 times, 1 second interval
+    for times in {9..0}; do
+        is_drbd_cephmon_primary
+        if [ $? -eq 0 ]; then
+            times=-1
+            break;
+        fi
+        sleep 1
+    done
+
+    if [ ${times} -eq 0 ]; then
+        wlog "-" ERROR "drbd-cephmon is not primary, cannot start ceph mon"
+        return 1
+    fi
+
+    # Check if drbd-cephmon partition is mounted
+    # Retries 10 times, 1 second interval
+    for times in {9..0}; do
+        is_drbd_cephmon_mounted
+        if [ $? -eq 0 ]; then
+            times=-1
+            break;
+        fi
+        sleep 1
+    done
+
+    if [ ${times} -eq 0 ]; then
+        wlog "-" ERROR "drbd-cephmon is not mounted, cannot start ceph mon"
+        return 1
+    fi
+
+    # Ceph mon was last active in this controller. Can run safely.
+    if [ -f "${CEPH_LAST_ACTIVE_CONTROLLER_FLAG}" ]; then
+        return 0
+    fi
+
+    # Check if last active ceph-mon was in another controller
+    if [ "${CEPH_LAST_ACTIVE_CONTROLLER_FLAG}" == "${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}" ]; then
+        local CEPH_OTHER_ACTIVE_CONTROLLER_FLAG="${CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG}"
+    else
+        local CEPH_OTHER_ACTIVE_CONTROLLER_FLAG="${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
+    fi
+    if [ -f "${CEPH_OTHER_ACTIVE_CONTROLLER_FLAG}" ]; then
+        # Verify drbd-cephmon status
+        for times in {9..0}; do
+            is_drbd_cephmon_in_sync
+            if [ $? -eq 0 ]; then
+                # drbd-cephmon is in sync, it is safe to run.
+                return 0
+            fi
+            sleep 1
+        done
+
+        # drbd-cephmon is not in sync, it is not safe to run
+        wlog "-" ERROR "drbd-cephmon is not in sync, cannot start ceph mon"
+        return 1
+    fi
+
+    # This is safe to run ceph mon
+    return 0
+}
 
 with_service_lock ()
 {
@@ -133,9 +249,45 @@ start ()
         # Ceph is not running on this node, return success
         exit 0
     fi
-    wlog "-" INFO "Ceph START $1 command received"
-    with_service_lock "$1" ${CEPH_SCRIPT} start $1
-    wlog "-" INFO "Ceph START $1 command finished."
+
+    local service="$1"
+
+    # For AIO-DX, the mon service has special treatment
+    if [ "${service}" == "mon" ] && [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
+        # After the first controller unlock, ceph-mon is started by
+        # puppet-ceph module via sysvinit using /etc/init.d/ceph directly.
+        # Setting the controller-0 flag to the default prevents
+        # another controller from starting before any host-swact.
+        if [ ! -e "${CEPH_MON_LIB_PATH}"/.last_ceph_mon_active_controller_* ]; then
+            touch "${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
+        fi
+
+        # NOTE: In case of uncontrolled swact, to force start ceph-mon service
+        #       it will be needed to rename the flag to the desired controller.
+        can_start_ceph_mon
+        if [ $? -ne 0 ]; then
+            wlog "-" ERROR "Ceph mon cannot be started now."
+            exit 1
+        fi
+    fi
+
+    # Start the service
+    wlog "-" INFO "Ceph START ${service} command received"
+    with_service_lock "${service}" ${CEPH_SCRIPT} start ${service}
+    wlog "-" INFO "Ceph START ${service} command finished."
+
+    # For AIO-DX, the mon service has special treatment
+    if [ "${service}" == "mon" ] && [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
+        # If ceph-mon is successfully running, clear old flags and set the new one
+        # RC global variable is set by the with_service_lock function trying to start ceph-mon
+        if [ ${RC} -eq 0 ]; then
+            # Remove old flags
+            rm -f "${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
+            rm -f "${CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG}"
+            # Create new flag
+            touch "${CEPH_LAST_ACTIVE_CONTROLLER_FLAG}"
+        fi
+    fi
 }
 
 stop ()

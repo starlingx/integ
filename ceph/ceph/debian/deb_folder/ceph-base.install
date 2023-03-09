@@ -26,6 +26,7 @@ etc/init.d/ceph
 etc/init.d/mgr-restful-plugin
 etc/init.d/ceph-init-wrapper
 etc/ceph/ceph.conf.pmon
+etc/ceph/ceph-mds.conf.pmon
 etc/ceph/ceph.conf
 etc/services.d/*
 usr/sbin/ceph-preshutdown.sh
