@@ -990,19 +990,31 @@ for name in $what; do
 		shopt -s nullglob
 
 		OSD_SERVICES=$(for svc in /run/systemd/system/ceph-osd*.service; do basename $svc; done | xargs echo)
-	    for d in /run/systemd/system/ceph-osd*.d; do
-	        cat <<EOF > $d/starlingx-overrides.conf
+	    for d in /run/systemd/transient/ceph-osd*.scope; do
+	        do_cmd "mkdir -p $d.d"
+	        cat <<EOF > $d.d/starlingx-overrides.conf
 [Unit]
-Before=docker.service
+Before=containerd.service
 After=sm-shutdown.service
 
 EOF
 	    done
 
-	    for d in /run/systemd/system/ceph-mon*.d; do
-	        cat <<EOF > $d/starlingx-overrides.conf
+	    for d in /run/systemd/transient/ceph-mds*.scope; do
+	        do_cmd "mkdir -p $d.d"
+	        cat <<EOF > $d.d/starlingx-overrides.conf
 [Unit]
-Before=docker.service
+Before=containerd.service
+After=sm-shutdown.service
+
+EOF
+	    done
+
+	    for d in /run/systemd/transient/ceph-mon*.scope; do
+	        do_cmd "mkdir -p $d.d"
+	        cat <<EOF > $d.d/starlingx-overrides.conf
+[Unit]
+Before=containerd.service
 After=sm-shutdown.service ${OSD_SERVICES}
 
 EOF
