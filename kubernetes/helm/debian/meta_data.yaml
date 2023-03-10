@@ -23,4 +23,3 @@ revision:
   dist: $STX_DIST
   GITREVCOUNT:
     BASE_SRCREV: f98b1a5b40c01f54e407d1aaa1a5945c6beeb6c5
-    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/helm
