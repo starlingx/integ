@@ -1,14 +1,15 @@
 ---
-debver: 2019.1-1
+debver: 2022.2-1
 dl_files:
   meta-lat.tar.gz:
     topdir: null
-    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20220508.tar.gz
-    md5sum: a4978e36e070aca2f5510ceac0768c84
-    sha256sum: 861ec6ad71991798a936369b9f0eda94210fe192841be81e9b8917666d8da707
+    url: https://github.com/Wind-River/meta-lat/archive/refs/tags/20230307.tar.gz
+    sha256sum: 2331ba52e5196c5f2c9799c577e6fb38c53003fd52b6e831784826d4d3819d08
   ostree.tar.gz:
     topdir: null
-    url: https://salsa.debian.org/debian/ostree/-/archive/debian/2019.1-1/ostree-debian-2019.1-1.tar.gz
-    md5sum: 31b095f28ceb6278964f69198d3e8a03
-    sha256sum: 8446fd6e246bcd0a9e0d72d326547675d1ed14ba2f5cf52d0a5eee2867b0d3ba
+    url: https://salsa.debian.org/debian/ostree/-/archive/debian/2022.2-1/ostree-debian-2022.2-1.tar.gz
+    sha256sum: 842dd6d4e3bc83aa51d865f94803e6ac15a35086b07f3564d4266211f63a682e
 dl_hook: dl_hook
+revision:
+  dist: ${STX_DIST}
+  PKG_GITREVCOUNT: true
