@@ -9,3 +9,4 @@
 0010-wipe-unprepared-disks.patch
 0011-Fix-service-parameter-passing.patch
 0012-Add-multipath-disk-support.patch
+0013-Fix-puppet-ceph-multipath-ceph-partition-detection.patch
