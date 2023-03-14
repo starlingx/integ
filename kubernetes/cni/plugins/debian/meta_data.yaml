@@ -3,7 +3,7 @@ debname: golang-github-containernetworking-plugins
 debver: 1.1.1+ds1-1
 dl_path:
   name: golang-github-containernetworking-plugins-debian-1.1.1+ds1-1.tar.gz
-  url: https://salsa.debian.org/go-team/packages/golang-github-containernetworking-plugins/-/archive/debian/1.1.1+ds1-1/golang-github-containernetworking-plugins-debian-1.1.1+ds1-1.tar.gz
+  url: https://salsa.debian.org/go-team/packages/golang-github-containernetworking-plugins/-/archive/debian/1.1.1+ds1-1/golang-github-containernetworking-plugins-debian-1.1.1+ds1-1.tar.gz # yamllint disable-line rule:line-length
   md5sum: 64cae07a4337f3eae6cc1e1a13ce1af7
   sha256sum: cb08260f6b1136de00d62724911d427870ab2473d030e0909f963a36891fd98d
 revision:

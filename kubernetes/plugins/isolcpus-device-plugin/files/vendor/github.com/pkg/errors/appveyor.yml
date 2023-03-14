@@ -1,3 +1,4 @@
+---
 version: build-{build}.{branch}
 
 clone_folder: C:\gopath\src\github.com\pkg\errors
@@ -29,4 +30,4 @@ test_script:
 
 #artifacts:
 #  - path: '%GOPATH%\bin\*.exe'
-deploy: off
+deploy: off # yamllint disable-line rule:truthy

@@ -1,3 +1,4 @@
+---
 language: go
 go_import_path: k8s.io/klog
 dist: xenial
