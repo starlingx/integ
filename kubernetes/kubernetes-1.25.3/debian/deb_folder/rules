@@ -67,18 +67,18 @@ override_dh_install:
 	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d
 	install -p -m 0644 -t ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d debian/kubeadm.conf
 	install -p -m 0700 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} debian/kubelet-cgroup-setup.sh
-	install -p -m 754 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubelet
-	install -p -m 754 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubectl
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubelet
+	install -p -m 755 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubectl
 	# bash completions
 	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/
 	${DEBIAN_DESTDIR}${_stage2}${_bindir}/kubectl completion bash > ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/kubectl
 
 	# remaining are not kube_version staged, i.e., kubernetes-master, kubernetes-misc
 	install -m 755 -d ${DEBIAN_DESTDIR}${_bindir}
-	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-apiserver
-	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-controller-manager
-	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-scheduler
-	install -p -m 754 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-proxy
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-apiserver
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-controller-manager
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-scheduler
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-proxy
 
 	# specific cluster addons for optional use
 	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons
