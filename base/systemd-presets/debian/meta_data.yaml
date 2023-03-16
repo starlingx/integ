@@ -5,3 +5,5 @@ src_path: source
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
+  SRC_GITREVCOUNT:
+    SRC_BASE_SRCREV: 9349acf6f7857bcdf63c655cd45cca87b34d7aa
