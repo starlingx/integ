@@ -12,5 +12,3 @@ src_files:
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
-  FILES_GITREVCOUNT:
-    - 0293c76b36dbd902ccad258c71b0d79069a88307
