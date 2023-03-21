@@ -1,0 +1,61 @@
+From 3e3fa7363c871756f489b3b2eeb7472b98db0664 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Tue, 21 Mar 2023 14:39:57 +0800
+Subject: [PATCH] installer: inc number of digits in scripts' names
+
+The sections in kickstart cfg file are chopped up into scripts
+named with number increased.
+They are executed in the default sequence of 'ls' output, which
+aren't aligned with the number in names when the number in name
+is 10 and above.
+To make the scripts run in sequence according to their names,
+increase the number of digits in the names, so that 'ls' can list
+them in number sequence.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ lat-installer.hook | 2 +-
+ lat-installer.sh   | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/lat-installer.hook b/lat-installer.hook
+index 851e3f2..569519e 100755
+--- a/lat-installer.hook
++++ b/lat-installer.hook
+@@ -49,7 +49,7 @@ ks_parse_hook() {
+ 
+     # ${line} starts with ${key}
+     if [ "${line#${key}}" != "${line}" ]; then
+-      script="${script_dir}/${i}_script"
++      script="${script_dir}/$(printf "%02d" ${i})_script"
+     elif [ "${line::4}" = "%end" ]; then
+       chmod a+x ${script}
+       i=$((i+1))
+diff --git a/lat-installer.sh b/lat-installer.sh
+index c4462ca..510897d 100755
+--- a/lat-installer.sh
++++ b/lat-installer.sh
+@@ -402,7 +402,7 @@ ks_pre_script() {
+     [ "${line::1}" = "#" -o "${line::1}" = "" -o "${line::1}" = " " ] && continue
+ 
+     if [ "${line::4}" = "%pre" ]; then
+-      script="${lat_pre_script}/${i}_script"
++      script="${lat_pre_script}/$(printf "%02d" ${i})_script"
+       local shebang=`expr "$line" : '.*--interpreter=\(.*\)[ $]'`
+       if [ -z "$shebang" ]; then
+         shebang="/bin/sh"
+@@ -429,9 +429,9 @@ ks_post_script() {
+     if [ "${line::5}" = "%post" ]; then
+       local nochroot=`expr "$line" : '.* --\(nochroot\)'`
+       if [ "$nochroot" = "nochroot" ]; then
+-        script="${lat_post_nochroot_script}/${i}_script"
++        script="${lat_post_nochroot_script}/$(printf "%02d" ${i})_script"
+       else
+-        script="${lat_post_script}/${i}_script"
++        script="${lat_post_script}/$(printf "%02d" ${i})_script"
+       fi
+ 
+       local shebang=`expr "$line" : '.*--interpreter=\(.*\)[ $]'`
+-- 
+2.25.1
+

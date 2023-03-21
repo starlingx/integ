@@ -9,3 +9,4 @@
 0009-Allow-specifying-var-device-for-installs.patch
 0010-Add-Installer-and-Init-Multipath-support.patch
 0011-Add-H-W-Settle-time-to-installer-init.patch
+0012-installer-inc-number-of-digits-in-scripts-names.patch
