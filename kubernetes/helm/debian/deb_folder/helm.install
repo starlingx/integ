@@ -4,5 +4,4 @@ usr/local/sbin/helm-upload
 usr/local/sbin/helmv2-cli
 usr/local/share/helm
 usr/local/share/helm/plugins
-usr/local/share/helm/plugins/2to3
 usr/local/share/helm/plugins/mapkubeapis

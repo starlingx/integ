@@ -6,14 +6,11 @@ export ROOT = debian/tmp
 export SBINDIR = $(ROOT)/usr/sbin
 export SUDOERDIR = $(ROOT)/etc/sudoers.d
 
-export HELM_VERSION = 3.2.1
+export HELM_VERSION = 3.9.4
 export HELM_EXECUTABLE = linux-amd64/helm
 export HELM_PKG = helm-v$(HELM_VERSION)-linux-amd64.tar.gz
 
-export HELM_2TO3_VERSION = 0.10.0
-export HELM_2TO3_PKG = helm-2to3_$(HELM_2TO3_VERSION).tar.gz
-
-export HELM_MAPKUBEAPIS_VERSION =  0.3.0
+export HELM_MAPKUBEAPIS_VERSION =  0.3.2
 export HELM_MAPKUBEAPIS_PKG = helm-mapkubeapis_$(HELM_MAPKUBEAPIS_VERSION).tar.gz
 
 %:
@@ -22,7 +19,6 @@ export HELM_MAPKUBEAPIS_PKG = helm-mapkubeapis_$(HELM_MAPKUBEAPIS_VERSION).tar.g
 override_dh_auto_build:
 	# Extract the third party helm package downloaded in dl_hook.
 	tar xfz $(HELM_PKG)
-	tar xfz $(HELM_2TO3_PKG)
 	tar xfz $(HELM_MAPKUBEAPIS_PKG)
 
 override_dh_auto_install:
@@ -35,9 +31,6 @@ override_dh_auto_install:
 	install -p -D -m 440 helm.sudo $(SUDOERDIR)/helm
 	install -d -m 755 $(ROOT)/usr/local/share/helm
 	install -d -m 755 $(ROOT)/usr/local/share/helm/plugins
-	cp -R 2to3 $(ROOT)/usr/local/share/helm/plugins/
-	install -d -m 755 $(ROOT)/usr/local/share/helm/plugins/2to3/bin
-	mv $(ROOT)/usr/local/share/helm/plugins/2to3/2to3 $(ROOT)/usr/local/share/helm/plugins/2to3/bin
 	cp -R mapkubeapis $(ROOT)/usr/local/share/helm/plugins/
 
 override_dh_usrlocal:
