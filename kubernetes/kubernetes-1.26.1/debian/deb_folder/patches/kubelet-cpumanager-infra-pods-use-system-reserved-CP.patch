@@ -1,0 +1,166 @@
+From 6c9e22271647302c86578243de6d124ede78d829 Mon Sep 17 00:00:00 2001
+From: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Date: Mon, 7 Nov 2022 09:48:01 -0500
+Subject: [PATCH 07/10] kubelet cpumanager infra pods use system reserved CPUs
+
+This assigns system infrastructure pods to the "reserved" cpuset
+to isolate them from the shared pool of CPUs.
+
+Infrastructure pods include any pods that belong to the kube-system,
+armada, cert-manager, vault, platform-deployment-manager, portieris,
+notification, flux-helm or metrics-server namespaces.
+
+The implementation is a bit simplistic, it is assumed that the
+"reserved" cpuset is large enough to handle all infrastructure pods
+CPU allocations.
+
+This also prevents infrastucture pods from using Guaranteed resources.
+
+Co-authored-by: Jim Gauld <james.gauld@windriver.com>
+Signed-off-by: Gleb Aronsky <gleb.aronsky@windriver.com>
+Signed-off-by: Thiago Miranda <ThiagoOliveira.Miranda@windriver.com>
+Signed-off-by: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Signed-off-by: Sachin Gopala Krishna <saching.krishna@windriver.com>
+---
+ pkg/kubelet/cm/cpumanager/policy_static.go    | 50 ++++++++++++++++---
+ .../cm/cpumanager/policy_static_test.go       | 19 ++++++-
+ 2 files changed, 62 insertions(+), 7 deletions(-)
+
+diff --git a/pkg/kubelet/cm/cpumanager/policy_static.go b/pkg/kubelet/cm/cpumanager/policy_static.go
+index 4c4164a9099..180d018565c 100644
+--- a/pkg/kubelet/cm/cpumanager/policy_static.go
++++ b/pkg/kubelet/cm/cpumanager/policy_static.go
+@@ -56,6 +56,11 @@ func (e SMTAlignmentError) Type() string {
+ 	return ErrorSMTAlignment
+ }
+ 
++// Define namespaces used by platform infrastructure pods
++var infraNamespaces = [...]string{
++	"kube-system", "armada", "cert-manager", "platform-deployment-manager", "portieris", "vault", "notification", "flux-helm", "metrics-server",
++}
++
+ // staticPolicy is a CPU manager policy that does not change CPU
+ // assignments for exclusively pinned guaranteed containers after the main
+ // container process starts.
+@@ -128,11 +133,11 @@ func NewStaticPolicy(topology *topology.CPUTopology, numReservedCPUs int, reserv
+ 	klog.InfoS("Static policy created with configuration", "options", opts)
+ 
+ 	policy := &staticPolicy{
+-		topology:    topology,
+-		affinity:    affinity,
++		topology:        topology,
++		affinity:        affinity,
+ 		excludeReserved: excludeReserved,
+-		cpusToReuse: make(map[string]cpuset.CPUSet),
+-		options:     opts,
++		cpusToReuse:     make(map[string]cpuset.CPUSet),
++		options:         opts,
+ 	}
+ 
+ 	allCPUs := topology.CPUDetails.CPUs()
+@@ -200,8 +205,8 @@ func (p *staticPolicy) validateState(s state.State) error {
+ 	// - user tampered with file
+ 	if !p.excludeReserved {
+ 		if !p.reserved.Intersection(tmpDefaultCPUset).Equals(p.reserved) {
+-				return fmt.Errorf("not all reserved cpus: \"%s\" are present in defaultCpuSet: \"%s\"",
+-					p.reserved.String(), tmpDefaultCPUset.String())
++			return fmt.Errorf("not all reserved cpus: \"%s\" are present in defaultCpuSet: \"%s\"",
++				p.reserved.String(), tmpDefaultCPUset.String())
+ 		}
+ 	}
+ 	// 2. Check if state for static policy is consistent
+@@ -276,6 +281,25 @@ func (p *staticPolicy) updateCPUsToReuse(pod *v1.Pod, container *v1.Container, c
+ }
+ 
+ func (p *staticPolicy) Allocate(s state.State, pod *v1.Pod, container *v1.Container) (rerr error) {
++	// Process infra pods before guaranteed pods
++	if isKubeInfra(pod) {
++		// Container belongs in reserved pool.
++		// We don't want to fall through to the p.guaranteedCPUs() clause below so return either nil or error.
++		if _, ok := s.GetCPUSet(string(pod.UID), container.Name); ok {
++			klog.Infof("[cpumanager] static policy: reserved container already present in state, skipping (namespace: %s, pod UID: %s, pod: %s, container: %s)", pod.Namespace, string(pod.UID), pod.Name, container.Name)
++			return nil
++		}
++
++		cpuset := p.reserved
++		if cpuset.IsEmpty() {
++			// If this happens then someone messed up.
++			return fmt.Errorf("[cpumanager] static policy: reserved container unable to allocate cpus (namespace: %s, pod UID: %s, pod: %s, container: %s); cpuset=%v, reserved:%v", pod.Namespace, string(pod.UID), pod.Name, container.Name, cpuset, p.reserved)
++		}
++		s.SetCPUSet(string(pod.UID), container.Name, cpuset)
++		klog.Infof("[cpumanager] static policy: reserved: AddContainer (namespace: %s, pod UID: %s, pod: %s, container: %s); cpuset=%v", pod.Namespace, string(pod.UID), pod.Name, container.Name, cpuset)
++		return nil
++	}
++
+ 	numCPUs := p.guaranteedCPUs(pod, container)
+ 	if numCPUs == 0 {
+ 		// container belongs in the shared pool (nothing to do; use default cpuset)
+@@ -401,6 +425,10 @@ func (p *staticPolicy) guaranteedCPUs(pod *v1.Pod, container *v1.Container) int
+ 	if cpuQuantity.Value()*1000 != cpuQuantity.MilliValue() {
+ 		return 0
+ 	}
++	// Infrastructure pods use reserved CPUs even if they're in the Guaranteed QoS class
++	if isKubeInfra(pod) {
++		return 0
++	}
+ 	// Safe downcast to do for all systems with < 2.1 billion CPUs.
+ 	// Per the language spec, `int` is guaranteed to be at least 32 bits wide.
+ 	// https://golang.org/ref/spec#Numeric_types
+@@ -619,6 +647,16 @@ func (p *staticPolicy) generateCPUTopologyHints(availableCPUs cpuset.CPUSet, reu
+ 	return hints
+ }
+ 
++// check if a given pod is in a platform infrastructure namespace
++func isKubeInfra(pod *v1.Pod) bool {
++	for _, namespace := range infraNamespaces {
++		if namespace == pod.Namespace {
++			return true
++		}
++	}
++	return false
++}
++
+ // isHintSocketAligned function return true if numa nodes in hint are socket aligned.
+ func (p *staticPolicy) isHintSocketAligned(hint topologymanager.TopologyHint, minAffinitySize int) bool {
+ 	numaNodesBitMask := hint.NUMANodeAffinity.GetBits()
+diff --git a/pkg/kubelet/cm/cpumanager/policy_static_test.go b/pkg/kubelet/cm/cpumanager/policy_static_test.go
+index 80a0c5a9e70..414e5ce144c 100644
+--- a/pkg/kubelet/cm/cpumanager/policy_static_test.go
++++ b/pkg/kubelet/cm/cpumanager/policy_static_test.go
+@@ -939,7 +939,8 @@ func TestStaticPolicyStartWithResvList(t *testing.T) {
+ }
+ 
+ func TestStaticPolicyAddWithResvList(t *testing.T) {
+-
++	infraPod := makePod("fakePod", "fakeContainer2", "200m", "200m")
++	infraPod.Namespace = "kube-system"
+ 	testCases := []staticPolicyTestWithResvList{
+ 		{
+ 			description:     "GuPodSingleCore, SingleSocketHT, ExpectError",
+@@ -981,6 +982,22 @@ func TestStaticPolicyAddWithResvList(t *testing.T) {
+ 			expCPUAlloc:     true,
+ 			expCSet:         cpuset.NewCPUSet(4, 5),
+ 		},
++		{
++			description:     "InfraPod, SingleSocketHT, ExpectAllocReserved",
++			topo:            topoSingleSocketHT,
++			numReservedCPUs: 2,
++			reserved:        cpuset.NewCPUSet(0, 1),
++			stAssignments: state.ContainerCPUAssignments{
++				"fakePod": map[string]cpuset.CPUSet{
++					"fakeContainer100": cpuset.NewCPUSet(2, 3, 6, 7),
++				},
++			},
++			stDefaultCPUSet: cpuset.NewCPUSet(4, 5),
++			pod:             infraPod,
++			expErr:          nil,
++			expCPUAlloc:     true,
++			expCSet:         cpuset.NewCPUSet(0, 1),
++		},
+ 	}
+ 
+ 	testExcl := true
+-- 
+2.25.1
+
