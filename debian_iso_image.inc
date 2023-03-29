@@ -106,7 +106,7 @@ facter
 libfacter3.14.12
 
 #gpu-operator
-gpu-operator
+#gpu-operator
 
 #grub-efi
 #grub-efi-amd64-bin  # not used
