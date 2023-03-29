@@ -1,0 +1,27 @@
+From da2d00927912096fa53ab204c6b6332123288135 Mon Sep 17 00:00:00 2001
+From: Dostoievski Batista <dostoievski.albinobatista@windriver.com>
+Date: Mon, 3 Apr 2023 08:53:00 -0300
+Subject: [PATCH] Disabling test that may cause hanging on building process
+
+Signed-off-by: Dostoievski Batista <dostoievski.albinobatista@windriver.com>
+---
+ debian/rules | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/debian/rules b/debian/rules
+index 1d632f2..68d71be 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -313,6 +313,9 @@ PROFILE_EXCLUDES += \
+ PROFILE_EXCLUDES += \
+ 	test_cmd_line_script test_zipimport_support
+ 
++PROFILE_EXCLUDES += \
++	test_builtin test_openpty
++
+ # TODO: update profiled-build.diff to support --next
+ #       --next=20
+ PROFILE_TASK = ../Lib/test/regrtest.py \
+-- 
+2.25.1
+
