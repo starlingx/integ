@@ -230,15 +230,6 @@ ldapscripts
 #libfdt
 libfdt
 
-#libvirt
-libvirt0
-libvirt-clients
-libvirt-daemon
-libvirt-daemon-driver-lxc
-libvirt-daemon-driver-qemu
-libvirt-daemon-driver-storage-gluster
-libvirt-login-shell
-
 #lighttpd
 #lighttpd-doc  # not used
 #lighttpd-mod-authn-gssapi  # not used
@@ -386,14 +377,6 @@ python3-openscap
 openvswitch-common
 openvswitch-switch-dpdk
 openvswitch-switch
-
-#qemu
-qemu-block-extra
-qemu-guest-agent
-qemu-system-common
-qemu-system-data
-qemu-system-x86
-qemu-utils
 
 #runc
 #golang-github-opencontainers-runc-dev  # not used
