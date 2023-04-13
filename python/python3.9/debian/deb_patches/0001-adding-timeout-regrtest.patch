@@ -1,0 +1,24 @@
+From b8d2158ba83561554bbc88bcdeb7de16eb776371 Mon Sep 17 00:00:00 2001
+From: Dostoievski Batista <dostoievski.albinobatista@windriver.com>
+Date: Mon, 10 Apr 2023 16:31:49 -0300
+Subject: [PATCH] Adding timeout for regrtest.py
+Signed-off-by: Dostoievski Batista <dostoievski.albinobatista@windriver.com>
+---
+ debian/rules | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index 1d632f2..1bb7f39 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -316,7 +316,7 @@ PROFILE_EXCLUDES += \
+ # TODO: update profiled-build.diff to support --next
+ #       --next=20
+ PROFILE_TASK = ../Lib/test/regrtest.py \
+-	-s \
++	-s --timeout 240 \
+ 	-j 1 -unone,decimal \
+ 	-x $(sort $(TEST_EXCLUDES) $(PROFILE_EXCLUDES))
+ 
+-- 
+2.25.1
