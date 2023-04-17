@@ -1,2 +1,0 @@
-BUILDER=docker
-LABEL=stx-libvirt

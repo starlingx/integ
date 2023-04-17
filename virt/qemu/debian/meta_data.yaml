@@ -1,9 +1,0 @@
----
-debname: qemu
-debver: 5.2+dfsg-11+deb11u2
-archive: https://snapshot.debian.org/archive/debian/20221109T211529Z/pool/main/q/qemu/
-revision:
-  dist: $STX_DIST
-  GITREVCOUNT:
-    BASE_SRCREV: 75a234904ff66d8656bcac85c54b93cfc9f058df
-    SRC_DIR: ${MY_REPO}/stx/integ/virt/qemu
