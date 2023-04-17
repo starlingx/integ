@@ -1,0 +1,5 @@
+golang-github-containernetworking-plugins (1.2.0) unstable; urgency=medium
+
+  * Updated for stx debian packaging
+
+ -- Mohammad Issa <mohammad.issa@windriver.com>  Fri, 17 Mar 2023 14:44:40 -0400

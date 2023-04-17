@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+export PATH := /usr/lib/go-1.17/bin:$(PATH)
+export DH_VERBOSE := 1
+export DH_GOLANG_GO_GENERATE := 1
+export INSTALL_DIR := $(CURDIR)/debian/plugins
+
+%:
+	dh $@ --buildsystem=golang --with=golang --builddirectory=_build
+
+override_dh_install:
+	dh_install --sourcedir=$(INSTALL_DIR)
