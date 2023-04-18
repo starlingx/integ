@@ -24,6 +24,7 @@ CRI_FILE   += vendor/k8s.io vendor/github.com/docker/docker
 CRI_FILE   += vendor/github.com/containerd/imgcrypt
 
 export DH_GOLANG_EXCLUDES    := $(EXCLUDES)
+export PATH := /usr/lib/go-1.17/bin:$(PATH)
 
 %:
 	dh $@ --buildsystem=golang --with=golang --builddirectory=_build

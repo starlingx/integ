@@ -1,0 +1,27 @@
+From 5a09ae888e41a92bcb76c6d0ec5fe452fe0695bf Mon Sep 17 00:00:00 2001
+From: Yue Tao <yue.tao@windriver.com>
+Date: Tue, 18 Apr 2023 08:41:40 +0000
+Subject: [PATCH] Update to Go 1.17 due to containernetworking-plugins upgraded
+ to v1.2.0
+
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+---
+ debian/control | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/control b/debian/control
+index 57a3a9c..db17fb8 100644
+--- a/debian/control
++++ b/debian/control
+@@ -8,7 +8,7 @@ Uploaders: Tianon Gravi <tianon@debian.org>,
+ Build-Depends: debhelper-compat (= 13),
+                dh-golang,
+                go-md2man,
+-               golang-any,
++               golang-1.17,
+                golang-github-burntsushi-toml-dev,
+                golang-github-containerd-btrfs-dev (>= 0.0~git20200117.1539353~),
+                golang-github-containerd-cgroups-dev (>= 0.0~git20200817.7a3c009~),
+-- 
+2.30.2
+
