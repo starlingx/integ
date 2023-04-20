@@ -1,3 +1,9 @@
+pf-bb-config (22.11) UNRELEASED; urgency=low
+
+  * Upversion to 22.11
+
+ -- Nidhi Shivashankara Belur <nidhi.shivashankara.belur@intel.com> Thu, 30 Mar 2023 17:50:13 +0000
+
 pf-bb-config (22.07) UNRELEASED; urgency=low
 
   * Upversion to 22.07

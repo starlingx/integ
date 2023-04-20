@@ -1,10 +1,10 @@
 ---
-debver: 22.07
+debver: 22.11
 dl_path:
-  name: pf-bb-config-22.07.tar.gz
-  url: https://github.com/intel/pf-bb-config/archive/refs/tags/v22.07.tar.gz
-  md5sum: 84bb65ac65dadd4b238be763c5a112f0
-  sha256sum: cb390b31962918cea7ee1a2802e2e94c8ed39bc4326602646f06adfb5191dcf4
+  name: pf-bb-config-22.11.tar.gz
+  url: https://github.com/intel/pf-bb-config/archive/refs/tags/v22.11.tar.gz
+  md5sum: fc1daa9cc9d6ea864954fef95d465098
+  sha256sum: 28754ef96330a0640f13440bb3fb9a5b825900f03711bcdc0b9be58e01caa55e
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
