@@ -49,6 +49,8 @@ if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; the
     CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_controller_0"
     CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_controller_1"
     CEPH_LAST_ACTIVE_CONTROLLER_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_${HOSTNAME/-/_}"
+
+    CEPH_MON_SHUTDOWN_COMPLETE="${CEPH_MON_LIB_PATH}/.ceph_mon_shutdown_complete"
 fi
 
 BINDIR=/usr/bin
@@ -181,7 +183,13 @@ can_start_ceph_mon ()
     else
         local CEPH_OTHER_ACTIVE_CONTROLLER_FLAG="${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
     fi
+
     if [ -f "${CEPH_OTHER_ACTIVE_CONTROLLER_FLAG}" ]; then
+
+        if [ -f "${CEPH_MON_SHUTDOWN_COMPLETE}" ]; then
+            return 0
+        fi
+
         # Verify drbd-cephmon status
         for times in {9..0}; do
             is_drbd_cephmon_in_sync
@@ -284,6 +292,8 @@ start ()
             # Remove old flags
             rm -f "${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
             rm -f "${CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG}"
+            rm -f "${CEPH_MON_SHUTDOWN_COMPLETE}"
+
             # Create new flag
             touch "${CEPH_LAST_ACTIVE_CONTROLLER_FLAG}"
         fi
@@ -292,9 +302,15 @@ start ()
 
 stop ()
 {
+    local service="$1"
+
     wlog "-" INFO "Ceph STOP $1 command received."
     with_service_lock "$1" ${CEPH_SCRIPT} stop $1
     wlog "-" INFO "Ceph STOP $1 command finished."
+
+    if [ "${service}" == "mon" ] && [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
+        touch "${CEPH_MON_SHUTDOWN_COMPLETE}"
+    fi
 }
 
 restart ()
@@ -304,7 +320,8 @@ restart ()
         exit 0
     fi
     wlog "-" INFO "Ceph RESTART $1 command received."
-    with_service_lock "$1" ${CEPH_SCRIPT} restart $1
+    stop "$1"
+    start "$1"
     wlog "-" INFO "Ceph RESTART $1 command finished."
 }
 
