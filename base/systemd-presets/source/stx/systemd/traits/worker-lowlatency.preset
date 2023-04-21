@@ -7,6 +7,12 @@ disable sw-patch-controller-daemon.service
 enable sw-patch-agent.service
 enable sw-patch.service
 
+# 00-software.preset
+enable software-controller.service
+enable software-controller-daemon.service
+enable software-agent.service
+enable software.service
+
 # 00-controllerconfig.preset
 enable config.service
 
