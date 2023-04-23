@@ -1,0 +1,11 @@
+---
+debname: kata-containers
+debver: 2.0.3
+dl_path:
+  name: kata-static-2.0.3-x86_64.tar.xz
+  url: https://github.com/kata-containers/kata-containers/releases/download/2.0.3/kata-static-2.0.3-x86_64.tar.xz
+  md5sum: 1c47d58603539a1f40df5339c44be59a
+  sha256sum: 3c999b819f2bba68fba4b9b099a7242f5bc8cdc938ebeb622adf2a8479b6dc42
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

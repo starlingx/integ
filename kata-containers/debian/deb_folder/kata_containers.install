@@ -1,0 +1,87 @@
+opt/kata/bin/containerd-shim-kata-v2 /usr/bin/
+opt/kata/bin/kata-runtime /usr/bin/
+opt/kata/bin/kata-collect-data.sh /usr/bin/
+opt/kata/share/kata-containers/vmlinux-5.4.71-84 /usr/share/kata-containers/
+opt/kata/share/kata-containers/vmlinuz-virtiofs.container /usr/share/kata-containers/
+opt/kata/share/kata-containers/vmlinuz.container /usr/share/kata-containers/
+opt/kata/share/kata-containers/kata-containers-image_clearlinux_2.0.3_agent_ef11ce13ea.img /usr/share/kata-containers/
+opt/kata/share/kata-containers/vmlinux-kata-v5.6-april-09-2020-84-virtiofs /usr/share/kata-containers/
+opt/kata/share/kata-containers/kata-containers-initrd_alpine_2.0.3_agent_ef11ce13ea.initrd /usr/share/kata-containers/
+opt/kata/share/kata-containers/vmlinuz-kata-v5.6-april-09-2020-84-virtiofs /usr/share/kata-containers/
+opt/kata/share/kata-containers/kata-containers.img /usr/share/kata-containers/
+opt/kata/share/kata-containers/vmlinux.container /usr/share/kata-containers/
+opt/kata/share/kata-containers/config-5.4.71 /usr/share/kata-containers/
+opt/kata/share/kata-containers/kata-containers-initrd.img /usr/share/kata-containers/
+opt/kata/share/kata-containers/vmlinux-virtiofs.container /usr/share/kata-containers/
+opt/kata/share/kata-containers/vmlinuz-5.4.71-84 /usr/share/kata-containers/
+opt/kata/share/kata-containers/config-kata-v5.6-april-09-2020 /usr/share/kata-containers/
+opt/kata/share/defaults/kata-containers/configuration-qemu.toml /usr/share/defaults/kata-containers/
+opt/kata/share/defaults/kata-containers/configuration-acrn.toml /usr/share/defaults/kata-containers/
+opt/kata/share/defaults/kata-containers/configuration-clh.toml /usr/share/defaults/kata-containers/
+opt/kata/share/defaults/kata-containers/configuration.toml /usr/share/defaults/kata-containers/
+opt/kata/share/defaults/kata-containers/configuration-fc.toml /usr/share/defaults/kata-containers/
+opt/kata/share/bash-completion/completions/kata-runtime /usr/share/bash-completion/completions/
+opt/kata
+opt/kata/bin/cloud-hypervisor
+opt/kata/bin/kata-fc
+opt/kata/bin/kata-qemu-virtiofs
+opt/kata/bin/qemu-system-x86_64
+opt/kata/bin/jailer
+opt/kata/bin/firecracker
+opt/kata/bin/kata-runtime
+opt/kata/bin/kata-qemu
+opt/kata/bin/kata-collect-data.sh
+opt/kata/bin/kata-monitor
+opt/kata/bin/containerd-shim-kata-v2
+opt/kata/bin/kata-clh
+opt/kata/share/kata-containers/vmlinux-5.4.71-84
+opt/kata/share/kata-containers/vmlinuz-virtiofs.container
+opt/kata/share/kata-containers/vmlinuz.container
+opt/kata/share/kata-containers/kata-containers-image_clearlinux_2.0.3_agent_ef11ce13ea.img
+opt/kata/share/kata-containers/vmlinux-kata-v5.6-april-09-2020-84-virtiofs
+opt/kata/share/kata-containers/kata-containers-initrd_alpine_2.0.3_agent_ef11ce13ea.initrd
+opt/kata/share/kata-containers/vmlinuz-kata-v5.6-april-09-2020-84-virtiofs
+opt/kata/share/kata-containers/kata-containers.img
+opt/kata/share/kata-containers/vmlinux.container
+opt/kata/share/kata-containers/config-5.4.71
+opt/kata/share/kata-containers/kata-containers-initrd.img
+opt/kata/share/kata-containers/vmlinux-virtiofs.container
+opt/kata/share/kata-containers/vmlinuz-5.4.71-84
+opt/kata/share/kata-containers/config-kata-v5.6-april-09-2020
+opt/kata/share/defaults/kata-containers/configuration-qemu.toml
+opt/kata/share/defaults/kata-containers/configuration-acrn.toml
+opt/kata/share/defaults/kata-containers/configuration-clh.toml
+opt/kata/share/defaults/kata-containers/configuration.toml
+opt/kata/share/defaults/kata-containers/configuration-fc.toml
+opt/kata/share/kata-qemu/qemu/bios-256k.bin
+opt/kata/share/kata-qemu/qemu/edk2-licenses.txt
+opt/kata/share/kata-qemu/qemu/edk2-i386-code.fd
+opt/kata/share/kata-qemu/qemu/kvmvapic.bin
+opt/kata/share/kata-qemu/qemu/opensbi-riscv32-virt-fw_jump.bin
+opt/kata/share/kata-qemu/qemu/edk2-i386-secure-code.fd
+opt/kata/share/kata-qemu/qemu/edk2-arm-code.fd
+opt/kata/share/kata-qemu/qemu/linuxboot_dma.bin
+opt/kata/share/kata-qemu/qemu/bios.bin
+opt/kata/share/kata-qemu/qemu/edk2-arm-vars.fd
+opt/kata/share/kata-qemu/qemu/edk2-aarch64-code.fd
+opt/kata/share/kata-qemu/qemu/firmware
+opt/kata/share/kata-qemu/qemu/firmware/60-edk2-i386.json
+opt/kata/share/kata-qemu/qemu/firmware/50-edk2-x86_64-secure.json
+opt/kata/share/kata-qemu/qemu/firmware/60-edk2-x86_64.json
+opt/kata/share/kata-qemu/qemu/firmware/50-edk2-i386-secure.json
+opt/kata/share/kata-qemu/qemu/firmware/60-edk2-aarch64.json
+opt/kata/share/kata-qemu/qemu/firmware/60-edk2-arm.json
+opt/kata/share/kata-qemu/qemu/opensbi-riscv64-virt-fw_jump.bin
+opt/kata/share/kata-qemu/qemu/vhost-user
+opt/kata/share/kata-qemu/qemu/vhost-user/50-qemu-virtiofsd.json
+opt/kata/share/kata-qemu/qemu/pvh.bin
+opt/kata/share/kata-qemu/qemu/edk2-x86_64-secure-code.fd
+opt/kata/share/kata-qemu/qemu/edk2-i386-vars.fd
+opt/kata/share/kata-qemu/qemu/efi-virtio.rom
+opt/kata/share/kata-qemu/qemu/opensbi-riscv64-sifive_u-fw_jump.bin
+opt/kata/share/kata-qemu/qemu/bios-microvm.bin
+opt/kata/share/kata-qemu/qemu/opensbi-riscv32-sifive_u-fw_jump.bin
+opt/kata/share/kata-qemu/qemu/linuxboot.bin
+opt/kata/share/kata-qemu/qemu/qemu-nsis.bmp
+opt/kata/share/kata-qemu/qemu/edk2-x86_64-code.fd
+opt/kata/share/bash-completion/completions/kata-runtime

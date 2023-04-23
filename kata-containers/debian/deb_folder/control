@@ -1,0 +1,19 @@
+Source: kata-containers
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: kata-containers
+Architecture: amd64
+Depends: qemu-system-arm [arm64],
+         qemu-system-x86 [amd64], 
+         ${misc:Depends}, 
+         ${shlibs:Depends}
+Description: secure container runtime with lightweight virtual machines
+ Kata Containers is an open source project and community working to build a
+ standard implementation of lightweight Virtual Machines (VMs) that feel and
+ perform like containers, but provide the workload isolation and security
+ advantages of VMs. 
