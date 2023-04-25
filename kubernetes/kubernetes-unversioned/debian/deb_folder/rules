@@ -43,7 +43,6 @@ override_dh_install:
 	install -v -m 644 -t ${DEBIAN_DESTDIR}/etc/${_k8s_name} contrib/init/systemd/environ/kubelet
 	install -v -m 644 -t ${DEBIAN_DESTDIR}/etc/${_k8s_name} contrib/init/systemd/environ/kubelet.kubeconfig
 	install -v -m 644 -t ${DEBIAN_DESTDIR}/etc/${_k8s_name} contrib/init/systemd/environ/proxy
-	install -v -m 644 -t ${DEBIAN_DESTDIR}/etc/${_k8s_name} debian/kubelet_override.yaml
 
 	# install config files
 	install -v -d -m 0755 ${DEBIAN_DESTDIR}/usr/lib/tmpfiles.d

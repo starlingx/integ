@@ -2,7 +2,6 @@ usr/lib/systemd/system/kubelet.service
 etc/kubernetes/config
 etc/kubernetes/kubelet
 etc/kubernetes/kubelet.kubeconfig
-etc/kubernetes/kubelet_override.yaml
 etc/kubernetes/proxy
 etc/systemd/system.conf.d/kubernetes-accounting.conf
 usr/lib/tmpfiles.d/kubernetes.conf
