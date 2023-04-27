@@ -31,7 +31,7 @@ index 0e5b8f3..ffc68a5 100644
  	if [ -e /instboot${INSTL#/sysroot/boot/efi} ] ; then
 -		lpull="--url file:///instboot${INSTL#/sysroot/boot/efi}"
 +		instl_name=$(basename ${INSTL#/sysroot/boot/efi})
-+		cmd="rsync -azr /instboot/${instl_name} /"
++		cmd="rsync -ar /instboot/${instl_name} /"
 +		lpull="--url file:///${instl_name}"
 +		echo "The following rsync command can take a while, please be patient"
 +		echo running: $cmd
