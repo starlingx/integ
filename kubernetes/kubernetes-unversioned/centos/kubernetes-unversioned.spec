@@ -39,8 +39,6 @@ Source2: kubernetes-accounting.conf
 # kubelet config overrides parameters
 Source3: kubelet_override.yaml
 
-Source4: upgrade_k8s_config.sh
-
 Source5: sanitize_kubelet_reserved_cpus.sh
 
 Patch1: kubelet-service-remove-docker-dependency.patch
@@ -101,8 +99,6 @@ install -p -D -m 644 %{SOURCE3} %{buildroot}%{_sysconfdir}/%{_k8s_name}/kubelet_
 
 install -d %{buildroot}%{local_sbindir}
 # install execution scripts
-install -m 700 %{SOURCE4} %{buildroot}/%{local_sbindir}/upgrade_k8s_config.sh
-
 install -m 700 %{SOURCE5} %{buildroot}/%{local_sbindir}/sanitize_kubelet_reserved_cpus.sh
 
 # install service files
@@ -123,7 +119,6 @@ install -v -p -m 0644 -t %{buildroot}/%{_sysconfdir}/systemd/system.conf.d %{SOU
 %dir %{_curr_stage2}
 
 # the following are execution scripts
-%{local_sbindir}/upgrade_k8s_config.sh
 %{local_sbindir}/sanitize_kubelet_reserved_cpus.sh
 
 # the following are symlinks
