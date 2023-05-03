@@ -1,2 +1,2 @@
 kubernetes/armada
-kubernetes/plugins/intel-device-plugin
+#kubernetes/plugins/intel-device-plugin
