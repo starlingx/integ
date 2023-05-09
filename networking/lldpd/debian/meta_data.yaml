@@ -1,10 +1,6 @@
 ---
-debver: 1.0.11-1
-dl_path:
-  name: lldpd-debian-1.0.11-1.tar.gz
-  url: https://salsa.debian.org/debian/lldpd/-/archive/debian/1.0.11-1/lldpd-debian-1.0.11-1.tar.gz
-  md5sum: 2e01f096f54c5e7513489ceb2017896c
-  sha256sum: 72697a6dba04e25387f3e6fea54816121e97059ed8aee85114a8bd784a3ff1ab
+debver: 1.0.11-1+deb11u1
+archive: https://snapshot.debian.org/archive/debian/20230508T030704Z/pool/main/l/lldpd/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
