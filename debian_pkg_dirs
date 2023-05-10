@@ -32,6 +32,7 @@ config/puppet-modules/puppetlabs-mysql-8.1.0
 config/puppet-modules/puppetlabs-postgresql-8.0.0
 config/puppet-modules/puppetlabs-stdlib-5.0.0
 config/puppet-modules/puppet-ldap
+config/puppet-modules/puppet-hash2stuff
 config/puppet-modules/puppet-lvm-1.4.0
 config/puppet-modules/puppet-network
 config/puppet-modules/puppet-puppi

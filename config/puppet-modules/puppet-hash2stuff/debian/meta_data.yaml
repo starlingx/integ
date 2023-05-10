@@ -1,0 +1,10 @@
+---
+debname: puppet-hash2stuff
+debver: 1.2.1-0
+dl_path:
+  name: puppet-hash2stuff-1.2.1-0.tar.gz
+  url: https://codeload.github.com/mmckinst/puppet-hash2stuff/tar.gz/a3e8847d1e11fb92a36ff98b37e30e8a85beb702
+  sha256sum: 9f1ef511a11cf46a5514669bfb34274e2f358db93b6b7a80a791592b6bd991dc
+revision:
+  dist: ${STX_DIST}
+  PKG_GITREVCOUNT: true

@@ -301,6 +301,9 @@ puppet-dnsmasq
 #puppet-drbd-0.5.2
 puppet-drbd
 
+#puppet-hash2stuff
+puppet-hash2stuff
+
 #puppet-etcd-1.12.3
 puppet-module-cristifalcas-etcd
 
