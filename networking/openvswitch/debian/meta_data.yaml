@@ -1,11 +1,10 @@
 ---
 debname: openvswitch
-debver: 2.15.0+ds1-2+deb11u2
+debver: 2.15.0+ds1-2+deb11u4
 dl_path:
-  name: openvswitch-debian-2.15.0+ds1-2+deb11u2.tar.gz
-  url: https://salsa.debian.org/openstack-team/third-party/openvswitch/-/archive/debian/2.15.0+ds1-2+deb11u2/openvswitch-debian-2.15.0+ds1-2+deb11u2.tar.gz
-  md5sum: 1df5943cd57810cb577781f054f92f3b
-  sha256sum: 7514a10ba2d144feb29e09b5e2d4ca506bda023d75aba9387f8681fe2aabee52
+  name: openvswitch-debian-2.15.0+ds1-2+deb11u4.tar.gz
+  url: https://salsa.debian.org/openstack-team/third-party/openvswitch/-/archive/debian/2.15.0+ds1-2+deb11u4/openvswitch-debian-2.15.0+ds1-2+deb11u4.tar.gz
+  sha256sum: 87d2fe0e319f66839eddfc9f6c43b7a3cd9c6c71c1b944107cc0a42d7122efd7
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
