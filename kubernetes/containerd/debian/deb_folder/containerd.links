@@ -1,4 +1,0 @@
-/usr/bin/containerd /usr/local/bin/containerd
-
-# file renaming can be done with dh-exec, this is a simpler workaround
-/usr/local/sbin/k8s-container-cleanup.sh /usr/local/sbin/k8s-container-cleanup

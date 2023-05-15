@@ -1,62 +1,8 @@
 #!/usr/bin/make -f
-
-#
-# Copyright (c) 2022 Wind River Systems, Inc.
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
-# This file based from upstream containerd_1.4.12/debian/rules,
-# modified to install k8s-container-cleanup.sh to /usr/local/sbin.
-
-DEBIAN_BUILDDIR := $(CURDIR)/debian/tmp
-
-include /usr/share/dpkg/default.mk
-
-PKG        := github.com/containerd/containerd
-TAGS       := seccomp apparmor
-GO_LDFLAGS += -X $(PKG)/version.Version=$(DEB_VERSION_UPSTREAM)
-GO_LDFLAGS += -X $(PKG)/version.Revision=$(DEB_VERSION)
-EXCLUDES   += cmd/protoc-gen-gogoctrd cmd/containerd-stress
-EXCLUDES   += runtime/v2/example/cmd
-CRI_FILE   += cmd/containerd/builtins_cri.go vendor/github.com/containerd/cri
-CRI_FILE   += vendor/k8s.io vendor/github.com/docker/docker
-CRI_FILE   += vendor/github.com/containerd/imgcrypt
-
-export DH_GOLANG_EXCLUDES    := $(EXCLUDES)
-export PATH := /usr/lib/go-1.17/bin:$(PATH)
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+export DH_VERBOSE = 1
 
 %:
-	dh $@ --buildsystem=golang --with=golang --builddirectory=_build
+	dh $@
 
-# want dh_userlocal to do nothing since proper debian packages have
-# only empty directories under /usr/local.
-override_dh_usrlocal:
-	# Do Nothing
-
-override_dh_auto_build:
-	dh_auto_build -- -tags '$(TAGS)' -ldflags '$(GO_LDFLAGS)'
-
-execute_after_dh_auto_build:
-	mkdir -p man
-	make man/containerd-config.8
-	make man/containerd-config.toml.5
-	_build/bin/gen-manpages containerd.8 man
-	_build/bin/gen-manpages ctr.8 man
-	rm -vf _build/bin/gen-manpages
-
-	sed 's|/usr/local/bin|/usr/bin|' containerd.service > debian/containerd.service
-	mkdir -vp debian/bash-completion
-	install -m644 -T /usr/share/gocode/src/github.com/urfave/cli/autocomplete/bash_autocomplete \
-		debian/bash-completion/ctr
-	mkdir -vp debian/zsh-completion
-	sed 's|$$PROG|ctr|g' /usr/share/gocode/src/github.com/urfave/cli/autocomplete/zsh_autocomplete > \
-		debian/zsh-completion/_ctr
-
-override_dh_auto_test:
-	dh_auto_test -- -tags '$(TAGS)'
-
-override_dh_auto_install:
-	DH_GOLANG_EXCLUDES="$(EXCLUDES) $(CRI_FILE)" dh_auto_install
-	install -d $(DEBIAN_BUILDDIR)/usr/local/sbin/
-	install -m 755 -p -D k8s-container-cleanup.sh $(DEBIAN_BUILDDIR)/usr/local/sbin/

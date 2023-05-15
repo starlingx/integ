@@ -1,0 +1,26 @@
+Source: containerd
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+ build-info-dev
+Standards-Version: 4.4.1
+Homepage: https://containerd.io/
+
+Package: containerd
+Architecture: linux-any
+Depends: runc (>= 0.1.0~),
+         ${misc:Depends},
+         ${shlibs:Depends},
+Description: open and reliable container runtime
+ Containerd is an industry-standard container runtime with an emphasis on
+ simplicity, robustness and portability. It is available as a daemon for
+ Linux and Windows, which can manage the complete container life cycle of
+ its host system: image transfer and storage, container execution and
+ supervision, low-level storage and network attachments, etc.
+ .
+ Containerd is designed to be embedded into a larger system, rather than
+ being used directly by developers or end-users.
+ .
+ This package contains the binaries.
+
