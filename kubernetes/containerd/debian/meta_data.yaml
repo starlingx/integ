@@ -1,13 +1,16 @@
 ---
 debname: containerd
-debver: 1.4.12~ds1-1
+debver: 1.6.21
 dl_path:
-  name: containerd-debian-1.4.12_ds1-1.tar.gz
-  url: https://salsa.debian.org/go-team/packages/containerd/-/archive/debian/1.4.12_ds1-1_deb11u1/containerd-debian-1.4.12_ds1-1_deb11u1.tar.gz
-  md5sum: 12565b0d12ce878b6315f049e48113cd
-  sha256sum: 00199134fed422a3a8041d7a9f8dd782811e7792ee2e7c298351f026c04b99db
+  name: containerd-1.6.21-linux-amd64.tar.gz
+  url: https://github.com/containerd/containerd/releases/download/v1.6.21/containerd-1.6.21-linux-amd64.tar.gz
+  sha256sum: 04dcc1b99368492caee758583e531392683268197e58156888a3cea2941117b6
+src_files:
+  - debian/files/config.toml
+  - debian/files/containerd.service
+  - debian/files/k8s-container-cleanup.sh
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
-    BASE_SRCREV: 5993c6715c645f39eb0258b62ec38a9e6eeb57bb
+    BASE_SRCREV: 5e9b56a96d58ab5069cb1e6afb856d50450b8875
     SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/containerd
