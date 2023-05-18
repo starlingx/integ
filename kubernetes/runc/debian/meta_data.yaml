@@ -1,11 +1,12 @@
 ---
 debname: runc
-debver: 1.0.2+ds1-2
-dl_path:
-  name: runc-debian-1.0.2+ds1-2.tar.gz
-  url: https://salsa.debian.org/go-team/packages/runc/-/archive/debian/1.0.2+ds1-2/runc-debian-1.0.2+ds1-2.tar.gz
-  md5sum: b5d8a40e5def530abb66f6555c0f55a7
-  sha256sum: 7d4d68f2e9f15881fd55de723ee507fbefc396a184ebbeda0cbc560983fd1689
+debver: 1.1.7
+src_path: null
+dl_files:
+  runc.amd64:
+    topdir: null
+    url: https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64
+    sha256sum: c3aadb419e5872af49504b6de894055251d2e685fddddb981a79703e7f895cbd
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

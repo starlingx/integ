@@ -1,0 +1,16 @@
+Source: runc
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+               dh-exec,
+Standards-Version: 4.6.1
+Homepage: https://github.com/opencontainers/runc
+
+Package: runc
+Architecture: linux-any
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: runc is a CLI tool for spawning and running containers
+ on Linux according to the OCI specification.
+ This package contains the binaries.

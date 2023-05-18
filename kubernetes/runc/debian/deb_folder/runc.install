@@ -1,0 +1,2 @@
+#!/usr/bin/dh-exec --with=install
+runc.amd64 => usr/bin/runc

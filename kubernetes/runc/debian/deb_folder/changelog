@@ -1,0 +1,5 @@
+runc (1.1.7) STABLE; urgency=medium
+
+  * Initial release using binaries from upstream runc package
+
+ -- Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>  Mon, 29 May 2023 04:08:15 -0400
