@@ -165,6 +165,9 @@ k8s-pod-recovery
 #k8s-cni-cache-cleanup
 k8s-cni-cache-cleanup
 
+#kata-containers
+kata-containers
+
 #kubectl-cert-manager
 kubectl-cert-manager
 

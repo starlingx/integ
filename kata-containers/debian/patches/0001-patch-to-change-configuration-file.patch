@@ -1,0 +1,53 @@
+From 02a4ab1606ec7df06a1a34d6be4c05654e2879ac Mon Sep 17 00:00:00 2001
+From: David Liu <david.liu@windriver.com>
+Date: Fri, 2 Jun 2023 02:27:27 -0400
+Subject: [PATCH] patch to change configuration file
+
+Signed-off-by: David Liu <david.liu@windriver.com>
+---
+ .../defaults/kata-containers/configuration-qemu.toml | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/opt/kata/share/defaults/kata-containers/configuration-qemu.toml b/opt/kata/share/defaults/kata-containers/configuration-qemu.toml
+index d451b89..a23a85c 100644
+--- a/opt/kata/share/defaults/kata-containers/configuration-qemu.toml
++++ b/opt/kata/share/defaults/kata-containers/configuration-qemu.toml
+@@ -12,9 +12,9 @@
+ # XXX:   Type: kata
+
+ [hypervisor.qemu]
+-path = "/opt/kata/bin/qemu-system-x86_64"
+-kernel = "/opt/kata/share/kata-containers/vmlinux.container"
+-image = "/opt/kata/share/kata-containers/kata-containers.img"
++path = "/usr/bin/qemu-system-x86_64"
++kernel = "/var/opt/kata/share/kata-containers/vmlinux.container"
++image = "/var/opt/kata/share/kata-containers/kata-containers.img"
+ # initrd = "/opt/kata/share/kata-containers/kata-containers-initrd.img"
+ machine_type = "q35"
+
+@@ -60,7 +60,7 @@ enable_annotations = ["enable_iommu"]
+ # Each member of the list is a path pattern as described by glob(3).
+ # The default if not set is empty (all annotations rejected.)
+ # Your distribution recommends: ["/opt/kata/bin/qemu-system-x86_64"]
+-valid_hypervisor_paths = ["/opt/kata/bin/qemu-system-x86_64"]
++valid_hypervisor_paths = ["/usr/bin/qemu-system-x86_64"]
+
+ # Optional space-separated list of options to pass to the guest kernel.
+ # For example, use `kernel_params = "vsyscall=emulate"` if you are having
+@@ -181,12 +181,12 @@ disable_block_device_use = false
+ shared_fs = "virtio-fs"
+
+ # Path to vhost-user-fs daemon.
+-virtio_fs_daemon = "/opt/kata/libexec/virtiofsd"
++virtio_fs_daemon = "/usr/kata/libexec/virtiofsd"
+
+ # List of valid annotations values for the virtiofs daemon
+ # The default if not set is empty (all annotations rejected.)
+ # Your distribution recommends: ["/opt/kata/libexec/virtiofsd"]
+-valid_virtio_fs_daemon_paths = ["/opt/kata/libexec/virtiofsd"]
++valid_virtio_fs_daemon_paths = ["/usr/kata/libexec/virtiofsd"]
+
+ # Default size of DAX cache in MiB
+ virtio_fs_cache_size = 0
+--
+2.29.2

@@ -55,6 +55,9 @@ golang-github-dev/golang-github-networkplumbing-go-nft-dev
 grub/grub-efi
 grub/grub2
 grub/grubby
+kata-containers
+kubernetes/armada
+kubernetes/armada-helm-toolkit
 kubernetes/chartmuseum
 kubernetes/cni/bond-cni
 kubernetes/cni/plugins
