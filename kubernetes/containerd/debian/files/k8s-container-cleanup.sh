@@ -26,27 +26,43 @@ function ERROR {
     logger -p daemon.error -t "${NAME}($$): " "${@}"
 }
 
-state=$(timeout 10 systemctl is-system-running)
-RC=$?
-LOG "System state is: ${state}, RC = ${RC}."
-case ${RC} in
-    124)
-        # systemctl hung.
-        ERROR "systemctl timed out. System state unknown."
-        ;;
+function do_force_clean {
+    LOG "Stopping all containers."
+    # Use crictl to gracefully stop each container. If specified timeout is
+    # reached, it forcibly kills the container. There is no need to check
+    # return code since there is nothing more we can do, and crictl already
+    # logs to daemon.log.
+    crictl ps -q | xargs -n 10 -r crictl stop --timeout 5
+    LOG "Stopping all containers completed."
+}
 
-    [01])
-        # 0 - running; 1 - initializing, starting, degraded, maintenance, stopping
-        if [ "${state}" = "stopping" ]; then
-            LOG "Stopping all containers."
-            # Use crictl to gracefully stop each container. If specified timeout is
-            # reached, it forcibly kills the container. There is no need to check
-            # return code since there is nothing more we can do, and crictl already
-            # logs to daemon.log.
-            crictl ps -q | xargs -r -I {} crictl stop --timeout 5 {}
-            LOG "Stopping all containers completed."
-            exit 0
-        fi
+case "$1" in
+
+    "")
+        state=$(timeout 10 systemctl is-system-running)
+        RC=$?
+        LOG "System state is: ${state}, RC = ${RC}."
+        case ${RC} in
+            124)
+                # systemctl hung.
+                ERROR "systemctl timed out. System state unknown."
+                exit 0
+                ;;
+
+            1)
+                # 1 - initializing, starting, degraded, maintenance, stopping
+                if [ "${state}" = "stopping" ]; then
+                        do_force_clean
+                fi
+                ;;
+        esac
+        ;;
+    force-clean)
+        do_force_clean
+        ;;
+    *)
+        echo "usage: $0 { force-clean }" >&2
+        exit 3
         ;;
 esac
 
