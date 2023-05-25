@@ -13,7 +13,7 @@ SOURCE7 := ceph-manage-journal.py
 SOURCE8 := ceph.service
 SOURCE9 := mgr-restful-plugin.service
 SOURCE10 := ceph-preshutdown.sh
-SOURCE11 := starlingx-docker-override.conf
+SOURCE11 := stx-containerd-ceph-override.conf
 
 
 # Paths
@@ -197,7 +197,7 @@ override_dh_auto_install:
 	install -D -m 644 ${SOURCE8} $(DESTDIR)/${UNITDIR}/ceph.service
 	install -D -m 644 ${SOURCE9} $(DESTDIR)/${UNITDIR}/mgr-restful-plugin.service
 	install -D -m 700 ${SOURCE10} $(DESTDIR)/${SBINDIR}/ceph-preshutdown.sh
-	install -D -m 644 ${SOURCE11} $(DESTDIR)/${UNITDIR}/docker.service.d/starlingx-docker-override.conf
+	install -D -m 644 ${SOURCE11} $(DESTDIR)/${UNITDIR}/containerd.service.d/stx-containerd-ceph-override.conf
 	install -m 750 src/init-radosgw $(DESTDIR)/${INITDIR}/ceph-radosgw
 	sed -i '/### END INIT INFO/a SYSTEMCTL_SKIP_REDIRECT=1' $(DESTDIR)/${INITDIR}/ceph-radosgw
 	install -m 750 src/init-rbdmap $(DESTDIR)/${INITDIR}/rbdmap

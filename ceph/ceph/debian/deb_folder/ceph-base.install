@@ -30,7 +30,7 @@ etc/ceph/ceph-mds.conf.pmon
 etc/ceph/ceph.conf
 etc/services.d/*
 usr/sbin/ceph-preshutdown.sh
-lib/systemd/system/docker.service.d/starlingx-docker-override.conf
+lib/systemd/system/containerd.service.d/stx-containerd-ceph-override.conf
 lib/systemd/system/ceph.service
 lib/systemd/system/mgr-restful-plugin.service
 
