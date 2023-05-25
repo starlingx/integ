@@ -1,10 +1,9 @@
 ---
-debver: 2.2.9-2+deb11u4
+debver: 2.2.9-2+deb11u5
 dl_path:
-  name: haproxy-debian-2.2.9-2+deb11u4.tar.gz
-  url: https://salsa.debian.org/haproxy-team/haproxy/-/archive/debian/2.2.9-2+deb11u4/haproxy-debian-2.2.9-2+deb11u4.tar.gz
-  md5sum: c5a8b73ff2b5c359bb1289c15c8f20d0
-  sha256sum: dfa52c0f8da5b3585dbb2160d248e8f4961ea590ad1dd4119458e58196917803
+  name: haproxy-debian-2.2.9-2+deb11u5.tar.gz
+  url: https://salsa.debian.org/haproxy-team/haproxy/-/archive/debian/2.2.9-2+deb11u5/haproxy-debian-2.2.9-2+deb11u5.tar.gz
+  sha256sum: 7ac0fbbe15a733fe291031b71e550577310d9a839502102b79598d26f4501a0e
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
