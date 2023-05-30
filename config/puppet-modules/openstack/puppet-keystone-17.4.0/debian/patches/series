@@ -5,3 +5,4 @@
 0005-Replace-deprecated-idle_timeout-parameter.patch
 0006-fix-paths-for-openstack-libs.patch
 0007-Replace-deprecated-hiera-function.patch
+0008-Fix-hiera_lookup-function-to-unescape-characters.patch
