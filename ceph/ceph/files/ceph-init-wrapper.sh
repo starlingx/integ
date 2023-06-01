@@ -42,16 +42,7 @@ CEPH_FILE="$VOLATILE_PATH/.ceph_started"
 CEPH_GET_MON_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_mon_status"
 CEPH_GET_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_osd_status"
 CEPH_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_status_failure.txt"
-
-# For All-in-one duplex, set some variables
-if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
-    CEPH_MON_LIB_PATH=/var/lib/ceph/mon
-    CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_controller_0"
-    CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_controller_1"
-    CEPH_LAST_ACTIVE_CONTROLLER_FLAG="${CEPH_MON_LIB_PATH}/.last_ceph_mon_active_${HOSTNAME/-/_}"
-
-    CEPH_MON_SHUTDOWN_COMPLETE="${CEPH_MON_LIB_PATH}/.ceph_mon_shutdown_complete"
-fi
+CEPH_MON_LIB_PATH=/var/lib/ceph/mon
 
 BINDIR=/usr/bin
 SBINDIR=/usr/sbin
@@ -95,18 +86,6 @@ if [ ! -z $ARGS ]; then
     args+=("${new_args[@]}")
 fi
 
-# Verify if drbd-cephmon is in sync, checking the output of 'drbdadm dstate'
-# Return 0 on success and 1 if drbd-cephmon is not ready
-is_drbd_cephmon_in_sync ()
-{
-    local DRBD_CEPHMON_STATUS=$(drbdadm dstate drbd-cephmon)
-    wlog "-" INFO "drbd-cephmon status: ${DRBD_CEPHMON_STATUS}"
-    if [ "${DRBD_CEPHMON_STATUS}" == "UpToDate/UpToDate" ]; then
-        return 0
-    fi
-    return 1
-}
-
 # Verify if drbd-cephmon role is primary, checking the output of 'drbdadm role'
 # Return 0 on success and 1 if drbd-cephmon is not primary
 is_drbd_cephmon_primary ()
@@ -131,6 +110,43 @@ is_drbd_cephmon_mounted ()
     fi
     wlog "-" INFO "drbd-cephmon partition is NOT mounted"
     return 1
+}
+
+# Verify if oam, cluster host and mgmt networks have carrier.
+# This is a special condition for AIO-DX Direct setup.
+# If all networks have no carrier, then the other host is down.
+# When the other host is down, ceph must start on this host.
+# Return 0 if no carrier is detected on all network interfaces.
+# Return 1 of carrier has been detected in at lease one network interface.
+has_all_network_no_carrier()
+{
+    ip link show "${oam_interface}" | grep NO-CARRIER
+    oam_carrier=$?
+    ip link show "${cluster_host_interface}" | grep NO-CARRIER
+    cluster_host_carrier=$?
+    ip link show "${management_interface}" | grep NO-CARRIER
+    mgmt_carrier=$?
+
+    # Check if all networks have no carrier, meaning the other host is down
+    if [ "${oam_carrier}" -eq 0 ] && [ "${cluster_host_carrier}" -eq 0 ] && [ "${mgmt_carrier}" -eq 0 ]; then
+        wlog "-" INFO "No carrier detected from all network interfaces"
+        return 0
+    fi
+    return 1
+}
+
+# Check mgmt network carrier signal
+has_mgmt_network_carrier()
+{
+    # Checks the carrier (cable connected) for management interface
+    # If no-carrier message is detected, then the interface has no physical link
+    ip link show "${management_interface}" | grep NO-CARRIER
+    if [ $? -eq 0 ]; then
+        wlog "-" INFO "management interface '${management_interface}' has NO-CARRIER, cannot start ceph mon"
+        return 1
+    fi
+    wlog "-" INFO "management interface '${management_interface}' is working"
+    return 0
 }
 
 # Verify if ceph mon can be started on AIO-DX configuration.
@@ -169,39 +185,6 @@ can_start_ceph_mon ()
 
     if [ ${times} -eq 0 ]; then
         wlog "-" ERROR "drbd-cephmon is not mounted, cannot start ceph mon"
-        return 1
-    fi
-
-    # Ceph mon was last active in this controller. Can run safely.
-    if [ -f "${CEPH_LAST_ACTIVE_CONTROLLER_FLAG}" ]; then
-        return 0
-    fi
-
-    # Check if last active ceph-mon was in another controller
-    if [ "${CEPH_LAST_ACTIVE_CONTROLLER_FLAG}" == "${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}" ]; then
-        local CEPH_OTHER_ACTIVE_CONTROLLER_FLAG="${CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG}"
-    else
-        local CEPH_OTHER_ACTIVE_CONTROLLER_FLAG="${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
-    fi
-
-    if [ -f "${CEPH_OTHER_ACTIVE_CONTROLLER_FLAG}" ]; then
-
-        if [ -f "${CEPH_MON_SHUTDOWN_COMPLETE}" ]; then
-            return 0
-        fi
-
-        # Verify drbd-cephmon status
-        for times in {9..0}; do
-            is_drbd_cephmon_in_sync
-            if [ $? -eq 0 ]; then
-                # drbd-cephmon is in sync, it is safe to run.
-                return 0
-            fi
-            sleep 1
-        done
-
-        # drbd-cephmon is not in sync, it is not safe to run
-        wlog "-" ERROR "drbd-cephmon is not in sync, cannot start ceph mon"
         return 1
     fi
 
@@ -260,22 +243,36 @@ start ()
 
     local service="$1"
 
-    # For AIO-DX, the mon service has special treatment
-    if [ "${service}" == "mon" ] && [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
-        # After the first controller unlock, ceph-mon is started by
-        # puppet-ceph module via sysvinit using /etc/init.d/ceph directly.
-        # Setting the controller-0 flag to the default prevents
-        # another controller from starting before any host-swact.
-        if [ ! -e "${CEPH_MON_LIB_PATH}"/.last_ceph_mon_active_controller_* ]; then
-            touch "${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
+    # For AIO-DX, ceph services have special treatment
+    if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; then
+
+        # For ceph mon, check if drbd-cephmon is ready
+        if [ "${service}" == "mon" ]; then
+            can_start_ceph_mon
+            if [ $? -ne 0 ]; then
+                wlog "-" INFO "Ceph monitor is not ready to start because drbd-cephmon is not ready and mounted"
+                exit 1
+            fi
         fi
 
-        # NOTE: In case of uncontrolled swact, to force start ceph-mon service
-        #       it will be needed to rename the flag to the desired controller.
-        can_start_ceph_mon
+        # Check mgmt network state
+        has_mgmt_network_carrier
         if [ $? -ne 0 ]; then
-            wlog "-" ERROR "Ceph mon cannot be started now."
-            exit 1
+            # If this is a AIO-DX Direct, check if all other network interfaces are down
+            if [ "${system_mode}" == "duplex-direct" ]; then
+                has_all_network_no_carrier
+                if [ $? -eq 0 ]; then
+                    wlog "-" INFO "All network interfaces are not functional, considering the other host is down. Let Ceph start."
+                else
+                    # Else AIO-DX Direct mgmt network is NOT functional
+                    wlog "-" INFO "Mgmt network is not functional, defer starting Ceph processes until recovered"
+                    exit 1
+                fi
+            else
+                # Else AIO-DX mgmt network is NOT functional
+                wlog "-" INFO "Mgmt network is not functional, defer starting Ceph processes until recovered"
+                exit 1
+            fi
         fi
     fi
 
@@ -283,21 +280,6 @@ start ()
     wlog "-" INFO "Ceph START ${service} command received"
     with_service_lock "${service}" ${CEPH_SCRIPT} start ${service}
     wlog "-" INFO "Ceph START ${service} command finished."
-
-    # For AIO-DX, the mon service has special treatment
-    if [ "${service}" == "mon" ] && [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
-        # If ceph-mon is successfully running, clear old flags and set the new one
-        # RC global variable is set by the with_service_lock function trying to start ceph-mon
-        if [ ${RC} -eq 0 ]; then
-            # Remove old flags
-            rm -f "${CEPH_LAST_ACTIVE_CONTROLLER_0_FLAG}"
-            rm -f "${CEPH_LAST_ACTIVE_CONTROLLER_1_FLAG}"
-            rm -f "${CEPH_MON_SHUTDOWN_COMPLETE}"
-
-            # Create new flag
-            touch "${CEPH_LAST_ACTIVE_CONTROLLER_FLAG}"
-        fi
-    fi
 }
 
 stop ()
@@ -307,10 +289,6 @@ stop ()
     wlog "-" INFO "Ceph STOP $1 command received."
     with_service_lock "$1" ${CEPH_SCRIPT} stop $1
     wlog "-" INFO "Ceph STOP $1 command finished."
-
-    if [ "${service}" == "mon" ] && [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
-        touch "${CEPH_MON_SHUTDOWN_COMPLETE}"
-    fi
 }
 
 restart ()
@@ -394,6 +372,27 @@ status ()
     fi
 
     if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]] && [[ "$1" == "osd" ]]; then
+        has_mgmt_network_carrier
+        if [ $? -eq 0 ]; then
+            # Network is functional, continue
+            wlog "-" INFO "mgmt network active..."
+        else
+            if [ "${system_mode}" == "duplex-direct" ]; then
+                has_all_network_no_carrier
+                if [ $? -ne 0 ]; then
+                    # Network is NOT functional, prevent split brain corruptions
+                    wlog "-" INFO "mgmt network inactive... stop OSDs to force a re-peering once the network has recovered"
+                    stop "$1"
+                    exit 0
+                fi
+            else
+                # Network is NOT functional, prevent split brain corruptions
+                wlog "-" INFO "mgmt network inactive... stop OSDs to force a re-peering once the network has recovered"
+                stop "$1"
+                exit 0
+            fi
+        fi
+
         timeout $CEPH_STATUS_TIMEOUT ceph -s
         if [ "$?" -ne 0 ]; then
             # Ceph cluster is not accessible. Don't panic, controller swact
@@ -482,6 +481,24 @@ status ()
         test -e "/var/lib/ceph/mon/ceph-controller"
         if [ "$?" -ne 0 ]; then
             exit 3
+        else
+            has_mgmt_network_carrier
+            if [ $? -ne 0 ]; then
+                if [ "${system_mode}" == "duplex-direct" ]; then
+                    has_all_network_no_carrier
+                    if [ $? -ne 0 ]; then
+                        # Network is NOT functional, prevent split brain corruptions
+                        wlog "-" INFO "mgmt network inactive... stop MON to prevent localized operation"
+                        stop "$1"
+                        exit 0
+                    fi
+                else
+                    # Network is NOT functional, prevent split brain corruptions
+                    wlog "-" INFO "mgmt network inactive... stop MON to prevent localized operation"
+                    stop "$1"
+                    exit 0
+                fi
+            fi
         fi
     fi
 }
