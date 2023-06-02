@@ -1,2 +1,17 @@
 0001-grub2-add-tboot.patch
 0002-grub2-checking-if-loop-devices-are-available.patch
+0003-kern-efi-sb-Reject-non-kernel-files-in-the-shim_lock.patch
+0004-video-readers-Add-artificial-limit-to-image-dimensio.patch
+0005-font-Reject-glyphs-exceeds-font-max_glyph_width-or-f.patch
+0006-font-Fix-size-overflow-in-grub_font_get_glyph_intern.patch
+0007-font-Fix-several-integer-overflows-in-grub_font_cons.patch
+0008-font-Remove-grub_font_dup_glyph.patch
+0009-font-Fix-integer-overflow-in-ensure_comb_space.patch
+0010-font-Fix-integer-overflow-in-BMP-index.patch
+0011-font-Fix-integer-underflow-in-binary-search-of-char-.patch
+0012-kern-efi-sb-Enforce-verification-of-font-files.patch
+0013-fbutil-Fix-integer-overflow.patch
+0014-font-Fix-an-integer-underflow-in-blit_comb.patch
+0015-font-Harden-grub_font_blit_glyph-and-grub_font_blit_.patch
+0016-font-Assign-null_font-to-glyphs-in-ascii_font_glyph.patch
+0017-normal-charset-Fix-an-integer-overflow-in-grub_unico.patch
