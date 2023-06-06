@@ -75,7 +75,6 @@ kubernetes/plugins/kubectl-cert-manager
 kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
-livepatch/kpatch
 networking/dpdk
 networking/ifupdown-extra
 networking/iputils

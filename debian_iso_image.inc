@@ -189,12 +189,6 @@ lvm2
 #keyrings.alt
 python3-keyrings.alt
 
-#kpatch-0.9.5
-kpatch
-kpatch-build
-kpatch-prebuilt
-kpatch-prebuilt-rt
-
 #kubernetes-x (-master, -misc, -unit-test used only for build)
 #kubernetes-1.21.8
 kubernetes-1.21.8-client
