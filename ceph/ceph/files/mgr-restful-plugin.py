@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2019 Wind River Systems, Inc.
+# Copyright (c) 2019-2023 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -32,6 +32,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import datetime
 
 import daemon
 import psutil
@@ -140,6 +141,10 @@ class Config(object):
         # Until then service monitor reports status OK just in case
         # restful plugin recovers
         self.ping_fail_count_report_error = 5
+
+        # Number of days for ceph-mgr to be restarted to avoid possible
+        # memory overflow due to memory growth (-1 to disable)
+        self.ceph_mgr_lifecycle_days = 7
 
     @staticmethod
     def load():
@@ -276,6 +281,9 @@ class ServiceMonitor(object):
 
         # ceph-mgr process
         self.ceph_mgr = None
+
+        # date the ceph-mgr process was started
+        self.ceph_mgr_start_date = None
 
         # consecutive ceph-mgr/restful-plugin start failures. Service monitor
         # reports failure after CONFIG.ceph_mgr_max_failure_count
@@ -570,6 +578,12 @@ class ServiceMonitor(object):
                 # REST API should be available now
                 # start making periodic requests (ping)
                 while True:
+                    if self.ceph_mgr_lifecycle_days != -1 \
+                            and self.ceph_mgr_uptime() >= self.ceph_mgr_lifecycle_days:
+                        self.ceph_mgr_start_date = None
+                        LOG.info("Restarting ceph-mgr to control RSS memory growth")
+                        self.ceph_mgr_restart()
+
                     try:
                         self.restful_plugin_ping()
                         self.ping_failure_count = 0
@@ -710,6 +724,7 @@ class ServiceMonitor(object):
                     stdout=null,
                     stderr=null,
                     shell=False)
+            self.ceph_mgr_start_date = datetime.now()
         except (OSError, ValueError) as err:
             raise CephMgrStartFailed(reason=str(err))
         time.sleep(CONFIG.ceph_mgr_grace_period_sec)
@@ -719,6 +734,15 @@ class ServiceMonitor(object):
             return
         LOG.info('Stop ceph-mgr')
         psutil_terminate_kill(self.ceph_mgr, CONFIG.ceph_mgr_kill_delay_sec)
+
+    def ceph_mgr_restart(self):
+        self.ceph_mgr_stop()
+        self.ceph_mgr_start()
+
+    def ceph_mgr_uptime(self):
+        if not self.ceph_mgr_start_date:
+            return 0
+        return (datetime.now() - self.ceph_mgr_start_date).days
 
     def restful_plugin_has_server_port(self):
         try:
