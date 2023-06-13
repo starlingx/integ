@@ -1,37 +1,49 @@
-From 65107586a55c594c44b0a97a2d6756f6a0f0a5ca Mon Sep 17 00:00:00 2001
-From: Giao Le <giao.le@windriver.com>
-Date: Mon, 27 Aug 2018 19:41:36 +0800
-Subject: [PATCH] check-length
+From 98b8cbc80e14e6b47b13bcddfedc0bdc8d2abf19 Mon Sep 17 00:00:00 2001
+From: Zhixiong Chi <zhixiong.chi@windriver.com>
+Date: Mon, 12 Jun 2023 02:23:58 -0700
+Subject: [PATCH] check content-length
+
+Rebase this local patch for StarlingX.
 
 Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+Signed-off-by: Giao Le <giao.le@windriver.com>
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
 ---
- src/request.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 45 insertions(+)
+ src/request.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
 
 diff --git a/src/request.c b/src/request.c
-index d25e1e7..fe541a5 100644
+index 62f2f0cb..e9668d42 100644
 --- a/src/request.c
 +++ b/src/request.c
-@@ -8,10 +8,39 @@
+@@ -8,16 +8,48 @@
+ #include "first.h"
+ 
+ #include "request.h"
++#include "base.h"
+ #include "burl.h"
+ #include "http_header.h"
+ #include "http_kv.h"
  #include "log.h"
  #include "sock_addr.h"
  
 +#include <errno.h>
  #include <limits.h>
+ #include <stdint.h>
  #include <stdlib.h>
  #include <string.h>
 +#include <sys/statvfs.h>
- 
-+static size_t get_tempdirs_free_space(server *srv)
++
++static size_t get_tempdirs_free_space(request_st * const restrict r)
 +{
 +	int i;
 +	int valid = 0;
 +	size_t total = 0;
-+	array *dirs = srv->srvconf.upload_tempdirs;
++	array *dirs = r->con->srv->srvconf.upload_tempdirs;
 +
 +	for (i = 0; i < (int)dirs->used; ++i) {
 +		struct statvfs stat;
-+		const char *name = ((data_string *)dirs->data[i])->value->ptr;
++		const char *name = ((data_string *)dirs->data[i])->value.ptr;
 +		int ret = statvfs(name, &stat);
 +
 +		if (ret >= 0) {
@@ -40,41 +52,47 @@ index d25e1e7..fe541a5 100644
 +			valid = 1;
 +		}
 +		else {
-+			log_error_write(srv, __FILE__, __LINE__, "ssss",
-+						"dir:", name,
-+						"error:", strerror(errno));
++			if (r->conf.log_request_header_on_error) {
++				log_error(r->conf.errh, __FILE__, __LINE__,
++						"statvfs error, dir: %s, eno: %s\n",
++						name, strerror(errno));
++			}
 +		}
 +	}
 +
 +	return (valid) ? total : SSIZE_MAX;
 +}
-+ 
- static int request_check_hostname(buffer *host) {
+ 
+ static int request_check_hostname(buffer * const host) {
  	enum { DOMAINLABEL, TOPLABEL } stage = TOPLABEL;
- 	size_t i;
-@@ -928,6 +957,22 @@ int http_request_parse(server *srv, conn
- 		if (!state.con_length_set) {
- 			return http_request_header_line_invalid(srv, 411, "POST-request, but content-length missing -> 411");
- 		}
-+		/* content-length is larger than 64k */
-+		if (con->request.content_length > 64*1024) {
-+			size_t disk_free = get_tempdirs_free_space(srv);
-+			if (con->request.content_length > disk_free) {
-+				con->http_status = 413;
-+				con->keep_alive = 0;
+@@ -1260,10 +1292,27 @@ http_request_parse (request_st * const restrict r, const int scheme_port)
+                 http_header_request_unset(r, HTTP_HEADER_CONTENT_LENGTH, CONST_STR_LEN("Content-Length"));
+             }
+         }
 +
-+				log_error_write(srv, __FILE__, __LINE__, "ssosos",
-+						"not enough free space in tempdirs:",
-+						"length =", (off_t) con->request.content_length,
-+						"free =", (off_t) disk_free,
-+						"-> 413");
-+				return 0;
-+			}
-+		}
+         if (http_method_get_or_head(r->http_method)
+             && !(http_parseopts & HTTP_PARSEOPT_METHOD_GET_BODY)) {
+             return http_request_header_line_invalid(r, 400, "GET/HEAD with content-length -> 400");
+         }
 +
- 		break;
- 	default:
- 		break;
++        /* content-length is larger than 64k */
++        if (r->reqbody_length > 64*1024 && HTTP_METHOD_POST == r->http_method) {
++            size_t disk_free = get_tempdirs_free_space(r);
++            if (r->reqbody_length > disk_free) {
++                r->http_status = 413;
++                r->keep_alive = 0;
++                if (r->conf.log_request_header_on_error) {
++                   log_error(r->conf.errh, __FILE__, __LINE__,
++                             "not enough free space in tempdirs:\n length =%d\n free=%d\ncontent-length -> 413",
++                              r->reqbody_length,
++                              disk_free);
++                }
++                return 0;
++            }
++        }
+     }
+ 
+     return 0;
 -- 
-2.21.0
+2.39.0
 
