@@ -26,17 +26,10 @@ logecho ()
 
 start ()
 {
-    if [[ "$system_type" != "All-in-one" ]] || [[ "$system_mode" != "duplex" ]]; then
-        logecho "Starting ceph services..."
-        ${INITDIR}/ceph start >> ${LOGFILE} 2>&1
-        RC=$?
-    else
-        # In an AIO-DX configuration SM manages the floating MON and OSDs and pmon manages
-        # the ceph-mds process. Here we defer starting all ceph process to allow SM and pmon
-        # to start them at the appropriate time.
-        RC=0
-    fi
-
+    # Defer ceph initialization to avoid race conditions. Let SM and Pmon to start the
+    # processes in the appropriate time.
+    # Set the flag to let ceph start later.
+    logecho "Setting flag to enable ceph processes to start."
     if [ ! -f ${CEPH_FILE} ]; then
         touch ${CEPH_FILE}
     fi
@@ -55,7 +48,7 @@ stop ()
         rm -f ${CEPH_FILE}
     fi
 
-    ${INITDIR}/ceph stop >> ${LOGFILE} 2>&1
+    ${INITDIR}/ceph-init-wrapper stop >> ${LOGFILE} 2>&1
     RC=$?
 }
 
