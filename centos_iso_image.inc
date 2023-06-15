@@ -130,15 +130,6 @@ memcached
 
 # kubernetes
 kubernetes-unversioned
-kubernetes-1.21.8-node
-kubernetes-1.21.8-kubeadm
-kubernetes-1.21.8-client
-kubernetes-1.22.5-node
-kubernetes-1.22.5-kubeadm
-kubernetes-1.22.5-client
-kubernetes-1.23.1-node
-kubernetes-1.23.1-kubeadm
-kubernetes-1.23.1-client
 containerd
 k8s-pod-recovery
 k8s-cni-cache-cleanup

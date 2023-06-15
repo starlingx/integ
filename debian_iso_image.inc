@@ -187,18 +187,6 @@ lvm2
 python3-keyrings.alt
 
 #kubernetes-x (-master, -misc, -unit-test used only for build)
-#kubernetes-1.21.8
-kubernetes-1.21.8-client
-kubernetes-1.21.8-kubeadm
-kubernetes-1.21.8-node
-#kubernetes-1.22.5
-kubernetes-1.22.5-client
-kubernetes-1.22.5-kubeadm
-kubernetes-1.22.5-node
-#kubernetes-1.23.1
-kubernetes-1.23.1-client
-kubernetes-1.23.1-kubeadm
-kubernetes-1.23.1-node
 #kubernetes-1.24.4
 kubernetes-1.24.4-client
 kubernetes-1.24.4-kubeadm
