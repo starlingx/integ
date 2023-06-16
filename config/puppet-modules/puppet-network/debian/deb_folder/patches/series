@@ -5,3 +5,4 @@
 0005-Add-options-content-to-routes-file.patch
 0006-Use-prefix_len-for-default-routes.patch
 0007-Prevent-MTU-value-from-duplicating.patch
+0008-Replace-IPAddress-gem-with-built-in-IPAddr-class.patch
