@@ -1,0 +1,35 @@
+From 5f4be332f0de3a60117aac1dd4baf75f7c82151a Mon Sep 17 00:00:00 2001
+From: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Fri, 9 Jun 2023 09:07:04 -0300
+Subject: [PATCH] Adjust puppet-haproxy dependency requirements
+
+To avoid warnings during bootstrap, the accepted version ranges
+for puppetlabs-concat and puppetlabs-stdlib were changed to
+accommodate higher versions of both.
+
+Signed-off-by: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ metadata.json | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/metadata.json b/metadata.json
+index b868a77..b120c21 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -10,11 +10,11 @@
+   "dependencies": [
+     {
+       "name": "puppetlabs/stdlib",
+-      "version_requirement": ">= 4.13.1 < 5.0.0"
++      "version_requirement": ">= 4.13.1 < 6.0.0"
+     },
+     {
+       "name": "puppetlabs/concat",
+-      "version_requirement": ">= 1.2.3 < 5.0.0"
++      "version_requirement": ">= 1.2.3 < 6.0.0"
+     }
+   ],
+   "operatingsystem_support": [
+-- 
+2.37.1
+
