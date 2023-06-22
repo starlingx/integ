@@ -1,32 +1,38 @@
-From 95f82fc840c43c964a6c2dcdeaf33b87b44665f3 Mon Sep 17 00:00:00 2001
-From: Zhixiong Chi <zhixiong.chi@windriver.com>
-Date: Mon, 12 Jun 2023 12:46:45 +0800
+From 91f1bd05e5acc70789d17de47de7813bb615027c Mon Sep 17 00:00:00 2001
+From: Yue Tao <Yue.Tao@windriver.com>
+Date: Tue, 9 Mar 2021 18:26:53 -0800
 Subject: [PATCH] lighttpd: backport spec-include-TiS-changes.patch from
  StarlingX f/centos8 branch
 
 Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
-Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
 ---
- debian/control | 178 ++++++++++++++++++++++++-------------------------
- debian/rules   |  11 +--
- 2 files changed, 95 insertions(+), 94 deletions(-)
+ debian/control | 99 ++++++++++++++++++++++++--------------------------
+ debian/rules   | 12 +++---
+ 2 files changed, 55 insertions(+), 56 deletions(-)
 
 diff --git a/debian/control b/debian/control
-index 628bfc7..cae8626 100644
+index 7807525..682477b 100644
 --- a/debian/control
 +++ b/debian/control
-@@ -74,8 +74,6 @@ Suggests:
+@@ -62,15 +62,12 @@ Suggests:
+  lighttpd-mod-authn-gssapi,
+  lighttpd-mod-authn-pam,
+  lighttpd-mod-authn-sasl,
+- lighttpd-mod-cml,
+  lighttpd-mod-geoip,
+- lighttpd-mod-magnet,
+  lighttpd-mod-maxminddb,
+  lighttpd-mod-trigger-b4-dl,
+  lighttpd-mod-vhostdb-dbi,
   lighttpd-mod-vhostdb-pgsql,
   lighttpd-mod-webdav,
-  lighttpd-modules-dbi,
 - lighttpd-modules-ldap,
-- lighttpd-modules-lua,
   lighttpd-modules-mysql,
  Description: fast webserver with minimal memory footprint
   lighttpd is a small webserver and fast webserver developed with
-@@ -130,61 +128,61 @@ Description: DBI-based modules for lighttpd
-  Do not depend on this package. Depend on the provided lighttpd-mod-*
-  packages instead.
+@@ -99,29 +96,29 @@ Description: documentation for lighttpd
+  .
+  This package contains documentation for lighttpd.
  
 -Package: lighttpd-modules-ldap
 -Architecture: any
@@ -51,38 +57,6 @@ index 628bfc7..cae8626 100644
 - .
 - Do not depend on this package. Depend on the provided lighttpd-mod-*
 - packages instead.
--
--Package: lighttpd-modules-lua
--Architecture: any
--Depends:
-- ${misc:Depends},
-- ${shlibs:Depends},
-- lighttpd (= ${binary:Version}),
--Breaks:
-- lighttpd-mod-cml (<< 1.4.56~rc7-0+exp2),
-- lighttpd-mod-magnet (<< 1.4.56~rc7-0+exp2),
--Replaces:
-- lighttpd (<< 1.4.56~rc7-0+exp2),
-- lighttpd-mod-cml (<< 1.4.56~rc7-0+exp2),
-- lighttpd-mod-magnet (<< 1.4.56~rc7-0+exp2),
--Provides:
-- ${lighttpd:ModuleProvides},
--Description: LUA-based modules for lighttpd
-- This package contains the following modules:
--  * mod_magnet: control the request handling module for lighttpd
--    mod_magnet can attract a request in several stages in the request-handling.
--    either at the same level as mod_rewrite, before any parsing of the URL is
--    done or at a later stage, when the doc-root is known and the physical-path
--    is already setup.
--  * mod_cml: cache meta language module for lighttpd
--    With the cache meta language, it is possible to describe to the
--    dependencies of a cached file to its source files/scripts. For the
--    cache files, the scripting language Lua is used.
--    THIS MODULE IS OBSOLETED, USE mod_magnet INSTEAD.
-- .
-- Do not depend on this package. Depend on the provided lighttpd-mod-*
-- packages instead.
--
 +#Package: lighttpd-modules-ldap
 +#Architecture: any
 +#Depends:
@@ -106,116 +80,69 @@ index 628bfc7..cae8626 100644
 +# .
 +# Do not depend on this package. Depend on the provided lighttpd-mod-*
 +# packages instead.
-+#
-+#Package: lighttpd-modules-lua
-+#Architecture: any
-+#Depends:
-+# ${misc:Depends},
-+# ${shlibs:Depends},
-+# lighttpd (= ${binary:Version}),
-+#Breaks:
-+# lighttpd-mod-cml (<< 1.4.56~rc7-0+exp2),
-+# lighttpd-mod-magnet (<< 1.4.56~rc7-0+exp2),
-+#Replaces:
-+# lighttpd (<< 1.4.56~rc7-0+exp2),
-+# lighttpd-mod-cml (<< 1.4.56~rc7-0+exp2),
-+# lighttpd-mod-magnet (<< 1.4.56~rc7-0+exp2),
-+#Provides:
-+# ${lighttpd:ModuleProvides},
-+#Description: LUA-based modules for lighttpd
-+# This package contains the following modules:
-+#  * mod_magnet: control the request handling module for lighttpd
-+#    mod_magnet can attract a request in several stages in the request-handling.
-+#    either at the same level as mod_rewrite, before any parsing of the URL is
-+#    done or at a later stage, when the doc-root is known and the physical-path
-+#    is already setup.
-+#  * mod_cml: cache meta language module for lighttpd
-+#    With the cache meta language, it is possible to describe to the
-+#    dependencies of a cached file to its source files/scripts. For the
-+#    cache files, the scripting language Lua is used.
-+#    THIS MODULE IS OBSOLETED, USE mod_magnet INSTEAD.
-+# .
-+# Do not depend on this package. Depend on the provided lighttpd-mod-*
-+# packages instead.
-+#
+ 
  Package: lighttpd-modules-mysql
  Architecture: any
- Depends:
-@@ -231,39 +229,39 @@ Description: anti-deep-linking module for lighttpd
+@@ -165,32 +162,32 @@ Description: anti-deep-linking module for lighttpd
   from other sites by requiring users to visit a trigger URL to
   be able to download certain files.
  
 -Package: lighttpd-mod-cml
--Section: oldlibs
 -Architecture: any
 -Depends:
 - ${misc:Depends},
 - ${shlibs:Depends},
-- lighttpd-modules-lua (= ${binary:Version}),
--Description: Transitional dummy package for: cache meta language module for lighttpd
+- lighttpd (= ${binary:Version}),
+-Recommends:
+- memcached,
+-Description: cache meta language module for lighttpd
 - With the cache meta language, it is possible to describe to the
 - dependencies of a cached file to its source files/scripts. For the
 - cache files, the scripting language Lua is used.
 - .
 - THIS MODULE IS OBSOLETED, USE mod_magnet INSTEAD.
-- .
-- While this transitional dummy package will go away, the package name
-- continues to exist as a virtual package provided by lighttpd-modules-lua.
--
--Package: lighttpd-mod-magnet
--Section: oldlibs
--Architecture: any
--Depends:
-- ${misc:Depends},
-- ${shlibs:Depends},
-- lighttpd-modules-lua (= ${binary:Version}),
--Description: Transitional dummy package for: control the request handling module for lighttpd
-- mod_magnet can attract a request in several stages in the request-handling.
-- either at the same level as mod_rewrite, before any parsing of the URL is done
-- or at a later stage, when the doc-root is known and the physical-path is
-- already setup
-- .
-- While this transitional dummy package will go away, the package name
-- continues to exist as a virtual package provided by lighttpd-modules-lua.
--
 +#Package: lighttpd-mod-cml
-+#Section: oldlibs
 +#Architecture: any
 +#Depends:
 +# ${misc:Depends},
 +# ${shlibs:Depends},
-+# lighttpd-modules-lua (= ${binary:Version}),
-+#Description: Transitional dummy package for: cache meta language module for lighttpd
++# lighttpd (= ${binary:Version}),
++#Recommends:
++# memcached,
++#Description: cache meta language module for lighttpd
 +# With the cache meta language, it is possible to describe to the
 +# dependencies of a cached file to its source files/scripts. For the
 +# cache files, the scripting language Lua is used.
 +# .
 +# THIS MODULE IS OBSOLETED, USE mod_magnet INSTEAD.
-+# .
-+# While this transitional dummy package will go away, the package name
-+# continues to exist as a virtual package provided by lighttpd-modules-lua.
-+#
+ 
+-Package: lighttpd-mod-magnet
+-Architecture: any
+-Depends:
+- ${misc:Depends},
+- ${shlibs:Depends},
+- lighttpd (= ${binary:Version}),
+-Description: control the request handling module for lighttpd
+- mod_magnet can attract a request in several stages in the request-handling.
+- either at the same level as mod_rewrite, before any parsing of the URL is done
+- or at a later stage, when the doc-root is known and the physical-path is
+- already setup
 +#Package: lighttpd-mod-magnet
-+#Section: oldlibs
 +#Architecture: any
 +#Depends:
 +# ${misc:Depends},
 +# ${shlibs:Depends},
-+# lighttpd-modules-lua (= ${binary:Version}),
-+#Description: Transitional dummy package for: control the request handling module for lighttpd
++# lighttpd (= ${binary:Version}),
++#Description: control the request handling module for lighttpd
 +# mod_magnet can attract a request in several stages in the request-handling.
 +# either at the same level as mod_rewrite, before any parsing of the URL is done
 +# or at a later stage, when the doc-root is known and the physical-path is
 +# already setup
-+# .
-+# While this transitional dummy package will go away, the package name
-+# continues to exist as a virtual package provided by lighttpd-modules-lua.
-+#
+ 
  Package: lighttpd-mod-webdav
  Architecture: any
- Depends:
 diff --git a/debian/rules b/debian/rules
-index 5317ce6..7535999 100755
+index 7c0440b..e456781 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -16,6 +16,7 @@ override_dh_clean:
@@ -227,21 +154,21 @@ index 5317ce6..7535999 100755
  		--libexecdir="/usr/lib/lighttpd" \
  		--with-attr \
 @@ -23,10 +24,12 @@ override_dh_auto_configure:
- 		--with-dbi \
+ 		--with-fam \
  		--with-gdbm \
  		--with-krb5 \
 -		--with-ldap \
 +		--without-ldap \
  		--with-geoip \
  		--with-memcached \
--		--with-lua=lua5.3 \
+-		--with-lua=lua5.1 \
 +		--without-lua \
 +		--without-bzip2 \
 +		--without-memcache \
  		--with-maxminddb \
- 		--with-mbedtls \
  		--with-mysql \
-@@ -37,8 +40,8 @@ override_dh_auto_configure:
+ 		--with-openssl \
+@@ -34,8 +37,8 @@ override_dh_auto_configure:
  		--with-pcre \
  		--with-pgsql \
  		--with-sasl \
@@ -249,9 +176,17 @@ index 5317ce6..7535999 100755
 -		--with-webdav-props \
 +		--without-webdav-locks \
 +		--without-webdav-props \
- 		--with-wolfssl \
- 		--with-xxhash \
  		$(if $(filter pkg.lighttpd.libunwind,$(DEB_BUILD_PROFILES)),--with-libunwind) \
+ 		CFLAGS_FOR_BUILD="$(shell dpkg-buildflags --get CFLAGS)" \
+ 		LDFLAGS_FOR_BUILD="$(shell dpkg-buildflags --get LDFLAGS)" \
+@@ -49,7 +52,6 @@ override_dh_missing:
+ 	dh_missing --fail-missing
+ 
+ DOCLESS_PACKAGES=\
+-	lighttpd-modules-ldap \
+ 	lighttpd-modules-mysql \
+ 	lighttpd-mod-authn-pam \
+ 	lighttpd-mod-authn-sasl \
 -- 
-2.34.1
+2.31.1
 
