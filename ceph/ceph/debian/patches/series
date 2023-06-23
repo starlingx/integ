@@ -20,5 +20,4 @@ cmake_add_1.74_to_known_versions.patch
 another-cmakelists-fix.patch
 fix-ceph-osd-systemd-target.patch
 # allow-bgp-to-host.patch ## Not applicable to stx/14.2.22 version
-0001-Fix-error-related-to-src-.git_version.patch
 0002-Fix-src-CMakeLists.txts-DESTINATION-error.patch

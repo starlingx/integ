@@ -2,10 +2,12 @@
 
 set -x
 
+VERSION="14.2.22"
+
 STX_BASE=$(realpath ${MY_REPO}/stx)
 PKG_BASE=$(realpath ${STX_BASE}/integ/ceph/ceph)
 
-PKG_SRC_DIR=/ceph
+CEPH_GIT_SRC_DIR=${STX_GIT_SRC_DIR}/ceph
 
 PKG_BUILD_NAME=$1
 PKG_BUILD_DIR=$(realpath `pwd`/${PKG_BUILD_NAME})
@@ -13,6 +15,9 @@ PKG_BUILD_DIR=$(realpath `pwd`/${PKG_BUILD_NAME})
 # Package up the git source
 mkdir ${PKG_BUILD_NAME}
 tar -acvvzf - -C ${STX_GIT_SRC_DIR} ceph | tar -xvvzf - --directory ${PKG_BUILD_DIR} --strip-components 1
+
+# Set ceph version
+(git -C ${CEPH_GIT_SRC_DIR} rev-parse HEAD ; echo "v${VERSION}") 2> /dev/null > ${PKG_BUILD_DIR}/src/.git_version
 
 # Remove upstream's debian folder
 rm -rf ${PKG_BUILD_DIR}/debian
@@ -94,8 +99,8 @@ unpack_submodule "${SOURCE24}" "$(dirname ${SOURCE24})"
 unpack_submodule "${SOURCE25}" "$(dirname ${SOURCE25})"
 
 # Alpine configs
-sed -e "s/@VERSION@/14.2.22/g" \
+sed -e "s/@VERSION@/${VERSION}/g" \
     -e "s/@RPM_RELEASE@/1.stx.1/g" \
-    -e "s/@TARBALL_BASENAME@/ceph-14.2.22/g" \
+    -e "s/@TARBALL_BASENAME@/${PKG_BUILD_NAME}/g" \
     -i ${PKG_BUILD_DIR}/alpine/APKBUILD.in
 mv ${PKG_BUILD_DIR}/alpine/APKBUILD.in ${PKG_BUILD_DIR}/alpine/APKBUILD
