@@ -1,10 +1,11 @@
 ---
-debver: 247.3-7
+debver: 247.3-7+deb11u2
 dl_path:
-  name: systemd-debian-247.3-7.tar.gz
-  url: https://salsa.debian.org/systemd-team/systemd/-/archive/debian/247.3-7/systemd-debian-247.3-7.tar.gz
-  md5sum: 99b627b32cc4fce1ba23189da8d6a6a5
-  sha256sum: 2f5129519100a2f6e218832efa147f0fd8b7332a0f1cda070560134cda0d739b
+  name: systemd-debian-247.3-7+deb11u2.tar.gz
+  url: "https://salsa.debian.org/systemd-team/systemd/-/archive/debian/\
+        247.3-7+deb11u2/systemd-debian-247.3-7+deb11u2.tar.gz"
+  md5sum: 03e1d74248b4377f8db5ea08dd35a2d5
+  sha256sum: 37955119fd1a43f65a561af2f5f1c90602d5cd56f34df13413785042a6aee6f9
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
