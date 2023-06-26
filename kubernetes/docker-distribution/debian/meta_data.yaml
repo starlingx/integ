@@ -1,7 +1,7 @@
 ---
 debname: docker-registry
-debver: 2.7.1+ds2-7
-archive: https://snapshot.debian.org/archive/debian/20210529T084123Z/pool/main/d/docker-registry
+debver: 2.7.1+ds2-7+deb11u1
+archive: https://snapshot.debian.org/archive/debian/20230529T205957Z/pool/main/d/docker-registry
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
