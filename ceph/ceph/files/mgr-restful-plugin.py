@@ -578,8 +578,8 @@ class ServiceMonitor(object):
                 # REST API should be available now
                 # start making periodic requests (ping)
                 while True:
-                    if self.ceph_mgr_lifecycle_days != -1 \
-                            and self.ceph_mgr_uptime() >= self.ceph_mgr_lifecycle_days:
+                    if CONFIG.ceph_mgr_lifecycle_days != -1 \
+                            and self.ceph_mgr_uptime() >= CONFIG.ceph_mgr_lifecycle_days:
                         self.ceph_mgr_start_date = None
                         LOG.info("Restarting ceph-mgr to control RSS memory growth")
                         self.ceph_mgr_restart()
