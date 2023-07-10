@@ -1,2 +1,3 @@
 kubelet-service-remove-docker-dependency.patch
 Remove-KUBE_ALLOW_PRIV-from-kubelet-service.patch
+Update-kubelet-kube-config-environment-variable.patch
