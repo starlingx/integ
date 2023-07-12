@@ -1,1 +1,2 @@
 fix-openvswitch-vtep-race.patch
+dpdk-static-build.patch
