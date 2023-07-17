@@ -8,8 +8,8 @@ enable sw-patch-agent.service
 enable sw-patch.service
 
 # 00-software.preset
-enable software-controller.service
-enable software-controller-daemon.service
+disable software-controller.service
+disable software-controller-daemon.service
 enable software-agent.service
 enable software.service
 
