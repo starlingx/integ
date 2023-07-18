@@ -14,7 +14,6 @@ RUN apt-get -y update \
     openvswitch-dev \
     openvswitch-ipsec \
     openvswitch-pki \
-    openvswitch-switch-dpdk \
     openvswitch-switch \
     openvswitch-testcontroller \
     openvswitch-vtep
