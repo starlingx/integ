@@ -1,2 +1,3 @@
 check-content-length.patch
 CVE-2022-37797.patch
+CVE-2022-22707.patch
