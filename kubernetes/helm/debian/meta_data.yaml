@@ -1,16 +1,16 @@
 ---
 debname: helm
-debver: 3.9.4-1
+debver: 3.12.2-1
 src_path: centos/files
 dl_files:
-  helm-v3.9.4-linux-amd64.tar.gz:
+  helm-v3.12.2-linux-amd64.tar.gz:
     topdir: linux-amd64
-    url: https://get.helm.sh/helm-v3.9.4-linux-amd64.tar.gz
-    sha256sum: 31960ff2f76a7379d9bac526ddf889fb79241191f1dbe2a24f7864ddcb3f6560
-  helm-mapkubeapis_0.3.2.tar.gz:
+    url: https://get.helm.sh/helm-v3.12.2-linux-amd64.tar.gz
+    sha256sum: 2b6efaa009891d3703869f4be80ab86faa33fa83d9d5ff2f6492a8aebe97b219
+  helm-mapkubeapis_0.4.1_linux_amd64.tar.gz:
     topdir: mapkubeapis
-    url: https://github.com/helm/helm-mapkubeapis/releases/download/v0.3.2/helm-mapkubeapis_0.3.2_linux_amd64.tar.gz
-    sha256sum: fdc017a5e95921967b670114723437f2d757c718f8324832b3d4bd7787f17e98
+    url: https://github.com/helm/helm-mapkubeapis/releases/download/v0.4.1/helm-mapkubeapis_0.4.1_linux_amd64.tar.gz
+    sha256sum: e90a22c4acee76774589042f6a5901e136ee33c10630790d6cff37d169905a78
 
 revision:
   dist: $STX_DIST

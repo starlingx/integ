@@ -1,3 +1,9 @@
+helm (3.12.2-1) unstable; urgency=medium
+
+  * Bump version (3.12.2)
+
+ -- Igor Soares <igor.piressoares@windriver.com>  Fri, 04 Aug 2023 13:45:00 +0000
+
 helm (3.9.4-1) unstable; urgency=medium
 
   * Bump version (3.9.4)

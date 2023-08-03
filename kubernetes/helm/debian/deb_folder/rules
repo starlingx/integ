@@ -6,12 +6,12 @@ export ROOT = debian/tmp
 export SBINDIR = $(ROOT)/usr/sbin
 export SUDOERDIR = $(ROOT)/etc/sudoers.d
 
-export HELM_VERSION = 3.9.4
+export HELM_VERSION = 3.12.2
 export HELM_EXECUTABLE = linux-amd64/helm
 export HELM_PKG = helm-v$(HELM_VERSION)-linux-amd64.tar.gz
 
-export HELM_MAPKUBEAPIS_VERSION =  0.3.2
-export HELM_MAPKUBEAPIS_PKG = helm-mapkubeapis_$(HELM_MAPKUBEAPIS_VERSION).tar.gz
+export HELM_MAPKUBEAPIS_VERSION =  0.4.1
+export HELM_MAPKUBEAPIS_PKG = helm-mapkubeapis_$(HELM_MAPKUBEAPIS_VERSION)_linux_amd64.tar.gz
 
 %:
 	dh $@
@@ -32,6 +32,8 @@ override_dh_auto_install:
 	install -d -m 755 $(ROOT)/usr/local/share/helm
 	install -d -m 755 $(ROOT)/usr/local/share/helm/plugins
 	cp -R mapkubeapis $(ROOT)/usr/local/share/helm/plugins/
+	install -d -m 755 $(ROOT)/usr/local/share/helm/plugins/mapkubeapis/bin
+	mv $(ROOT)/usr/local/share/helm/plugins/mapkubeapis/mapkubeapis $(ROOT)/usr/local/share/helm/plugins/mapkubeapis/bin/
 
 override_dh_usrlocal:
 	# Do Nothing
