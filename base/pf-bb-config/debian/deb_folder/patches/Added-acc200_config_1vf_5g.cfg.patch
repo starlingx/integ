@@ -1,22 +1,22 @@
-From 3d2da09d14dc4adefd79a2eee50d43556e618f0b Mon Sep 17 00:00:00 2001
-From: Teresa Ho <teresa.ho@windriver.com>
-Date: Mon, 14 Nov 2022 13:51:51 -0500
-Subject: [PATCH] Added acc200_config_1vf_5g.cfg
+From 7a956384591eb929e97b5d75a115091f87237927 Mon Sep 17 00:00:00 2001
+From: Nidhi S Belur <nidhi.shivashankara.belur@intel.com>
+Date: Fri, 4 Aug 2023 12:51:47 -0500
+Subject: [PATCH] Patch for adding 1VF config file for VRB1
 
-Added config file for ACC200 specifying 1 VF and 5G.
+- Added config file for VRB1 specifying 1 VF and 5G.
 
-Signed-off-by: Teresa Ho <teresa.ho@windriver.com>
+Signed-off-by: Nidhi S Belur <nidhi.shivashankara.belur@intel.com>
 ---
- acc200/acc200_config_1vf_5g.cfg | 37 +++++++++++++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
- create mode 100644 acc200/acc200_config_1vf_5g.cfg
+ vrb1/vrb1_config_1vf_5g.cfg | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+ create mode 100644 vrb1/vrb1_config_1vf_5g.cfg
 
-diff --git a/acc200/acc200_config_1vf_5g.cfg b/acc200/acc200_config_1vf_5g.cfg
+diff --git a/vrb1/vrb1_config_1vf_5g.cfg b/vrb1/vrb1_config_1vf_5g.cfg
 new file mode 100644
-index 0000000..d4375ab
+index 0000000..a0ae074
 --- /dev/null
-+++ b/acc200/acc200_config_1vf_5g.cfg
-@@ -0,0 +1,37 @@
++++ b/vrb1/vrb1_config_1vf_5g.cfg
+@@ -0,0 +1,36 @@
 +; SPDX-License-Identifier: Apache-2.0
 +; Copyright(c) 2020 Intel Corporation
 +
@@ -53,7 +53,6 @@ index 0000000..d4375ab
 +num_qgroups = 4
 +num_aqs_per_groups = 16
 +aq_depth_log2 = 4
-+
 -- 
-2.25.1
+2.7.4
 
