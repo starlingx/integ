@@ -1,3 +1,9 @@
+chartmuseum (0.13.0-1) unstable; urgency=medium
+
+  * Upversion to 0.13.0
+
+ -- Luan Nunes Utimura <LuanNunes.Utimura@windriver.com>  Tue, 08 Aug 2023 09:55:22 -0300
+
 chartmuseum (0.12.0-1) unstable; urgency=medium
 
   * Initial release
