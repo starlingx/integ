@@ -1,7 +1,7 @@
 From e4fd6a930213e6f0f009eb070d51b1e14db60d1b Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Wed, 18 May 2022 11:33:38 +0200
-Subject: [PATCH 10/10] phc2sys: Don't exit when reading of PHC fails with EBUSY.
+Subject: [PATCH 10/47] phc2sys: Don't exit when reading of PHC fails with EBUSY.
 
 Reading of the PHC can occasionally fail with some drivers, e.g. the ice
 driver returns EBUSY when it fails to get a lock. Continue in the loop
