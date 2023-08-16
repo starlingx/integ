@@ -1,6 +1,6 @@
-From d4515b56b7b0e625de279b7094123199004b23be Mon Sep 17 00:00:00 2001
+From 42ecf1cfaee7f9a5f16643465a964cfda25efaec Mon Sep 17 00:00:00 2001
 From: Gleb Aronsky <gleb.aronsky@windriver.com>
-Date: Thu, 20 Jul 2023 11:56:02 -0300
+Date: Tue, 15 Aug 2023 22:13:29 -0300
 Subject: [PATCH] kubelet cpumanager infra pods use system reserved CPUs
 
 This assigns system infrastructure pods to the "reserved" cpuset
@@ -9,7 +9,7 @@ to isolate them from the shared pool of CPUs.
 Infrastructure pods include any pods that belong to the kube-system,
 armada, cert-manager, vault, platform-deployment-manager, portieris,
 notification, flux-helm, metrics-server, node-feature-discovery,
-intel-power or power-metrics namespaces.
+intel-power, power-metrics or sriov-fec-system namespaces.
 
 The implementation is a bit simplistic, it is assumed that the
 "reserved" cpuset is large enough to handle all infrastructure pods
@@ -23,6 +23,7 @@ Signed-off-by: Thiago Miranda <ThiagoOliveira.Miranda@windriver.com>
 Signed-off-by: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
 Signed-off-by: Marcos Silva <Marcos.PauloOliveiraSilva@windriver.com>
 Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+Signed-off-by: Marcos Silva <Marcos.PauloOliveiraSilva@windriver.com>
 
 ---
  pkg/kubelet/cm/cpumanager/policy_static.go    | 47 +++++++++++++++++--
@@ -30,7 +31,7 @@ Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
  2 files changed, 61 insertions(+), 5 deletions(-)
 
 diff --git a/pkg/kubelet/cm/cpumanager/policy_static.go b/pkg/kubelet/cm/cpumanager/policy_static.go
-index 09e0fc0ea0e..7324c336bd3 100644
+index 09e0fc0ea0e..216b6ce9bf8 100644
 --- a/pkg/kubelet/cm/cpumanager/policy_static.go
 +++ b/pkg/kubelet/cm/cpumanager/policy_static.go
 @@ -53,6 +53,11 @@ func (e SMTAlignmentError) Type() string {
@@ -39,7 +40,7 @@ index 09e0fc0ea0e..7324c336bd3 100644
 
 +// Define namespaces used by platform infrastructure pods
 +var infraNamespaces = [...]string{
-+	"kube-system", "armada", "cert-manager", "platform-deployment-manager", "portieris", "vault", "notification", "flux-helm", "metrics-server", "node-feature-discovery", "intel-power", "power-metrics",
++	"kube-system", "armada", "cert-manager", "platform-deployment-manager", "portieris", "vault", "notification", "flux-helm", "metrics-server", "node-feature-discovery", "intel-power", "power-metrics", "sriov-fec-system",
 +}
 +
  // staticPolicy is a CPU manager policy that does not change CPU
