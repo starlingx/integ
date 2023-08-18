@@ -1,0 +1,26 @@
+#!/usr/bin/make -f
+# export DH_VERBOSE = 1
+
+export ROOT = debian/tmp
+export LOCAL_SBINDIR = $(ROOT)/usr/local/sbin
+export UNITDIR = $(ROOT)/lib/systemd/system
+export CONFIGDIR = $(ROOT)/etc/luks-fs-mgr.d
+
+%:
+	dh $@
+
+override_dh_auto_test:
+	echo
+
+override_dh_auto_install:
+	install -m 755 -d ${LOCAL_SBINDIR}
+	install -m 700 -p -D encryption/luks-fs-mgr ${LOCAL_SBINDIR}/luks-fs-mgr
+	install -m 755 -d ${UNITDIR}
+	install -p -D -m 644 ./debian/luks-fs-mgr.service ${UNITDIR}/luks-fs-mgr.service
+	install -p -D -m 644 encryption/scripts/luks_config.json ${CONFIGDIR}/luks_config.json
+
+override_dh_installsystemd:
+	dh_installsystemd --name luks-fs-mgr
+
+override_dh_usrlocal:
+	echo

@@ -40,6 +40,7 @@ config/puppet-modules/puppet-rabbitmq-8.5.0
 config/puppet-modules/puppet-staging
 docker/python-docker
 filesystem/drbd/drbd-tools
+filesystem/luks
 filesystem/parted
 golang-github-dev/golang-github-appc-cni
 golang-github-dev/golang-github-checkpoint-restore-go-criu-dev
