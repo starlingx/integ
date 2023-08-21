@@ -1,7 +1,7 @@
 From 142b30b1f996a5bd48f0edc9b5fb0f51af0b97fd Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Tue, 4 Jul 2023 17:27:50 -0300
-Subject: [PATCH 38/47] Best source selection algorithm
+Subject: [PATCH 38/48] Best source selection algorithm
 
 An algorithm to select the best available clock and use it
 as clock source.
