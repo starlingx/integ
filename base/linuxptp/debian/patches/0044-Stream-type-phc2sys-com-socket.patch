@@ -1,7 +1,7 @@
 From 2d40cc7cf52bbf054856c34902e4bda9f13ebb79 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 7 Aug 2023 14:55:12 -0300
-Subject: [PATCH 44/47] Stream type phc2sys com socket
+Subject: [PATCH 44/48] Stream type phc2sys com socket
 
 The type of the socket was changed from datagram to stream.
 

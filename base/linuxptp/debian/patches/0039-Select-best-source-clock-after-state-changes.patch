@@ -1,7 +1,7 @@
 From c61a91f5da1c07a783b0922e713c9f1d32adfa80 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Sat, 8 Jul 2023 19:02:50 -0300
-Subject: [PATCH 39/47] Select best source clock after state changes
+Subject: [PATCH 39/48] Select best source clock after state changes
 
 During operation, the clock states might change and require a new clock
 to be selected. For example, the local clock class of the current active

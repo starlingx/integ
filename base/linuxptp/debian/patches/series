@@ -45,3 +45,4 @@
 0045-Functions-starts_with-and-str_at_column.patch
 0046-Robustness-improvements-to-phc2sys-socket.patch
 0047-phc2sys-without-w-option.patch
+0048-HA-domain-number.patch

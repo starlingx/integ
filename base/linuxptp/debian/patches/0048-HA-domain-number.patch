@@ -1,0 +1,145 @@
+From c9a2a5398bace2f000ecc5ae6185b331cefa3a2c Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Mon, 21 Aug 2023 14:28:20 -0300
+Subject: [PATCH] HA domain number
+
+Support multiple domain numbers for each uds socket used in HA phc2sys.
+
+The ha_domainNumber option is an interface setting to configure the domain
+number for an uds socket. It ranges from 0 to 127. If the ha_domainNumber
+is not configured for a given interface, the global domainNumber setting
+is used.
+
+Test plan:
+PASS: Verify use of ha_domainNumber configuration in manual configuration.
+
+Failure path: domain number match
+PASS: Verify that phc2sys fails to start if domain number
+doesn't match ptp4l instance parameter.
+
+Regression:
+PASS: Verify use of global domain number in manual configuration.
+PASS: Verify auto configuration uses global domain number.
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ config.c    | 16 +++++++++++++++-
+ config.h    |  3 +++
+ phc2sys.c   | 11 +++++++++--
+ pmc_agent.c |  6 +++---
+ pmc_agent.h |  3 ++-
+ 5 files changed, 32 insertions(+), 7 deletions(-)
+
+diff --git a/config.c b/config.c
+index 6a1bfb4..1b7ed51 100644
+--- a/config.c
++++ b/config.c
+@@ -250,8 +250,9 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("G.8275.defaultDS.localPriority", 128, 1, UINT8_MAX),
+ 	PORT_ITEM_INT("G.8275.portDS.localPriority", 128, 1, UINT8_MAX),
+ 	GLOB_ITEM_INT("gmCapable", 1, 0, 1),
+-	GLOB_ITEM_INT("ha_frequencyTraceable", 0, 0, 1),
++	PORT_ITEM_INT("ha_domainNumber", 0, 0, 127),
+ 	GLOB_ITEM_INT("ha_enabled", 0, 0, 1),
++	GLOB_ITEM_INT("ha_frequencyTraceable", 0, 0, 1),
+ 	GLOB_ITEM_INT("ha_min_clockAccuracy", 0xfe, 0, 0xff),
+ 	GLOB_ITEM_INT("ha_min_gm_ClockClass", 135, 6, 255),
+ 	GLOB_ITEM_INT("ha_min_local_clockClass", 135, 6, 255),
+@@ -1022,6 +1023,19 @@ unsigned int config_get_interfaces(struct config *cfg, char *interfaces[], unsig
+ 	return counter;
+ }
+ 
++bool config_is_option_set(struct config *cfg, const char *section,
++			const char *option)
++{
++	struct config_item *ci;
++	if (section) {
++		ci = config_section_item(cfg, section, option);
++	} else {
++		ci = config_global_item(cfg, option);
++	}
++	fprintf(stderr, "section: %s option: %s ci:%p\n", section, option, ci);
++	return !!ci;
++}
++
+ int config_harmonize_onestep(struct config *cfg)
+ {
+ 	enum timestamp_type tstype = config_get_int(cfg, NULL, "time_stamping");
+diff --git a/config.h b/config.h
+index 645fb42..f074736 100644
+--- a/config.h
++++ b/config.h
+@@ -66,6 +66,9 @@ char *config_get_string(struct config *cfg, const char *section,
+ 
+ unsigned int config_get_interfaces(struct config *cfg, char *interfaces[], unsigned int max);
+ 
++bool config_is_option_set(struct config *cfg, const char *section,
++			const char *option);
++
+ int config_harmonize_onestep(struct config *cfg);
+ 
+ static inline struct option *config_long_options(struct config *cfg)
+diff --git a/phc2sys.c b/phc2sys.c
+index 065b7f0..be7b07a 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -2226,7 +2226,8 @@ int main(int argc, char *argv[])
+ 		 getpid());
+ 
+ 	if (autocfg) {
+-		if (init_pmc_node(cfg, node, uds_local,
++		domain_number = config_get_int(cfg, NULL, "domainNumber");
++		if (init_pmc_node(cfg, node, uds_local, domain_number,
+ 				  phc2sys_recv_subscribed, &priv))
+ 			goto end;
+ 		if (auto_init_ports(&priv, rt) < 0)
+@@ -2305,7 +2306,13 @@ int main(int argc, char *argv[])
+ 			snprintf(uds_local, sizeof(uds_local), "/var/run/phc2sys.%d.%s",
+ 				getpid(), src->device);
+ 
+-			if (init_pmc_node(cfg, src->node, uds_local,
++			if (config_is_option_set(cfg, src->device, "ha_domainNumber")) {
++				domain_number = config_get_int(cfg, src->device,
++					"ha_domainNumber");
++			} else {
++				domain_number = config_get_int(cfg, NULL, "domainNumber");
++			}
++			if (init_pmc_node(cfg, src->node, uds_local, domain_number,
+ 					phc2sys_recv_subscribed, &priv))
+ 				goto end;
+ 
+diff --git a/pmc_agent.c b/pmc_agent.c
+index af15710..92fc14c 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -220,10 +220,10 @@ void run_pmc_events(struct pmc_agent *node)
+ }
+ 
+ int init_pmc_node(struct config *cfg, struct pmc_agent *node, const char *uds,
+-		  pmc_node_recv_subscribed_t *recv_subscribed, void *context)
++		  int domain_number, pmc_node_recv_subscribed_t *recv_subscribed,
++		  void *context)
+ {
+-	node->pmc = pmc_create(cfg, TRANS_UDS, uds, 0,
+-			       config_get_int(cfg, NULL, "domainNumber"),
++	node->pmc = pmc_create(cfg, TRANS_UDS, uds, 0, domain_number,
+ 			       config_get_int(cfg, NULL, "transportSpecific") << 4, 1);
+ 	if (!node->pmc) {
+ 		pr_err("failed to create pmc");
+diff --git a/pmc_agent.h b/pmc_agent.h
+index 8207c46..38951b1 100644
+--- a/pmc_agent.h
++++ b/pmc_agent.h
+@@ -56,7 +56,8 @@ struct pmc_agent {
+ };
+ 
+ int init_pmc_node(struct config *cfg, struct pmc_agent *agent, const char *uds,
+-		  pmc_node_recv_subscribed_t *recv_subscribed, void *context);
++		  int domain_number, pmc_node_recv_subscribed_t *recv_subscribed,
++		  void *context);
+ int run_pmc_wait_sync(struct pmc_agent *agent, int timeout);
+ void run_pmc_events(struct pmc_agent *agent);
+ 
+-- 
+2.25.1
+

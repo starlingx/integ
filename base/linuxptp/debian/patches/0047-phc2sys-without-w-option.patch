@@ -1,7 +1,7 @@
 From c5e1599748877f16bfd1dea6910f6b8b57be7ddd Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 7 Aug 2023 18:19:37 -0300
-Subject: [PATCH 47/47] phc2sys without -w option.
+Subject: [PATCH 47/48] phc2sys without -w option.
 
 Fix bad clock and pmc initialization when -w command argument
 is not provided.

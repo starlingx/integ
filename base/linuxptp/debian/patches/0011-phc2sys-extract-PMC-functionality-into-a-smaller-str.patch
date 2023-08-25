@@ -1,7 +1,7 @@
 From 0c5c39a8cd3675d91e872a75d75854907950957d Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 13:47:47 -0300
-Subject: [PATCH 11/47] phc2sys: extract PMC functionality into a smaller
+Subject: [PATCH 11/48] phc2sys: extract PMC functionality into a smaller
  struct pmc_node
 
 This creates a smaller structure within phc2sys_private, which embeds
