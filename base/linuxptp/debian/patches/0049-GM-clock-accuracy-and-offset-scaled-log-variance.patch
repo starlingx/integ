@@ -1,0 +1,263 @@
+From 52c6fd7f9212902a2c5195e5a7b2c19a5956633f Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Wed, 23 Aug 2023 19:18:08 -0300
+Subject: [PATCH 49/49] GM clock accuracy and offset scaled log variance
+
+Include GM clock quality parameters clock accuracy and offset
+scaled log variance to the clock selection algorithm. Those
+checks together with clock class can check the remote clock
+quality, enhancing T-BC support.
+
+The existing ha_min_local_clockClass, ha_min_clockAccuracy,
+ha_min_gm_offsetScaledLogVariance and ha_min_gm_ClockClass were
+renamed. Now their names are ha_max* because they represent the
+maximum value the clock can present to be considered valid.
+
+The existing ha_timeTraceable and ha_frequencyTraceable were
+renamed. Now their names contains gm to explitly show they
+correspond to the GM time and frequency traceability.
+
+The ha_min_local_clockClass is now ha_max_local_clockClass, and
+its default value was changed to 255.
+
+The ha_min_clockAccuracy is now ha_max_local_clockAccuracy, its
+name now contains the local key to differentiate from the GM
+configuration option.
+
+The ha_min_offsetScaledLogVariance is now
+ha_max_local_offsetScaledLogVar. Its name now contains the
+local key to differentiate from the GM configuration option,
+and the word Variace was shortened Var due to the size limit
+of the name.
+
+The ha_min_gm_ClockClass is now ha_max_gm_clockClass, and its
+default value was changed to 6.
+
+The ha_max_local_clockClass and ha_max_gm_clockClass default values
+were changed to make easier to configure both T-GM and T-BC
+scenarios.
+
+The new ha_max_gm_clockAccuracy option is a global setting for the
+maximum GM clock accuracy requirement. It ranges from 0x00 to 0xff
+and its default is 0xfe.
+
+The new ha_max_gm_offsetScaledLogVar option is a global setting for
+the maximum GM offset scaled log variance requirement. It ranges
+from 0x0000 to 0xffff and its default is 0xffff.
+
+The status command now includes the GM clock accuracy and offset scaled
+log variance values.
+
+Test plan: new GM fields
+PASS Verify the clock is discarded because GM clock accuracy is out of
+requirement
+PASS Verify the clock is discarded because GM offset scaled log
+variance is out of requirement
+PASS Verify the status command shows the new fields gm.clockAcc and
+gm.offset
+
+Test plan: new default values
+PASS Verify the ha_max_gm_ClockClass and ha_max_local_clockClass
+default values.
+
+Test plan: renamed fields
+PASS Verify tha a configuration containing all HA configuration options
+is accepted.
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ config.c  | 15 +++++------
+ phc2sys.c | 75 +++++++++++++++++++++++++++++++++++--------------------
+ 2 files changed, 56 insertions(+), 34 deletions(-)
+
+diff --git a/config.c b/config.c
+index 1b7ed51..d405589 100644
+--- a/config.c
++++ b/config.c
+@@ -252,15 +252,17 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("gmCapable", 1, 0, 1),
+ 	PORT_ITEM_INT("ha_domainNumber", 0, 0, 127),
+ 	GLOB_ITEM_INT("ha_enabled", 0, 0, 1),
+-	GLOB_ITEM_INT("ha_frequencyTraceable", 0, 0, 1),
+-	GLOB_ITEM_INT("ha_min_clockAccuracy", 0xfe, 0, 0xff),
+-	GLOB_ITEM_INT("ha_min_gm_ClockClass", 135, 6, 255),
+-	GLOB_ITEM_INT("ha_min_local_clockClass", 135, 6, 255),
+-	GLOB_ITEM_INT("ha_min_offsetScaledLogVariance", 65535, 0, 65535),
++	GLOB_ITEM_INT("ha_gm_frequencyTraceable", 0, 0, 1),
++	GLOB_ITEM_INT("ha_gm_timeTraceable", 0, 0, 1),
++	GLOB_ITEM_INT("ha_max_gm_clockAccuracy", 0xfe, 0, 0xff),
++	GLOB_ITEM_INT("ha_max_gm_clockClass", 6, 6, 255),
++	GLOB_ITEM_INT("ha_max_gm_offsetScaledLogVar", 0xffff, 0, 0xffff),
++	GLOB_ITEM_INT("ha_max_local_clockAccuracy", 0xfe, 0, 0xff),
++	GLOB_ITEM_INT("ha_max_local_clockClass", 255, 6, 255),
++	GLOB_ITEM_INT("ha_max_local_offsetScaledLogVar", 0xffff, 0, 0xffff),
+ 	GLOB_ITEM_STR("ha_phc2sys_com_socket", "/var/run/phc2sys-phc-inst1"),
+ 	PORT_ITEM_INT("ha_priority", 0, 0, 254),
+ 	PORT_ITEM_INT("ha_stability_timer", 0, 0, INT_MAX),
+-	GLOB_ITEM_INT("ha_timeTraceable", 0, 0, 1),
+ 	PORT_ITEM_STR("ha_uds_address", "/var/run/ptp4l"),
+ 	GLOB_ITEM_ENU("hwts_filter", HWTS_FILTER_NORMAL, hwts_filter_enu),
+ 	PORT_ITEM_INT("hybrid_e2e", 0, 0, 1),
+@@ -1032,7 +1034,6 @@ bool config_is_option_set(struct config *cfg, const char *section,
+ 	} else {
+ 		ci = config_global_item(cfg, option);
+ 	}
+-	fprintf(stderr, "section: %s option: %s ci:%p\n", section, option, ci);
+ 	return !!ci;
+ }
+ 
+diff --git a/phc2sys.c b/phc2sys.c
+index be7b07a..1dd8c0f 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -306,9 +306,9 @@ static size_t clock_count_enabled_sources(struct phc2sys_private *priv,
+ static bool clock_match_ha_dds_requirements(struct clock *clock, struct config *cfg)
+ {
+ 	/* get requirements */
+-	int local_clock_class, min_local_clock_class = config_get_int(cfg, NULL, "ha_min_local_clockClass");
+-	unsigned int clock_accuracy, min_clock_accuracy = config_get_int(cfg, NULL, "ha_min_clockAccuracy");
+-	unsigned int offset, min_offset_scaled_log_variance = config_get_int(cfg, NULL, "ha_min_offsetScaledLogVariance");
++	int local_clock_class, max_local_clock_class = config_get_int(cfg, NULL, "ha_max_local_clockClass");
++	unsigned int clock_accuracy, max_clock_accuracy = config_get_int(cfg, NULL, "ha_max_local_clockAccuracy");
++	unsigned int offset, max_offset_scaled_log_variance = config_get_int(cfg, NULL, "ha_max_local_offsetScaledLogVar");
+ 
+ 	/* sanity check */
+ 	if (clock->node == NULL) {
+@@ -321,27 +321,27 @@ static bool clock_match_ha_dds_requirements(struct clock *clock, struct config *
+ 		return false;
+ 	}
+ 
+-	/* min local clock class (lower is better) */
++	/* max local clock class (lower is better) */
+ 	local_clock_class = clock->node->dds.clockQuality.clockClass;
+-	if (local_clock_class > min_local_clock_class) {
+-		pr_debug("clock %s local clock class %d > min local clock class %d",
+-			clock->device, local_clock_class, min_local_clock_class);
++	if (local_clock_class > max_local_clock_class) {
++		pr_debug("clock %s local clock class %d > max local clock class %d",
++			clock->device, local_clock_class, max_local_clock_class);
+ 		return false;
+ 	}
+ 
+-	/* min clock accuracy (lower is better) */
++	/* max clock accuracy (lower is better) */
+ 	clock_accuracy = clock->node->dds.clockQuality.clockAccuracy;
+-	if (clock_accuracy > min_clock_accuracy) {
+-		pr_debug("clock %s clock accuracy %d > min clock accuracy %d",
+-			clock->device, clock_accuracy, min_clock_accuracy);
++	if (clock_accuracy > max_clock_accuracy) {
++		pr_debug("clock %s clock accuracy %d > max clock accuracy %d",
++			clock->device, clock_accuracy, max_clock_accuracy);
+ 		return false;
+ 	}
+ 
+-	/* min offset scaled log variance (lower is better) */
++	/* max offset scaled log variance (lower is better) */
+ 	offset = clock->node->dds.clockQuality.offsetScaledLogVariance;
+-	if (offset > min_offset_scaled_log_variance) {
+-		pr_debug("clock %s offset scaled log variance 0x%x > min offset 0x%x",
+-			clock->device, offset, min_offset_scaled_log_variance);
++	if (offset > max_offset_scaled_log_variance) {
++		pr_debug("clock %s offset scaled log variance 0x%x > max offset 0x%x",
++			clock->device, offset, max_offset_scaled_log_variance);
+ 		return false;
+ 	}
+ 
+@@ -351,8 +351,8 @@ static bool clock_match_ha_dds_requirements(struct clock *clock, struct config *
+ static bool clock_match_ha_tpds_requirements(struct clock *clock, struct config *cfg)
+ {
+ 	/* get requirements */
+-	bool check_time_traceable = config_get_int(cfg, NULL, "ha_timeTraceable");
+-	bool check_freq_traceable = config_get_int(cfg, NULL, "ha_frequencyTraceable");
++	bool check_time_traceable = config_get_int(cfg, NULL, "ha_gm_timeTraceable");
++	bool check_freq_traceable = config_get_int(cfg, NULL, "ha_gm_frequencyTraceable");
+ 
+ 	/* sanity check */
+ 	if (clock->node == NULL) {
+@@ -378,7 +378,9 @@ static bool clock_match_ha_tpds_requirements(struct clock *clock, struct config
+ static bool clock_match_ha_pds_requirements(struct clock *clock, struct config *cfg)
+ {
+ 	/* get requirements */
+-	int gm_clock_class, min_gm_clock_class = config_get_int(cfg, NULL, "ha_min_gm_ClockClass");
++	int gm_clock_class, max_gm_clock_class = config_get_int(cfg, NULL, "ha_max_gm_clockClass");
++	unsigned int clock_accuracy, max_clock_accuracy = config_get_int(cfg, NULL, "ha_max_gm_clockAccuracy");
++	unsigned int offset, max_offset_scaled_log_variance = config_get_int(cfg, NULL, "ha_max_gm_offsetScaledLogVar");
+ 
+ 	/* sanity check */
+ 	if (clock->node == NULL) {
+@@ -391,11 +393,27 @@ static bool clock_match_ha_pds_requirements(struct clock *clock, struct config *
+ 		return false;
+ 	}
+ 
+-	/* min gm clock class (lower is better) */
++	/* max gm clock class (lower is better) */
+ 	gm_clock_class = clock->node->pds.grandmasterClockQuality.clockClass;
+-	if (gm_clock_class > min_gm_clock_class) {
+-		pr_debug("clock %s GM clock class %d > min clock class %d",
+-			clock->device, gm_clock_class, min_gm_clock_class);
++	if (gm_clock_class > max_gm_clock_class) {
++		pr_debug("clock %s GM clock class %d > max clock class %d",
++			clock->device, gm_clock_class, max_gm_clock_class);
++		return false;
++	}
++
++	/* max clock accuracy (lower is better) */
++	clock_accuracy = clock->node->pds.grandmasterClockQuality.clockAccuracy;
++	if (clock_accuracy > max_clock_accuracy) {
++		pr_debug("clock %s GM clock accuracy %d > max clock accuracy %d",
++			clock->device, clock_accuracy, max_clock_accuracy);
++		return false;
++	}
++
++	/* max offset scaled log variance (lower is better) */
++	offset = clock->node->pds.grandmasterClockQuality.offsetScaledLogVariance;
++	if (offset > max_offset_scaled_log_variance) {
++		pr_debug("clock %s GM offset scaled log variance 0x%x > max offset 0x%x",
++			clock->device, offset, max_offset_scaled_log_variance);
+ 		return false;
+ 	}
+ 
+@@ -411,8 +429,8 @@ static int clock_available_ha_src_clocks(struct phc2sys_private *priv, struct co
+ 
+ 	LIST_INIT(available_clocks);
+ 
+-	check_time_traceable = config_get_int(cfg, NULL, "ha_timeTraceable");
+-	check_freq_traceable = config_get_int(cfg, NULL, "ha_frequencyTraceable");
++	check_time_traceable = config_get_int(cfg, NULL, "ha_gm_timeTraceable");
++	check_freq_traceable = config_get_int(cfg, NULL, "ha_gm_frequencyTraceable");
+ 
+ 	LIST_FOREACH(clock, &priv->clocks, list) {
+ 		pr_debug("clock %s state %d", clock->device, clock->state);
+@@ -1288,7 +1306,7 @@ static int ha_handle_status_msg(struct phc2sys_private *priv, char *response,
+ 	/* header */
+ 	curlen = snprintf(response, resplen,
+ 		"act   interface   priority   clockClass   clockAcc   offset   time   freq   "
+-		"gm.clockClass\n\n");
++		"gm.clockClass    gm.clockAcc   gm.offset\n\n");
+ 
+ 	LIST_FOREACH(clock, &priv->clocks, list) {
+ 
+@@ -1301,7 +1319,8 @@ static int ha_handle_status_msg(struct phc2sys_private *priv, char *response,
+ 			continue;
+ 
+ 		curlen += snprintf(response + curlen, resplen - curlen,
+-			" %c    %9s   %8d   %10d       0x%2x   0x%4x     %s    %s  %d\n",
++			" %c    %9s   %8d   %10d       0x%2x   0x%4x     %s    %s  %13d   "
++			"        0x%2x      0x%4x\n",
+ 			(priv->master ==  clock) ? '*' :
+ 				(priv->better == clock) ? '-' :
+ 					(!clock->enabled) ? 'x' : ' ',
+@@ -1311,7 +1330,9 @@ static int ha_handle_status_msg(struct phc2sys_private *priv, char *response,
+ 			clock->node->dds.clockQuality.offsetScaledLogVariance,
+ 			clock->node->utc_offset_traceable ? "yes" : "no ",
+ 			clock->node->freq_traceable ? "yes" : "no ",
+-			clock->node->pds.grandmasterClockQuality.clockClass);
++			clock->node->pds.grandmasterClockQuality.clockClass,
++			clock->node->pds.grandmasterClockQuality.clockAccuracy,
++			clock->node->pds.grandmasterClockQuality.offsetScaledLogVariance);
+ 	}
+ 
+ 	curlen += snprintf(response + curlen, resplen - curlen,
+-- 
+2.25.1
+

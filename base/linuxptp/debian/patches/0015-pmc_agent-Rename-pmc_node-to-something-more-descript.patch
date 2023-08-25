@@ -1,7 +1,7 @@
 From 82258917b8de7110545f3d4f99d3ac88a609f019 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:47:36 -0300
-Subject: [PATCH 15/48] pmc_agent: Rename pmc_node to something more
+Subject: [PATCH 15/49] pmc_agent: Rename pmc_node to something more
  descriptive.
 
 Signed-off-by: Richard Cochran <richardcochran@gmail.com>

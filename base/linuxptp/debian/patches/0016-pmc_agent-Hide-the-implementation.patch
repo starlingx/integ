@@ -1,7 +1,7 @@
 From f6d7bb0a62f15fcca0343c42891f7e056f502949 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:55:29 -0300
-Subject: [PATCH 16/48] pmc_agent: Hide the implementation.
+Subject: [PATCH 16/49] pmc_agent: Hide the implementation.
 
 The PMC agent's implementation should not be exposed to its users.  This
 patch hides the details and provides a method to create an instance.  In
