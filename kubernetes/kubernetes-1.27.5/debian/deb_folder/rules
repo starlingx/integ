@@ -1,0 +1,119 @@
+#!/usr/bin/make -f
+
+#
+# Copyright (c) 2023 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This debian/rules file is based on:
+# https://packages.debian.org/source/bookworm/kubernetes
+# http://deb.debian.org/debian/pool/main/k/kubernetes/kubernetes_1.20.5+really1.20.2-1.1.debian.tar.xz
+
+# Customizations support kubernetes upgrades:
+# - specific directory locations with kubernetes version, upgrades stage,
+#   and version specific golang compiler
+# - build output not required on the production host is moved to
+#   kubernetes-misc package
+
+kube_version := 1.27.5
+kube_git_version := v${kube_version}
+name := kubernetes-${kube_version}
+go_version := 1.20.7
+_stage1 := /usr/local/kubernetes/${kube_version}/stage1
+_stage2 := /usr/local/kubernetes/${kube_version}/stage2
+_bindir := /usr/bin
+kube_dir := src/k8s.io/kubernetes
+output_dir := ${kube_dir}/_output
+output_bindir := ${output_dir}/bin
+output_mandir := ${output_dir}/man
+DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
+export DH_VERBOSE = 1
+export PATH := /usr/lib/go-1.20/bin:$(PATH)
+export KUBE_GIT_TREE_STATE="clean"
+export KUBE_GIT_COMMIT=${kube_version}
+export KUBE_GIT_VERSION=${kube_git_version}
+export KUBE_EXTRA_GOPATH=$(pwd)/Godeps/_workspace
+export PBR_VERSION=${kube_git_version}
+
+bins = kube-proxy kube-apiserver kube-controller-manager kubelet kubeadm kube-scheduler kubectl
+
+%:
+	dh $@ --with=bash-completion --builddirectory=src --without=build-stamp
+
+override_dh_auto_build:
+	# we support multiple go compilers; indicate the version we are using
+	go version
+	which go
+
+	mkdir -pv ${kube_dir}
+        # keep the .go-version and ignore unwanted files
+	mv -v $$(ls -a -I ".." -I "." -I ".git*" -I ".generated_files" | grep -v "^src$$" | grep -v "^debian$$") ${kube_dir}/.
+	cd ${kube_dir} && make WHAT="$(addprefix cmd/,$(bins) genman)"
+
+	# manpages
+	mkdir -p ${output_mandir}
+	echo $(bins) | xargs --max-args=1 ${output_bindir}/genman ${output_mandir}
+
+	# NOTICE files
+	find ${kube_dir}/vendor -name '*NOTICE*' -print0 | xargs -0 head -n1000 > ${output_dir}/NOTICE
+
+override_dh_install:
+	# kube_version stage1
+	install -m 755 -d ${DEBIAN_DESTDIR}${_stage1}${_bindir}
+	install -p -m 755 -t ${DEBIAN_DESTDIR}${_stage1}${_bindir} ${output_bindir}/kubeadm
+
+	# kube_version stage2
+	install -m 755 -d ${DEBIAN_DESTDIR}${_stage2}${_bindir}
+	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d
+	install -p -m 0644 -t ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d debian/kubeadm.conf
+	install -p -m 0700 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} debian/kubelet-cgroup-setup.sh
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubelet
+	install -p -m 755 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubectl
+	# bash completions
+	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/
+	${DEBIAN_DESTDIR}${_stage2}${_bindir}/kubectl completion bash > ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/kubectl
+
+	# remaining are not kube_version staged, i.e., kubernetes-master, kubernetes-misc
+	install -m 755 -d ${DEBIAN_DESTDIR}${_bindir}
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-apiserver
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-controller-manager
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-scheduler
+	install -p -m 750 -t ${DEBIAN_DESTDIR}${_bindir} ${output_bindir}/kube-proxy
+
+	# specific cluster addons for optional use
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons
+
+	# Addon: volumesnapshots
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/crd
+	install -m 0644 -t ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/crd ${kube_dir}/cluster/addons/volumesnapshots/crd/*
+	install -d -m 0755 ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/volume-snapshot-controller
+	install -m 0644 -t ${DEBIAN_DESTDIR}/etc/${name}/addons/volumesnapshots/volume-snapshot-controller ${kube_dir}/cluster/addons/volumesnapshots/volume-snapshot-controller/*
+
+	# unit-test
+	# - everything from the root directory is needed
+	# - unit-tests needs source code
+	# - integration tests needs docs and other files
+	# - test-cmd.sh atm needs cluster, examples and other
+	install -d -m 0755 ${DEBIAN_DESTDIR}/var/lib/kubernetes-unit-test/
+	cp -a src ${DEBIAN_DESTDIR}/var/lib/kubernetes-unit-test/
+	# remove generated output, i.e., binaries, go cache, man pages, violations report
+	rm -rf ${DEBIAN_DESTDIR}/var/lib/kubernetes-unit-test/${output_dir}
+
+	dh_install
+
+override_dh_auto_test:
+	${kube_dir}/hack/test-cmd.sh
+	${kube_dir}/hack/benchmark-go.sh
+	${kube_dir}/hack/test-go.sh
+	${kube_dir}/hack/test-integration.sh --use_go_build
+
+override_dh_fixperms:
+	dh_fixperms -Xkube-apiserver -Xkubeadm -Xkubeadm.conf \
+		-Xkubelet-cgroup-setup.sh -Xkube-apiserver \
+		-Xkube-controller-manager -Xkube-scheduler \
+		-Xkube-proxy -Xkubelet -Xkubectl
+
+override_dh_usrlocal:
+
