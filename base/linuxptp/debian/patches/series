@@ -46,3 +46,4 @@
 0046-Robustness-improvements-to-phc2sys-socket.patch
 0047-phc2sys-without-w-option.patch
 0048-HA-domain-number.patch
+0049-GM-clock-accuracy-and-offset-scaled-log-variance.patch

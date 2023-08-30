@@ -1,7 +1,7 @@
 From d3b877cae9576beddb00d4c5db67bf49c944b222 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:30:57 -0300
-Subject: [PATCH 30/48] pmc_agent: Simplify the method that gets of the number
+Subject: [PATCH 30/49] pmc_agent: Simplify the method that gets of the number
  of local ports.
 
 The number of ports is already available in the cached default data

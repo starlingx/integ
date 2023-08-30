@@ -1,7 +1,7 @@
 From 87d8e7281e3e66813d0c669bea0b5335a8cbb6b6 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 13:59:48 -0300
-Subject: [PATCH 12/48] phc2sys: make PMC functions non-static
+Subject: [PATCH 12/49] phc2sys: make PMC functions non-static
 
 In preparation of a trivial movement of code to pmc_common.c, remove the
 "static" keyword from the functions that will end up there, since they

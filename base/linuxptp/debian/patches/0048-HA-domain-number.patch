@@ -1,7 +1,7 @@
 From c9a2a5398bace2f000ecc5ae6185b331cefa3a2c Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 21 Aug 2023 14:28:20 -0300
-Subject: [PATCH] HA domain number
+Subject: [PATCH 48/49] HA domain number
 
 Support multiple domain numbers for each uds socket used in HA phc2sys.
 

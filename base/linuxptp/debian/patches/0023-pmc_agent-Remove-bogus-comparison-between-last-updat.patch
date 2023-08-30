@@ -1,7 +1,7 @@
 From 357e24c897e1e2d29cf011b3a38c3a6b2a7943c3 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:33:43 -0300
-Subject: [PATCH 23/48] pmc_agent: Remove bogus comparison between last update
+Subject: [PATCH 23/49] pmc_agent: Remove bogus comparison between last update
  and now.
 
 The monotonic clock can never go backwards.  If you take T1 and later T2
