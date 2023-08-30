@@ -1,7 +1,7 @@
 From 6428c2628c013c408ec09355ad37eb12fa6bb20f Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Wed, 18 May 2022 11:33:35 +0200
-Subject: [PATCH 7/49] sysoff: Change sysoff_measure() to return errno.
+Subject: [PATCH 7/50] sysoff: Change sysoff_measure() to return errno.
 
 Return -errno from failed ioctl instead of the SYSOFF_* enum from the
 measurement functions to allow the callers to check for specific errors.
@@ -9,6 +9,7 @@ measurement functions to allow the callers to check for specific errors.
 Signed-off-by: Miroslav Lichvar <mlichvar@redhat.com>
 [commit 7824b13db9533ddebe37cf444d7aaa5d235575d3 upstream]
 Signed-off-by: Douglas Henrique Koerich <douglashenrique.koerich@windriver.com>
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
  sysoff.c | 15 ++++++++-------
  sysoff.h |  2 +-

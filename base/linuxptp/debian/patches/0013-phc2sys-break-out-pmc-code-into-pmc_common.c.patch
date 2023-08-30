@@ -1,7 +1,7 @@
 From ba9c2ea0e1f7a96093bca1147d4745a7d0ce17b6 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:34:19 -0300
-Subject: [PATCH 13/49] phc2sys: break out pmc code into pmc_common.c
+Subject: [PATCH 13/50] phc2sys: break out pmc code into pmc_common.c
 
 The code through which phc2sys sends various PTP management messages to
 ptp4l via pmc can be reused.

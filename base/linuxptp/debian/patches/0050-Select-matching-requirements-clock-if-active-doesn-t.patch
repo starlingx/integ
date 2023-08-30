@@ -1,0 +1,80 @@
+From 2155ccb5a4de8cbebb552cf3d0a23874b026a716 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Tue, 29 Aug 2023 19:06:23 -0300
+Subject: [PATCH 50/50] Select matching requirements clock if active doesn't match
+ them
+
+Fix clock selection algorithm behavior where a clock source starts
+to match requirements but is not selected because it has the same
+ha_priority than active.
+
+In a HA configuration with two or more clocks configured with equal
+ha_priority if no clock source match the requirements the first one in
+the configuration file is selected active. This is a standard behavior
+to always have a clock source, even when they are not synchronized.
+
+And when one of the clock source starts to match the requirements it
+must be selected active, regardless the priority.
+
+But when a second clock source starts to match the requirements and
+has the same ha_priority of the active, the active remains the clock
+source. There is no need to switch active when they have equal
+ha_priority.
+
+Test plan: two sources with same priority
+PASS: Verify a clock source is selected active when it starts to match
+the requirements and the current active doesn't match them, event if
+they have equal ha_priority.
+PASS: Verify a clock source isn't selected active when it starts to
+match the requirements and the current active does too match them.
+
+Regression: two sources with different priority
+PASS: Verify a clock source is selected active when it starts to match
+the requirements and the current active doesn't match them, even if
+their ha_priority is lower than the actives.
+PASS: Verify a clock source is selected active when it starts to match
+the requirements and the current active does too match them but has
+lower ha_priority configured.
+PASS: Verify a clock source isn't selected active when it starts to
+match the requirements and the current active does too match them
+and has higher ha_priority configured.
+
+Story: 2010723
+Task: 48699
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 1dd8c0f..5df89e5 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -420,6 +420,13 @@ static bool clock_match_ha_pds_requirements(struct clock *clock, struct config *
+ 	return true;
+ }
+ 
++static bool clock_match_ha_requirements(struct clock *clock, struct config *cfg)
++{
++	return clock_match_ha_dds_requirements(clock, cfg) &&
++		clock_match_ha_tpds_requirements(clock, cfg) &&
++		clock_match_ha_pds_requirements(clock, cfg);
++}
++
+ /* save a list of available source clocks that matches ha requirements */
+ static int clock_available_ha_src_clocks(struct phc2sys_private *priv, struct config *cfg, clock_list_head_t *available_clocks)
+ {
+@@ -1183,7 +1190,8 @@ static struct clock* check_and_select_clock(struct phc2sys_private *priv, struct
+ 		active_clock_class = active->node->dds.clockQuality.clockClass;
+ 		candidate_clock_class = candidate->node->dds.clockQuality.clockClass;
+ 		if ((active->ha_priority == candidate->ha_priority) &&
+-			(active_clock_class == candidate_clock_class)) {
++			(active_clock_class == candidate_clock_class) &&
++			clock_match_ha_requirements(active, cfg)) {
+ 			return NULL;
+ 		}
+ 
+-- 
+2.25.1
+
