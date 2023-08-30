@@ -1,8 +1,0 @@
-0001-Revert-Tiller-listen-on-localhost-by-default.patch
-0002-Revert-Add-labels-to-Armada-deployment.patch
-0003-Create-lock-CRD-as-apiextensions.k8s.io-v1-object.patch
-0004-Add-Helm-v2-client-initialization.patch
-0005-Tiller-wait-for-postgres-database-ping.patch
-0006-Update-the-liveness-probe-to-verify-postgres-connect.patch
-0007-Update-postgres-liveness-check-to-support-IPv6-addre.patch
-0008-Add-toleration-to-armada-api.patch

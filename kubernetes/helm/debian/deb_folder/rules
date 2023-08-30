@@ -26,7 +26,6 @@ override_dh_auto_install:
 	install -d -m 755 $(ROOT)/usr/local/sbin
 	install -p -D -m 755 $(HELM_EXECUTABLE) $(SBINDIR)
 	install -p -D -m 755 helm-upload $(ROOT)/usr/local/sbin
-	install -p -D -m 755 helmv2-cli.sh $(ROOT)/usr/local/sbin/helmv2-cli
 	install -d -m 755 $(SUDOERDIR)
 	install -p -D -m 440 helm.sudo $(SUDOERDIR)/helm
 	install -d -m 755 $(ROOT)/usr/local/share/helm

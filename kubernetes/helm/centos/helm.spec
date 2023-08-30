@@ -52,7 +52,6 @@ cp -R mapkubeapis %{buildroot}/usr/local/share/helm/plugins/
 %defattr(-,root,root,-)
 %{_sbindir}/helm
 /usr/local/sbin/helm-upload
-/usr/local/sbin/helmv2-cli
 %{_sysconfdir}/sudoers.d/helm
 /usr/local/share/helm/plugins/2to3/*
 /usr/local/share/helm/plugins/mapkubeapis/*

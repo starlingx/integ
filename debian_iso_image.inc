@@ -1,8 +1,5 @@
 # List of packages to be included/installed in ISO
 
-#armada
-armada
-
 #base-passwd
 base-passwd
 
