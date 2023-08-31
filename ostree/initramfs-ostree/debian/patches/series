@@ -13,3 +13,4 @@
 0013-Rsync-the-ostree-repo-before-pulling.patch
 0014-init-ostree-install.sh-support-boot-option-inst.ks-f.patch
 0015-Support-driver-switch-in-installer.patch
+0016-init-ostree-install.sh-skip-eject-operation-through-.patch
