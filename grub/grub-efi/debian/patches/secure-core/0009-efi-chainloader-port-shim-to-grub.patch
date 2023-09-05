@@ -1,7 +1,7 @@
-From cb88b18b2648c89bccedb7bda25e398618110cbc Mon Sep 17 00:00:00 2001
+From 061a1200d52bdfc6160cfad5fbe1cef125f8d3a2 Mon Sep 17 00:00:00 2001
 From: Ricardo Neri <ricardo.neri-calderon@linux.intel.com>
 Date: Fri, 27 Mar 2015 08:19:21 -0700
-Subject: [PATCH] efi: chainloader: port shim to grub
+Subject: [PATCH 4/7] efi: chainloader: port shim to grub
 
 Upstream-Status: Inappropriate [embedded specific]
 
@@ -26,7 +26,7 @@ Signed-off-by: Ricardo Neri <ricardo.neri-calderon@linux.intel.com>
  1 file changed, 534 insertions(+)
 
 diff --git a/grub-core/loader/efi/chainloader.c b/grub-core/loader/efi/chainloader.c
-index 2bd80f4..d192e2d 100644
+index 7557eb2..74c84a7 100644
 --- a/grub-core/loader/efi/chainloader.c
 +++ b/grub-core/loader/efi/chainloader.c
 @@ -32,6 +32,7 @@
@@ -37,10 +37,10 @@ index 2bd80f4..d192e2d 100644
  #include <grub/command.h>
  #include <grub/i18n.h>
  #include <grub/net.h>
-@@ -49,6 +50,539 @@ static grub_efi_uintn_t pages;
- static grub_efi_device_path_t *file_path;
- static grub_efi_handle_t image_handle;
- static grub_efi_char16_t *cmdline;
+@@ -43,6 +44,539 @@
+ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ static grub_dl_t my_mod;
 +static grub_int32_t shim_used;
 +static grub_efi_physical_address_t shim_buffer;
 +static grub_efi_uintn_t shim_pages;
@@ -576,7 +576,7 @@ index 2bd80f4..d192e2d 100644
 +}
  
  static grub_err_t
- grub_chainloader_unload (void)
+ grub_chainloader_unload (void *context)
 -- 
-2.17.1
+2.25.1
 

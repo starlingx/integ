@@ -21,3 +21,6 @@
 0021-net-ip-Do-IP-fragment-maths-safely.patch
 0022-net-http-Fix-OOB-write-for-split-http-headers.patch
 0023-net-http-Error-out-on-headers-with-LF-without-CR.patch
+0024-loader-efi-chainloader-Simplify-the-loader-state.patch
+0025-commands-boot-Add-API-to-pass-context-to-loader.patch
+0026-loader-efi-chainloader-Use-grub_loader_set_ex.patch
