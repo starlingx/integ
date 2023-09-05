@@ -15,3 +15,9 @@
 0015-font-Harden-grub_font_blit_glyph-and-grub_font_blit_.patch
 0016-font-Assign-null_font-to-glyphs-in-ascii_font_glyph.patch
 0017-normal-charset-Fix-an-integer-overflow-in-grub_unico.patch
+0018-video-readers-png-Drop-greyscale-support-to-fix-heap.patch
+0019-video-readers-png-Avoid-heap-OOB-R-W-inserting-huff-.patch
+0020-video-readers-jpeg-Block-int-underflow-wild-pointer-.patch
+0021-net-ip-Do-IP-fragment-maths-safely.patch
+0022-net-http-Fix-OOB-write-for-split-http-headers.patch
+0023-net-http-Error-out-on-headers-with-LF-without-CR.patch
