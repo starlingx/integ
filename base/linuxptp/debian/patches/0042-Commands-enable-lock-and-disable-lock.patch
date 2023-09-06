@@ -1,7 +1,7 @@
 From e77783a9873baeeda277cfa59059021ce121a693 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Fri, 4 Aug 2023 15:44:12 -0300
-Subject: [PATCH 42/50] Commands 'enable lock' and 'disable lock.
+Subject: [PATCH 42/54] Commands 'enable lock' and 'disable lock.
 
 The 'enable lock' command is used to lock to a single clock
 source and disable the HA clock selection algorithm. The

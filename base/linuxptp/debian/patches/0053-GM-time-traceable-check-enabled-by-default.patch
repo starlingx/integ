@@ -1,0 +1,40 @@
+From a304feefd0c9f6e6319eb643b82f70a8b122f58a Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Thu, 31 Aug 2023 12:36:02 -0300
+Subject: [PATCH 52/54] GM time traceable check enabled by default
+
+Now the GM time traceable check is enabled by default as it is an
+important check for both T-GM and T-BC scenarios.
+
+The GM time traceable check is controlled in configuration by using
+the ha_gm_timeTraceable setting, and it can be disabled using the
+value 0 (ha_gm_timeTraceable 0).
+
+Test plan: default value
+PASS Verify the check is performed by default.
+PASS Verify the user can disable the check by configuration.
+
+Story: 2010723
+Task: 48702
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ config.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/config.c b/config.c
+index d405589..ef17463 100644
+--- a/config.c
++++ b/config.c
+@@ -253,7 +253,7 @@ struct config_item config_tab[] = {
+ 	PORT_ITEM_INT("ha_domainNumber", 0, 0, 127),
+ 	GLOB_ITEM_INT("ha_enabled", 0, 0, 1),
+ 	GLOB_ITEM_INT("ha_gm_frequencyTraceable", 0, 0, 1),
+-	GLOB_ITEM_INT("ha_gm_timeTraceable", 0, 0, 1),
++	GLOB_ITEM_INT("ha_gm_timeTraceable", 1, 0, 1),
+ 	GLOB_ITEM_INT("ha_max_gm_clockAccuracy", 0xfe, 0, 0xff),
+ 	GLOB_ITEM_INT("ha_max_gm_clockClass", 6, 6, 255),
+ 	GLOB_ITEM_INT("ha_max_gm_offsetScaledLogVar", 0xffff, 0, 0xffff),
+-- 
+2.25.1
+

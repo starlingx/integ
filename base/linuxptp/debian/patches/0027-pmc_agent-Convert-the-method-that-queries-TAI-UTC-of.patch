@@ -1,7 +1,7 @@
 From b8188a4fd51bc8983e5d19f18fe37b8ca39d03a6 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:20:04 -0300
-Subject: [PATCH 27/50] pmc_agent: Convert the method that queries TAI-UTC
+Subject: [PATCH 27/54] pmc_agent: Convert the method that queries TAI-UTC
  offset into the canonical form.
 
 This patch renames the function to have the module prefix and corrects the

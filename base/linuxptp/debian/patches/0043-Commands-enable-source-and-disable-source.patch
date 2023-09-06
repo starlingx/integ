@@ -1,7 +1,7 @@
 From 27b5c6afff470053b30ade14537be43f1c1c376d Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Fri, 4 Aug 2023 19:01:57 -0300
-Subject: [PATCH 43/50] Commands 'enable source' and 'disable source'.
+Subject: [PATCH 43/54] Commands 'enable source' and 'disable source'.
 
 These commands controls the list of clocks available to clock
 selection algorithm.

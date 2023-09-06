@@ -1,0 +1,110 @@
+From 5459f8e2eedcace7478a9c74fb6f73dc78af2c84 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Wed, 30 Aug 2023 13:28:34 -0300
+Subject: [PATCH 51/54] Time traceable flag
+
+A new time traceable flag was added to pmc agent to store the current
+time traceable status.
+
+This flag replaces the utc_offset_traceable flag in the HA clock
+selection algorithm and status command.
+
+Test plan: HA clock selection algorithm
+PASS: Verify the clock source which time isn't traceable is discarded
+by the algorithm if ha_gm_timeTraceable is enabled.
+PASS: Verify the clock source which time is traceable isn't discarded
+by the algorithm if ha_gm_timeTraceable is enabled.
+
+Regression: status command
+PASS: Verify the response of status command shows the correct GM time
+traceable.
+
+Story: 2010723
+Task: 48702
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c   | 4 ++--
+ pmc_agent.c | 5 +++++
+ pmc_agent.h | 1 +
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 5df89e5..27ba630 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -361,7 +361,7 @@ static bool clock_match_ha_tpds_requirements(struct clock *clock, struct config
+ 	}
+ 
+ 	/* is time traceable */
+-	if (check_time_traceable && !clock->node->utc_offset_traceable) {
++	if (check_time_traceable && !clock->node->time_traceable) {
+ 		pr_debug("clock %s time is not traceable", clock->device);
+ 		return false;
+ 	}
+@@ -1336,7 +1336,7 @@ static int ha_handle_status_msg(struct phc2sys_private *priv, char *response,
+ 			clock->node->dds.clockQuality.clockClass,
+ 			clock->node->dds.clockQuality.clockAccuracy,
+ 			clock->node->dds.clockQuality.offsetScaledLogVariance,
+-			clock->node->utc_offset_traceable ? "yes" : "no ",
++			clock->node->time_traceable ? "yes" : "no ",
+ 			clock->node->freq_traceable ? "yes" : "no ",
+ 			clock->node->pds.grandmasterClockQuality.clockClass,
+ 			clock->node->pds.grandmasterClockQuality.clockAccuracy,
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 92fc14c..bf65897 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -344,6 +344,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 	struct ptp_message *msg;
+ 	int res;
+ 	int sync_offset, leap, utc_offset_traceable, freq_traceable;
++	int time_traceable;
+ 
+ 	res = run_pmc(node, timeout, MID_TIME_PROPERTIES_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
+@@ -354,6 +355,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 	sync_offset = node->sync_offset;
+ 	leap = node->leap;
+ 	utc_offset_traceable = node->utc_offset_traceable;
++	time_traceable = node->time_traceable;
+ 	freq_traceable = node->freq_traceable;
+ 
+ 	tds = (struct timePropertiesDS *) management_tlv_data(msg);
+@@ -367,11 +369,13 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 			node->leap = 0;
+ 		node->utc_offset_traceable = tds->flags & UTC_OFF_VALID &&
+ 					     tds->flags & TIME_TRACEABLE;
++		node->time_traceable = tds->flags & TIME_TRACEABLE;
+ 		node->freq_traceable = tds->flags & FREQ_TRACEABLE;
+ 	} else {
+ 		node->sync_offset = 0;
+ 		node->leap = 0;
+ 		node->utc_offset_traceable = 0;
++		node->time_traceable = 0;
+ 		node->freq_traceable = 0;
+ 	}
+ 
+@@ -379,6 +383,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 	if ((sync_offset != node->sync_offset) ||
+ 		(leap != node->leap) ||
+ 		(utc_offset_traceable != node->utc_offset_traceable) ||
++		(time_traceable != node->time_traceable) ||
+ 		(freq_traceable != node->freq_traceable)) {
+ 		node->new_tpds = true;
+ 	}
+diff --git a/pmc_agent.h b/pmc_agent.h
+index 38951b1..4e70606 100644
+--- a/pmc_agent.h
++++ b/pmc_agent.h
+@@ -43,6 +43,7 @@ struct pmc_agent {
+ 	bool stay_subscribed;
+ 	int sync_offset;
+ 	int utc_offset_traceable;
++	int time_traceable;
+ 	int freq_traceable;
+ 	bool new_tpds;
+ 	unsigned int index;
+-- 
+2.25.1
+

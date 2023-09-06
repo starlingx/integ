@@ -48,3 +48,7 @@
 0048-HA-domain-number.patch
 0049-GM-clock-accuracy-and-offset-scaled-log-variance.patch
 0050-Select-matching-requirements-clock-if-active-doesn-t.patch
+0051-Time-traceable-flag.patch
+0052-Command-valid-sources.patch
+0053-GM-time-traceable-check-enabled-by-default.patch
+0054-Disable-active-interface-failing.patch
