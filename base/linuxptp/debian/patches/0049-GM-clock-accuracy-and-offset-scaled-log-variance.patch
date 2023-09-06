@@ -1,7 +1,7 @@
 From 52c6fd7f9212902a2c5195e5a7b2c19a5956633f Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 23 Aug 2023 19:18:08 -0300
-Subject: [PATCH 49/49] GM clock accuracy and offset scaled log variance
+Subject: [PATCH 49/50] GM clock accuracy and offset scaled log variance
 
 Include GM clock quality parameters clock accuracy and offset
 scaled log variance to the clock selection algorithm. Those

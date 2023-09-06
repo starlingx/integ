@@ -1,7 +1,7 @@
 From 4ebb69f5c55e7f1f08d1a73df87d42fe70147ec9 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:58:09 -0300
-Subject: [PATCH 17/49] Find a better home for the management TLV ID helper
+Subject: [PATCH 17/50] Find a better home for the management TLV ID helper
  function.
 
 Signed-off-by: Richard Cochran <richardcochran@gmail.com>

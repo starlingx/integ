@@ -1,7 +1,7 @@
 From fce993dd36e481aace337a62ff81331cd2411bec Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Thu, 27 Jul 2023 14:22:47 -0300
-Subject: [PATCH 41/49] HA phc2sys com socket
+Subject: [PATCH 41/50] HA phc2sys com socket
 
 A new communication path was created to retrieve status and to control
 the high availability algorithm.

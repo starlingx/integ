@@ -1,7 +1,7 @@
 From 5aacbe319db97907a15741005e2790bbf4c742a0 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:37:46 -0300
-Subject: [PATCH 26/49] phc2sys: Fix null pointer de-reference in manual mode.
+Subject: [PATCH 26/50] phc2sys: Fix null pointer de-reference in manual mode.
 
 If both the -w and -O command line options are specified (or when
 using -w when both source and destination clocks are PHCs), then

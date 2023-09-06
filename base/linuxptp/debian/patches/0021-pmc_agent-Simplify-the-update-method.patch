@@ -1,7 +1,7 @@
 From 82a369b4fe44a7cea41fb0ccf408c02b1b6aa694 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:17:26 -0300
-Subject: [PATCH 21/49] pmc_agent: Simplify the update method.
+Subject: [PATCH 21/50] pmc_agent: Simplify the update method.
 
 The main method that causes the PMC agent to update its status takes a flag
 that results in different behavior when push notifications are active.

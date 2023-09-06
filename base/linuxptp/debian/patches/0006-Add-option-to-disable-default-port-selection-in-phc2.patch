@@ -4,7 +4,7 @@ In-Reply-To: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerv
 References: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
 From: Cole Walker <cole.walker@windriver.com>
 Date: Wed, 23 Jun 2021 11:14:41 -0400
-Subject: [PATCH 6/49] Add option to disable default port selection in phc2sys
+Subject: [PATCH 6/50] Add option to disable default port selection in phc2sys
 
 This change serves to address an issue in phc2sys
 where the local ptp clocks are not synced together properly if the local
@@ -31,6 +31,7 @@ but can be configured by users via
 system service-parameter-add ptp global default_sync=0
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
  config.c  |  1 +
  phc2sys.c | 15 ++++++++++++---
