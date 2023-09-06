@@ -1,0 +1,73 @@
+From 6de75db12990a77b167f2957fef99bae76ed04f6 Mon Sep 17 00:00:00 2001
+From: Erickson Silva <Erickson.SilvadeOliveira@windriver.com>
+Date: Fri, 11 Aug 2023 10:29:02 -0300
+Subject: [PATCH] Fix the 'unless' condition of ceph-osd-prepare
+
+In the 'unless' condition of ceph-prepare-osd-* there will be
+a false positive if an exception occurs when running ceph-disk,
+causing the osd to be formatted.
+
+To fix this, the contents of the unless block were moved to the
+command block and the execution of the binary (ceph-disk) was
+isolated.
+
+Signed-off-by: Erickson Silva <Erickson.SilvadeOliveira@windriver.com>
+---
+ manifests/osd.pp | 32 +++++++++++++++-----------------
+ 1 file changed, 15 insertions(+), 17 deletions(-)
+
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index 5353f58..5851676 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -135,10 +135,24 @@ test -z $(ceph-disk list $(readlink -f ${data}) | egrep -o '[0-9a-f]{8}-([0-9a-f
+       Exec[$ceph_check_udev] -> Exec[$ceph_prepare]
+       # ceph-disk: prepare should be idempotent http://tracker.ceph.com/issues/7475
+       exec { $ceph_prepare:
+-
++        # We don't want to erase the disk if:
++        # 1. There is already ceph data on the disk for our cluster AND
++        # 2. The uuid for the OSD we are configuring matches the uuid for the
++        #    OSD on the disk. We don't want to attempt to re-use an OSD that
++        #    had previously been deleted.
+         command   => "/bin/true # comment to satisfy puppet syntax requirements
+ set -ex
+ disk=$(readlink -f ${data})
++# If disk is multipath, must add partition number at the end of string.
++if [[ \${disk} == *dm-* ]]; then
++   ceph_part=${data}-part1
++else
++   ceph_part=${data}
++fi
++ceph_disk_output=$(/usr/sbin/ceph-disk list)
++if echo \${ceph_disk_output} | grep -v 'unknown cluster' | grep \" *$(readlink -f \${ceph_part}).*ceph data\" | grep -v unprepared | grep 'osd uuid ${uuid}'; then
++   exit 0
++fi
+ ceph-disk --verbose --log-stdout prepare --filestore  ${cluster_uuid_option} ${uuid_option} ${osdid_option} --fs-type xfs --zap-disk \${disk} $(readlink -f ${journal})
+ mkdir -p /var/lib/ceph/osd/ceph-${osdid}
+ ceph auth del osd.${osdid} || true
+@@ -154,22 +168,6 @@ mount $(readlink -f \${part}) /var/lib/ceph/osd/ceph-${osdid}
+ ceph-osd --id ${osdid} --mkfs --mkkey --mkjournal
+ ceph auth add osd.${osdid} osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-${osdid}/keyring
+ umount /var/lib/ceph/osd/ceph-${osdid}
+-",
+-        # We don't want to erase the disk if:
+-        # 1. There is already ceph data on the disk for our cluster AND
+-        # 2. The uuid for the OSD we are configuring matches the uuid for the
+-        #    OSD on the disk. We don't want to attempt to re-use an OSD that
+-        #    had previously been deleted.
+-        unless    => "/bin/true # comment to satisfy puppet syntax requirements
+-set -e
+-disk=$(readlink -f ${data})
+-# If disk is multipath, must add partition number at the end of string.
+-if [[ \${disk} == *dm-* ]]; then
+-   ceph_part=${data}-part1
+-else
+-   ceph_part=${data}
+-fi
+-/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep \" *$(readlink -f \${ceph_part}).*ceph data\" | grep -v unprepared | grep 'osd uuid ${uuid}'
+ ",
+         logoutput => true,
+         timeout   => $exec_timeout,
+--
+2.25.1
