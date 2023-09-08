@@ -1,0 +1,39 @@
+From c87892bae32dfc4fbb2cbb0fb4479f947e1d5a42 Mon Sep 17 00:00:00 2001
+From: Zhang Xiao <xiao.zhang@windriver.com>
+Date: Mon, 28 Aug 2023 19:43:11 -0700
+Subject: [PATCH] init-ostree-install.sh: skip eject operation through INSTPOST
+
+In special cases the installation media does not support "eject"
+operation. Add "skip-eject" option on parameter INSTPOST to avoid
+"eject" operation.
+
+Signed-off-by: Zhang Xiao <xiao.zhang@windriver.com>
+---
+ init-ostree-install.sh | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 6494253..0f523bc 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -58,6 +58,7 @@ OPTIONAL:
+  instpost=halt			- Halt at the end of install vs reboot
+  instpost=exit			- exit at the end of install vs reboot
+  instpost=shell		- shell at the end of install vs reboot
++ instpost=skip-eject		- Do not eject boot media at the end of install
+  instos=OSTREE_OS_NAME		- Use alternate OS name vs @OSTREE_OSNAME@
+  instsbd=1			- Turn on the skip-boot-diff configuration
+  instsf=1			- Skip fat partition format
+@@ -1734,7 +1735,9 @@ echo 3 > /proc/sys/vm/drop_caches
+ # Eject installer ISO image if available
+ isodev=$(blkid --label ${ISO_INSTLABEL} -o device)
+ if [ $? -eq 0 ]; then
+-	eject $isodev
++	if [ "$INSTPOST" != "skip-eject" ] ; then
++		eject $isodev
++	fi
+ fi
+ 
+ if [ "$INSTPOST" = "halt" ] ; then
+-- 
+2.40.0
