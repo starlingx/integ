@@ -1,0 +1,5 @@
+luks-fs-mgr (1.0-1) unstable; urgency=medium
+
+  * Initial release.
+
+ --  Rahul Roshan <rahulroshan.kachchap@windriver.com>  Fri, 18 Aug 2023 13:02:42 +0000

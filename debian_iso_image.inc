@@ -271,6 +271,9 @@ libparted2
 parted-doc
 parted
 
+#luks-encryption
+luks-fs-mgr
+
 #pf-bb-config
 pf-bb-config
 

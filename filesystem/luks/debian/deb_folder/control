@@ -1,0 +1,32 @@
+Source: luks-fs-mgr
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+ libjson-c-dev
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: luks-fs-mgr
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, systemd
+Description: Luks encryption service manager
+ The Luks Encryption Service Manager operates as an essential component during
+ the boot process and host unlocking, serving as a critical safeguard for data
+ on StarlingX. This service is responsible for managing the creation,
+ configuration, and utilization of encrypted volumes, all in accordance with
+ the Linux Unified Key Setup (LUKS) standard. Its functionality is driven by
+ the information provided in the luks_config.json file, which acts as a
+ blueprint for configuring the encryption process.
+ Upon startup, the service reads the luks_config.json file to extract crucial
+ parameters, such as the vault file path, volume size, volume name, and
+ mounting path. If the service detects that the encryption volume is already
+ open, it unseals it. This step ensures a seamless experience for users, as they
+ can quickly access their encrypted data without redundant processes.
+ However, if the encryption volume is not open, the service dynamically creates
+ one based on the parameters defined in the JSON configuration. It initializes
+ the vault file using random data, then proceeds to set up the LUKS encryption
+ mechanism and unseals the newly created volume.
+ To ensure the highest level of security, the Luks Encryption Service Manager
+ employs error handling and logging mechanisms, enabling administrators to
+ monitor and troubleshoot any issues that may arise.

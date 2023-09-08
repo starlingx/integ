@@ -1,0 +1,11 @@
+[Unit]
+Description=Create and mount encrypted vault using LUKS
+After=local-fs.target network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/luks-fs-mgr start
+PIDFile=/var/run/luks-fs-mgr.pid
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+{
+	"luksvolumes": [{
+		"PASSPHRASE_TYPE": "HWID",
+		"VAULT_FILE": "/var/luks/stx/luks_volume.img",
+		"VAULT_SIZE": "256M",
+		"VOL_NAME": "luks_encrypted_vault",
+		"MOUNT_PATH": "/var/luks/stx/luks_fs"
+	}]
+}

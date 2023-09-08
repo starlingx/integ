@@ -1,0 +1,3 @@
+usr/local/sbin/luks-fs-mgr
+lib/systemd/system/luks-fs-mgr.service
+etc/luks-fs-mgr.d/luks_config.json
