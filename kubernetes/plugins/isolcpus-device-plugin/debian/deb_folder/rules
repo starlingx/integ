@@ -11,3 +11,6 @@ override_dh_auto_test:
 
 override_dh_usrlocal:
 	echo "do nothing"
+
+override_dh_dwz:
+	echo "do nothing"
