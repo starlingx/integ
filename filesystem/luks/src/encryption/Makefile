@@ -7,12 +7,14 @@
 SHELL = /bin/bash
 
 CFLAGS = -Wall -Wextra -g -Werror -std=c++11
-LIBS = -lstdc++ -lstdc++ -ljson-c
+LIBS = -lstdc++ -ljson-c
 INCLUDES = -I.
 
 CC=g++
 
-SRC = luks-fs-mgr.cpp
+SRC = PassphraseGenerator.cpp luks-fs-mgr.cpp
+COMMON_OBJS = PassphraseGenerator.o
+OBJS = $(SRCS:.cpp=.o)
 EXECUTABLE = luks-fs-mgr
 
 .PHONY: all clean
@@ -20,7 +22,7 @@ EXECUTABLE = luks-fs-mgr
 all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(SRC)
-	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LIBS)
 
 clean:
 	rm -f $(EXECUTABLE) *.o
