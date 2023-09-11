@@ -15,6 +15,7 @@
 #define PASSPHRASE_GENERATOR_H
 
 #include <string>
+#include <memory>
 
 enum PassphraseMechanism {
     HWID_Firmware,

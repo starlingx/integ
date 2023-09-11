@@ -13,7 +13,6 @@
 
 #include <string>
 #include <unistd.h>
-#include <memory>
 #include <exception>
 #include <iostream>
 #include "PassphraseGenerator.h"
