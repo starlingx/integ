@@ -1,0 +1,59 @@
+From e74d268ac5432c0e41dc14fb0ea648a432d8e340 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Thu, 31 Aug 2023 16:05:15 -0300
+Subject: [PATCH 53/54] Disable active interface failing
+
+Fixed the behavior when none clock is matching the requirements and the
+active clock source is disabled using the 'disable source <interface>'
+command. The interface is must be disabled and a new clock source is
+selected.
+
+Test plan: none clock is matching the requirements
+PASS: Verify that the active source can be disabled and a new one is
+selected.
+PASS: Verify that an attempt to disable the last active interface
+fails and an appopriated message is given as response.
+PASS: Verify that the interface with higher priority is selected after
+re-enabling it.
+PASS: Verify the active clock source doesn't change if another
+interface is disabled.
+PASS: Verify the active clock source doesn't change if another
+interface is re-enabled.
+
+Story: 2010723
+Task: 48702
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 9893675..4120568 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1115,6 +1115,10 @@ static struct clock* ha_select_clock(struct phc2sys_private *priv, struct config
+ 			if (clock->node == NULL)
+ 				continue;
+ 
++			/* clock disabled */
++			if (!clock->enabled)
++				continue;
++
+ 			/* get clock class */
+ 			clock_class = clock->node->dds.clockQuality.clockClass;
+ 			if (clock_class  <= lowest_clock_class) {
+@@ -1137,6 +1141,10 @@ static struct clock* ha_select_clock(struct phc2sys_private *priv, struct config
+ 			if (clock->node == NULL)
+ 				continue;
+ 
++			/* clock disabled */
++			if (!clock->enabled)
++				continue;
++
+ 			best = clock;
+ 		}
+ 	}
+-- 
+2.25.1
+

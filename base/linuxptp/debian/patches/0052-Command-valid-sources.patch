@@ -1,0 +1,69 @@
+From 146da924d87830de29a8f261636e5311fa8997ac Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Wed, 30 Aug 2023 15:43:42 -0300
+Subject: [PATCH 51/54] Command 'valid sources'
+
+The 'valid sources' command is used to get a list of interfaces which
+the clock is matching the requirements. The response contains a space
+separated list of interfaces, or "None" when not a single clock is
+matching all the requirements.
+
+Test plan: valid sources command
+PASS: Verify that a space separated list of interface is returned when
+one or more clocks match the requirements.
+PASS: Verify that the string "None" is returned when not a single clock
+match the requirements.
+
+Story: 2010723
+Task: 48702
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 27ba630..9893675 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1499,6 +1499,27 @@ static int ha_handle_disable_source_msg(struct phc2sys_private *priv,
+ 	return curlen;
+ }
+ 
++static int ha_handle_valid_sources_msg(struct phc2sys_private *priv,
++			struct config *cfg, char *response, size_t resplen)
++{
++	size_t curlen = 0;
++	struct clock *clock = NULL;
++
++	LIST_FOREACH(clock, &priv->clocks, list) {
++		if (clock_match_ha_requirements(clock, cfg)) {
++			curlen += snprintf(response + curlen, resplen - curlen,
++				"%s ", clock->device);
++		}
++	}
++
++	/* no clock is matching requirements */
++	if (0 == curlen) {
++		curlen = snprintf(response, resplen, "None");
++	}
++
++	return curlen;
++}
++
+ static int ha_com_socket_handle_msg(struct phc2sys_private *priv,
+ 			struct config *cfg)
+ {
+@@ -1567,6 +1588,9 @@ static int ha_com_socket_handle_msg(struct phc2sys_private *priv,
+ 		} else if (starts_with("disable source", buffer)) {
+ 			cnt = ha_handle_disable_source_msg(priv, cfg, buffer, response,
+ 					HA_SCK_BUFFER_SIZE);
++		} else if (strcmp((const char*)buffer, "valid sources") == 0) {
++			cnt = ha_handle_valid_sources_msg(priv, cfg, response,
++					HA_SCK_BUFFER_SIZE);
+ 		} else {
+ 			cnt = snprintf((char*)response, HA_SCK_BUFFER_SIZE,
+ 					"Error: Invalid command");
+-- 
+2.25.1
+

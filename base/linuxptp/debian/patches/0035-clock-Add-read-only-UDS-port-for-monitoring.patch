@@ -1,7 +1,7 @@
 From 4af24949b94eda84b4b74d77b9164cf3fe0eccf9 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 18:18:29 -0300
-Subject: [PATCH 35/50] clock: Add read-only UDS port for monitoring.
+Subject: [PATCH 35/54] clock: Add read-only UDS port for monitoring.
 
 Add a second UDS port to allow untrusted applications to monitor ptp4l.
 On this "read-only" UDS port disable non-GET actions and forwarding.

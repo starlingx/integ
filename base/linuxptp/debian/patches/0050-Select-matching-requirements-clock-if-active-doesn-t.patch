@@ -1,7 +1,7 @@
 From 2155ccb5a4de8cbebb552cf3d0a23874b026a716 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Tue, 29 Aug 2023 19:06:23 -0300
-Subject: [PATCH 50/50] Select matching requirements clock if active doesn't match
+Subject: [PATCH 50/54] Select matching requirements clock if active doesn't match
  them
 
 Fix clock selection algorithm behavior where a clock source starts
