@@ -1,0 +1,92 @@
+Source: kubernetes-1.27.5
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <StarlingX-discuss@lists.StarlingX.io>
+Build-Depends: debhelper-compat (= 13),
+               build-essential,
+               bash-completion,
+               jq,
+               rsync,
+               go-bindata,
+               go-md2man,
+               golang-1.20
+Standards-Version: 4.4.1
+Homepage: http://kubernetes.io/
+
+Package: kubernetes-1.27.5-client
+Provides: kubernetes-utils
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Recommends: ${misc:Recommends}
+Built-Using: ${misc:Built-Using}
+Description: Kubernetes Command Line Tool
+ The Kubernetes command line tool for interacting with the Kubernetes API.
+
+Package: kubernetes-1.27.5-master
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends},
+        adduser,
+        lsb-base,
+        etcd
+Recommends: ${misc:Recommends}, kubernetes-1.27.5-client
+Built-Using: ${misc:Built-Using}
+Description: Kubernetes services for master host
+ Container Cluster Manager from Google. Kubernetes is an open source system
+ for managing containerized applications across multiple hosts, providing
+ basic mechanisms for deployment, maintenance, and scaling of applications.
+ .
+ Linux kernel version 3.8 or above is required for proper operation of the
+ daemon process, and that any lower versions may have subtle and/or glaring
+ issues.
+ .
+ This package provides "kube-apiserver", "kube-controller-manager" and
+ "kube-scheduler" daemons.
+
+Package: kubernetes-1.27.5-node
+Provides: cadvisor
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends},
+        adduser,
+        conntrack,
+        conntrackd,
+        docker.io,
+        lsb-base,
+        socat,
+Recommends: ${misc:Recommends}, kubernetes-1.27.5-client
+Built-Using: ${misc:Built-Using}
+Description: Kubernetes services for node host
+ Container Cluster Manager from Google. Kubernetes is an open source system
+ for managing containerized applications across multiple hosts, providing
+ basic mechanisms for deployment, maintenance, and scaling of applications.
+ .
+ Linux kernel version 3.8 or above is required for proper operation of the
+ daemon process, and that any lower versions may have subtle and/or glaring
+ issues.
+
+Package: kubernetes-1.27.5-kubeadm
+Architecture: amd64
+Depends: ${misc:Depends}, containernetworking-plugins
+Recommends: ${misc:Recommends}, kubernetes-1.27.5-client
+Built-Using: ${misc:Built-Using}
+Description: Kubernetes Cluster Bootstrapping Tool
+ The Kubernetes command line tool for bootstrapping a Kubernetes cluster.
+
+Package: kubernetes-1.27.5-misc
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Recommends: ${misc:Recommends}
+Built-Using: ${misc:Built-Using}
+Description: dummy package
+ Kubernetes dummy package for misc stuff we don't want to install in production.
+
+Package: kubernetes-1.27.5-unit-test
+Architecture: amd64
+Depends: ${misc:Depends}, ${shlibs:Depends},
+         hostname,
+         rsync,
+         etcd (>= 2.0.9),
+         network-manager,
+Recommends: ${misc:Recommends}
+Built-Using: ${misc:Built-Using}
+Description: Kubernetes unit test
+ Kubernetes unit-test framework.
