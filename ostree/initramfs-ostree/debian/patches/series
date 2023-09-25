@@ -14,3 +14,4 @@
 0014-init-ostree-install.sh-support-boot-option-inst.ks-f.patch
 0015-Support-driver-switch-in-installer.patch
 0016-init-ostree-install.sh-skip-eject-operation-through-.patch
+0017-Allow-adjusting-boot-order.patch
