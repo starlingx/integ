@@ -1,0 +1,126 @@
+From 745ca38039944f70ccb98cf9e75e3f439377399e Mon Sep 17 00:00:00 2001
+From: Boovan Rajendran <boovan.rajendran@windriver.com>
+Date: Wed, 30 Aug 2023 04:20:24 -0400
+Subject: [PATCH] Revert "use subpath for coredns only for default repository"
+
+This reverts commit 38a41e1557649a7cc763bf737779db9aa03ec75e.
+
+Co-authored-by: Jim Gauld <james.gauld@windriver.com>
+Signed-off-by: Gleb Aronsky <gleb.aronsky@windriver.com>
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+---
+ cmd/kubeadm/app/constants/constants.go |  2 +-
+ cmd/kubeadm/app/images/images.go       |  5 ---
+ cmd/kubeadm/app/images/images_test.go  | 55 --------------------------
+ 3 files changed, 1 insertion(+), 61 deletions(-)
+
+diff --git a/cmd/kubeadm/app/constants/constants.go b/cmd/kubeadm/app/constants/constants.go
+index 1146b67dd59..e89ae1d62df 100644
+--- a/cmd/kubeadm/app/constants/constants.go
++++ b/cmd/kubeadm/app/constants/constants.go
+@@ -344,7 +344,7 @@ const (
+ 	CoreDNSDeploymentName = "coredns"
+ 
+ 	// CoreDNSImageName specifies the name of the image for CoreDNS add-on
+-	CoreDNSImageName = "coredns"
++	CoreDNSImageName = "coredns/coredns"
+ 
+ 	// CoreDNSVersion is the version of CoreDNS to be deployed if it is used
+ 	CoreDNSVersion = "v1.10.1"
+diff --git a/cmd/kubeadm/app/images/images.go b/cmd/kubeadm/app/images/images.go
+index a9a9528b669..5099b260530 100644
+--- a/cmd/kubeadm/app/images/images.go
++++ b/cmd/kubeadm/app/images/images.go
+@@ -22,7 +22,6 @@ import (
+ 	"k8s.io/klog/v2"
+ 
+ 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+-	kubeadmapiv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
+ 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+ 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
+ )
+@@ -48,10 +47,6 @@ func GetDNSImage(cfg *kubeadmapi.ClusterConfiguration) string {
+ 	if cfg.DNS.ImageRepository != "" {
+ 		dnsImageRepository = cfg.DNS.ImageRepository
+ 	}
+-	// Handle the renaming of the official image from "registry.k8s.io/coredns" to "registry.k8s.io/coredns/coredns
+-	if dnsImageRepository == kubeadmapiv1beta3.DefaultImageRepository {
+-		dnsImageRepository = fmt.Sprintf("%s/coredns", dnsImageRepository)
+-	}
+ 	// DNS uses an imageTag that corresponds to the DNS version matching the Kubernetes version
+ 	dnsImageTag := constants.CoreDNSVersion
+ 
+diff --git a/cmd/kubeadm/app/images/images_test.go b/cmd/kubeadm/app/images/images_test.go
+index 1aa08e30fa8..f19880cdc2e 100644
+--- a/cmd/kubeadm/app/images/images_test.go
++++ b/cmd/kubeadm/app/images/images_test.go
+@@ -22,7 +22,6 @@ import (
+ 	"testing"
+ 
+ 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+-	kubeadmapiv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
+ 	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+ )
+ 
+@@ -235,57 +234,3 @@ func TestGetAllImages(t *testing.T) {
+ 	}
+ }
+ 
+-func TestGetDNSImage(t *testing.T) {
+-	var tests = []struct {
+-		expected string
+-		cfg      *kubeadmapi.ClusterConfiguration
+-	}{
+-		{
+-			expected: "foo.io/coredns:v1.10.1",
+-			cfg: &kubeadmapi.ClusterConfiguration{
+-				ImageRepository: "foo.io",
+-				DNS:             kubeadmapi.DNS{},
+-			},
+-		},
+-		{
+-			expected: kubeadmapiv1beta3.DefaultImageRepository + "/coredns/coredns:v1.10.1",
+-			cfg: &kubeadmapi.ClusterConfiguration{
+-				ImageRepository: kubeadmapiv1beta3.DefaultImageRepository,
+-				DNS:             kubeadmapi.DNS{},
+-			},
+-		},
+-		{
+-			expected: "foo.io/coredns/coredns:v1.10.1",
+-			cfg: &kubeadmapi.ClusterConfiguration{
+-				ImageRepository: "foo.io",
+-				DNS: kubeadmapi.DNS{
+-					ImageMeta: kubeadmapi.ImageMeta{
+-						ImageRepository: "foo.io/coredns",
+-					},
+-				},
+-			},
+-		},
+-		{
+-			expected: "foo.io/coredns/coredns:v1.11.0",
+-			cfg: &kubeadmapi.ClusterConfiguration{
+-				ImageRepository: "foo.io/coredns",
+-				DNS: kubeadmapi.DNS{
+-					ImageMeta: kubeadmapi.ImageMeta{
+-						ImageTag: "v1.11.0",
+-					},
+-				},
+-			},
+-		},
+-	}
+-
+-	for _, test := range tests {
+-		actual := GetDNSImage(test.cfg)
+-		if actual != test.expected {
+-			t.Errorf(
+-				"failed to GetDNSImage:\n\texpected: %s\n\t actual: %s",
+-				test.expected,
+-				actual,
+-			)
+-		}
+-	}
+-}
+-- 
+2.25.1
+
