@@ -1,0 +1,17 @@
+Metadata-Version: 1
+Name: openssl
+Version: 1.1.1w
+Summary: Openssl with sctp enabling
+Home-page:
+Author:
+Author-email:
+License: BSD
+
+Description:
+By default, OpenSSL is typically configured and built with support for
+TCP and UDP, but SCTP is not included.
+To support DTLS Protocol, openssl library must be built with
+'enable-sctp' flag.
+
+
+Platform: UNKNOWN

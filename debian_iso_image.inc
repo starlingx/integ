@@ -382,6 +382,10 @@ openscap-scanner
 openscap-utils
 python3-openscap
 
+#openssl
+openssl
+libssl1.1
+
 #openvswitch
 openvswitch-common
 openvswitch-switch-dpdk

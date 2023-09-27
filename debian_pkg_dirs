@@ -8,6 +8,7 @@ base/lighttpd
 base/linuxptp
 base/lvm2
 base/lsb
+base/openssl
 base/pf-bb-config
 base/synce4l
 base/systemd
