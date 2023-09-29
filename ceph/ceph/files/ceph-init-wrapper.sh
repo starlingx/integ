@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019-2023 Wind River Systems, Inc.
+# Copyright (c) 2019-2024 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -329,7 +329,7 @@ log_and_kill_hung_procs ()
 
         # monitoring interval
         wlog $name "INFO" "Increasing log level"
-        execute_ceph_cmd ret $name "ceph daemon $name config set debug_$type 20/20"
+        WAIT_FOR_CMD=10 execute_ceph_cmd ret $name "ceph daemon $name config set debug_$type 20/20"
         monitoring=$MONITORING_INTERVAL
         while [ $monitoring -gt 0 ]; do
             if [ $(($monitoring % $TRACE_LOOP_INTERVAL)) -eq 0 ]; then
