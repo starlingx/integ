@@ -94,7 +94,6 @@ efitools
 #etcd
 etcd-client
 etcd-server
-etcd
 #golang-etcd-server-dev  # not used
 
 #facter

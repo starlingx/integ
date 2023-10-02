@@ -1,11 +1,11 @@
 ---
 debname: etcd
-debver: 3.3.25+dfsg-6
+debver: 3.4.27
 dl_path:
-  name: etcd-debian-3.3.25+dfsg-6.tar.gz
-  url: https://salsa.debian.org/go-team/packages/etcd/-/archive/debian/3.3.25+dfsg-6/etcd-debian-3.3.25+dfsg-6.tar.gz
-  md5sum: 91df267a20b0f34a1ad1ff48a8815706
-  sha256sum: c1303c274a3bb83fca94fa862454c7110ed131323d54e5614f401b62f3665e3f
+  name: etcd-3.4.27.tar.gz
+  url: https://github.com/etcd-io/etcd/archive/refs/tags/v3.4.27.tar.gz
+  md5sum: 8337cfbd8c437107b0b95fef06fe1d18
+  sha256sum: aad42ea0635bc6481b04eb6e279c6122ccd72117018296aab32d0f9d6d606243
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
