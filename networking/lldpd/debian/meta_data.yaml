@@ -1,6 +1,6 @@
 ---
-debver: 1.0.11-1+deb11u1
-archive: https://snapshot.debian.org/archive/debian/20230508T030704Z/pool/main/l/lldpd/
+debver: 1.0.11-1+deb11u2
+archive: https://snapshot.debian.org/archive/debian/20230927T030735Z/pool/main/l/lldpd/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
