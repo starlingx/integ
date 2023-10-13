@@ -400,7 +400,7 @@ libpam-systemd
 libsystemd0
 #libudev-dev  # not used
 libudev1
-#systemd-container  # not used
+systemd-container
 #systemd-coredump  # not used
 #systemd-journal-remote  # not used
 systemd-sysv
