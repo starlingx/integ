@@ -7,7 +7,7 @@
 SHELL = /bin/bash
 
 CFLAGS = -Wall -Wextra -g -Werror -std=c++11
-LIBS = -lstdc++ -ljson-c
+LIBS = -lstdc++ -ljson-c -ldaemon
 INCLUDES = -I.
 
 CC=g++

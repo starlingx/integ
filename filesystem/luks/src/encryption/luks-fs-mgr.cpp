@@ -14,12 +14,15 @@
 #include <json-c/json.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <libdaemon/daemon.h>
 #include <iostream>
 #include <string>
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
 #include "PassphraseGenerator.h"
+
+#define SLEEP_DURATION 60
 
 using namespace std;
 
@@ -707,8 +710,40 @@ bool resizeVault(const char* vaultFile,
     }
 }
 
+/* ***********************************************************************
+ *
+ * Name       : monitorLUKSVolume
+ *
+ * Description: This function monitors the LUKS volume status and runs
+ *              in loop until there's any issue with the LUKS volume.
+ *
+ * ************************************************************************/
+
+void monitorLUKSVolume(const string& volumeName) {
+    while (1) {
+        string statusCommand = "cryptsetup status " + volumeName +
+                                                           " 2>/dev/null";
+        int status = system(statusCommand.c_str());
+            if (status != 0) {
+                string errorMessage = "LUKS volume is not in use. "
+                                      "Error code: " + to_string(status);
+                log(errorMessage, LOG_ERR);
+                break;
+            }
+            sleep(SLEEP_DURATION);
+        }
+}
+
 int main() {
     int rc = 0;
+    int ret = daemon(0, 0);
+    if (ret != 0) {
+        string errorMessage = "Failed to run luks-fs-mgr as daemon service. "
+                              "Error code: " + to_string(ret);
+        log(errorMessage, LOG_ERR);
+        return 1;
+    }
+
     LuksConfig luksConfig;
     CreatedLuksConfig createdLuksConfig;
     string passphrase;
@@ -723,10 +758,10 @@ int main() {
     PassphraseMechanism selectedMechanism = passPhraseType();
     auto passphraseGenerator =
       PassphraseGeneratorFactory::createPassphraseGenerator(selectedMechanism);
-    bool ret = passphraseGenerator->generatePassphrase(passphrase);
+    bool passStatus = passphraseGenerator->generatePassphrase(passphrase);
 
     // Validating if passphrase is empty
-    if (passphrase.empty() || ret == false) {
+    if (passphrase.empty() || passStatus == false) {
         log("Passphrase generation failed or"
                             " returned an empty passphrase.", LOG_ERR);
         rc = 1;
@@ -786,6 +821,7 @@ int main() {
         int createdsize = 0;
         defaultsize = checkVaultSize(luksConfig.vaultSize);
         createdsize = checkVaultSize(createdLuksConfig.vaultSize);
+        string volName = string(createdLuksConfig.volName);
         if (defaultsize > createdsize) {
             log("Resizing the vault file.", LOG_INFO);
             if (resizeVault(createdLuksConfig.vaultFile,
@@ -834,7 +870,7 @@ int main() {
                 // or device is block device
                 // 1: failure; incorrect invocation, permissions or system error
                 // 32: failure; the directory is not a mountpoint,
-                // or device is not a block device on
+                // or device is not a block device
                 if (mountpoint_status != 0) {
                     // Mount path directory is not mount point,
                     // proceed to mount it
@@ -863,8 +899,9 @@ int main() {
             log("Encrypted vault is mounted.", LOG_INFO);
             }
         }
-    rc = 0;
-    goto cleanup;
+        monitorLUKSVolume(volName);
+        rc = 0;
+        goto cleanup;
     } else {
         // Execute the below code when service start during first boot
         // Create default directory for the service to create FS and mount
@@ -882,6 +919,7 @@ int main() {
         // Create a new string to hold the created values
         string modifiedVaultFile = luksConfig.vaultFile;
         string mountPath = luksConfig.mountPath;
+        string volName = luksConfig.volName;
         // Check if directory path is provided in vaultFile
         size_t lastSlashPos = modifiedVaultFile.rfind('/');
         if (lastSlashPos == string::npos) {
@@ -1027,6 +1065,7 @@ int main() {
             rc = 1;
             goto cleanup;
         }
+        monitorLUKSVolume(volName);
         rc = 0;
         goto cleanup;
     }
