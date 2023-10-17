@@ -1,0 +1,43 @@
+From a988607febfcb518857b5120a1bbcfe2ac68b838 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Tue, 17 Oct 2023 14:40:42 -0400
+Subject: [PATCH] No leap second on 2023-12-31
+
+Per IERS Bulletin C 66 (2023-07-04).
+https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.66
+
+* leap-seconds.list: Update file from NIST, retrieved from
+ftp://ftp.boulder.nist.gov/pub/time/leap-seconds.list
+
+Signed-off-by: Scott Little <scott.little@windriver.com>
+---
+ leap-seconds.list | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/leap-seconds.list b/leap-seconds.list
+index 17e3a10..3fe9a12 100644
+--- a/leap-seconds.list
++++ b/leap-seconds.list
+@@ -204,10 +204,10 @@
+ #	current -- the update time stamp, the data and the name of the file
+ #	will not change.
+ #
+-#	Updated through IERS Bulletin C65
+-#	File expires on:  28 December 2023
++#	Updated through IERS Bulletin C66
++#	File expires on:  28 June 2024
+ #
+-#@	3912710400
++#@	3928521600
+ #
+ 2272060800	10	# 1 Jan 1972
+ 2287785600	11	# 1 Jul 1972
+@@ -252,4 +252,4 @@
+ #	the hash line is also ignored in the
+ #	computation.
+ #
+-#h 	e76a99dc 65f15cc7 e613e040 f5078b5e b23834fe
++#h 	16edd0f0 3666784f 37db6bdd e74ced87 59af48f1
+-- 
+2.7.4
+

@@ -1,0 +1,7 @@
+---
+debver: 2023c-10
+debname: tzdata
+archive: https://snapshot.debian.org/archive/debian/20231001T025741Z/pool/main/t/tzdata/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
