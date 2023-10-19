@@ -52,7 +52,7 @@
         postgresql: true
       devstack_localrc:
         # LIBS_FROM_GIT: keystone
-        FORCE: yes # yamllint disable-line rule:truthy
+        FORCE: yes  # yamllint disable-line rule:truthy
 
 # A minimal base job that eliminates most OpenStack services
 # Leave Celiometer, Horizon and Swift in the base since none
@@ -125,7 +125,7 @@
         postgresql: true
       devstack_localrc:
         # LIBS_FROM_GIT: keystone
-        FORCE: yes # yamllint disable-line rule:truthy
+        FORCE: yes  # yamllint disable-line rule:truthy
 
 # And the tox version of the base-min job
 - job:
