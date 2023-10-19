@@ -1,6 +1,6 @@
-From 4b27111fbe6b626d08e212eb48693a228da203bc Mon Sep 17 00:00:00 2001
-From: Charles Short <charles.short@windriver.com>
-Date: Tue, 7 Dec 2021 18:49:39 +0000
+From 166ccc11c71ce7d68073e4231c6423a8eae9c1c2 Mon Sep 17 00:00:00 2001
+From: Karla Felix <karla.karolinenogueirafelix@windriver.com>
+Date: Wed, 18 Oct 2023 19:32:16 -0300
 Subject: [PATCH] Do not set gecos when creating user
 
 Remove the gecos creation since it causes issue while running
@@ -8,11 +8,12 @@ debootstrap.
 
 Signed-off-by: Charles Short <charles.short@windriver.com>
 ---
+---
  debian/docker-registry.postinst | 1 -
  1 file changed, 1 deletion(-)
 
 diff --git a/debian/docker-registry.postinst b/debian/docker-registry.postinst
-index 96ded3c..13df951 100755
+index d179197..d6a93ba 100755
 --- a/debian/docker-registry.postinst
 +++ b/debian/docker-registry.postinst
 @@ -7,7 +7,6 @@ if [ "$1" = 'configure' ]; then
@@ -24,5 +25,5 @@ index 96ded3c..13df951 100755
  	fi
  
 -- 
-2.30.2
+2.25.1
 

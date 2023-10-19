@@ -1,14 +1,14 @@
-From 922d937e24a4a0cd9d826579eeb9afed4f7c234c Mon Sep 17 00:00:00 2001
-From: Daniel Safta <daniel.safta@windriver.com>
-Date: Wed, 3 Nov 2021 09:48:45 +0000
+From d59ec80b26c352416d84eb22e8dc8c743eb9a8e6 Mon Sep 17 00:00:00 2001
+From: Karla Felix <karla.karolinenogueirafelix@windriver.com>
+Date: Wed, 18 Oct 2023 19:05:21 -0300
 Subject: [PATCH] debian-patches
 
 ---
  debian/docker-registry.init     | 2 +-
- debian/docker-registry.install  | 2 +-
  debian/docker-registry.postinst | 2 +-
  debian/docker-registry.service  | 7 ++++++-
- 4 files changed, 9 insertions(+), 4 deletions(-)
+ debian/rules                    | 4 ++--
+ 4 files changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/debian/docker-registry.init b/debian/docker-registry.init
 index c225130..c03a67a 100644
@@ -23,15 +23,6 @@ index c225130..c03a67a 100644
  EXECUSER=docker-registry
  PIDFILE=/var/run/$BASE.pid
  LOGFILE=/var/log/$BASE.log
-diff --git a/debian/docker-registry.install b/debian/docker-registry.install
-index ea1de25..6ed37e3 100755
---- a/debian/docker-registry.install
-+++ b/debian/docker-registry.install
-@@ -1,3 +1,3 @@
- #!/usr/bin/dh-exec
- usr/bin/registry => usr/bin/docker-registry
--cmd/registry/config-example.yml => etc/docker/registry/config.yml
-+cmd/registry/config-example.yml => etc/docker-distribution/registry/config.yml
 diff --git a/debian/docker-registry.postinst b/debian/docker-registry.postinst
 index 96ded3c..d179197 100755
 --- a/debian/docker-registry.postinst
@@ -63,6 +54,21 @@ index 066e38a..a2feaa6 100644
  
  [Install]
  WantedBy=multi-user.target
+diff --git a/debian/rules b/debian/rules
+index 8f0ea9f..ec4fa26 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -15,8 +15,8 @@ override_dh_auto_build:
+ 
+ execute_after_dh_auto_install:
+ 	mv debian/tmp/usr/bin/registry debian/tmp/usr/bin/docker-registry
+-	mkdir -p debian/tmp/etc/docker/registry
+-	cp cmd/registry/config-example.yml debian/tmp/etc/docker/registry/config.yml
++	mkdir -p debian/tmp/etc/docker-distribution/registry
++	cp cmd/registry/config-example.yml debian/tmp/etc/docker-distribution/registry/config.yml
+ 
+ override_dh_auto_test:
+ 	dh_auto_test -- -test.short -test.timeout=1h
 -- 
-2.30.2
+2.25.1
 
