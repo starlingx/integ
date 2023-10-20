@@ -14,6 +14,8 @@
 #include <string>
 #include <unistd.h>
 #include <memory>
+#include <exception>
+#include <iostream>
 #include "PassphraseGenerator.h"
 using namespace std;
 
@@ -78,6 +80,10 @@ class HWIDPassphraseGenerator : public PassphraseGenerator {
 class SGXPassphraseGenerator : public PassphraseGenerator {
  public:
     bool generatePassphrase(string &shaPhrase) override {
+        // Pretend like shaPhrase is used, to avoid getting the
+        // "unused parameter" message from the compiler, which results in
+        // compliation errors due to -Werror.
+        (void)shaPhrase;
         // Implement SGX-based passphrase generation
         // Replace this with actual generated passphrase
         return "sgx_generated_passphrase";
@@ -88,6 +94,10 @@ class SGXPassphraseGenerator : public PassphraseGenerator {
 class TPMPassphraseGenerator : public PassphraseGenerator {
  public:
     bool generatePassphrase(string &shaPhrase) override {
+        // Pretend like shaPhrase is used, to avoid getting the
+        // "unused parameter" message from the compiler, which results in
+        // compliation errors due to -Werror.
+        (void)shaPhrase;
         // Implement TPM-based passphrase generation
         // Replace this with actual generated passphrase
         return "tpm_generated_passphrase";
