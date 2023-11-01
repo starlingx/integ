@@ -38,6 +38,7 @@ config/puppet-modules/puppet-network
 config/puppet-modules/puppet-puppi
 config/puppet-modules/puppet-rabbitmq-8.5.0
 config/puppet-modules/puppet-staging
+config/puppet-modules/puppet-zitrlp-strongswan
 docker/python-docker
 filesystem/drbd/drbd-tools
 filesystem/luks

@@ -350,6 +350,9 @@ puppet-module-puppetlabs-postgresql
 #puppetlabs-stdlib-5.0.0
 puppet-module-puppetlabs-stdlib
 
+#puppet-zitrlp-strongswan
+puppet-zitrlp-strongswan
+
 #python-docker
 python3-docker
 

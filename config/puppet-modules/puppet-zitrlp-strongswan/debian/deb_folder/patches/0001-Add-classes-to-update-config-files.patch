@@ -1,0 +1,146 @@
+From c02bf3a61dafb0dee6362c0bb63e782abe3090f2 Mon Sep 17 00:00:00 2001
+From: Leonardo Mendes <Leonardo.MendesSantana@windriver.com>
+Date: Tue, 17 Oct 2023 14:18:54 -0300
+Subject: [PATCH] Add classes to update config files
+
+---
+ manifests/charon.pp         | 12 ++++++++++++
+ manifests/charon_logging.pp | 12 ++++++++++++
+ manifests/init.pp           | 37 ++-----------------------------------
+ manifests/swanctl.pp        | 22 ++++++++++++++++++++++
+ 4 files changed, 48 insertions(+), 35 deletions(-)
+ create mode 100644 manifests/charon.pp
+ create mode 100644 manifests/charon_logging.pp
+ create mode 100644 manifests/swanctl.pp
+
+diff --git a/manifests/charon.pp b/manifests/charon.pp
+new file mode 100644
+index 0000000..d1f6dcc
+--- /dev/null
++++ b/manifests/charon.pp
+@@ -0,0 +1,12 @@
++# @param charon_options configure other attributes in charon.conf.
++class strongswan::charon (
++  Hash $charon_options = {},
++) {
++  file { '/etc/strongswan.d/charon.conf':
++    owner   => 'root',
++    mode    => '0600',
++    content => strongswan::hash_to_strongswan_config({
++        charon => $charon_options,
++    }),
++  }
++}
+diff --git a/manifests/charon_logging.pp b/manifests/charon_logging.pp
+new file mode 100644
+index 0000000..b454f2b
+--- /dev/null
++++ b/manifests/charon_logging.pp
+@@ -0,0 +1,12 @@
++# @param charon_logging configure file charon-logging.conf.
++class strongswan::charon_logging (
++  Hash $charon_logging = {},
++) {
++  file { '/etc/strongswan.d/charon-logging.conf':
++    owner   => 'root',
++    mode    => '0600',
++    content => strongswan::hash_to_strongswan_config({
++        charon => $charon_logging,
++    }),
++  }
++}
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 08002a3..27904e4 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -23,12 +23,6 @@
+ # @param sw_collector sw-collector block in strongswan.conf.
+ # @param starter starter block in strongswan.conf.
+ # @param swanctl swanctl block in strongswan.conf.
+-# @param authorities authorities block in swanctl.conf.
+-# @param connections connections block in swanctl.conf. Besides keys allowed in swanctl, these ones are added:
+-#      * base_interface: base interface for xfrm device.
+-#      * if_id: interface ID for xfrm device used for in and out. In swanctl.conf, this value is used for id_id_in and if_id_out.
+-# @param secrets secrets block in swanctl.conf.
+-# @param pools pools block in swanctl.conf.
+ # @param route_based Whether route based VPN is configured.
+ # @param xfrm_default_base_interface XRFM base interface used if none is specified in connection.
+ #
+@@ -58,25 +52,9 @@ class strongswan (
+   Hash $connections = {},
+   Hash $secrets = {},
+   Hash $pools = {},
+-  Boolean $route_based = false,
+   String $xfrm_default_base_interface = 'lo',
++  String $strongswan_include = 'strongswan.d/*.conf',
+ ) {
+-  ensure_packages(['strongswan-swanctl', 'charon-systemd'])
+-  service { ['ipsec,', 'strongswan-starter']:
+-    ensure => stopped,
+-    enable => false,
+-  }
+-  service { 'strongswan':
+-    ensure => running,
+-    enable => true,
+-  }
+-  if ($route_based) {
+-    $d = strongswan::extract_xfrm_devices_from_connections($connections, $xfrm_default_base_interface)
+-    $_connections = $d['connections']
+-    ensure_resources('strongswan::xfrm', $d['xfrm'])
+-  } else {
+-    $_connections = $connections
+-  }
+   file { '/etc/strongswan.conf':
+     owner   => 'root',
+     mode    => '0600',
+@@ -100,18 +78,7 @@ class strongswan (
+         sw-collector       => $sw_collector,
+         starter            => $starter,
+         swanctl            => $swanctl,
++        strongswan_include => $strongswan_include,
+     }),
+-    notify  => Service['strongswan'],
+-  }
+-  file { '/etc/swanctl/swanctl.conf':
+-    owner   => 'root',
+-    mode    => '0600',
+-    content => strongswan::hash_to_strongswan_config({
+-        authorities => $authorities,
+-        connections => $_connections,
+-        secrets     => $secrets,
+-        pools       => $pools,
+-    }),
+-    notify  => Service['strongswan'],
+   }
+ }
+diff --git a/manifests/swanctl.pp b/manifests/swanctl.pp
+new file mode 100644
+index 0000000..f85e7e3
+--- /dev/null
++++ b/manifests/swanctl.pp
+@@ -0,0 +1,22 @@
++# @param authorities authorities block in swanctl.conf.
++# @param connections connections block in swanctl.conf.
++# @param secrets secrets block in swanctl.conf.
++# @param pools pools block in swanctl.conf.
++
++class strongswan::swanctl (
++  Hash $authorities = {},
++  Hash $connections = {},
++  Hash $secrets = {},
++  Hash $pools = {},
++) {
++  file { '/etc/swanctl/swanctl.conf':
++    owner   => 'root',
++    mode    => '0600',
++    content => strongswan::hash_to_strongswan_config({
++        authorities => $authorities,
++        connections => $connections,
++        secrets     => $secrets,
++        pools       => $pools,
++    }),
++  }
++}
+-- 
+2.25.1
+
