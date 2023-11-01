@@ -302,6 +302,9 @@ puppet-drbd
 #puppet-hash2stuff
 puppet-hash2stuff
 
+#puppet-memcached
+puppet-memcached
+
 #puppet-etcd-1.12.3
 puppet-module-cristifalcas-etcd
 

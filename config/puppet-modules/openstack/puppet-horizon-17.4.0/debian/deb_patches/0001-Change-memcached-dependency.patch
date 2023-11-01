@@ -1,0 +1,27 @@
+From 7bd6c2bddb9285af15988247a8fbee2e56fd8a18 Mon Sep 17 00:00:00 2001
+From: Teresa Ho <teresa.ho@windriver.com>
+Date: Mon, 17 Jul 2023 17:56:27 -0400
+Subject: [PATCH 1/2] Change memcached dependency
+
+Signed-off-by: Teresa Ho <teresa.ho@windriver.com>
+Signed-off-by: Fabiano Correa Mercer <fabiano.correamercer@windriver.com>
+---
+ debian/control | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/control b/debian/control
+index 58c178c..3239aa7 100644
+--- a/debian/control
++++ b/debian/control
+@@ -22,7 +22,7 @@ Depends:
+  puppet-module-openstacklib (>= 17.4.0),
+  puppet-module-puppetlabs-apache (>= 5.0.0),
+  puppet-module-puppetlabs-stdlib,
+- puppet-module-saz-memcached,
++ puppet-memcached,
+  ${misc:Depends},
+ Description: Puppet module for OpenStack Horizon
+  Puppet lets you centrally manage every important aspect of your system using a
+-- 
+2.25.1
+
