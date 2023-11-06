@@ -1,0 +1,34 @@
+From d51af14bfd2653f80d31e5cfdb60335367a4a137 Mon Sep 17 00:00:00 2001
+From: Boovan Rajendran <boovan.rajendran@windriver.com>
+Date: Mon, 6 Nov 2023 02:22:16 -0500
+Subject: [PATCH] Affinity of guaranteed pod to non-isolated CPUs
+
+This corrects kubelet cpumanager static cpuset tracking for isolcpus
+for versions 1.26.1 and 1.27.5. This ensures that pods specified with
+isolcpus + guaranteed QoS + integer cpu requests, are affined to
+exclusive cpuset and tracked as non-isolated cpus.
+
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+---
+ pkg/kubelet/cm/cpumanager/policy_static.go | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/pkg/kubelet/cm/cpumanager/policy_static.go b/pkg/kubelet/cm/cpumanager/policy_static.go
+index 98b8d1d882d..125429035a5 100644
+--- a/pkg/kubelet/cm/cpumanager/policy_static.go
++++ b/pkg/kubelet/cm/cpumanager/policy_static.go
+@@ -317,7 +317,10 @@ func (p *staticPolicy) Allocate(s state.State, pod *v1.Pod, container *v1.Contai
+ 		return nil
+ 	}
+ 
+-	if isolcpus := p.podIsolCPUs(pod, container); isolcpus.Size() > 0 {
++	cpuQuantity := container.Resources.Requests[v1.ResourceCPU]
++	fractionalCpuQuantity := cpuQuantity.MilliValue() % 1000
++	if isolcpus := p.podIsolCPUs(pod, container); isolcpus.Size() > 0 &&
++		v1qos.GetPodQOS(pod) != v1.PodQOSGuaranteed && fractionalCpuQuantity == 0{
+ 		// container has requested isolated CPUs
+ 		if set, ok := s.GetCPUSet(string(pod.UID), container.Name); ok {
+ 			if set.Equals(isolcpus) {
+-- 
+2.25.1
+
