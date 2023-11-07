@@ -12,6 +12,7 @@
   */
 
 #include <json-c/json.h>
+#include <sys/inotify.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <libdaemon/daemon.h>
@@ -20,9 +21,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
+#include <thread>
 #include <signal.h>
 #include "PassphraseGenerator.h"
 
+#define INOTIFY_THREAD_SLEEP 15
+#define CONTROLLER_0 "controller-0"
+#define CONTROLLER_1 "controller-1"
 #define SLEEP_DURATION        60
 #define BUFFER                1024
 #define FAIL_FILE_WRITE       (11)
@@ -35,6 +40,7 @@ const char *configFile = "/etc/luks-fs-mgr.d/luks_config.json";
 const char *defaultDirectoryPath = "/var/luks/stx";
 const char *defaultMountPath = "/var/luks/stx/luks_fs";
 const char *createdConfigFile = "/etc/luks-fs-mgr.d/created_luks.json";
+const char *luksControllerDataPath = "/var/luks/stx/luks_fs/controller/";
 const char *pidFileName = "/var/run/luks-fs-mgr.pid";
 
 // Define a struct to hold configuration variables
@@ -739,6 +745,182 @@ void monitorLUKSVolume(const string& volumeName) {
         }
 }
 
+bool execCmd(const string &cmd, string &result) {
+    const int MAX_BUF = 256;
+    char buf[MAX_BUF];
+    result = "";
+    int cmdStatus;
+    bool retVal = false;
+
+    FILE *fstream = popen(cmd.c_str(), "r");
+    if (!fstream)
+        return retVal;
+
+    if (fstream) {
+        while (!feof(fstream)) {
+            if (fgets(buf, MAX_BUF, fstream) != NULL)
+                  result.append(buf);
+        }
+        cmdStatus = pclose(fstream);
+    }
+    if (!result.empty())
+           result = result.substr(0, result.size() - 1);
+
+    if (WIFEXITED(cmdStatus) && WEXITSTATUS(cmdStatus) == 0) {
+        retVal = true;
+    }
+
+    return retVal;
+}
+
+void syncLuksVolume() {
+    string output = "";
+    string hostname = "";
+    string logMsg = "";
+    string standbyHostname = "";
+    string facterActiveCmd = "FACTERLIB=/usr/share/puppet/modules/"
+                             "platform/lib/facter/ facter | egrep \"active\"";
+    string facterStandAloneCmd = "FACTERLIB=/usr/share/puppet/modules/"
+                          "platform/lib/facter/ facter | egrep \"standalone\"";
+    int isStandAlone = 0, isActive = 0;
+    int maxRetries = 3;
+    int retryDelay = 5;
+    size_t strFound = 0;
+
+    try {
+        // Get the hostname
+        if (!execCmd("/usr/bin/hostname", hostname)) {
+            logMsg = "Command failed: Unable to retrieve hostname: ";
+            log(logMsg, LOG_ERR);
+            throw std::runtime_error("Command Hostname failed.");
+        }
+        // Check if controller is not standalone/simplex
+        if (!execCmd(facterStandAloneCmd, output)) {
+            logMsg = "Command failed: Unable to fetch FACTER standalone";
+            log(logMsg, LOG_ERR);
+            throw std::runtime_error("Command: FACTER standalone failed.");
+        }
+
+        strFound = output.find("is_standalone_controller => false");
+        if (strFound != string::npos) {
+            isStandAlone = 1;
+        }
+        // Check if the controller is active
+        // Use the FACTER to get the active status of controller
+        if (!execCmd(facterActiveCmd, output)) {
+            logMsg = "Command failed: Unable to fetch FACTER.";
+            log(logMsg, LOG_ERR);
+            throw std::runtime_error("Command: FACTER active failed.");
+        }
+
+        // Check if controller is active and then
+        // rsync the changes to standby controller.
+        strFound = output.find("is_controller_active => true");
+        if (strFound != string::npos) {
+            isActive = 1;
+        }
+
+        if (isActive && isStandAlone) {
+            logMsg = "Active controller found is " + hostname;
+            log(logMsg, LOG_INFO);
+
+            // Check the name of standby controller
+            if (strcmp(CONTROLLER_0, hostname.c_str()) == 0) {
+                standbyHostname = CONTROLLER_1;
+            } else {
+                standbyHostname = CONTROLLER_0;
+            }
+
+            // Loop to retry rsyncing
+            for (int attempt = 1; attempt <= maxRetries; ++attempt) {
+                string rsyncCmd = "rsync -v -acv --delete "
+                       "/var/luks/stx/luks_fs/controller/ rsync://";
+                rsyncCmd.append(standbyHostname);
+                rsyncCmd += "/luksdata/";
+
+                if (!execCmd(rsyncCmd, output)) {
+                    logMsg = "rysnc failed: Command execution "
+                                 "failed: " + rsyncCmd;
+                    log(logMsg, LOG_ERR);
+
+                    if (attempt < maxRetries) {
+                        log("Retrying...", LOG_INFO);
+                        sleep(retryDelay);  // Wait for 5 secs
+                        continue;  // Retry rsync
+                    } else {
+                        throw runtime_error("rsync failed after "
+                                            "multiple retries");
+                    }
+                } else {
+                    logMsg = "rysnc successful: " + rsyncCmd;
+                    log(logMsg, LOG_INFO);
+                    break;  // exit on rysnc success
+                }
+            }  // loop ends
+        }
+    } catch (const exception &ex) {
+        string errorStr = "rsync failed, error: " + string(ex.what());
+        log(errorStr, LOG_ERR);
+    }
+
+    return;
+}
+
+void notifyLuksVolumeChange(const char* luksPath) {
+    char buffer[4096];
+    ssize_t totalBufferBytes;
+
+    // Sleep for 15 secs while the luks_volume  mounted.
+    // This is to avoid the race condition between inotifyThread
+    // and luksVolume creation. This sleep will give that extra bit
+    // of time for luksVolume to be created and mounted.
+    sleep(INOTIFY_THREAD_SLEEP);
+
+    // Initialize iNotify
+    int inotify_fd = inotify_init();
+    if (inotify_fd < 0) {
+        log("inotify_init failed to initialize", LOG_ERR);
+        close(inotify_fd);
+        return;
+    }
+
+    // Adding luksVolumeDirectory to watch
+    int wd = inotify_add_watch(inotify_fd, luksPath, IN_MODIFY
+                                | IN_CREATE | IN_DELETE);
+    if (wd < 0) {
+        string errMsg = "inotify_add_watch failed: Failed to add "
+                       "watch for dir: " + string(luksPath);
+        log(errMsg, LOG_ERR);
+        close(inotify_fd);
+        return;
+    }
+
+    while (true) {
+        // Listen for notification event
+        // The read() method blocks until one or more alerts arrive
+        totalBufferBytes = read(inotify_fd, buffer, sizeof(buffer));
+
+        if (totalBufferBytes < 0) {
+            log("Failed to read event.", LOG_ERR);
+            continue;
+        }
+
+        for (char* ptr = buffer; ptr < buffer + totalBufferBytes;) {
+            struct inotify_event* event =
+                   reinterpret_cast<struct inotify_event*>(ptr);
+
+            if (event->mask & (IN_MODIFY | IN_CREATE | IN_DELETE)) {
+                log("Change detected: " + string(event->name), LOG_INFO);
+
+                // Initiate rsync when change detected
+                syncLuksVolume();
+            }
+            ptr += sizeof(struct inotify_event) + event->len;
+        }  // ending for loop
+    }  // While
+    close(inotify_fd);
+}
+
 /* Creates PID file and adds the pid*/
 int daemon_create_pidfile ( void )
 {
@@ -841,6 +1023,9 @@ int main() {
     auto passphraseGenerator =
       PassphraseGeneratorFactory::createPassphraseGenerator(selectedMechanism);
     bool passStatus = passphraseGenerator->generatePassphrase(passphrase);
+
+    // Create a thread for luks volume monitoring
+    std::thread notifyThread(notifyLuksVolumeChange, luksControllerDataPath);
 
     // Validating if passphrase is empty
     if (passphrase.empty() || passStatus == false) {
@@ -1151,8 +1336,12 @@ int main() {
         rc = 0;
         goto cleanup;
     }
+    notifyThread.join();
 
     cleanup:
+        if (notifyThread.joinable()) {
+            notifyThread.join();
+        }
         json_object_put(jsonConfig);
         json_object_put(usedAttributes);
         json_object_put(luksvolumesArray);
