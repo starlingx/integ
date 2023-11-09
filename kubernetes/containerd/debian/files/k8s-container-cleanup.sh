@@ -27,13 +27,26 @@ function ERROR {
 }
 
 function do_force_clean {
-    LOG "Stopping all containers."
     # Use crictl to gracefully stop each container. If specified timeout is
     # reached, it forcibly kills the container. There is no need to check
     # return code since there is nothing more we can do, and crictl already
     # logs to daemon.log.
-    crictl ps -q | xargs -n 10 -r crictl stop --timeout 5
+
+    # Number to stop in parallel
+    NPAR=10
+
+    # Set timeout to 5 seconds in case stop doesn't complete
+    TIMEOUT="--timeout 5"
+
+    # Stop all containers.
+    LOG "Stopping all containers."
+    crictl ps -q | xargs -P ${NPAR} -n 1 -r crictl stop ${TIMEOUT}
     LOG "Stopping all containers completed."
+
+    # Stop all pods, this will cleanup /pause containers.
+    LOG "Stopping all pods."
+    crictl pods -q | xargs -P ${NPAR} -n 1 -r crictl stopp
+    LOG "Stopping all pods completed."
 }
 
 case "$1" in
@@ -52,7 +65,7 @@ case "$1" in
             1)
                 # 1 - initializing, starting, degraded, maintenance, stopping
                 if [ "${state}" = "stopping" ]; then
-                        do_force_clean
+                    do_force_clean
                 fi
                 ;;
         esac
