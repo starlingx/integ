@@ -1,11 +1,11 @@
 ---
 debname: trident-installer
-debver: 23.04.0-0
+debver: 23.10.0-0
 dl_path:
-  name: trident-installer-23.04.0.tar.gz
-  url: https://github.com/NetApp/trident/releases/download/v23.04.0/trident-installer-23.04.0.tar.gz
-  md5sum: 398894ca97f86807a272a5476ef50083
-  sha256sum: 52e18232b96a587319a301c116f625bb48b372b008e4ded33d470714b8454121
+  name: trident-installer-23.10.0.tar.gz
+  url: https://github.com/NetApp/trident/releases/download/v23.10.0/trident-installer-23.10.0.tar.gz
+  md5sum: dfffa67467d6ac8a38d1bc7805c58642
+  sha256sum: 34f9e1e73978437beaff5d58ee863c31f713e1a79cc7480679df3b0f9d69620f
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

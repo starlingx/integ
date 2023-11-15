@@ -1,3 +1,9 @@
+trident-installer (23.10.0-0) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Erickson Silva de Oliveira <Erickson.SilvadeOliveira@windriver.com>  Wed, 15 Nov 2023 11:42:00 -0400
+
 trident-installer (23.04.0-0) unstable; urgency=medium
 
   * Initial release.
