@@ -1,28 +1,28 @@
-From 8d41cb5a84e9d7a51a02e3e33289008bdf2a5491 Mon Sep 17 00:00:00 2001
-From: Daniel Safta <daniel.safta@windriver.com>
-Date: Wed, 3 Nov 2021 09:50:59 +0000
-Subject: [PATCH] code-patches
+From c4682c6ef5deba520d2e6cf4ec24459c86eb6399 Mon Sep 17 00:00:00 2001
+From: Karla Felix <karla.karolinenogueirafelix@windriver.com>
+Date: Thu, 19 Oct 2023 14:08:31 -0300
+Subject: [PATCH] code_patches
 
 ---
  Dockerfile                                    |  4 ++--
  cmd/registry/config-example.yml               |  2 +-
- contrib/docker-integration/docker-compose.yml | 22 +++++++++----------
+ contrib/docker-integration/docker-compose.yml | 20 +++++++++----------
  .../registry-config-notls.yml                 |  2 +-
- .../tokenserver-oauth/registry-config.yml     |  6 ++---
- .../tokenserver/registry-config.yml           |  6 ++---
- 6 files changed, 21 insertions(+), 21 deletions(-)
+ .../tokenserver-oauth/registry-config.yml     |  6 +++---
+ .../tokenserver/registry-config.yml           |  6 +++---
+ 6 files changed, 20 insertions(+), 20 deletions(-)
 
 diff --git a/Dockerfile b/Dockerfile
-index 9537817..5c92094 100644
+index fb54b68..a8233ad 100644
 --- a/Dockerfile
 +++ b/Dockerfile
-@@ -15,9 +15,9 @@ COPY . $DISTRIBUTION_DIR
- RUN CGO_ENABLED=0 make PREFIX=/go clean binaries && file ./bin/registry | grep "statically linked"
+@@ -52,9 +52,9 @@ COPY --from=releaser /out /
  
- FROM alpine
+ FROM alpine:${ALPINE_VERSION}
+ RUN apk add --no-cache ca-certificates
 -COPY cmd/registry/config-dev.yml /etc/docker/registry/config.yml
 +COPY cmd/registry/config-dev.yml /etc/docker-distribution/registry/config.yml
- COPY --from=build /go/src/github.com/docker/distribution/bin/registry /bin/registry
+ COPY --from=binary /registry /bin/registry
  VOLUME ["/var/lib/registry"]
  EXPOSE 5000
  ENTRYPOINT ["registry"]
@@ -42,7 +42,7 @@ index d2aecbb..30c9f62 100644
    storagedriver:
      enabled: true
 diff --git a/contrib/docker-integration/docker-compose.yml b/contrib/docker-integration/docker-compose.yml
-index 374197a..74f203f 100644
+index 374197a..bd981a6 100644
 --- a/contrib/docker-integration/docker-compose.yml
 +++ b/contrib/docker-integration/docker-compose.yml
 @@ -37,10 +37,10 @@ registryv2token:
@@ -84,15 +84,6 @@ index 374197a..74f203f 100644
  tokenserveroauth:
    build: "tokenserver-oauth"
    command: "--debug -addr 0.0.0.0:5559 -issuer registry-test -passwd .htpasswd -tlscert tls.cert -tlskey tls.key -key sign.key -realm http://auth.localregistry:5559 -enforce-class"
-@@ -84,7 +84,7 @@ docker:
-   environment:
-     DOCKER_GRAPHDRIVER:
-   volumes:
--    - /etc/generated_certs.d:/etc/docker/certs.d
-+    - /etc/generated_certs.d:/etc/docker-distribution/certs.d
-     - /var/lib/docker
-   links:
-     - nginx:localregistry
 diff --git a/contrib/docker-integration/tokenserver-oauth/registry-config-notls.yml b/contrib/docker-integration/tokenserver-oauth/registry-config-notls.yml
 index a700d08..bbde741 100644
 --- a/contrib/docker-integration/tokenserver-oauth/registry-config-notls.yml
@@ -146,5 +137,5 @@ index b9efdd3..11be98e 100644
 -        rootcertbundle: "/etc/docker/registry/tokenbundle.pem"
 +        rootcertbundle: "/etc/docker-distribution/registry/tokenbundle.pem"
 -- 
-2.30.2
+2.25.1
 

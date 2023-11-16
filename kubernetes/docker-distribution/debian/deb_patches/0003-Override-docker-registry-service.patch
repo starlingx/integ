@@ -1,29 +1,29 @@
-From ec4d2b9704df16e3ffe4256b3eae6b7bd8d25807 Mon Sep 17 00:00:00 2001
-From: Charles Short <charles.short@windriver.com>
-Date: Sun, 5 Dec 2021 13:33:26 +0000
+From 7e2c90b4c9bcb35a81a737eb50b4720f52b79fa2 Mon Sep 17 00:00:00 2001
+From: Karla Felix <karla.karolinenogueirafelix@windriver.com>
+Date: Wed, 18 Oct 2023 19:42:53 -0300
 Subject: [PATCH] Override docker-registry service
 
 Prevent the docker-registry from starting when package is installed.
 
 Signed-off-by: Charles Short <charles.short@windriver.com>
 ---
- debian/rules | 4 ++++
- 1 file changed, 4 insertions(+)
+ debian/rules | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/debian/rules b/debian/rules
-index 8383ccd..f02c9ef 100755
+index 02ce7be..32ef06f 100755
 --- a/debian/rules
 +++ b/debian/rules
-@@ -17,5 +17,9 @@ override_dh_auto_test:
- 	# health/checks hit the internet, and thus fail
- 	#DH_GOLANG_EXCLUDES='distribution/registry/handlers health/checks' dh_auto_test -- -test.short
+@@ -10,6 +10,9 @@ export DH_GOLANG_EXCLUDES := \
+ %:
+ 	dh $@ --buildsystem=golang --with=golang
  
 +override_dh_installsystemd:
 +	dh_installsystemd -p docker-registry --no-enable docker-registry.service
 +
- %:
- 	dh $@ --buildsystem=golang --with=golang
-+
+ override_dh_auto_build:
+ 	dh_auto_build -- -ldflags '-X github.com/docker/distribution/version.Version=$(DEB_VERSION_UPSTREAM)'
+ 
 -- 
-2.30.2
+2.25.1
 
