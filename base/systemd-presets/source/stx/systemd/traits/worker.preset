@@ -83,6 +83,9 @@ disable k8s-pod-recovery.service
 # lldpd.spec
 enable lldpd.service
 
+# luks-fs-mgr.service
+enable luks-fs-mgr.service
+
 # openvswitch.spec
 disable openvswitch.service
 
