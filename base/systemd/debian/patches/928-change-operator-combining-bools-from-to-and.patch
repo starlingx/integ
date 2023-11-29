@@ -1,0 +1,34 @@
+From 364625df3f176e8c810ae5eab2a10aa448123989 Mon Sep 17 00:00:00 2001
+From: "david.liu" <david.liu@windriver.com>
+Date: Fri, 16 Jun 2023 17:15:42 +0800
+Subject: [PATCH] change operator combining bools from + to and upstream meson
+ stopped allowing combining boolean with the plus operator, and now requires
+ using the logical and operator
+
+reference:
+mesonbuild/meson@43302d3
+
+Fixes: systemd#20632
+
+Signed-off-by: Dan Streetman
+Signed-off-by: david.liu <david.liu@windriver.com>
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 580964c..98b0ec2 100644
+--- a/meson.build
++++ b/meson.build
+@@ -43,7 +43,7 @@ conf.set('BUILD_MODE', 'BUILD_MODE_' + get_option('mode').to_upper(),
+ 
+ want_ossfuzz = get_option('oss-fuzz')
+ want_libfuzzer = get_option('llvm-fuzz')
+-if want_ossfuzz + want_libfuzzer > 1
++if want_ossfuzz and want_libfuzzer > 1
+         error('only one of oss-fuzz or llvm-fuzz can be specified')
+ endif
+ 
+-- 
+2.30.2
+
