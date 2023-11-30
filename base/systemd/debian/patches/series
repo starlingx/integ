@@ -31,6 +31,3 @@ skip-some-testcases.patch
 
 # Fix SAS paths for multiple disks
 0015-Port-udev-old-sas-paths-creation-from-RHEL.patch
-
-# Change operator combining bools from + to and
-928-change-operator-combining-bools-from-to-and.patch
