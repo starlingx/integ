@@ -1,3 +1,10 @@
+bond-cni (1.0-408b549d88c6395b50ef20bf3195c7e1a8766a47) unstable; urgency=medium
+
+  * Updated using latest commit
+
+ -- Mohammad Issa <mohammad.issa@windriver.com>  Wed, 08 Nov 2023 14:08:13 -0400
+
+
 bond-cni (1.0-98008131ca7c6bfb3cdf0021846b58891375686f) unstable; urgency=medium
 
   * Updated using latest commit
