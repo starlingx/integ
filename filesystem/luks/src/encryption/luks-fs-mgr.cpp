@@ -4,14 +4,13 @@
 * SPDX-License-Identifier: Apache-2.0
 *
  */
-
 /**
   * @file
   * StarlingX Luks FileSystem Management Service
   *
   */
-
 #include <json-c/json.h>
+#include <signal.h>
 #include <sys/inotify.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -22,9 +21,7 @@
 #include <cstring>
 #include <type_traits>
 #include <thread>
-#include <signal.h>
 #include "PassphraseGenerator.h"
-
 #define INOTIFY_THREAD_SLEEP 15
 #define CONTROLLER_0 "controller-0"
 #define CONTROLLER_1 "controller-1"
@@ -32,9 +29,9 @@
 #define BUFFER                1024
 #define FAIL_FILE_WRITE       (11)
 #define FAIL_PID_OPEN         (9)
+#define K8_PROVIDER_FILE "encryption-provider.yaml"
 
 using namespace std;
-
 // Global constants
 const char *configFile = "/etc/luks-fs-mgr.d/luks_config.json";
 const char *defaultDirectoryPath = "/var/luks/stx";
@@ -42,7 +39,6 @@ const char *defaultMountPath = "/var/luks/stx/luks_fs";
 const char *createdConfigFile = "/etc/luks-fs-mgr.d/created_luks.json";
 const char *luksControllerDataPath = "/var/luks/stx/luks_fs/controller/";
 const char *pidFileName = "/var/run/luks-fs-mgr.pid";
-
 // Define a struct to hold configuration variables
 struct LuksConfig {
     const char *vaultFile;
@@ -50,7 +46,6 @@ struct LuksConfig {
     const char *volName;
     const char *mountPath;
 };
-
 // Define a struct to hold configuration variables for created volume
 struct CreatedLuksConfig {
     const char *vaultFile;
@@ -59,7 +54,6 @@ struct CreatedLuksConfig {
     const char *mountPath;
     const char *passphraseType;
 };
-
 /* ***********************************************************************
  *
  * Name       : log
@@ -67,13 +61,11 @@ struct CreatedLuksConfig {
  * Description: Defined to log info/error messages using the 'syslog' utility.
  *
  * ************************************************************************/
-
 void log(const string &message, int logType) {
     openlog("luks-fs-mgr", LOG_PID | LOG_NDELAY, LOG_DAEMON);
     syslog(logType, "%s", message.c_str());
     closelog();
 }
-
 // A helper function for parsing passphraseType when ConfigType
 // is CreatedLuksConfig
 template <typename ConfigType>
@@ -82,7 +74,6 @@ parsePassphraseType(ConfigType &config, json_object *passPhraseObj) {
     config.passphraseType = json_object_get_string(passPhraseObj);
     return true;
 }
-
 // A helper function for parsing passphraseType when ConfigType
 // is LuksConfig
 template <typename ConfigType>
@@ -91,7 +82,6 @@ parsePassphraseType(ConfigType &, json_object *) {
     // No-op when ConfigType is not CreatedLuksConfig
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : parseJSONConfig
@@ -101,7 +91,6 @@ parsePassphraseType(ConfigType &, json_object *) {
  *              vault size, volume name, and mount path.
  *
  * ************************************************************************/
-
 template <typename ConfigType>
 bool parseJSONConfig(const char *configFile, ConfigType &config,
                      json_object **jsonConfig) {
@@ -112,33 +101,27 @@ bool parseJSONConfig(const char *configFile, ConfigType &config,
         log("Error opening or parsing config file", LOG_ERR);
         return false;
     }
-
     json_object *luksvolumes;
     if (!json_object_object_get_ex(*jsonConfig, "luksvolumes", &luksvolumes)) {
         log("Unable to get 'luksvolumes' array from JSON", LOG_ERR);
         return false;
     }
-
     if (!json_object_is_type(luksvolumes, json_type_array)) {
         log("'luksvolumes' is not an array", LOG_ERR);
         return false;
     }
-
     int numVolumes = json_object_array_length(luksvolumes);
     if (numVolumes == 0) {
         log("'luksvolumes' array is empty", LOG_ERR);
         return false;
     }
-
     json_object *volumeObj = json_object_array_get_idx(luksvolumes, 0);
-
     json_object *vaultFileObj = json_object_object_get(volumeObj, "VAULT_FILE");
     json_object *vaultSizeObj = json_object_object_get(volumeObj, "VAULT_SIZE");
     json_object *volNameObj = json_object_object_get(volumeObj, "VOL_NAME");
     json_object *mountPathObj = json_object_object_get(volumeObj, "MOUNT_PATH");
     json_object *passPhraseObj = json_object_object_get(volumeObj,
                                                              "PASSPHRASE_TYPE");
-
     if (!vaultFileObj || json_object_get_type(vaultFileObj)
                          != json_type_string) {
         log(" - 'VAULT_FILE' attribute is missing or not a string.", LOG_ERR);
@@ -159,21 +142,17 @@ bool parseJSONConfig(const char *configFile, ConfigType &config,
         log(" - 'MOUNT_PATH' attribute is missing or not a string.", LOG_ERR);
         valid = false;
     }
-
     if (!valid) {
         log("Missing or invalid attributes in JSON configuration", LOG_ERR);
         return false;
     }
-
     config.vaultFile = json_object_get_string(vaultFileObj);
     config.vaultSize = json_object_get_string(vaultSizeObj);
     config.volName = json_object_get_string(volNameObj);
     config.mountPath = json_object_get_string(mountPathObj);
     parsePassphraseType(config, passPhraseObj);
-
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : createDefaultDirectory
@@ -183,7 +162,6 @@ bool parseJSONConfig(const char *configFile, ConfigType &config,
  *              that the specified directory path (defaultDirectoryPath) exists.
  *
  * ************************************************************************/
-
 bool createDefaultDirectory(const char *defaultDirectoryPath) {
     if (access(defaultDirectoryPath, F_OK) == 0) {
         // Default directory already exists
@@ -204,7 +182,6 @@ bool createDefaultDirectory(const char *defaultDirectoryPath) {
         return true;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       :  createDirectory
@@ -215,7 +192,6 @@ bool createDefaultDirectory(const char *defaultDirectoryPath) {
  *               if necessary.
  *
  * ************************************************************************/
-
 bool createDirectory(const char *directoryPath) {
     if (access(directoryPath, F_OK) == 0) {
         // Directory already exists
@@ -240,7 +216,6 @@ bool createDirectory(const char *directoryPath) {
         return true;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       : checkVaultSize
@@ -251,7 +226,6 @@ bool createDirectory(const char *directoryPath) {
  *             size of 256 megabytes.
  *
  * ************************************************************************/
-
 int checkVaultSize(const char *vaultSize) {
     int size = 256;
     // Convert const char* to string
@@ -262,10 +236,8 @@ int checkVaultSize(const char *vaultSize) {
         // Extract the numeric portion and the suffix
         string sizeStr = vaultSizeStr.substr(0, firstNonNumeric);
         string suffix = vaultSizeStr.substr(firstNonNumeric);
-
         // Convert the extracted string to an integer
         size = stoi(sizeStr);
-
         // Determine the multiplier based on the suffix
         if (suffix == "M") {
             // Megabytes
@@ -281,7 +253,6 @@ int checkVaultSize(const char *vaultSize) {
             // Set to the default size
             size = 256;
         }
-
         // Set a minimum size of 256MB
         if (size < 256) {
             log("Vault file size below default: The specified size is less"
@@ -296,7 +267,6 @@ int checkVaultSize(const char *vaultSize) {
     }
     return size;
 }
-
 /* ***********************************************************************
  *
  * Name       : createVaultFile
@@ -306,14 +276,12 @@ int checkVaultSize(const char *vaultSize) {
  *              cryptsetup utilities.
  *
  * ************************************************************************/
-
 bool createVaultFile(const string &modifiedVaultFile, int vaultSize) {
     // Create the directory path if it doesn't exist
     if (!createDirectory(modifiedVaultFile.c_str())) {
         // Directory creation failed
         return false;
     }
-
     string command = "dd if=/dev/urandom of=" + string(modifiedVaultFile) +
                      " bs=1M count=" + to_string(vaultSize);
     int status = system(command.c_str());
@@ -330,7 +298,6 @@ bool createVaultFile(const string &modifiedVaultFile, int vaultSize) {
         return false;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       : setupLUKSEncryption
@@ -340,7 +307,6 @@ bool createVaultFile(const string &modifiedVaultFile, int vaultSize) {
  *              file for use as an encrypted volume.
  *
  * ************************************************************************/
-
 bool setupLUKSEncryption(const string &modifiedVaultFile,
                          const string &passphrase) {
     log("Encrypting LUKS Volume", LOG_INFO);
@@ -365,7 +331,6 @@ bool setupLUKSEncryption(const string &modifiedVaultFile,
         return false;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       : openLUKSVolume
@@ -375,7 +340,6 @@ bool setupLUKSEncryption(const string &modifiedVaultFile,
  *              operations.
  *
  * ************************************************************************/
-
 bool openLUKSVolume(const string &modifiedVaultFile, const char *volName,
                     const string &passphrase) {
     log("Unsealing LUKS Volume", LOG_INFO);
@@ -400,7 +364,6 @@ bool openLUKSVolume(const string &modifiedVaultFile, const char *volName,
         return false;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       : createFilesystem
@@ -409,7 +372,6 @@ bool openLUKSVolume(const string &modifiedVaultFile, const char *volName,
  *              on a specified LUKS volume.
  *
  * ************************************************************************/
-
 bool createFilesystem(const char *volName) {
     log("Creating EXT4 Filesystem", LOG_INFO);
     string mkfs_command = "mkfs.ext4 /dev/mapper/" + string(volName);
@@ -428,7 +390,6 @@ bool createFilesystem(const char *volName) {
         return false;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       : isMountPathValid
@@ -438,7 +399,6 @@ bool createFilesystem(const char *volName) {
  *              be adjusted to a default mount path.
  *
  * ************************************************************************/
-
 bool isMountPathValid(const char *mountPath, const char *defaultDirectoryPath) {
     // Check if the provided mount path starts with the default directory path
     if (strncmp(mountPath, defaultDirectoryPath,
@@ -447,7 +407,6 @@ bool isMountPathValid(const char *mountPath, const char *defaultDirectoryPath) {
     }
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : mountFilesystem
@@ -456,7 +415,6 @@ bool isMountPathValid(const char *mountPath, const char *defaultDirectoryPath) {
  *              filesystem to a specified or default mount path.
  *
  * ************************************************************************/
-
 bool mountFilesystem(const char *volName, const char *mountPath,
                      const char *defaultDirectoryPath) {
     log("Mounting Filesystem", LOG_INFO);
@@ -464,7 +422,6 @@ bool mountFilesystem(const char *volName, const char *mountPath,
         log("Mount path is not valid, using default mount path.", LOG_INFO);
         mountPath = defaultMountPath;  // Use default mount path
     }
-
     string mkdir_command = "/usr/bin/mkdir -p " + string(mountPath);
     int status_check = system(mkdir_command.c_str());
     // An exit status of zero indicates success, and a nonzero value
@@ -474,7 +431,6 @@ bool mountFilesystem(const char *volName, const char *mountPath,
                   "status: " + to_string(status_check), LOG_ERR);
         return false;
     }
-
     string mount_command = "/usr/bin/mount /dev/mapper/" +
                             string(volName) + " " +
                             string(mountPath);
@@ -492,7 +448,6 @@ bool mountFilesystem(const char *volName, const char *mountPath,
         return false;
      }
 }
-
 /* ***********************************************************************
  *
  * Name       : writeJSONToFile
@@ -503,7 +458,6 @@ bool mountFilesystem(const char *volName, const char *mountPath,
  *              write and false on failure.
  *
  * ************************************************************************/
-
 bool writeJSONToFile(const char *filePath, json_object *jsonObj) {
     log("Creating json config file", LOG_INFO);
     FILE *file = fopen(filePath, "w");
@@ -511,7 +465,6 @@ bool writeJSONToFile(const char *filePath, json_object *jsonObj) {
         log("Error opening file for writing JSON.", LOG_ERR);
         return false;
     }
-
     // Convert JSON object to a string
     const char *jsonStr = json_object_to_json_string_ext(jsonObj,
                                         JSON_C_TO_STRING_PRETTY);
@@ -520,18 +473,15 @@ bool writeJSONToFile(const char *filePath, json_object *jsonObj) {
         fclose(file);
         return false;
     }
-
     // Write the JSON string to the file
     if (fprintf(file, "%s\n", jsonStr) < 0) {
         log("Error writing JSON to file.", LOG_ERR);
         fclose(file);
         return false;
     }
-
     fclose(file);
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : getPassPhraseType
@@ -540,12 +490,9 @@ bool writeJSONToFile(const char *filePath, json_object *jsonObj) {
  *              indicating the type of passphrase as "Hardware Identifier."
  *
  * ************************************************************************/
-
 string getPassPhraseType() {
     return "HWID";
 }
-
-
 /* ***********************************************************************
  *
  * Name       : passPhraseType
@@ -554,11 +501,9 @@ string getPassPhraseType() {
  *              indicating the type of passphrase as "Hardware Identifier."
  *
  * ************************************************************************/
-
 PassphraseMechanism passPhraseType() {
     return HWID_Firmware;
 }
-
 /* ***********************************************************************
  *
  * Name       : unmountFilesystem
@@ -567,7 +512,6 @@ PassphraseMechanism passPhraseType() {
  *              specified 'mountPath'.
  *
  * ************************************************************************/
-
 bool unmountFilesystem(const char* mountPath) {
     log("Unmounting Filesystem", LOG_INFO);
     // Check if the filesystem is already unmounted
@@ -584,7 +528,6 @@ bool unmountFilesystem(const char* mountPath) {
     }
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : increaseVaultSize
@@ -593,7 +536,6 @@ bool unmountFilesystem(const char* mountPath) {
  *              to a given defaultSize in megabytes.
  *
  * ************************************************************************/
-
 bool increaseVaultSize(const char* vaultFile, int defaultSize) {
     log("Increasing Vault file size", LOG_INFO);
     string increase_size_command = "/usr/bin/truncate -s " +
@@ -604,7 +546,6 @@ bool increaseVaultSize(const char* vaultFile, int defaultSize) {
     }
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : resizeLUKSVolume
@@ -613,7 +554,6 @@ bool increaseVaultSize(const char* vaultFile, int defaultSize) {
  *              volume specified by volName using the provided passphrase
  *
  * ************************************************************************/
-
 bool resizeLUKSVolume(const char* volName, const char* passphrase) {
     log("Resizing LUKS Volume", LOG_INFO);
     string resize_command = "echo -n \"" + string(passphrase) +
@@ -624,7 +564,6 @@ bool resizeLUKSVolume(const char* volName, const char* passphrase) {
     }
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : checkFilesystem
@@ -633,7 +572,6 @@ bool resizeLUKSVolume(const char* volName, const char* passphrase) {
  *              specified volume (volName).
  *
  * ************************************************************************/
-
 bool checkFilesystem(const char* volName) {
     log("Checking Filesystem for errors", LOG_INFO);
     string e2fsck_command = "/usr/sbin/e2fsck -fy /dev/mapper/" +
@@ -647,7 +585,6 @@ bool checkFilesystem(const char* volName) {
         return true;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       : resizeFilesystem
@@ -656,7 +593,6 @@ bool checkFilesystem(const char* volName) {
  *              volume (volName).
  *
  * ************************************************************************/
-
 bool resizeFilesystem(const char* volName) {
     log("Resizing Filesystem", LOG_INFO);
     string resize_fs_command = "/usr/sbin/resize2fs /dev/mapper/" +
@@ -667,7 +603,6 @@ bool resizeFilesystem(const char* volName) {
     }
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : remountFilesystem
@@ -676,7 +611,6 @@ bool resizeFilesystem(const char* volName) {
  *              unmounted filesystem onto a specified mountPath
  *
  * ************************************************************************/
-
 bool remountFilesystem(const char* volName, const char* mountPath) {
     log("Re-mounting Filesystem", LOG_INFO);
     string mount_command = "/usr/bin/mount /dev/mapper/" +
@@ -687,7 +621,6 @@ bool remountFilesystem(const char* volName, const char* mountPath) {
     }
     return true;
 }
-
 /* ***********************************************************************
  *
  * Name       : resizeVault
@@ -700,7 +633,6 @@ bool remountFilesystem(const char* volName, const char* mountPath) {
  *              again, resizing the filesystem, and remounting the filesystem.
  *
  * ************************************************************************/
-
 bool resizeVault(const char* vaultFile,
                  int defaultSize,
                  const char* volName,
@@ -720,7 +652,6 @@ bool resizeVault(const char* vaultFile,
         return false;
     }
 }
-
 /* ***********************************************************************
  *
  * Name       : monitorLUKSVolume
@@ -729,7 +660,6 @@ bool resizeVault(const char* vaultFile,
  *              in loop until there's any issue with the LUKS volume.
  *
  * ************************************************************************/
-
 void monitorLUKSVolume(const string& volumeName) {
     while (1) {
         string statusCommand = "cryptsetup status " + volumeName +
@@ -744,7 +674,13 @@ void monitorLUKSVolume(const string& volumeName) {
             sleep(SLEEP_DURATION);
         }
 }
-
+/* ***********************************************************************
+ *
+ * Name       : execCmd
+ *
+ * Description: This function execute command on shell and collect output.
+ *
+ * ************************************************************************/
 bool execCmd(const string &cmd, string &result) {
     const int MAX_BUF = 256;
     char buf[MAX_BUF];
@@ -772,7 +708,15 @@ bool execCmd(const string &cmd, string &result) {
 
     return retVal;
 }
-
+/* ***********************************************************************
+ *
+ * Name       : syncLuksVolume
+ *
+ * Description: This function checks for active controller and pushes
+ *              the LUKS volume files on to standby controller's LUKS
+ *              volume.
+ *
+ * ************************************************************************/
 void syncLuksVolume() {
     string output = "";
     string hostname = "";
@@ -782,11 +726,10 @@ void syncLuksVolume() {
                              "platform/lib/facter/ facter | egrep \"active\"";
     string facterStandAloneCmd = "FACTERLIB=/usr/share/puppet/modules/"
                           "platform/lib/facter/ facter | egrep \"standalone\"";
-    int isStandAlone = 0, isActive = 0;
+    int isNotStandAlone = 0, isActive = 0;
     int maxRetries = 3;
     int retryDelay = 5;
     size_t strFound = 0;
-
     try {
         // Get the hostname
         if (!execCmd("/usr/bin/hostname", hostname)) {
@@ -800,10 +743,9 @@ void syncLuksVolume() {
             log(logMsg, LOG_ERR);
             throw std::runtime_error("Command: FACTER standalone failed.");
         }
-
         strFound = output.find("is_standalone_controller => false");
         if (strFound != string::npos) {
-            isStandAlone = 1;
+            isNotStandAlone = 1;
         }
         // Check if the controller is active
         // Use the FACTER to get the active status of controller
@@ -812,37 +754,31 @@ void syncLuksVolume() {
             log(logMsg, LOG_ERR);
             throw std::runtime_error("Command: FACTER active failed.");
         }
-
         // Check if controller is active and then
         // rsync the changes to standby controller.
         strFound = output.find("is_controller_active => true");
         if (strFound != string::npos) {
             isActive = 1;
         }
-
-        if (isActive && isStandAlone) {
+        if (isActive && isNotStandAlone) {
             logMsg = "Active controller found is " + hostname;
             log(logMsg, LOG_INFO);
-
             // Check the name of standby controller
             if (strcmp(CONTROLLER_0, hostname.c_str()) == 0) {
                 standbyHostname = CONTROLLER_1;
             } else {
                 standbyHostname = CONTROLLER_0;
             }
-
             // Loop to retry rsyncing
             for (int attempt = 1; attempt <= maxRetries; ++attempt) {
                 string rsyncCmd = "rsync -v -acv --delete "
                        "/var/luks/stx/luks_fs/controller/ rsync://";
                 rsyncCmd.append(standbyHostname);
                 rsyncCmd += "/luksdata/";
-
                 if (!execCmd(rsyncCmd, output)) {
                     logMsg = "rysnc failed: Command execution "
                                  "failed: " + rsyncCmd;
                     log(logMsg, LOG_ERR);
-
                     if (attempt < maxRetries) {
                         log("Retrying...", LOG_INFO);
                         sleep(retryDelay);  // Wait for 5 secs
@@ -862,20 +798,25 @@ void syncLuksVolume() {
         string errorStr = "rsync failed, error: " + string(ex.what());
         log(errorStr, LOG_ERR);
     }
-
     return;
 }
-
+/* ***********************************************************************
+ *
+ * Name       : notifyLuksVolumeChange
+ *
+ * Description: This function watches LUKS volume for any changes such as
+ *              create/modify/delete and accordingly generates notification 
+ *              event.
+ *
+ * ************************************************************************/
 void notifyLuksVolumeChange(const char* luksPath) {
     char buffer[4096];
     ssize_t totalBufferBytes;
-
     // Sleep for 15 secs while the luks_volume  mounted.
     // This is to avoid the race condition between inotifyThread
     // and luksVolume creation. This sleep will give that extra bit
     // of time for luksVolume to be created and mounted.
     sleep(INOTIFY_THREAD_SLEEP);
-
     // Initialize iNotify
     int inotify_fd = inotify_init();
     if (inotify_fd < 0) {
@@ -883,7 +824,6 @@ void notifyLuksVolumeChange(const char* luksPath) {
         close(inotify_fd);
         return;
     }
-
     // Adding luksVolumeDirectory to watch
     int wd = inotify_add_watch(inotify_fd, luksPath, IN_MODIFY
                                 | IN_CREATE | IN_DELETE);
@@ -894,24 +834,19 @@ void notifyLuksVolumeChange(const char* luksPath) {
         close(inotify_fd);
         return;
     }
-
     while (true) {
         // Listen for notification event
         // The read() method blocks until one or more alerts arrive
         totalBufferBytes = read(inotify_fd, buffer, sizeof(buffer));
-
         if (totalBufferBytes < 0) {
             log("Failed to read event.", LOG_ERR);
             continue;
         }
-
         for (char* ptr = buffer; ptr < buffer + totalBufferBytes;) {
             struct inotify_event* event =
                    reinterpret_cast<struct inotify_event*>(ptr);
-
             if (event->mask & (IN_MODIFY | IN_CREATE | IN_DELETE)) {
                 log("Change detected: " + string(event->name), LOG_INFO);
-
                 // Initiate rsync when change detected
                 syncLuksVolume();
             }
@@ -920,11 +855,15 @@ void notifyLuksVolumeChange(const char* luksPath) {
     }  // While
     close(inotify_fd);
 }
-
-/* Creates PID file and adds the pid*/
-int daemon_create_pidfile ( void )
-{
-    FILE * pid_file_stream  = (FILE *)(NULL);
+/* ***********************************************************************
+ *
+ * Name       : daemonCreatePidfile
+ *
+ * Description: Creates PID file and adds the pid.
+ *
+ * ************************************************************************/
+int daemonCreatePidfile(void) {
+    FILE * pid_file_stream  = NULL;
     string errorMessage = "";
     /* Create PID file */
     pid_t mypid = getpid();
@@ -933,140 +872,311 @@ int daemon_create_pidfile ( void )
      * If it opens then there "may" be another process running.
      * If it opens then read the pid and see if that pID exists.
      * If it does then this is a duplicate process so exit. */
-    pid_file_stream = fopen (pidFileName, "r" ) ;
-    if ( pid_file_stream )
-    {
-        int   rc  = 0 ;
-        pid_t pid = 0 ;
+    pid_file_stream = fopen(pidFileName, "r");
+    if (pid_file_stream) {
+        int   rc  = 0;
+        pid_t pid = 0;
         char buffer[BUFFER];
-        if ( fgets ( buffer, BUFFER, pid_file_stream) != NULL )
-        {
-            rc = sscanf ( &buffer[0], "%d",  &pid );
-            if ( rc == 1 )
-            {
-                rc = kill ( pid, 0 );
-                if ( rc == 0 )
-                {
+        if (fgets(buffer, BUFFER, pid_file_stream) != NULL) {
+            rc = sscanf(&buffer[0], "%d",  &pid);
+            if (rc == 1) {
+                rc = kill(pid, 0);
+                if (rc == 0) {
                     errorMessage = "Refusing to start duplicate process pid: "
                          + to_string(pid);
                     log(errorMessage, LOG_ERR);
-                    fclose (pid_file_stream);
-                    exit (0);
+                    fclose(pid_file_stream);
+                    exit(0);
                 }
             }
         }
     }
-
-    if ( pid_file_stream )
-        fclose (pid_file_stream);
+    if (pid_file_stream)
+        fclose(pid_file_stream);
 
     /* if we got here then we are ok to run */
-    pid_file_stream = fopen (pidFileName, "w" ) ;
-
-    if ( pid_file_stream == NULL )
-    {
-        syslog ( LOG_ERR, "Failed to open or create %s\n", pidFileName);
-        return ( FAIL_PID_OPEN );
+    pid_file_stream = fopen(pidFileName, "w");
+    if (pid_file_stream == NULL) {
+        syslog(LOG_ERR, "Failed to open or create %s\n", pidFileName);
+        return (FAIL_PID_OPEN);
+    } else if (!fprintf(pid_file_stream, "%d", mypid)) {
+        syslog(LOG_ERR, "Failed to write pid file for %s\n", pidFileName);
+        fclose(pid_file_stream);
+        return(FAIL_FILE_WRITE);
     }
-    else if (!fprintf (pid_file_stream,"%d", mypid))
-    {
-        syslog ( LOG_ERR, "Failed to write pid file for %s\n", pidFileName );
-        fclose ( pid_file_stream ) ;
-        return ( FAIL_FILE_WRITE ) ;
-    }
-    syslog ( LOG_INFO, "opened and written PID file:(pid:%d) FileName: %s\n",mypid, pidFileName);
+    syslog(LOG_INFO, "opened and written PID file:(pid:%d) FileName: %s\n",
+        mypid, pidFileName);
 
-    fflush (pid_file_stream);
-    fclose (pid_file_stream);
+    fflush(pid_file_stream);
+    fclose(pid_file_stream);
     return (0);
 }
-
-/* Signal handler to handle termination signals */
-void signal_handler(int signo) {
+/* ***********************************************************************
+ *
+ * Name       : luksMgrSignalHandler
+ *
+ * Description: Signal handler to handle termination signals
+ *
+ * ************************************************************************/
+void luksMgrSignalHandler(int signo) {
     if (signo == SIGTERM) {
         // Cleanup tasks and exit the daemon
         log("luks daemon: Received SIGTERM. Exiting", LOG_INFO);
         exit(EXIT_SUCCESS);
     }
 }
-
-int main() {
+/* ***********************************************************************
+ *
+ * Name       : copyKubeProviderFile
+ *
+ * Description: This function creates "/controller/etc/kubernetes/" directory 
+ *              on the LUKS volume. Then it copies encryption-provider.yaml
+ *              in the directory and creates symlink for
+ *              /etc/kubernetes/encryption-provider.yaml file.
+ *
+ * ************************************************************************/
+void copyKubeProviderFile(void) {
+    // Create /etc/kubernetes directory
+    string luksKubernetesDirPath = string(luksControllerDataPath)
+                                   + "etc/kubernetes/";
+    string sourceFilePath = luksKubernetesDirPath + K8_PROVIDER_FILE;
+    // Check if the encryption-provider.yaml file already exists
+    if (access(sourceFilePath.c_str(), F_OK) == 0) {
+        return;
+    }
+    string kubernetesDirCmd = "/usr/bin/mkdir -p " + luksKubernetesDirPath;
+    string outResult;
+    if (!execCmd(kubernetesDirCmd, outResult)) {
+        log("Command failed: unable to create /controller/etc/kubernetes/ "
+            "directory path", LOG_ERR);
+    }
+    // Copy the encryption-provider.yaml file to kubernetesFilePath
+    string encryptionFilePath = "/etc/kubernetes/encryption-provider.yaml";
+    string copyEncryptionFileCmd = "/usr/bin/mv " +
+                           encryptionFilePath + " " + luksKubernetesDirPath;
+    if (!execCmd(copyEncryptionFileCmd, outResult)) {
+        log("Command failed: unable to copy "
+            "encryption-provider.yaml file to luksVolume", LOG_ERR);
+    }
+    // Create symlink for encryption-provider.yaml file
+    string symLinkCmd = "/usr/bin/ln -s " + sourceFilePath + " " +
+                        encryptionFilePath;
+    if (!execCmd(symLinkCmd, outResult)) {
+        log("Command failed: unable to create "
+                 "symlink for encryption-provider.yaml file", LOG_ERR);
+    }
+    return;
+}
+/* ***********************************************************************
+ *
+ * Name       : handleResize
+ *
+ * Description: This function resizes the existing LUKS volume if there is
+ *              change in volume size in the default configuration file.
+ *
+ * ************************************************************************/
+int handleResize(string &passphrase, string &volName) {
     int rc = 0;
-    int ret = daemon(0, 0);
-    if (ret != 0) {
-        string errorMessage = "Failed to run luks-fs-mgr as daemon service. "
-                              "Error code: " + to_string(ret);
-        log(errorMessage, LOG_ERR);
-        return 1;
-    }
-    /* create PID file */
-    ret = daemon_create_pidfile();
-    if (ret != 0) {
-        return ret;
-    }
-
-    /* Install signal handler for termination signals */
-    signal(SIGTERM, signal_handler);
-
-    LuksConfig luksConfig;
-    CreatedLuksConfig createdLuksConfig;
-    string passphrase;
-
+    int defaultsize = 0;
+    int createdsize = 0;
+    int status;
+    string statusCommand, log_message, sizeStr;
     // create a JSON object to store the used attributes.
     json_object *jsonConfig;
+    CreatedLuksConfig createdLuksConfig;
+    LuksConfig luksConfig;
     json_object *usedAttributes = json_object_new_object();
     json_object *luksvolumesArray = json_object_new_array();
     json_object *attributesObj = json_object_new_object();
-
-    // Getting Passphrase from passphraseGenerator
-    PassphraseMechanism selectedMechanism = passPhraseType();
-    auto passphraseGenerator =
-      PassphraseGeneratorFactory::createPassphraseGenerator(selectedMechanism);
-    bool passStatus = passphraseGenerator->generatePassphrase(passphrase);
-
-    // Create a thread for luks volume monitoring
-    std::thread notifyThread(notifyLuksVolumeChange, luksControllerDataPath);
-
-    // Validating if passphrase is empty
-    if (passphrase.empty() || passStatus == false) {
-        log("Passphrase generation failed or"
-                            " returned an empty passphrase.", LOG_ERR);
-        rc = 1;
-        goto cleanup;
-    }
-
     // Parse default configuration and extract volume attributes
     if (!parseJSONConfig(configFile, luksConfig, &jsonConfig)) {
         rc = 1;
         goto cleanup;
     }
-
-    if (access(createdConfigFile, F_OK) == 0) {
-        // Parse the createdConfigfile and extract volume attributes
-        if (!parseJSONConfig(createdConfigFile, createdLuksConfig,
-                                                  &jsonConfig)) {
+    // Parse the createdConfigfile and extract volume attributes
+    if (!parseJSONConfig(createdConfigFile, createdLuksConfig,
+                                              &jsonConfig)) {
+        rc = 1;
+        goto cleanup;
+    } else {
+        log("created_luks.json exists", LOG_INFO);
+    }
+    // Logging the successfully parsed attributes of created_luks.json
+    log_message = "Vault File: " +
+                                       string(createdLuksConfig.vaultFile) +
+                         ", Vault Size: " +
+                                       string(createdLuksConfig.vaultSize) +
+                         ", Volume Name: " +
+                                         string(createdLuksConfig.volName) +
+                         ", Mount Path: " +
+                                       string(createdLuksConfig.mountPath) +
+                         ", Passphrase Type: " +
+                                   string(createdLuksConfig.passphraseType);
+    log(log_message, LOG_INFO);
+    // Resizing logic begin here
+    statusCommand = "cryptsetup status " +
+                        string(createdLuksConfig.volName) + " 2>/dev/null";
+    status = system(statusCommand.c_str());
+    // Cryptsetup returns 0 on success and a non-zero value on error.
+    // Return codes on failure:
+    // 1 wrong parameters, 2 no permission (badpassphrase),
+    // 3 out of memory, 4 wrong device specified,
+    // 5 device already exists or device is busy.
+    if (status == 0) {
+        log("LUKS device is already open", LOG_INFO);
+    } else {
+        log("LUKS device is not open. Try opening", LOG_INFO);
+        if (!openLUKSVolume(createdLuksConfig.vaultFile,
+                            createdLuksConfig.volName,
+                            passphrase.c_str())) {
             rc = 1;
             goto cleanup;
-        } else {
-            log("created_luks.json exists", LOG_INFO);
         }
-        // Logging the successfully parsed attributes of created_luks.json
-        string log_message = "Vault File: " +
-                                           string(createdLuksConfig.vaultFile) +
-                             ", Vault Size: " +
-                                           string(createdLuksConfig.vaultSize) +
-                             ", Volume Name: " +
-                                             string(createdLuksConfig.volName) +
-                             ", Mount Path: " +
-                                           string(createdLuksConfig.mountPath) +
-                             ", Passphrase Type: " +
-                                       string(createdLuksConfig.passphraseType);
-        log(log_message, LOG_INFO);
-
-        // Resizing logic begin here
-        string statusCommand = "cryptsetup status " +
-                            string(createdLuksConfig.volName) + " 2>/dev/null";
-        int status = system(statusCommand.c_str());
+        log("LUKS device is successfully opened", LOG_INFO);
+    }
+    defaultsize = checkVaultSize(luksConfig.vaultSize);
+    createdsize = checkVaultSize(createdLuksConfig.vaultSize);
+    volName = string(createdLuksConfig.volName);
+    if (defaultsize > createdsize) {
+        log("Resizing the vault file.", LOG_INFO);
+        if (resizeVault(createdLuksConfig.vaultFile,
+                        defaultsize,
+                        createdLuksConfig.volName,
+                        createdLuksConfig.mountPath,
+                        passphrase.c_str())) {
+            // Assigning values to attributes used to write
+            // created_luks.json
+            sizeStr = to_string(defaultsize);
+            luksConfig.vaultSize = (sizeStr + "M").c_str();
+            json_object_object_add(attributesObj, "PASSPHRASE_TYPE",
+                json_object_new_string(createdLuksConfig.passphraseType));
+            json_object_object_add(attributesObj, "VAULT_FILE",
+                     json_object_new_string(createdLuksConfig.vaultFile));
+            json_object_object_add(attributesObj, "VAULT_SIZE",
+                     json_object_new_string(luksConfig.vaultSize));
+            json_object_object_add(attributesObj, "VOL_NAME",
+                        json_object_new_string(createdLuksConfig.volName));
+            json_object_object_add(attributesObj, "MOUNT_PATH",
+                      json_object_new_string(createdLuksConfig.mountPath));
+            json_object_array_add(luksvolumesArray, attributesObj);
+            json_object_object_add(usedAttributes, "luksvolumes",
+                                                         luksvolumesArray);
+            if (!writeJSONToFile(createdConfigFile, usedAttributes)) {
+                log("Error writing JSON file.", LOG_ERR);
+                rc = 1;
+                goto cleanup;
+            }
+        } else {
+            rc = 1;
+            goto cleanup;
+          }
+    } else {
+        log("No resizing required", LOG_INFO);
+        // No Reszing to handle, start the service normally
+        // Check if the mount path exists
+        if (access(luksConfig.mountPath, F_OK) == 0) {
+            string mount_command = "/usr/bin/mountpoint -q " +
+                                 string(luksConfig.mountPath);
+            int mountpoint_status = system(mount_command.c_str());
+            // mountpoint has the following exit status values:
+            // 0: success; the directory is a mountpoint,
+            // or device is block device
+            // 1: failure; incorrect invocation, permissions or system error
+            // 32: failure; the directory is not a mountpoint,
+            // or device is not a block device
+            if (mountpoint_status != 0) {
+                // Mount path directory is not mount point,
+                // proceed to mount it
+                if (!mountFilesystem(luksConfig.volName,
+                                     luksConfig.mountPath,
+                                     defaultDirectoryPath)) {
+                    rc = 1;
+                    goto cleanup;
+                }
+                log("Encrypted vault is mounted.", LOG_INFO);
+            } else {
+                log("Encrypted vault is already mounted.", LOG_INFO);
+              }
+        } else {
+            // Mount path does not exist, create filesystem and then mount
+            if (!createFilesystem(luksConfig.volName)) {
+                log("Error creating filesystem", LOG_ERR);
+                rc = 1;
+                goto cleanup;
+            }
+            if (!mountFilesystem(luksConfig.volName, luksConfig.mountPath,
+                                defaultDirectoryPath)) {
+                rc = 1;
+                goto cleanup;
+            }
+            log("Encrypted vault is mounted.", LOG_INFO);
+        }
+    }
+    cleanup:
+        json_object_put(jsonConfig);
+        json_object_put(usedAttributes);
+        json_object_put(luksvolumesArray);
+        json_object_put(attributesObj);
+        return (rc);
+}
+/* ***********************************************************************
+ *
+ * Name       : initialVolCreate
+ *
+ * Description: This function reads the default configuration file and
+ *              creates the vault file, setups the LUKS encryption,
+ *              unseals the LUKS volume, create file system and mount
+ *              the file system.
+ *              Once the LUKS voume is created, it writes the configuration
+ *              in new file.
+ *
+ * ************************************************************************/
+int initialVolCreate(string &passphrase, string &volName) {
+    int rc = 0;
+    int size, status;
+    size_t lastSlashPos;
+    string log_message, sizeStr, ppType;
+    string modifiedVaultFile, mountPath, statusCommand;
+    // create a JSON object to store the used attributes.
+    json_object *jsonConfig;
+    LuksConfig luksConfig;
+    CreatedLuksConfig createdLuksConfig;
+    json_object *usedAttributes = json_object_new_object();
+    json_object *luksvolumesArray = json_object_new_array();
+    json_object *attributesObj = json_object_new_object();
+    // Parse default configuration and extract volume attributes
+    if (!parseJSONConfig(configFile, luksConfig, &jsonConfig)) {
+        rc = 1;
+        goto cleanup;
+    }
+    // Execute the below code when service start during first boot
+    // Create default directory for the service to create FS and mount
+    if (!createDefaultDirectory(defaultDirectoryPath)) {
+        rc = 1;
+        goto cleanup;
+    }
+    log_message = "Vault File: " + string(luksConfig.vaultFile) +
+                     ", Vault Size: " + string(luksConfig.vaultSize) +
+                     ", Volume Name: " + string(luksConfig.volName) +
+                     ", Mount Path: " + string(luksConfig.mountPath);
+    log(log_message, LOG_INFO);
+    // Create a new string to hold the created values
+    modifiedVaultFile = luksConfig.vaultFile;
+    mountPath = luksConfig.mountPath;
+    volName = luksConfig.volName;
+    // Check if directory path is provided in vaultFile
+    lastSlashPos = modifiedVaultFile.rfind('/');
+    if (lastSlashPos == string::npos) {
+        // No directory path provided, use default directory
+        modifiedVaultFile = "/var/luks/stx/" + modifiedVaultFile;
+    }
+    // Check if the vault file exists
+    if ((access(luksConfig.vaultFile, F_OK) == 0) ||
+           (access(modifiedVaultFile.c_str(), F_OK) == 0)) {
+        // The vault file exists, proceed to unseal
+        statusCommand = "cryptsetup status " +
+            string(luksConfig.volName) + " 2>/dev/null";
+        status = system(statusCommand.c_str());
         // Cryptsetup returns 0 on success and a non-zero value on error.
         // Return codes on failure:
         // 1 wrong parameters, 2 no permission (badpassphrase),
@@ -1076,275 +1186,177 @@ int main() {
             log("LUKS device is already open", LOG_INFO);
         } else {
             log("LUKS device is not open. Try opening", LOG_INFO);
-            if (!openLUKSVolume(createdLuksConfig.vaultFile,
-                                createdLuksConfig.volName,
-                                passphrase.c_str())) {
+            if (!openLUKSVolume(modifiedVaultFile.c_str(),
+                                luksConfig.volName, passphrase.c_str())) {
                 rc = 1;
                 goto cleanup;
             }
             log("LUKS device is successfully opened", LOG_INFO);
-        }
-        int defaultsize = 0;
-        int createdsize = 0;
-        defaultsize = checkVaultSize(luksConfig.vaultSize);
-        createdsize = checkVaultSize(createdLuksConfig.vaultSize);
-        string volName = string(createdLuksConfig.volName);
-        if (defaultsize > createdsize) {
-            log("Resizing the vault file.", LOG_INFO);
-            if (resizeVault(createdLuksConfig.vaultFile,
-                            defaultsize,
-                            createdLuksConfig.volName,
-                            createdLuksConfig.mountPath,
-                            passphrase.c_str())) {
-                // Assigning values to attributes used to write
-                // created_luks.json
-                string sizeStr = to_string(defaultsize);
-                luksConfig.vaultSize = (sizeStr + "M").c_str();
-                json_object_object_add(attributesObj, "PASSPHRASE_TYPE",
-                    json_object_new_string(createdLuksConfig.passphraseType));
-                json_object_object_add(attributesObj, "VAULT_FILE",
-                         json_object_new_string(createdLuksConfig.vaultFile));
-                json_object_object_add(attributesObj, "VAULT_SIZE",
-                         json_object_new_string(luksConfig.vaultSize));
-                json_object_object_add(attributesObj, "VOL_NAME",
-                            json_object_new_string(createdLuksConfig.volName));
-                json_object_object_add(attributesObj, "MOUNT_PATH",
-                          json_object_new_string(createdLuksConfig.mountPath));
-
-                json_object_array_add(luksvolumesArray, attributesObj);
-                json_object_object_add(usedAttributes, "luksvolumes",
-                                                             luksvolumesArray);
-
-                if (!writeJSONToFile(createdConfigFile, usedAttributes)) {
-                    log("Error writing JSON file.", LOG_ERR);
-                    rc = 1;
-                    goto cleanup;
-                }
-            } else {
-                rc = 1;
-                goto cleanup;
-              }
-        } else {
-            log("No resizing required", LOG_INFO);
-            // No Reszing to handle, start the service normally
-            // Check if the mount path exists
-            if (access(luksConfig.mountPath, F_OK) == 0) {
-                string mount_command = "/usr/bin/mountpoint -q " +
-                                     string(luksConfig.mountPath);
-                int mountpoint_status = system(mount_command.c_str());
-                // mountpoint has the following exit status values:
-                // 0: success; the directory is a mountpoint,
-                // or device is block device
-                // 1: failure; incorrect invocation, permissions or system error
-                // 32: failure; the directory is not a mountpoint,
-                // or device is not a block device
-                if (mountpoint_status != 0) {
-                    // Mount path directory is not mount point,
-                    // proceed to mount it
-                    if (!mountFilesystem(luksConfig.volName,
-                                         luksConfig.mountPath,
-                                         defaultDirectoryPath)) {
-                        rc = 1;
-                        goto cleanup;
-                    }
-                    log("Encrypted vault is mounted.", LOG_INFO);
-                } else {
-                    log("Encrypted vault is already mounted.", LOG_INFO);
-                  }
-            } else {
-                // Mount path does not exist, create filesystem and then mount
-                if (!createFilesystem(luksConfig.volName)) {
-                    log("Error creating filesystem", LOG_ERR);
-                    rc = 1;
-                    goto cleanup;
-                }
-                if (!mountFilesystem(luksConfig.volName, luksConfig.mountPath,
-                                    defaultDirectoryPath)) {
-                    rc = 1;
-                    goto cleanup;
-                }
-            log("Encrypted vault is mounted.", LOG_INFO);
-            }
-        }
-        monitorLUKSVolume(volName);
-        rc = 0;
-        goto cleanup;
-    } else {
-        // Execute the below code when service start during first boot
-        // Create default directory for the service to create FS and mount
-        if (!createDefaultDirectory(defaultDirectoryPath)) {
-            rc = 1;
-            goto cleanup;
-        }
-
-        string log_message = "Vault File: " + string(luksConfig.vaultFile) +
-                         ", Vault Size: " + string(luksConfig.vaultSize) +
-                         ", Volume Name: " + string(luksConfig.volName) +
-                         ", Mount Path: " + string(luksConfig.mountPath);
-        log(log_message, LOG_INFO);
-
-        // Create a new string to hold the created values
-        string modifiedVaultFile = luksConfig.vaultFile;
-        string mountPath = luksConfig.mountPath;
-        string volName = luksConfig.volName;
-        // Check if directory path is provided in vaultFile
-        size_t lastSlashPos = modifiedVaultFile.rfind('/');
-        if (lastSlashPos == string::npos) {
-            // No directory path provided, use default directory
-            modifiedVaultFile = "/var/luks/stx/" + modifiedVaultFile;
-        }
-
-        // Check if the vault file exists
-        if ((access(luksConfig.vaultFile, F_OK) == 0) ||
-               (access(modifiedVaultFile.c_str(), F_OK) == 0)) {
-            // The vault file exists, proceed to unseal
-            string statusCommand = "cryptsetup status " +
-                string(luksConfig.volName) + " 2>/dev/null";
-            int status = system(statusCommand.c_str());
-            // Cryptsetup returns 0 on success and a non-zero value on error.
-            // Return codes on failure:
-            // 1 wrong parameters, 2 no permission (badpassphrase),
-            // 3 out of memory, 4 wrong device specified,
-            // 5 device already exists or device is busy.
-            if (status == 0) {
-                log("LUKS device is already open", LOG_INFO);
-            } else {
-                log("LUKS device is not open. Try opening", LOG_INFO);
-                if (!openLUKSVolume(modifiedVaultFile.c_str(),
-                                    luksConfig.volName, passphrase.c_str())) {
-                    rc = 1;
-                    goto cleanup;
-                }
-                log("LUKS device is successfully opened", LOG_INFO);
-             }
-            // Check if the mount path exists
-            if (access(luksConfig.mountPath, F_OK) == 0) {
-                string mount_command = "/usr/bin/mountpoint -q " +
-                                     string(luksConfig.mountPath);
-                int mountpoint_status = system(mount_command.c_str());
-                // mountpoint has the following exit status values:
-                // 0: success; the directory is a mountpoint,
-                // or device is block device
-                // 1: failure; incorrect invocation, permissions or system error
-                // 32: failure; the directory is not a mountpoint,
-                // or device is not a block device on
-                if (mountpoint_status != 0) {
-                    // Mount path directory is not mount point,
-                    // proceed to mount it
-                    if (!mountFilesystem(luksConfig.volName,
-                                  luksConfig.mountPath, defaultDirectoryPath)) {
-                        rc = 1;
-                        goto cleanup;
-                    }
-                    log("Encrypted vault is mounted.", LOG_INFO);
-                } else {
-                    log("Encrypted vault is already mounted.", LOG_INFO);
-                  }
-            } else {
-                // Mount path does not exist, create filesystem and then mount
-                if (!createFilesystem(luksConfig.volName)) {
-                    log("Error creating filesystem", LOG_ERR);
-                    rc = 1;
-                    goto cleanup;
-                }
-                if (!mountFilesystem(luksConfig.volName, luksConfig.mountPath,
-                                    defaultDirectoryPath)) {
+         }
+        // Check if the mount path exists
+        if (access(luksConfig.mountPath, F_OK) == 0) {
+            string mount_command = "/usr/bin/mountpoint -q " +
+                                 string(luksConfig.mountPath);
+            int mountpoint_status = system(mount_command.c_str());
+            // mountpoint has the following exit status values:
+            // 0: success; the directory is a mountpoint,
+            // or device is block device
+            // 1: failure; incorrect invocation, permissions or system error
+            // 32: failure; the directory is not a mountpoint,
+            // or device is not a block device on
+            if (mountpoint_status != 0) {
+                // Mount path directory is not mount point,
+                // proceed to mount it
+                if (!mountFilesystem(luksConfig.volName,
+                              luksConfig.mountPath, defaultDirectoryPath)) {
                     rc = 1;
                     goto cleanup;
                 }
                 log("Encrypted vault is mounted.", LOG_INFO);
-            }
+            } else {
+                log("Encrypted vault is already mounted.", LOG_INFO);
+              }
         } else {
-            // The vault file does not exist, create it
-            // Create the necessary directories if they don't exist
-            log("The vault image file does not exist, creating one", LOG_INFO);
-            int size = checkVaultSize(luksConfig.vaultSize);
-
-            if (!createVaultFile(modifiedVaultFile.c_str(), size)) {
-                log("Error creating LUKS vault image file", LOG_ERR);
-                rc = 1;
-                goto cleanup;
-            }
-
-            // Set up LUKS encryption
-            if (!setupLUKSEncryption(modifiedVaultFile.c_str(),
-                                 passphrase.c_str())) {
-                log("Error setting up LUKS encryption", LOG_ERR);
-                rc = 1;
-                goto cleanup;
-            }
-
-            // Open LUKS Volume
-            if (!openLUKSVolume(modifiedVaultFile.c_str(), luksConfig.volName,
-                            passphrase.c_str())) {
-                log("Error opening LUKS volume", LOG_ERR);
-                rc = 1;
-                goto cleanup;
-            }
-
-            // Create filesystem
+            // Mount path does not exist, create filesystem and then mount
             if (!createFilesystem(luksConfig.volName)) {
                 log("Error creating filesystem", LOG_ERR);
                 rc = 1;
                 goto cleanup;
             }
-
-            // Mount filesystem
             if (!mountFilesystem(luksConfig.volName, luksConfig.mountPath,
-                             defaultDirectoryPath)) {
+                                defaultDirectoryPath)) {
                 rc = 1;
                 goto cleanup;
             }
-            log("Encrypted vault is set up and mounted.", LOG_INFO);
+            log("Encrypted vault is mounted.", LOG_INFO);
         }
-
-        if (!isMountPathValid(luksConfig.mountPath, defaultDirectoryPath)) {
-            log("Mount path is not valid, using default mount path.", LOG_INFO);
-            mountPath = defaultMountPath;  // Use default mount path
-        }
-
-        // Assigning values to attributes used to write created_luks.json
-        int size = checkVaultSize(luksConfig.vaultSize);
-        string sizeStr = to_string(size);
-        string ppType = getPassPhraseType();
-        createdLuksConfig.vaultSize = (sizeStr + "M").c_str();
-        createdLuksConfig.vaultFile = modifiedVaultFile.c_str();
-        createdLuksConfig.volName = luksConfig.volName;
-        createdLuksConfig.mountPath = mountPath.c_str();
-        createdLuksConfig.passphraseType = ppType.c_str();
-
-        json_object_object_add(attributesObj, "PASSPHRASE_TYPE",
-                    json_object_new_string(createdLuksConfig.passphraseType));
-        json_object_object_add(attributesObj, "VAULT_FILE",
-                         json_object_new_string(createdLuksConfig.vaultFile));
-        json_object_object_add(attributesObj, "VAULT_SIZE",
-                         json_object_new_string(createdLuksConfig.vaultSize));
-        json_object_object_add(attributesObj, "VOL_NAME",
-                            json_object_new_string(createdLuksConfig.volName));
-        json_object_object_add(attributesObj, "MOUNT_PATH",
-                          json_object_new_string(createdLuksConfig.mountPath));
-
-        json_object_array_add(luksvolumesArray, attributesObj);
-        json_object_object_add(usedAttributes, "luksvolumes", luksvolumesArray);
-
-        if (!writeJSONToFile(createdConfigFile, usedAttributes)) {
-            log("Error writing JSON file.", LOG_ERR);
+    } else {
+        // The vault file does not exist, create it
+        // Create the necessary directories if they don't exist
+        log("The vault image file does not exist, creating one", LOG_INFO);
+        size = checkVaultSize(luksConfig.vaultSize);
+        if (!createVaultFile(modifiedVaultFile.c_str(), size)) {
+            log("Error creating LUKS vault image file", LOG_ERR);
             rc = 1;
             goto cleanup;
         }
-        monitorLUKSVolume(volName);
-        rc = 0;
+        // Set up LUKS encryption
+        if (!setupLUKSEncryption(modifiedVaultFile.c_str(),
+                             passphrase.c_str())) {
+            log("Error setting up LUKS encryption", LOG_ERR);
+            rc = 1;
+            goto cleanup;
+        }
+        // Open LUKS Volume
+        if (!openLUKSVolume(modifiedVaultFile.c_str(), luksConfig.volName,
+                        passphrase.c_str())) {
+            log("Error opening LUKS volume", LOG_ERR);
+            rc = 1;
+            goto cleanup;
+        }
+        // Create filesystem
+        if (!createFilesystem(luksConfig.volName)) {
+            log("Error creating filesystem", LOG_ERR);
+            rc = 1;
+            goto cleanup;
+        }
+        // Mount filesystem
+        if (!mountFilesystem(luksConfig.volName, luksConfig.mountPath,
+                         defaultDirectoryPath)) {
+            rc = 1;
+            goto cleanup;
+        }
+        log("Encrypted vault is set up and mounted.", LOG_INFO);
+    }
+    if (!isMountPathValid(luksConfig.mountPath, defaultDirectoryPath)) {
+        log("Mount path is not valid, using default mount path.", LOG_INFO);
+        mountPath = defaultMountPath;  // Use default mount path
+    }
+    // Assigning values to attributes used to write created_luks.json
+    size = checkVaultSize(luksConfig.vaultSize);
+    sizeStr = to_string(size);
+    ppType = getPassPhraseType();
+    createdLuksConfig.vaultSize = (sizeStr + "M").c_str();
+    createdLuksConfig.vaultFile = modifiedVaultFile.c_str();
+    createdLuksConfig.volName = luksConfig.volName;
+    createdLuksConfig.mountPath = mountPath.c_str();
+    createdLuksConfig.passphraseType = ppType.c_str();
+    json_object_object_add(attributesObj, "PASSPHRASE_TYPE",
+                json_object_new_string(createdLuksConfig.passphraseType));
+    json_object_object_add(attributesObj, "VAULT_FILE",
+                     json_object_new_string(createdLuksConfig.vaultFile));
+    json_object_object_add(attributesObj, "VAULT_SIZE",
+                     json_object_new_string(createdLuksConfig.vaultSize));
+    json_object_object_add(attributesObj, "VOL_NAME",
+                        json_object_new_string(createdLuksConfig.volName));
+    json_object_object_add(attributesObj, "MOUNT_PATH",
+                      json_object_new_string(createdLuksConfig.mountPath));
+    json_object_array_add(luksvolumesArray, attributesObj);
+    json_object_object_add(usedAttributes, "luksvolumes", luksvolumesArray);
+    if (!writeJSONToFile(createdConfigFile, usedAttributes)) {
+        log("Error writing JSON file.", LOG_ERR);
+        rc = 1;
         goto cleanup;
     }
-    notifyThread.join();
-
     cleanup:
-        if (notifyThread.joinable()) {
-            notifyThread.join();
-        }
         json_object_put(jsonConfig);
         json_object_put(usedAttributes);
         json_object_put(luksvolumesArray);
         json_object_put(attributesObj);
+        return (rc);
+}
+int main() {
+    int rc = 0;
+    int ret = daemon(0, 0);
+    if (ret != 0) {
+        string errorMessage = "Failed to run luks-fs-mgr as daemon service. "
+                              "Error code: " + to_string(ret);
+        log(errorMessage, LOG_ERR);
+        return ret;
+    }
+    // Create PID file
+    ret = daemonCreatePidfile();
+    if (ret != 0) {
+        string errorMessage = "Failed to create pid file for luks-fs-mgr. "
+                              "Error code: " + to_string(ret);
+        log(errorMessage, LOG_ERR);
+        return ret;
+    }
+    // Install signal handler for termination signals
+    signal(SIGTERM, luksMgrSignalHandler);
+
+    string passphrase;
+    string volName;
+    // Getting Passphrase from passphraseGenerator
+    PassphraseMechanism selectedMechanism = passPhraseType();
+    auto passphraseGenerator =
+      PassphraseGeneratorFactory::createPassphraseGenerator(selectedMechanism);
+    bool passStatus = passphraseGenerator->generatePassphrase(passphrase);
+    // Validating if passphrase is empty
+    if (passphrase.empty() || passStatus == false) {
+        log("Passphrase generation failed or"
+                            " returned an empty passphrase.", LOG_ERR);
+        return 1;
+    }
+    // Create a thread for luks volume monitoring
+    std::thread notifyThread(notifyLuksVolumeChange, luksControllerDataPath);
+    if (access(createdConfigFile, F_OK) == 0) {
+        // Volume exists, check resize required or not and handle
+        rc = handleResize(passphrase, volName);
+        if (rc != 0) {
+            goto cleanup;
+        }
+    } else {
+        rc = initialVolCreate(passphrase, volName);
+        if (rc != 0) {
+            goto cleanup;
+        }
+        copyKubeProviderFile();
+    }
+    monitorLUKSVolume(volName);
+    cleanup:
+        if (notifyThread.joinable()) {
+            notifyThread.join();
+        }
         return (rc);
 }
