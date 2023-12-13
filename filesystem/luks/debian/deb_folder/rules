@@ -5,6 +5,7 @@ export ROOT = debian/tmp
 export LOCAL_SBINDIR = $(ROOT)/usr/local/sbin
 export UNITDIR = $(ROOT)/lib/systemd/system
 export CONFIGDIR = $(ROOT)/etc/luks-fs-mgr.d
+export PMONDIR = $(ROOT)/usr/share/starlingx/pmon.d
 
 %:
 	dh $@
@@ -18,6 +19,10 @@ override_dh_auto_install:
 	install -m 755 -d ${UNITDIR}
 	install -p -D -m 644 ./debian/luks-fs-mgr.service ${UNITDIR}/luks-fs-mgr.service
 	install -p -D -m 644 encryption/scripts/luks_config.json ${CONFIGDIR}/luks_config.json
+
+	# Process monitor config files
+	install -m 755 -d $(PMONDIR)
+	install -p -D -m 644 encryption/scripts/luks.conf ${PMONDIR}/luks.conf
 
 override_dh_installsystemd:
 	dh_installsystemd --name luks-fs-mgr
