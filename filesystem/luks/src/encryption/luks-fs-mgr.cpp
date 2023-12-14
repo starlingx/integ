@@ -20,9 +20,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
+#include <signal.h>
 #include "PassphraseGenerator.h"
 
-#define SLEEP_DURATION 60
+#define SLEEP_DURATION        60
+#define BUFFER                1024
+#define FAIL_FILE_WRITE       (11)
+#define FAIL_PID_OPEN         (9)
 
 using namespace std;
 
@@ -31,6 +35,7 @@ const char *configFile = "/etc/luks-fs-mgr.d/luks_config.json";
 const char *defaultDirectoryPath = "/var/luks/stx";
 const char *defaultMountPath = "/var/luks/stx/luks_fs";
 const char *createdConfigFile = "/etc/luks-fs-mgr.d/created_luks.json";
+const char *pidFileName = "/var/run/luks-fs-mgr.pid";
 
 // Define a struct to hold configuration variables
 struct LuksConfig {
@@ -734,6 +739,75 @@ void monitorLUKSVolume(const string& volumeName) {
         }
 }
 
+/* Creates PID file and adds the pid*/
+int daemon_create_pidfile ( void )
+{
+    FILE * pid_file_stream  = (FILE *)(NULL);
+    string errorMessage = "";
+    /* Create PID file */
+    pid_t mypid = getpid();
+
+    /* Check for another instance running by trying to open in read only mode.
+     * If it opens then there "may" be another process running.
+     * If it opens then read the pid and see if that pID exists.
+     * If it does then this is a duplicate process so exit. */
+    pid_file_stream = fopen (pidFileName, "r" ) ;
+    if ( pid_file_stream )
+    {
+        int   rc  = 0 ;
+        pid_t pid = 0 ;
+        char buffer[BUFFER];
+        if ( fgets ( buffer, BUFFER, pid_file_stream) != NULL )
+        {
+            rc = sscanf ( &buffer[0], "%d",  &pid );
+            if ( rc == 1 )
+            {
+                rc = kill ( pid, 0 );
+                if ( rc == 0 )
+                {
+                    errorMessage = "Refusing to start duplicate process pid: "
+                         + to_string(pid);
+                    log(errorMessage, LOG_ERR);
+                    fclose (pid_file_stream);
+                    exit (0);
+                }
+            }
+        }
+    }
+
+    if ( pid_file_stream )
+        fclose (pid_file_stream);
+
+    /* if we got here then we are ok to run */
+    pid_file_stream = fopen (pidFileName, "w" ) ;
+
+    if ( pid_file_stream == NULL )
+    {
+        syslog ( LOG_ERR, "Failed to open or create %s\n", pidFileName);
+        return ( FAIL_PID_OPEN );
+    }
+    else if (!fprintf (pid_file_stream,"%d", mypid))
+    {
+        syslog ( LOG_ERR, "Failed to write pid file for %s\n", pidFileName );
+        fclose ( pid_file_stream ) ;
+        return ( FAIL_FILE_WRITE ) ;
+    }
+    syslog ( LOG_INFO, "opened and written PID file:(pid:%d) FileName: %s\n",mypid, pidFileName);
+
+    fflush (pid_file_stream);
+    fclose (pid_file_stream);
+    return (0);
+}
+
+/* Signal handler to handle termination signals */
+void signal_handler(int signo) {
+    if (signo == SIGTERM) {
+        // Cleanup tasks and exit the daemon
+        log("luks daemon: Received SIGTERM. Exiting", LOG_INFO);
+        exit(EXIT_SUCCESS);
+    }
+}
+
 int main() {
     int rc = 0;
     int ret = daemon(0, 0);
@@ -743,6 +817,14 @@ int main() {
         log(errorMessage, LOG_ERR);
         return 1;
     }
+    /* create PID file */
+    ret = daemon_create_pidfile();
+    if (ret != 0) {
+        return ret;
+    }
+
+    /* Install signal handler for termination signals */
+    signal(SIGTERM, signal_handler);
 
     LuksConfig luksConfig;
     CreatedLuksConfig createdLuksConfig;
