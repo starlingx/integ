@@ -131,6 +131,9 @@ enable logmgmt.service
 # sssd
 enable sssd.service
 
+# strongswan ipsec daemon
+enable strongswan-starter.service
+
 # worker-utils.spec
 enable affine-platform.sh.service
 enable affine-tasks.service

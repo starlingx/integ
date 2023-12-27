@@ -132,6 +132,9 @@ disable epmd.socket
 # sssd
 enable sssd.service
 
+# strongswan ipsec daemon
+enable strongswan-starter.service
+
 # storage personality
 disable ceph-manager.service
 disable dcmanager-api.service
