@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Wind River Systems, Inc.
+ * Copyright (c) 2023-2024 Wind River Systems, Inc.
 *
 * SPDX-License-Identifier: Apache-2.0
 *
@@ -13,6 +13,8 @@
 #include <signal.h>
 #include <sys/inotify.h>
 #include <syslog.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <libdaemon/daemon.h>
 #include <iostream>
@@ -20,13 +22,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
-#include <thread>
+#include <atomic>
 #include "PassphraseGenerator.h"
-#define INOTIFY_THREAD_SLEEP 15
 #define CONTROLLER_0 "controller-0"
 #define CONTROLLER_1 "controller-1"
-#define SLEEP_DURATION        60
 #define BUFFER                1024
+#define MAX_BUF_SIZE          4096
 #define FAIL_FILE_WRITE       (11)
 #define FAIL_PID_OPEN         (9)
 #define K8_PROVIDER_FILE "encryption-provider.yaml"
@@ -39,6 +40,7 @@ const char *defaultMountPath = "/var/luks/stx/luks_fs";
 const char *createdConfigFile = "/etc/luks-fs-mgr.d/created_luks.json";
 const char *luksControllerDataPath = "/var/luks/stx/luks_fs/controller/";
 const char *pidFileName = "/var/run/luks-fs-mgr.pid";
+atomic<bool> exitFlag(false);
 // Define a struct to hold configuration variables
 struct LuksConfig {
     const char *vaultFile;
@@ -654,25 +656,17 @@ bool resizeVault(const char* vaultFile,
 }
 /* ***********************************************************************
  *
- * Name       : monitorLUKSVolume
+ * Name       : isSymlink
  *
- * Description: This function monitors the LUKS volume status and runs
- *              in loop until there's any issue with the LUKS volume.
+ * Description: This function checks if file is symlink or not.
  *
  * ************************************************************************/
-void monitorLUKSVolume(const string& volumeName) {
-    while (1) {
-        string statusCommand = "cryptsetup status " + volumeName +
-                                                           " 2>/dev/null";
-        int status = system(statusCommand.c_str());
-            if (status != 0) {
-                string errorMessage = "LUKS volume is not in use. "
-                                      "Error code: " + to_string(status);
-                log(errorMessage, LOG_ERR);
-                break;
-            }
-            sleep(SLEEP_DURATION);
-        }
+bool isSymlink(const char* path) {
+    struct stat buf;
+    if (lstat(path, &buf) != -1) {
+        return S_ISLNK(buf.st_mode);
+    }
+    return false;
 }
 /* ***********************************************************************
  *
@@ -681,16 +675,19 @@ void monitorLUKSVolume(const string& volumeName) {
  * Description: This function execute command on shell and collect output.
  *
  * ************************************************************************/
-bool execCmd(const string &cmd, string &result) {
+int execCmd(const string &cmd, string &result) {
     const int MAX_BUF = 256;
     char buf[MAX_BUF];
     result = "";
     int cmdStatus;
-    bool retVal = false;
+    int errorCode = 0;
 
     FILE *fstream = popen(cmd.c_str(), "r");
-    if (!fstream)
-        return retVal;
+    if (!fstream) {
+        log("popen error for " + cmd +  " OS err no: "
+             + to_string(errno), LOG_ERR);
+        return 1;
+    }
 
     if (fstream) {
         while (!feof(fstream)) {
@@ -702,11 +699,12 @@ bool execCmd(const string &cmd, string &result) {
     if (!result.empty())
            result = result.substr(0, result.size() - 1);
 
-    if (WIFEXITED(cmdStatus) && WEXITSTATUS(cmdStatus) == 0) {
-        retVal = true;
-    }
+    errorCode = WEXITSTATUS(cmdStatus);
 
-    return retVal;
+    if (WIFEXITED(cmdStatus) && errorCode == 0) {
+        return 0;
+    }
+    return errorCode;
 }
 /* ***********************************************************************
  *
@@ -730,16 +728,21 @@ void syncLuksVolume() {
     int maxRetries = 3;
     int retryDelay = 5;
     size_t strFound = 0;
+    int rc = 0;
     try {
         // Get the hostname
-        if (!execCmd("/usr/bin/hostname", hostname)) {
-            logMsg = "Command failed: Unable to retrieve hostname: ";
+        rc = execCmd("/usr/bin/hostname", hostname);
+        if (rc != 0) {
+            logMsg = "Command failed: Unable to retrieve hostname: Error code: "
+                     +to_string(rc);
             log(logMsg, LOG_ERR);
             throw std::runtime_error("Command Hostname failed.");
         }
         // Check if controller is not standalone/simplex
-        if (!execCmd(facterStandAloneCmd, output)) {
-            logMsg = "Command failed: Unable to fetch FACTER standalone";
+        rc = execCmd(facterStandAloneCmd, output);
+        if (rc != 0) {
+            logMsg = "Command failed: Unable to fetch FACTER standalone. "
+                     " Error code: "+to_string(rc);
             log(logMsg, LOG_ERR);
             throw std::runtime_error("Command: FACTER standalone failed.");
         }
@@ -749,8 +752,10 @@ void syncLuksVolume() {
         }
         // Check if the controller is active
         // Use the FACTER to get the active status of controller
-        if (!execCmd(facterActiveCmd, output)) {
-            logMsg = "Command failed: Unable to fetch FACTER.";
+        rc = execCmd(facterActiveCmd, output);
+        if (rc != 0) {
+            logMsg = "Command failed: Unable to fetch active FACTER."
+                     " Error code: " + to_string(rc);
             log(logMsg, LOG_ERR);
             throw std::runtime_error("Command: FACTER active failed.");
         }
@@ -775,9 +780,10 @@ void syncLuksVolume() {
                        "/var/luks/stx/luks_fs/controller/ rsync://";
                 rsyncCmd.append(standbyHostname);
                 rsyncCmd += "/luksdata/";
-                if (!execCmd(rsyncCmd, output)) {
+                rc = execCmd(rsyncCmd, output);
+                if (rc != 0) {
                     logMsg = "rysnc failed: Command execution "
-                                 "failed: " + rsyncCmd;
+                        "failed: " + rsyncCmd + " Error code:"+to_string(rc);
                     log(logMsg, LOG_ERR);
                     if (attempt < maxRetries) {
                         log("Retrying...", LOG_INFO);
@@ -790,9 +796,9 @@ void syncLuksVolume() {
                 } else {
                     logMsg = "rysnc successful: " + rsyncCmd;
                     log(logMsg, LOG_INFO);
-                    break;  // exit on rysnc success
+                    break;  // Exit on rysnc success
                 }
-            }  // loop ends
+            }  // Loop ends
         }
     } catch (const exception &ex) {
         string errorStr = "rsync failed, error: " + string(ex.what());
@@ -802,58 +808,35 @@ void syncLuksVolume() {
 }
 /* ***********************************************************************
  *
- * Name       : notifyLuksVolumeChange
+ * Name       : syncLuksVolumeChange
  *
  * Description: This function watches LUKS volume for any changes such as
- *              create/modify/delete and accordingly generates notification 
- *              event.
+ *              create/modify/delete and accordingly generates notification
+ *              event and sync the luks volume with standby controller.
  *
  * ************************************************************************/
-void notifyLuksVolumeChange(const char* luksPath) {
-    char buffer[4096];
-    ssize_t totalBufferBytes;
-    // Sleep for 15 secs while the luks_volume  mounted.
-    // This is to avoid the race condition between inotifyThread
-    // and luksVolume creation. This sleep will give that extra bit
-    // of time for luksVolume to be created and mounted.
-    sleep(INOTIFY_THREAD_SLEEP);
-    // Initialize iNotify
-    int inotify_fd = inotify_init();
-    if (inotify_fd < 0) {
-        log("inotify_init failed to initialize", LOG_ERR);
-        close(inotify_fd);
-        return;
+int syncLuksVolumeChange(const char* luksPath) {
+    FILE *fp;
+    char notifyWaitCmd[MAX_BUF_SIZE] = {0};
+    char output[BUFFER] = {0};
+
+    (void)snprintf(notifyWaitCmd, (MAX_BUF_SIZE - 1), "timeout 5s "
+                      "inotifywait -m -r -e "
+                      "create,modify,delete,attrib,move --format "
+                      "'%%e %%w%%f' %s 2>/dev/null", luksPath);
+    fp = popen(notifyWaitCmd, "r");
+    if (fp == NULL) {
+        log("Error opening inotifywait pipe", LOG_ERR);
+        return 1;
     }
-    // Adding luksVolumeDirectory to watch
-    int wd = inotify_add_watch(inotify_fd, luksPath, IN_MODIFY
-                                | IN_CREATE | IN_DELETE);
-    if (wd < 0) {
-        string errMsg = "inotify_add_watch failed: Failed to add "
-                       "watch for dir: " + string(luksPath);
-        log(errMsg, LOG_ERR);
-        close(inotify_fd);
-        return;
+    // Read inotifywait output
+    while (fgets(output, sizeof(output), fp) != NULL) {
+        // Initiate rsync on change detected
+        syncLuksVolume();
+        break;
     }
-    while (true) {
-        // Listen for notification event
-        // The read() method blocks until one or more alerts arrive
-        totalBufferBytes = read(inotify_fd, buffer, sizeof(buffer));
-        if (totalBufferBytes < 0) {
-            log("Failed to read event.", LOG_ERR);
-            continue;
-        }
-        for (char* ptr = buffer; ptr < buffer + totalBufferBytes;) {
-            struct inotify_event* event =
-                   reinterpret_cast<struct inotify_event*>(ptr);
-            if (event->mask & (IN_MODIFY | IN_CREATE | IN_DELETE)) {
-                log("Change detected: " + string(event->name), LOG_INFO);
-                // Initiate rsync when change detected
-                syncLuksVolume();
-            }
-            ptr += sizeof(struct inotify_event) + event->len;
-        }  // ending for loop
-    }  // While
-    close(inotify_fd);
+    pclose(fp);
+    return 0;
 }
 /* ***********************************************************************
  *
@@ -922,50 +905,115 @@ void luksMgrSignalHandler(int signo) {
     if (signo == SIGTERM) {
         // Cleanup tasks and exit the daemon
         log("luks daemon: Received SIGTERM. Exiting", LOG_INFO);
-        exit(EXIT_SUCCESS);
+        exitFlag.store(true);
     }
 }
 /* ***********************************************************************
  *
  * Name       : copyKubeProviderFile
  *
- * Description: This function creates "/controller/etc/kubernetes/" directory 
+ * Description: This function creates "/controller/etc/kubernetes/" directory
  *              on the LUKS volume. Then it copies encryption-provider.yaml
  *              in the directory and creates symlink for
  *              /etc/kubernetes/encryption-provider.yaml file.
+ *              encryption-provider.yaml is generated during bootstrap and
+ *              copied to LUKS volume.
+ *              This function is written specifically for the patch-back 
+ *              and upgrade case to move encryption-provider.yaml to LUKS
+ *              volume.
  *
  * ************************************************************************/
-void copyKubeProviderFile(void) {
-    // Create /etc/kubernetes directory
+int copyKubeProviderFile(void) {
+    int rc = 0;
     string luksKubernetesDirPath = string(luksControllerDataPath)
                                    + "etc/kubernetes/";
     string sourceFilePath = luksKubernetesDirPath + K8_PROVIDER_FILE;
-    // Check if the encryption-provider.yaml file already exists
+    // Check if the encryption-provider.yaml file already exists on LUKS
     if (access(sourceFilePath.c_str(), F_OK) == 0) {
-        return;
+        log("encryption-provider.yaml file is already present on "
+            "LUKS filesystem.", LOG_INFO);
+        return 0;
     }
+
+    // Create controller directory on luks volume if doesnt exist.
+    // This directory is needed for syncing files between active-standby
+    // controllers.
+    // Note: Do not delete this directory in failure path of this function.
+    // This is to avoid rsync failure in standby controller.
     string kubernetesDirCmd = "/usr/bin/mkdir -p " + luksKubernetesDirPath;
     string outResult;
-    if (!execCmd(kubernetesDirCmd, outResult)) {
-        log("Command failed: unable to create /controller/etc/kubernetes/ "
-            "directory path", LOG_ERR);
+    log("Creating dir:  "+kubernetesDirCmd, LOG_INFO);
+    rc = execCmd(kubernetesDirCmd, outResult);
+    if (rc != 0) {
+        log("Command failed:  " + kubernetesDirCmd+" Error code: "
+             +to_string(rc), LOG_ERR);
+        return rc;
     }
-    // Copy the encryption-provider.yaml file to kubernetesFilePath
+
+    // Get the SW_Version from build.info
+    string swVersionCmd = "grep 'SW_VERSION' /etc/build.info | "
+                          "cut -d'=' -f2 | tr -d '\"'";
+    rc = execCmd(swVersionCmd, outResult);
+    if (rc != 0) {
+        log("Command failed: "+ swVersionCmd + " Error code: "
+             +to_string(rc), LOG_ERR);
+        return rc;
+    }
+
+    if (outResult.empty()) {
+        log(swVersionCmd +
+        ": Could not get software version from /etc/build.info", LOG_ERR);
+        return 1;
+    }
+
+    // Verify if encryption-provider.yaml file exists.
+    // If exists, then move to luks volume.
+    string platformConfigPath = "/opt/platform/config/" +outResult+
+                                "/kubernetes/encryption-provider.yaml";
+    if (access(platformConfigPath.c_str(), F_OK) == 0) {
+        log("File: "+platformConfigPath+" exists.", LOG_INFO);
+
+        // Copy the encryption-provider.yaml file to kubernetesFilePath
+        string moveEncryptionFileCmd = "/usr/bin/mv " +
+                           platformConfigPath + " " + luksKubernetesDirPath;
+        log("Move File:  "+moveEncryptionFileCmd, LOG_INFO);
+        rc = execCmd(moveEncryptionFileCmd, outResult);
+        if (rc != 0) {
+            log("Command failed:  " + moveEncryptionFileCmd +
+                " Error code: " + to_string(rc), LOG_ERR);
+            return rc;
+        }
+    }
+
+    // Verify if /etc/kubernetes/encryption-provider.yaml file exists.
+    // Note: access() does not detect symlink file.
     string encryptionFilePath = "/etc/kubernetes/encryption-provider.yaml";
-    string copyEncryptionFileCmd = "/usr/bin/mv " +
-                           encryptionFilePath + " " + luksKubernetesDirPath;
-    if (!execCmd(copyEncryptionFileCmd, outResult)) {
-        log("Command failed: unable to copy "
-            "encryption-provider.yaml file to luksVolume", LOG_ERR);
-    }
-    // Create symlink for encryption-provider.yaml file
-    string symLinkCmd = "/usr/bin/ln -s " + sourceFilePath + " " +
-                        encryptionFilePath;
-    if (!execCmd(symLinkCmd, outResult)) {
-        log("Command failed: unable to create "
-                 "symlink for encryption-provider.yaml file", LOG_ERR);
-    }
-    return;
+    if (access(encryptionFilePath.c_str(), F_OK) == 0) {
+        string delEncryptionFileCmd = "/usr/bin/rm -f " +
+                           encryptionFilePath;
+        log("Delete File:  "+delEncryptionFileCmd, LOG_INFO);
+        rc = execCmd(delEncryptionFileCmd, outResult);
+        if (rc != 0) {
+            log("Command failed: " + delEncryptionFileCmd +
+                " Error code: " + to_string(rc), LOG_ERR);
+            return rc;
+        }  // Check if symlink exists at /etc/kubernetes/
+     } else if (isSymlink(encryptionFilePath.c_str())) {
+         log(encryptionFilePath + " already exists", LOG_INFO);
+         return 0;
+     }
+
+     // Create symlink for encryption-provider.yaml file
+     string symLinkCmd = "/usr/bin/ln -s " + sourceFilePath + " " +
+                          encryptionFilePath;
+     log("Creating symlink:  "+symLinkCmd, LOG_INFO);
+     rc = execCmd(symLinkCmd, outResult);
+     if (rc != 0) {
+         log("Command failed: " + symLinkCmd + " Error code: "
+              + to_string(rc), LOG_ERR);
+         return rc;
+     }
+     return rc;
 }
 /* ***********************************************************************
  *
@@ -1096,18 +1144,34 @@ int handleResize(string &passphrase, string &volName) {
                 log("Encrypted vault is mounted.", LOG_INFO);
             } else {
                 log("Encrypted vault is already mounted.", LOG_INFO);
-              }
-        } else {
-            // Mount path does not exist, create filesystem and then mount
-            if (!createFilesystem(luksConfig.volName)) {
-                log("Error creating filesystem", LOG_ERR);
-                rc = 1;
-                goto cleanup;
             }
-            if (!mountFilesystem(luksConfig.volName, luksConfig.mountPath,
-                                defaultDirectoryPath)) {
-                rc = 1;
-                goto cleanup;
+        } else {
+            statusCommand = "cryptsetup status " +
+                 string(createdLuksConfig.volName) + " 2>/dev/null";
+            status = system(statusCommand.c_str());
+            if (status == 0) {
+                log("LUKS device is already open and in use", LOG_INFO);
+                if (!mountFilesystem(luksConfig.volName, luksConfig.mountPath,
+                                 defaultDirectoryPath)) {
+                    rc = 1;
+                    goto cleanup;
+                }
+            } else {
+                log("LUKS device is not open. Try opening", LOG_INFO);
+                if (openLUKSVolume(createdLuksConfig.vaultFile,
+                             createdLuksConfig.volName,
+                             passphrase.c_str())) {
+                    if (!mountFilesystem(luksConfig.volName,
+                                 luksConfig.mountPath,
+                                 defaultDirectoryPath)) {
+                        rc = 1;
+                        goto cleanup;
+                     }
+                 } else {
+                     log("Unable to open LUKS device.", LOG_ERR);
+                     rc = 1;
+                     goto cleanup;
+                 }
             }
             log("Encrypted vault is mounted.", LOG_INFO);
         }
@@ -1115,8 +1179,6 @@ int handleResize(string &passphrase, string &volName) {
     cleanup:
         json_object_put(jsonConfig);
         json_object_put(usedAttributes);
-        json_object_put(luksvolumesArray);
-        json_object_put(attributesObj);
         return (rc);
 }
 /* ***********************************************************************
@@ -1301,10 +1363,36 @@ int initialVolCreate(string &passphrase, string &volName) {
     cleanup:
         json_object_put(jsonConfig);
         json_object_put(usedAttributes);
-        json_object_put(luksvolumesArray);
-        json_object_put(attributesObj);
         return (rc);
 }
+/* ***********************************************************************
+ *
+ * Name       : monitorLUKSVolume
+ *
+ * Description: This function monitors the LUKS volume status and runs
+ *              in loop until there's any issue with the LUKS volume.
+ *
+ * ************************************************************************/
+void monitorLUKSVolume(const string& volumeName) {
+    log("Monitoring LUKS volume: " + volumeName, LOG_INFO);
+    while (!exitFlag.load()) {
+        string statusCommand = "cryptsetup status " + volumeName +
+                                                           " 2>/dev/null";
+        int status = system(statusCommand.c_str());
+        if (status != 0) {
+            string errorMessage = "LUKS volume is not in use. "
+                                  "Error code: " + to_string(status);
+            log(errorMessage, LOG_ERR);
+            break;
+        }
+        int rc = syncLuksVolumeChange(luksControllerDataPath);
+        if (rc != 0) {
+            log("Sync failed. Error code: " + to_string(rc), LOG_ERR);
+            break;
+        }
+    }
+}
+
 int main() {
     int rc = 0;
     int ret = daemon(0, 0);
@@ -1338,25 +1426,27 @@ int main() {
                             " returned an empty passphrase.", LOG_ERR);
         return 1;
     }
-    // Create a thread for luks volume monitoring
-    std::thread notifyThread(notifyLuksVolumeChange, luksControllerDataPath);
     if (access(createdConfigFile, F_OK) == 0) {
         // Volume exists, check resize required or not and handle
         rc = handleResize(passphrase, volName);
         if (rc != 0) {
-            goto cleanup;
+            log("Volume resize failed. Error code: " + to_string(rc), LOG_ERR);
+            return rc;
         }
     } else {
         rc = initialVolCreate(passphrase, volName);
         if (rc != 0) {
-            goto cleanup;
+            log("Initial volume creation failed. Error code: " +
+                 to_string(rc), LOG_ERR);
+            return rc;
         }
-        copyKubeProviderFile();
+    }
+    rc = copyKubeProviderFile();
+    if (rc != 0) {
+        log("copyKubeProviderFile() failed. Error code: "
+            +to_string(rc), LOG_ERR);
+        return rc;
     }
     monitorLUKSVolume(volName);
-    cleanup:
-        if (notifyThread.joinable()) {
-            notifyThread.join();
-        }
-        return (rc);
+    return rc;
 }
