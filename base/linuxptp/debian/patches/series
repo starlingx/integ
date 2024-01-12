@@ -52,3 +52,4 @@
 0052-Command-valid-sources.patch
 0053-GM-time-traceable-check-enabled-by-default.patch
 0054-Disable-active-interface-failing.patch
+0055-Ignore-interface-in-conf-file-when-HA-is-disabled.patch
