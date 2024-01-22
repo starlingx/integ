@@ -923,8 +923,13 @@ void luksMgrSignalHandler(int signo) {
  *              volume.
  *
  * ************************************************************************/
-int copyKubeProviderFile(void) {
+int copyKubeProviderFile(bool isController) {
     int rc = 0;
+    // If not a controller node then return.
+    if (isController == false) {
+        return 0;
+    }
+
     string luksKubernetesDirPath = string(luksControllerDataPath)
                                    + "etc/kubernetes/";
     string sourceFilePath = luksKubernetesDirPath + K8_PROVIDER_FILE;
@@ -1373,7 +1378,7 @@ int initialVolCreate(string &passphrase, string &volName) {
  *              in loop until there's any issue with the LUKS volume.
  *
  * ************************************************************************/
-void monitorLUKSVolume(const string& volumeName) {
+void monitorLUKSVolume(bool isController, const string& volumeName) {
     log("Monitoring LUKS volume: " + volumeName, LOG_INFO);
     while (!exitFlag.load()) {
         string statusCommand = "cryptsetup status " + volumeName +
@@ -1385,16 +1390,53 @@ void monitorLUKSVolume(const string& volumeName) {
             log(errorMessage, LOG_ERR);
             break;
         }
-        int rc = syncLuksVolumeChange(luksControllerDataPath);
-        if (rc != 0) {
-            log("Sync failed. Error code: " + to_string(rc), LOG_ERR);
-            break;
+        if (isController == true) {
+            int rc = syncLuksVolumeChange(luksControllerDataPath);
+            if (rc != 0) {
+                log("Sync failed. Error code: " + to_string(rc), LOG_ERR);
+                break;
+            }
         }
     }
 }
-
+/* ***********************************************************************
+ *
+ * Name       : checkPersonality
+ *
+ * Description: This function checks the personality of the host
+ *              where service is running and sets the output controller
+ *              flag accordingly.
+ *
+ * ************************************************************************/
+int checkPersonality(bool &isController) {
+    string output = "";
+    string logMsg = "";
+    isController = false;
+    log("Checking host personality", LOG_INFO);
+    string facterPersonalityCmd = "FACTERLIB=/usr/share/puppet/modules/"
+                       "platform/lib/facter/ facter | egrep \"personality\"";
+    // Check if host is a controller
+    int rc = execCmd(facterPersonalityCmd, output);
+    if (rc != 0) {
+        logMsg = "Command " + facterPersonalityCmd +
+                 " failed: Unable to fetch FACTER personality. "
+                 " Error code: "+to_string(rc);
+        log(logMsg, LOG_ERR);
+    } else {
+        // Process the output
+        size_t pos = output.find("controller");
+        if (pos != string::npos) {
+            log("Host personality is controller.", LOG_INFO);
+            isController = true;
+        } else {
+            log("Host personality is not controller.", LOG_INFO);
+        }
+    }
+    return rc;
+}
 int main() {
     int rc = 0;
+    bool isController = false;
     int ret = daemon(0, 0);
     if (ret != 0) {
         string errorMessage = "Failed to run luks-fs-mgr as daemon service. "
@@ -1406,6 +1448,14 @@ int main() {
     ret = daemonCreatePidfile();
     if (ret != 0) {
         string errorMessage = "Failed to create pid file for luks-fs-mgr. "
+                              "Error code: " + to_string(ret);
+        log(errorMessage, LOG_ERR);
+        return ret;
+    }
+    // Check personality of host
+    ret = checkPersonality(isController);
+    if (ret != 0) {
+        string errorMessage = "Failed to get the personality. "
                               "Error code: " + to_string(ret);
         log(errorMessage, LOG_ERR);
         return ret;
@@ -1441,12 +1491,12 @@ int main() {
             return rc;
         }
     }
-    rc = copyKubeProviderFile();
+    rc = copyKubeProviderFile(isController);
     if (rc != 0) {
         log("copyKubeProviderFile() failed. Error code: "
             +to_string(rc), LOG_ERR);
         return rc;
     }
-    monitorLUKSVolume(volName);
+    monitorLUKSVolume(isController, volName);
     return rc;
 }
