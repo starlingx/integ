@@ -104,13 +104,35 @@ STUCK_PEERING_RESTART_THRESH=180        # Restart OSD if stuck peering is longer
 
 LOG_LEVEL=NORMAL  # DEBUG
 
+# Log Management
+# Adding PID and PPID informations
+log () {
+    local name=""
+    local log_level="$1"
+    # Checking if the first parameter is not a log level
+    if grep -q -v ${log_level} <<< "INFO DEBUG WARN ERROR"; then
+        name=" ($1)";
+        log_level="$2"
+        shift
+    fi
+
+    shift
+
+    local message="$@"
+    # prefix = <pid_subshell> <ppid_name>[<ppid>] <name|optional>
+    local prefix="${BASHPID} $(cat /proc/${PPID}/comm)[${PPID}]${name}"
+    # yyyy-MM-dd HH:mm:ss.SSSSSS /etc/init.d/ceph <prefix> <log_level>: <message>
+    wlog "${prefix}" "${log_level}" "${message}"
+    return 0
+}
+
 save_proc_state() {
     # Set the state of a process in the state machine and store it in a file
     local name=$1
     local state=$2
     if [ "$state" != "$ST_STARTUP" ] && [ "$state" != "$ST_OPER" ] && \
        [ "$state" != "$ST_HANGED" ] && [ "$state" != "$ST_STOPPED" ]; then
-        wlog $name "ERROR" "State $state is invalid, resetting to $ST_STARTUP" print_trace
+        log $name "ERROR" "State $state is invalid, resetting to $ST_STARTUP" print_trace
         state=$ST_STARTUP
     fi
     echo "$state" > ${DATA_PATH}/.${name}_state
@@ -125,7 +147,7 @@ load_proc_state() {
     fi
     if [ "$state" != "$ST_STARTUP" ] && [ "$state" != "$ST_OPER" ] && \
        [ "$state" != "$ST_HANGED" ] && [ "$state" != "$ST_STOPPED" ]; then
-        wlog $name "ERROR" "State $state is invalid, resetting to $ST_STARTUP" print_trace
+        log $name "ERROR" "State $state is invalid, resetting to $ST_STARTUP" print_trace
         state=$ST_STARTUP
         save_proc_state $name $state
     fi
@@ -142,7 +164,7 @@ save_proc_startup_ok() {
     save_proc_state $name $ST_STARTUP
 
     # Save the time when a process was started
-    wlog $name INFO "Process $ST_STARTUP successfully, waiting for it to become $ST_OPER"
+    log $name INFO "Process $ST_STARTUP successfully, waiting for it to become $ST_OPER"
     echo $(date +%s) > ${DATA_PATH}/.${name}_start_time
 }
 
@@ -177,7 +199,7 @@ get_duration(){
 
     # Check that we have a filename
     if [ ! -f $record ]; then
-        wlog $name ERROR "Failed to compute duration, time was never stored in $record!" print_trace
+        log $name ERROR "Failed to compute duration, time was never stored in $record!" print_trace
         echo "-1"; return
     fi
 
@@ -185,7 +207,7 @@ get_duration(){
     local start_time=$(cat $record)
     re="^[0-9]+$"
     if ! [[ "$start_time" =~ $re ]] ; then
-       wlog $name ERROR "Recorded time '$start_time' is not a number!" print_trace
+       log $name ERROR "Recorded time '$start_time' is not a number!" print_trace
        echo "-1"; return
     fi
 
@@ -193,7 +215,7 @@ get_duration(){
     local now=$(date +%s)
     local duration=$((now-start_time))
     if [ "$duration" -lt 0 ]; then
-        wlog $name ERROR "Duration less than 0!" print_trace
+        log $name ERROR "Duration less than 0!" print_trace
         echo "-1"; return
     fi
     echo $duration
@@ -202,14 +224,14 @@ get_duration(){
 get_proc_run_time() {
     local name=$1
     local time=$(get_duration $name ${DATA_PATH}/.${name}_start_time)
-    wlog $name DEBUG ">>> process running for: ${time}s"
+    log $name DEBUG ">>> process running for: ${time}s"
     echo $time
 }
 
 get_proc_down_time() {
     local name=$1
     local time=$(get_duration $name ${DATA_PATH}/.${name}_down_time)
-    wlog $name DEBUG ">>> process down for: ${time}s"
+    log $name DEBUG ">>> process down for: ${time}s"
     echo $time
 }
 
@@ -224,19 +246,19 @@ run_state_machine() {
 
     local state=$(load_proc_state $name)
 
-    wlog $name "DEBUG" ">>>  state: $state"
+    log $name "DEBUG" ">>>  state: $state"
     # state machine
     if [ "$state" = "$ST_STARTUP" ]; then
-        wlog $name "DEBUG" ">>> status: $status"
+        log $name "DEBUG" ">>> status: $status"
         if [ "$status" = $UP ]; then
             save_proc_state $name $ST_OPER
-            wlog $name "INFO" "Process is OPERATIONAL"
+            log $name "INFO" "Process is OPERATIONAL"
             echo $ST_OPER; return
         else
             # the process should be 'up' in $WAIT_FOR_OSD_OPERATIONAL seconds!
             if [ $(get_proc_run_time $name) -gt $wait_for_operational ]; then
                 # process hung!
-                wlog $name "ERROR" "Process failed to go up in ${wait_for_operational}s after start, reporting it as $ST_HANGED!"
+                log $name "ERROR" "Process failed to go up in ${wait_for_operational}s after start, reporting it as $ST_HANGED!"
                 save_proc_state $name $ST_HANGED
                 echo $ST_HANGED; return
             fi
@@ -244,20 +266,20 @@ run_state_machine() {
     elif [ "$state" = "$ST_OPER" ]; then
         if [ "$status" = "$DOWN" ]; then
             if [ $(load_proc_status $name) = $UP ];then
-                wlog $name "WARN" "Process went down!"
+                log $name "WARN" "Process went down!"
                 save_proc_status $name $DOWN
             fi
             # if a process is down we don't report it as hung for a while
             # this should avoid status flapping
             if [ $(get_proc_down_time $name) -gt $wait_for_down_confirm ]; then
                 # the process is down for a long time, report it as hung!
-                wlog $name "ERROR" "Process went down for more than ${wait_for_down_confirm}s, reporting it as $ST_HANGED"
+                log $name "ERROR" "Process went down for more than ${wait_for_down_confirm}s, reporting it as $ST_HANGED"
                 save_proc_state $name $ST_HANGED
                 echo $ST_HANGED; return
             fi
         elif [ "$status" = "$UP" ]; then
             if [ $(load_proc_status $name) = $DOWN ]; then
-                wlog $name "WARN" "Process went up, flapping status or busy process?"
+                log $name "WARN" "Process went up, flapping status or busy process?"
                 save_proc_status $name $UP
                 return
             fi
@@ -279,13 +301,13 @@ execute_ceph_cmd() {
     errcode=$?
     set +o pipefail
     if [ -z "$output" ] && [ $errcode -eq 124 ]; then  # 'timeout' returns 124 when timing out
-        wlog $name "WARN" "Ceph cluster failed to respond in ${WAIT_FOR_CMD}s when running: $cmd"
+        log $name "WARN" "Ceph cluster failed to respond in ${WAIT_FOR_CMD}s when running: $cmd"
         CEPH_FAILURE="true"
         echo ""; return 1
     fi
     output=$(cat $DATA_PATH/.ceph_cmd_out)
     if [ -z "$output" ] || [ $errcode -ne 0 ]; then
-        wlog $name "WARN" "Error executing: $cmd errorcode: $errcode output: $output"
+        log $name "WARN" "Error executing: $cmd errorcode: $errcode output: $output"
         echo ""; return 1
     fi
     echo "$output"; return $errcode
@@ -299,7 +321,7 @@ is_process_hung() {
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
-        wlog $name "WARN" "Ceph cluster is marked as failed, aborting hang check"
+        log $name "WARN" "Ceph cluster is marked as failed, aborting hang check"
         echo "false"; return
     fi
 
@@ -307,7 +329,7 @@ is_process_hung() {
     if [ -z "$CEPH_HEALTH_DETAIL" ]; then
         execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
         if [ $? -ne 0 ]; then
-            wlog $name "WARN" "Aborting hang check"
+            log $name "WARN" "Aborting hang check"
             echo "false"; return
         fi
     fi
@@ -318,7 +340,7 @@ is_process_hung() {
         # Note this can be done with: 'ceph osd set noup; ceph osd down <osd.id>'
         $(echo "$CEPH_HEALTH_DETAIL" | grep -q "noup.*set")
         if [ $? -eq 0 ]; then
-           wlog $name "WARN" "Ceph 'noup' flag is set, aborting hang check"
+           log $name "WARN" "Ceph 'noup' flag is set, aborting hang check"
            echo "false"; return
         fi
 
@@ -327,7 +349,7 @@ is_process_hung() {
         if [ -z "$CEPH_OSD_TREE" ]; then
             execute_ceph_cmd CEPH_OSD_TREE $name "ceph osd tree"
             if [ $? -ne 0 ]; then
-                wlog $name "WARN" "Ceph cmd exec failed, aborting hang check"
+                log $name "WARN" "Ceph cmd exec failed, aborting hang check"
                 echo "false"; return
             fi
         fi
@@ -349,8 +371,8 @@ is_process_hung() {
         fi
 
 
-     # Check if a Monitor is hung
-     elif [ "$type" = "mon" ]; then
+    # Check if a Monitor is hung
+    elif [ "$type" = "mon" ]; then
         # Get monitor status info
         local mon_status=$UP
         echo "$CEPH_HEALTH_DETAIL" | grep -q -e "^[[:space:]]*$name.*down"
@@ -366,10 +388,13 @@ is_process_hung() {
             echo "false"; return
         fi
 
-     else
-        wlog $name "WARN" "Unknown process type: $type"
-     fi
-   echo "false"
+    elif [ "$type" = "mds" ]; then
+        echo "false"; return
+
+    else
+        log $name "WARN" "Unknown process type: $type"
+    fi
+    echo "false"
 }
 
 osd_has_blocked_ops() {
@@ -377,7 +402,7 @@ osd_has_blocked_ops() {
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
-        wlog $name "WARN" "Ceph cluster is marked as failed, aborting blocked ops check"
+        log $name "WARN" "Ceph cluster is marked as failed, aborting blocked ops check"
         echo "false"; return
     fi
 
@@ -387,7 +412,7 @@ osd_has_blocked_ops() {
     if [ -z "$CEPH_HEALTH_DETAIL" ]; then
         execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
         if [ $? -ne 0 ]; then
-            wlog $name "WARN" "Aborting blocked ops check"
+            log $name "WARN" "Aborting blocked ops check"
             echo "false"; return
         fi
     fi
@@ -396,7 +421,7 @@ osd_has_blocked_ops() {
     # Note this can be done with: 'ceph osd set noup; ceph osd down <osd.id>'
     $(echo "$CEPH_HEALTH_DETAIL" | grep -q "noup.*set")
     if [ $? -eq 0 ]; then
-        wlog $name "WARN" "Ceph 'noup' flag is set, aborting blocked ops check"
+        log $name "WARN" "Ceph 'noup' flag is set, aborting blocked ops check"
         echo "false"; return
     fi
 
@@ -406,7 +431,7 @@ osd_has_blocked_ops() {
     if [ -z "$CEPH_OSD_TREE" ]; then
         execute_ceph_cmd CEPH_OSD_TREE $name "ceph osd tree"
         if [ $? -ne 0 ]; then
-            wlog $name "WARN" "Ceph cmd exec failed, aborting blocked ops check"
+            log $name "WARN" "Ceph cmd exec failed, aborting blocked ops check"
             echo "false"; return
         fi
     fi
@@ -418,7 +443,7 @@ osd_has_blocked_ops() {
         local blocked_time=$(echo "$CEPH_HEALTH_DETAIL" | grep $name | sed -rn 's/.*ops are blocked > ([[:digit:]]*).*/\1/p')
         [[ "$blocked_time" == "" ]] && blocked_time=0
         if [ $blocked_time -gt $BLOCKED_OPS_RESTART_THRESH ]; then
-            wlog $name "WARN" "Detected blocked operations for $blocked_time seconds"
+            log $name "WARN" "Detected blocked operations for $blocked_time seconds"
             echo "true"; return
         else
             echo "false"; return
@@ -432,7 +457,7 @@ osd_has_stuck_peering() {
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
-        wlog $name "WARN" "Ceph cluster is marked as failed, aborting stuck peering check"
+        log $name "WARN" "Ceph cluster is marked as failed, aborting stuck peering check"
         echo "false"; return
     fi
 
@@ -442,7 +467,7 @@ osd_has_stuck_peering() {
     if [ -z "$CEPH_HEALTH_DETAIL" ]; then
         execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
         if [ $? -ne 0 ]; then
-            wlog $name "WARN" "Aborting stuck peering check"
+            log $name "WARN" "Aborting stuck peering check"
             echo "false"; return
         fi
     fi
@@ -451,7 +476,7 @@ osd_has_stuck_peering() {
     # Note this can be done with: 'ceph osd set nodown; /etc/init.d/ceph stop <osd.id>'
     $(echo "$CEPH_HEALTH_DETAIL" | grep -q "nodown.*set")
     if [ $? -eq 0 ]; then
-        wlog $name "WARN" "Ceph 'nodown' flag is set, aborting stuck peering check"
+        log $name "WARN" "Ceph 'nodown' flag is set, aborting stuck peering check"
         echo "false"; return
     fi
 
@@ -487,7 +512,7 @@ osd_has_stuck_peering() {
             fi
 
             if [ $blocked_time -gt $STUCK_PEERING_RESTART_THRESH ]; then
-                wlog $name "WARN" "Detected stuck peering for $blocked_time seconds"
+                log $name "WARN" "Detected stuck peering for $blocked_time seconds"
                 echo "true"; return
             else
                 echo "false"; return
@@ -613,7 +638,7 @@ stop_daemon() {
 ## command line options
 options=
 IFS=" " read -r -a args <<< "$@"
-wlog "-" INFO "$@"
+log INFO "$@"
 
 OPTS=$(${GETOPT} -n 'init-ceph' -o 'hvam:c:' -l 'help,verbose,valgrind,novalgrind,allhosts,restart,norestart,btrfs,nobtrfs,fsmount,nofsmount,btrfsumount,fsumount,conf:,cluster:,hostname:' -- "${args[@]}")
 if [ $? != 0 ]
@@ -883,7 +908,7 @@ for name in $what; do
 	    while [[ $(date '+%s') -lt "${deadline}" ]]; do
 	        systemd_coredump_pid=$(pgrep -f "systemd-coredump.*ceph-${type}")
 	        [[ -z "${systemd_coredump_pid}" ]] && break
-	        wlog $name "INFO" "systemd-coredump ceph-${type} in progress: pid ${systemd_coredump_pid}"
+	        log $name "INFO" "systemd-coredump ceph-${type} in progress: pid ${systemd_coredump_pid}"
 	        sleep 1
 	    done
 
@@ -1034,16 +1059,16 @@ EOF
 	    get_conf post_stop "" "post stop command"
 	    [ -n "$pre_stop" ] && do_cmd "$pre_stop"
 
-	    wlog $name "INFO" "Stopping process"
+	    log $name "INFO" "Stopping process"
 
 	    if [ $(load_proc_state $name) != "$ST_HANGED" ]; then
 		stop_daemon $name ceph-$type $pid_file
 	    else
 		# first try to gracefully close process, this should be fast if
 		# its threads still respond to the TERM signal
-		wlog $name "DEBUG" ">>> Sending term signal"
+		log $name "DEBUG" ">>> Sending term signal"
 		stop_daemon $name ceph-$type $pid_file TERM "" 5
-		wlog $name "DEBUG" ">>> Sending kill signal"
+		log $name "DEBUG" ">>> Sending kill signal"
 		# then just kill it
 		stop_daemon $name ceph-$type $pid_file KILL
 	    fi
@@ -1057,13 +1082,13 @@ EOF
                 CMD_OUTPUT=''
                 execute_ceph_cmd CMD_OUTPUT "Ceph Status" "ceph -s"
                 if [ $? == 0 ]; then
-                    wlog "${name}" "INFO" "Flushing journal"
+                    log "${name}" "INFO" "Flushing journal"
                     $(/usr/bin/ceph-osd -i $id --flush-journal) &
                 else
-                    wlog "${name}" "INFO" "Skipping journal flush"
+                    log "${name}" "INFO" "Skipping journal flush"
                 fi
 	    fi
-	    wlog $name "INFO" "Process stopped, setting state to $ST_STOPPED"
+	    log $name "INFO" "Process stopped, setting state to $ST_STOPPED"
 	    save_proc_state $name $ST_STOPPED
 	    if [ $dofsumount -eq 1 ] && [ -n "$fs_devs" ]; then
 		echo Unmounting OSD volume on $host:$fs_path
@@ -1084,7 +1109,7 @@ EOF
 		    if [ $? -eq 0 ]; then
 		        state=$(echo "$CEPH_DAEMON_STATUS" | awk -F ':' '/state/{gsub(/[,[:space:]]/, "", $2);print $2}')
 		        if [ "$state" != "active" ]; then
-			    wlog $name "INFO" "$name has the following state: $state"
+			    log $name "INFO" "$name has the following state: $state"
 			fi
 		    fi
 		fi

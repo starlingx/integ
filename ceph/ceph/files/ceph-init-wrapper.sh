@@ -86,16 +86,38 @@ if [ ! -z $ARGS ]; then
     args+=("${new_args[@]}")
 fi
 
+# Log Management
+# Adding PID and PPID informations
+log () {
+    local name=""
+    local log_level="$1"
+    # Checking if the first parameter is not a log level
+    if grep -q -v ${log_level} <<< "INFO DEBUG WARN ERROR"; then
+        name=" ($1)";
+        log_level="$2"
+        shift
+    fi
+
+    shift
+
+    local message="$@"
+    # prefix = <pid_subshell> <ppid_name>[<ppid>] <name|optional>
+    local prefix="${BASHPID} $(cat /proc/${PPID}/comm)[${PPID}]${name}"
+    # yyyy-MM-dd HH:mm:ss.SSSSSS /etc/init.d/ceph-init-wrapper <prefix> <log_level>: <message>
+    wlog "${prefix}" "${log_level}" "${message}"
+    return 0
+}
+
 # Verify if drbd-cephmon role is primary, checking the output of 'drbdadm role'
 # Return 0 on success and 1 if drbd-cephmon is not primary
 is_drbd_cephmon_primary ()
 {
     drbdadm role drbd-cephmon | grep -q 'Primary/'
     if [ $? -eq 0 ]; then
-        wlog "-" INFO "drbd-cephmon role is Primary"
+        log INFO "drbd-cephmon role is Primary"
         return 0
     fi
-    wlog "-" INFO "drbd-cephmon role is NOT Primary"
+    log INFO "drbd-cephmon role is NOT Primary"
     return 1
 }
 
@@ -105,10 +127,10 @@ is_drbd_cephmon_mounted ()
 {
     findmnt -no SOURCE "${CEPH_MON_LIB_PATH}" | grep -q drbd
     if [ $? -eq 0 ]; then
-        wlog "-" INFO "drbd-cephmon partition is mounted"
+        log INFO "drbd-cephmon partition is mounted"
         return 0
     fi
-    wlog "-" INFO "drbd-cephmon partition is NOT mounted"
+    log INFO "drbd-cephmon partition is NOT mounted"
     return 1
 }
 
@@ -129,7 +151,7 @@ has_all_network_no_carrier()
 
     # Check if all networks have no carrier, meaning the other host is down
     if [ "${oam_carrier}" -eq 0 ] && [ "${cluster_host_carrier}" -eq 0 ] && [ "${mgmt_carrier}" -eq 0 ]; then
-        wlog "-" INFO "No carrier detected from all network interfaces"
+        log INFO "No carrier detected from all network interfaces"
         return 0
     fi
     return 1
@@ -142,10 +164,10 @@ has_mgmt_network_carrier()
     # If no-carrier message is detected, then the interface has no physical link
     ip link show "${management_interface}" | grep NO-CARRIER
     if [ $? -eq 0 ]; then
-        wlog "-" INFO "management interface '${management_interface}' has NO-CARRIER, cannot start ceph mon"
+        log INFO "Management Interface '${management_interface}' has NO-CARRIER, cannot start ceph-mon"
         return 1
     fi
-    wlog "-" INFO "management interface '${management_interface}' is working"
+    log "-" DEBUG "Management Interface '${management_interface}' is working"
     return 0
 }
 
@@ -168,7 +190,7 @@ can_start_ceph_mon ()
     done
 
     if [ ${times} -eq 0 ]; then
-        wlog "-" ERROR "drbd-cephmon is not primary, cannot start ceph mon"
+        log ERROR "drbd-cephmon is NOT Primary, cannot start ceph-mon"
         return 1
     fi
 
@@ -184,7 +206,7 @@ can_start_ceph_mon ()
     done
 
     if [ ${times} -eq 0 ]; then
-        wlog "-" ERROR "drbd-cephmon is not mounted, cannot start ceph mon"
+        log ERROR "drbd-cephmon is NOT mounted, cannot start ceph-mon"
         return 1
     fi
 
@@ -201,12 +223,12 @@ with_service_lock ()
     # used for locking service actions
     (
         # Grab service locks
-        wlog "-" INFO "Grab service locks"
+        log INFO "Grab service locks"
         [[ "${target}" == *"mon"* ]] && flock ${LOCK_CEPH_MON_SERVICE_FD}
         [[ "${target}" == *"osd"* ]] && flock ${LOCK_CEPH_OSD_SERVICE_FD}
 
         # Try to lock status with a timeout in case status is stuck
-        wlog "-" INFO "Lock service status"
+        log INFO "Lock service status"
         deadline=$((SECONDS + MAX_STATUS_TIMEOUT + 1))
         if [[ "${target}" == *"mon"* ]]; then
             flock --exclusive --timeout ${MONITOR_STATUS_TIMEOUT} ${LOCK_CEPH_MON_STATUS_FD}
@@ -221,7 +243,7 @@ with_service_lock ()
         # Close lock file descriptors so they are
         # not inherited by the spawned process then
         # run service action
-        wlog "-" INFO "Run service action: $@"
+        log INFO "Run service action: $@"
         "$@" {LOCK_CEPH_MON_SERVICE_FD}>&- \
              {LOCK_CEPH_MON_STATUS_FD}>&- \
              {LOCK_CEPH_OSD_SERVICE_FD}>&- \
@@ -250,7 +272,7 @@ start ()
         if [ "${service}" == "mon" ]; then
             can_start_ceph_mon
             if [ $? -ne 0 ]; then
-                wlog "-" INFO "Ceph monitor is not ready to start because drbd-cephmon is not ready and mounted"
+                log INFO "Ceph Monitor is not ready to start because drbd-cephmon is not ready and mounted"
                 exit 1
             fi
         fi
@@ -262,33 +284,33 @@ start ()
             if [ "${system_mode}" == "duplex-direct" ]; then
                 has_all_network_no_carrier
                 if [ $? -eq 0 ]; then
-                    wlog "-" INFO "All network interfaces are not functional, considering the other host is down. Let Ceph start."
+                    log INFO "All network interfaces are not functional, considering the other host is down. Let Ceph start."
                 else
                     # Else AIO-DX Direct mgmt network is NOT functional
-                    wlog "-" INFO "Mgmt network is not functional, defer starting Ceph processes until recovered"
+                    log INFO "Management Interface is not functional, defer starting Ceph processes until recovered"
                     exit 1
                 fi
             else
                 # Else AIO-DX mgmt network is NOT functional
-                wlog "-" INFO "Mgmt network is not functional, defer starting Ceph processes until recovered"
+                log INFO "Management Interface is not functional, defer starting Ceph processes until recovered"
                 exit 1
             fi
         fi
     fi
 
     # Start the service
-    wlog "-" INFO "Ceph START ${service} command received"
+    log INFO "Ceph START ${service} command received"
     with_service_lock "${service}" ${CEPH_SCRIPT} start ${service}
-    wlog "-" INFO "Ceph START ${service} command finished."
+    log INFO "Ceph START ${service} command finished."
 }
 
 stop ()
 {
     local service="$1"
 
-    wlog "-" INFO "Ceph STOP $1 command received."
+    log INFO "Ceph STOP $1 command received."
     with_service_lock "$1" ${CEPH_SCRIPT} stop $1
-    wlog "-" INFO "Ceph STOP $1 command finished."
+    log INFO "Ceph STOP $1 command finished."
 }
 
 restart ()
@@ -297,10 +319,10 @@ restart ()
         # Ceph is not running on this node, return success
         exit 0
     fi
-    wlog "-" INFO "Ceph RESTART $1 command received."
+    log INFO "Ceph RESTART $1 command received."
     stop "$1"
     start "$1"
-    wlog "-" INFO "Ceph RESTART $1 command finished."
+    log INFO "Ceph RESTART $1 command finished."
 }
 
 log_and_restart_blocked_osds ()
@@ -309,7 +331,7 @@ log_and_restart_blocked_osds ()
     local names=$1
     local message=$2
     for name in $names; do
-        wlog $name "INFO" "$message"
+        log $name "INFO" "$message"
         # Restart the daemons but release ceph mon and osd file descriptors
         ${CEPH_SCRIPT} restart $name {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-
     done
@@ -325,17 +347,17 @@ log_and_kill_hung_procs ()
         get_conf run_dir "/var/run/ceph" "run dir"
         get_conf pid_file "$run_dir/$type.$id.pid" "pid file"
         pid=$(cat $pid_file)
-        wlog $name "INFO" "Dealing with hung process (pid:$pid)"
+        log $name "INFO" "Dealing with hung process (pid:$pid)"
 
         # monitoring interval
-        wlog $name "INFO" "Increasing log level"
+        log $name "INFO" "Increasing log level"
         WAIT_FOR_CMD=10 execute_ceph_cmd ret $name "ceph daemon $name config set debug_$type 20/20"
         monitoring=$MONITORING_INTERVAL
         while [ $monitoring -gt 0 ]; do
             if [ $(($monitoring % $TRACE_LOOP_INTERVAL)) -eq 0 ]; then
                 date=$(date "+%Y-%m-%d_%H-%M-%S")
                 log_file="$LOG_PATH/hang_trace_${name}_${pid}_${date}.log"
-                wlog $name "INFO" "Dumping stack trace to: $log_file"
+                log $name "INFO" "Dumping stack trace to: $log_file"
                 if grep -q "Debian" /etc/os-release; then
                     $(eu-stack -p $pid >$log_file) &
                 elif grep -q "CentOS" /etc/os-release; then
@@ -345,7 +367,7 @@ log_and_kill_hung_procs ()
             let monitoring-=1
             sleep 1
         done
-        wlog $name "INFO" "Trigger core dump"
+        log $name "INFO" "Trigger core dump"
         kill -ABRT $pid &>/dev/null
         rm -f $pid_file # process is dead, core dump is archiving, preparing for restart
         # Wait for pending systemd core dumps
@@ -354,7 +376,7 @@ log_and_kill_hung_procs ()
         while [[ $(date '+%s') -lt "${deadline}" ]]; do
             systemd_coredump_pid=$(pgrep -f "systemd-coredump.*${pid}.*ceph-${type}")
             [[ -z "${systemd_coredump_pid}" ]] && break
-            wlog $name "INFO" "systemd-coredump ceph-${type} in progress: pid ${systemd_coredump_pid}"
+            log $name "INFO" "systemd-coredump ceph-${type} in progress: pid ${systemd_coredump_pid}"
             sleep 2
         done
         kill -KILL $pid &>/dev/null
@@ -375,19 +397,19 @@ status ()
         has_mgmt_network_carrier
         if [ $? -eq 0 ]; then
             # Network is functional, continue
-            wlog "-" INFO "mgmt network active..."
+            log DEBUG "Management Interface active."
         else
             if [ "${system_mode}" == "duplex-direct" ]; then
                 has_all_network_no_carrier
                 if [ $? -ne 0 ]; then
                     # Network is NOT functional, prevent split brain corruptions
-                    wlog "-" INFO "mgmt network inactive... stop OSDs to force a re-peering once the network has recovered"
+                    log INFO "Management Interface inactive. Stopping OSDs to force a re-peering once the network has recovered"
                     stop "$1"
                     exit 0
                 fi
             else
                 # Network is NOT functional, prevent split brain corruptions
-                wlog "-" INFO "mgmt network inactive... stop OSDs to force a re-peering once the network has recovered"
+                log INFO "Management Interface inactive. Stopping OSDs to force a re-peering once the network has recovered"
                 stop "$1"
                 exit 0
             fi
@@ -397,7 +419,7 @@ status ()
         if [ "$?" -ne 0 ]; then
             # Ceph cluster is not accessible. Don't panic, controller swact
             # may be in progress.
-            wlog "-" INFO "Ceph is down, ignoring OSD status."
+            log INFO "Ceph is DOWN, ignoring OSD status."
             exit 0
         fi
     fi
@@ -425,7 +447,7 @@ status ()
         flock --shared ${LOCK_CEPH_OSD_STATUS_FD}
     fi
 
-    result=`${CEPH_SCRIPT} status $1 {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-`
+    result=`log INFO "status $1"; ${CEPH_SCRIPT} status $1 {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-`
     RC=$?
     if [ "$RC" -ne 0 ]; then
         erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
@@ -488,13 +510,13 @@ status ()
                     has_all_network_no_carrier
                     if [ $? -ne 0 ]; then
                         # Network is NOT functional, prevent split brain corruptions
-                        wlog "-" INFO "mgmt network inactive... stop MON to prevent localized operation"
+                        log INFO "Management Interface inactive. Stopping ceph-mon to prevent localized operation"
                         stop "$1"
                         exit 0
                     fi
                 else
                     # Network is NOT functional, prevent split brain corruptions
-                    wlog "-" INFO "mgmt network inactive... stop MON to prevent localized operation"
+                    log INFO "Management Interface inactive. Stopping ceph-mon to prevent localized operation"
                     stop "$1"
                     exit 0
                 fi
