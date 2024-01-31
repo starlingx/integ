@@ -111,9 +111,6 @@ enable hostw.service
 enable pmon.service
 enable lmon.service
 
-# mtce-guest.spec
-enable guestServer.service
-
 # collect-engtools.spec (Move to rutime enablement. Typically not installed. Disable, not needed for AIO)
 #enable collect-engtools.service
 
@@ -149,7 +146,6 @@ disable drbd.service
 disable fminit.service
 disable lighttpd.service
 disable memcached.service
-disable guestAgent.service
 disable slapd.service
 disable barbican-api.service
 disable barbican-keystone-listener.service
