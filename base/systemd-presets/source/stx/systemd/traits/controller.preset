@@ -119,10 +119,6 @@ enable hostw.service
 enable pmon.service
 enable lmon.service
 
-# mtce-guest.spec
-disable guestServer.service
-
-
 # collect-engtools.spec (Move to rutime enablement. Typically not installed. Disable, not needed for AIO)
 #enable collect-engtools.service
 
