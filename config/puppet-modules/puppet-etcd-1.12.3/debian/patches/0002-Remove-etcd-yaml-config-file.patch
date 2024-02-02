@@ -1,0 +1,47 @@
+From ca6c05f5cb5f9b2f789fa4ce29d2515246d08e33 Mon Sep 17 00:00:00 2001
+From: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+Date: Fri, 29 Sep 2023 18:26:00 -0700
+Subject: [PATCH] Remove etcd yaml config file
+
+This change prevents creation of /etc/etcd/etcd.yaml as it
+is not required. Also, it changes owner of /etc/etcd/ from etcd
+to root.
+
+Signed-off-by: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+---
+ manifests/config.pp | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/manifests/config.pp b/manifests/config.pp
+index c61c711..dbf66eb 100644
+--- a/manifests/config.pp
++++ b/manifests/config.pp
+@@ -4,8 +4,8 @@ class etcd::config {
+   if $::osfamily == 'Ubuntu' {
+     file { '/etc/etcd':
+       ensure => 'directory',
+-      owner  => 'etcd',
+-      group  => 'etcd',
++      owner  => 'root',
++      group  => 'root',
+       mode   => '0755',
+     }
+   }
+@@ -15,14 +15,6 @@ class etcd::config {
+     content => template("${module_name}/etc/etcd/etcd.conf.erb"),
+   }
+ 
+-  file { $::etcd::config_yaml_path:
+-    ensure  => 'file',
+-    owner   => 'etcd',
+-    group   => 'etcd',
+-    mode    => '0640',
+-    content => template("${module_name}/etc/etcd/etcd.yml.erb"),
+-  }
+-
+   if $::etcd::manage_package and $::etcd::journald_forward_enable and $::operatingsystemmajrelease == '7' {
+     file { '/etc/systemd/system/etcd.service.d':
+       ensure => 'directory',
+-- 
+2.25.1
+
