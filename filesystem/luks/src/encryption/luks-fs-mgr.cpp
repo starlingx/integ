@@ -1396,6 +1396,9 @@ void monitorLUKSVolume(bool isController, const string& volumeName) {
                 log("Sync failed. Error code: " + to_string(rc), LOG_ERR);
                 break;
             }
+        } else {
+            log("Not a controller node. Exiting the service", LOG_INFO);
+            break;
         }
     }
 }
