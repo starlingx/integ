@@ -910,6 +910,25 @@ void luksMgrSignalHandler(int signo) {
 }
 /* ***********************************************************************
  *
+ * Name       : getSoftwareVersion
+ *
+ * Description: This function gets the current software version.
+ *
+* ************************************************************************/
+string getSoftwareVersion() {
+    string swVersionCmd = "grep 'SW_VERSION' /etc/build.info | "
+                          "cut -d'=' -f2 | tr -d '\"'";
+    string outResult;
+    int rc = execCmd(swVersionCmd, outResult);
+    if (rc != 0) {
+        log("Command failed: "+ swVersionCmd + " Error code: "
+            +to_string(rc), LOG_ERR);
+        return "";
+    }
+    return outResult;
+}
+/* ***********************************************************************
+ *
  * Name       : copyKubeProviderFile
  *
  * Description: This function creates "/controller/etc/kubernetes/" directory
@@ -956,24 +975,14 @@ int copyKubeProviderFile(bool isController) {
     }
 
     // Get the SW_Version from build.info
-    string swVersionCmd = "grep 'SW_VERSION' /etc/build.info | "
-                          "cut -d'=' -f2 | tr -d '\"'";
-    rc = execCmd(swVersionCmd, outResult);
-    if (rc != 0) {
-        log("Command failed: "+ swVersionCmd + " Error code: "
-             +to_string(rc), LOG_ERR);
-        return rc;
-    }
-
-    if (outResult.empty()) {
-        log(swVersionCmd +
-        ": Could not get software version from /etc/build.info", LOG_ERR);
+    string softwareVersion = getSoftwareVersion();
+    if (softwareVersion.empty()) {
+        log("Could not get software version from /etc/build.info", LOG_ERR);
         return 1;
     }
-
     // Verify if encryption-provider.yaml file exists.
     // If exists, then move to luks volume.
-    string platformConfigPath = "/opt/platform/config/" +outResult+
+    string platformConfigPath = "/opt/platform/config/" +softwareVersion+
                                 "/kubernetes/encryption-provider.yaml";
     if (access(platformConfigPath.c_str(), F_OK) == 0) {
         log("File: "+platformConfigPath+" exists.", LOG_INFO);
@@ -994,15 +1003,31 @@ int copyKubeProviderFile(bool isController) {
     // Note: access() does not detect symlink file.
     string encryptionFilePath = "/etc/kubernetes/encryption-provider.yaml";
     if (access(encryptionFilePath.c_str(), F_OK) == 0) {
-        string delEncryptionFileCmd = "/usr/bin/rm -f " +
-                           encryptionFilePath;
-        log("Delete File:  "+delEncryptionFileCmd, LOG_INFO);
-        rc = execCmd(delEncryptionFileCmd, outResult);
-        if (rc != 0) {
-            log("Command failed: " + delEncryptionFileCmd +
-                " Error code: " + to_string(rc), LOG_ERR);
-            return rc;
-        }  // Check if symlink exists at /etc/kubernetes/
+        // If encrption-provider.yaml exists in luks volume, then
+        // its already copied to luks volume from the
+        // /opt/platform/config/${sftw_ver}/kubernetes
+        if (access(sourceFilePath.c_str(), F_OK) != 0) {
+            string moveEncryptFileCmd = "/usr/bin/mv " +
+                   encryptionFilePath + " " + luksKubernetesDirPath;
+            log("Move File:  "+moveEncryptFileCmd, LOG_INFO);
+            rc = execCmd(moveEncryptFileCmd, outResult);
+            if (rc != 0) {
+                log("Command failed: " + moveEncryptFileCmd +
+                    " Error code: " + to_string(rc), LOG_ERR);
+                return rc;
+            }
+        } else {
+            string delEncryptionFileCmd = "/usr/bin/rm -f " +
+                   encryptionFilePath;
+            log("Remove File:  "+delEncryptionFileCmd, LOG_INFO);
+            rc = execCmd(delEncryptionFileCmd, outResult);
+            if (rc != 0) {
+                log("Command failed: " + delEncryptionFileCmd +
+                    " Error code: " + to_string(rc), LOG_ERR);
+                return rc;
+            }
+        }
+     // Check if symlink exists at /etc/kubernetes/
      } else if (isSymlink(encryptionFilePath.c_str())) {
          log(encryptionFilePath + " already exists", LOG_INFO);
          return 0;
@@ -1380,6 +1405,13 @@ int initialVolCreate(string &passphrase, string &volName) {
  * ************************************************************************/
 void monitorLUKSVolume(bool isController, const string& volumeName) {
     log("Monitoring LUKS volume: " + volumeName, LOG_INFO);
+    string softwareVersion = getSoftwareVersion();
+    if (softwareVersion.empty()) {
+        log("Could not get software version from /etc/build.info", LOG_ERR);
+        return;
+    }
+    string platformConfigPath = "/opt/platform/config/"
+                 +softwareVersion+"/kubernetes/encryption-provider.yaml";
     while (!exitFlag.load()) {
         string statusCommand = "cryptsetup status " + volumeName +
                                                            " 2>/dev/null";
@@ -1391,6 +1423,22 @@ void monitorLUKSVolume(bool isController, const string& volumeName) {
             break;
         }
         if (isController == true) {
+            // encyption-provider.yaml should only be present in luks volume,
+            // incase if it is present in
+            // /opt/platform/config/${sftw_ver}/kubernetes, then delete it
+            if (access(platformConfigPath.c_str(), F_OK) == 0) {
+                string outResult;
+                string delEncryptionFileCmd = "/usr/bin/rm -f " +
+                                      platformConfigPath;
+                log("Delete File:  "+delEncryptionFileCmd, LOG_INFO);
+                int rc = execCmd(delEncryptionFileCmd, outResult);
+                if (rc != 0) {
+                    // Continue in the error case, so that it can
+                    // be tried to delete the file again.
+                    log("Command failed:  " + delEncryptionFileCmd +
+                        " Error code: " + to_string(rc), LOG_ERR);
+                }
+            }
             int rc = syncLuksVolumeChange(luksControllerDataPath);
             if (rc != 0) {
                 log("Sync failed. Error code: " + to_string(rc), LOG_ERR);
