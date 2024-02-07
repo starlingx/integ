@@ -1,5 +1,4 @@
 kubeadm-create-platform-pods-with-zero-CPU-resources.patch
-Revert-use-subpath-for-coredns-only-for-default-repo.patch
 kubernetes-make-isolcpus-allocation-SMT-aware.patch
 kubelet-sort-isolcpus-allocation-when-SMT-enabled.patch
 kubelet-cpumanager-disable-CFS-quota-throttling.patch
