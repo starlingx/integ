@@ -6,5 +6,4 @@ kubelet-cpumanager-keep-normal-containers-off-reserv.patch
 kubelet-cpumanager-infra-pods-use-system-reserved-CP.patch
 kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 Affinity-of-guaranteed-pod-to-non-isolated-CPUs.patch
-enable-support-for-kubernetes-to-ignore-isolcpus.patch
 kubelet-CFS-quota-throttling-for-non-integer-cpulimit.patch
