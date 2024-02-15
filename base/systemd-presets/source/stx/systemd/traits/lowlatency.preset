@@ -134,6 +134,9 @@ enable sssd.service
 # strongswan ipsec daemon
 enable strongswan-starter.service
 
+# ipsec auth server
+enable ipsec-server.service
+
 # worker-utils.spec
 enable affine-platform.sh.service
 enable affine-tasks.service
