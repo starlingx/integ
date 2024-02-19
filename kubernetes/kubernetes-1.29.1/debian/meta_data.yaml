@@ -1,0 +1,10 @@
+debver: 1.29.1
+dl_path:
+  name: kubernetes-1.29.1.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.29.1.tar.gz
+  sha256sum: 63fd3a82639c5d2a76ad0345930dd672fa1affc958d28975e6809300683132e8
+revision:
+  dist: ${STX_DIST}
+  GITREVCOUNT:
+    BASE_SRCREV: 92e7b2fce357b6ea539d7962883fc56790bce1c3
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.29.1
