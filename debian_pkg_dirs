@@ -12,7 +12,6 @@ base/pf-bb-config
 base/synce4l
 base/systemd
 base/systemd-presets
-base/tzdata
 base/watchdog
 centos-debian-compat
 ceph/ceph

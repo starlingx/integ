@@ -420,8 +420,5 @@ systemd-presets
 #trident-installer
 trident-installer
 
-#tzdata
-tzdata
-
 #watchdog
 watchdog
