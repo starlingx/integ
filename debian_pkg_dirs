@@ -82,6 +82,7 @@ kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
 networking/dpdk
+networking/ifupdown
 networking/ifupdown-extra
 networking/iputils
 networking/lldpd

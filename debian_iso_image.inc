@@ -145,7 +145,8 @@ haproxy-config
 #helm
 helm
 
-#ifupdown-extra
+#ifupdown
+ifupdown
 ifupdown-extra
 
 kdump-tools

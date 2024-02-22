@@ -1,0 +1,70 @@
+From 382eb354d6b6ceee52fb2dd6d8845b9a313a3f78 Mon Sep 17 00:00:00 2001
+From: Lucas Ratusznei Fonseca <lucas.ratuszneifonseca@windriver.com>
+Date: Thu, 8 Feb 2024 14:52:17 -0300
+Subject: [PATCH] Fix detection logic
+
+---
+ settle-dad.sh | 42 +++++++++++++++++++++++++++---------------
+ 1 file changed, 27 insertions(+), 15 deletions(-)
+
+diff --git a/settle-dad.sh b/settle-dad.sh
+index 37cb516..4cdbc8e 100644
+--- a/settle-dad.sh
++++ b/settle-dad.sh
+@@ -6,26 +6,38 @@ delay=${IF_DAD_INTERVAL:-0.1}
+ 
+ [ $attempts -eq 0 ] && exit 0
+ 
+-echo -n "Waiting for DAD... "
++echo -n "Attempting DAD test for ${IF_ADDRESS}/${IF_NETMASK} on ${IFACE}... "
++
++real_iface=${IFACE%:*}
++no_link=0
++
+ for attempt in $(seq 1 $attempts); do
+-	tentative=$(ip -o -6 address list dev "$IFACE" to "${IF_ADDRESS}/${IF_NETMASK}" tentative | wc -l)
+-	if [ $tentative -eq 0 ]; then
+-		attempt=0 # This might have been our last attempt, but successful
+-		break
++	if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) == "down" ]] ; then
++		no_link=0
++	else
++		no_link=1
++		tentative=$(ip -o -6 address list dev "$IFACE" to "${IF_ADDRESS}/${IF_NETMASK}" tentative)
++		if [ -z "$tentative" ]; then
++			attempt=0 # This might have been our last attempt, but successful
++			break
++		fi
++		if [[ "$tentative" =~ "dadfailed tentative" ]] ; then
++			echo "Failed"
++			exit 1
++		fi
+ 	fi
+-	sleep $delay
++
++    sleep $delay
+ done
+ 
+ if [ $attempt -eq $attempts ]; then
+-	echo "Timed out"
+-	exit 1
+-fi
+-
+-dadfailed=$(ip -o -6 address list dev "$IFACE" to "${IF_ADDRESS}/${IF_NETMASK}" dadfailed | wc -l)
+-
+-if [ $dadfailed -ge 1 ]; then
+-	echo "Failed"
+-	exit 1
++	if [ $no_link -eq 0 ]; then
++		echo "No link"
++		exit 0
++	else
++		echo "Timed out"
++		exit 1
++	fi
+ fi
+ 
+ echo Done
+-- 
+2.34.1
+
