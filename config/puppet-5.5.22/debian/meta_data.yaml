@@ -1,6 +1,23 @@
 ---
 debname: puppet
 debver: 5.5.22-2
+dl_hook: dl_hook
+dl_files:
+  puppet_5.5.22-2.dsc:
+    topdir: null
+    url:
+      https://snapshot.debian.org/archive/debian/20221007T085526Z/pool/main/p/puppet/puppet_5.5.22-2.dsc
+    sha256sum: a04db8d58d677042177f5b4ada6dca5008589f03b861c716833593a34a3301c5
+  puppet_5.5.22.orig.tar.gz:
+    topdir: null
+    url:
+      https://snapshot.debian.org/archive/debian/20221007T085526Z/pool/main/p/puppet/puppet_5.5.22.orig.tar.gz
+    sha256sum: 2f7c68887f823a4b1f25c810702faf730779d5347d16bb604666f3c445ccc0ed
+  puppet_5.5.22-2.debian.tar.xz:
+    topdir: null
+    url:
+      https://snapshot.debian.org/archive/debian/20221007T085526Z/pool/main/p/puppet/puppet_5.5.22-2.debian.tar.xz
+    sha256sum: 0a8dd4333db310e86436d5afb0a15b4f219236c0ebb5cddb3d39d0558647ef7e
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
