@@ -1,7 +1,7 @@
-From 8c1dd261683d27acba49e047d9f6da52dada3c98 Mon Sep 17 00:00:00 2001
+From 479301925d24906f03b13821ee8bd6cafb58c8c5 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:08:01 -0300
-Subject: [PATCH 20/56] pmc_agent: Convert the subscribe method into the
+Subject: [PATCH 20/57] pmc_agent: Convert the subscribe method into the
  canonical form.
 
 This patch renames the function to have the module prefix and corrects the
@@ -149,5 +149,5 @@ index f3a26fe..9dc684e 100644
   * Tests whether the current UTC offset is traceable.
   * @param agent  Pointer to a PMC instance obtained via @ref pmc_agent_create().
 -- 
-2.25.1
+2.30.2
 

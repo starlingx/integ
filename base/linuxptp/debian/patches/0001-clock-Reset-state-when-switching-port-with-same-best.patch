@@ -1,7 +1,8 @@
-From 63b43924294da6cb177d0509120b2e957580441c Mon Sep 17 00:00:00 2001
+From edb8d92c8e3379c6b764eb033a1d872dee3c8802 Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:52 +0200
-Subject: [PATCH 1/56] clock: Reset state when switching port with same best clock.
+Subject: [PATCH 01/57] clock: Reset state when switching port with same best
+ clock.
 
 When the best port is changed, but the ID of the best clock doesn't
 change (e.g. a passive port is activated on link failure), reset the
@@ -31,5 +32,5 @@ index a66d189..96453f4 100644
  		tsproc_reset(c->tsproc, 1);
  		if (!tmv_is_zero(c->initial_delay))
 -- 
-2.25.1
+2.30.2
 

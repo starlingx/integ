@@ -1,7 +1,7 @@
-From f480fb54182da36baeb35bac90154abafcaf854a Mon Sep 17 00:00:00 2001
+From d14df9d1f0b239c2a5fbe587875448a2d10b12a6 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Tue, 8 Aug 2023 14:06:55 -0300
-Subject: [PATCH 46/56] Robustness improvements to phc2sys socket
+Subject: [PATCH 46/57] Robustness improvements to phc2sys socket
 
 When phc2sys abnormally exits the socket file might remain created.
 To avoid error when phc2sys is relaunched, the exixting file is
@@ -74,5 +74,5 @@ index 6965162..edc626f 100644
  		pr_err("ha_com_socket: send failed: %m");
  		return -errno;
 -- 
-2.25.1
+2.30.2
 
