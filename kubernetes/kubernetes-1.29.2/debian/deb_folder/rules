@@ -16,10 +16,10 @@
 # - build output not required on the production host is moved to
 #   kubernetes-misc package
 
-kube_version := 1.29.1
+kube_version := 1.29.2
 kube_git_version := v${kube_version}
 name := kubernetes-${kube_version}
-go_version := 1.21.6
+go_version := 1.21.7
 _stage1 := /usr/local/kubernetes/${kube_version}/stage1
 _stage2 := /usr/local/kubernetes/${kube_version}/stage2
 _bindir := /usr/bin
