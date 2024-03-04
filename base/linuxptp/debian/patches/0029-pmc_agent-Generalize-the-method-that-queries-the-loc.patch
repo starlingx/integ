@@ -1,7 +1,7 @@
-From 3e6dd047083625ca03df9b4bbdc781e7dd079ff2 Mon Sep 17 00:00:00 2001
+From adb2a1eeb1083c72b4ae8d0c987a1bcbc64f2434 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:29:30 -0300
-Subject: [PATCH 29/56] pmc_agent: Generalize the method that queries the local
+Subject: [PATCH 29/57] pmc_agent: Generalize the method that queries the local
  clock identity.
 
 When started in automatic mode, the phc2sys program first queries the
@@ -179,5 +179,5 @@ index ea37bf9..9d8bd1c 100644
   * Queries the port properties of a given port from the ptp4l service.
   *
 -- 
-2.25.1
+2.30.2
 

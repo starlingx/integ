@@ -1,10 +1,7 @@
-From 3a6de7b6208ccc64a20474db15abaac08e99d10b Mon Sep 17 00:00:00 2001
-Message-Id: <3a6de7b6208ccc64a20474db15abaac08e99d10b.1630418391.git.Jim.Somerville@windriver.com>
-In-Reply-To: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
-References: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
+From 901b4f776d7cf483e0f229eb10f78d14b9be5f17 Mon Sep 17 00:00:00 2001
 From: Cole Walker <cole.walker@windriver.com>
 Date: Wed, 23 Jun 2021 11:14:41 -0400
-Subject: [PATCH 6/56] Add option to disable default port selection in phc2sys
+Subject: [PATCH 06/57] Add option to disable default port selection in phc2sys
 
 This change serves to address an issue in phc2sys
 where the local ptp clocks are not synced together properly if the local
@@ -38,10 +35,10 @@ Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
  2 files changed, 13 insertions(+), 3 deletions(-)
 
 diff --git a/config.c b/config.c
-index ef5e833..cab7e4f 100644
+index d237de9..fea7f67 100644
 --- a/config.c
 +++ b/config.c
-@@ -333,6 +333,7 @@ struct config_item config_tab[] = {
+@@ -331,6 +331,7 @@ struct config_item config_tab[] = {
  	GLOB_ITEM_INT("utc_offset", CURRENT_UTC_OFFSET, 0, INT_MAX),
  	GLOB_ITEM_INT("verbose", 0, 0, 1),
  	GLOB_ITEM_INT("write_phase_mode", 0, 0, 1),
@@ -118,5 +115,5 @@ index a36cbe0..44d6872 100644
  	if (autocfg) {
  		if (init_pmc(cfg, &priv))
 -- 
-2.29.2
+2.30.2
 

@@ -1,7 +1,7 @@
-From e74d268ac5432c0e41dc14fb0ea648a432d8e340 Mon Sep 17 00:00:00 2001
+From d43854295382f20697ffb067dde9b6f8d610d1f9 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Thu, 31 Aug 2023 16:05:15 -0300
-Subject: [PATCH 54/56] Disable active interface failing
+Subject: [PATCH 54/57] Disable active interface failing
 
 Fixed the behavior when none clock is matching the requirements and the
 active clock source is disabled using the 'disable source <interface>'
@@ -55,5 +55,5 @@ index 9893675..4120568 100644
  		}
  	}
 -- 
-2.25.1
+2.30.2
 

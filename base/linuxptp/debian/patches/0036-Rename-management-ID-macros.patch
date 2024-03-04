@@ -1,7 +1,7 @@
-From 019f50868bc4300c591025d364898035ea9817b9 Mon Sep 17 00:00:00 2001
+From 8307227fcd921d1025361d0c345b491258f9d190 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 18:20:50 -0300
-Subject: [PATCH 36/56] Rename management ID macros.
+Subject: [PATCH 36/57] Rename management ID macros.
 
 The management ID macros are prefixed with TLV.  This is confusing,
 because the true TLV tags have the same prefix.  Make the code more
@@ -1384,5 +1384,5 @@ index a205119..97615fd 100644
  /* Values for the SYNCHRONIZATION_UNCERTAIN_NP management TLV */
  #define SYNC_UNCERTAIN_DONTCARE	0xff
 -- 
-2.25.1
+2.30.2
 

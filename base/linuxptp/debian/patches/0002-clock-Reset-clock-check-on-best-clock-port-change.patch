@@ -1,10 +1,7 @@
-From 1779482f39e6513995b13fdbd350f7aee8495b7e Mon Sep 17 00:00:00 2001
-Message-Id: <1779482f39e6513995b13fdbd350f7aee8495b7e.1630418391.git.Jim.Somerville@windriver.com>
-In-Reply-To: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
-References: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
+From cef81731404b339517e277bab9c0285ee239f065 Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:53 +0200
-Subject: [PATCH 2/56] clock: Reset clock check on best clock/port change.
+Subject: [PATCH 02/57] clock: Reset clock check on best clock/port change.
 
 Reset the clock check when the best clock or port changes, together with
 the other state like current estimated delay and frequency. This avoids
@@ -23,10 +20,10 @@ Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
  3 files changed, 16 insertions(+), 1 deletion(-)
 
 diff --git a/clock.c b/clock.c
-index d955710..49bd4a9 100644
+index 96453f4..437cd1c 100644
 --- a/clock.c
 +++ b/clock.c
-@@ -1911,6 +1911,8 @@ static void handle_state_decision_event(struct clock *c)
+@@ -1859,6 +1859,8 @@ static void handle_state_decision_event(struct clock *c)
  
  	if (!cid_eq(&best_id, &c->best_id) || best != c->best) {
  		clock_freq_est_reset(c);
@@ -75,5 +72,5 @@ index 78aca48..1ff86eb 100644
   * Perform the sanity check on a time stamp.
   * @param cc Pointer to a clock check obtained via @ref clockcheck_create().
 -- 
-2.29.2
+2.30.2
 

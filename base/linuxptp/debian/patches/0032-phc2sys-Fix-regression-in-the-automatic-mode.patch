@@ -1,7 +1,7 @@
-From 0e504e57af6c576202bbe1abe5a99eb24a981b73 Mon Sep 17 00:00:00 2001
+From fdccd5ec965dee65d021eba76a1e75d28197be02 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:51:10 -0300
-Subject: [PATCH 32/56] phc2sys: Fix regression in the automatic mode.
+Subject: [PATCH 32/57] phc2sys: Fix regression in the automatic mode.
 
 Commit ac7d69bbc476 ("pmc_agent: Convert the method that queries the
 port properties.") had the well meant intention of the cleaning up the
@@ -33,5 +33,5 @@ index 6e6627d..623f300 100644
  	}
  out:
 -- 
-2.25.1
+2.30.2
 

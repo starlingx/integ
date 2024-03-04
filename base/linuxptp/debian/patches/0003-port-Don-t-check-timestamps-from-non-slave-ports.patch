@@ -1,10 +1,7 @@
-From a1ed560a712d611edf8b47756bc56542a57bff7d Mon Sep 17 00:00:00 2001
-Message-Id: <a1ed560a712d611edf8b47756bc56542a57bff7d.1630418391.git.Jim.Somerville@windriver.com>
-In-Reply-To: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
-References: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
+From 7a507ff333c3c8046e84ca605ba4d386614c3a99 Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:54 +0200
-Subject: [PATCH 3/56] port: Don't check timestamps from non-slave ports.
+Subject: [PATCH 03/57] port: Don't check timestamps from non-slave ports.
 
 Don't perform the sanity check on receive timestamps from ports in
 non-slave states to avoid false positives in the jbod mode, where
@@ -20,10 +17,10 @@ Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/port.c b/port.c
-index 9e9d484..387d5a2 100644
+index fa49663..8cf3f59 100644
 --- a/port.c
 +++ b/port.c
-@@ -2731,7 +2731,10 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+@@ -2714,7 +2714,10 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
  	}
  	if (msg_sots_valid(msg)) {
  		ts_add(&msg->hwts.ts, -p->rx_timestamp_offset);
@@ -36,5 +33,5 @@ index 9e9d484..387d5a2 100644
  
  	switch (msg_type(msg)) {
 -- 
-2.29.2
+2.30.2
 

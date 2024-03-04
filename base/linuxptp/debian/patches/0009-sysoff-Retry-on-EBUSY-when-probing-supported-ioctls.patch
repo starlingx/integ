@@ -1,7 +1,7 @@
-From 11ae077e31d9957df01aacfa17eea5b5d548b249 Mon Sep 17 00:00:00 2001
+From c36e970db481dc1d5482386418f046f46b25f645 Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Wed, 18 May 2022 11:33:37 +0200
-Subject: [PATCH 9/56] sysoff: Retry on EBUSY when probing supported ioctls.
+Subject: [PATCH 09/57] sysoff: Retry on EBUSY when probing supported ioctls.
 
 Handle EBUSY when probing support for a PTP_SYS_OFFSET ioctl. Try each
 ioctl up to three times before giving up on it to make the detection
@@ -49,5 +49,5 @@ index a425275..fc1f7ca 100644
  
  	return SYSOFF_RUN_TIME_MISSING;
 -- 
-2.29.2
+2.30.2
 

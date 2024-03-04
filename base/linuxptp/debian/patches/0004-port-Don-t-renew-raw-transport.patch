@@ -1,10 +1,7 @@
-From 5caa4d0a9161e6a33e269c8e445b322e4437e6b3 Mon Sep 17 00:00:00 2001
-Message-Id: <5caa4d0a9161e6a33e269c8e445b322e4437e6b3.1630418391.git.Jim.Somerville@windriver.com>
-In-Reply-To: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
-References: <0389752e3aecf8d2b2743f16ce1408a58088bea9.1630418391.git.Jim.Somerville@windriver.com>
+From ab617c7f70e8d8bc66673412a536fc1a8cf3584c Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:55 +0200
-Subject: [PATCH 4/56] port: Don't renew raw transport.
+Subject: [PATCH 04/57] port: Don't renew raw transport.
 
 Renewing of the transport on announce/sync timeout is needed in the
 client-only mode to avoid getting stuck with a broken multicast socket
@@ -25,10 +22,10 @@ Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/port.c b/port.c
-index 387d5a2..d26b87f 100644
+index 8cf3f59..f22bff4 100644
 --- a/port.c
 +++ b/port.c
-@@ -1805,6 +1805,12 @@ static int port_renew_transport(struct port *p)
+@@ -1796,6 +1796,12 @@ static int port_renew_transport(struct port *p)
  	if (!port_is_enabled(p)) {
  		return 0;
  	}
@@ -42,5 +39,5 @@ index 387d5a2..d26b87f 100644
  	port_clear_fda(p, FD_FIRST_TIMER);
  	res = transport_open(p->trp, p->iface, &p->fda, p->timestamping);
 -- 
-2.29.2
+2.30.2
 

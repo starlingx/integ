@@ -1,7 +1,7 @@
-From 52c6fd7f9212902a2c5195e5a7b2c19a5956633f Mon Sep 17 00:00:00 2001
+From afb5e76b98d7528bb36b860f9f0a6a8f04b094f8 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 23 Aug 2023 19:18:08 -0300
-Subject: [PATCH 49/56] GM clock accuracy and offset scaled log variance
+Subject: [PATCH 49/57] GM clock accuracy and offset scaled log variance
 
 Include GM clock quality parameters clock accuracy and offset
 scaled log variance to the clock selection algorithm. Those
@@ -259,5 +259,5 @@ index be7b07a..1dd8c0f 100644
  
  	curlen += snprintf(response + curlen, resplen - curlen,
 -- 
-2.25.1
+2.30.2
 

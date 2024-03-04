@@ -1,7 +1,7 @@
-From 6428c2628c013c408ec09355ad37eb12fa6bb20f Mon Sep 17 00:00:00 2001
+From 347548500e39e21037b4afea6179d5101695b28f Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Wed, 18 May 2022 11:33:35 +0200
-Subject: [PATCH 7/56] sysoff: Change sysoff_measure() to return errno.
+Subject: [PATCH 07/57] sysoff: Change sysoff_measure() to return errno.
 
 Return -errno from failed ioctl instead of the SYSOFF_* enum from the
 measurement functions to allow the callers to check for specific errors.
@@ -90,5 +90,5 @@ index e4de919..5480f8f 100644
  int sysoff_measure(int fd, int method, int n_samples,
  		   int64_t *result, uint64_t *ts, int64_t *delay);
 -- 
-2.29.2
+2.30.2
 

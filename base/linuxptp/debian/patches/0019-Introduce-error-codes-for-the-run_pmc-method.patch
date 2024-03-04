@@ -1,7 +1,7 @@
-From 95e4983c9ab517b9dda1faf171721f0dd877e076 Mon Sep 17 00:00:00 2001
+From d798a871a0b27a953a80afa7b696a44cd8a93fdf Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:04:11 -0300
-Subject: [PATCH 19/56] Introduce error codes for the run_pmc method.
+Subject: [PATCH 19/57] Introduce error codes for the run_pmc method.
 
 The run_pmc function is used by several of the PMC agent methods, but it
 breaks the pattern of returning zero on success.  However, the user facing
@@ -77,5 +77,5 @@ index 6e9c023..22d9c5b 100644
  }
  
 -- 
-2.25.1
+2.30.2
 

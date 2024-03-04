@@ -1,7 +1,7 @@
-From acdf74df9fa69b81c1e9332f10d4efcd3e9bae48 Mon Sep 17 00:00:00 2001
+From b469ea325783cfe906bd7e28e63a7eb26b4cad96 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:23:29 -0300
-Subject: [PATCH 28/56] pmc_agent: Convert the method that queries the port
+Subject: [PATCH 28/57] pmc_agent: Convert the method that queries the port
  properties.
 
 Prefix the function with the module name and correct the return code
@@ -240,5 +240,5 @@ index 44326d2..ea37bf9 100644
   * Queries the TAI-UTC offset and the current leap adjustment from the
   * ptp4l service.
 -- 
-2.25.1
+2.30.2
 
