@@ -1,8 +1,8 @@
-kubernetes-1.29.1 (1.29.1-1) unstable; urgency=medium
+kubernetes-1.29.2 (1.29.2-1) unstable; urgency=medium
 
-  * Updated to support building 1.29.1
+  * Updated to support building 1.29.2
 
- -- Ramesh Kumar Sivanandam rameshkumar.sivanandam@windriver.com  Mon, 19 Feb 2024 10:00:00 +0000
+ -- Ramesh Kumar Sivanandam rameshkumar.sivanandam@windriver.com  Mon, 01 Mar 2024 10:00:00 +0000
 
 kubernetes-1.28.4 (1.28.4-1) unstable; urgency=medium
 
