@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2018 Wind River Systems, Inc.
+# Copyright (c) 2018-2024 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -26,55 +26,74 @@ REINDEX=0
 REPO_BASE='/var/www/pages/helm_charts'
 INDEX_FILENAME='index.yaml'
 
-# First argument is always the repo where the charts need to be placed
+# The 'check-only' optional parameter can be used to validate charts against the
+# repo without uploading them.
+# The 'upload-only' optional parameter can be used to upload charts bypassing the
+# preliminary checks.
+# If no optional parameters are passed then charts will be checked and uploaded if valid.
+# The repository name must be passed as a parameter preceding the charts.
 if [ $# -lt 2 ]; then
     echo "Usage: helm-upload <repo name> <chart 1> .. <chart N>"
+    echo "       helm-upload check-only <repo name> <chart 1> .. <chart N>"
+    echo "       helm-upload upload-only <repo name> <chart 1> .. <chart N>"
     exit 1
 fi
 
+if [ "$1" = "check-only" ]; then
+    RUN_CHECK=true
+    RUN_UPLOAD=false
+    REPO_DIR="${REPO_BASE}/$2"
+    shift 2
+elif [ "$1" = "upload-only" ]; then
+    RUN_CHECK=false
+    RUN_UPLOAD=true
+    REPO_DIR="${REPO_BASE}/$2"
+    shift 2
+else
+    RUN_CHECK=true
+    RUN_UPLOAD=true
+    REPO_DIR="${REPO_BASE}/$1"
+    shift 1
+fi
+
 # Make sure the repo directory exists
-REPO_DIR="${REPO_BASE}/$1"
 if [ ! -e $REPO_DIR ]; then
     echo "$REPO_DIR doesn't exist."
     exit 1
 fi
 
-declare -A CHARTS_INDEXED_BY_DIGEST
 declare -A CHARTS_INDEXED_BY_VERSION
 INDEX_PATH="${REPO_DIR}/${INDEX_FILENAME}"
-FOUND_DIGEST=false
 FOUND_NAME=false
+FOUND_URL=false
 
-# Build an array of repository charts indexed by their digest
+# Build an array of repository charts indexed by their version
 while read -r LINE; do
 
-    if [[ "$LINE" = *"digest: "* ]]; then
-        CHART_DIGEST=$(echo "$LINE" | cut -d " " -f 2)
-        FOUND_DIGEST=true
-    fi
-
-    if [ "$FOUND_DIGEST" = true ] && [[ "$LINE" = *"name: "* ]]; then
+    if [[ "$LINE" = *"name: "* ]]; then
         CHART_NAME=$(echo "$LINE" | cut -d " " -f 2)
         FOUND_NAME=true
     fi
 
-    if [ "$FOUND_NAME" = true ] && [[ "$LINE" = *"version: "* ]]; then
-        CHART_VERSION=$(echo "$LINE" | cut -d " " -f 2)
+    if [ "$FOUND_NAME" = true ] && [[ "$LINE" = "- "*.tgz ]]; then
+        CHART_URL=$(echo "$LINE" | cut -d " " -f 2)
+        FOUND_URL=true
+    fi
 
-        FOUND_DIGEST=false
+    if [ "$FOUND_URL" = true ] && [[ "$LINE" = *"version: "* ]]; then
         FOUND_NAME=false
-        CHARTS_INDEXED_BY_DIGEST["$CHART_DIGEST"]="$CHART_NAME $CHART_VERSION"
-        CHARTS_INDEXED_BY_VERSION["$CHART_NAME-$CHART_VERSION"]="$CHART_DIGEST"
+        FOUND_URL=false
+
+        CHART_VERSION=$(echo "$LINE" | cut -d " " -f 2)
+        CHART_FULL_NAME="${CHART_NAME}-${CHART_VERSION}"
+        CHARTS_INDEXED_BY_VERSION["${CHART_FULL_NAME}"]="${REPO_DIR}/${CHART_URL}"
     fi
 
 done < "$INDEX_PATH"
 
-shift 1
-
 for FILE in "$@"; do
-    if [ -r $FILE ]; then
-
-        INCOMING_CHART_DIGEST=$(sha256sum "$FILE" | cut -d " " -f 1)
+    IS_VALID=false
+    if [[ -r $FILE && "${RUN_CHECK}" = true ]] ; then
 
         FOUND_NAME=false
         while read -r LINE; do
@@ -90,8 +109,9 @@ for FILE in "$@"; do
         done <<< "$(helm show chart "$FILE")"
 
         # Check if the file already exists in the repository
-        if [[ -v "CHARTS_INDEXED_BY_DIGEST[$INCOMING_CHART_DIGEST]" ]]; then
-            echo "Chart ${INCOMING_CHART_NAME} (version ${INCOMING_CHART_VERSION}) already" \
+        if [[ -v "CHARTS_INDEXED_BY_VERSION[$INCOMING_CHART]" ]] &&
+                diff <(tar -xOzf ${FILE} | sha256sum) <(tar -xOzf "${CHARTS_INDEXED_BY_VERSION[$INCOMING_CHART]}" | sha256sum) &>/dev/null; then
+            echo "Chart ${INCOMING_CHART_NAME} (version ${INCOMING_CHART_VERSION}) already " \
                  "in the repository"
             RETVAL=2
         elif [[ -v "CHARTS_INDEXED_BY_VERSION[$INCOMING_CHART]" ]]; then
@@ -99,16 +119,23 @@ for FILE in "$@"; do
                  "and version (${INCOMING_CHART_VERSION}) already exists in the repository"
             RETVAL=3
         else
-            cp $FILE $REPO_DIR
-
-            if [ $? -ne 0 ]; then
-                echo Problem adding $FILE to helm chart registry.
-                RETVAL=1
-            else
-                REINDEX=1
-            fi
+            IS_VALID=true
         fi
-    else
+    elif [[ ! -r $FILE ]]; then
+        echo Cannot read file ${FILE}.
+        RETVAL=1
+    fi
+
+    if [[ -r $FILE && "${RUN_UPLOAD}" = true && ( "${RUN_CHECK}" = false || ( "${RUN_CHECK}" = true  && "${IS_VALID}" = true ) ) ]]; then
+        cp $FILE $REPO_DIR
+
+        if [ $? -ne 0 ]; then
+            echo Problem adding $FILE to helm chart registry.
+            RETVAL=1
+        else
+            REINDEX=1
+        fi
+    elif [[ ! -r $FILE ]]; then
         echo Cannot read file ${FILE}.
         RETVAL=1
     fi
