@@ -8,4 +8,4 @@ kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 kubelet-CFS-quota-throttling-for-non-integer-cpulimit.patch
 Revert-kubeadm-remove-RemoveOldControlPlaneLabel.patch
 Revert-kubeadm-cleanup-the-master-taint-on-CP-nodes-.patch
-
+kubeadm-reduce-UpgradeManifestTimeout.patch

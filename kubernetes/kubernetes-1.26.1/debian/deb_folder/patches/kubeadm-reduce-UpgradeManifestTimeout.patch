@@ -1,0 +1,33 @@
+From 1168a33565667c030f73b55df8c227a051e06b9e Mon Sep 17 00:00:00 2001
+From: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Date: Fri, 15 Mar 2024 03:46:02 -0400
+Subject: [PATCH] kubeadm: reduce UpgradeManifestTimeout
+
+This modifies kubeadm UpgradeManifestTimeout from 5 minutes default
+to 3 minutes to reduce the unnecessary delay in retries during
+kubeadm-upgrade-apply failures.
+
+The typical control-plane upgrade of static pods is 75 to 85 seconds,
+so 3 minutes gives adequate buffer to complete the operation.
+
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+---
+ cmd/kubeadm/app/phases/upgrade/staticpods.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmd/kubeadm/app/phases/upgrade/staticpods.go b/cmd/kubeadm/app/phases/upgrade/staticpods.go
+index 524a624c34f..37562342368 100644
+--- a/cmd/kubeadm/app/phases/upgrade/staticpods.go
++++ b/cmd/kubeadm/app/phases/upgrade/staticpods.go
+@@ -46,7 +46,7 @@ import (
+ 
+ const (
+ 	// UpgradeManifestTimeout is timeout of upgrading the static pod manifest
+-	UpgradeManifestTimeout = 5 * time.Minute
++	UpgradeManifestTimeout = 3 * time.Minute
+ )
+ 
+ // StaticPodPathManager is responsible for tracking the directories used in the static pod upgrade transition
+-- 
+2.25.1
+
