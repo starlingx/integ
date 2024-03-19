@@ -7,7 +7,7 @@ License: Apache-2
 
 Other files are included from the upstream runc
 binary package at
-https://github.com/opencontainers/runc/releases/download/v1.1.7/runc.amd64
+https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64
 
 
 License: Apache-2.0
