@@ -1,7 +1,7 @@
 From adb2a1eeb1083c72b4ae8d0c987a1bcbc64f2434 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:29:30 -0300
-Subject: [PATCH 29/57] pmc_agent: Generalize the method that queries the local
+Subject: [PATCH 29/58] pmc_agent: Generalize the method that queries the local
  clock identity.
 
 When started in automatic mode, the phc2sys program first queries the

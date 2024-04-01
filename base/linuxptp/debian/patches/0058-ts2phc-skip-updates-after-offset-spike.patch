@@ -1,0 +1,140 @@
+From 0cb3bd52e6dd3680aa900045d3c837d1098d8da8 Mon Sep 17 00:00:00 2001
+From: cwalker <cole.walker@windriver.com>
+Date: Tue, 20 Feb 2024 17:25:17 +0000
+Subject: [PATCH 58/58] Implement logic to skip updates with offset spike.
+
+This change allows ts2phc to be configured to ignore timing updates that
+have a large offset spike in order to mitigate the resulting timing
+skew.
+
+In some circumstances on realtime systems with high CPU load, the
+timestamp consumed by ts2phc can be delayed in reaching ts2phc and
+results in the offset calculation attempting to speed the clock up by a
+large margin.
+
+This change causes ts2phc to ignore updates that would greatly skew the
+clock when ts2phc is already in a synchronized state.
+
+The global configuration option "max_phc_update_skip_cnt" is provided to
+allow users to specify how many consecutive offset spike incidents will
+be ignored before adjusting the clock. The default value is 120. The
+behaviour can be disabled by setting max_phc_update_skip_cnt to 0.
+
+This code is ported from a proposed upstream patch found here:
+https://sourceforge.net/p/linuxptp/mailman/message/44114092/
+
+Signed-off-by: cwalker <cole.walker@windriver.com>
+---
+ config.c       |  1 +
+ ts2phc.c       |  3 +++
+ ts2phc_slave.c | 26 ++++++++++++++++++++++++--
+ 3 files changed, 28 insertions(+), 2 deletions(-)
+diff --git a/config.c b/config.c
+index ef17463..b53d8f4 100644
+--- a/config.c
++++ b/config.c
+@@ -347,6 +347,7 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("verbose", 0, 0, 1),
+ 	GLOB_ITEM_INT("write_phase_mode", 0, 0, 1),
+ 	GLOB_ITEM_INT("default_sync", 1, 0, 1),
++	PORT_ITEM_INT("max_phc_update_skip_cnt", 120, 0, 14400),
+ };
+ 
+ static struct unicast_master_table *current_uc_mtab;
+diff --git a/ts2phc.c b/ts2phc.c
+index 2342858..a59dc5f 100644
+--- a/ts2phc.c
++++ b/ts2phc.c
+@@ -15,6 +15,8 @@
+ #include "ts2phc_slave.h"
+ #include "version.h"
+ 
++int max_phc_update_skip_count;
++
+ struct interface {
+ 	STAILQ_ENTRY(interface) list;
+ };
+@@ -146,6 +148,7 @@ int main(int argc, char *argv[])
+ 	print_set_verbose(config_get_int(cfg, NULL, "verbose"));
+ 	print_set_syslog(config_get_int(cfg, NULL, "use_syslog"));
+ 	print_set_level(config_get_int(cfg, NULL, "logging_level"));
++	max_phc_update_skip_count = config_get_int(cfg, NULL, "max_phc_update_skip_cnt");
+ 
+ 	STAILQ_FOREACH(iface, &cfg->interfaces, list) {
+ 		if (1 == config_get_int(cfg, interface_name(iface), "ts2phc.master")) {
+diff --git a/ts2phc_slave.c b/ts2phc_slave.c
+index 749efe5..126c502 100644
+--- a/ts2phc_slave.c
++++ b/ts2phc_slave.c
+@@ -29,6 +29,8 @@
+ #define SAMPLE_WEIGHT		1.0
+ #define SERVO_SYNC_INTERVAL	1.0
+ 
++extern int max_phc_update_skip_count;
++
+ struct ts2phc_slave {
+ 	char *name;
+ 	STAILQ_ENTRY(ts2phc_slave) list;
+@@ -42,6 +44,8 @@ struct ts2phc_slave {
+ 	clockid_t clk;
+ 	int no_adj;
+ 	int fd;
++	int max_offset_skip_count;
++	int current_offset_skip_count;
+ };
+ 
+ struct ts2phc_slave_array {
+@@ -218,6 +222,9 @@ static struct ts2phc_slave *ts2phc_slave_create(struct config *cfg, const char *
+ 	if (ts2phc_slave_clear_fifo(slave)) {
+ 		goto no_ext_ts;
+ 	}
++	slave->max_offset_skip_count = max_phc_update_skip_count;
++	slave->current_offset_skip_count = 0;
++	pr_debug("PHC slave %s has skip cnt %d", device, slave->max_offset_skip_count);
+ 
+ 	return slave;
+ no_ext_ts:
+@@ -275,6 +282,18 @@ static int ts2phc_slave_event(struct ts2phc_slave *slave,
+ 		return 0;
+ 	}
+ 
++	if ((slave->state == SERVO_LOCKED) || (slave->state == SERVO_LOCKED_STABLE)) {
++		if (llabs(offset) >= NS_PER_SEC / 2) {
++			if (slave->current_offset_skip_count < slave->max_offset_skip_count) {
++			pr_debug("Offset spike detected. Skip current PHC update %s offset %10" PRId64 " s%d freq %+7.0f",
++						slave->name, offset, slave->state, adj);
++				slave->current_offset_skip_count++;
++				pr_debug("Current skip count: %i", slave->current_offset_skip_count);
++				return 0;
++			}
++		}
++	}
++
+ 	adj = servo_sample(slave->servo, offset, extts_ts,
+ 			   SAMPLE_WEIGHT, &slave->state);
+ 
+@@ -290,6 +309,9 @@ static int ts2phc_slave_event(struct ts2phc_slave *slave,
+ 		break;
+ 	case SERVO_LOCKED:
+ 	case SERVO_LOCKED_STABLE:
++		if (llabs(offset) < 500) {
++			slave->current_offset_skip_count = 0;
++		}
+ 		clockadj_set_freq(slave->clk, -adj);
+ 		break;
+ 	}
+@@ -336,10 +358,10 @@ static enum extts_result ts2phc_slave_offset(struct ts2phc_slave *slave,
+ 	*local_ts = event_ns + slave->correction;
+ 
+ 	pr_debug("%s extts index %u at %lld.%09u corr %d src %" PRIi64
+-		 ".%ld diff %" PRId64,
++		 ".%ld diff %" PRId64 " servo state %d",
+ 		 slave->name, event.index, event.t.sec, event.t.nsec,
+ 		 slave->correction,
+-		 (int64_t) source_ts.tv_sec, source_ts.tv_nsec, *offset);
++		 (int64_t) source_ts.tv_sec, source_ts.tv_nsec, *offset, slave->state);
+ 
+ 	return EXTTS_OK;
+ }
+-- 
+2.30.2

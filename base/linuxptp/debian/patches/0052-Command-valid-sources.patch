@@ -1,7 +1,7 @@
 From 2f4339ab555fdd90d5c5fd11296d5c17b19c37e3 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 30 Aug 2023 15:43:42 -0300
-Subject: [PATCH 52/57] Command 'valid sources'
+Subject: [PATCH 52/58] Command 'valid sources'
 
 The 'valid sources' command is used to get a list of interfaces which
 the clock is matching the requirements. The response contains a space

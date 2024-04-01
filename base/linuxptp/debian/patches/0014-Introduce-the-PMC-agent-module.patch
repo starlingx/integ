@@ -1,7 +1,7 @@
 From 4d8fa2e0d4ed8c0ca79ee9123d8a5963a2a13ce5 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:40:59 -0300
-Subject: [PATCH 14/57] Introduce the PMC agent module.
+Subject: [PATCH 14/58] Introduce the PMC agent module.
 
 The logic for placing PTP management queries migrated out of phc2sys into
 pmc_common in order to be shared with other programs in the future.  This

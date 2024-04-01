@@ -55,3 +55,4 @@
 0055-Ignore-interface-in-conf-file-when-HA-is-disabled.patch
 0056-Fixed-event-port-id-map.patch
 0057-Fix-uninitialized-variable-in-nmea_scan_rmc.patch
+0058-ts2phc-skip-updates-after-offset-spike.patch
