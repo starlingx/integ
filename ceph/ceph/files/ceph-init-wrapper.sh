@@ -84,6 +84,11 @@ args=("$@")
 if [ ! -z $ARGS ]; then
     IFS=";" read -r -a new_args <<< "$ARGS"
     args+=("${new_args[@]}")
+else
+    # Since PMON uses a unique string to pass arguments,
+    # it must support splitting the string into the args array.
+    #   Eg.: /etc/init.d/ceph-init-wrapper "start mds".
+    IFS=" " read -r -a args <<< "$@"
 fi
 
 # Log Management
@@ -106,6 +111,23 @@ log () {
     # yyyy-MM-dd HH:mm:ss.SSSSSS /etc/init.d/ceph-init-wrapper <prefix> <log_level>: <message>
     wlog "${prefix}" "${log_level}" "${message}"
     return 0
+}
+
+# Identify the ceph network interface from /etc/platform/platform.conf file
+# The network interface will be set to the 'ceph_network_interface' variable
+# Return 0 if found the variable, and 1 if not.
+identify_ceph_network_interface() {
+    if [ "${ceph_network}" == "mgmt" ]; then
+        ceph_network_interface="${management_interface}"
+        return 0
+    fi
+
+    if [ "${ceph_network}" == "cluster-host" ]; then
+        ceph_network_interface="${cluster_host_interface}"
+        return 0
+    fi
+
+    return 1
 }
 
 # Verify if drbd-cephmon role is primary, checking the output of 'drbdadm role'
@@ -143,11 +165,11 @@ is_drbd_cephmon_mounted ()
 has_all_network_no_carrier()
 {
     ip link show "${oam_interface}" | grep NO-CARRIER
-    oam_carrier=$?
+    local oam_carrier=$?
     ip link show "${cluster_host_interface}" | grep NO-CARRIER
-    cluster_host_carrier=$?
+    local cluster_host_carrier=$?
     ip link show "${management_interface}" | grep NO-CARRIER
-    mgmt_carrier=$?
+    local mgmt_carrier=$?
 
     # Check if all networks have no carrier, meaning the other host is down
     if [ "${oam_carrier}" -eq 0 ] && [ "${cluster_host_carrier}" -eq 0 ] && [ "${mgmt_carrier}" -eq 0 ]; then
@@ -157,17 +179,23 @@ has_all_network_no_carrier()
     return 1
 }
 
-# Check mgmt network carrier signal
-has_mgmt_network_carrier()
+# Check Ceph network carrier signal
+has_ceph_network_carrier()
 {
-    # Checks the carrier (cable connected) for management interface
-    # If no-carrier message is detected, then the interface has no physical link
-    ip link show "${management_interface}" | grep NO-CARRIER
+    # Checks the carrier (cable connected) for Ceph network interface
+    # If no-carrier is detected, then the interface has no physical link
+    eval local interface=\$${ceph_network}_interface
+    if [ -z ${interface} ]; then
+        log ERROR "Cannot detect Ceph network. Skipping network carrier detection"
+        return 0
+    fi
+
+    ip link show "${interface}" | grep NO-CARRIER
     if [ $? -eq 0 ]; then
-        log INFO "Management Interface '${management_interface}' has NO-CARRIER, cannot start ceph-mon"
+        log INFO "Ceph network '${interface}' has NO-CARRIER, cannot start ceph-mon"
         return 1
     fi
-    log "-" DEBUG "Management Interface '${management_interface}' is working"
+    log DEBUG "Ceph network '${interface}' is working"
     return 0
 }
 
@@ -256,6 +284,25 @@ with_service_lock ()
     RC=$?
 }
 
+has_daemon_running ()
+{
+    local service="$1"
+    if [ ${#service} -eq 3 ]; then
+        # Check based on service type
+        local count_pid_files=$(ls -1 /var/run/ceph/${service}.*.pid 2>/dev/null | wc -l)
+        if [ ${count_pid_files} -gt 0 ]; then
+            return 0
+        fi
+    else
+        # Check based on service name
+        if [ -f /var/run/ceph/${service}.pid ]; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
 start ()
 {
     if [ ! -f ${CEPH_FILE} ]; then
@@ -264,21 +311,25 @@ start ()
     fi
 
     local service="$1"
+    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
+    eval service="${service}"
+
+    log INFO "Ceph START ${service} command received"
 
     # For AIO-DX, ceph services have special treatment
     if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; then
 
-        # For ceph mon, check if drbd-cephmon is ready
-        if [ "${service}" == "mon" ]; then
+        # For ceph mon.controller (floating monitor), check if drbd-cephmon is ready
+        if [ "${service}" == "mon.controller" ]; then
             can_start_ceph_mon
             if [ $? -ne 0 ]; then
-                log INFO "Ceph Monitor is not ready to start because drbd-cephmon is not ready and mounted"
+                log INFO "Ceph Monitor cannot start because drbd-cephmon is not ready and mounted."
                 exit 1
             fi
         fi
 
-        # Check mgmt network state
-        has_mgmt_network_carrier
+        # Check Ceph network state
+        has_ceph_network_carrier
         if [ $? -ne 0 ]; then
             # If this is a AIO-DX Direct, check if all other network interfaces are down
             if [ "${system_mode}" == "duplex-direct" ]; then
@@ -286,31 +337,43 @@ start ()
                 if [ $? -eq 0 ]; then
                     log INFO "All network interfaces are not functional, considering the other host is down. Let Ceph start."
                 else
-                    # Else AIO-DX Direct mgmt network is NOT functional
-                    log INFO "Management Interface is not functional, defer starting Ceph processes until recovered"
+                    # Else AIO-DX Direct Ceph network is NOT functional
+                    log INFO "Ceph network interface is not functional, defer starting Ceph processes until recovered"
                     exit 1
                 fi
             else
-                # Else AIO-DX mgmt network is NOT functional
-                log INFO "Management Interface is not functional, defer starting Ceph processes until recovered"
+                # Else AIO-DX Ceph network is NOT functional
+                log INFO "Ceph network interface is not functional, defer starting Ceph processes until recovered"
                 exit 1
             fi
         fi
     fi
 
     # Start the service
-    log INFO "Ceph START ${service} command received"
     with_service_lock "${service}" ${CEPH_SCRIPT} start ${service}
     log INFO "Ceph START ${service} command finished."
 }
 
 stop ()
 {
+    local cmd="stop"
     local service="$1"
+    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
+    eval service="${service}"
+    [ "$2" == "force" ] && cmd="forcestop"
 
-    log INFO "Ceph STOP $1 command received."
-    with_service_lock "$1" ${CEPH_SCRIPT} stop $1
-    log INFO "Ceph STOP $1 command finished."
+    log INFO "Ceph ${cmd^^} ${service} command received."
+
+    if [ ! -z "${service}"]; then
+        has_daemon_running ${service}
+        if [ $? -ne 0 ]; then
+            log INFO "Ceph ${service} daemon is already stopped. No action is required."
+            exit 0
+        fi
+    fi
+
+    with_service_lock "${service}" ${CEPH_SCRIPT} ${cmd} ${service}
+    log INFO "Ceph ${cmd^^} ${service} command finished."
 }
 
 restart ()
@@ -386,6 +449,8 @@ log_and_kill_hung_procs ()
 status ()
 {
     local target="$1"  # no shift here
+    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
+    eval target="$target"
     [ -z "${target}" ] && target="mon osd"
 
     if [ ! -f ${CEPH_FILE} ]; then
@@ -393,29 +458,31 @@ status ()
         exit 0
     fi
 
-    if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]] && [[ "$1" == "osd" ]]; then
-        has_mgmt_network_carrier
+    log INFO "status ${target}";
+
+    if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]] && [[ "$target" == "osd" ]]; then
+        has_ceph_network_carrier
         if [ $? -eq 0 ]; then
             # Network is functional, continue
-            log DEBUG "Management Interface active."
+            log DEBUG "Ceph network interface is active."
         else
             if [ "${system_mode}" == "duplex-direct" ]; then
                 has_all_network_no_carrier
                 if [ $? -ne 0 ]; then
                     # Network is NOT functional, prevent split brain corruptions
-                    log INFO "Management Interface inactive. Stopping OSDs to force a re-peering once the network has recovered"
-                    stop "$1"
+                    log INFO "Ceph network interface is inactive. Stopping OSDs to force a re-peering once the network has recovered"
+                    stop "$target"
                     exit 0
                 fi
             else
                 # Network is NOT functional, prevent split brain corruptions
-                log INFO "Management Interface inactive. Stopping OSDs to force a re-peering once the network has recovered"
-                stop "$1"
+                log INFO "Ceph network interface is inactive. Stopping OSDs to force a re-peering once the network has recovered"
+                stop "$target"
                 exit 0
             fi
         fi
 
-        timeout $CEPH_STATUS_TIMEOUT ceph -s
+        timeout $CEPH_STATUS_TIMEOUT ceph -s 2>&1 1>/dev/null
         if [ "$?" -ne 0 ]; then
             # Ceph cluster is not accessible. Don't panic, controller swact
             # may be in progress.
@@ -447,21 +514,22 @@ status ()
         flock --shared ${LOCK_CEPH_OSD_STATUS_FD}
     fi
 
-    result=`log INFO "status $1"; ${CEPH_SCRIPT} status $1 {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-`
+    result=`${CEPH_SCRIPT} status $target {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-`
     RC=$?
     if [ "$RC" -ne 0 ]; then
-        erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
-        hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
-        blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
-        stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
+        hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
+        blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
+        stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
         invalid=0
         host=`hostname`
         if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
             # On 2 node configuration we have a floating monitor
+            host_fixed="$host"
             host="controller"
         fi
         for i in $(echo $erred_procs $hung_procs); do
-            if [[ "$i" =~ osd.?[0-9]?[0-9]|mon.$host ]]; then
+            if [[ "$i" =~ osd.?[0-9]?[0-9]|mon.$host|mon.$host_fixed|mds.${HOSTNAME} ]]; then
                 continue
             else
                 invalid=1
@@ -485,12 +553,12 @@ status ()
             done
             echo "$text" | tr -d '\n' > $CEPH_STATUS_FAILURE_TEXT_FILE
         else
-            echo "$host: '${CEPH_SCRIPT} status $1' result contains invalid process names: $erred_procs"
+            echo "$host: '${CEPH_SCRIPT} status $target' result contains invalid process names: $erred_procs"
             echo "Undetermined osd or monitor id" > $CEPH_STATUS_FAILURE_TEXT_FILE
         fi
     fi
 
-    if [[ $RC == 0 ]] && [[ "$1" == "mon" ]] && [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
+    if [[ $RC == 0 ]] && [[ "$target" == "mon.controller" ]] && [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
         # SM needs exit code != 0 from 'status mon' argument of the init script on
         # standby controller otherwise it thinks that the monitor is running and
         # tries to stop it.
@@ -504,20 +572,20 @@ status ()
         if [ "$?" -ne 0 ]; then
             exit 3
         else
-            has_mgmt_network_carrier
+            has_ceph_network_carrier
             if [ $? -ne 0 ]; then
                 if [ "${system_mode}" == "duplex-direct" ]; then
                     has_all_network_no_carrier
                     if [ $? -ne 0 ]; then
                         # Network is NOT functional, prevent split brain corruptions
-                        log INFO "Management Interface inactive. Stopping ceph-mon to prevent localized operation"
-                        stop "$1"
+                        log INFO "Ceph network interface is inactive. Stopping ceph-mon to prevent localized operation"
+                        stop "$target"
                         exit 0
                     fi
                 else
                     # Network is NOT functional, prevent split brain corruptions
-                    log INFO "Management Interface inactive. Stopping ceph-mon to prevent localized operation"
-                    stop "$1"
+                    log INFO "Ceph network interface is inactive. Stopping ceph-mon to prevent localized operation"
+                    stop "$target"
                     exit 0
                 fi
             fi
@@ -535,6 +603,9 @@ case "${args[0]}" in
     stop)
         stop ${args[1]}
         ;;
+    forcestop)
+        stop ${args[1]} force
+        ;;
     restart)
         restart ${args[1]}
         ;;
@@ -542,7 +613,7 @@ case "${args[0]}" in
         status ${args[1]}
         ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status} [{mon|osd|osd.<number>|mon.<hostname>}]"
+        echo "Usage: $0 {start|stop|forcestop|restart|status} [{mon|osd|osd.<number>|mon.<hostname>}]"
         exit 1
         ;;
 esac

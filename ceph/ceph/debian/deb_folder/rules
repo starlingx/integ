@@ -14,7 +14,8 @@ SOURCE8 := ceph.service
 SOURCE9 := mgr-restful-plugin.service
 SOURCE10 := ceph-preshutdown.sh
 SOURCE11 := stx-containerd-ceph-override.conf
-
+SOURCE12 := ceph-storage-network.sh
+SOURCE13 := ceph-fixed-mon.conf.pmon
 
 # Paths
 export DESTDIR = $(CURDIR)/debian/tmp
@@ -198,6 +199,8 @@ override_dh_auto_install:
 	install -D -m 644 ${SOURCE9} $(DESTDIR)/${UNITDIR}/mgr-restful-plugin.service
 	install -D -m 700 ${SOURCE10} $(DESTDIR)/${SBINDIR}/ceph-preshutdown.sh
 	install -D -m 644 ${SOURCE11} $(DESTDIR)/${UNITDIR}/containerd.service.d/stx-containerd-ceph-override.conf
+	install -D -m 750 ${SOURCE12} $(DESTDIR)/${INITDIR}/ceph-storage-network
+	install -D -m 750 ${SOURCE13} $(DESTDIR)/${SYSCONFDIR}/ceph/
 	install -m 750 src/init-radosgw $(DESTDIR)/${INITDIR}/ceph-radosgw
 	sed -i '/### END INIT INFO/a SYSTEMCTL_SKIP_REDIRECT=1' $(DESTDIR)/${INITDIR}/ceph-radosgw
 	install -m 750 src/init-rbdmap $(DESTDIR)/${INITDIR}/rbdmap
@@ -280,6 +283,7 @@ override_dh_fixperms:
 	-Xceph.conf.pmon  \
 	-Xceph-mds.conf.pmon  \
 	-Xceph-init-wrapper  \
+	-Xceph-storage-network  \
 	-Xceph.conf  \
 	-Xceph-manage-journal  \
 	-Xceph.service  \

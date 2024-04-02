@@ -13,3 +13,4 @@
 0014-Adjust-puppet-ceph-dependency-requirements.patch
 0015-Fix-the-unless-condition-of-ceph-osd-prepare.patch
 0016-Add-ms_bind_ipv4-option-to-ceph-paremeters.patch
+0017-Add-mon_data-parameter.patch

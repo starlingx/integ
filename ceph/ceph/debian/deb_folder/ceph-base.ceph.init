@@ -623,7 +623,7 @@ stop_daemon() {
 	        if [ \$timeout -lt 0 ]; then
 	            break
 	        fi
-	        timeout-=1
+	        timeout=\$((timeout-1))
 	    fi
 	    cmd=\"kill $signal \$pid\"
 	    printf \"\$cmd...\"
@@ -769,7 +769,7 @@ fi
 # When this is a AIO-DX pmon is monitoring ceph-mds process.
 # If ceph-mon is not running, ceph-mds will hang when starting.
 # Check if we are trying to bring up ceph-mds and ceph-mon is not ready yet
-if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "duplex" ]; then
+if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; then
     if [ "${command}" = "start" -o "${command}" = "onestart" ]; then
         what_out=
         what_mds=
@@ -873,6 +873,12 @@ for name in $what; do
     # conf file
     cmd="$cmd -c $conf"
 
+    # StarlingX:
+    # If this is AIO-DX, check if service is the fixed Ceph monitor and set the parameter --mon-data
+    if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ] && [ "$type" == "mon" ] && [ "$id" == ${HOSTNAME} ]; then
+        cmd="$cmd --mon-data /var/lib/ceph/data/ceph-${HOSTNAME}"
+    fi
+
     if echo $name | grep -q ^osd; then
 	get_conf osd_data "/var/lib/ceph/osd/$cluster-$id" "osd data"
 	get_conf fs_path "$osd_data" "fs path"  # mount point defaults so osd data
@@ -928,13 +934,15 @@ for name in $what; do
 
 	    [ -n "$TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES" ] && tcmalloc="TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=$TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES"
 
-		# StarlingX: start processes in scope under slice system-ceph.slice
-		# so that ceph processes do not start under this script's callers cgroup
-		if [ "$type" = "osd" ]; then
-			cmd="systemd-run --scope --unit=ceph-${type}-${id} --slice=system-ceph $cmd"
-		else
-			cmd="systemd-run --scope --unit=ceph-${type} --slice=system-ceph $cmd"
-		fi
+	    # StarlingX: start processes in scope under slice system-ceph.slice
+	    # so that ceph processes do not start under this script's callers cgroup
+	    if [ "$type" = "osd" ]; then
+	        cmd="systemd-run --scope --unit=ceph-${type}-${id} --slice=system-ceph $cmd"
+	    elif [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ] && [ "$type" == "mon" ] && [ "$id" == ${HOSTNAME} ]; then
+	        cmd="systemd-run --scope --unit=ceph-${type}-${id} --slice=system-ceph $cmd"
+	    else
+	        cmd="systemd-run --scope --unit=ceph-${type} --slice=system-ceph $cmd"
+	    fi
 
 	    # StarlingX: not running as ceph user/group
 	    cmd="$files $tcmalloc $wrap $cmd --cluster $cluster $runmode"
@@ -988,9 +996,21 @@ for name in $what; do
 		fi
 	    fi
 
+	    echo Starting Ceph $name on $host...
+
+	    if [ $type = "mds" ]; then
+	        echo "Waiting for ceph-mon to respond before starting ceph-mds..."
+		execute_ceph_cmd CMD_OUTPUT $name "ceph fsid"
+	        if [ $? -ne 0 ]; then
+	            log $name "INFO" "Cannot start $name process. Ceph-mon is not working..."
+	            echo "Cannot start ceph-mds. Ceph-mon is not working..."
+	            EXIT_STATUS=$errcode
+		    continue
+	        fi
+	    fi
+
 	    save_proc_startup_ok $name
 
-	    echo Starting Ceph $name on $host...
 	    if [ ! -d $run_dir ]; then
 		# assume /var/run exists
 		install -d -m0770 -o ceph -g ceph /var/run/ceph
@@ -1067,10 +1087,10 @@ EOF
 		# first try to gracefully close process, this should be fast if
 		# its threads still respond to the TERM signal
 		log $name "DEBUG" ">>> Sending term signal"
-		stop_daemon $name ceph-$type $pid_file TERM "" 5
+		stop_daemon $name ceph-$type $pid_file -SIGTERM "" 5
 		log $name "DEBUG" ">>> Sending kill signal"
 		# then just kill it
-		stop_daemon $name ceph-$type $pid_file KILL
+		stop_daemon $name ceph-$type $pid_file -SIGKILL
 	    fi
 
 	    [ -n "$pidfile" ] && rm -f $pidfile
@@ -1182,7 +1202,17 @@ EOF
 	    get_conf pre_forcestop "" "pre forcestop command"
 	    get_conf post_forcestop "" "post forcestop command"
 	    [ -n "$pre_forcestop" ] && do_cmd "$pre_forcestop"
-	    stop_daemon $name ceph-$type $pid_file -9
+
+	    # first try to gracefully close process, this should be fast if
+	    # its threads still respond to the TERM signal
+	    wlog $name "DEBUG" ">>> Sending term signal"
+	    stop_daemon $name ceph-$type $pid_file -SIGTERM "" 5
+	    wlog $name "DEBUG" ">>> Sending kill signal"
+	    # then just kill it
+	    stop_daemon $name ceph-$type $pid_file -SIGKILL
+
+	    [ -n "$pidfile" ] && rm -f $pidfile
+	    [ -n "$asok" ] && rm -f $asok
 	    [ -n "$post_forcestop" ] && do_cmd "$post_forcestop"
 	    [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
 	    ;;
