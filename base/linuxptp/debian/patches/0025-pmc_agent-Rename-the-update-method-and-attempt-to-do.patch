@@ -1,7 +1,7 @@
 From 9136345c69038a22d9b548863fb6afe64e54958d Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:36:38 -0300
-Subject: [PATCH 25/57] pmc_agent: Rename the update method and attempt to
+Subject: [PATCH 25/58] pmc_agent: Rename the update method and attempt to
  document it.
 
 This patch renames the function to have the module prefix and tries to
