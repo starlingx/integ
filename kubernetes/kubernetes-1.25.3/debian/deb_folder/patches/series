@@ -9,3 +9,4 @@ kubelet-CFS-quota-throttling-for-non-integer-cpulimit.patch
 Revert-kubeadm-remove-RemoveOldControlPlaneLabel.patch
 Revert-kubeadm-cleanup-the-master-taint-on-CP-nodes-.patch
 kubeadm-reduce-UpgradeManifestTimeout.patch
+Identify-platform-pods-based-on-pod-or-namespace-labels.patch
