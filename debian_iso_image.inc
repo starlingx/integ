@@ -372,6 +372,9 @@ python3-setuptools
 #python3.9
 python3.9
 
+#pyzmq
+python3-zmq
+
 #openscap
 libopenscap25
 openscap-common
