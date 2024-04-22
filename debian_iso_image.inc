@@ -387,6 +387,9 @@ openvswitch-common
 openvswitch-switch-dpdk
 openvswitch-switch
 
+#redfishtool 1.1.8
+redfishtool
+
 #runc
 #golang-github-opencontainers-runc-dev  # not used
 runc

@@ -1,0 +1,56 @@
+From ff18b735189bcab5d7c86186fa36baabebe55971 Mon Sep 17 00:00:00 2001
+From: GitHub Release Workflow <>
+Date: Wed, 16 Aug 2023 20:28:08 +0000
+Subject: [PATCH] 1.1.8 versioning
+
+Signed-off-by: GitHub Release Workflow <>
+---
+ CHANGELOG.md                           | 3 +++
+ redfishtoollib/redfishtoolTransport.py | 4 ++--
+ setup.py                               | 2 +-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index b81e357..29e6b23 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,5 +1,8 @@
+ # Change Log
+ 
++## [1.1.8] - 2023-08-16
++- Corrected matching logic to return the matched resource if found
++
+ ## [1.1.7] - 2023-06-30
+ - Added workaround to specify the 'BootSourceOverrideMode' property when modifying the boot override properties even if the mode is not changing
+ 
+diff --git a/redfishtoollib/redfishtoolTransport.py b/redfishtoollib/redfishtoolTransport.py
+index be7b83d..3eee1c7 100644
+--- a/redfishtoollib/redfishtoolTransport.py
++++ b/redfishtoollib/redfishtoolTransport.py
+@@ -60,8 +60,8 @@ class RfTransport():
+     def __init__(self):
+         # constant parameters-- these dont change and are not updated
+         self.program="redfishtool"              # program name (in case we want to change it)
+-        self.version="1.1.7"                    # this redfishtool version
+-        self.releaseDate="06/30/2023"           # release date for this version of redfishtool
++        self.version="1.1.8"                    # this redfishtool version
++        self.releaseDate="08/16/2023"           # release date for this version of redfishtool
+         self.downloadFrom="https://github.com/DMTF/Redfishtool" # where to find redfishtool
+         self.magic="12345"                      # used for debug to test for a known parameter in this object
+         self.UNAUTHENTICATED_API=1              # unauthenticated API that doesn't send credentials in body data
+diff --git a/setup.py b/setup.py
+index 907c25f..c21fbbe 100644
+--- a/setup.py
++++ b/setup.py
+@@ -6,7 +6,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+     long_description = f.read()
+ 
+ setup(name='redfishtool',
+-      version='1.1.7',
++      version='1.1.8',
+       description='Redfishtool package and command-line client',
+       long_description=long_description,
+       long_description_content_type='text/markdown',
+-- 
+2.25.1
+
