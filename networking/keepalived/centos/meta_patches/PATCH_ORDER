@@ -1,3 +1,0 @@
-keepalived.spec-Modify-Release-field-for-StarlingX.patch
-keepalived.spec-Disable-dependency-on-snmp.patch
-keepalived.spec-Remove-usr-share-doc-keepalived-READ.patch

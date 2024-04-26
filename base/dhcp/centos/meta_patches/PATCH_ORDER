@@ -1,4 +1,0 @@
-spec-include-TiS-patches.patch
-dhclient-dhcp6-set-hostname.patch
-0001-dhcp-set-the-prefixlen-to-64.patch
-0001-Update-package-versioning-for-TIS-format.patch

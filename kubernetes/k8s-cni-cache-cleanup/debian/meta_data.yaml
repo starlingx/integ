@@ -1,7 +1,7 @@
 ---
 debname: k8s-cni-cache-cleanup
 debver: 1.0-1
-src_path: centos/files
+src_path: files
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

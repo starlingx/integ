@@ -1,6 +1,0 @@
-The upstream mariadb includes TokuDB source code with AGPL license.
-As AGPL-3.0 is considered a prohibited license by WR, we've modified
-the source tarball to delete the storage/tokudb directory and remove
-the AGPL reference from the EXCEPTIONS-CLIENT Foss License file. The
-spec file has also been modified to compile without tokudb support.
-

@@ -1,7 +1,7 @@
 ---
 debname: helm
 debver: 3.12.2-1
-src_path: centos/files
+src_path: files
 dl_files:
   helm-v3.12.2-linux-amd64.tar.gz:
     topdir: linux-amd64

@@ -1,8 +1,0 @@
-main.partition_exchange             : #1399847
-main.analyze_stmt_orderby           : #1399847
-main.explain_json_innodb            : #1399847
-main.explain_json_format_partitions : #1399847
-main.analyze_format_json            : #1399847
-main.explain_json                   : #1399847
-main.subselect_cache                : #1399847
-main.type_year                      : #1399847

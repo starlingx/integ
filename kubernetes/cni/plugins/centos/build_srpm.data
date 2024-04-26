@@ -1,2 +1,0 @@
-COPY_LIST="${CGCS_BASE}/downloads/containernetworking-plugins-v1.0.1.tar.gz ${FILES_BASE}/*"
-TIS_PATCH_VER=PKG_GITREVCOUNT

@@ -1,4 +1,0 @@
-TAR="kubectl-cert_manager-linux-amd64.tar.gz"
-
-COPY_LIST="${CGCS_BASE}/downloads/${TAR}"
-TIS_PATCH_VER=PKG_GITREVCOUNT

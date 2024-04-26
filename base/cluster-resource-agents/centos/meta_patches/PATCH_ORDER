@@ -1,5 +1,0 @@
-spec-include-TiS-patches.patch
-spec-avoid-dir-collisions.patch
-0001-Update-package-versioning-for-TIS-format.patch
-Disable-creation-of-the-debug-package.patch
-Do-not-log-at-debug-log-level-when-HAdebug-is-unset.patch

@@ -1,9 +1,0 @@
-main.userstat                                : #1399847
-main.multi_update                            : #1399847
-main.set_statement_notembedded_binlog        : #1399847
-main.ssl_7937                                : #1399847
-main.ssl_crl_clients                         : #1399847
-main.ssl_cert_verify                         : #1399847
-perfschema.nesting                           : #1399847
-perfschema.socket_summary_by_event_name_func : #1399847
-perfschema.socket_summary_by_instance_func   : #1399847
