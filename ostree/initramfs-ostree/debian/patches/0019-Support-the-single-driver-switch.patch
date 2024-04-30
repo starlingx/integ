@@ -1,0 +1,150 @@
+From 27da188f7054f4aec1d94f1ef3d16ee5d0a23f9c Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 25 Apr 2024 23:05:07 -0700
+Subject: [PATCH 19/19] Support the single driver switch
+
+In order to select between the in-tree and OOT drivers for the single
+driver, a cmdline parameter out-of-tree-drivers need be used. The
+cmdline parameter out-of-tree-drivers will be set driver names that
+these drivers will be used as the out of tree drivers. For example
+"out-of-tree-drivers=ice,i40e,iavf", the OOT drivers ice, i40e, iavf
+will be loaded by "insmod" command before udevd is started, and that
+ensures that the OOT drivers will be loaded rather than the in-tree
+drivers.
+
+The default drivers will be the in-tree drivers if there is not
+out-of-tree-drivers in the cmdline parameters or they are not set
+correct.
+
+1. Switch the single driver as the following step.
+ a) ice
+   * switch the ice driver to the OOT version
+      out-of-tree-drivers=ice
+   * switch the ice driver to the in-tree version
+      remove ice from out-of-tree-drivers
+ b) i40e
+   * switch the i40e driver to the OOT version
+      out-of-tree-drivers=i40e
+   * switch the i40e driver to the in-tree version
+      remove i40e from out-of-tree-drivers
+ c) iavf
+   * switch the iavf driver to the OOT version
+      out-of-tree-drivers=iavf
+   * switch the iavf driver to the in-tree version
+      remove iavf from out-of-tree-drivers
+2. Switch the bundle driver as the following step.
+   * switch the bundle drivers to the OOT version.
+      out-of-tree-drivers=ice,iavf,i40e
+   * switch the bundle drivers to the in-tree version
+      out-of-tree-drivers=
+    or
+      remove out-of-tree-drivers from the boot commandline.
+3. Switch any two ones.
+   * switch ice and iavf to the OOT version.
+       out-of-tree-drivers=ice,iavf
+   * switch i40e and iavf to the OOT version.
+       out-of-tree-drivers=i40e,iavf
+   * switch to the in-tree version.
+      just remove driver name from out-of-tree-drivers.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ init-ostree-install.sh | 28 +++++++++++++---------------
+ init-ostree.sh         | 27 ++++++++++++---------------
+ 2 files changed, 25 insertions(+), 30 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index c9172de..0d047fb 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -476,20 +476,18 @@ do_mount_fs() {
+ 	[[ -e /proc/mounts ]] && { grep -q -e "^$1 $2 $1" /proc/mounts && { log_info "$2 ($1) already mounted"; return 0; } }
+ 	mount -t "$1" "$1" "$2" || fatal "Error mounting $2"
+ }
++
+ network_modules() {
+-	if grep -s -q '\smulti-drivers-switch=' /proc/cmdline ; then
+-		if [ -d /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}" ]; then
+-			insmod /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}"/ice.ko
+-			insmod /lib/modules/"$(uname -r)"/weak-updates/i40e-"${DRIVER_VERSION}"/i40e.ko
+-			insmod /lib/modules/"$(uname -r)"/weak-updates/iavf-"${DRIVER_VERSION}"/iavf.ko
+-			echo "OOT NIC ${DRIVER_VERSION} drivers have been activated"
+-		else
+-			ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
+-			echo "In-tree NIC drivers have been activated"
+-		fi
+-	else
+-		ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
+-		echo "In-tree NIC drivers have been activated"
++	ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
++	if grep -s -q '\sout-of-tree-drivers=' /proc/cmdline ; then
++		drivers=(`echo ${OOT_DRIVERS} | tr ',' ' '` )
++		for driver in ${drivers[@]}
++		do
++			if [ -e /lib/modules/"$(uname -r)"/weak-updates/"${driver}"*/"${driver}".ko ]; then
++				insmod /lib/modules/"$(uname -r)"//weak-updates/"${driver}"*/"${driver}".ko
++				echo "OOT driver ${driver} have been activated"
++			fi
++		done
+ 	fi
+ }
+ 
+@@ -746,8 +744,8 @@ read_args() {
+ 				OSTREE_ROOT_B_DEVICE=$optarg ;;
+ 			inst_ostree_var=*)
+ 				OSTREE_VAR_DEVICE=$optarg ;;
+-			multi-drivers-switch=*)
+-				DRIVER_VERSION=$optarg ;;
++			out-of-tree-drivers=*)
++				OOT_DRIVERS=$optarg ;;
+ 		esac
+ 	done
+ 	# defaults if not set
+diff --git a/init-ostree.sh b/init-ostree.sh
+index c74f350..d1f6416 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -68,19 +68,16 @@ do_mount_fs() {
+ }
+ 
+ network_modules() {
+-	if grep -s -q '\smulti-drivers-switch=' /proc/cmdline ; then
+-		if [ -d /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}" ]; then
+-			insmod /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}"/ice.ko
+-			insmod /lib/modules/"$(uname -r)"/weak-updates/i40e-"${DRIVER_VERSION}"/i40e.ko
+-			insmod /lib/modules/"$(uname -r)"/weak-updates/iavf-"${DRIVER_VERSION}"/iavf.ko
+-			echo "OOT NIC ${DRIVER_VERSION} drivers have been activated"
+-		else
+-			ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
+-			echo "In-tree NIC drivers have been activated"
+-		fi
+-	else
+-		ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
+-		echo "In-tree NIC drivers have been activated"
++	ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
++	if grep -s -q '\sout-of-tree-drivers=' /proc/cmdline ; then
++		drivers=(`echo ${OOT_DRIVERS} | tr ',' ' '` )
++		for driver in ${drivers[@]}
++		do
++			if [ -e /lib/modules/"$(uname -r)"/weak-updates/"${driver}"*/"${driver}".ko ]; then
++				insmod /lib/modules/"$(uname -r)"//weak-updates/"${driver}"*/"${driver}".ko
++				echo "OOT driver ${driver} have been activated"
++			fi
++		done
+ 	fi
+ }
+ 
+@@ -209,8 +206,8 @@ read_args() {
+ 				HW_SETTLE=$optarg ;;
+ 			multipath=*)
+ 				MULTIPATH=$optarg ;;
+-			multi-drivers-switch=*)
+-				DRIVER_VERSION=$optarg ;;
++			out-of-tree-drivers=*)
++				OOT_DRIVERS=$optarg ;;
+ 			ostree_var=*)
+ 				OSTREE_VAR_DEVICE=${optarg} ;;
+ 		esac
+-- 
+2.43.0
+
