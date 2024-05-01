@@ -8,3 +8,4 @@ kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 Affinity-of-guaranteed-pod-to-non-isolated-CPUs.patch
 kubelet-CFS-quota-throttling-for-non-integer-cpulimit.patch
 kubeadm-reduce-UpgradeManifestTimeout.patch
+Identify-platform-pods-based-on-pod-or-namespace-labels.patch
