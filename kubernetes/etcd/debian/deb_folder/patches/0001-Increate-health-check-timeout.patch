@@ -1,0 +1,32 @@
+From ec992b6080f5fff7545a2d5026f444674ae1b0f1 Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Fri, 19 Apr 2024 11:28:39 -0400
+Subject: [PATCH 1/1] Increate health check timeout
+
+Under high load, the /health check QGET times out occasionally.
+This change increase the timeout value to 5s.
+
+Signed-off-by: Andy Ning <andy.ning@windriver.com>
+---
+ etcdserver/api/etcdhttp/metrics.go | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/etcdserver/api/etcdhttp/metrics.go b/etcdserver/api/etcdhttp/metrics.go
+index e5c062e..d12ead0 100644
+--- a/etcdserver/api/etcdhttp/metrics.go
++++ b/etcdserver/api/etcdhttp/metrics.go
+@@ -134,7 +134,10 @@ func checkHealth(srv etcdserver.ServerV2, excludedAlarms AlarmSet) Health {
+ 	}
+ 
+ 	if h.Health == "true" {
+-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
++		time_out := time.Second*5
++		plog.Debugf("/health check; QGET timeout: %v", time_out)
++
++		ctx, cancel := context.WithTimeout(context.Background(), time_out)
+ 		_, err := srv.Do(ctx, etcdserverpb.Request{Method: "QGET"})
+ 		cancel()
+ 		if err != nil {
+-- 
+2.25.1
+
