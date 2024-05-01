@@ -1,7 +1,6 @@
-From df691061d979ba6aa921b455f570365417e5700e Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 13:47:47 -0300
-Subject: [PATCH 11/58] phc2sys: extract PMC functionality into a smaller
+Subject: [PATCH 11/59] phc2sys: extract PMC functionality into a smaller
  struct pmc_node
 
 This creates a smaller structure within phc2sys_private, which embeds
@@ -25,7 +24,7 @@ Signed-off-by: Vladimir Oltean <olteanv@gmail.com>
 [commit 1ca1419ad7e6cc04cf893f5a9ca449a90f39f4e0 upstream]
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
- phc2sys.c | 228 ++++++++++++++++++++++++++++++------------------------
+ phc2sys.c | 228 ++++++++++++++++++++++++++++++++++----------------------------
  1 file changed, 125 insertions(+), 103 deletions(-)
 
 diff --git a/phc2sys.c b/phc2sys.c
@@ -636,6 +635,3 @@ index 7959015..86b9822 100644
  	clock_cleanup(&priv);
  	port_cleanup(&priv);
  	config_destroy(cfg);
--- 
-2.30.2
-

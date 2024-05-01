@@ -1,7 +1,6 @@
-From 6323af225d205564a16fefefda9674feaf53ead5 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Fri, 4 Aug 2023 19:01:57 -0300
-Subject: [PATCH 43/58] Commands 'enable source' and 'disable source'.
+Subject: [PATCH 43/59] Commands 'enable source' and 'disable source'.
 
 These commands controls the list of clocks available to clock
 selection algorithm.
@@ -47,7 +46,7 @@ Reviewed-by: Andre Fernando Zanella Kantek
 
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
- phc2sys.c | 146 +++++++++++++++++++++++++++++++++++++++++++++++-------
+ phc2sys.c | 146 ++++++++++++++++++++++++++++++++++++++++++++++++++++++--------
  1 file changed, 127 insertions(+), 19 deletions(-)
 
 diff --git a/phc2sys.c b/phc2sys.c
@@ -283,6 +282,3 @@ index f89dc23..035ee21 100644
  					}
  				}
  			}
--- 
-2.30.2
-

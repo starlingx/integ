@@ -1,7 +1,6 @@
-From 7acbb86b5d95709a6d87b898df5783c25fbb2d26 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:30:57 -0300
-Subject: [PATCH 30/58] pmc_agent: Simplify the method that gets of the number
+Subject: [PATCH 30/59] pmc_agent: Simplify the method that gets of the number
  of local ports.
 
 The number of ports is already available in the cached default data
@@ -101,6 +100,3 @@ index 9d8bd1c..f0e2c7a 100644
  /**
   * Gets the TAI-UTC offset.
   * @param agent  Pointer to a PMC instance obtained via @ref pmc_agent_create().
--- 
-2.30.2
-

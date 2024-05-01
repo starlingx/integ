@@ -1,7 +1,6 @@
-From 6f7e16dac861cb6bc1d2063c3fb47a9e6da4dc75 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:34:19 -0300
-Subject: [PATCH 13/58] phc2sys: break out pmc code into pmc_common.c
+Subject: [PATCH 13/59] phc2sys: break out pmc code into pmc_common.c
 
 The code through which phc2sys sends various PTP management messages to
 ptp4l via pmc can be reused.
@@ -16,9 +15,9 @@ Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
 [commit abc75482332752b630b023178ccdf636f5fe7de7 upstream]
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
- phc2sys.c    | 354 ---------------------------------------------------
- pmc_common.c | 337 ++++++++++++++++++++++++++++++++++++++++++++++++
- pmc_common.h |  35 +++++
+ phc2sys.c    | 354 -----------------------------------------------------------
+ pmc_common.c | 337 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ pmc_common.h |  35 ++++++
  3 files changed, 372 insertions(+), 354 deletions(-)
 
 diff --git a/phc2sys.c b/phc2sys.c
@@ -836,6 +835,3 @@ index 9fa72de..476ccea 100644
 +void *get_mgt_data(struct ptp_message *msg);
 +
  #endif
--- 
-2.30.2
-

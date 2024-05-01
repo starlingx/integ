@@ -1,7 +1,6 @@
-From 844bd2a0cb524079e5878cbdd7b24b1539970aaa Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:57:11 -0300
-Subject: [PATCH 33/58] Implement push notification for TIME_STATUS_NP
+Subject: [PATCH 33/59] Implement push notification for TIME_STATUS_NP
 
 Subscribers to NOTIFY_TIME_SYNC will be notified on every clock
 synchronization.
@@ -183,6 +182,3 @@ index a117904..c5cd992 100644
  		}
  		pmc_send_set_action(pmc, code, &sen, sizeof(sen));
  		break;
--- 
-2.30.2
-

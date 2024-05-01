@@ -1,7 +1,6 @@
-From f6de4c4e2c1ae6d9762778baf18031fc42251657 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:55:29 -0300
-Subject: [PATCH 16/58] pmc_agent: Hide the implementation.
+Subject: [PATCH 16/59] pmc_agent: Hide the implementation.
 
 The PMC agent's implementation should not be exposed to its users.  This
 patch hides the details and provides a method to create an instance.  In
@@ -13,9 +12,9 @@ Signed-off-by: Richard Cochran <richardcochran@gmail.com>
 [commit 826698791769e0ba4431fe98f02d4d09c109542e upstream]
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
- phc2sys.c   | 76 +++++++++++++++++++++++++++++------------------------
- pmc_agent.c | 58 +++++++++++++++++++++++++++++++++++-----
- pmc_agent.h | 62 +++++++++++++++++++++++++++++++------------
+ phc2sys.c   | 76 ++++++++++++++++++++++++++++++++++---------------------------
+ pmc_agent.c | 58 ++++++++++++++++++++++++++++++++++++++++------
+ pmc_agent.h | 62 +++++++++++++++++++++++++++++++++++--------------
  3 files changed, 138 insertions(+), 58 deletions(-)
 
 diff --git a/phc2sys.c b/phc2sys.c
@@ -443,6 +442,3 @@ index 10ef4b5..c0b4525 100644
 +bool pmc_agent_utc_offset_traceable(struct pmc_agent *agent);
 +
 +#endif
--- 
-2.30.2
-

@@ -1,7 +1,6 @@
-From afb5e76b98d7528bb36b860f9f0a6a8f04b094f8 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 23 Aug 2023 19:18:08 -0300
-Subject: [PATCH 49/58] GM clock accuracy and offset scaled log variance
+Subject: [PATCH 49/59] GM clock accuracy and offset scaled log variance
 
 Include GM clock quality parameters clock accuracy and offset
 scaled log variance to the clock selection algorithm. Those
@@ -66,8 +65,8 @@ is accepted.
 
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
- config.c  | 15 +++++------
- phc2sys.c | 75 +++++++++++++++++++++++++++++++++++--------------------
+ config.c  | 15 +++++++------
+ phc2sys.c | 75 ++++++++++++++++++++++++++++++++++++++++-----------------------
  2 files changed, 56 insertions(+), 34 deletions(-)
 
 diff --git a/config.c b/config.c
@@ -258,6 +257,3 @@ index be7b07a..1dd8c0f 100644
  	}
  
  	curlen += snprintf(response + curlen, resplen - curlen,
--- 
-2.30.2
-

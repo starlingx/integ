@@ -1,7 +1,6 @@
-From 4321cff2b53512d4027bc096bdef5df2610b18cf Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:35:23 -0300
-Subject: [PATCH 24/58] pmc_agent: Perform time comparison using positive
+Subject: [PATCH 24/59] pmc_agent: Perform time comparison using positive
  logic.
 
 In the update_pmc_node() method, reduce the expression
@@ -38,6 +37,3 @@ index df3a562..ea6b3b7 100644
  	}
  
  	return 0;
--- 
-2.30.2
-

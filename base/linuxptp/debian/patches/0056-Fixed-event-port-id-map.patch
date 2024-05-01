@@ -1,7 +1,6 @@
-From adfe866226b758f789a3127447d37e19f442311f Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 15 Jan 2024 16:19:59 -0300
-Subject: [PATCH 56/58] Fixed event port id map
+Subject: [PATCH 56/59] Fixed event port id map
 
 Fixed the port id map in the Port Data Set event handling. The port id
 is composed by port number and node index after the HA implementation.
@@ -77,6 +76,3 @@ index 1f6b6c2..d89fb23 100644
  			if (!port)
  				return -1;
  			port->state = normalize_state(state);
--- 
-2.30.2
-

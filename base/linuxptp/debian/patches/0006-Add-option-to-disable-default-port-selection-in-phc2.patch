@@ -1,7 +1,7 @@
-From 901b4f776d7cf483e0f229eb10f78d14b9be5f17 Mon Sep 17 00:00:00 2001
 From: Cole Walker <cole.walker@windriver.com>
 Date: Wed, 23 Jun 2021 11:14:41 -0400
-Subject: [PATCH 06/58] Add option to disable default port selection in phc2sys
+Subject: [PATCH 06/59] Add option to disable default port selection in
+ phc2sys
 
 This change serves to address an issue in phc2sys
 where the local ptp clocks are not synced together properly if the local
@@ -114,6 +114,3 @@ index a36cbe0..44d6872 100644
  
  	if (autocfg) {
  		if (init_pmc(cfg, &priv))
--- 
-2.30.2
-
