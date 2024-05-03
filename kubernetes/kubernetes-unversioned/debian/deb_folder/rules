@@ -6,8 +6,7 @@
 _k8s_name := kubernetes
 _bindir := /usr/bin
 _local_sbindir := /usr/local/sbin
-_curr_stage1 := /usr/local/kubernetes/current/stage1
-_curr_stage2 := /usr/local/kubernetes/current/stage2
+_symlinkdir := /var/lib/kubernetes
 
 DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
 
@@ -22,20 +21,19 @@ override_dh_auto_build:
 	cp -rv init contrib
 
 override_dh_install:
-	# Current staged directories
-	install -v -m 755 -d ${DEBIAN_DESTDIR}${_curr_stage1}
-	install -v -m 755 -d ${DEBIAN_DESTDIR}${_curr_stage2}
+	# location for stage1 and state2 version symlinks
+	install -v -m 755 -d ${DEBIAN_DESTDIR}${_symlinkdir}
 
 	# Symlink targets
 	install -v -m 755 -d ${DEBIAN_DESTDIR}${_bindir}
 	install -v -m 755 -d ${DEBIAN_DESTDIR}/etc/systemd/system/kubelet.service.d
 	install -v -m 755 -d ${DEBIAN_DESTDIR}/usr/share/bash-completion/completions
-	$(call stage_link,${_curr_stage1},${_bindir},kubeadm)
-	$(call stage_link,${_curr_stage2},/etc/systemd/system/kubelet.service.d,kubeadm.conf)
-	$(call stage_link,${_curr_stage2},/usr/share/bash-completion/completions,kubectl)
-	$(call stage_link,${_curr_stage2},${_bindir},kubelet-cgroup-setup.sh)
-	$(call stage_link,${_curr_stage2},${_bindir},kubelet)
-	$(call stage_link,${_curr_stage2},${_bindir},kubectl)
+	$(call stage_link,${_symlinkdir}/stage1,${_bindir},kubeadm)
+	$(call stage_link,${_symlinkdir}/stage2,/etc/systemd/system/kubelet.service.d,kubeadm.conf)
+	$(call stage_link,${_symlinkdir}/stage2,/usr/share/bash-completion/completions,kubectl)
+	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubelet-cgroup-setup.sh)
+	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubelet)
+	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubectl)
 
 	# install environment files
 	install -v -d -m 0755 ${DEBIAN_DESTDIR}/etc/${_k8s_name}
