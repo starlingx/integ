@@ -56,3 +56,4 @@
 0056-Fixed-event-port-id-map.patch
 0057-Fix-uninitialized-variable-in-nmea_scan_rmc.patch
 0058-ts2phc-skip-updates-after-offset-spike.patch
+0059-clock-Downgrade-log-message-about-failed-uds-forward.patch

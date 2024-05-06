@@ -1,7 +1,6 @@
-From 8dd4e2b6c8b99952296319a0e0c0e0f3e6160e32 Mon Sep 17 00:00:00 2001
 From: cwalker <cole.walker@windriver.com>
 Date: Fri, 1 Mar 2024 17:50:29 +0000
-Subject: [PATCH 57/58] Fix uninitialized variable in nmea_scan_rmc
+Subject: [PATCH 57/59] Fix uninitialized variable in nmea_scan_rmc
 
 Initialize the tm_isdst variable to ensure that mktime does not fail on
 recent versions of glibc.
@@ -19,7 +18,7 @@ Signed-off-by: cwalker <cole.walker@windriver.com>
  1 file changed, 1 insertion(+)
 
 diff --git a/nmea.c b/nmea.c
-index dc865d0..d86d81c 100644
+index dc865d0..44c7c01 100644
 --- a/nmea.c
 +++ b/nmea.c
 @@ -157,6 +157,7 @@ static int nmea_scan_rmc(struct nmea_parser *np, struct nmea_rmc *result)
@@ -30,6 +29,3 @@ index dc865d0..d86d81c 100644
  	result->ts.tv_sec = mktime(&tm);
  	result->ts.tv_nsec = msec * 1000000UL;
  	result->fix_valid = status == 'A' ? true : false;
--- 
-2.30.2
-

@@ -1,7 +1,6 @@
-From 2a1a37e5617f9db8b7da67b87544afee2096cf69 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 18:16:31 -0300
-Subject: [PATCH 34/58] clock: Rename UDS variables to read-write.
+Subject: [PATCH 34/59] clock: Rename UDS variables to read-write.
 
 In preparation for a new read-only UDS port, rename variables of the
 current UDS port to make it clear it is read-write, as opposed to
@@ -209,6 +208,3 @@ index f048771..d653c33 100644
  			if (EV_STATE_DECISION_EVENT == event) {
  				c->sde = 1;
  			}
--- 
-2.30.2
-

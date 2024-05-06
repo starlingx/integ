@@ -1,7 +1,6 @@
-From b469ea325783cfe906bd7e28e63a7eb26b4cad96 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:23:29 -0300
-Subject: [PATCH 28/58] pmc_agent: Convert the method that queries the port
+Subject: [PATCH 28/59] pmc_agent: Convert the method that queries the port
  properties.
 
 Prefix the function with the module name and correct the return code
@@ -16,9 +15,9 @@ Signed-off-by: Richard Cochran <richardcochran@gmail.com>
 [commit ac7d69bbc476b94d76e5cee4992b9682f003feaf upstream]
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
- phc2sys.c   | 41 +++++++++++++++--------------
- pmc_agent.c | 74 ++++++++++++++++++++++++++---------------------------
- pmc_agent.h | 22 +++++++++++++---
+ phc2sys.c   | 41 ++++++++++++++++++----------------
+ pmc_agent.c | 74 ++++++++++++++++++++++++++++++-------------------------------
+ pmc_agent.h | 22 +++++++++++++++---
  3 files changed, 78 insertions(+), 59 deletions(-)
 
 diff --git a/phc2sys.c b/phc2sys.c
@@ -239,6 +238,3 @@ index 44326d2..ea37bf9 100644
  /**
   * Queries the TAI-UTC offset and the current leap adjustment from the
   * ptp4l service.
--- 
-2.30.2
-

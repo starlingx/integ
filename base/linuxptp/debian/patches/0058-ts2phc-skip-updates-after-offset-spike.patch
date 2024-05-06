@@ -1,7 +1,6 @@
-From 0cb3bd52e6dd3680aa900045d3c837d1098d8da8 Mon Sep 17 00:00:00 2001
 From: cwalker <cole.walker@windriver.com>
 Date: Tue, 20 Feb 2024 17:25:17 +0000
-Subject: [PATCH 58/58] Implement logic to skip updates with offset spike.
+Subject: [PATCH 58/59] Implement logic to skip updates with offset spike.
 
 This change allows ts2phc to be configured to ignore timing updates that
 have a large offset spike in order to mitigate the resulting timing
@@ -29,8 +28,9 @@ Signed-off-by: cwalker <cole.walker@windriver.com>
  ts2phc.c       |  3 +++
  ts2phc_slave.c | 26 ++++++++++++++++++++++++--
  3 files changed, 28 insertions(+), 2 deletions(-)
+
 diff --git a/config.c b/config.c
-index ef17463..b53d8f4 100644
+index ef17463..249c9ca 100644
 --- a/config.c
 +++ b/config.c
 @@ -347,6 +347,7 @@ struct config_item config_tab[] = {
@@ -42,7 +42,7 @@ index ef17463..b53d8f4 100644
  
  static struct unicast_master_table *current_uc_mtab;
 diff --git a/ts2phc.c b/ts2phc.c
-index 2342858..a59dc5f 100644
+index 2342858..5687c9b 100644
 --- a/ts2phc.c
 +++ b/ts2phc.c
 @@ -15,6 +15,8 @@
@@ -63,7 +63,7 @@ index 2342858..a59dc5f 100644
  	STAILQ_FOREACH(iface, &cfg->interfaces, list) {
  		if (1 == config_get_int(cfg, interface_name(iface), "ts2phc.master")) {
 diff --git a/ts2phc_slave.c b/ts2phc_slave.c
-index 749efe5..126c502 100644
+index 749efe5..ab3f13b 100644
 --- a/ts2phc_slave.c
 +++ b/ts2phc_slave.c
 @@ -29,6 +29,8 @@
@@ -136,5 +136,3 @@ index 749efe5..126c502 100644
  
  	return EXTTS_OK;
  }
--- 
-2.30.2

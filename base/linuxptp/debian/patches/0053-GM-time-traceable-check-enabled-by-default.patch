@@ -1,7 +1,6 @@
-From 76f07fac7536b525b74858dacc3e37f28583c703 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Thu, 31 Aug 2023 12:36:02 -0300
-Subject: [PATCH 53/58] GM time traceable check enabled by default
+Subject: [PATCH 53/59] GM time traceable check enabled by default
 
 Now the GM time traceable check is enabled by default as it is an
 important check for both T-GM and T-BC scenarios.
@@ -35,6 +34,3 @@ index d405589..ef17463 100644
  	GLOB_ITEM_INT("ha_max_gm_clockAccuracy", 0xfe, 0, 0xff),
  	GLOB_ITEM_INT("ha_max_gm_clockClass", 6, 6, 255),
  	GLOB_ITEM_INT("ha_max_gm_offsetScaledLogVar", 0xffff, 0, 0xffff),
--- 
-2.30.2
-

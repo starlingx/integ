@@ -1,7 +1,6 @@
-From 4f37561dad0e8b163691f68cfd101e798d39248a Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:20:04 -0300
-Subject: [PATCH 27/58] pmc_agent: Convert the method that queries TAI-UTC
+Subject: [PATCH 27/59] pmc_agent: Convert the method that queries TAI-UTC
  offset into the canonical form.
 
 This patch renames the function to have the module prefix and corrects the
@@ -17,9 +16,9 @@ Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
 [commit 943c8f51c56acb72277d1a9459bbf7b7a5ac5fe7 upstream]
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
- phc2sys.c   |  8 +++----
- pmc_agent.c | 63 +++++++++++++++++++++++++++--------------------------
- pmc_agent.h | 16 ++++++++++++--
+ phc2sys.c   |  8 ++++----
+ pmc_agent.c | 63 +++++++++++++++++++++++++++++++------------------------------
+ pmc_agent.h | 16 ++++++++++++++--
  3 files changed, 50 insertions(+), 37 deletions(-)
 
 diff --git a/phc2sys.c b/phc2sys.c
@@ -177,6 +176,3 @@ index 0ed10f8..44326d2 100644
  /**
   * Sets the TAI-UTC offset.
   * @param agent  Pointer to a PMC instance obtained via @ref pmc_agent_create().
--- 
-2.30.2
-

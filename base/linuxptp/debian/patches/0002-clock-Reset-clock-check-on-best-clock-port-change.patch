@@ -1,7 +1,6 @@
-From cef81731404b339517e277bab9c0285ee239f065 Mon Sep 17 00:00:00 2001
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:53 +0200
-Subject: [PATCH 02/58] clock: Reset clock check on best clock/port change.
+Subject: [PATCH 02/59] clock: Reset clock check on best clock/port change.
 
 Reset the clock check when the best clock or port changes, together with
 the other state like current estimated delay and frequency. This avoids
@@ -71,6 +70,3 @@ index 78aca48..1ff86eb 100644
  /**
   * Perform the sanity check on a time stamp.
   * @param cc Pointer to a clock check obtained via @ref clockcheck_create().
--- 
-2.30.2
-

@@ -1,7 +1,6 @@
-From e269f17d01c324e70fb3ef8b8e88c0e57ac78eb1 Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 26 Jul 2023 15:08:15 -0300
-Subject: [PATCH 40/58] Forced lock a clock source in configuration
+Subject: [PATCH 40/59] Forced lock a clock source in configuration
 
 To help on maintenance and debuging tasks was implemented a configuration
 to forced lock to a single clock. It disables the automatic clock
@@ -32,7 +31,7 @@ Reviewed-by: Andre Fernando Zanella Kantek <andrefernandozanella.kantek@windrive
 Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
  config.c  |   2 +-
- phc2sys.c | 105 ++++++++++++++++++++++++++++++++++++++----------------
+ phc2sys.c | 105 +++++++++++++++++++++++++++++++++++++++++++-------------------
  2 files changed, 75 insertions(+), 32 deletions(-)
 
 diff --git a/config.c b/config.c
@@ -251,6 +250,3 @@ index 152e783..0b3f724 100644
  		}
  	}
  
--- 
-2.30.2
-

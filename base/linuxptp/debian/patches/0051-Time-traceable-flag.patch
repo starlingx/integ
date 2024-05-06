@@ -1,7 +1,6 @@
-From 9ecbddcccbeadabb8cef295dd540dadc26f03d5b Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 30 Aug 2023 13:28:34 -0300
-Subject: [PATCH 51/58] Time traceable flag
+Subject: [PATCH 51/59] Time traceable flag
 
 A new time traceable flag was added to pmc agent to store the current
 time traceable status.
@@ -105,6 +104,3 @@ index 38951b1..4e70606 100644
  	int freq_traceable;
  	bool new_tpds;
  	unsigned int index;
--- 
-2.30.2
-
