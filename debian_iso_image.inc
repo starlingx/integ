@@ -352,9 +352,6 @@ puppet-module-puppetlabs-postgresql
 #puppetlabs-stdlib-5.0.0
 puppet-module-puppetlabs-stdlib
 
-#puppet-module-uol-host6
-puppet-module-uol-host6
-
 #puppet-zitrlp-strongswan
 puppet-zitrlp-strongswan
 
