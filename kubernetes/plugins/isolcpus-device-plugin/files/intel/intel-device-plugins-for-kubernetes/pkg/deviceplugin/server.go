@@ -211,6 +211,13 @@ func (srv *server) setupAndServe(namespace string, devicePluginPath string, kube
 		pluginEndpoint := pluginPrefix + ".sock"
 		pluginSocket := path.Join(devicePluginPath, pluginEndpoint)
 
+		// Wait for the kubelet RPC server to start
+		if err := waitForServer(kubeletSocket, 60*time.Second); err != nil {
+			return errors.Wrap(err, "Kubelet socket connection test failed")
+		}
+
+		fmt.Println("Connection test successful with the kubelet socket at", kubeletSocket)
+
 		if err := waitForServer(pluginSocket, time.Second); err == nil {
 			return errors.Errorf("Socket %s is already in use", pluginSocket)
 		}
