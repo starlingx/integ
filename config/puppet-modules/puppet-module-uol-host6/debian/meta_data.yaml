@@ -1,9 +1,0 @@
----
-debname: puppet-module-uol-host6
-debver: 0.0.1
-dl_path:
-  name: uol-host6-0.0.1.tar.gz
-  url: https://forge.puppet.com/v3/files/uol-host6-0.0.1.tar.gz
-  sha256sum: 3a36850a1d63c6d18ced763c839b94ce25e277d5fef1fdad35d01a4895a8ee26
-revision:
-  dist: $STX_DIST
