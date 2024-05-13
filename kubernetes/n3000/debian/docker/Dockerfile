@@ -10,4 +10,4 @@ RUN yum install -y \
     yum install -y python-pip && \
     yum clean all && \
     rm -rf /var/cache/yum
-RUN pip install intelhex
+RUN pip install --trusted-host pypi.python.org intelhex
