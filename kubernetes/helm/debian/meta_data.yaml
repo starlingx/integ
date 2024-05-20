@@ -1,12 +1,12 @@
 ---
 debname: helm
-debver: 3.12.2-1
+debver: 3.14.4-1
 src_path: files
 dl_files:
-  helm-v3.12.2-linux-amd64.tar.gz:
+  helm-v3.14.4-linux-amd64.tar.gz:
     topdir: linux-amd64
-    url: https://get.helm.sh/helm-v3.12.2-linux-amd64.tar.gz
-    sha256sum: 2b6efaa009891d3703869f4be80ab86faa33fa83d9d5ff2f6492a8aebe97b219
+    url: https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
+    sha256sum: a5844ef2c38ef6ddf3b5a8f7d91e7e0e8ebc39a38bb3fc8013d629c1ef29c259
   helm-mapkubeapis_0.4.1_linux_amd64.tar.gz:
     topdir: mapkubeapis
     url: https://github.com/helm/helm-mapkubeapis/releases/download/v0.4.1/helm-mapkubeapis_0.4.1_linux_amd64.tar.gz

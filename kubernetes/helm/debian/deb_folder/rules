@@ -6,7 +6,7 @@ export ROOT = debian/tmp
 export SBINDIR = $(ROOT)/usr/sbin
 export SUDOERDIR = $(ROOT)/etc/sudoers.d
 
-export HELM_VERSION = 3.12.2
+export HELM_VERSION = 3.14.4
 export HELM_EXECUTABLE = linux-amd64/helm
 export HELM_PKG = helm-v$(HELM_VERSION)-linux-amd64.tar.gz
 
