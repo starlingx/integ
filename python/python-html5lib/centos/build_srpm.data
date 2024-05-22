@@ -1,3 +1,0 @@
-COPY_LIST="$STX_BASE/downloads/html5lib-python-1.0.1.tar.gz"
-
-TIS_PATCH_VER=PKG_GITREVCOUNT

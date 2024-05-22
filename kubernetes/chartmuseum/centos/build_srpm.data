@@ -1,6 +1,0 @@
-VERSION=0.12.0
-TAR_NAME=chartmuseum
-TAR="$TAR_NAME-$VERSION.tar.gz"
-COPY_LIST="${CGCS_BASE}/downloads/$TAR $STX_BASE/downloads/chartmuseum-v0.12.0-amd64"
-
-TIS_PATCH_VER=PKG_GITREVCOUNT

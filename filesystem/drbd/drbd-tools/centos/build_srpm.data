@@ -1,4 +1,0 @@
-COPY_LIST="$FILES_BASE/* \
-           $DISTRO/patches/* \
-           $CGCS_BASE/downloads/drbd-utils-9.15.1.tar.gz"
-TIS_PATCH_VER=PKG_GITREVCOUNT

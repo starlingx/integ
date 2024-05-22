@@ -1,9 +1,0 @@
-VERSION=3.2.1
-TAR_NAME=helm
-TAR="$TAR_NAME-v$VERSION-linux-amd64.tar.gz"
-HELM2TO3_TAR="helm-2to3-0.10.0.tar.gz"
-HELMMAPKUBEAPIS_TAR="helm-mapkubeapis_0.3.0.tar.gz"
-COPY_LIST="${CGCS_BASE}/downloads/$TAR $FILES_BASE/* ${CGCS_BASE}/downloads/${HELM2TO3_TAR} ${CGCS_BASE}/downloads/${HELMMAPKUBEAPIS_TAR}"
-
-TIS_PATCH_VER=PKG_GITREVCOUNT
-
