@@ -20,8 +20,8 @@ index 4cde4d7..452ed0c 100755
 +_BADPASSWDMESSAGE=$(cat << EOF
 +BAD PASSWORD!
 +Password must comply with the following rules:
-+* The password must be at least 7 characters long
-+* You cannot reuse the last password in history
++* The password must be at least 12 characters long
++* You cannot reuse the last 5 passwords in history
 +* Every password must differ from its previous one by at least 3 characters
 +* The password must contain:
 +  - at least 1 lower-case character
