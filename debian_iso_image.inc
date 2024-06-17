@@ -432,3 +432,5 @@ trident-installer
 
 #watchdog
 watchdog
+
+ca-certificates
