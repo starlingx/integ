@@ -11,3 +11,4 @@
 0011-Fix-DRBD-cephmon-resize.patch
 0012-Convert-strings-to-Numeric-type-to-avoid-warnings.patch
 0013-Ensure-drbd-becomes-primary.patch
+0014-Add-hmac-parameter.patch
