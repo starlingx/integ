@@ -526,6 +526,8 @@ status ()
 }
 
 
+start=$(date +%s%N)
+log INFO "action:${args[0]}:start-at:${start: 0:-6} ms"
 case "${args[0]}" in
     start)
         start ${args[1]}
@@ -544,5 +546,9 @@ case "${args[0]}" in
         exit 1
         ;;
 esac
+end=$(date +%s%N)
+log INFO "action:${args[0]}:end-at:${end: 0:-6} ms"
+diff=$((end-start))
+log INFO "action:${args[0]}:took:${diff: 0:-6} ms"
 
 exit $RC
