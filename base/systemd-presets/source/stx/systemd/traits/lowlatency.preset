@@ -140,3 +140,6 @@ enable ipsec-server.service
 # worker-utils.spec
 enable affine-platform.sh.service
 enable affine-tasks.service
+
+# usm initialize service
+disable usm-initialize.service

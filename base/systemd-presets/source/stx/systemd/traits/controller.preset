@@ -149,3 +149,6 @@ disable worker-config-gate.service
 disable storageconfig.service
 disable workerconfig.service
 disable kvm_timer_advance_setup.service
+
+# usm initialize service
+disable usm-initialize.service
