@@ -14,17 +14,6 @@ if [ -z "${IMAGE_TAG}" ]; then
     exit 1
 fi
 
-# https://bugs.launchpad.net/starlingx/+bug/1927153
-# https://bugs.launchpad.net/starlingx/+bug/1939448
-# pin clearlinux/golang to the last known working tag
-CLEAR_LINUX_BASE=clearlinux/golang:1.15.10
-CLEAR_LINUX_VERSION=34900
-
-sed -i -r \
-    -e 's!^(\s*ARG\s+CLEAR_LINUX_BASE\s*=\s*).*!\1'$CLEAR_LINUX_BASE'!' \
-    -e 's!^(\s*ARG\s+CLEAR_LINUX_VERSION\s*=\s*).*!\1--version='$CLEAR_LINUX_VERSION'!' \
-    build/docker/${DEVICE}.Dockerfile || exit 1
-
 make ${DEVICE}
 
 if [ $? -ne 0 ]; then
