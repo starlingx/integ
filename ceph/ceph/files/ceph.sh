@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2023 Wind River Systems, Inc.
+# Copyright (c) 2023-2024 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -37,19 +37,42 @@ start ()
 
 stop ()
 {
-    if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" == "simplex" ]]; then
+    if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" == "simplex" ]; then
+        # AIO-SX
         logecho "Ceph services will continue to run on node"
-        exit 0
+        RC=0
+    elif [ "$system_type" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; then
+        # AIO-DX and AIO-DX+
+        # Will stop OSDs and MDS processes only.
+        # mon.controller will be already stopped on standby controllers.
+        # mon.${hostname} must be running.
+        logecho "Ceph services will be stopped, except local ceph monitor"
+
+        if [ -f ${CEPH_FILE} ]; then
+            rm -f ${CEPH_FILE}
+        fi
+
+        ${INITDIR}/ceph-init-wrapper stop osd >> ${LOGFILE} 2>&1
+        local rc_osd=$?
+        logecho "rc_osd=${rc_osd}"
+
+        ${INITDIR}/ceph-init-wrapper stop mds >> ${LOGFILE} 2>&1
+        local rc_mds=$?
+        logecho "rc_mds=${rc_mds}"
+
+        RC=0
+        [ ${rc_osd} -ne 0 ] || [ ${rc_mds} -ne 0 ] && RC=1
+    else
+        # Standard and Standard Dedicated Storage
+        logecho "Stopping ceph services..."
+
+        if [ -f ${CEPH_FILE} ]; then
+            rm -f ${CEPH_FILE}
+        fi
+
+        ${INITDIR}/ceph-init-wrapper stop >> ${LOGFILE} 2>&1
+        RC=$?
     fi
-
-    logecho "Stopping ceph services..."
-
-    if [ -f ${CEPH_FILE} ]; then
-        rm -f ${CEPH_FILE}
-    fi
-
-    ${INITDIR}/ceph-init-wrapper stop >> ${LOGFILE} 2>&1
-    RC=$?
 }
 
 # If system is an AIO the mtcClient will run this script twice
