@@ -293,6 +293,115 @@ run_state_machine() {
     fi
 }
 
+load_ceph_mgr_restful_key() {
+    [ ! -z "${MGR_RESTFUL_KEY}" ] && return 0
+
+    MGR_RESTFUL_KEY=$(cat "${DATA_PATH}/.ceph_mgr_restful_key")
+    [ -z "${MGR_RESTFUL_KEY}" ] && renew_ceph_mgr_restful_key
+    [ -z "${MGR_RESTFUL_KEY}" ] && return 1
+    return 0
+}
+
+renew_ceph_mgr_restful_key() {
+    local ceph_cmd="ceph restful list-keys"
+    execute_ceph_cmd MGR_RESTFUL_KEY "" "$ceph_cmd"
+    [ $? -ne 0 ] && return 1
+
+    MGR_RESTFUL_KEY=$(echo -e "${MGR_RESTFUL_KEY}" | awk '/admin/ { gsub("\"", "", $2); print $2 }')
+
+    if [ ! -z "${MGR_RESTFUL_KEY}" ]; then
+        echo ${MGR_RESTFUL_KEY} > ${DATA_PATH}/.ceph_mgr_restful_key
+        return 0
+    fi
+    return 1
+}
+
+load_ceph_mgr_restful_service() {
+    [ ! -z "${MGR_RESTFUL_SERVICE}" ] && return 0
+
+    MGR_RESTFUL_SERVICE=$(cat "${DATA_PATH}/.ceph_mgr_restful_service")
+    [ -z "${MGR_RESTFUL_SERVICE}" ] && renew_ceph_mgr_restful_service
+    [ -z "${MGR_RESTFUL_SERVICE}" ] && return 1
+    return 0
+}
+
+renew_ceph_mgr_restful_service() {
+    local ceph_cmd="ceph mgr services"
+    execute_ceph_cmd MGR_RESTFUL_SERVICE "" "$ceph_cmd"
+    [ $? -ne 0 ] && return 1
+
+    MGR_RESTFUL_SERVICE=$(echo -e "${MGR_RESTFUL_SERVICE}" | awk '/restful/ {gsub ("\"", "", $2); split($2, str, "/"); print str[3]}')
+
+    if [ ! -z "${MGR_RESTFUL_SERVICE}" ]; then
+        echo ${MGR_RESTFUL_SERVICE} > ${DATA_PATH}/.ceph_mgr_restful_service
+        return 0
+    fi
+    return 1
+}
+
+get_ceph_health_detail() {
+    if [ -z "${CEPH_HEALTH_DETAIL}" ]; then
+      process_curl_output CEPH_HEALTH_DETAIL '{"format": "text", "prefix": "health", "detail": "detail"}' "ceph health detail"
+      if [ $? -ne 0 ]; then return 1; fi
+    fi
+    return 0
+}
+
+get_ceph_osd_tree() {
+    if [ -z "${CEPH_OSD_TREE}" ]; then
+        process_curl_output CEPH_OSD_TREE '{"format": "text", "prefix": "osd tree"}' "ceph osd tree"
+        if [ $? -ne 0 ]; then return 1; fi
+    fi
+    return 0
+}
+
+get_ceph_status() {
+    if [ -z "${CEPH_STATUS}" ]; then
+        process_curl_output CEPH_STATUS '{"format": "text", "prefix": "status"}' "ceph status"
+        if [ $? -ne 0 ]; then return 1; fi
+    fi
+    return 0
+}
+
+process_curl_output() {
+  local curl_cmd="$2"
+  local ceph_cmd="$3"
+  local output=""
+  local curl_max_time_sec=5
+  local curl_output=""
+
+  load_ceph_mgr_restful_service
+  load_ceph_mgr_restful_key
+
+  curl_output=$(curl --max-time ${curl_max_time_sec} -k https://admin:${MGR_RESTFUL_KEY}@${MGR_RESTFUL_SERVICE}/request?wait=1 -X POST -H 'Content-Type: application/json' -d "${curl_cmd}" 2>/dev/null)
+  local error_code=$?
+
+  if [ ${error_code} -eq 0 ]; then
+    output=$(echo "${curl_output}" | awk '/"outb"|"message"/ {if (match($0, "Incorrect password")) {print "Wrong password"}; if (match($0, "outb")) {split($0, msg, "\""); gsub(/\\n/, "\n", msg[4]); print msg[4]} }')
+  else
+    output="No connection"
+  fi
+
+  if [ "${output}" == "Wrong password" ]; then
+    log "restful" "WARN" "Ceph restful api command failed: Wrong password"
+    renew_ceph_mgr_restful_key
+
+    log "restful" "WARN" "Ceph restful api command failed: Fallback to Ceph CLI"
+    execute_ceph_cmd output "" "${ceph_cmd}"
+    [ $? -ne 0 ] && return 1
+  elif [ "${output}" == "No connection" ]; then
+    log "restful" "WARN" "Ceph restful api command failed: No connection"
+    renew_ceph_mgr_restful_service
+
+    log "restful" "WARN" "Ceph restful api command failed: Fallback to Ceph CLI"
+    execute_ceph_cmd output "" "${ceph_cmd}"
+    [ $? -ne 0 ] && return 1
+  fi
+
+  eval $1=\""${output}"\"
+  return 0
+}
+
 CEPH_OSD_TREE=""
 CEPH_HEALTH_DETAIL=""
 is_process_hung() {
@@ -312,12 +421,10 @@ is_process_hung() {
     fi
 
     # Cache Ceph Health for later use as calling Ceph takes time
-    if [ -z "$CEPH_HEALTH_DETAIL" ]; then
-        execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
-        if [ $? -ne 0 ]; then
-            log $name "WARN" "Aborting hang check"
-            return 1
-        fi
+    get_ceph_health_detail
+    if [ $? -ne 0 ]; then
+        log $name "WARN" "Aborting hang check"
+        return 1
     fi
 
     # Check if an OSD is hung
@@ -332,12 +439,10 @@ is_process_hung() {
 
         # Multiple OSD processes may be running, so we only run
         # 'ceph osd tree' once as it takes some time to execute
-        if [ -z "$CEPH_OSD_TREE" ]; then
-            execute_ceph_cmd CEPH_OSD_TREE $name "ceph osd tree"
-            if [ $? -ne 0 ]; then
-                log $name "WARN" "Ceph cmd exec failed, aborting hang check"
-                return 1
-            fi
+        get_ceph_osd_tree
+        if [ $? -ne 0 ]; then
+            log $name "WARN" "Ceph cmd exec failed, aborting hang check"
+            return 1
         fi
 
         # Get osd status as 'up' or, for any other output, as 'down'
@@ -395,12 +500,10 @@ osd_has_blocked_ops() {
     # Cache Ceph Health for later use as calling Ceph takes time This is
     # initially cached from the hang check but check and call again here if
     # needed
-    if [ -z "$CEPH_HEALTH_DETAIL" ]; then
-        execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
-        if [ $? -ne 0 ]; then
-            log $name "WARN" "Aborting blocked ops check"
-            return 1
-        fi
+    get_ceph_health_detail
+    if [ $? -ne 0 ]; then
+        log $name "WARN" "Aborting blocked ops check"
+        return 1
     fi
 
     # Ignore health check if OSDs are administratively down
@@ -414,12 +517,10 @@ osd_has_blocked_ops() {
     # Multiple OSD processes may be running, so we only run 'ceph osd tree' once
     # as it takes some time to execute. This is initially cached from the hang
     # check but check and call again here if needed
-    if [ -z "$CEPH_OSD_TREE" ]; then
-        execute_ceph_cmd CEPH_OSD_TREE $name "ceph osd tree"
-        if [ $? -ne 0 ]; then
-            log $name "WARN" "Ceph cmd exec failed, aborting blocked ops check"
-            return 1
-        fi
+    get_ceph_osd_tree
+    if [ $? -ne 0 ]; then
+        log $name "WARN" "Ceph cmd exec failed, aborting blocked ops check"
+        return 1
     fi
 
     # Get osd status as 'up' or, for any other output, as 'down'
@@ -450,12 +551,10 @@ osd_has_stuck_peering() {
     # Cache Ceph Health for later use as calling Ceph takes time This is
     # initially cached from the hang check but check and call again here if
     # needed
-    if [ -z "$CEPH_HEALTH_DETAIL" ]; then
-        execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
-        if [ $? -ne 0 ]; then
-            log $name "WARN" "Aborting stuck peering check"
-            return 1
-        fi
+    get_ceph_health_detail
+    if [ $? -ne 0 ]; then
+        log $name "WARN" "Aborting stuck peering check"
+        return 1
     fi
 
     # Ignore health check if OSDs are administratively up
@@ -470,7 +569,7 @@ osd_has_stuck_peering() {
     file="${DATA_PATH}/.${name}_stuck_peering_start"
     max_blocked_time=0
 
-    $(echo "$CEPH_HEALTH_DETAIL" | grep "stuck peering" | awk '{split($0,a,"acting"); print a[2]}' | grep -q $id)
+    $(echo "$CEPH_HEALTH_DETAIL" | awk '/stuck peering/ {split($0,a,"acting"); print a[2]}' | grep -q $id)
     if [ "$?" -eq 0 ]; then
         while read -r line; do
             $(echo $line | awk '{split($0,a,"acting"); print a[2]}' | grep -q $id)
@@ -599,7 +698,7 @@ stop_daemon() {
     timeout=$6
     [ -z "$action" ] && action="Stopping"
     printf "$action Ceph $name on $host..."
-    do_cmd "if [ -e $pidfile ] ; then 
+    do_cmd "if [ -e $pidfile ] ; then
     pid=\`cat $pidfile\`
     timeout=$timeout
     while ps -p \$pid -o args= | grep -q $daemon; do
@@ -762,8 +861,7 @@ if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; th
             has_mon=1
         else
             has_mon=0
-            CEPH_STATUS=''
-            execute_ceph_cmd CEPH_STATUS "ceph status" "ceph -s"
+            get_ceph_status
             if [ $? -eq 0 ]; then
                 has_mon=1
             fi
@@ -792,8 +890,7 @@ fi
 # This is needed only for Standard deployments
 
 if [ "$system_type" == "Standard" ]; then
-    CEPH_STATUS=''
-    execute_ceph_cmd CEPH_STATUS "ceph status" "ceph -s"
+    get_ceph_status
     if [ "$?" -ne 0 ]; then
         what_out=
         for name in $what; do
@@ -1083,8 +1180,7 @@ EOF
 	    [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
 	    # flush journal to data disk in background
 	    if [ "${type}" = "osd" ];then
-                CMD_OUTPUT=''
-                execute_ceph_cmd CMD_OUTPUT "Ceph Status" "ceph -s"
+                get_ceph_status
                 if [ $? == 0 ]; then
                     log "${name}" "INFO" "Flushing journal"
                     $(/usr/bin/ceph-osd -i $id --flush-journal) &
@@ -1192,10 +1288,10 @@ EOF
 
 	    # first try to gracefully close process, this should be fast if
 	    # its threads still respond to the TERM signal
-	    wlog $name "DEBUG" ">>> Sending term signal"
+	    log $name "DEBUG" ">>> Sending term signal"
 	    stop_daemon $name ceph-$type $pid_file -SIGTERM "" 5
-	    wlog $name "DEBUG" ">>> Sending kill signal"
 	    # then just kill it
+	    log $name "DEBUG" ">>> Sending kill signal"
 	    stop_daemon $name ceph-$type $pid_file -SIGKILL
 
 	    [ -n "$pidfile" ] && rm -f $pidfile
