@@ -165,6 +165,7 @@
 - job:
     name: stx-integ-pylint
     parent: tox
+    nodeset: debian-bullseye
     required-projects:
       - starlingx/config
     vars:
