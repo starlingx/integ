@@ -1,7 +1,7 @@
 ---
 debname: setuptools
-debver: 52.0.0-4
-archive: https://snapshot.debian.org/archive/debian/20210629T151153Z/pool/main/s/setuptools/
+debver: 52.0.0-4+deb11u1
+archive: https://snapshot.debian.org/archive/debian-security/20240904T224638Z/pool/updates/main/s/setuptools/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
