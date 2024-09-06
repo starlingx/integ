@@ -2,3 +2,4 @@
 0002-ignore-IFACE-all-for-ifupdown-scripts.patch
 0003-Handle-default-route-creation.patch
 0004-Fix-DAD-and-gateway-detection-improve-logs.patch
+0005-Correct-support-for-gateway-checking-in-dual-stack.patch
