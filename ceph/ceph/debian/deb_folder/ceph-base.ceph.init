@@ -290,29 +290,6 @@ run_state_machine() {
     fi
 }
 
-CEPH_FAILURE=""
-execute_ceph_cmd() {
-    # execute a comand and in case it timeouts mark ceph as failed
-    local name=$1
-    local cmd=$2
-    local cmd="timeout $WAIT_FOR_CMD $cmd"
-    set -o pipefail
-    eval "$cmd >$DATA_PATH/.ceph_cmd_out"
-    errcode=$?
-    set +o pipefail
-    if [ -z "$output" ] && [ $errcode -eq 124 ]; then  # 'timeout' returns 124 when timing out
-        log $name "WARN" "Ceph cluster failed to respond in ${WAIT_FOR_CMD}s when running: $cmd"
-        CEPH_FAILURE="true"
-        echo ""; return 1
-    fi
-    output=$(cat $DATA_PATH/.ceph_cmd_out)
-    if [ -z "$output" ] || [ $errcode -ne 0 ]; then
-        log $name "WARN" "Error executing: $cmd errorcode: $errcode output: $output"
-        echo ""; return 1
-    fi
-    echo "$output"; return $errcode
-}
-
 CEPH_OSD_TREE=""
 CEPH_HEALTH_DETAIL=""
 is_process_hung() {
@@ -322,7 +299,7 @@ is_process_hung() {
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
         log $name "WARN" "Ceph cluster is marked as failed, aborting hang check"
-        echo "false"; return
+        return 1
     fi
 
     # Cache Ceph Health for later use as calling Ceph takes time
@@ -330,7 +307,7 @@ is_process_hung() {
         execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
         if [ $? -ne 0 ]; then
             log $name "WARN" "Aborting hang check"
-            echo "false"; return
+            return 1
         fi
     fi
 
@@ -341,7 +318,7 @@ is_process_hung() {
         $(echo "$CEPH_HEALTH_DETAIL" | grep -q "noup.*set")
         if [ $? -eq 0 ]; then
            log $name "WARN" "Ceph 'noup' flag is set, aborting hang check"
-           echo "false"; return
+           return 1
         fi
 
         # Multiple OSD processes may be running, so we only run
@@ -350,7 +327,7 @@ is_process_hung() {
             execute_ceph_cmd CEPH_OSD_TREE $name "ceph osd tree"
             if [ $? -ne 0 ]; then
                 log $name "WARN" "Ceph cmd exec failed, aborting hang check"
-                echo "false"; return
+                return 1
             fi
         fi
 
@@ -365,9 +342,9 @@ is_process_hung() {
         local state=$(run_state_machine $name $type $osd_status \
                       $WAIT_FOR_OSD_OPERATIONAL $WAIT_FOR_OSD_DOWN_CONFIRM)
         if [ "$state" = "$ST_HANGED" ]; then
-            echo "true"; return
+            return 0
         else
-            echo "false"; return
+            return 1
         fi
 
 
@@ -383,18 +360,18 @@ is_process_hung() {
         local state=$(run_state_machine $name $type $mon_status \
                       $WAIT_FOR_MON_OPERATIONAL $WAIT_FOR_MON_DOWN_CONFIRM)
         if [ "$state" = "$ST_HANGED" ]; then
-            echo "true"; return
+            return 0
         else
-            echo "false"; return
+            return 1
         fi
 
     elif [ "$type" = "mds" ]; then
-        echo "false"; return
+        return 1
 
     else
         log $name "WARN" "Unknown process type: $type"
     fi
-    echo "false"
+    return 1
 }
 
 osd_has_blocked_ops() {
@@ -403,7 +380,7 @@ osd_has_blocked_ops() {
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
         log $name "WARN" "Ceph cluster is marked as failed, aborting blocked ops check"
-        echo "false"; return
+        return 1
     fi
 
     # Cache Ceph Health for later use as calling Ceph takes time This is
@@ -413,7 +390,7 @@ osd_has_blocked_ops() {
         execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
         if [ $? -ne 0 ]; then
             log $name "WARN" "Aborting blocked ops check"
-            echo "false"; return
+            return 1
         fi
     fi
 
@@ -422,7 +399,7 @@ osd_has_blocked_ops() {
     $(echo "$CEPH_HEALTH_DETAIL" | grep -q "noup.*set")
     if [ $? -eq 0 ]; then
         log $name "WARN" "Ceph 'noup' flag is set, aborting blocked ops check"
-        echo "false"; return
+        return 1
     fi
 
     # Multiple OSD processes may be running, so we only run 'ceph osd tree' once
@@ -432,7 +409,7 @@ osd_has_blocked_ops() {
         execute_ceph_cmd CEPH_OSD_TREE $name "ceph osd tree"
         if [ $? -ne 0 ]; then
             log $name "WARN" "Ceph cmd exec failed, aborting blocked ops check"
-            echo "false"; return
+            return 1
         fi
     fi
 
@@ -444,9 +421,9 @@ osd_has_blocked_ops() {
         [[ "$blocked_time" == "" ]] && blocked_time=0
         if [ $blocked_time -gt $BLOCKED_OPS_RESTART_THRESH ]; then
             log $name "WARN" "Detected blocked operations for $blocked_time seconds"
-            echo "true"; return
+            return 0
         else
-            echo "false"; return
+            return 1
         fi
     fi
 }
@@ -458,7 +435,7 @@ osd_has_stuck_peering() {
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
         log $name "WARN" "Ceph cluster is marked as failed, aborting stuck peering check"
-        echo "false"; return
+        return 1
     fi
 
     # Cache Ceph Health for later use as calling Ceph takes time This is
@@ -468,7 +445,7 @@ osd_has_stuck_peering() {
         execute_ceph_cmd CEPH_HEALTH_DETAIL $name "ceph health detail"
         if [ $? -ne 0 ]; then
             log $name "WARN" "Aborting stuck peering check"
-            echo "false"; return
+            return 1
         fi
     fi
 
@@ -477,7 +454,7 @@ osd_has_stuck_peering() {
     $(echo "$CEPH_HEALTH_DETAIL" | grep -q "nodown.*set")
     if [ $? -eq 0 ]; then
         log $name "WARN" "Ceph 'nodown' flag is set, aborting stuck peering check"
-        echo "false"; return
+        return 1
     fi
 
 
@@ -513,9 +490,9 @@ osd_has_stuck_peering() {
 
             if [ $blocked_time -gt $STUCK_PEERING_RESTART_THRESH ]; then
                 log $name "WARN" "Detected stuck peering for $blocked_time seconds"
-                echo "true"; return
+                return 0
             else
-                echo "false"; return
+                return 1
             fi
         else
             # register the time for first detected stuck peering
@@ -524,8 +501,6 @@ osd_has_stuck_peering() {
     else
         rm -f ${file} 2>/dev/null
     fi
-
-
 }
 
 ######################
@@ -601,8 +576,8 @@ daemon_is_running() {
     daemon_id=$3
     pidfile=$4
     do_cmd "[ -e $pidfile ] || exit 1   # no pid, presumably not running
-	pid=\`cat $pidfile\`
-	ps -p \$pid -o args= | grep $daemon | grep -qwe -i.$daemon_id && exit 0 # running
+        pid=\`cat $pidfile\`
+        cat /proc/\$pid/cmdline | tr '\\0' ' ' | grep $daemon | grep -qwe -i.$daemon_id && exit 0 # running
         exit 1  # pid is something else" "" "okfail"
 }
 
@@ -1119,9 +1094,6 @@ EOF
 	status)
 	    if daemon_is_running $name ceph-$type $id $pid_file; then
 
-		# ceph processes answer in around 100ms when the process works correctly
-		do_cmd "timeout 1 $BINDIR/ceph --admin-daemon $asok version 2>/dev/null || echo unknown"
-
         	# log ceph osd state
 		if [ "$type" = "osd" ];then
 		    CEPH_DAEMON_STATUS=""
@@ -1135,8 +1107,8 @@ EOF
 		fi
 
 		# check if daemon is hung
-		is_hung=$(is_process_hung $name $type)
-		if [ "$is_hung" = "true" ]; then
+		is_process_hung $name $type
+		if [ $? -eq 0 ]; then
 		echo "$name: hung."
 		# based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
 		# exit codes from 150 to 199 are application specific, therefore we define one here
@@ -1146,8 +1118,8 @@ EOF
 		if [ "$type" = "osd" ] && [ $BLOCKED_OPS_DETECTION_ENABLED = "true" ]; then
 		    up_time=$(get_proc_run_time $name)
 		    if [ $up_time -gt $BLOCKED_OPS_START_DETECTION ]; then
-		        has_blocked_ops=$(osd_has_blocked_ops $name)
-		        if [ "$has_blocked_ops" = "true" ]; then
+		        osd_has_blocked_ops $name
+		        if [ $? -eq 0 ]; then
 		            echo "$name: blocked ops."
 		            # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
 		            # exit codes from 150 to 199 are application specific, therefore we define one here

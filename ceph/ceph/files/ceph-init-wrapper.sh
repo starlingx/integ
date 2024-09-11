@@ -364,7 +364,7 @@ stop ()
 
     log INFO "Ceph ${cmd^^} ${service} command received."
 
-    if [ ! -z "${service}"]; then
+    if [ ! -z "${service}" ]; then
         has_daemon_running ${service}
         if [ $? -ne 0 ]; then
             log INFO "Ceph ${service} daemon is already stopped. No action is required."
