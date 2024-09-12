@@ -1,77 +1,87 @@
-From 721ddbe3f2d5a83eaa4982dde371f9ab4cc48cf6 Mon Sep 17 00:00:00 2001
+From 7113cf5c9133a9da26002b6f02cc3b84ba0b55b8 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Fri, 3 Sep 2021 18:05:15 -0400
-Subject: [PATCH 01/10] kubeadm: create platform pods with zero CPU resources
+Subject: [PATCH] kubeadm: create platform pods with zero CPU resources
 
 We want to specify zero CPU resources when creating the manifests
 for the static platform pods, as a workaround for the lack of
 separate resource tracking for platform resources.
 
-We also specify zero CPU resources for the coredns deployment.
-manifests.go appears to be the main file for this, not sure if the
-others are used but I changed them just in case.
+We also specify zero CPU and Memory resources for the
+coredns deployment.
+manifests.go appears to be the main file for this, not
+sure if the others are used but I changed them just in case.
 
 Signed-off-by: Daniel Safta <daniel.safta@windriver.com>
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
 ---
- cluster/addons/dns/coredns/coredns.yaml.base     | 2 +-
- cluster/addons/dns/coredns/coredns.yaml.in       | 2 +-
- cluster/addons/dns/coredns/coredns.yaml.sed      | 2 +-
- cmd/kubeadm/app/phases/addons/dns/manifests.go   | 2 +-
+ cluster/addons/dns/coredns/coredns.yaml.base     | 4 ++--
+ cluster/addons/dns/coredns/coredns.yaml.in       | 4 ++--
+ cluster/addons/dns/coredns/coredns.yaml.sed      | 4 ++--
+ cmd/kubeadm/app/phases/addons/dns/manifests.go   | 4 ++--
  cmd/kubeadm/app/phases/controlplane/manifests.go | 6 +++---
- 5 files changed, 7 insertions(+), 7 deletions(-)
+ 5 files changed, 11 insertions(+), 11 deletions(-)
 
 diff --git a/cluster/addons/dns/coredns/coredns.yaml.base b/cluster/addons/dns/coredns/coredns.yaml.base
-index e03559423e6..bda0ff6059f 100644
+index e03559423e6..49e88afc976 100644
 --- a/cluster/addons/dns/coredns/coredns.yaml.base
 +++ b/cluster/addons/dns/coredns/coredns.yaml.base
-@@ -145,7 +145,7 @@ spec:
+@@ -145,8 +145,8 @@ spec:
            limits:
              memory: __DNS__MEMORY__LIMIT__
            requests:
 -            cpu: 100m
+-            memory: 70Mi
 +            cpu: 0
-             memory: 70Mi
++            memory: 0
          args: [ "-conf", "/etc/coredns/Corefile" ]
          volumeMounts:
+         - name: config-volume
 diff --git a/cluster/addons/dns/coredns/coredns.yaml.in b/cluster/addons/dns/coredns/coredns.yaml.in
-index 9b241370bea..e39d37e9e03 100644
+index 9b241370bea..78a23317b56 100644
 --- a/cluster/addons/dns/coredns/coredns.yaml.in
 +++ b/cluster/addons/dns/coredns/coredns.yaml.in
-@@ -145,7 +145,7 @@ spec:
+@@ -145,8 +145,8 @@ spec:
            limits:
              memory: 'dns_memory_limit'
            requests:
 -            cpu: 100m
+-            memory: 70Mi
 +            cpu: 0
-             memory: 70Mi
++            memory: 0
          args: [ "-conf", "/etc/coredns/Corefile" ]
          volumeMounts:
+         - name: config-volume
 diff --git a/cluster/addons/dns/coredns/coredns.yaml.sed b/cluster/addons/dns/coredns/coredns.yaml.sed
-index 561fdf9aea8..186cce37950 100644
+index 561fdf9aea8..536513d1e9d 100644
 --- a/cluster/addons/dns/coredns/coredns.yaml.sed
 +++ b/cluster/addons/dns/coredns/coredns.yaml.sed
-@@ -145,7 +145,7 @@ spec:
+@@ -145,8 +145,8 @@ spec:
            limits:
              memory: $DNS_MEMORY_LIMIT
            requests:
 -            cpu: 100m
+-            memory: 70Mi
 +            cpu: 0
-             memory: 70Mi
++            memory: 0
          args: [ "-conf", "/etc/coredns/Corefile" ]
          volumeMounts:
+         - name: config-volume
 diff --git a/cmd/kubeadm/app/phases/addons/dns/manifests.go b/cmd/kubeadm/app/phases/addons/dns/manifests.go
-index 0e3c6c98c29..97c5ff96d43 100644
+index 0e3c6c98c29..0aa23679caa 100644
 --- a/cmd/kubeadm/app/phases/addons/dns/manifests.go
 +++ b/cmd/kubeadm/app/phases/addons/dns/manifests.go
-@@ -104,7 +104,7 @@ spec:
+@@ -104,8 +104,8 @@ spec:
            limits:
              memory: 170Mi
            requests:
 -            cpu: 100m
+-            memory: 70Mi
 +            cpu: 0
-             memory: 70Mi
++            memory: 0
          args: [ "-conf", "/etc/coredns/Corefile" ]
          volumeMounts:
+         - name: config-volume
 diff --git a/cmd/kubeadm/app/phases/controlplane/manifests.go b/cmd/kubeadm/app/phases/controlplane/manifests.go
 index 73f4fa56270..da52342a6f6 100644
 --- a/cmd/kubeadm/app/phases/controlplane/manifests.go
