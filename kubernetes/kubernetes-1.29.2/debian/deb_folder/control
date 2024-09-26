@@ -12,6 +12,7 @@ Build-Depends: debhelper-compat (= 13),
                golang-1.21
 Standards-Version: 4.4.1
 Homepage: http://kubernetes.io/
+XS-Build-Size: 15GB
 
 Package: kubernetes-1.29.2-client
 Provides: kubernetes-utils

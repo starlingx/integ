@@ -80,6 +80,7 @@ Standards-Version: 4.2.1
 Vcs-Git: https://salsa.debian.org/ceph-team/ceph.git
 Vcs-Browser: https://salsa.debian.org/ceph-team/ceph
 Homepage: http://ceph.com/
+XS-Build-Size: 39GB
 
 Package: ceph
 Architecture: linux-any
