@@ -86,6 +86,7 @@ ldap/openldap
 networking/dpdk
 networking/ifupdown
 networking/ifupdown-extra
+networking/ifenslave
 networking/iputils
 networking/lldpd
 networking/net-tools
