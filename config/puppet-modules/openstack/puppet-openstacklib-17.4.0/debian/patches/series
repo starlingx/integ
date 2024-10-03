@@ -3,3 +3,4 @@
 0003-Adjust-puppetlabs-postgresql-version-requirement.patch
 0004-Increase-timeout-from-40s-to-100s.patch
 0005-Fix-hiera_lookup-function-to-unescape-characters.patch
+0006-Update-Postgres-Auth-and-Password-Encryption.patch
