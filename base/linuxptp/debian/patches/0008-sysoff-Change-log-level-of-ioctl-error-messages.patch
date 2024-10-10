@@ -1,6 +1,6 @@
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Wed, 18 May 2022 11:33:36 +0200
-Subject: [PATCH 08/59] sysoff: Change log level of ioctl error messages.
+Subject: [PATCH 08/60] sysoff: Change log level of ioctl error messages.
 
 Change the log level of ioctl error messages to the error level to make
 them visible in default configuration, with the exception of EOPNOTSUPP

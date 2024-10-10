@@ -1,6 +1,6 @@
 From: cwalker <cole.walker@windriver.com>
 Date: Fri, 1 Mar 2024 17:50:29 +0000
-Subject: [PATCH 57/59] Fix uninitialized variable in nmea_scan_rmc
+Subject: [PATCH 57/60] Fix uninitialized variable in nmea_scan_rmc
 
 Initialize the tm_isdst variable to ensure that mktime does not fail on
 recent versions of glibc.

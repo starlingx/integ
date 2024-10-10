@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 14:59:57 -0300
-Subject: [PATCH 18/59] Find a better home for the management TLV data helper
+Subject: [PATCH 18/60] Find a better home for the management TLV data helper
  function.
 
 Signed-off-by: Richard Cochran <richardcochran@gmail.com>
