@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 26 Jul 2023 15:08:15 -0300
-Subject: [PATCH 40/59] Forced lock a clock source in configuration
+Subject: [PATCH 40/60] Forced lock a clock source in configuration
 
 To help on maintenance and debuging tasks was implemented a configuration
 to forced lock to a single clock. It disables the automatic clock
