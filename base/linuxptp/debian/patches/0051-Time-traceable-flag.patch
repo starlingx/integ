@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 30 Aug 2023 13:28:34 -0300
-Subject: [PATCH 51/60] Time traceable flag
+Subject: [PATCH 51/61] Time traceable flag
 
 A new time traceable flag was added to pmc agent to store the current
 time traceable status.

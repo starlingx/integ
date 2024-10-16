@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Thu, 4 Jan 2024 13:27:09 -0300
-Subject: [PATCH 55/60] Ignore interface in conf file when HA is disabled
+Subject: [PATCH 55/61] Ignore interface in conf file when HA is disabled
 
 Fixed the behavior when HA is disabled, one interface has been configured and
 '-a' autoconfiguration option is enabled. The behavior before HA feature was
