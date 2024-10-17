@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Tue, 8 Aug 2023 14:06:55 -0300
-Subject: [PATCH 46/60] Robustness improvements to phc2sys socket
+Subject: [PATCH 46/61] Robustness improvements to phc2sys socket
 
 When phc2sys abnormally exits the socket file might remain created.
 To avoid error when phc2sys is relaunched, the exixting file is
