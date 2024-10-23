@@ -20,8 +20,8 @@ index d451b89..a23a85c 100644
 -kernel = "/opt/kata/share/kata-containers/vmlinux.container"
 -image = "/opt/kata/share/kata-containers/kata-containers.img"
 +path = "/usr/bin/qemu-system-x86_64"
-+kernel = "/var/opt/kata/share/kata-containers/vmlinux.container"
-+image = "/var/opt/kata/share/kata-containers/kata-containers.img"
++kernel = "/usr/share/kata/share/kata-containers/vmlinux.container"
++image = "/usr/share/kata/share/kata-containers/kata-containers.img"
  # initrd = "/opt/kata/share/kata-containers/kata-containers-initrd.img"
  machine_type = "q35"
 
