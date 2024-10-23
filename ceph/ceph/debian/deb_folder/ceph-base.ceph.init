@@ -102,6 +102,9 @@ STUCK_PEERING_DETECTION_ENABLED="true"  # Enable/Disable detection
 STUCK_PEERING_START_DETECTION=300       # Wait on OSD startup before handling stuck peering
 STUCK_PEERING_RESTART_THRESH=180        # Restart OSD if stuck peering is longer that this
 
+# Flag to detect the OSD daemon as hung
+DAEMON_OSD_NOT_RESPONDING="false"
+
 LOG_LEVEL=NORMAL  # DEBUG
 
 # Log Management
@@ -295,6 +298,12 @@ CEPH_HEALTH_DETAIL=""
 is_process_hung() {
     local name=$1
     local type=$2  # 'osd' or 'mon'
+
+    # Verify if the daemon is hung
+    if [ "$DAEMON_OSD_NOT_RESPONDING" = "true" ]; then
+        DAEMON_OSD_NOT_RESPONDING="false"
+        return 0
+    fi
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
@@ -1092,19 +1101,25 @@ EOF
 	    ;;
 
 	status)
-	    if daemon_is_running $name ceph-$type $id $pid_file; then
+        if daemon_is_running $name ceph-$type $id $pid_file; then
 
-        	# log ceph osd state
-		if [ "$type" = "osd" ];then
-		    CEPH_DAEMON_STATUS=""
-		    execute_ceph_cmd CEPH_DAEMON_STATUS $name "ceph daemon $name status"
-		    if [ $? -eq 0 ]; then
-		        state=$(echo "$CEPH_DAEMON_STATUS" | awk -F ':' '/state/{gsub(/[,[:space:]]/, "", $2);print $2}')
-		        if [ "$state" != "active" ]; then
-			    log $name "INFO" "$name has the following state: $state"
-			fi
-		    fi
-		fi
+            # log ceph osd state
+            if [ "$type" = "osd" ];then
+                CEPH_DAEMON_STATUS=""
+                CEPH_FAILURE_OLD=$CEPH_FAILURE
+                execute_ceph_cmd CEPH_DAEMON_STATUS $name "ceph daemon $name status"
+                if [ $? -eq 0 ]; then
+                    state=$(echo "$CEPH_DAEMON_STATUS" | awk -F ':' '/state/{gsub(/[,[:space:]]/, "", $2);print $2}')
+                    if [ "$state" != "active" ]; then
+                        log $name "INFO" "$name has the following state: $state"
+                    fi
+                else
+                    # The ceph command did not respond
+                    DAEMON_OSD_NOT_RESPONDING="true"
+                    CEPH_FAILURE=$CEPH_FAILURE_OLD
+                    log $name "INFO" "$name: daemon is not responding"
+                fi
+            fi
 
 		# check if daemon is hung
 		is_process_hung $name $type
