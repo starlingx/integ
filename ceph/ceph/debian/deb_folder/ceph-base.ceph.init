@@ -611,6 +611,59 @@ osd_has_stuck_peering() {
     fi
 }
 
+mds_has_blocked_clients() {
+    local name=$1
+
+    # Abort if we had previous errors with Ceph
+    if [ "$CEPH_FAILURE" = "true" ]; then
+        log $name "WARN" "Ceph cluster is marked as failed, aborting blocked MDS clients check"
+        return 1
+    fi
+
+    # Cache Ceph Health for later use as calling Ceph takes time This is
+    # initially cached from the hang check but check and call again here if
+    # needed
+    get_ceph_health_detail
+    if [ $? -ne 0 ]; then
+        log $name "WARN" "Aborting blocked MDS clients check"
+        return 1
+    fi
+
+    # Ignore health check if OSDs are administratively down
+    # Note this can be done with: 'ceph osd set noup; ceph osd down <osd.id>'
+    $(echo "$CEPH_HEALTH_DETAIL" | grep -q "noup.*set")
+    if [ $? -eq 0 ]; then
+        log $name "WARN" "Ceph 'noup' flag is set, aborting blocked ops check"
+        return 1
+    fi
+
+    # Look for and parse:'    mds.controller-0(mds.0): Client controller-0: failing to respond to capability release client_id: 1737491'
+    local client_id_list=($(echo "$CEPH_HEALTH_DETAIL" | grep "failing to respond to capability release" | sed -rn 's/.*client_id: ([[:digit:]]*).*/\1/p'))
+    log $name "INFO" "${client_id_list[@]}"
+    if [[ "$client_id_list" != "" ]]; then
+        log $name "WARN" "Detected blocked MDS clients: ${client_id_list[@]}"
+
+        # Extract the active mds
+        local active_mds_list=($(echo "$CEPH_HEALTH_DETAIL" | grep "failing to respond to capability release" | sed -rn 's/[[:space:]]+(mds\..*)\(mds.*client_id:.*/\1/p'))
+
+        MDS_EVICTION_CMD_LIST=()
+        local list_end=$(( ${#client_id_list[@]} - 1 ))
+        # only evict from the active mds
+        for i in $(seq 0 ${list_end}); do
+            if [[ ${active_mds_list[$i]} =~ $(hostname) ]]; then
+                # Form eviction string and add it to the list
+                MDS_EVICTION_CMD_LIST+=("${active_mds_list[$i]} session evict ${client_id_list[$i]}")
+            fi
+        done
+
+        if [ ${#MDS_EVICTION_CMD_LIST[@]} -gt 0 ]; then
+	    log $name "INFO" "${MDS_EVICTION_CMD_LIST[@]}"
+            return 0
+        fi
+    fi
+    return 1
+}
+
 ######################
 #### StarlingX END ###
 ######################
@@ -1196,7 +1249,7 @@ EOF
 	    fi
 	    ;;
 
-	status)
+    status)
         if daemon_is_running $name ceph-$type $id $pid_file; then
 
             # log ceph osd state
@@ -1217,33 +1270,33 @@ EOF
                 fi
             fi
 
-		# check if daemon is hung
-		is_process_hung $name $type
-		if [ $? -eq 0 ]; then
-		echo "$name: hung."
-		# based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
-		# exit codes from 150 to 199 are application specific, therefore we define one here
-		EXIT_STATUS=150
-		else
-		# Wait a period of time prior to OSD start before restarting based on slow/blocked requests
-		if [ "$type" = "osd" ] && [ $BLOCKED_OPS_DETECTION_ENABLED = "true" ]; then
-		    up_time=$(get_proc_run_time $name)
-		    if [ $up_time -gt $BLOCKED_OPS_START_DETECTION ]; then
-		        osd_has_blocked_ops $name
-		        if [ $? -eq 0 ]; then
-		            echo "$name: blocked ops."
-		            # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
-		            # exit codes from 150 to 199 are application specific, therefore we define one here
-		            EXIT_STATUS=151
-		        else
-		            echo "$name: running."
-		        fi
-		    else
-		        echo "$name: running."
-		    fi
-		else
-		    echo "$name: running."
-		fi
+            # check if daemon is hung
+            is_process_hung $name $type
+            if [ $? -eq 0 ]; then
+                echo "$name: hung."
+                # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
+                # exit codes from 150 to 199 are application specific, therefore we define one here
+                EXIT_STATUS=150
+            else
+                # Wait a period of time prior to OSD start before restarting based on slow/blocked requests
+                if [ "$type" = "osd" ] && [ $BLOCKED_OPS_DETECTION_ENABLED = "true" ]; then
+                    up_time=$(get_proc_run_time $name)
+                    if [ $up_time -gt $BLOCKED_OPS_START_DETECTION ]; then
+                        osd_has_blocked_ops $name
+                        if [ $? -eq 0 ]; then
+                            echo "$name: blocked ops."
+                            # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
+                            # exit codes from 150 to 199 are application specific, therefore we define one here
+                            EXIT_STATUS=151
+                        else
+                            echo "$name: running."
+                        fi
+                    else
+                        echo "$name: running."
+                    fi
+                else
+                    echo "$name: running."
+                fi
 
                 # Wait a period of time prior to OSD start before restarting based on stuck peering
                 if [ "$type" = "osd" ] && [ $STUCK_PEERING_DETECTION_ENABLED = "true" ]; then
@@ -1264,18 +1317,44 @@ EOF
                 else
                     echo "$name: running."
                 fi
-		fi
+            fi
 
-	    elif [ -e "$pid_file" ]; then
-		# daemon is dead, but pid file still exists
-		echo "$name: dead."
-		EXIT_STATUS=1
-	    else
-		# daemon is dead, and pid file is gone
-		echo "$name: not running."
-		EXIT_STATUS=3
-	    fi
-	    ;;
+            # Check mds daemon
+            if [ "$type" = "mds" ]; then
+                log $name "DEBUG" "checking $name for blocked clients"
+                mds_has_blocked_clients $name
+                if [ $? -eq 0 ]; then
+                    list_end=$(( ${#MDS_EVICTION_CMD_LIST[@]} - 1 ))
+                    for i in $(seq 0 $list_end); do
+                        log $name "INFO" "Evicting client $(echo ${MDS_EVICTION_CMD_LIST[$i]} | awk '{ print $NF }')"
+                        CEPH_EVICT_CLIENT=""
+                        execute_ceph_cmd CEPH_EVICT_CLIENT $name "ceph daemon ${MDS_EVICTION_CMD_LIST[$i]} && echo success"
+                        rc=$?
+                        if [ ${rc} -ne 0 ]; then
+                            log $name "ERROR" "MDS Client eviction failed: ceph daemon ${MDS_EVICTION_CMD_LIST[$i]}: ${rc} - '${CEPH_EVICT_CLIENT}'"
+                        fi
+                    done
+
+                    # Clear the Ceph blacklist
+	            log $name "INFO" "Clear ceph blacklist"
+                    CEPH_BLKLIST_CLEAR=""
+                    execute_ceph_cmd CEPH_BLKLIST_CLEAR $name "ceph osd blacklist clear"
+                    rc=$?
+                    if [ ${rc} -ne 0 ]; then
+                        log $name "ERROR" "OSD blacklist clear failed: ${rc} - '${CEPH_BLKLIST_CLEAR}'"
+                    fi
+                fi
+            fi
+        elif [ -e "$pid_file" ]; then
+            # daemon is dead, but pid file still exists
+            echo "$name: dead."
+            EXIT_STATUS=1
+        else
+            # daemon is dead, and pid file is gone
+            echo "$name: not running."
+            EXIT_STATUS=3
+        fi
+        ;;
 
 	ssh)
 	    $ssh
