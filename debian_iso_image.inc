@@ -150,6 +150,8 @@ ifupdown
 ifupdown-extra
 
 kdump-tools
+crash
+makedumpfile
 
 # iputils
 iputils-arping
