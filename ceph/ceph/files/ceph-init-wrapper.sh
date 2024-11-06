@@ -305,11 +305,6 @@ has_daemon_running ()
 
 start ()
 {
-    if [ ! -f ${CEPH_FILE} ]; then
-        # Ceph is not running on this node, return success
-        exit 0
-    fi
-
     local service="$1"
     # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
     eval service="${service}"
@@ -598,6 +593,14 @@ start=$(date +%s%N)
 log INFO "action:${args[0]}:start-at:${start: 0:-6} ms"
 case "${args[0]}" in
     start)
+        if [ ! -f ${CEPH_FILE} ]; then
+            # Ceph is not running on this node, return success
+            exit 0
+        fi
+
+        start ${args[1]}
+        ;;
+    forcestart)
         start ${args[1]}
         ;;
     stop)
