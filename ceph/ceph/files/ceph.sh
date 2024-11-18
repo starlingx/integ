@@ -33,6 +33,9 @@ start ()
     if [ ! -f ${CEPH_FILE} ]; then
         touch ${CEPH_FILE}
     fi
+
+    #restrict log file access
+    chmod 0640 ${LOGFILE}
 }
 
 stop ()
