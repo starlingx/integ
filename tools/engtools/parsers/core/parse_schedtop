@@ -77,6 +77,7 @@ our %families = (
          ldavg => {scale => "none", agg => "dtsum", un => "(#)", fmtT => "%6s", fmt => "%6.2f", w => 1, div => 1, idx =>  1},
          runq  => {scale => "none", agg => "dtsum", un => "(#)", fmtT => "%4s", fmt => "%4.0f", w => 1, div => 1, idx =>  2},
          blk   => {scale => "none", agg => "dtsum", un => "(#)", fmtT => "%3s", fmt => "%3.0f", w => 1, div => 1, idx =>  3},
+         D     => {scale => "none", agg => "dtsum", un => "(#)", fmtT => "%3s", fmt => "%3.0f", w => 1, div => 1, idx =>  4},
       },
       MiB => {
          Tot    => {scale => "none", agg => "dtsum", un => "(MiB)", fmtT => "%7s", fmt => "%7.1f",  w => 1, div => 1, idx =>  1},
@@ -117,6 +118,10 @@ our %families = (
          delay => {scale => "none", agg => "ctxt",   un => "(ms)",   fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1, idx => 3},
          dmax  => {scale => "none", agg => "max",    un => "(ms)",   fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1, idx => 4},
       },
+      block => {
+         bmax  => {scale => "none", agg => "max",    un => "(ms)",   fmtT => "%7s", fmt => "%7.1f", w => 1, div => 1, idx => 1},
+         age   => {scale => "none", agg => "dtsum",  un => "(s)",    fmtT => "%3s", fmt => "%3.0f", w => 1, div => 1, idx => 2},
+      },
       io => {
          iowait => {scale => "none", agg => "dtsum", un => "(%)",    fmtT => "%7s",  fmt => "%7.2f",  w => 2, div => 1,      idx => 0},
          iowt  => {scale => "none", agg => "dtsum",  un => "(%)",    fmtT => "%7s",  fmt => "%7.2f",  w => 2, div => 1,      idx => 1},
@@ -143,9 +148,10 @@ our %families = (
       },
       cmd => {
          wchan   => {scale => "none", agg => "none", un => "(str)",  fmtT => "%16s", fmt => "%16s", w => 1, div => 1, idx => 1},
-         comm    => {scale => "none", agg => "none", un => "(name)", fmtT => "%16",  fmt => "%16s", w => 1, div => 1, idx => 2},
-         cmdline => {scale => "none", agg => "none", un => "(name)", fmtT => "%s",   fmt => "%s",   w => 1, div => 1, idx => 3},
-         COMMAND => {scale => "none", agg => "none", un => "(name)", fmtT => "%s",   fmt => "%s",   w => 1, div => 1, idx => 4},
+         cgroup  => {scale => "none", agg => "none", un => "(str)",  fmtT => "%16s", fmt => "%16s", w => 1, div => 1, idx => 2},
+         comm    => {scale => "none", agg => "none", un => "(name)", fmtT => "%16",  fmt => "%16s", w => 1, div => 1, idx => 3},
+         cmdline => {scale => "none", agg => "none", un => "(name)", fmtT => "%s",   fmt => "%s",   w => 1, div => 1, idx => 4},
+         COMMAND => {scale => "none", agg => "none", un => "(name)", fmtT => "%s",   fmt => "%s",   w => 1, div => 1, idx => 5},
       },
       misc => {
          cnt     => {scale => "none", agg => "none", un => "(#)",   fmtT => "%5s", fmt => "%5d", w => 1, div => 1, idx => 1},
@@ -171,7 +177,7 @@ for (my $core=0; $core <= $MAX_CORES; $core++) {
 }
          
 # Selected field parameters
-our @select_families = ('cpu', 'del', 'io', 'mem'); # overall average mode
+our @select_families = ('cpu', 'del', 'block', 'io', 'mem'); # overall average mode
 our @select_fields   = ('cpu'); # time-series mode
 our %select_H = ();
 our %select_F = ();
@@ -357,7 +363,7 @@ sub aggregate_time_series {
       my @per_core_T = (); my $per_core_N = ();
       my @per_core_x = (); my @per_core_tot = ();
       my @per_task_T = (); my @per_task_x = (); my $per_task_N = ();
-      my ($tstamp, $ldavg, $runq, $blk, $del, $ignore) = ();
+      my ($tstamp, $ldavg, $runq, $blk, $D, $del, $ignore) = ();
       my ($yy, $month, $day, $hh, $mm, $ss, $frac);
       my @overall = ();
 
@@ -365,8 +371,8 @@ sub aggregate_time_series {
       READ_LOOP: while ($_ = <FILE>) {
          s/[\0\e\f\r\a]//g; chomp; # strip control characters if any
 
-         if (/^schedtop\s+\S+\s+\-\-\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})\s+dt:\s*(\S+)\s+ms\s+ldavg:(\S+),\s+\S+,\s+\S+\s+runq:(\d+)\s+blk:(\d+)\s+/) { # header line
-            $tstamp = $1; $dt = $2/1000.0; $ldavg = $3; $runq = $4; $blk = $5;
+         if (/^schedtop\s+\S+\s+\-\-\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})\s+dt:\s*(\S+)\s+ms\s+ldavg:(\S+),\s+\S+,\s+\S+\s+runq:(\d+)\s+blk:(\d+)\s+D:(\d+)\s+/) { # header line
+            $tstamp = $1; $dt = $2/1000.0; $ldavg = $3; $runq = $4; $blk = $5; $D = $6;
             $del = 0.0; $ignore = 0; @overall = ();
 
             $_ = $tstamp;
@@ -407,6 +413,7 @@ sub aggregate_time_series {
             $sample{'ldavg'}  = $ldavg;
             $sample{'runq'}   = $runq;
             $sample{'blk'}    = $blk;
+            $sample{'D'}      = $D;
 
             $group = 'ov'; $family = 'MiB';
             foreach $field (keys %{ $::families{$group}{$family} }) { $sample{$field} = 0.0; }
