@@ -4,7 +4,6 @@ disable goenabled-storage.service
 # 00-cgcs-patch.preset
 enable sw-patch-controller.service
 enable sw-patch-controller-daemon.service
-enable sw-patch-agent.service
 enable sw-patch.service
 
 # 00-software.preset
