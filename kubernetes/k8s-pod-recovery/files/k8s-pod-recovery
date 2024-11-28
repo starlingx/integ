@@ -106,6 +106,26 @@ function _wait_for_pod_stabilization {
     done
 }
 
+function _wait_for_kubeapi_server {
+
+    local time_between_polls=${1}
+    local attempt_cycles=${2}
+
+    attempt_count=0
+    while [[ ${attempt_count} -lt ${attempt_cycles} ]] ; do
+        api_status=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get --raw "/readyz")
+        if [[ ${api_status} == "ok" ]]; then
+            LOG "kube-api server available, status=${api_status}"
+            return 0
+        else
+            LOG "kube-api server not available, attempt[count=${attempt_count}, cycles=${attempt_cycles}]"
+            attempt_count=$((attempt_count+1))
+        fi
+        sleep "${time_between_polls}"
+    done
+    return 1
+}
+
 function _unknown_pods {
     # $1: actions <recover|verify>
 
@@ -336,8 +356,20 @@ function start {
     LOG "Starting."
 
     _wait_for_systemd
-    _examine_pods 'recover'
-    _examine_pods 'verify'
+
+    # check if kube-api server is available before trying to use kubectl
+    # wait is up to 5 min to consider dead office recover for the active
+    # controller
+    _wait_for_kubeapi_server $SLEEP_DELAY_SEC 20
+    if [ $? -eq 0 ]; then
+        LOG "kube-api-server is available, start pod examination"
+        _examine_pods 'recover'
+        _examine_pods 'verify'
+    else
+        LOG "kube-api-server is not available, exit for systemd to restart on failure"
+        exit 1
+    fi
+
     _do_cni_cache_cleanup
 }
 

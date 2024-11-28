@@ -9,6 +9,8 @@ Type=simple
 ExecStart=/usr/local/sbin/k8s-pod-recovery start
 ExecStop=/usr/local/sbin/k8s-pod-recovery stop
 PIDFile=/var/run/k8s-pod-recovery.pid
+Restart=on-failure
+RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target
