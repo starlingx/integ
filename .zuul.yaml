@@ -5,14 +5,14 @@
       - stx-release-notes-jobs
     check:
       jobs:
-        - openstack-tox-pep8
-        - openstack-tox-linters
-        - stx-integ-pylint
+        - integ-tox-pep8
+        - integ-tox-linters
+        - integ-tox-pylint
     gate:
       jobs:
-        - openstack-tox-pep8
-        - openstack-tox-linters
-        - stx-integ-pylint
+        - integ-tox-pep8
+        - integ-tox-linters
+        - integ-tox-pylint
     post:
       jobs:
         - stx-integ-upload-git-mirror
@@ -161,10 +161,25 @@
         q-metering: false
         q-svc: false
 
-# Try this as a tox-based job with a minimal functional target in tox.ini
 - job:
-    name: stx-integ-pylint
+    name: integ-tox-linters
+    parent: openstack-tox-linters
+    description: |
+      Run linters
+    nodeset: debian-bullseye
+
+- job:
+    name: integ-tox-pep8
+    parent: openstack-tox-pep8
+    description: |
+      Check conformance with pep8
+    nodeset: debian-bullseye
+
+- job:
+    name: integ-tox-pylint
     parent: tox
+    description: |
+      Tox-based job with a minimal functional target in tox.ini
     nodeset: debian-bullseye
     required-projects:
       - starlingx/config
