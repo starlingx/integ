@@ -8,7 +8,10 @@ INITDIR=/etc/init.d
 LOGFILE=/var/log/ceph/ceph-init.log
 CEPH_STARTED_FLAG=/var/run/.ceph_started
 CEPH_CONFIGURED_FLAG=/etc/platform/.node_ceph_configured
-CEPH_INIT="${INITDIR}/ceph-init-wrapper"
+
+# Call ceph-init-wrapper script with systemd-run to avoid inheriting any
+# unwanted file descriptor.
+CEPH_INIT="systemd-run --pipe --wait ${INITDIR}/ceph-init-wrapper"
 
 # Get system/node configuration
 . /etc/platform/platform.conf
