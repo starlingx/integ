@@ -58,16 +58,16 @@ index ad1dd2d..5ab0d52 100644
 -games:*:60:
  users:*:100:
  nogroup:*:65534:
-+nova:x:162:nova
-+neutron:x:164:neutron
-+ceilometer:x:166:ceilometer
-+sysinv:x:168:sysinv
-+snmpd:x:169:snmpd,fm
-+fm:x:195:fm
-+libvirt:x:991:nova
-+ironic:x:1874:ironic
-+www:x:1877:www
-+keystone:x:42424:keystone
++nova:*:162:nova
++neutron:*:164:neutron
++ceilometer:*:166:ceilometer
++sysinv:*:168:sysinv
++snmpd:*:169:snmpd,fm
++fm:*:195:fm
++libvirt:*:991:nova
++ironic:*:1874:ironic
++www:*:1877:www
++keystone:*:42424:keystone
 diff --git a/passwd.master b/passwd.master
 index f1e69a4..c3a3ebc 100644
 --- a/passwd.master
@@ -89,15 +89,15 @@ index f1e69a4..c3a3ebc 100644
  irc:*:39:39:ircd:/run/ircd:/usr/sbin/nologin
  gnats:*:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
  nobody:*:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-+neutron:x:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
-+sysinv:x:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
-+snmpd:x:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
-+fm:x:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
-+ceilometer:x:991:166:OpenStack ceilometer Daemons:/var/lib/ceilometer:/sbin/nologin
-+nova:x:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
-+ironic:x:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
-+www:x:1877:1877:www:/home/www:/sbin/nologin
-+keystone:x:42424:42424:OpenStack Keystone Daemons:/var/lib/keystone:/sbin/nologin
++neutron:*:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
++sysinv:*:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
++snmpd:*:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
++fm:*:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
++ceilometer:*:991:166:OpenStack ceilometer Daemons:/var/lib/ceilometer:/sbin/nologin
++nova:*:994:162:OpenStack Nova Daemons:/var/lib/nova:/sbin/nologin
++ironic:*:1874:1874:OpenStack Ironic Daemons:/var/lib/ironic:/sbin/nologin
++www:*:1877:1877:www:/home/www:/sbin/nologin
++keystone:*:42424:42424:OpenStack Keystone Daemons:/var/lib/keystone:/sbin/nologin
 -- 
 2.17.1
 
