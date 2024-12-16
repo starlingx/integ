@@ -9,4 +9,5 @@ export PBR_VERSION=1.0.0
 	dh $@ --with python3 --buildsystem=pybuild
 
 override_dh_install:
-	# nothing to do here
+	mkdir -p $(CURDIR)/debian/redfishtool/etc/redfishtool
+	cp $(CURDIR)/redfishtool.ini $(CURDIR)/debian/redfishtool/etc/redfishtool
