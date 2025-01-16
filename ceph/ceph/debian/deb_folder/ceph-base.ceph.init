@@ -736,7 +736,11 @@ daemon_is_running() {
     daemon=$2
     daemon_id=$3
     pidfile=$4
-    do_cmd "[ -e $pidfile ] || exit 1   # no pid, presumably not running
+    do_cmd "if [ ! -e $pidfile ] ; then
+        pid_found=\$(ps aux | grep \"$daemon -i $daemon_id\" | grep -v grep | awk '{print \$2}')
+        [ \"\$pid_found\" != \"\" ] || exit 1   # no pid, presumably not running
+        echo \$pid_found > $pidfile
+        fi
         pid=\`cat $pidfile\`
         cat /proc/\$pid/cmdline | tr '\\0' ' ' | grep $daemon | grep -qwe -i.$daemon_id && exit 0 # running
         exit 1  # pid is something else" "" "okfail"
