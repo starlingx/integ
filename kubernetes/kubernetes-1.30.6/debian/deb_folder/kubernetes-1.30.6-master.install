@@ -1,6 +1,3 @@
-usr/bin/kube-apiserver
-usr/bin/kube-controller-manager
-usr/bin/kube-scheduler
 etc/kubernetes-1.30.6/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
 etc/kubernetes-1.30.6/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
 etc/kubernetes-1.30.6/addons/volumesnapshots/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
