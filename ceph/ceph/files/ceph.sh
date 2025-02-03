@@ -90,6 +90,9 @@ start ()
     if [ ! -f ${CEPH_STARTED_FLAG} ]; then
         touch ${CEPH_STARTED_FLAG}
     fi
+
+    #restrict log file access
+    chmod 0640 ${LOGFILE}
 }
 
 stop ()
