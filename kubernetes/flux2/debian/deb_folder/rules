@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+# export DH_VERBOSE = 1
+
+export ROOT = debian/tmp
+export SBINDIR = $(ROOT)/usr/local/bin
+
+export FLUX_VERSION = 2.3.0
+export FLUX_PKG = flux_$(FLUX_VERSION)_linux_amd64.tar.gz
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Extract the third party flux-cli package downloaded in dl_hook.
+	tar xfz $(FLUX_PKG)
+
+override_dh_auto_install:
+	install -d -m 755 $(SBINDIR)
+	install -d -m 755 $(ROOT)/usr/local/bin
+
+override_dh_usrlocal:
+	# Do Nothing

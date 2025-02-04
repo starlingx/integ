@@ -1,0 +1,13 @@
+---
+debname: flux2
+debver: 2.3.0-1
+src_path: files
+dl_files:
+  flux_2.3.0_linux_amd64.tar.gz:
+    topdir: null
+    url: https://github.com/fluxcd/flux2/releases/download/v2.3.0/flux_2.3.0_linux_amd64.tar.gz
+    sha256sum: 51ef10a0ebf2078e52476c4d168200a1db73feef987e0bc8722f4ce4fcd4b6d9
+
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
