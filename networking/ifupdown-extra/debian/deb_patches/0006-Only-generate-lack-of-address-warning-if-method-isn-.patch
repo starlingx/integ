@@ -1,0 +1,37 @@
+From da5950d5578aaed4719624400b59402fc335cd7a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Javier=20Fernandez-Sanguino=20Pe=C3=B1a?= <jfs@debian.org>
+Date: Tue, 1 Oct 2024 09:10:11 -0300
+Subject: [PATCH] Only generate lack of address warning if method isn't manual
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The script check-duplicate-ip is generating warning message about
+lack of address config in the interface even if the method is manual.
+The manual method does not provide address to be tested.
+
+This change adds this logic to decide if generates a warning message.
+
+Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+---
+ if-up-scripts/check-duplicate-ip | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/if-up-scripts/check-duplicate-ip b/if-up-scripts/check-duplicate-ip
+index ec9ff65..b51fa11 100755
+--- a/if-up-scripts/check-duplicate-ip
++++ b/if-up-scripts/check-duplicate-ip
+@@ -127,7 +127,9 @@ esac
+ [ -z "$IF_ADDRESS" ] && find_ip
+ # Still no IP? Bail out
+ if [ -z "$IF_ADDRESS" ] ; then
+-    $OUT_WARN "Cannot check for duplicate IPv4 address in the network as the script could not find the IPv4 address of $IFACE. You can disable this test by setting DO_ARPING to 'no' in $DEFAULT ."
++    if [[ "$METHOD" != 'manual' ]]; then
++        $OUT_WARN "Cannot check for duplicate IPv4 address in the network as the script could not find the IPv4 address of $IFACE. You can disable this test by setting DO_ARPING to 'no' in $DEFAULT ."
++    fi
+     exit 0
+ fi
+ 
+-- 
+2.34.1
+
