@@ -101,6 +101,9 @@ etcd-server
 facter
 libfacter3.14.12
 
+#flux
+flux2-charts
+
 #gpu-operator
 #gpu-operator
 
