@@ -1,0 +1,88 @@
+From 6725ab07375fc9fc8035b8919b6f2b7f601168c5 Mon Sep 17 00:00:00 2001
+From: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+Date: Mon, 23 Dec 2024 17:53:09 -0300
+Subject: [PATCH] Adjust timeout for coredns readinessProbe
+
+The timeout value for the readinessProbe of CoreDNS was increased.
+This adjustment was necessary to avoid issues during stress testing,
+ensuring that the component can properly handle high-load situations
+and prevent premature failure in readiness checks.
+---
+ cluster/addons/dns/coredns/coredns.yaml.base   | 1 +
+ cluster/addons/dns/coredns/coredns.yaml.in     | 1 +
+ cluster/addons/dns/coredns/coredns.yaml.sed    | 1 +
+ cmd/kubeadm/app/phases/addons/dns/dns_test.go  | 2 ++
+ cmd/kubeadm/app/phases/addons/dns/manifests.go | 1 +
+ 5 files changed, 6 insertions(+)
+
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.base b/cluster/addons/dns/coredns/coredns.yaml.base
+index 41088f063eb..4bcb2b2e4fe 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.base
++++ b/cluster/addons/dns/coredns/coredns.yaml.base
+@@ -170,6 +170,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.in b/cluster/addons/dns/coredns/coredns.yaml.in
+index 906d6d28890..744f8cb730a 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.in
++++ b/cluster/addons/dns/coredns/coredns.yaml.in
+@@ -170,6 +170,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.sed b/cluster/addons/dns/coredns/coredns.yaml.sed
+index af0fae57dbd..844f21f2abf 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.sed
++++ b/cluster/addons/dns/coredns/coredns.yaml.sed
+@@ -170,6 +170,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cmd/kubeadm/app/phases/addons/dns/dns_test.go b/cmd/kubeadm/app/phases/addons/dns/dns_test.go
+index 4f2022d7105..1f571f48bb8 100644
+--- a/cmd/kubeadm/app/phases/addons/dns/dns_test.go
++++ b/cmd/kubeadm/app/phases/addons/dns/dns_test.go
+@@ -736,6 +736,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+@@ -1001,6 +1002,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cmd/kubeadm/app/phases/addons/dns/manifests.go b/cmd/kubeadm/app/phases/addons/dns/manifests.go
+index 2a2212d5d37..c0be57357e4 100644
+--- a/cmd/kubeadm/app/phases/addons/dns/manifests.go
++++ b/cmd/kubeadm/app/phases/addons/dns/manifests.go
+@@ -135,6 +135,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+-- 
+2.25.1
+
