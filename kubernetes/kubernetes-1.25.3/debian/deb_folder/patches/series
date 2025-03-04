@@ -11,3 +11,4 @@ Revert-kubeadm-cleanup-the-master-taint-on-CP-nodes-.patch
 kubeadm-reduce-UpgradeManifestTimeout.patch
 Identify-platform-pods-based-on-pod-or-namespace-labels.patch
 kubeadm-readiness-probe-timeout-core-dns.patch
+kubernetes-pull-117682-vendor-bump-runc-to-1.1.6.patch
