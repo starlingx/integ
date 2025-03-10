@@ -1,0 +1,25 @@
+From 7b05c1388f2bf21309e7e7b45a8087b08b0d181e Mon Sep 17 00:00:00 2001
+From: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+Date: Mon, 10 Mar 2025 11:14:09 -0300
+Subject: [PATCH] Add heartbeat to zmq socket
+
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+---
+ zerorpc/events.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/zerorpc/events.py b/zerorpc/events.py
+index a0de3f0..3ba8354 100644
+--- a/zerorpc/events.py
++++ b/zerorpc/events.py
+@@ -253,6 +253,7 @@ class Events(ChannelBase):
+         self._context = context or Context.get_instance()
+         self._socket = self._context.socket(zmq_socket_type)
+         self._socket.setsockopt(zmq.IPV6, True)
++        self._socket.setsockopt(zmq.HEARTBEAT_IVL, 5000)
+         self._encoder = encoder
+         self._decoder = decoder
+ 
+-- 
+2.34.1
+
