@@ -99,6 +99,7 @@ ostree/mttyexec
 ostree/ostree
 ostree/ostree-upgrade-mgr
 python/dh-python
+python/pynetlink
 python/python-nss
 python/python3-nsenter
 python/python3-setuptools

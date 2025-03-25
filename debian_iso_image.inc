@@ -385,6 +385,9 @@ python3-setuptools
 #python3.9
 python3.9
 
+#pynetlink
+pynetlink
+
 #pyzmq
 python3-zmq
 
