@@ -1,6 +1,6 @@
 From: Cole Walker <cole.walker@windriver.com>
 Date: Wed, 1 May 2024 17:56:14 +0000
-Subject: [PATCH 59/61] clock: Downgrade log message about failed uds forward.
+Subject: [PATCH 59/62] clock: Downgrade log message about failed uds forward.
 
 If multiple management clients are used in the network and ptp4l
 responded at least once over UDS, it will try to forward all management

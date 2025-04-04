@@ -59,3 +59,4 @@
 0059-clock-Downgrade-log-message-about-failed-uds-forward.patch
 0060-Fix-HA-clock-selection-of-priority-0-source.patch
 0061-Fix-HA-clock-selection-algorithm.patch
+0062-Fix-HA-clock-selection-when-poll-timeout.patch

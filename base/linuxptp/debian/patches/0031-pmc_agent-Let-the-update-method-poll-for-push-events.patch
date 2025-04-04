@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 17:32:27 -0300
-Subject: [PATCH 31/61] pmc_agent: Let the update method poll for push events.
+Subject: [PATCH 31/62] pmc_agent: Let the update method poll for push events.
 
 Signed-off-by: Richard Cochran <richardcochran@gmail.com>
 
