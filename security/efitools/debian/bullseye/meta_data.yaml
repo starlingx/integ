@@ -8,7 +8,7 @@ dl_path:
   md5sum: e81aa4822cfcbca81074c9cb07951e75
   sha256sum: 69f02c5b588b666075ed4d390655cf3bfe7f7e2daae643423cd052e081e1368a
 src_files:
-  - debian/uefi_sb_keys
+  - debian/bullseye/uefi_sb_keys
   - ${MY_REPO}/public-keys/tis-boot.crt
 revision:
   dist: $STX_DIST

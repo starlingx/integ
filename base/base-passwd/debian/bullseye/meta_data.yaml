@@ -7,5 +7,6 @@ dl_path:
   sha256sum: 7dda1771ce9107290fea9fca0c11e69334385d614a7c21cbeb50ce9437dd561f
 revision:
   dist: $STX_DIST
+  stx_patch: 9
   GITREVCOUNT:
     BASE_SRCREV: 9b545c5e197a424d08ed062ca6f11efe7bc824b4
