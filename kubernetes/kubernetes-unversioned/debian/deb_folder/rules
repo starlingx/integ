@@ -31,7 +31,6 @@ override_dh_install:
 	$(call stage_link,${_symlinkdir}/stage1,${_bindir},kubeadm)
 	$(call stage_link,${_symlinkdir}/stage2,/etc/systemd/system/kubelet.service.d,kubeadm.conf)
 	$(call stage_link,${_symlinkdir}/stage2,/usr/share/bash-completion/completions,kubectl)
-	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubelet-cgroup-setup.sh)
 	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubelet)
 	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubectl)
 
@@ -60,6 +59,7 @@ override_dh_install:
 	install -v -p -m 0644 -t ${DEBIAN_DESTDIR}/etc/systemd/system.conf.d debian/kubernetes-accounting.conf
 
 	# install scripts
+	install -p -m 0700 -t ${DEBIAN_DESTDIR}${_bindir} debian/kubelet-cgroup-setup.sh
 	install -v -m 0700 -d ${DEBIAN_DESTDIR}${_local_sbindir}
 	install -v -m 0700 -t ${DEBIAN_DESTDIR}${_local_sbindir} debian/sanitize_kubelet_reserved_cpus.sh
 

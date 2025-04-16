@@ -1,6 +1,5 @@
 usr/bin/kubeadm
 usr/bin/kubelet
-usr/bin/kubelet-cgroup-setup.sh
 usr/bin/kubectl
 etc/systemd/system/kubelet.service.d/kubeadm.conf
 usr/share/bash-completion/completions/kubectl

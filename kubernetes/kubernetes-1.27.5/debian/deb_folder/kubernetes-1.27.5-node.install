@@ -1,2 +1,1 @@
 usr/local/kubernetes/1.27.5/stage2/usr/bin/kubelet
-usr/local/kubernetes/1.27.5/stage2/usr/bin/kubelet-cgroup-setup.sh

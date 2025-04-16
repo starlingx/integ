@@ -1,6 +1,5 @@
 /var/lib/kubernetes/stage1/usr/bin/kubeadm /usr/bin/kubeadm
 /var/lib/kubernetes/stage2/usr/bin/kubelet /usr/bin/kubelet
-/var/lib/kubernetes/stage2/usr/bin/kubelet-cgroup-setup.sh /usr/bin/kubelet-cgroup-setup.sh
 /var/lib/kubernetes/stage2/usr/bin/kubectl /usr/bin/kubectl
 /var/lib/kubernetes/stage2/etc/systemd/system/kubelet.service.d/kubeadm.conf /etc/systemd/system/kubelet.service.d/kubeadm.conf
 /var/lib/kubernetes/stage2/usr/share/bash-completion/completions/kubectl /usr/share/bash-completion/completions/kubectl
