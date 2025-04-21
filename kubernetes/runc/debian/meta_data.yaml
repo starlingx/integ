@@ -1,12 +1,12 @@
 ---
 debname: runc
-debver: 1.1.12
+debver: 1.3.0
 src_path: null
 dl_files:
   runc.amd64:
     topdir: null
-    url: https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64
-    sha256sum: aadeef400b8f05645768c1476d1023f7875b78f52c7ff1967a6dbce236b8cbd8
+    url: https://github.com/opencontainers/runc/releases/download/v1.3.0-rc.2/runc.amd64
+    sha256sum: 51b0df0d2a884aec9b9f14076f711c40e069d38c017e0e97470d4a6b3abe6aff
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
