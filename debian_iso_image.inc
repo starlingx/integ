@@ -410,6 +410,9 @@ runc
 shim-helpers-amd64-signed-template
 shim-unsigned
 
+#stalld
+stalld
+
 #synce4l
 synce4l
 

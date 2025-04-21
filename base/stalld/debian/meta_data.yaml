@@ -1,0 +1,10 @@
+---
+debname: stalld
+debver: 1.19.6
+dl_path:
+  name: stalld-v1.19.6.tar.gz
+  url: https://gitlab.com/rt-linux-tools/stalld/-/archive/v1.19.6/stalld-v1.19.6.tar.gz
+  sha256sum: a185756f5d4ea239120322aa8b4f2a37c76653e41295f69e7eb37dcd26313bd0
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

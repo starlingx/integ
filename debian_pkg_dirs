@@ -11,6 +11,7 @@ base/lsb
 base/openssl
 base/ca-certificates
 base/pf-bb-config
+base/stalld
 base/synce4l
 base/systemd
 base/systemd-presets

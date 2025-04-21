@@ -1,0 +1,5 @@
+stalld (1.19.6) UNRELEASED; urgency=low
+
+  * Initial patching of debian package
+
+ Eliud Kyale <Eliud.Kyale@windriver.com>  Wed, 11 Dec 2024 00:00:00 +0000

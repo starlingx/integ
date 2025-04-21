@@ -1,0 +1,21 @@
+Metadata-Version: 1.1
+Name: stalld
+Version: 1.19.6
+Summary: stall daemon
+Home-page: https://gitlab.com/rt-linux-tools/stalld
+Author: RedHat
+Author-email:
+License: GPLv2
+
+Description:
+  The stalld program (which stands for 'stall daemon') is a
+  mechanism to prevent the starvation of operating system threads in a
+  Linux system. The premise is to start up on a housekeeping cpu (one
+  that is not used for real-application purposes) and to periodically
+  monitor the state of each thread in the system, looking for a thread
+  that has been on a run queue (i.e. ready to run) for a specifed length
+  of time without being run. This condition is usually hit when the
+  thread is on the same cpu as a high-priority cpu-intensive task and
+  therefore is being given no opportunity to run.
+
+Platform: UNKNOWN
