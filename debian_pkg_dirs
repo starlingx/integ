@@ -69,6 +69,7 @@ kubernetes/docker-distribution
 kubernetes/etcd
 kubernetes/flux2
 kubernetes/flux2-charts
+kubernetes/flux2-charts-legacy
 kubernetes/helm
 kubernetes/k8s-cni-cache-cleanup
 kubernetes/k8s-pod-recovery

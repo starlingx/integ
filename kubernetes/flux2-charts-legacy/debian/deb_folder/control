@@ -1,0 +1,16 @@
+Source: flux2-charts-legacy
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), helm
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: flux2-charts-legacy
+Architecture: any
+Depends:  ${misc:Depends}
+Description: A Helm chart for flux2 legacy versions.
+ Flux is a tool for keeping Kubernetes clusters in sync with sources of
+ configuration (like Git repositories), and automating updates to
+ configuration. This package provides the Helm charts to allow rolling
+ back to a previous FluxCD version.
