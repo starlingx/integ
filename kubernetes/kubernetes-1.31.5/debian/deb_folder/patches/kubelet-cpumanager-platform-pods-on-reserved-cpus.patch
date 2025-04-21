@@ -1,0 +1,555 @@
+From 5bab4ef0da32c5753c59770b3e197fc9efbc7bd7 Mon Sep 17 00:00:00 2001
+From: Boovan Rajendran <boovan.rajendran@windriver.com>
+Date: Tue, 5 Sep 2023 06:27:39 -0400
+Subject: [PATCH] kubelet cpumanager platform pods on reserved cpus
+
+This change assigns system infrastructure pods to the "reserved"
+cpuset to isolate them from the shared pool of CPUs. Kubernetes
+infrastructure pods are identified based on namespace 'kube-system'.
+Platform pods are identified based on namespace 'kube-system',
+or label with 'app.starlingx.io/component=platform'.
+
+The platform and infrastructure pods are given an isolated CPU
+affinity cpuset when the CPU manager is configured "with the 'static'
+policy."
+
+This implementation assumes that the "reserved" cpuset is large
+enough to handle all infrastructure and platform pod's CPU
+allocations, and it prevents the platform pods from running on
+application/isolated CPUs regardless of what QoS class they're in.
+
+Co-authored-by: Jim Gauld <james.gauld@windriver.com>
+Signed-off-by: Gleb Aronsky <gleb.aronsky@windriver.com>
+Signed-off-by: Thiago Miranda <ThiagoOliveira.Miranda@windriver.com>
+Signed-off-by: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Signed-off-by: Sachin Gopala Krishna <saching.krishna@windriver.com>
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ pkg/kubelet/cm/cpumanager/policy_static.go    | 121 ++++++++-
+ .../cm/cpumanager/policy_static_test.go       | 233 +++++++++++++++---
+ .../cm/cpumanager/topology_hints_test.go      |   4 +
+ 3 files changed, 316 insertions(+), 42 deletions(-)
+
+diff --git a/pkg/kubelet/cm/cpumanager/policy_static.go b/pkg/kubelet/cm/cpumanager/policy_static.go
+index fdbca3acd52..6bd5c5876ab 100644
+--- a/pkg/kubelet/cm/cpumanager/policy_static.go
++++ b/pkg/kubelet/cm/cpumanager/policy_static.go
+@@ -17,11 +17,17 @@ limitations under the License.
+ package cpumanager
+ 
+ import (
++	"context"
+ 	"fmt"
+ 
+ 	v1 "k8s.io/api/core/v1"
++	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+ 	utilfeature "k8s.io/apiserver/pkg/util/feature"
++	k8sclient "k8s.io/client-go/kubernetes"
++	restclient "k8s.io/client-go/rest"
++	"k8s.io/client-go/tools/clientcmd"
+ 	"k8s.io/klog/v2"
++	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+ 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
+ 	v1qos "k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
+ 	"k8s.io/kubernetes/pkg/features"
+@@ -44,6 +50,22 @@ const (
+ 	ErrorSMTAlignment = "SMTAlignmentError"
+ )
+ 
++// Declared as variables so that they can easily more
++// overridden during testing
++type getPodNamespace func(string) (*v1.Namespace, error)
++type buildFromConfigFlag func(masterUrl string, kubeconfigPath string) (*restclient.Config, error)
++type isKubeInfraFunc func(pod *v1.Pod) bool
++
++var varGetNamespaceObject getPodNamespace
++var varBuildConfigFromFlags buildFromConfigFlag
++var varIsKubeInfra isKubeInfraFunc
++
++func init() {
++	varIsKubeInfra = isKubeInfra
++	varGetNamespaceObject = getPodNamespaceObject
++	varBuildConfigFromFlags = clientcmd.BuildConfigFromFlags
++}
++
+ // SMTAlignmentError represents an error due to SMT alignment
+ type SMTAlignmentError struct {
+ 	RequestedCPUs         int
+@@ -141,11 +163,11 @@ func NewStaticPolicy(topology *topology.CPUTopology, numReservedCPUs int, reserv
+ 	klog.InfoS("Static policy created with configuration", "options", opts)
+ 
+ 	policy := &staticPolicy{
+-		topology:    topology,
+-		affinity:    affinity,
++		topology:        topology,
++		affinity:        affinity,
+ 		excludeReserved: excludeReserved,
+-		cpusToReuse: make(map[string]cpuset.CPUSet),
+-		options:     opts,
++		cpusToReuse:     make(map[string]cpuset.CPUSet),
++		options:         opts,
+ 	}
+ 
+ 	allCPUs := topology.CPUDetails.CPUs()
+@@ -223,8 +245,8 @@ func (p *staticPolicy) validateState(s state.State) error {
+ 	// - user tampered with file
+ 	if !p.excludeReserved {
+ 		if !p.reservedCPUs.Intersection(tmpDefaultCPUset).Equals(p.reservedCPUs) {
+-				return fmt.Errorf("not all reserved cpus: \"%s\" are present in defaultCpuSet: \"%s\"",
+-					p.reservedCPUs.String(), tmpDefaultCPUset.String())
++			return fmt.Errorf("not all reserved cpus: \"%s\" are present in defaultCpuSet: \"%s\"",
++				p.reservedCPUs.String(), tmpDefaultCPUset.String())
+ 		}
+ 	}
+ 	// 2. Check if state for static policy is consistent
+@@ -309,6 +331,25 @@ func (p *staticPolicy) updateCPUsToReuse(pod *v1.Pod, container *v1.Container, c
+ }
+ 
+ func (p *staticPolicy) Allocate(s state.State, pod *v1.Pod, container *v1.Container) (rerr error) {
++	// Process infra pods before guaranteed pods
++	if varIsKubeInfra(pod) {
++		// Container belongs in reserved pool.
++		// We don't want to fall through to the p.guaranteedCPUs() clause below so return either nil or error.
++		if _, ok := s.GetCPUSet(string(pod.UID), container.Name); ok {
++			klog.Infof("[cpumanager] static policy: reserved container already present in state, skipping (namespace: %s, pod UID: %s, pod: %s, container: %s)", pod.Namespace, string(pod.UID), pod.Name, container.Name)
++			return nil
++		}
++
++		cpuset := p.reservedCPUs
++		if cpuset.IsEmpty() {
++			// If this happens then someone messed up.
++			return fmt.Errorf("[cpumanager] static policy: reserved container unable to allocate cpus (namespace: %s, pod UID: %s, pod: %s, container: %s); cpuset=%v, reserved:%v", pod.Namespace, string(pod.UID), pod.Name, container.Name, cpuset, p.reservedCPUs)
++		}
++		s.SetCPUSet(string(pod.UID), container.Name, cpuset)
++		klog.Infof("[cpumanager] static policy: reserved: AddContainer (namespace: %s, pod UID: %s, pod: %s, container: %s); cpuset=%v", pod.Namespace, string(pod.UID), pod.Name, container.Name, cpuset)
++		return nil
++	}
++
+ 	numCPUs := p.guaranteedCPUs(pod, container)
+ 	if numCPUs == 0 {
+ 		// container belongs in the shared pool (nothing to do; use default cpuset)
+@@ -460,6 +501,10 @@ func (p *staticPolicy) guaranteedCPUs(pod *v1.Pod, container *v1.Container) int
+ 	if cpuQuantity.Value()*1000 != cpuQuantity.MilliValue() {
+ 		return 0
+ 	}
++	// Infrastructure pods use reserved CPUs even if they're in the Guaranteed QoS class
++	if varIsKubeInfra(pod) {
++		return 0
++	}
+ 	// Safe downcast to do for all systems with < 2.1 billion CPUs.
+ 	// Per the language spec, `int` is guaranteed to be at least 32 bits wide.
+ 	// https://golang.org/ref/spec#Numeric_types
+@@ -690,6 +735,70 @@ func (p *staticPolicy) generateCPUTopologyHints(availableCPUs cpuset.CPUSet, reu
+ 	return hints
+ }
+ 
++func getPodNamespaceObject(podNamespaceName string) (*v1.Namespace, error) {
++
++	kubeConfigPath := constants.GetKubeletKubeConfigPath()
++	cfg, err := varBuildConfigFromFlags("", kubeConfigPath)
++	if err != nil {
++		klog.Error("Failed to build client config from ", kubeConfigPath, err.Error())
++		return nil, err
++	}
++
++	clientset, err := k8sclient.NewForConfig(cfg)
++	if err != nil {
++		klog.Error("Failed to get clientset for KUBECONFIG ", kubeConfigPath, err.Error())
++		return nil, err
++	}
++
++	namespaceObj, err := clientset.CoreV1().Namespaces().Get(context.TODO(), podNamespaceName, metav1.GetOptions{})
++	if err != nil {
++		klog.Error("Error getting namespace object:", err.Error())
++		return nil, err
++	}
++
++	return namespaceObj, nil
++
++}
++
++// check if a given pod is labelled as platform pod or
++// is in a namespace labelled as a platform namespace
++func isKubeInfra(pod *v1.Pod) bool {
++
++	podName := pod.GetName()
++	podNamespaceName := pod.GetNamespace()
++
++	if podNamespaceName == "kube-system" {
++		klog.Infof("Pod %s has %s namespace. Treating as platform pod.", podName, podNamespaceName)
++		return true
++	}
++
++	klog.InfoS("Checking pod ", podName, " for label 'app.starlingx.io/component=platform'.")
++	podLabels := pod.GetLabels()
++	val, ok := podLabels["app.starlingx.io/component"]
++	if ok && val == "platform" {
++		klog.InfoS("Pod ", podName, " has 'app.starlingx.io/component=platform' label. Treating as platform pod.")
++		return true
++	}
++
++	klog.V(4).InfoS("Pod ", pod.GetName(), " does not have 'app.starlingx.io/component=platform' label. Checking its namespace information...")
++
++	namespaceObj, err := varGetNamespaceObject(podNamespaceName)
++	if err != nil {
++		return false
++	}
++
++	namespaceLabels := namespaceObj.GetLabels()
++	val, ok = namespaceLabels["app.starlingx.io/component"]
++	if ok && val == "platform" {
++		klog.InfoS("For pod: ", podName, ", its Namespace ", podNamespaceName, " has 'app.starlingx.io/component=platform' label. Treating as platform pod.")
++		return true
++	}
++
++	klog.InfoS("Neither pod ", podName, " nor its namespace ", podNamespaceName, " has 'app.starlingx.io/component=platform' label. Not treating as platform pod.")
++	return false
++
++}
++
+ // isHintSocketAligned function return true if numa nodes in hint are socket aligned.
+ func (p *staticPolicy) isHintSocketAligned(hint topologymanager.TopologyHint, minAffinitySize int) bool {
+ 	numaNodesBitMask := hint.NUMANodeAffinity.GetBits()
+diff --git a/pkg/kubelet/cm/cpumanager/policy_static_test.go b/pkg/kubelet/cm/cpumanager/policy_static_test.go
+index f3e8eb14134..8c4be44bbc6 100644
+--- a/pkg/kubelet/cm/cpumanager/policy_static_test.go
++++ b/pkg/kubelet/cm/cpumanager/policy_static_test.go
+@@ -17,12 +17,15 @@ limitations under the License.
+ package cpumanager
+ 
+ import (
++	"errors"
+ 	"fmt"
+ 	"reflect"
+ 	"testing"
+ 
+ 	v1 "k8s.io/api/core/v1"
++	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+ 	utilfeature "k8s.io/apiserver/pkg/util/feature"
++	restclient "k8s.io/client-go/rest"
+ 	featuregatetesting "k8s.io/component-base/featuregate/testing"
+ 	pkgfeatures "k8s.io/kubernetes/pkg/features"
+ 	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager/state"
+@@ -109,7 +112,7 @@ func TestStaticPolicyStart(t *testing.T) {
+ 			stAssignments:   state.ContainerCPUAssignments{},
+ 			stDefaultCPUSet: cpuset.New(),
+ 			expCSet:         cpuset.New(1, 2, 3, 4, 5, 7, 8, 9, 10, 11),
+-	        },
++		},
+ 		{
+ 			description:     "reserved cores 0 & 6 are not present in available cpuset",
+ 			topo:            topoDualSocketHT,
+@@ -954,17 +957,18 @@ func TestTopologyAwareAllocateCPUs(t *testing.T) {
+ // above test cases are without kubelet --reserved-cpus cmd option
+ // the following tests are with --reserved-cpus configured
+ type staticPolicyTestWithResvList struct {
+-	description     string
+-	topo            *topology.CPUTopology
+-	numReservedCPUs int
+-	reserved        cpuset.CPUSet
+-	stAssignments   state.ContainerCPUAssignments
+-	stDefaultCPUSet cpuset.CPUSet
+-	pod             *v1.Pod
+-	expErr          error
+-	expNewErr       error
+-	expCPUAlloc     bool
+-	expCSet         cpuset.CPUSet
++	description        string
++	topo               *topology.CPUTopology
++	numReservedCPUs    int
++	reserved           cpuset.CPUSet
++	stAssignments      state.ContainerCPUAssignments
++	stDefaultCPUSet    cpuset.CPUSet
++	pod                *v1.Pod
++	isKubeInfraPodfunc isKubeInfraFunc
++	expErr             error
++	expNewErr          error
++	expCPUAlloc        bool
++	expCSet            cpuset.CPUSet
+ }
+ 
+ func TestStaticPolicyStartWithResvList(t *testing.T) {
+@@ -1032,35 +1036,63 @@ func TestStaticPolicyStartWithResvList(t *testing.T) {
+ 	}
+ }
+ 
+-func TestStaticPolicyAddWithResvList(t *testing.T) {
++func fakeIsKubeInfraTrue(pod *v1.Pod) bool {
++	return true
++}
+ 
++func fakeIsKubeInfraFalse(pod *v1.Pod) bool {
++	return false
++}
++
++func TestStaticPolicyAddWithResvList(t *testing.T) {
++	infraPod := makePod("fakePod", "fakeContainer2", "200m", "200m")
++	infraPod.Namespace = "kube-system"
+ 	testCases := []staticPolicyTestWithResvList{
+ 		{
+-			description:     "GuPodSingleCore, SingleSocketHT, ExpectError",
+-			topo:            topoSingleSocketHT,
+-			numReservedCPUs: 1,
+-			reserved:        cpuset.New(0),
+-			stAssignments:   state.ContainerCPUAssignments{},
+-			stDefaultCPUSet: cpuset.New(1, 2, 3, 4, 5, 6, 7),
+-			pod:             makePod("fakePod", "fakeContainer2", "8000m", "8000m"),
+-			expErr:          fmt.Errorf("not enough cpus available to satisfy request: requested=8, available=7"),
+-			expCPUAlloc:     false,
+-			expCSet:         cpuset.New(),
++			description:        "GuPodSingleCore, SingleSocketHT, ExpectError",
++			topo:               topoSingleSocketHT,
++			numReservedCPUs:    1,
++			reserved:           cpuset.New(0),
++			stAssignments:      state.ContainerCPUAssignments{},
++			stDefaultCPUSet:    cpuset.New(1, 2, 3, 4, 5, 6, 7),
++			pod:                makePod("fakePod", "fakeContainer2", "8000m", "8000m"),
++			isKubeInfraPodfunc: fakeIsKubeInfraFalse,
++			expErr:             fmt.Errorf("not enough cpus available to satisfy request: requested=8, available=7"),
++			expCPUAlloc:        false,
++			expCSet:            cpuset.New(),
+ 		},
+ 		{
+-			description:     "GuPodSingleCore, SingleSocketHT, ExpectAllocOneCPU",
++			description:        "GuPodSingleCore, SingleSocketHT, ExpectAllocOneCPU",
++			topo:               topoSingleSocketHT,
++			numReservedCPUs:    2,
++			reserved:           cpuset.New(0, 1),
++			stAssignments:      state.ContainerCPUAssignments{},
++			stDefaultCPUSet:    cpuset.New(2, 3, 4, 5, 6, 7),
++			pod:                makePod("fakePod", "fakeContainer2", "1000m", "1000m"),
++			isKubeInfraPodfunc: fakeIsKubeInfraFalse,
++			expErr:             nil,
++			expCPUAlloc:        true,
++			expCSet:            cpuset.New(4), // expect sibling of partial core
++		},
++		{
++			description:     "GuPodMultipleCores, SingleSocketHT, ExpectAllocOneCore",
+ 			topo:            topoSingleSocketHT,
+ 			numReservedCPUs: 2,
+ 			reserved:        cpuset.New(0, 1),
+-			stAssignments:   state.ContainerCPUAssignments{},
+-			stDefaultCPUSet: cpuset.New(2, 3, 4, 5, 6, 7),
+-			pod:             makePod("fakePod", "fakeContainer2", "1000m", "1000m"),
+-			expErr:          nil,
+-			expCPUAlloc:     true,
+-			expCSet:         cpuset.New(4), // expect sibling of partial core
++			stAssignments: state.ContainerCPUAssignments{
++				"fakePod": map[string]cpuset.CPUSet{
++					"fakeContainer100": cpuset.New(2, 3, 6, 7),
++				},
++			},
++			stDefaultCPUSet:    cpuset.New(0, 1, 4, 5),
++			pod:                makePod("fakePod", "fakeContainer3", "2000m", "2000m"),
++			isKubeInfraPodfunc: fakeIsKubeInfraFalse,
++			expErr:             nil,
++			expCPUAlloc:        true,
++			expCSet:            cpuset.New(4, 5),
+ 		},
+ 		{
+-			description:     "GuPodMultipleCores, SingleSocketHT, ExpectAllocOneCore",
++			description:     "InfraPod, SingleSocketHT, ExpectAllocReserved",
+ 			topo:            topoSingleSocketHT,
+ 			numReservedCPUs: 2,
+ 			reserved:        cpuset.New(0, 1),
+@@ -1069,11 +1101,12 @@ func TestStaticPolicyAddWithResvList(t *testing.T) {
+ 					"fakeContainer100": cpuset.New(2, 3, 6, 7),
+ 				},
+ 			},
+-			stDefaultCPUSet: cpuset.New(0, 1, 4, 5),
+-			pod:             makePod("fakePod", "fakeContainer3", "2000m", "2000m"),
+-			expErr:          nil,
+-			expCPUAlloc:     true,
+-			expCSet:         cpuset.New(4, 5),
++			stDefaultCPUSet:    cpuset.New(4, 5),
++			pod:                infraPod,
++			isKubeInfraPodfunc: fakeIsKubeInfraTrue,
++			expErr:             nil,
++			expCPUAlloc:        true,
++			expCSet:            cpuset.New(0, 1),
+ 		},
+ 	}
+ 
+@@ -1086,6 +1119,7 @@ func TestStaticPolicyAddWithResvList(t *testing.T) {
+ 			defaultCPUSet: testCase.stDefaultCPUSet,
+ 		}
+ 
++		varIsKubeInfra = testCase.isKubeInfraPodfunc
+ 		container := &testCase.pod.Spec.Containers[0]
+ 		err := policy.Allocate(st, testCase.pod, container)
+ 		if !reflect.DeepEqual(err, testCase.expErr) {
+@@ -1206,6 +1240,133 @@ func TestStaticPolicyOptions(t *testing.T) {
+ 	}
+ }
+ 
++func makePodWithLabels(podLabels map[string]string) *v1.Pod {
++	return &v1.Pod{
++		ObjectMeta: metav1.ObjectMeta{
++			Name:      "test-pod",
++			Namespace: "test-namespace",
++			Labels:    podLabels,
++		},
++	}
++}
++
++func fakeBuildConfigFromFlags(masterUrl string, kubeconfigPath string) (*restclient.Config, error) {
++
++	return &restclient.Config{}, nil
++}
++
++func fakeBuildConfigFromFlagsError(masterUrl string, kubeconfigPath string) (*restclient.Config, error) {
++
++	errString := fmt.Sprintf("%s file not found", kubeconfigPath)
++	return nil, errors.New(errString)
++
++}
++
++func getFakeInfraPodNamespace(_ string) (*v1.Namespace, error) {
++
++	return &v1.Namespace{
++		ObjectMeta: metav1.ObjectMeta{
++			Name: "test-namespace",
++			Labels: map[string]string{
++				"app.starlingx.io/component": "platform",
++			},
++		}}, nil
++}
++
++func getFakeNonInfraPodNamespace(_ string) (*v1.Namespace, error) {
++
++	return &v1.Namespace{
++		ObjectMeta: metav1.ObjectMeta{
++			Name: "test-namespace",
++			Labels: map[string]string{
++				"fake": "label",
++			}}}, nil
++
++}
++
++type kubeInfraPodTestCase struct {
++	description   string
++	pod           *v1.Pod
++	namespaceFunc getPodNamespace
++	expectedValue bool
++}
++
++func TestKubeInfraPod(t *testing.T) {
++	testCases := []kubeInfraPodTestCase{
++		{
++			description: "Pod with platform label and namespace with platform label",
++			pod: makePodWithLabels(map[string]string{
++				"app.starlingx.io/component": "platform",
++			}),
++			namespaceFunc: getFakeInfraPodNamespace,
++			expectedValue: true,
++		},
++		{
++			description: "Pod with platform label and namespace without platform label",
++			pod: makePodWithLabels(map[string]string{
++				"app.starlingx.io/component": "platform",
++			}),
++			namespaceFunc: getFakeNonInfraPodNamespace,
++			expectedValue: true,
++		},
++		{
++			description: "Pod without platform label and namespace with platform label",
++			pod: makePodWithLabels(map[string]string{
++				"test": "label",
++			}),
++			namespaceFunc: getFakeInfraPodNamespace,
++			expectedValue: true,
++		},
++		{
++			description: "Pod without platform label and namespace without platform label",
++			pod: makePodWithLabels(map[string]string{
++				"test": "namespace",
++			}),
++			namespaceFunc: getFakeNonInfraPodNamespace,
++			expectedValue: false,
++		},
++	}
++
++	for _, testCase := range testCases {
++		t.Run(testCase.description, func(t *testing.T) {
++
++			varGetNamespaceObject = testCase.namespaceFunc
++			varBuildConfigFromFlags = fakeBuildConfigFromFlags
++			gotValue := isKubeInfra(testCase.pod)
++
++			if gotValue != testCase.expectedValue {
++				t.Errorf("StaticPolicy isKubeInfraPod() error %v. expected value %v actual value %v",
++					testCase.description, testCase.expectedValue, gotValue)
++			} else {
++				fmt.Printf("StaticPolicy isKubeInfraPod() test successful. : %v ", testCase.description)
++			}
++
++		})
++	}
++
++	test := kubeInfraPodTestCase{
++		description: "Failure reading kubeconfig file",
++		pod: makePodWithLabels(map[string]string{
++			"test": "namespace",
++		}),
++		namespaceFunc: getFakeNonInfraPodNamespace,
++		expectedValue: false,
++	}
++
++	varGetNamespaceObject = getPodNamespaceObject
++	varBuildConfigFromFlags = fakeBuildConfigFromFlagsError
++
++	gotValue := isKubeInfra(test.pod)
++
++	if gotValue != test.expectedValue {
++		t.Errorf("StaticPolicy isKubeInfraPod() error %v. expected value %v actual value %v",
++			test.description, test.expectedValue, gotValue)
++	} else {
++		fmt.Printf("StaticPolicy isKubeInfraPod() test successful. : %v ", test.description)
++	}
++
++}
++
+ func newCPUSetPtr(cpus ...int) *cpuset.CPUSet {
+ 	ret := cpuset.New(cpus...)
+ 	return &ret
+diff --git a/pkg/kubelet/cm/cpumanager/topology_hints_test.go b/pkg/kubelet/cm/cpumanager/topology_hints_test.go
+index dc8f0d49834..60c22b6d5bf 100644
+--- a/pkg/kubelet/cm/cpumanager/topology_hints_test.go
++++ b/pkg/kubelet/cm/cpumanager/topology_hints_test.go
+@@ -197,6 +197,7 @@ func TestPodGuaranteedCPUs(t *testing.T) {
+ 			expectedCPU: 210,
+ 		},
+ 	}
++	varIsKubeInfra = fakeIsKubeInfraFalse
+ 	for _, tc := range tcases {
+ 		t.Run(tc.name, func(t *testing.T) {
+ 			requestedCPU := p.podGuaranteedCPUs(tc.pod)
+@@ -241,6 +242,7 @@ func TestGetTopologyHints(t *testing.T) {
+ 			sourcesReady:      &sourcesReadyStub{},
+ 		}
+ 
++		varIsKubeInfra = fakeIsKubeInfraFalse
+ 		hints := m.GetTopologyHints(&tc.pod, &tc.container)[string(v1.ResourceCPU)]
+ 		if len(tc.expectedHints) == 0 && len(hints) == 0 {
+ 			continue
+@@ -294,6 +296,7 @@ func TestGetPodTopologyHints(t *testing.T) {
+ 			sourcesReady:      &sourcesReadyStub{},
+ 		}
+ 
++		varIsKubeInfra = fakeIsKubeInfraFalse
+ 		podHints := m.GetPodTopologyHints(&tc.pod)[string(v1.ResourceCPU)]
+ 		if len(tc.expectedHints) == 0 && len(podHints) == 0 {
+ 			continue
+@@ -477,6 +480,7 @@ func TestGetPodTopologyHintsWithPolicyOptions(t *testing.T) {
+ 				sourcesReady:      &sourcesReadyStub{},
+ 			}
+ 
++			varIsKubeInfra = fakeIsKubeInfraFalse
+ 			podHints := m.GetPodTopologyHints(&testCase.pod)[string(v1.ResourceCPU)]
+ 			sort.SliceStable(podHints, func(i, j int) bool {
+ 				return podHints[i].LessThan(podHints[j])
+-- 
+2.34.1
+
