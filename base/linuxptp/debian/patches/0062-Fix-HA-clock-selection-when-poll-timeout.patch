@@ -1,5 +1,5 @@
 From: Tara Subedi <Tara.Subedi@windriver.com>
-Date: Fri Apr 4 12:46:53 2025 -0400
+Date: Mon Apr 21 13:43:49 2025 -0400
 Subject: [PATCH 62/62] Fix HA clock selection when poll timeout
 
 PTP HA phc2sys not switching over when primary ptp instance is down
@@ -19,6 +19,11 @@ clock selection algorithm.
 This commit fixes this issue by resetting clock's internal data when pmc
 read fails, and clock selection algorithm re-triggered. This reset
 values can be seen in ha socket.
+
+This also increases timeout of pmc_agent_query_dds, pmc_agent_query_pds
+and pmc_agent_query_utc_offset polling from 0 to 1000 milliseconds, as
+with 0 ms timeout, it would timeout very frequently, which is not
+desirable.
 
 TEST PLAN:
 PASS: Setup HA PHY2SYS with two PTP4l instances
@@ -43,11 +48,11 @@ Task: 51927
 
 Signed-off-by: Tara Subedi <Tara.Subedi@windriver.com>
 ---
- pmc_agent.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+pmc_agent.c | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 57 insertions(+), 3 deletions(-)
 
 diff --git a/pmc_agent.c b/pmc_agent.c
-index bf65897..31db4c1 100644
+index bf65897..7b25e01 100644
 --- a/pmc_agent.c
 +++ b/pmc_agent.c
 @@ -284,6 +284,20 @@ int pmc_agent_query_dds(struct pmc_agent *node, int timeout)
@@ -125,3 +130,16 @@ index bf65897..31db4c1 100644
  		return run_pmc_err2errno(res);
  	}
  
+@@ -447,9 +501,9 @@ int pmc_agent_update(struct pmc_agent *node)
+ 		if (node->stay_subscribed) {
+ 			renew_subscription(node, 0);
+ 		}
+-		r = pmc_agent_query_utc_offset(node, 0);
+-		r += pmc_agent_query_dds(node, 0);
+-		r += pmc_agent_query_pds(node, 0);
++		r = pmc_agent_query_utc_offset(node, 1000);
++		r += pmc_agent_query_dds(node, 1000);
++		r += pmc_agent_query_pds(node, 1000);
+ 		if (!r) {
+ 			node->pmc_last_update = ts;
+ 		}
