@@ -1,2 +1,2 @@
-usr/local/kubernetes/1.29.2/stage2/usr/bin/kubectl
-usr/local/kubernetes/1.29.2/stage2/usr/share/bash-completion/completions/kubectl
+usr/local/kubernetes/1.29.2/stage1/usr/bin/kubectl
+usr/local/kubernetes/1.29.2/stage1/usr/share/bash-completion/completions/kubectl
