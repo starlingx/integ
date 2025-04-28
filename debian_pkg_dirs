@@ -105,6 +105,7 @@ python/python-nss
 python/python3-nsenter
 python/python3-setuptools
 python/python3-zmq
+python/python3-wheel
 python/python3.9
 python/zerorpc-python
 security/efitools

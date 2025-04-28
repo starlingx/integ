@@ -1,0 +1,62 @@
+From 8c765cb3755e9b5bae8554362f7ff943e78da954 Mon Sep 17 00:00:00 2001
+From: Peng Zhang <Peng.Zhang2@windriver.com>
+Date: Mon, 28 Apr 2025 06:14:56 +0000
+Subject: [PATCH] Fixed parsing of wheel file names with multiple platform tags
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes #485.
+
+Signed-off-by: Alex Grönholm <alex.gronholm@nextday.fi
+
+(Adapt for context change)
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
+(cherry picked from commit 44193907eb308930de05deed863fb4d157c5c866)
+---
+ src/wheel/wheelfile.py  |  4 ++--
+ tests/test_wheelfile.py | 13 ++++++++++---
+ 2 files changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/src/wheel/wheelfile.py b/src/wheel/wheelfile.py
+index bc4e8d7..81804ae 100644
+--- a/src/wheel/wheelfile.py
++++ b/src/wheel/wheelfile.py
+@@ -16,8 +16,8 @@ from wheel.util import urlsafe_b64decode, as_unicode, native, urlsafe_b64encode,
+ # Non-greedy matching of an optional build number may be too clever (more
+ # invalid wheel filenames will match). Separate regex for .dist-info?
+ WHEEL_INFO_RE = re.compile(
+-    r"""^(?P<namever>(?P<name>[^-]+?)-(?P<ver>[^-]+?))(-(?P<build>\d[^-]*))?
+-     -(?P<pyver>[^-]+?)-(?P<abi>[^-]+?)-(?P<plat>[^.]+?)\.whl$""",
++    r"""^(?P<namever>(?P<name>[^\s-]+?)-(?P<ver>[^\s-]+?))(-(?P<build>\d[^\s-]*))?
++     -(?P<pyver>[^\s-]+?)-(?P<abi>[^\s-]+?)-(?P<plat>\S+)\.whl$""",
+     re.VERBOSE)
+ 
+ 
+diff --git a/tests/test_wheelfile.py b/tests/test_wheelfile.py
+index db11bcd..69225f8 100644
+--- a/tests/test_wheelfile.py
++++ b/tests/test_wheelfile.py
+@@ -16,9 +16,16 @@ def wheel_path(tmpdir):
+     return str(tmpdir.join('test-1.0-py2.py3-none-any.whl'))
+ 
+ 
+-def test_wheelfile_re(tmpdir):
+-    # Regression test for #208
+-    path = tmpdir.join('foo-2-py3-none-any.whl')
++@pytest.mark.parametrize(
++    "filename",
++    [
++        "foo-2-py3-none-any.whl",
++        "foo-2-py2.py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
++    ],
++)
++def test_wheelfile_re(filename, tmpdir):
++    # Regression test for #208 and #485
++    path = tmpdir.join(filename)
+     with WheelFile(str(path), 'w') as wf:
+         assert wf.parsed_filename.group('namever') == 'foo-2'
+ 
+-- 
+2.30.2
+
