@@ -1,6 +1,6 @@
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:55 +0200
-Subject: [PATCH 04/62] port: Don't renew raw transport.
+Subject: [PATCH 04/63] port: Don't renew raw transport.
 
 Renewing of the transport on announce/sync timeout is needed in the
 client-only mode to avoid getting stuck with a broken multicast socket

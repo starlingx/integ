@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Thu, 31 Aug 2023 12:36:02 -0300
-Subject: [PATCH 53/62] GM time traceable check enabled by default
+Subject: [PATCH 53/63] GM time traceable check enabled by default
 
 Now the GM time traceable check is enabled by default as it is an
 important check for both T-GM and T-BC scenarios.

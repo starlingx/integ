@@ -1,6 +1,6 @@
 From: Cole Walker <cole.walker@windriver.com>
 Date: Wed, 23 Jun 2021 11:14:41 -0400
-Subject: [PATCH 06/62] Add option to disable default port selection in
+Subject: [PATCH 06/63] Add option to disable default port selection in
  phc2sys
 
 This change serves to address an issue in phc2sys

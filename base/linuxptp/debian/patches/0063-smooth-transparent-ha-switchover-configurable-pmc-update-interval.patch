@@ -1,0 +1,233 @@
+From: Tara Subedi <Tara.Subedi@windriver.com>
+Date: Mon Apr 28 13:12:23 2025 -0400
+Subject: [PATCH 63/63] Smooth/Transparent HA Switchover - Configurable Pmc Update Interval
+
+PTP: smooth/transparent HA switchover
+
+Currently we have following inconsistency between linuxptp and
+ptp-notification app.
+1) pmc_agent.cc: PMC polling interval (PMC_UPDATE_INTERVAL of 60
+	sec on pmc_agent_update)
+2) ptp-notification app: 'overalltracker_context': {'holdover_seconds':
+'15'}
+
+In context of HA switchover, there is pmc polling in 60 sec interval
+(pmc_agent_update uses PMC_UPDATE_INTERVAL i.e 60s ). This means when
+primary ptp source lost, it would take 60 sec to switchover to secondary
+clock.
+On ptp-application app side, we have 'ptptracker_context': {'holdover_seconds':
+15} 'overalltracker_context': {'holdover_seconds': '15'}
+With this, when the selected ptp source is lost more than 15 sec, the ptp
+state and overall state would go holdover and then freerun.
+
+For smooth transition, PMC_UPDATE_INTERVAL should be << holdover_seconds.
+This commit introduces configurable value for PMC_UPDATE_INTERVAL with
+"phc2sys .. -p <int value [1, 3600]>", and without configuration, the
+default value would be of 7 sec.
+
+TEST PLAN:
+PASS: deploy PTP with HA phy2sys parameter of "-p 60"
+		or with file global parameter "pmc_update_interval_sec 60"
+		stop primary ptp4l instance and check users.log to see the "timeout
+		reading pmc" in 60 secs.
+PASS: deploy PTP with HA Phy2sys without parameter of "-p"
+		stop primary ptp4l instance and check users.log to see the "timeout
+		reading pmc" in 7 secs.
+		check HA switchover happens in 7 secs, and overall state won't
+		change from Locked to holdover/freerun.
+
+Story: 2011370
+Task: 52061
+
+Signed-off-by: Tara Nath Subedi <tara.subedi@windriver.com>
+---
+config.c    |  1 +
+phc2sys.c   | 26 +++++++++++++++++++++++---
+pmc_agent.c | 15 +++++----------
+pmc_agent.h | 12 ++++++++----
+4 files changed, 37 insertions(+), 17 deletions(-)
+
+diff --git a/config.c b/config.c
+index 249c9ca..319f825 100644
+--- a/config.c
++++ b/config.c
+@@ -348,6 +348,7 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("write_phase_mode", 0, 0, 1),
+ 	GLOB_ITEM_INT("default_sync", 1, 0, 1),
+ 	PORT_ITEM_INT("max_phc_update_skip_cnt", 120, 0, 14400),
++	GLOB_ITEM_INT("pmc_update_interval_sec", 7, 1, 3600),
+ };
+ 
+ static struct unicast_master_table *current_uc_mtab;
+diff --git a/phc2sys.c b/phc2sys.c
+index d89fb23..5f3e6c7 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -69,6 +69,7 @@
+ #define HA_SCK_N_FD 1
+ #define HA_SCK_BUFFER_SIZE 1024
+ #define HA_SCK_FILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP) /*0660*/
++#define MAX_PMC_UPDATE_INTERVAL_SEC 3600 /* 1 hour */
+ 
+ #define PORT_INDEX_TO_PORT_ID(port, index) (((((unsigned int) port) & 0xFF) << 8) | (((unsigned int) index) & 0xFF))
+ #define PORT_ID_TO_PORT(id) ((((unsigned int) id) >> 8) & 0xFF)
+@@ -1993,6 +1994,7 @@ static void usage(char *progname)
+ 		" common options:\n"
+ 		" -f [file]      configuration file\n"
+ 		" -E [pi|linreg] clock servo (pi)\n"
++		" -p [num]       PMC update interval in seconds (7)\n"
+ 		" -P [kp]        proportional constant (0.7)\n"
+ 		" -I [ki]        integration constant (0.3)\n"
+ 		" -S [step]      step threshold (disabled)\n"
+@@ -2024,6 +2026,12 @@ int main(int argc, char *argv[])
+ 	int autocfg = 0, c, domain_number = 0, index, ntpshm_segment, offset;
+ 	int pps_fd = -1, print_level = LOG_INFO, r = -1, rt = 0;
+ 	int wait_sync = 0;
++	/* Note that pmc_subscribe_duration_sec has to be longer than
++	* pmc_update_interval_sec otherwise subscription will time out before it is
++	* renewed.
++	*/
++	int pmc_update_interval_sec = 7;
++	int pmc_subscribe_duration_sec = 3 * pmc_update_interval_sec;
+ 	struct clock *src, *dst;
+ 	struct config *cfg;
+ 	struct option *opts;
+@@ -2062,7 +2070,7 @@ int main(int argc, char *argv[])
+ 	progname = strrchr(argv[0], '/');
+ 	progname = progname ? 1+progname : argv[0];
+ 	while (EOF != (c = getopt_long(argc, argv,
+-				"arc:d:f:s:E:P:I:S:F:R:N:O:L:M:D:i:u:wn:xz:l:t:mqvh",
++				"arc:d:f:s:E:p:P:I:S:F:R:N:O:L:M:D:i:u:wn:xz:l:t:mqvh",
+ 				opts, &index))) {
+ 		switch (c) {
+ 		case 0:
+@@ -2117,6 +2125,12 @@ int main(int argc, char *argv[])
+ 				goto end;
+ 			}
+ 			break;
++		case 'p':
++			if (get_arg_val_i(c, optarg, &pmc_update_interval_sec, 1, MAX_PMC_UPDATE_INTERVAL_SEC) ||
++				config_set_int(cfg, "pmc_update_interval_sec", pmc_update_interval_sec)) {
++				goto end;
++			}
++			break;
+ 		case 'P':
+ 			if (get_arg_val_d(c, optarg, &tmp, 0.0, DBL_MAX) ||
+ 			    config_set_double(cfg, "pi_proportional_const", tmp))
+@@ -2289,10 +2303,15 @@ int main(int argc, char *argv[])
+ 	snprintf(uds_local, sizeof(uds_local), "/var/run/phc2sys.%d",
+ 		 getpid());
+ 
++	pmc_update_interval_sec = config_get_int(cfg, NULL, "pmc_update_interval_sec");
++	pmc_subscribe_duration_sec = 3 * pmc_update_interval_sec;
++	pr_info("pmc_update_interval_sec %d, pmc_subscribe_duration_sec %d",
++			pmc_update_interval_sec, pmc_subscribe_duration_sec);
+ 	if (autocfg) {
+ 		domain_number = config_get_int(cfg, NULL, "domainNumber");
+ 		if (init_pmc_node(cfg, node, uds_local, domain_number,
+-				  phc2sys_recv_subscribed, &priv))
++				  phc2sys_recv_subscribed, &priv, pmc_update_interval_sec,
++				  pmc_subscribe_duration_sec))
+ 			goto end;
+ 		if (auto_init_ports(&priv, rt) < 0)
+ 			goto end;
+@@ -2376,7 +2395,8 @@ int main(int argc, char *argv[])
+ 				domain_number = config_get_int(cfg, NULL, "domainNumber");
+ 			}
+ 			if (init_pmc_node(cfg, src->node, uds_local, domain_number,
+-					phc2sys_recv_subscribed, &priv))
++					phc2sys_recv_subscribed, &priv, pmc_update_interval_sec,
++					pmc_subscribe_duration_sec))
+ 				goto end;
+ 
+ 			while (is_running()) {
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 7b25e01..64012f8 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -27,19 +27,12 @@
+ #include "print.h"
+ #include "util.h"
+ 
+-#define PMC_UPDATE_INTERVAL (60 * NS_PER_SEC)
+-#define PMC_SUBSCRIBE_DURATION 180	/* 3 minutes */
+-/* Note that PMC_SUBSCRIBE_DURATION has to be longer than
+- * PMC_UPDATE_INTERVAL otherwise subscription will time out before it is
+- * renewed.
+- */
+-
+ static void send_subscription(struct pmc_agent *node)
+ {
+ 	struct subscribe_events_np sen;
+ 
+ 	memset(&sen, 0, sizeof(sen));
+-	sen.duration = PMC_SUBSCRIBE_DURATION;
++	sen.duration = node->pmc_subscribe_duration_sec;
+ 	event_bitmask_set(sen.bitmask, NOTIFY_PORT_STATE, TRUE);
+ 	pmc_send_set_action(node->pmc, MID_SUBSCRIBE_EVENTS_NP, &sen, sizeof(sen));
+ }
+@@ -221,7 +214,7 @@ void run_pmc_events(struct pmc_agent *node)
+ 
+ int init_pmc_node(struct config *cfg, struct pmc_agent *node, const char *uds,
+ 		  int domain_number, pmc_node_recv_subscribed_t *recv_subscribed,
+-		  void *context)
++		  void *context, int pmc_update_interval_sec, int pmc_subscribe_duration_sec)
+ {
+ 	node->pmc = pmc_create(cfg, TRANS_UDS, uds, 0, domain_number,
+ 			       config_get_int(cfg, NULL, "transportSpecific") << 4, 1);
+@@ -231,6 +224,8 @@ int init_pmc_node(struct config *cfg, struct pmc_agent *node, const char *uds,
+ 	}
+ 	node->recv_subscribed = recv_subscribed;
+ 	node->recv_context = context;
++	node->pmc_update_interval_sec = pmc_update_interval_sec;
++	node->pmc_subscribe_duration_sec = pmc_subscribe_duration_sec;
+ 
+ 	return 0;
+ }
+@@ -497,7 +492,7 @@ int pmc_agent_update(struct pmc_agent *node)
+ 	}
+ 	ts = tp.tv_sec * NS_PER_SEC + tp.tv_nsec;
+ 
+-	if (ts - node->pmc_last_update >= PMC_UPDATE_INTERVAL) {
++	if (ts - node->pmc_last_update >= (uint64_t)node->pmc_update_interval_sec * NS_PER_SEC) {
+ 		if (node->stay_subscribed) {
+ 			renew_subscription(node, 0);
+ 		}
+diff --git a/pmc_agent.h b/pmc_agent.h
+index 4e70606..9fbe780 100644
+--- a/pmc_agent.h
++++ b/pmc_agent.h
+@@ -51,6 +51,9 @@ struct pmc_agent {
+ 	bool pds_valid;
+ 	bool new_pds;
+ 
++	int pmc_update_interval_sec;
++	int pmc_subscribe_duration_sec;
++
+ 	/* Callback on message reception */
+ 	pmc_node_recv_subscribed_t *recv_subscribed;
+ 	void *recv_context;
+@@ -58,7 +61,7 @@ struct pmc_agent {
+ 
+ int init_pmc_node(struct config *cfg, struct pmc_agent *agent, const char *uds,
+ 		  int domain_number, pmc_node_recv_subscribed_t *recv_subscribed,
+-		  void *context);
++		  void *context, int pmc_update_interval_sec, int pmc_subscribe_duration_sec);
+ int run_pmc_wait_sync(struct pmc_agent *agent, int timeout);
+ void run_pmc_events(struct pmc_agent *agent);
+ 
+@@ -187,10 +190,11 @@ int pmc_agent_subscribe(struct pmc_agent *agent, int timeout);
+  * - The port state notification callback might be invoked.
+  *
+  * This function should be called periodically at least once per
+- * minute to keep both the port state and the leap second flags up to
++ * 7s (configurable on agent->pmc_update_interval_sec) to keep both the
++ * port state and the leap second flags up to
+  * date.  Note that the PMC agent rate limits the query to once per
+- * minute, and so the caller may safely invoke this method more often
+- * than that.
++ * 7s (configurable on agent->pmc_update_interval_sec), and so the caller
++ * may safely invoke this method more often than that.
+  *
+  * @param agent  Pointer to a PMC instance obtained via @ref pmc_agent_create().
+  * @return       Zero on success, negative error code otherwise.

@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 12 Jun 2023 15:08:01 -0300
-Subject: [PATCH 20/62] pmc_agent: Convert the subscribe method into the
+Subject: [PATCH 20/63] pmc_agent: Convert the subscribe method into the
  canonical form.
 
 This patch renames the function to have the module prefix and corrects the
