@@ -366,6 +366,9 @@ python3-nsenter
 python3-pkg-resources
 python3-setuptools
 
+#wheel
+python3-wheel
+
 #python3.9
 python3.9
 
