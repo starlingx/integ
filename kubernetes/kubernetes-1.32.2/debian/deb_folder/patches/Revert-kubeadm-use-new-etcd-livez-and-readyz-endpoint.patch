@@ -1,12 +1,14 @@
-From 39fcdd692beb7cc0e3d6a528f964bb891ba4d71f Mon Sep 17 00:00:00 2001
-From: Boovan Rajendran <boovan.rajendran@windriver.com>
-Date: Mon, 14 Apr 2025 06:26:59 -0400
+From ebe4522062301de6d58da76d157403c56eb6c27e Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Tue, 29 Apr 2025 10:21:01 -0400
 Subject: [PATCH] Revert "kubeadm: use new etcd /livez and /readyz endpoints"
 
 This reverts commit eeac2dda7091c1f1ea100e7637291bba2345bb0b and
 partially reverts commit a04cc020f1b3992fcf185ef2b1bf12c55815fb5a
 to install K8s 1.32.2 with the existing etcd version 3.4. This patch
 needs to be removed after upgrading the etcd version to >= 3.5.11.
+
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
 ---
  cmd/kubeadm/app/constants/constants.go      |  2 +-
  cmd/kubeadm/app/constants/constants_test.go | 12 ++++--------
@@ -15,7 +17,7 @@ needs to be removed after upgrading the etcd version to >= 3.5.11.
  4 files changed, 10 insertions(+), 26 deletions(-)
 
 diff --git a/cmd/kubeadm/app/constants/constants.go b/cmd/kubeadm/app/constants/constants.go
-index 3cff2113fa0..6c89e075dc0 100644
+index d9e7c579f44..5ad3c3c87ed 100644
 --- a/cmd/kubeadm/app/constants/constants.go
 +++ b/cmd/kubeadm/app/constants/constants.go
 @@ -323,7 +323,7 @@ const (
@@ -117,5 +119,5 @@ index 50cd5a96c6c..e04c8655eb5 100644
          scheme: HTTP
        initialDelaySeconds: 10
 -- 
-2.25.1
+2.34.1
 
