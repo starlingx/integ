@@ -5,8 +5,8 @@ src_path: null
 dl_files:
   runc.amd64:
     topdir: null
-    url: https://github.com/opencontainers/runc/releases/download/v1.3.0-rc.2/runc.amd64
-    sha256sum: 51b0df0d2a884aec9b9f14076f711c40e069d38c017e0e97470d4a6b3abe6aff
+    url: https://github.com/opencontainers/runc/releases/download/v1.3.0/runc.amd64
+    sha256sum: 028986516ab5646370edce981df2d8e8a8d12188deaf837142a02097000ae2f2
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
