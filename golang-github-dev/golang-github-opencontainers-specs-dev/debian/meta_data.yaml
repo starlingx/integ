@@ -1,7 +1,0 @@
----
-debname: golang-github-opencontainers-specs
-debver: 1.0.2.66.g20a2d97-1
-archive: https://snapshot.debian.org/archive/debian/20211010T204214Z/pool/main/g/golang-github-opencontainers-specs/
-revision:
-  dist: $STX_DIST
-  PKG_GITREVCOUNT: true

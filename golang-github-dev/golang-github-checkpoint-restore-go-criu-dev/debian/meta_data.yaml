@@ -1,7 +1,0 @@
----
-debname: golang-github-checkpoint-restore-go-criu
-debver: 5.1.0-1
-archive: https://snapshot.debian.org/archive/debian/20211010T204214Z/pool/main/g/golang-github-checkpoint-restore-go-criu/
-revision:
-  dist: $STX_DIST
-  PKG_GITREVCOUNT: true

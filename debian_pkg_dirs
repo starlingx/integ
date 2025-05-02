@@ -48,14 +48,8 @@ filesystem/drbd/drbd-tools
 filesystem/luks
 filesystem/parted
 golang-github-dev/golang-github-appc-cni
-golang-github-dev/golang-github-checkpoint-restore-go-criu-dev
-golang-github-dev/golang-github-cilium-ebpf-dev
-golang-github-dev/golang-github-coreos-go-systemd-dev
-golang-github-dev/golang-github-opencontainers-specs-dev
 golang-github-dev/golang-github-vishvananda-netlink
 golang-github-dev/golang-github-networkplumbing-go-nft-dev
-golang-github-dev/golang-github-cockroachdb-datadriven
-golang-github-dev/golang-github-golang-jwt-jwt-dev
 grub/grub-efi
 grub/grub2
 grub/grubby
