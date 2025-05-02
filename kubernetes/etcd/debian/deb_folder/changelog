@@ -1,3 +1,9 @@
+etcd (3.4.37-1) unstable; urgency=medium
+
+  * Updated to include a CVE fix
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Thu, 01 May 2025 17:28:19 +0000
+
 etcd (3.4.36-1) unstable; urgency=medium
 
   * Updated for stx debian packaging

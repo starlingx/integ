@@ -1,11 +1,10 @@
 ---
 debname: etcd
-debver: 3.4.36
+debver: 3.4.37
 dl_path:
-  name: etcd-3.4.36.tar.gz
-  url: https://github.com/etcd-io/etcd/releases/download/v3.4.36/etcd-v3.4.36-linux-amd64.tar.gz
-  md5sum: a00d13822c46ca6c6224b537499f62b2
-  sha256sum: 077e2054cefb5015089d76b8a665827c3965ac275e23faacb34ef5878f768550
+  name: etcd-3.4.37.tar.gz
+  url: https://github.com/etcd-io/etcd/releases/download/v3.4.37/etcd-v3.4.37-linux-amd64.tar.gz
+  sha256sum: e155b80ee292e19fa39000a218a7ea9166f45b161c610074db73e4e8f9011927
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
