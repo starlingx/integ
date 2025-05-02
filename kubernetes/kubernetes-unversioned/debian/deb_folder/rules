@@ -30,9 +30,9 @@ override_dh_install:
 	install -v -m 755 -d ${DEBIAN_DESTDIR}/usr/share/bash-completion/completions
 	$(call stage_link,${_symlinkdir}/stage1,${_bindir},kubeadm)
 	$(call stage_link,${_symlinkdir}/stage2,/etc/systemd/system/kubelet.service.d,kubeadm.conf)
-	$(call stage_link,${_symlinkdir}/stage2,/usr/share/bash-completion/completions,kubectl)
+	$(call stage_link,${_symlinkdir}/stage1,/usr/share/bash-completion/completions,kubectl)
 	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubelet)
-	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubectl)
+	$(call stage_link,${_symlinkdir}/stage1,${_bindir},kubectl)
 
 	# install environment files
 	install -v -d -m 0755 ${DEBIAN_DESTDIR}/etc/${_k8s_name}

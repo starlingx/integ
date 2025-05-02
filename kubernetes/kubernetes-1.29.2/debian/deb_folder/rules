@@ -62,16 +62,16 @@ override_dh_install:
 	# kube_version stage1
 	install -m 755 -d ${DEBIAN_DESTDIR}${_stage1}${_bindir}
 	install -p -m 755 -t ${DEBIAN_DESTDIR}${_stage1}${_bindir} ${output_bindir}/kubeadm
+	install -p -m 755 -t ${DEBIAN_DESTDIR}${_stage1}${_bindir} ${output_bindir}/kubectl
+	# bash completions
+	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage1}/usr/share/bash-completion/completions/
+	${DEBIAN_DESTDIR}${_stage1}${_bindir}/kubectl completion bash > ${DEBIAN_DESTDIR}${_stage1}/usr/share/bash-completion/completions/kubectl
 
 	# kube_version stage2
 	install -m 755 -d ${DEBIAN_DESTDIR}${_stage2}${_bindir}
 	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d
 	install -p -m 0644 -t ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d debian/kubeadm.conf
 	install -p -m 750 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubelet
-	install -p -m 755 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubectl
-	# bash completions
-	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/
-	${DEBIAN_DESTDIR}${_stage2}${_bindir}/kubectl completion bash > ${DEBIAN_DESTDIR}${_stage2}/usr/share/bash-completion/completions/kubectl
 
 	# remaining are not kube_version staged, i.e., kubernetes-master, kubernetes-misc
 	install -m 755 -d ${DEBIAN_DESTDIR}${_bindir}
