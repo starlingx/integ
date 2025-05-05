@@ -103,6 +103,7 @@ libfacter3.14.12
 
 #flux
 flux2-charts
+flux2-charts-legacy
 
 #gpu-operator
 #gpu-operator

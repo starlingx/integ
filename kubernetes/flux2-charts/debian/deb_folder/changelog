@@ -1,3 +1,9 @@
+flux2-charts (2.15.0-1) stable; urgency=medium
+
+  * Bump chart version to v2.15.0 (Flux v2.5.1)
+
+ -- Igor Pires Soares <igor.piressoares@windriver.com>  Mon, 21 Apr 2025 12:55:03 +0000
+
 flux2-charts (2.13.0-1) stable; urgency=medium
 
   * Initial release
