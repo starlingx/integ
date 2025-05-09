@@ -13,7 +13,7 @@ timeout to 5 sec for the coredns deployment. manifests.go is
 the main source file for this, not sure if the coredns.yaml
 are used but they are updated to be consistent.
 
-This specifies CPU limit of 1 for kube-apiserver pod so that it is
+This specifies CPU limit of 4 for kube-apiserver pod so that it is
 treated as a burstable QoS. This gives a boost of cgroup CPUShares
 since the burstable cgroup parent has significantly more CPUShares
 than best-effort on typical systems. This improves kube-apiserver
@@ -185,7 +185,7 @@ index e0abc479b22..9a789fed82b 100644
 -			Env:             kubeadmutil.MergeKubeadmEnvVars(proxyEnvs, cfg.APIServer.ExtraEnvs),
 +			// WRS: Increase kube-apiserver cgroup CPUShares to improve API responsiveness;
 +			// achieved by setting CPU Limits to make it burstable QoS.
-+			Resources: staticpodutil.ComponentLimitResources("0", "1"),
++			Resources: staticpodutil.ComponentLimitResources("0", "4"),
 +			Env:       kubeadmutil.MergeKubeadmEnvVars(proxyEnvs, cfg.APIServer.ExtraEnvs),
  		}, mounts.GetVolumes(kubeadmconstants.KubeAPIServer),
  			map[string]string{kubeadmconstants.KubeAPIServerAdvertiseAddressEndpointAnnotationKey: endpoint.String()}),
