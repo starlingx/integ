@@ -1,6 +1,6 @@
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:54 +0200
-Subject: [PATCH 03/63] port: Don't check timestamps from non-slave ports.
+Subject: [PATCH 03/64] port: Don't check timestamps from non-slave ports.
 
 Don't perform the sanity check on receive timestamps from ports in
 non-slave states to avoid false positives in the jbod mode, where

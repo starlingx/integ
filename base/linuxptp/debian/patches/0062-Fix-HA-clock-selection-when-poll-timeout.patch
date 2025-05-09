@@ -1,6 +1,6 @@
 From: Tara Subedi <Tara.Subedi@windriver.com>
 Date: Mon Apr 21 13:43:49 2025 -0400
-Subject: [PATCH 62/63] Fix HA clock selection when poll timeout
+Subject: [PATCH 62/64] Fix HA clock selection when poll timeout
 
 PTP HA phc2sys not switching over when primary ptp instance is down
 

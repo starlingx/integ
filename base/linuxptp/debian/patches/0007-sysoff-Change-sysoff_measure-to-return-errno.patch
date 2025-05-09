@@ -1,6 +1,6 @@
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Wed, 18 May 2022 11:33:35 +0200
-Subject: [PATCH 07/63] sysoff: Change sysoff_measure() to return errno.
+Subject: [PATCH 07/64] sysoff: Change sysoff_measure() to return errno.
 
 Return -errno from failed ioctl instead of the SYSOFF_* enum from the
 measurement functions to allow the callers to check for specific errors.

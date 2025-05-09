@@ -1,6 +1,6 @@
 From: Tara Subedi <Tara.Subedi@windriver.com>
 Date: Mon Apr 28 13:12:23 2025 -0400
-Subject: [PATCH 63/63] Smooth/Transparent HA Switchover - Configurable Pmc Update Interval
+Subject: [PATCH 63/64] Smooth/Transparent HA Switchover - Configurable Pmc Update Interval
 
 PTP: smooth/transparent HA switchover
 
