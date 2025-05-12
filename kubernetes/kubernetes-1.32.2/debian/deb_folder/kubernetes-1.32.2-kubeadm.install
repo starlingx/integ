@@ -1,2 +1,1 @@
 usr/local/kubernetes/1.32.2/stage1/usr/bin/kubeadm
-usr/local/kubernetes/1.32.2/stage2/etc/systemd/system/kubelet.service.d/kubeadm.conf

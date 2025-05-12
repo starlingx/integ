@@ -69,8 +69,6 @@ override_dh_install:
 
 	# kube_version stage2
 	install -m 755 -d ${DEBIAN_DESTDIR}${_stage2}${_bindir}
-	install -d -m 0755 ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d
-	install -p -m 0644 -t ${DEBIAN_DESTDIR}${_stage2}/etc/systemd/system/kubelet.service.d debian/kubeadm.conf
 	install -p -m 750 -t ${DEBIAN_DESTDIR}${_stage2}${_bindir} ${output_bindir}/kubelet
 
 	# remaining are not kube_version staged, i.e., kubernetes-master, kubernetes-misc
