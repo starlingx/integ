@@ -3,6 +3,7 @@ etc/kubernetes/config
 etc/kubernetes/kubelet
 etc/kubernetes/kubelet.kubeconfig
 etc/kubernetes/proxy
+etc/systemd/system/kubelet.service.d/kubeadm.conf
 etc/systemd/system.conf.d/kubernetes-accounting.conf
 usr/lib/tmpfiles.d/kubernetes.conf
 usr/bin/kubelet-cgroup-setup.sh
