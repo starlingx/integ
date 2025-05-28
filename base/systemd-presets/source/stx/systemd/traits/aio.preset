@@ -142,3 +142,6 @@ enable affine-tasks.service
 
 # usm initialize service
 disable usm-initialize.service
+
+# lvm snapshot restore service
+enable lvm-snapshot-restore.service
