@@ -1,0 +1,40 @@
+From cf34313cdf97c541c46ea312cbb0a57511b8d92e Mon Sep 17 00:00:00 2001
+From: Zhixiong Chi <zhixiong.chi@windriver.com>
+Date: Fri, 23 May 2025 07:00:17 +0000
+Subject: [PATCH] Keep the default value for MODULES
+
+Do not change the MODULES to 'dep' to avoid the following failure
+during the progress to generate the initramfs, which is triggerred
+by upgrading the kernel.
+
+>update-initramfs: Generating /boot/initrd.img-6.12.0-1-amd64
+>W: Possible missing firmware /lib/firmware/aic94xx-seq.fw for built-in driver aic94xx
+>/etc/kernel/postinst.d/kdump-tools:
+>kdump-tools: Generating /var/lib/kdump/initrd.img-6.12.0-1-amd64
+>mkinitramfs: failed to determine device for /
+>mkinitramfs: workaround is MODULES=most, check:
+>grep -r MODULES /var/lib/kdump/initramfs-toolsError please report bug on initramfs-tools
+>Include the output of 'mount' and 'cat /proc/mounts'
+>update-initramfs: failed for /var/lib/kdump/initrd.img-6.12.0-1-amd64 with 1.
+
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
+---
+ debian/kernel-postinst-generate-initrd | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/kernel-postinst-generate-initrd b/debian/kernel-postinst-generate-initrd
+index 45d3625..f40d729 100755
+--- a/debian/kernel-postinst-generate-initrd
++++ b/debian/kernel-postinst-generate-initrd
+@@ -50,7 +50,7 @@ for I in $(lsmod | grep scsi_dh | cut -d" " -f1);do
+ 	echo "${I}" >> $initramfsdir/modules
+ done
+ 
+-sed -e 's/MODULES=.*/MODULES=dep/' /etc/initramfs-tools/initramfs.conf > "$initramfsdir/initramfs.conf" || true
++cp /etc/initramfs-tools/initramfs.conf "$initramfsdir/initramfs.conf" || true
+ if ! [ -e "$initramfsdir/initramfs.conf" ];then
+ 	echo >&2 "W: kdump-tools: Unable to create $initramfsdir/initramfs.conf"
+ 	exit 2
+-- 
+2.49.0
+
