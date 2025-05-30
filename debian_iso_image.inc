@@ -354,6 +354,9 @@ puppet-module-puppetlabs-postgresql
 #puppetlabs-stdlib-5.0.0
 puppet-module-puppetlabs-stdlib
 
+#puppet-vswitch
+puppet-module-vswitch
+
 #puppet-zitrlp-strongswan
 puppet-zitrlp-strongswan
 

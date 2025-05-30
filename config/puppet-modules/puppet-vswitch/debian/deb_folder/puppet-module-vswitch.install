@@ -1,0 +1,6 @@
+Gemfile usr/share/puppet/modules.available/vswitch
+Rakefile usr/share/puppet/modules.available/vswitch
+lib usr/share/puppet/modules.available/vswitch
+manifests usr/share/puppet/modules.available/vswitch
+metadata.json usr/share/puppet/modules.available/vswitch
+spec usr/share/puppet/modules.available/vswitch

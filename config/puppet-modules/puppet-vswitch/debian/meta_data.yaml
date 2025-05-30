@@ -1,0 +1,11 @@
+---
+debname: puppet-module-vswitch
+debver: 20.0.0-1
+dl_path:
+  name: puppet-module-vswitch-debian-20.0.0-1.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-vswitch/-/archive/debian/20.0.0-1/puppet-module-vswitch-debian-20.0.0-1.tar.gz
+  md5sum: d84ed906594b785ded316ecf2e628701
+  sha256sum: bcd062b8072658fcfdd4e119fe3733e0192960cad95bb7108a0ed65b5a62e3d1
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

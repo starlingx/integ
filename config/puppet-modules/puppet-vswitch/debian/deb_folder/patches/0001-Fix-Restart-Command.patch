@@ -1,0 +1,42 @@
+From 94f4ef4b7a86d3f206830bb5d4ddddd2d8bda77c Mon Sep 17 00:00:00 2001
+From: Murillo Arantes <murillo.arantes@windriver.com>
+Date: Wed, 21 May 2025 09:52:11 -0300
+Subject: [PATCH] Fix Restart Command
+
+Fix for an openvswitch restart command issue caused by an array
+parameter where a string is expected.
+
+---
+ manifests/dpdk.pp | 2 +-
+ manifests/ovs.pp  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/manifests/dpdk.pp b/manifests/dpdk.pp
+index e691662..11ef2bb 100644
+--- a/manifests/dpdk.pp
++++ b/manifests/dpdk.pp
+@@ -292,7 +292,7 @@ class vswitch::dpdk (
+   # when any vs_config resource with restart => true is enabled.
+   exec { 'restart openvswitch':
+     path        => ['/sbin', '/usr/sbin', '/bin', '/usr/bin'],
+-    command     => ['systemctl', '-q', 'restart', "${service_name}.service"],
++    command     => "systemctl -q restart ${service_name}.service",
+     refreshonly => true,
+   }
+
+diff --git a/manifests/ovs.pp b/manifests/ovs.pp
+index ee16c3f..c32a338 100644
+--- a/manifests/ovs.pp
++++ b/manifests/ovs.pp
+@@ -99,7 +99,7 @@ class vswitch::ovs(
+   # when any vs_config resource with restart => true is enabled.
+   exec { 'restart openvswitch':
+     path        => ['/sbin', '/usr/sbin', '/bin', '/usr/bin'],
+-    command     => ['systemctl', '-q', 'restart', "${service_name}.service"],
++    command     => "systemctl -q restart ${service_name}.service",
+     refreshonly => true,
+   }
+
+--
+2.34.1
+
