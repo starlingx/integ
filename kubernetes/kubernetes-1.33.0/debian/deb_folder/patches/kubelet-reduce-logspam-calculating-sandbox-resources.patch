@@ -1,0 +1,48 @@
+From c5d43fd96dca833475af61d3027594310ea30674 Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Wed, 18 Jun 2025 09:26:33 -0400
+Subject: [PATCH] kubelet reduce logspam calculating sandbox resources
+
+On v1.33 nodes, the Kubelet logs have lots of lines like
+kuberuntime_sandbox_linux.go:62] "Enforcing CFS quota"
+            pod="kube-system/pod_name" unlimited=false
+
+This change lowers the verbosity of the CFS quota enforcement
+log from V(2) to V(5)
+Please see: https://github.com/kubernetes/kubernetes/pull/132168/files
+
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ pkg/kubelet/kuberuntime/kuberuntime_container_linux.go | 2 +-
+ pkg/kubelet/kuberuntime/kuberuntime_sandbox_linux.go   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pkg/kubelet/kuberuntime/kuberuntime_container_linux.go b/pkg/kubelet/kuberuntime/kuberuntime_container_linux.go
+index 92321bd9bd4..c449a3df35d 100644
+--- a/pkg/kubelet/kuberuntime/kuberuntime_container_linux.go
++++ b/pkg/kubelet/kuberuntime/kuberuntime_container_linux.go
+@@ -137,7 +137,7 @@ func (m *kubeGenericRuntimeManager) generateLinuxContainerResources(pod *v1.Pod,
+ 	// If pod has exclusive cpu and the container in question has integer cpu requests
+ 	// the cfs quota will not be enforced
+ 	disableCPUQuota := utilfeature.DefaultFeatureGate.Enabled(kubefeatures.DisableCPUQuotaWithExclusiveCPUs) && m.containerManager.ContainerHasExclusiveCPUs(pod, container)
+-	klog.V(2).InfoS("Enforcing CFS quota", "pod", klog.KObj(pod), "unlimited", disableCPUQuota)
++	klog.V(5).InfoS("Enforcing CFS quota", "pod", klog.KObj(pod), "unlimited", disableCPUQuota)
+ 	lcr := m.calculateLinuxResources(cpuRequest, cpuLimit, memoryLimit, disableCPUQuota)
+ 
+ 	lcr.OomScoreAdj = int64(qos.GetContainerOOMScoreAdjust(pod, container,
+diff --git a/pkg/kubelet/kuberuntime/kuberuntime_sandbox_linux.go b/pkg/kubelet/kuberuntime/kuberuntime_sandbox_linux.go
+index ebf8d4e6204..851386f0fd3 100644
+--- a/pkg/kubelet/kuberuntime/kuberuntime_sandbox_linux.go
++++ b/pkg/kubelet/kuberuntime/kuberuntime_sandbox_linux.go
+@@ -59,7 +59,7 @@ func (m *kubeGenericRuntimeManager) calculateSandboxResources(pod *v1.Pod) *runt
+ 
+ 	// If pod has exclusive cpu the sandbox will not have cfs quote enforced
+ 	disableCPUQuota := utilfeature.DefaultFeatureGate.Enabled(features.DisableCPUQuotaWithExclusiveCPUs) && m.containerManager.PodHasExclusiveCPUs(pod)
+-	klog.V(2).InfoS("Enforcing CFS quota", "pod", klog.KObj(pod), "unlimited", disableCPUQuota)
++	klog.V(5).InfoS("Enforcing CFS quota", "pod", klog.KObj(pod), "unlimited", disableCPUQuota)
+ 
+ 	return m.calculateLinuxResources(cpuRequest, lim.Cpu(), lim.Memory(), disableCPUQuota)
+ }
+-- 
+2.34.1
+
