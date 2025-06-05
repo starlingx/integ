@@ -34,3 +34,6 @@ skip-some-testcases.patch
 
 # Change operator combining bools from + to and
 928-change-operator-combining-bools-from-to-and.patch
+
+# Fix long unit names error
+929-Core-shorten-long-unit-names.patch
