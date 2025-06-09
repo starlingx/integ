@@ -1,3 +1,4 @@
 0001-Fix-detection-logic.patch
 0002-Fix-long-labels-cause-command-to-fail.patch
 0003-filter-out-interface-label-when-setting-MTU.patch
+0004-Check-for-existing-IP-before-adding.patch
