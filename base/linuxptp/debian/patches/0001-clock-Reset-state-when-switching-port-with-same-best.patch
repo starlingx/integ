@@ -1,6 +1,6 @@
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:52 +0200
-Subject: [PATCH 01/64] clock: Reset state when switching port with same best
+Subject: [PATCH 01/65] clock: Reset state when switching port with same best
  clock.
 
 When the best port is changed, but the ID of the best clock doesn't

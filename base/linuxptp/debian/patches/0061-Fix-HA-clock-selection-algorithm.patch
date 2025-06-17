@@ -1,7 +1,7 @@
 From 06d3e581486cc8f931c8599e4b7b3faea3ddf64f Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Wed, 16 Oct 2024 18:10:24 -0300
-Subject: [PATCH 61/64] Fix HA clock selection algorithm
+Subject: [PATCH 61/65] Fix HA clock selection algorithm
 
 The issue reported is a particular case of a BC configured with
 redundant PTP clocks with same priority. When a clock recovers

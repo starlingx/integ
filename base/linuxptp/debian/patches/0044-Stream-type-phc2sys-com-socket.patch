@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Mon, 7 Aug 2023 14:55:12 -0300
-Subject: [PATCH 44/64] Stream type phc2sys com socket
+Subject: [PATCH 44/65] Stream type phc2sys com socket
 
 The type of the socket was changed from datagram to stream.
 

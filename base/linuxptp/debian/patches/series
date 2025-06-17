@@ -62,3 +62,4 @@
 0062-Fix-HA-clock-selection-when-poll-timeout.patch
 0063-smooth-transparent-ha-switchover-configurable-pmc-update-interval.patch
 0064-Fix-HA-PTP4l-instance-down-osclock-swinging.patch
+0065-Fix-osclock-swinging-when-pmc-timeout.patch
