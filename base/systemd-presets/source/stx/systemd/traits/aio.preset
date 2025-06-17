@@ -61,6 +61,9 @@ enable sysinv-agent.service
 # 00-tuned-config.preset
 enable tuned.service
 
+# 00-dc-auto-restore.preset
+enable dc-auto-restore.service
+
 # 85-debpkg-issues.preset
 enable mountnfs.service
 
