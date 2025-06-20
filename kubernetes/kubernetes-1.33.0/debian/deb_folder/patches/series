@@ -6,3 +6,4 @@ kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
 kubeadm-reduce-UpgradeManifestTimeout.patch
 Revert-kubeadm-use-new-etcd-livez-and-readyz-endpoint.patch
 kubelet-reduce-logspam-calculating-sandbox-resources.patch
+kubelet-cpumanager-policy-none-use-allocatable-cpus-only.patch
