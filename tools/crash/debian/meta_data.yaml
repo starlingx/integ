@@ -1,10 +1,10 @@
 ---
-debver: 8.0.5
+debver: 8.0.6
 debname: crash
 dl_path:
-  name: crash_8.0.5.orig.tar.gz
-  url: https://snapshot.debian.org/archive/debian/20241005T024228Z/pool/main/c/crash/crash_8.0.5.orig.tar.gz
-  sha256sum: a1370be941cc518513a435c7afbd5fdd5bd0f030cd39c02cce9341ee3d0a5436
+  name: crash_8.0.6.orig.tar.gz
+  url: https://snapshot.debian.org/archive/debian/20241212T204812Z/pool/main/c/crash/crash_8.0.6.orig.tar.gz
+  sha256sum: 097c6c94ded7e24db4af58de24744bd28276d6f5bae0828bc6b6a02664c4282a
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

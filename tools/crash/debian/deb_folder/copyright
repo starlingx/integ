@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: crash
-Source: https://snapshot.debian.org/archive/debian/20241005T024228Z/pool/main/c/crash/crash_8.0.5.orig.tar.gz
+Source: https://snapshot.debian.org/archive/debian/20241212T204812Z/pool/main/c/crash/crash_8.0.6.orig.tar.gz
 Files: *
 Copyright: (C) 2002-2022  Red Hat, Inc.
            (C) 2004, 2005, 2006, 2010  IBM Corporation
