@@ -148,3 +148,6 @@ disable usm-initialize.service
 
 # lvm snapshot restore service
 enable lvm-snapshot-restore.service
+
+# boot counter reset service
+enable reset-boot-counter.service
