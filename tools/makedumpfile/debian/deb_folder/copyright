@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: makedumpfile
-Source: https://github.com/makedumpfile/makedumpfile/archive/refs/tags/1.7.4.tar.gz
+Source: https://github.com/makedumpfile/makedumpfile/archive/refs/tags/1.7.7.tar.gz
 Files: *
 Copyright: (C) 2006, 2007, 2008, 2009, 2011  NEC Corporation
            (C) Others (See individual files for more details)

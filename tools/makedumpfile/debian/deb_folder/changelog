@@ -1,3 +1,9 @@
+makedumpfile (1.7.7-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Peng Zhang2 <peng.zhang2@windriver.com>  Mon, 23 Jun 2025 02:37:21 +0000
+
 makedumpfile (1.7.4-1) unstable; urgency=medium
 
   * Initial release
