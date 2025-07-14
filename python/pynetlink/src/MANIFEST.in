@@ -1,0 +1,2 @@
+include pynetlink/specs/*.yaml
+include pynetlink/schemas/*.yaml

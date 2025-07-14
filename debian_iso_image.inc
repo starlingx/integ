@@ -103,6 +103,7 @@ libfacter3.14.12
 
 #flux
 flux2-charts
+flux2-charts-legacy
 
 #gpu-operator
 #gpu-operator
@@ -195,26 +196,6 @@ lvm2
 python3-keyrings.alt
 
 #kubernetes-x (-master, -misc, -unit-test used only for build)
-#kubernetes-1.24.4
-kubernetes-1.24.4-client
-kubernetes-1.24.4-kubeadm
-kubernetes-1.24.4-node
-#kubernetes-1.25.3
-kubernetes-1.25.3-client
-kubernetes-1.25.3-kubeadm
-kubernetes-1.25.3-node
-#kubernetes-1.26.1
-kubernetes-1.26.1-client
-kubernetes-1.26.1-kubeadm
-kubernetes-1.26.1-node
-#kubernetes-1.27.5
-kubernetes-1.27.5-client
-kubernetes-1.27.5-kubeadm
-kubernetes-1.27.5-node
-#kubernetes-1.28.4
-kubernetes-1.28.4-client
-kubernetes-1.28.4-kubeadm
-kubernetes-1.28.4-node
 #kubernetes-1.29.2
 kubernetes-1.29.2-client
 kubernetes-1.29.2-kubeadm
@@ -227,6 +208,14 @@ kubernetes-1.30.6-node
 kubernetes-1.31.5-client
 kubernetes-1.31.5-kubeadm
 kubernetes-1.31.5-node
+#kubernetes-1.32.2
+kubernetes-1.32.2-client
+kubernetes-1.32.2-kubeadm
+kubernetes-1.32.2-node
+#kubernetes-1.33.0
+kubernetes-1.33.0-client
+kubernetes-1.33.0-kubeadm
+kubernetes-1.33.0-node
 
 #kubernetes-unversioned
 kubernetes-unversioned
@@ -365,6 +354,9 @@ puppet-module-puppetlabs-postgresql
 #puppetlabs-stdlib-5.0.0
 puppet-module-puppetlabs-stdlib
 
+#puppet-vswitch
+puppet-module-vswitch
+
 #puppet-zitrlp-strongswan
 puppet-zitrlp-strongswan
 
@@ -382,8 +374,14 @@ python3-nsenter
 python3-pkg-resources
 python3-setuptools
 
+#wheel
+python3-wheel
+
 #python3.9
 python3.9
+
+#pynetlink
+pynetlink
 
 #pyzmq
 python3-zmq
@@ -414,6 +412,9 @@ runc
 #shim-unsigned
 shim-helpers-amd64-signed-template
 shim-unsigned
+
+#stalld
+stalld
 
 #synce4l
 synce4l

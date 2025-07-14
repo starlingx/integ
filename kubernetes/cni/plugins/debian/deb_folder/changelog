@@ -1,3 +1,16 @@
+golang-github-containernetworking-plugins (1.7.1) unstable; urgency=medium
+
+  * Updated for stx debian packaging
+  * Updated golang to 1.24
+
+ -- Mohammad Issa <mohammad.issa@windriver.com>  Tue, 20 May 2025 12:47:40 -0400
+
+golang-github-containernetworking-plugins (1.5.0) unstable; urgency=medium
+
+  * Updated golang to 1.21
+
+ -- Jim Gauld <james.gauld@windriver.com>  Mon, 21 Apr 2025 10:26:40 +0000
+
 golang-github-containernetworking-plugins (1.5.0) unstable; urgency=medium
 
   * Updated for stx debian packaging

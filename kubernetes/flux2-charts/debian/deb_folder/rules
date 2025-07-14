@@ -3,7 +3,7 @@
 
 export ROOT = debian/tmp
 
-export FLUX_CHARTS_VERSION = 2.13.0
+export FLUX_CHARTS_VERSION = 2.15.0
 export FLUX_CHARTS_PKG = flux2-$(FLUX_CHARTS_VERSION).tar.gz
 export TARGET_DIR = $(ROOT)/usr/local/share/flux2-charts
 

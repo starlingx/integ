@@ -1,7 +1,0 @@
----
-debname: golang-github-cilium-ebpf
-debver: 0.6.2-2
-archive: https://snapshot.debian.org/archive/debian/20211117T205928Z/pool/main/g/golang-github-cilium-ebpf/
-revision:
-  dist: $STX_DIST
-  PKG_GITREVCOUNT: true

@@ -1,6 +1,6 @@
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Sun, 18 Jun 2023 20:58:34 -0300
-Subject: [PATCH 37/61] Enhance phc2sys to accept multiple ptp4l inputs
+Subject: [PATCH 37/65] Enhance phc2sys to accept multiple ptp4l inputs
 
 A new configuration option called ha_enabled was created. When it is set 1
 multiple ptp4l inputs are accepted and the high availability algorithms

@@ -1,3 +1,18 @@
+bond-cni (1.0-3f7fb0552cb825411030266d2246e943443d4d84) unstable; urgency=medium
+
+  * Updated using latest commit
+  * Updated golang to 1.24
+
+ -- Mohammad Issa <mohammad.issa@windriver.com>  Tue, 20 May 2025 12:48:13 -0400
+
+
+bond-cni (1.0-91b412e3eb8c5dfc315d8c73fb386d005e44d5f3) unstable; urgency=medium
+
+  * Updated golang to 1.21
+
+ -- Jim Gauld <james.gauld@windriver.com>  Mon, 21 Apr 2025 10:26:40 +0000
+
+
 bond-cni (1.0-91b412e3eb8c5dfc315d8c73fb386d005e44d5f3) unstable; urgency=medium
 
   * Updated using latest commit

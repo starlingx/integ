@@ -1,11 +1,11 @@
 ---
 debname: golang-github-containernetworking-plugins
-debver: 1.5.0
+debver: 1.7.1
 dl_path:
-  name: v1.5.0.tar.gz
-  url: https://github.com/containernetworking/plugins/archive/refs/tags/v1.5.0.tar.gz
-  md5sum: 67d45515bb82cb32148a90589db6b47f
-  sha256sum: 16754edd9d795aef56962b13db991addbb7669dab0a85adc5c7cbbf9c174e2e4
+  name: v1.7.1.tar.gz
+  url: https://github.com/containernetworking/plugins/archive/refs/tags/v1.7.1.tar.gz
+  md5sum: 50323a0c6e542cb608a281469057e3c8
+  sha256sum: 95b639f8ccbb714da98e331ef8813f790d447fce5417f2f8a575f3c62bfb1474
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

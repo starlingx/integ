@@ -1,3 +1,9 @@
+crash (8.0.6-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Mon, 23 Jun 2025 02:45:38 +0000
+
 crash (8.0.5-1) unstable; urgency=medium
 
   * Initial release

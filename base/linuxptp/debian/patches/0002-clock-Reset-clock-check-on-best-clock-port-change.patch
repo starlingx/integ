@@ -1,6 +1,6 @@
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Mon, 31 May 2021 11:07:53 +0200
-Subject: [PATCH 02/61] clock: Reset clock check on best clock/port change.
+Subject: [PATCH 02/65] clock: Reset clock check on best clock/port change.
 
 Reset the clock check when the best clock or port changes, together with
 the other state like current estimated delay and frequency. This avoids

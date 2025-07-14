@@ -5,7 +5,7 @@ Standards-Version: 4.6.1
 Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
 Build-Depends: debhelper-compat (= 13),
                dh-golang,
-               golang-1.18,
+               golang-1.24,
                golang-dbus-dev (>= 5.0.2~),
                golang-github-alexflint-go-filemutex-dev,
                golang-github-appc-cni-dev (>= 1.0.1~),

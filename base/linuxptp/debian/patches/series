@@ -59,3 +59,7 @@
 0059-clock-Downgrade-log-message-about-failed-uds-forward.patch
 0060-Fix-HA-clock-selection-of-priority-0-source.patch
 0061-Fix-HA-clock-selection-algorithm.patch
+0062-Fix-HA-clock-selection-when-poll-timeout.patch
+0063-smooth-transparent-ha-switchover-configurable-pmc-update-interval.patch
+0064-Fix-HA-PTP4l-instance-down-osclock-swinging.patch
+0065-Fix-osclock-swinging-when-pmc-timeout.patch

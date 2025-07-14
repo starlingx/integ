@@ -1,0 +1,50 @@
+[
+    {
+      "clock-id": 13007330308713495000,
+      "id": 0,
+      "lock-status": "unlocked",
+      "mode": "automatic",
+      "mode-supported": [
+        "automatic",
+        "manual"
+      ],
+      "module-name": "ice",
+      "type": "eec"
+    },
+    {
+      "clock-id": 13007330308713495000,
+      "id": 1,
+      "lock-status": "unlocked",
+      "mode": "automatic",
+      "mode-supported": [
+        "automatic",
+        "manual"
+      ],
+      "module-name": "ice",
+      "type": "pps"
+    },
+    {
+      "clock-id": 5799633565437375000,
+      "id": 2,
+      "lock-status": "locked-ho-acq",
+      "lock-status-error": "none",
+      "mode": "automatic",
+      "mode-supported": [
+        "automatic"
+      ],
+      "module-name": "ice",
+      "type": "eec"
+    },
+    {
+      "clock-id": 5799633565437375000,
+      "id": 3,
+      "lock-status": "locked-ho-acq",
+      "lock-status-error": "none",
+      "mode": "automatic",
+      "mode-supported": [
+        "automatic"
+      ],
+      "module-name": "ice",
+      "type": "pps"
+    }
+  ]

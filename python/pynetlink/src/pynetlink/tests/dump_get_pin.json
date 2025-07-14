@@ -1,0 +1,1314 @@
+[
+  {
+    "board-label": "CVL-SDP22",
+    "panel-label": "PNL-CVL-SDP22",
+    "package-label": "PKG-CVL-SDP22",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 0,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 255,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 5,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "int-oscillator"
+  },
+  {
+    "board-label": "CVL-SDP20",
+    "panel-label": "PNL-CVL-SDP20",
+    "package-label": "PKG-CVL-SDP20",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 10000000,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 1,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 255,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 4,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "int-oscillator"
+  },
+  {
+    "board-label": "C827_0-RCLKA",
+    "panel-label": "PNL-C827_0-RCLKA",
+    "package-label": "PKG-C827_0-RCLKA",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1953125,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 2,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 8,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 8,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "mux"
+  },
+  {
+    "board-label": "C827_0-RCLKB",
+    "panel-label": "PNL-C827_0-RCLKB",
+    "package-label": "PKG-C827_0-RCLKB",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1953125,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 3,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 9,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 9,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "mux"
+  },
+  {
+    "board-label": "C827_1-RCLKA",
+    "panel-label": "PNL-C827_1-RCLKA",
+    "package-label": "PKG-C827_1-RCLKA",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1953125,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 4,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 10,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 10,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "mux"
+  },
+  {
+    "board-label": "C827_1-RCLKB",
+    "panel-label": "PNL-C827_1-RCLKB",
+    "package-label": "PKG-C827_1-RCLKB",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1953125,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 5,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 11,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 11,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "mux"
+  },
+  {
+    "board-label": "SMA1",
+    "panel-label": "PNL-SMA1",
+    "package-label": "PKG-SMA1",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 6,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": -347009363424540,
+        "prio": 3,
+        "state": "connected"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": -191040,
+        "prio": 3,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "ext"
+  },
+  {
+    "board-label": "SMA2/U.FL2",
+    "panel-label": "PNL-SMA2/U.FL2",
+    "package-label": "PKG-SMA2/U.FL2",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 7,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 2,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 2,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "ext"
+  },
+  {
+    "board-label": "GNSS-1PPS",
+    "panel-label": "PNL-GNSS-1PPS",
+    "package-label": "PKG-GNSS-1PPS",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 8,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 0,
+        "phase-offset": 0,
+        "prio": 0,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 1,
+        "phase-offset": 0,
+        "prio": 0,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "gnss"
+  },
+  {
+    "board-label": "REF-SMA1",
+    "panel-label": "PNL-REF-SMA1",
+    "package-label": "PKG-REF-SMA1",
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 9,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 0,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 1,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 559030611,
+    "phase-adjust-min": -559030611,
+    "type": "ext"
+  },
+  {
+    "board-label": "REF-SMA2/U.FL2",
+    "panel-label": "PNL-REF-SMA2/U.FL2",
+    "package-label": "PKG-REF-SMA2/U.FL2",
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 10,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 0,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 1,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 559030611,
+    "phase-adjust-min": -559030611,
+    "type": "ext"
+  },
+  {
+    "board-label": "PHY-CLK",
+    "panel-label": "PNL-PHY-CLK",
+    "package-label": "PKG-PHY-CLK",
+    "capabilities": [],
+    "clock-id": 13007330308713495000,
+    "frequency": 156250000,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 11,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 0,
+        "state": "connected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 1,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 559030611,
+    "phase-adjust-min": -559030611,
+    "type": "synce-eth-port"
+  },
+  {
+    "board-label": "PHY2-CLK",
+    "panel-label": "PNL-PHY2-CLK",
+    "package-label": "PKG-PHY2-CLK",
+    "capabilities": [],
+    "clock-id": 13007330308713495000,
+    "frequency": 156250000,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 12,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 0,
+        "state": "connected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 1,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 559030611,
+    "phase-adjust-min": -559030611,
+    "type": "synce-eth-port"
+  },
+  {
+    "board-label": "MAC-CLK",
+    "panel-label": "PNL-MAC-CLK",
+    "package-label": "PKG-MAC-CLK",
+    "capabilities": [],
+    "clock-id": 13007330308713495000,
+    "frequency": 156250000,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 13,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 0,
+        "state": "connected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 1,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 559030611,
+    "phase-adjust-min": -559030611,
+    "type": "synce-eth-port"
+  },
+  {
+    "board-label": "CVL-SDP21",
+    "panel-label": "PNL-CVL-SDP21",
+    "package-label": "PKG-CVL-SDP21",
+
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 14,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 0,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 1,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 559030611,
+    "phase-adjust-min": -559030611,
+    "type": "ext"
+  },
+  {
+    "board-label": "CVL-SDP23",
+    "panel-label": "PNL-CVL-SDP23",
+    "package-label": "PKG-CVL-SDP23",
+
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 15,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 0,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 1,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 559030611,
+    "phase-adjust-min": -559030611,
+    "type": "ext"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 16,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 4,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 5,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 17,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 4,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 5,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 18,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 4,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 5,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 19,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 4,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 5,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 20,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 3,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 21,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 3,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 22,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 3,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 13007330308713495000,
+    "id": 23,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 3,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "board-label": "CVL-SDP22",
+    "panel-label": "PNL-CVL-SDP22",
+    "package-label": "PKG-CVL-SDP22",
+
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 24,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 2,
+        "phase-offset": 0,
+        "prio": 255,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 3,
+        "phase-offset": 0,
+        "prio": 5,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 16723,
+    "phase-adjust-min": -16723,
+    "type": "int-oscillator"
+  },
+  {
+    "board-label": "CVL-SDP20",
+    "panel-label": "PNL-CVL-SDP20",
+    "package-label": "PKG-CVL-SDP20",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 10000000,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 25,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 2,
+        "phase-offset": 0,
+        "prio": 255,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 3,
+        "phase-offset": 0,
+        "prio": 4,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 16723,
+    "phase-adjust-min": -16723,
+    "type": "int-oscillator"
+  },
+  {
+    "board-label": "C827_0-RCLKA",
+    "panel-label": "PNL-C827_0-RCLKA",
+    "package-label": "PKG-C827_0-RCLKA",
+
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1953125,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 26,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 2,
+        "phase-offset": 0,
+        "prio": 8,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 3,
+        "phase-offset": 0,
+        "prio": 8,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 16723,
+    "phase-adjust-min": -16723,
+    "type": "mux"
+  },
+  {
+    "board-label": "C827_0-RCLKB",
+    "panel-label": "PNL-C827_0-RCLKB",
+    "package-label": "PKG-C827_0-RCLKB",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1953125,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 27,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 2,
+        "phase-offset": 0,
+        "prio": 9,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 3,
+        "phase-offset": 0,
+        "prio": 9,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 16723,
+    "phase-adjust-min": -16723,
+    "type": "mux"
+  },
+  {
+    "board-label": "SMA1",
+    "panel-label": "PNL-SMA1",
+    "package-label": "PKG-SMA1",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 28,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 2,
+        "phase-offset": 0,
+        "prio": 3,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 3,
+        "phase-offset": 0,
+        "prio": 3,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 16723,
+    "phase-adjust-min": -16723,
+    "type": "ext"
+  },
+  {
+    "board-label": "SMA2/U.FL2",
+    "panel-label": "PNL-SMA2/U.FL2",
+    "package-label": "PKG-SMA2/U.FL2",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 29,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 2,
+        "phase-offset": 0,
+        "prio": 2,
+        "state": "selectable"
+      },
+      {
+        "direction": "input",
+        "parent-id": 3,
+        "phase-offset": 0,
+        "prio": 2,
+        "state": "selectable"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 16723,
+    "phase-adjust-min": -16723,
+    "type": "ext"
+  },
+  {
+    "board-label": "GNSS-1PPS",
+    "panel-label": "PNL-GNSS-1PPS",
+    "package-label": "PKG-GNSS-1PPS",
+    "capabilities": [
+      "state-can-change",
+      "priority-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 30,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "input",
+        "parent-id": 2,
+        "phase-offset": -346758571483350,
+        "prio": 0,
+        "state": "connected"
+      },
+      {
+        "direction": "input",
+        "parent-id": 3,
+        "phase-offset": 349600,
+        "prio": 0,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 16723,
+    "phase-adjust-min": -16723,
+    "type": "gnss"
+  },
+  {
+    "board-label": "REF-SMA1",
+    "panel-label": "PNL-REF-SMA1",
+    "package-label": "PKG-REF-SMA1",
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 31,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 3,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 480307,
+    "phase-adjust-min": -480307,
+    "type": "ext"
+  },
+  {
+    "board-label": "REF-SMA2/U.FL2",
+    "panel-label": "PNL-REF-SMA2/U.FL2",
+    "package-label": "PKG-REF-SMA2/U.FL2",
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 32,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 3,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 480307,
+    "phase-adjust-min": -480307,
+    "type": "ext"
+  },
+  {
+    "board-label": "PHY-CLK",
+    "panel-label": "PNL-PHY-CLK",
+    "package-label": "PKG-PHY-CLK",
+    "capabilities": [],
+    "clock-id": 5799633565437375000,
+    "frequency": 156250000,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 33,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 2,
+        "state": "connected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 3,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 480307,
+    "phase-adjust-min": -480307,
+    "type": "synce-eth-port"
+  },
+  {
+    "board-label": "MAC-CLK",
+    "panel-label": "PNL-MAC-CLK",
+    "package-label": "PKG-MAC-CLK",
+    "capabilities": [],
+    "clock-id": 5799633565437375000,
+    "frequency": 156250000,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 34,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 2,
+        "state": "connected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 3,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 480307,
+    "phase-adjust-min": -480307,
+    "type": "synce-eth-port"
+  },
+  {
+    "board-label": "CVL-SDP21",
+    "panel-label": "PNL-CVL-SDP21",
+    "package-label": "PKG-CVL-SDP21",
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 35,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 3,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 480307,
+    "phase-adjust-min": -480307,
+    "type": "ext"
+  },
+  {
+    "board-label": "CVL-SDP23",
+    "panel-label": "PNL-CVL-SDP23",
+    "package-label": "PKG-CVL-SDP23",
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "frequency": 1,
+    "frequency-supported": [
+      {
+        "frequency-max": 25000000,
+        "frequency-min": 1
+      }
+    ],
+    "id": 36,
+    "module-name": "ice",
+    "parent-device": [
+      {
+        "direction": "output",
+        "parent-id": 2,
+        "state": "disconnected"
+      },
+      {
+        "direction": "output",
+        "parent-id": 3,
+        "state": "connected"
+      }
+    ],
+    "phase-adjust": 0,
+    "phase-adjust-max": 480307,
+    "phase-adjust-min": -480307,
+    "type": "ext"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "id": 37,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 26,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 27,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "id": 38,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 26,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 27,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "id": 39,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 26,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 27,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  },
+  {
+    "capabilities": [
+      "state-can-change"
+    ],
+    "clock-id": 5799633565437375000,
+    "id": 40,
+    "module-name": "ice",
+    "parent-pin": [
+      {
+        "parent-id": 26,
+        "state": "disconnected"
+      },
+      {
+        "parent-id": 27,
+        "state": "disconnected"
+      }
+    ],
+    "phase-adjust-max": 0,
+    "phase-adjust-min": 0,
+    "type": "synce-eth-port"
+  }
+]

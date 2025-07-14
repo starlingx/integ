@@ -1,11 +1,10 @@
 ---
 debname: crictl
-debver: 1.0-1
+debver: 1.33.0
 dl_path:
-  name: crictl-v1.21.0-linux-amd64.tar.gz
-  url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.21.0/crictl-v1.21.0-linux-amd64.tar.gz
-  md5sum: 671e173f96f87aab18a4f9f8111cd4e6
-  sha256sum: 85c78a35584971625bf1c3bcd46e5404a90396f979d7586f18b11119cb623e24
+  name: crictl-v1.33.0-linux-amd64.tar.gz
+  url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.33.0/crictl-v1.33.0-linux-amd64.tar.gz
+  sha256sum: 8307399e714626e69d1213a4cd18c8dec3d0201ecdac009b1802115df8973f0f
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

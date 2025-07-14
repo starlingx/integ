@@ -1,0 +1,273 @@
+From 7cfb193ddb4fe61058428f4ac8dc7c830881ce5b Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Mon, 28 Apr 2025 07:29:38 -0400
+Subject: [PATCH] kubelet disable CFS quota throttling non integer cpu limit
+
+This disables CFS CPU quota to avoid performance degradation due to
+Linux kernel CFS quota implementation. Note that 4.18 kernel attempts
+to solve the CFS throttling problem, but there are reports that it is
+not completely effective.
+
+This change disables CFS quota throttling at the container level for
+Guaranteed QoS pods only if the requested CPU is a whole number
+(i.e., no fractional cores). It ensures that for containers with
+fractional CPU requests, CFS quota remains enforced to maintain the
+CPU limit. This prevents unintended unlimited CPU usage while
+allowing full-core allocations to bypass throttling for better
+performance.
+
+This change leverages the internal_container_lifecycle framework
+to specify the Linux CPU set resources during the container creation.
+
+Co-authored-by: Jim Gauld <james.gauld@windriver.com>
+Signed-off-by: Sachin Gopala Krishna <saching.krishna@windriver.com>
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ pkg/kubelet/cm/cpumanager/cpu_manager.go      |  7 +++
+ pkg/kubelet/cm/cpumanager/fake_cpu_manager.go | 12 ++++--
+ pkg/kubelet/cm/helpers_linux.go               | 10 +++++
+ pkg/kubelet/cm/helpers_linux_test.go          | 43 ++++++++++---------
+ .../cm/internal_container_lifecycle_linux.go  | 13 ++++++
+ 5 files changed, 62 insertions(+), 23 deletions(-)
+
+diff --git a/pkg/kubelet/cm/cpumanager/cpu_manager.go b/pkg/kubelet/cm/cpumanager/cpu_manager.go
+index 9e72a7cc97a..733eb9e3e29 100644
+--- a/pkg/kubelet/cm/cpumanager/cpu_manager.go
++++ b/pkg/kubelet/cm/cpumanager/cpu_manager.go
+@@ -73,6 +73,9 @@ type Manager interface {
+ 	// State returns a read-only interface to the internal CPU manager state.
+ 	State() state.Reader
+ 
++	// GetCPUPolicy returns the assigned CPU manager policy
++	GetCPUPolicy() string
++
+ 	// GetTopologyHints implements the topologymanager.HintProvider Interface
+ 	// and is consulted to achieve NUMA aware resource alignment among this
+ 	// and other resource controllers.
+@@ -250,6 +253,10 @@ func (m *manager) Start(activePods ActivePodsFunc, sourcesReady config.SourcesRe
+ 	return nil
+ }
+ 
++func (m *manager) GetCPUPolicy() string {
++	return m.policy.Name()
++}
++
+ func (m *manager) Allocate(p *v1.Pod, c *v1.Container) error {
+ 	// Garbage collect any stranded resources before allocating CPUs.
+ 	m.removeStaleState()
+diff --git a/pkg/kubelet/cm/cpumanager/fake_cpu_manager.go b/pkg/kubelet/cm/cpumanager/fake_cpu_manager.go
+index 8f00ec3784b..d28ff1e064e 100644
+--- a/pkg/kubelet/cm/cpumanager/fake_cpu_manager.go
++++ b/pkg/kubelet/cm/cpumanager/fake_cpu_manager.go
+@@ -17,7 +17,7 @@ limitations under the License.
+ package cpumanager
+ 
+ import (
+-	"k8s.io/api/core/v1"
++	v1 "k8s.io/api/core/v1"
+ 	"k8s.io/klog/v2"
+ 	"k8s.io/kubernetes/pkg/kubelet/cm/containermap"
+ 	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager/state"
+@@ -28,7 +28,8 @@ import (
+ )
+ 
+ type fakeManager struct {
+-	state state.State
++	policy Policy
++	state  state.State
+ }
+ 
+ func (m *fakeManager) Start(activePods ActivePodsFunc, sourcesReady config.SourcesReady, podStatusProvider status.PodStatusProvider, containerRuntime runtimeService, initialContainers containermap.ContainerMap) error {
+@@ -70,6 +71,10 @@ func (m *fakeManager) State() state.Reader {
+ 	return m.state
+ }
+ 
++func (m *fakeManager) GetCPUPolicy() string {
++	return m.policy.Name()
++}
++
+ func (m *fakeManager) GetExclusiveCPUs(podUID, containerName string) cpuset.CPUSet {
+ 	klog.InfoS("GetExclusiveCPUs", "podUID", podUID, "containerName", containerName)
+ 	return cpuset.CPUSet{}
+@@ -93,6 +98,7 @@ func (m *fakeManager) GetAllCPUs() cpuset.CPUSet {
+ // NewFakeManager creates empty/fake cpu manager
+ func NewFakeManager() Manager {
+ 	return &fakeManager{
+-		state: state.NewMemoryState(),
++		policy: &nonePolicy{},
++		state:  state.NewMemoryState(),
+ 	}
+ }
+diff --git a/pkg/kubelet/cm/helpers_linux.go b/pkg/kubelet/cm/helpers_linux.go
+index 6e1ee829d29..406ceddd926 100644
+--- a/pkg/kubelet/cm/helpers_linux.go
++++ b/pkg/kubelet/cm/helpers_linux.go
+@@ -186,6 +186,16 @@ func ResourceConfigForPod(allocatedPod *v1.Pod, enforceCPULimits bool, cpuPeriod
+ 	// build the result
+ 	result := &ResourceConfig{}
+ 	if qosClass == v1.PodQOSGuaranteed {
++		// Disable CFS CPU quota to avoid performance degradation due to
++		// Linux kernel CFS throttle implementation.
++		// NOTE: 4.18 kernel attempts to solve CFS throttling problem,
++		// but there are reports that it is not completely effective.
++		// This will configure cgroup CFS parameters at pod level:
++		// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/cpu.cfs_quota_us
++		// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/cpu.cfs_period_us
++		cpuQuota = int64(-1)
++		cpuPeriod = uint64(100000)
++
+ 		result.CPUShares = &cpuShares
+ 		result.CPUQuota = &cpuQuota
+ 		result.CPUPeriod = &cpuPeriod
+diff --git a/pkg/kubelet/cm/helpers_linux_test.go b/pkg/kubelet/cm/helpers_linux_test.go
+index 92bab254975..738dfa5795c 100644
+--- a/pkg/kubelet/cm/helpers_linux_test.go
++++ b/pkg/kubelet/cm/helpers_linux_test.go
+@@ -64,8 +64,9 @@ func TestResourceConfigForPod(t *testing.T) {
+ 	burstablePartialShares := MilliCPUToShares(200)
+ 	burstableQuota := MilliCPUToQuota(200, int64(defaultQuotaPeriod))
+ 	guaranteedShares := MilliCPUToShares(100)
+-	guaranteedQuota := MilliCPUToQuota(100, int64(defaultQuotaPeriod))
+-	guaranteedTunedQuota := MilliCPUToQuota(100, int64(tunedQuotaPeriod))
++	guaranteedQuotaPeriod := uint64(100000)
++	guaranteedQuota := int64(-1)
++	guaranteedTunedQuota := int64(-1)
+ 	memoryQuantity = resource.MustParse("100Mi")
+ 	cpuNoLimit := int64(-1)
+ 	guaranteedMemory := memoryQuantity.Value()
+@@ -205,8 +206,8 @@ func TestResourceConfigForPod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: true,
+-			quotaPeriod:      defaultQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedQuota, CPUPeriod: &defaultQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedQuota, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 		"guaranteed-no-cpu-enforcement": {
+ 			pod: &v1.Pod{
+@@ -219,8 +220,8 @@ func TestResourceConfigForPod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: false,
+-			quotaPeriod:      defaultQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &defaultQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 		"guaranteed-with-tuned-quota": {
+ 			pod: &v1.Pod{
+@@ -233,8 +234,8 @@ func TestResourceConfigForPod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: true,
+-			quotaPeriod:      tunedQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedTunedQuota, CPUPeriod: &tunedQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedTunedQuota, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 		"guaranteed-no-cpu-enforcement-with-tuned-quota": {
+ 			pod: &v1.Pod{
+@@ -247,8 +248,8 @@ func TestResourceConfigForPod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: false,
+-			quotaPeriod:      tunedQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &tunedQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 		"burstable-partial-limits-with-init-containers": {
+ 			pod: &v1.Pod{
+@@ -424,8 +425,10 @@ func TestResourceConfigForPodWithCustomCPUCFSQuotaPeriod(t *testing.T) {
+ 	burstablePartialShares := MilliCPUToShares(200)
+ 	burstableQuota := MilliCPUToQuota(200, int64(defaultQuotaPeriod))
+ 	guaranteedShares := MilliCPUToShares(100)
+-	guaranteedQuota := MilliCPUToQuota(100, int64(defaultQuotaPeriod))
+-	guaranteedTunedQuota := MilliCPUToQuota(100, int64(tunedQuotaPeriod))
++	guaranteedQuotaPeriod := uint64(100000)
++	guaranteedQuota := int64(-1)
++	guaranteedTunedQuota := int64(-1)
++
+ 	memoryQuantity = resource.MustParse("100Mi")
+ 	cpuNoLimit := int64(-1)
+ 	guaranteedMemory := memoryQuantity.Value()
+@@ -564,8 +567,8 @@ func TestResourceConfigForPodWithCustomCPUCFSQuotaPeriod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: true,
+-			quotaPeriod:      defaultQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedQuota, CPUPeriod: &defaultQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedQuota, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 		"guaranteed-no-cpu-enforcement": {
+ 			pod: &v1.Pod{
+@@ -578,8 +581,8 @@ func TestResourceConfigForPodWithCustomCPUCFSQuotaPeriod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: false,
+-			quotaPeriod:      defaultQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &defaultQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 		"guaranteed-with-tuned-quota": {
+ 			pod: &v1.Pod{
+@@ -592,8 +595,8 @@ func TestResourceConfigForPodWithCustomCPUCFSQuotaPeriod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: true,
+-			quotaPeriod:      tunedQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedTunedQuota, CPUPeriod: &tunedQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &guaranteedTunedQuota, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 		"guaranteed-no-cpu-enforcement-with-tuned-quota": {
+ 			pod: &v1.Pod{
+@@ -606,8 +609,8 @@ func TestResourceConfigForPodWithCustomCPUCFSQuotaPeriod(t *testing.T) {
+ 				},
+ 			},
+ 			enforceCPULimits: false,
+-			quotaPeriod:      tunedQuotaPeriod,
+-			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &tunedQuotaPeriod, Memory: &guaranteedMemory},
++			quotaPeriod:      guaranteedQuotaPeriod,
++			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
+ 		},
+ 	}
+ 
+diff --git a/pkg/kubelet/cm/internal_container_lifecycle_linux.go b/pkg/kubelet/cm/internal_container_lifecycle_linux.go
+index 0c3bb2e4999..ac7d9a27527 100644
+--- a/pkg/kubelet/cm/internal_container_lifecycle_linux.go
++++ b/pkg/kubelet/cm/internal_container_lifecycle_linux.go
+@@ -26,6 +26,7 @@ import (
+ 	v1 "k8s.io/api/core/v1"
+ 	"k8s.io/apimachinery/pkg/util/sets"
+ 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
++	v1qos "k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
+ )
+ 
+ func (i *internalContainerLifecycleImpl) PreCreateContainer(pod *v1.Pod, container *v1.Container, containerConfig *runtimeapi.ContainerConfig) error {
+@@ -36,6 +37,18 @@ func (i *internalContainerLifecycleImpl) PreCreateContainer(pod *v1.Pod, contain
+ 		}
+ 	}
+ 
++	// Disable cgroup CFS throttle at the container level.
++	// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/<container>/cpu.cfs_quota_us
++	// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/<container>/cpu.cfs_period_us
++	// We can only set CpuQuota to -1 if we're allocating the entire CPU.
++	// For fractional CPUs the CpuQuota is needed to enforce the limit.
++	cpuQuantity := container.Resources.Requests[v1.ResourceCPU]
++	fractionalCpuQuantity := cpuQuantity.MilliValue() % 1000
++	if i.cpuManager.GetCPUPolicy() == "static" && v1qos.GetPodQOS(pod) == v1.PodQOSGuaranteed && fractionalCpuQuantity == 0 {
++		containerConfig.Linux.Resources.CpuPeriod = int64(100000)
++		containerConfig.Linux.Resources.CpuQuota = int64(-1)
++	}
++
+ 	if i.memoryManager != nil {
+ 		numaNodes := i.memoryManager.GetMemoryNUMANodes(pod, container)
+ 		if numaNodes.Len() > 0 {
+-- 
+2.34.1
+

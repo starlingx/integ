@@ -1,0 +1,5 @@
+etc/kubernetes-1.32.2
+etc/kubernetes-1.32.2/addons
+etc/kubernetes-1.32.2/addons/volumesnapshots
+etc/kubernetes-1.32.2/addons/volumesnapshots/crd
+etc/kubernetes-1.32.2/addons/volumesnapshots/volume-snapshot-controller

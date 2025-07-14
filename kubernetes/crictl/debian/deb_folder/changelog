@@ -1,3 +1,9 @@
+crictl (1.33.0) unstable; urgency=medium
+
+  * Up-rev crictl package for stx 11 release
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Thu, 01 May 2025 16:58:21 +0000
+
 crictl (1.0-1) unstable; urgency=medium
 
   * Initial release.

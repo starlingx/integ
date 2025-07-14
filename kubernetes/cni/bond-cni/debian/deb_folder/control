@@ -6,7 +6,7 @@ Standards-Version: 4.6.0
 Homepage: https://www.starlingx.io
 Build-Depends: debhelper-compat (= 13),
                dh-golang,
-               golang-1.18,
+               golang-1.24,
                golang-github-appc-cni-dev,
                golang-github-containernetworking-plugins-dev,
                golang-github-vishvananda-netlink-dev,
