@@ -1,6 +1,6 @@
 ---
 debname: pynetlink
-debver: 1.0.0
+debver: 1.0.1
 src_path: src
 revision:
   dist: $STX_DIST
