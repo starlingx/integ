@@ -1,0 +1,56 @@
+From 3010aa5cfac3a70740f70f24025e25cef0eba21d Mon Sep 17 00:00:00 2001
+From: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+Date: Thu, 24 Jul 2025 11:57:40 -0300
+Subject: [PATCH] Adding STX kernel build dependency
+
+This patch updates the dpdk debian build files to include StarlingX
+Linux kernel as a build dependency. Kernel path is then used for the
+Meson build option "kernel_dir", mapping the proper kernel headers in
+build time.
+
+Signed-off-by: Thales Elero Cervi <thaleselero.cervi@windriver.com>
+---
+ debian/control | 2 ++
+ debian/rules   | 6 ++++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/debian/control b/debian/control
+index 80fa7f68d6..46da9f07fe 100644
+--- a/debian/control
++++ b/debian/control
+@@ -22,6 +22,8 @@ Build-Depends: chrpath,
+                libnuma-dev,
+                libpcap-dev,
+                libssl-dev,
++               linux@KERNEL_TYPE@-headers-stx-amd64,
++               linux@KERNEL_TYPE@-keys,
+                meson (>= 0.47.1~),
+                pkg-config,
+                python3,
+diff --git a/debian/rules b/debian/rules
+index 182123d959..d64807ade9 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -15,6 +15,11 @@ ifeq (,$(findstring terse,$(DEB_BUILD_OPTIONS)))
+ 	export DH_OPTIONS=-v
+ endif
+ 
++# STX: Including StarlingX Kernel headers for Meson build options
++kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
++kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
++export STAGING_KERNEL_DIR=/usr/src/kernels/$(kversion)/
++
+ # People rebuilding this package can overwrite RTE_MACHINE
+ # via DEB_BUILD_OPTIONS if they like
+ ifneq (,$(filter rte_machine=%,$(DEB_BUILD_OPTIONS)))
+@@ -85,6 +90,7 @@ override_dh_auto_configure:
+ 	dh_auto_configure -- $(DPDK_CONFIG_OPTIONS) \
+ 		--includedir=include/dpdk \
+ 		--default-library=shared \
++		-Dkernel_dir=$(STAGING_KERNEL_DIR) \
+ 		-Dinclude_subdir_arch=../$(DEB_HOST_MULTIARCH)/dpdk \
+ 		-Dmachine=$(RTE_MACHINE)
+ 
+-- 
+2.34.1
+
