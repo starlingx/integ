@@ -84,6 +84,36 @@ dnsmasq
 #docker-distribution
 docker-registry
 
+#dpdk
+librte-bus-pci21
+librte-bus-vdev21
+librte-cryptodev21
+librte-eal21
+librte-ethdev21
+librte-eventdev21
+librte-hash21
+librte-kvargs21
+librte-mbuf21
+librte-mempool-ring21
+librte-mempool21
+librte-meter21
+librte-net-bnxt21
+librte-net-bond21
+librte-net-dpaa21
+librte-net-e1000-21
+librte-net-i40e21
+librte-net-ixgbe21
+librte-net-ring21
+librte-net-vhost21
+librte-net-virtio21
+librte-net21
+librte-pci21
+librte-rcu21
+librte-ring21
+librte-telemetry21
+librte-timer21
+librte-vhost21
+
 #drbd-tools
 drbd-utils
 
