@@ -46,7 +46,7 @@ save_state()
 }
 
 RETVAL=0
-STATE_FILE="/var/run/ceph/.storage-networking-state"
+STATE_FILE="/var/run/ceph/.sm-storage-networking-state"
 STATE_RUNNING="Running"
 STATE_STOPPED="Stopped"
 CURRENT_STATE=$(cat ${STATE_FILE} 2>/dev/null)
