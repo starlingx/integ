@@ -413,6 +413,9 @@ python3.9
 #pynetlink
 pynetlink
 
+#pyoidc
+pyoidc
+
 #pyzmq
 python3-zmq
 
