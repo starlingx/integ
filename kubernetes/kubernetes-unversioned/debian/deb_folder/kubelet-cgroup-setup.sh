@@ -61,7 +61,7 @@ function create_cgroup {
         CGDIR=${CGROUP}/${cnt}/${cg_name}
         if [ -d ${CGDIR} ]; then
             LOG "Nothing to do, already configured: ${CGDIR}."
-            exit ${RC}
+            return ${RC}
         fi
         LOG "Creating: ${CGDIR}"
         mkdir -p ${CGDIR}
@@ -127,6 +127,7 @@ ONLINE_CPUSET=$(/bin/cat /sys/devices/system/cpu/online)
 
 # Configure kubelet cgroup to match cgroupRoot.
 create_cgroup 'k8s-infra' ${ONLINE_NODESET} ${ONLINE_CPUSET}
+create_cgroup 'k8s-infra-stx' ${ONLINE_NODESET} ${ONLINE_CPUSET}
 
 exit $?
 
