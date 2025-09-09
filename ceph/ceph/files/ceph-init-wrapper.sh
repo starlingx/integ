@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019-2024 Wind River Systems, Inc.
+# Copyright (c) 2019-2025 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -76,6 +76,14 @@ LOCK_CEPH_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_osd_service"
 MONITOR_STATUS_TIMEOUT=30
 MAX_STATUS_TIMEOUT=120
 
+STATE_RUNNING="Running"
+STATE_STOPPED="Stopped"
+
+SM_CEPH_MON_STATE_FILE="$VOLATILE_PATH/ceph/.sm-ceph-mon-state"
+SM_CEPH_OSD_STATE_FILE="$VOLATILE_PATH/ceph/.sm-ceph-osd-state"
+SM_CEPH_MON_CURRENT_STATE=$(cat ${SM_CEPH_MON_STATE_FILE} 2>/dev/null)
+SM_CEPH_OSD_CURRENT_STATE=$(cat ${SM_CEPH_OSD_STATE_FILE} 2>/dev/null)
+
 RC=0
 
 # SM can only pass arguments through environment variable
@@ -89,6 +97,63 @@ else
     # it must support splitting the string into the args array.
     #   Eg.: /etc/init.d/ceph-init-wrapper "start mds".
     IFS=" " read -r -a args <<< "$@"
+fi
+
+is_ppid_sm()
+{
+    local ppid_name
+    ppid_name=$(cat /proc/${PPID}/comm)
+    if [[ $ppid_name == "sm" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Save service current state
+save_state()
+{
+    local ppid_name
+    local state_file="$1"
+    local new_state="$2"
+    if is_ppid_sm; then
+        if [[ ${state_file} == "${SM_CEPH_MON_STATE_FILE}" ]]; then
+            if [[ ${new_state} == "${SM_CEPH_MON_CURRENT_STATE}" ]]; then
+                return
+            fi
+            SM_CEPH_MON_CURRENT_STATE=${new_state}
+        elif [[ ${state_file} == "${SM_CEPH_OSD_STATE_FILE}" ]]; then
+            if [[ ${new_state} == "${SM_CEPH_OSD_CURRENT_STATE}" ]]; then
+                return
+            fi
+            SM_CEPH_OSD_CURRENT_STATE=${new_state}
+        fi
+
+        echo "${new_state}" > "${state_file}"
+        log INFO "Updating ${state_file} state to ${new_state}."
+    else
+        ppid_name=$(cat /proc/${PPID}/comm)
+        log WARN "Cannot save state to ${state_file}. Expected 'sm' ppid, found '${ppid_name}'."
+    fi
+}
+
+# Sanity check for the SM_CEPH_MON_CURRENT_STATE variable
+if is_ppid_sm && [ "${SM_CEPH_MON_CURRENT_STATE}" != "${STATE_RUNNING}" ]; then
+    timeout 5 sm-query service ceph-mon 2>/dev/null | grep -q enabled-active
+    if [ $? -eq 0 ]; then
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_RUNNING}
+    else
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_STOPPED}
+    fi
+fi
+
+# Sanity check for the SM_CEPH_OSD_CURRENT_STATE variable
+if is_ppid_sm && [ "${SM_CEPH_OSD_CURRENT_STATE}" != "${STATE_RUNNING}" ]; then
+    timeout 5 sm-query service ceph-osd 2>/dev/null | grep -q enabled-active
+    if [ $? -eq 0 ]; then
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_RUNNING}
+    else
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_STOPPED}
+    fi
 fi
 
 # Log Management
@@ -346,6 +411,13 @@ start ()
 
     # Start the service
     with_service_lock "${service}" ${CEPH_SCRIPT} start ${service}
+
+    if [ "$RC" -eq 0 ] && [[ "${service}" == *"mon"* ]]; then
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_RUNNING}
+    elif [ "$RC" -eq 0 ] && [[ "${service}" == *"osd"* ]]; then
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_RUNNING}
+    fi
+
     log INFO "Ceph START ${service} command finished."
 }
 
@@ -368,6 +440,13 @@ stop ()
     fi
 
     with_service_lock "${service}" ${CEPH_SCRIPT} ${cmd} ${service}
+
+    if [ "$RC" -eq 0 ] && [[ "${service}" == *"mon"* ]]; then
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_STOPPED}
+    elif [ "$RC" -eq 0 ] && [[ "${service}" == *"osd"* ]]; then
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_STOPPED}
+    fi
+
     log INFO "Ceph ${cmd^^} ${service} command finished."
 }
 
@@ -448,12 +527,26 @@ status ()
     eval target="$target"
     [ -z "${target}" ] && target="mon osd"
 
+    log INFO "status ${target}"
+
     if [ ! -f ${CEPH_FILE} ]; then
-        # Ceph is not running on this node, return success
+        log INFO "Ceph is not running on this node, returning success."
         exit 0
     fi
 
-    log INFO "status ${target}";
+    if is_ppid_sm; then
+        if [[ "${target}" == *"mon"* ]] && \
+           [[ "${SM_CEPH_MON_CURRENT_STATE}" != "${STATE_RUNNING}" ]]; then
+            log INFO "Ceph Mon is masked as ${SM_CEPH_MON_CURRENT_STATE} state, returning exit 1."
+            exit 1
+        fi
+
+        if [[ "${target}" == *"osd"* ]] && \
+           [[ "${SM_CEPH_OSD_CURRENT_STATE}" != "${STATE_RUNNING}" ]]; then
+            log INFO "Ceph OSD is masked as ${SM_CEPH_OSD_CURRENT_STATE} state, returning exit 1."
+            exit 1
+        fi
+    fi
 
     if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]] && [[ "$target" == "osd" ]]; then
         has_ceph_network_carrier
