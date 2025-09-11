@@ -1,0 +1,526 @@
+From: Robert Church <robert.church@windriver.com>
+Date: Thu, 11 Sep 2025 22:22:45 -0500
+Subject: Description: Remove usage of distutils
+
+ distutils is gone from Python 3.12, but there are replacements for all of
+ its API. This patch fixes the situation, as Debian is moving toward the
+ Python 3.12 interpreter.
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2024-04-24
+---
+ src/pybind/cephfs/setup.py                      | 40 +++++++++++++++++--------
+ src/pybind/mgr/dashboard/services/rgw_client.py | 20 +++++++++++--
+ src/pybind/mgr/dashboard/tools.py               | 20 +++++++++++--
+ src/pybind/rados/setup.py                       | 33 ++++++++++++--------
+ src/pybind/rbd/setup.py                         | 33 ++++++++++++--------
+ src/pybind/rgw/setup.py                         | 36 +++++++++++++---------
+ src/seastar/configure.py                        |  3 +-
+ src/seastar/dpdk/doc/guides/conf.py             |  4 +--
+ src/seastar/fmt/doc/build.py                    |  9 +++---
+ src/seastar/fmt/support/manage.py               |  6 ++--
+ src/spdk/dpdk/doc/guides/conf.py                |  4 +--
+ 11 files changed, 141 insertions(+), 67 deletions(-)
+
+diff --git a/src/pybind/cephfs/setup.py b/src/pybind/cephfs/setup.py
+index 4bcffb6..9f9ac40 100755
+--- a/src/pybind/cephfs/setup.py
++++ b/src/pybind/cephfs/setup.py
+@@ -7,11 +7,27 @@ import subprocess
+ import sys
+ import tempfile
+ import textwrap
+-from distutils.ccompiler import new_compiler
+-from distutils.errors import CompileError, LinkError
+-import distutils.sysconfig
++if not pkgutil.find_loader('setuptools'):
++    from distutils.core import setup
++    from distutils.extension import Extension
++else:
++    from setuptools import setup
++    from setuptools.extension import Extension
++try:
++    from distutils.ccompiler import new_compiler
++except ImportError:
++    from setuptools._distutils.ccompiler import new_compiler
++try:
++    from distutils.errors import CompileError, LinkError
++except ImportError:
++    from setuptools._distutils.errors import CompileError, LinkError
++
++try:
++    from distutils import sysconfig
++except ImportError:
++    import sysconfig
+ 
+-unwrapped_customize = distutils.sysconfig.customize_compiler
++unwrapped_customize = sysconfig.customize_compiler
+ 
+ clang = False
+ 
+@@ -32,7 +48,7 @@ def monkey_with_compiler(compiler):
+             compiler.compiler_so = filter_unsupported_flags(
+                 compiler.compiler_so)
+ 
+-distutils.sysconfig.customize_compiler = monkey_with_compiler
++sysconfig.customize_compiler = monkey_with_compiler
+ 
+ if not pkgutil.find_loader('setuptools'):
+     from distutils.core import setup
+@@ -49,14 +65,14 @@ __version__ = '2.0.0'
+ 
+ def get_python_flags(libs):
+     py_libs = sum((libs.split() for libs in
+-                   distutils.sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
++                   sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
+     return dict(
+-        include_dirs=[distutils.sysconfig.get_python_inc()],
+-        library_dirs=distutils.sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
++        include_dirs=[sysconfig.get_python_inc()],
++        library_dirs=sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
+         libraries=libs + [lib.replace('-l', '') for lib in py_libs],
+-        extra_compile_args=distutils.sysconfig.get_config_var('CFLAGS').split(),
+-        extra_link_args=(distutils.sysconfig.get_config_var('LDFLAGS').split() +
+-                         distutils.sysconfig.get_config_var('LINKFORSHARED').split()))
++        extra_compile_args=sysconfig.get_config_var('CFLAGS').split(),
++        extra_link_args=(sysconfig.get_config_var('LDFLAGS').split() +
++                         sysconfig.get_config_var('LINKFORSHARED').split()))
+ 
+ 
+ def check_sanity():
+@@ -86,7 +102,7 @@ def check_sanity():
+         fp.write(dummy_prog)
+ 
+     compiler = new_compiler()
+-    distutils.sysconfig.customize_compiler(compiler)
++    sysconfig.customize_compiler(compiler)
+ 
+     if {'MAKEFLAGS', 'MFLAGS', 'MAKELEVEL'}.issubset(set(os.environ.keys())):
+         # The setup.py has been invoked by a top-level Ceph make.
+diff --git a/src/pybind/mgr/dashboard/services/rgw_client.py b/src/pybind/mgr/dashboard/services/rgw_client.py
+index d3e0086..be5e236 100644
+--- a/src/pybind/mgr/dashboard/services/rgw_client.py
++++ b/src/pybind/mgr/dashboard/services/rgw_client.py
+@@ -2,7 +2,6 @@
+ from __future__ import absolute_import
+ 
+ import re
+-from distutils.util import strtobool
+ from ..awsauth import S3Auth
+ from ..settings import Settings, Options
+ from ..rest_client import RestClient, RequestException
+@@ -10,6 +9,23 @@ from ..tools import build_url, dict_contains_path, is_valid_ip_address, json_str
+ from .. import mgr, logger
+ 
+ 
++def _strtobool(val):
++    """Convert a string representation of truth to true (1) or false (0).
++
++    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
++    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
++    'val' is anything else.
++    """
++    # Copied from distutils
++    val = val.lower()
++    if val in ('y', 'yes', 't', 'true', 'on', '1'):
++        return 1
++    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
++        return 0
++    else:
++        raise ValueError("invalid truth value %r" % (val,))
++
++
+ class NoCredentialsException(RequestException):
+     def __init__(self):
+         super(NoCredentialsException, self).__init__(
+@@ -361,7 +377,7 @@ class RgwClient(RestClient):
+     def _is_system_user(self, admin_path, userid, request=None):
+         # pylint: disable=unused-argument
+         response = request()
+-        return strtobool(response['data']['system'])
++        return _strtobool(response['data']['system'])
+ 
+     def is_system_user(self):
+         return self._is_system_user(self.admin_path, self.userid)
+diff --git a/src/pybind/mgr/dashboard/tools.py b/src/pybind/mgr/dashboard/tools.py
+index 56b1425..bf67e1e 100644
+--- a/src/pybind/mgr/dashboard/tools.py
++++ b/src/pybind/mgr/dashboard/tools.py
+@@ -8,7 +8,6 @@ import functools
+ 
+ import collections
+ from datetime import datetime, timedelta
+-from distutils.util import strtobool
+ import fnmatch
+ import time
+ import threading
+@@ -39,6 +38,23 @@ def ensure_str(s, encoding='utf-8', errors='strict'):
+     return s
+ 
+ 
++def _strtobool(val):
++    """Convert a string representation of truth to true (1) or false (0).
++
++    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
++    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
++    'val' is anything else.
++    """
++    # Copied from distutils
++    val = val.lower()
++    if val in ('y', 'yes', 't', 'true', 'on', '1'):
++        return 1
++    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
++        return 0
++    else:
++        raise ValueError("invalid truth value %r" % (val,))
++
++
+ class RequestLoggingTool(cherrypy.Tool):
+     def __init__(self):
+         cherrypy.Tool.__init__(self, 'before_handler', self.request_begin,
+@@ -877,7 +893,7 @@ def str_to_bool(val):
+     """
+     if isinstance(val, bool):
+         return val
+-    return bool(strtobool(val))
++    return bool(_strtobool(val))
+ 
+ 
+ def json_str_to_object(value):  # type: (AnyStr) -> Any
+diff --git a/src/pybind/rados/setup.py b/src/pybind/rados/setup.py
+index 12c7c4c..0b3f79e 100755
+--- a/src/pybind/rados/setup.py
++++ b/src/pybind/rados/setup.py
+@@ -15,11 +15,20 @@ else:
+     from setuptools import setup
+     from setuptools.extension import Extension
+ 
+-from distutils.ccompiler import new_compiler
+-from distutils.errors import CompileError, LinkError
+-import distutils.sysconfig
++try:
++    from distutils import sysconfig
++except ImportError:
++    import sysconfig
++try:
++    from distutils.errors import CompileError, LinkError
++except ImportError:
++    from setuptools._distutils.errors import CompileError, LinkError
++try:
++    from distutils.ccompiler import new_compiler
++except ImportError:
++    from setuptools._distutils.ccompiler import new_compiler
+ 
+-unwrapped_customize = distutils.sysconfig.customize_compiler
++unwrapped_customize = sysconfig.customize_compiler
+ 
+ clang = False
+ 
+@@ -40,7 +49,7 @@ def monkey_with_compiler(compiler):
+             compiler.compiler_so = filter_unsupported_flags(
+                 compiler.compiler_so)
+ 
+-distutils.sysconfig.customize_compiler = monkey_with_compiler
++sysconfig.customize_compiler = monkey_with_compiler
+ 
+ # PEP 440 versioning of the Rados package on PyPI
+ # Bump this version, after every changeset
+@@ -49,14 +58,14 @@ __version__ = '2.0.0'
+ 
+ def get_python_flags(libs):
+     py_libs = sum((libs.split() for libs in
+-                   distutils.sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
++                   sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
+     return dict(
+-        include_dirs=[distutils.sysconfig.get_python_inc()],
+-        library_dirs=distutils.sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
++        include_dirs=[sysconfig.get_python_inc()],
++        library_dirs=sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
+         libraries=libs + [lib.replace('-l', '') for lib in py_libs],
+-        extra_compile_args=distutils.sysconfig.get_config_var('CFLAGS').split(),
+-        extra_link_args=(distutils.sysconfig.get_config_var('LDFLAGS').split() +
+-                         distutils.sysconfig.get_config_var('LINKFORSHARED').split()))
++        extra_compile_args=sysconfig.get_config_var('CFLAGS').split(),
++        extra_link_args=(sysconfig.get_config_var('LDFLAGS').split() +
++                         sysconfig.get_config_var('LINKFORSHARED').split()))
+ 
+ 
+ def check_sanity():
+@@ -85,7 +94,7 @@ def check_sanity():
+         fp.write(dummy_prog)
+ 
+     compiler = new_compiler()
+-    distutils.sysconfig.customize_compiler(compiler)
++    sysconfig.customize_compiler(compiler)
+ 
+     if {'MAKEFLAGS', 'MAKELEVEL'}.issubset(set(os.environ.keys())):
+         # The setup.py has been invoked by a top-level Ceph make.
+diff --git a/src/pybind/rbd/setup.py b/src/pybind/rbd/setup.py
+index d35d600..1d4ed6b 100755
+--- a/src/pybind/rbd/setup.py
++++ b/src/pybind/rbd/setup.py
+@@ -7,11 +7,20 @@ import subprocess
+ import sys
+ import tempfile
+ import textwrap
+-from distutils.ccompiler import new_compiler
+-from distutils.errors import CompileError, LinkError
+-import distutils.sysconfig
++try:
++    from distutils.ccompiler import new_compiler
++except ImportError:
++    from setuptools._distutils.ccompiler import new_compiler
++try:
++    from distutils.errors import CompileError, LinkError
++except ImportError:
++    from setuptools._distutils.errors import CompileError, LinkError
++try:
++    from distutils import sysconfig
++except ImportError:
++    import sysconfig
+ 
+-unwrapped_customize = distutils.sysconfig.customize_compiler
++unwrapped_customize = sysconfig.customize_compiler
+ 
+ clang = False
+ 
+@@ -32,7 +41,7 @@ def monkey_with_compiler(compiler):
+             compiler.compiler_so = filter_unsupported_flags(
+                 compiler.compiler_so)
+ 
+-distutils.sysconfig.customize_compiler = monkey_with_compiler
++sysconfig.customize_compiler = monkey_with_compiler
+ 
+ if not pkgutil.find_loader('setuptools'):
+     from distutils.core import setup
+@@ -49,14 +58,14 @@ __version__ = '2.0.0'
+ 
+ def get_python_flags(libs):
+     py_libs = sum((libs.split() for libs in
+-                   distutils.sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
++                   sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
+     return dict(
+-        include_dirs=[distutils.sysconfig.get_python_inc()],
+-        library_dirs=distutils.sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
++        include_dirs=[sysconfig.get_python_inc()],
++        library_dirs=sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
+         libraries=libs + [lib.replace('-l', '') for lib in py_libs],
+-        extra_compile_args=distutils.sysconfig.get_config_var('CFLAGS').split(),
+-        extra_link_args=(distutils.sysconfig.get_config_var('LDFLAGS').split() +
+-                         distutils.sysconfig.get_config_var('LINKFORSHARED').split()))
++        extra_compile_args=sysconfig.get_config_var('CFLAGS').split(),
++        extra_link_args=(sysconfig.get_config_var('LDFLAGS').split() +
++                         sysconfig.get_config_var('LINKFORSHARED').split()))
+ 
+ 
+ def check_sanity():
+@@ -85,7 +94,7 @@ def check_sanity():
+         fp.write(dummy_prog)
+ 
+     compiler = new_compiler()
+-    distutils.sysconfig.customize_compiler(compiler)
++    sysconfig.customize_compiler(compiler)
+ 
+     if {'MAKEFLAGS', 'MFLAGS', 'MAKELEVEL'}.issubset(set(os.environ.keys())):
+         # The setup.py has been invoked by a top-level Ceph make.
+diff --git a/src/pybind/rgw/setup.py b/src/pybind/rgw/setup.py
+index 6365e97..e055b19 100755
+--- a/src/pybind/rgw/setup.py
++++ b/src/pybind/rgw/setup.py
+@@ -7,11 +7,21 @@ import subprocess
+ import sys
+ import tempfile
+ import textwrap
+-from distutils.ccompiler import new_compiler
+-from distutils.errors import CompileError, LinkError
+-import distutils.sysconfig
+ 
+-unwrapped_customize = distutils.sysconfig.customize_compiler
++try:
++    from distutils.ccompiler import new_compiler
++except ImportError:
++    from setuptools._distutils.ccompiler import new_compiler
++try:
++    from distutils.errors import CompileError, LinkError
++except ImportError:
++    from setuptools._distutils.errors import CompileError, LinkError
++try:
++    from distutils import sysconfig
++except ImportError:
++    import sysconfig
++
++unwrapped_customize = sysconfig.customize_compiler
+ 
+ clang = False
+ 
+@@ -33,9 +43,7 @@ def monkey_with_compiler(compiler):
+ 
+ # See what you made me do?
+ 
+-distutils.sysconfig.customize_compiler = monkey_with_compiler
+-
+-import distutils.core
++sysconfig.customize_compiler = monkey_with_compiler
+ 
+ if not pkgutil.find_loader('setuptools'):
+     from distutils.core import setup
+@@ -52,14 +60,14 @@ __version__ = '2.0.0'
+ 
+ def get_python_flags(libs):
+     py_libs = sum((libs.split() for libs in
+-                   distutils.sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
++                   sysconfig.get_config_vars('LIBS', 'SYSLIBS')), [])
+     return dict(
+-        include_dirs=[distutils.sysconfig.get_python_inc()],
+-        library_dirs=distutils.sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
++        include_dirs=[sysconfig.get_python_inc()],
++        library_dirs=sysconfig.get_config_vars('LIBDIR', 'LIBPL'),
+         libraries=libs + [lib.replace('-l', '') for lib in py_libs],
+-        extra_compile_args=distutils.sysconfig.get_config_var('CFLAGS').split(),
+-        extra_link_args=(distutils.sysconfig.get_config_var('LDFLAGS').split() +
+-                         distutils.sysconfig.get_config_var('LINKFORSHARED').split()))
++        extra_compile_args=sysconfig.get_config_var('CFLAGS').split(),
++        extra_link_args=(sysconfig.get_config_var('LDFLAGS').split() +
++                         sysconfig.get_config_var('LINKFORSHARED').split()))
+ 
+ 
+ def check_sanity():
+@@ -88,7 +96,7 @@ def check_sanity():
+         fp.write(dummy_prog)
+ 
+     compiler = new_compiler()
+-    distutils.sysconfig.customize_compiler(compiler)
++    sysconfig.customize_compiler(compiler)
+ 
+     if {'MAKEFLAGS', 'MFLAGS', 'MAKELEVEL'}.issubset(set(os.environ.keys())):
+         # The setup.py has been invoked by a top-level Ceph make.
+diff --git a/src/seastar/configure.py b/src/seastar/configure.py
+index 9b70ef4..92987cf 100755
+--- a/src/seastar/configure.py
++++ b/src/seastar/configure.py
+@@ -17,7 +17,6 @@
+ # under the License.
+ #
+ import argparse
+-import distutils.dir_util
+ import os
+ import seastar_cmake
+ import subprocess
+@@ -163,7 +162,7 @@ def configure_mode(mode):
+     # Generate a new build by pointing to the source directory.
+     ARGS = seastar_cmake.COOKING_BASIC_ARGS + (['-i', 'dpdk'] if args.dpdk else []) + ['-d', BUILD_PATH, '--'] + TRANSLATED_ARGS
+     print(ARGS)
+-    distutils.dir_util.mkpath(BUILD_PATH)
++    os.makedirs(BUILD_PATH, exist_ok=True)
+     subprocess.check_call(ARGS, shell=False, cwd=seastar_cmake.ROOT_PATH)
+ 
+ for mode in MODES:
+diff --git a/src/seastar/dpdk/doc/guides/conf.py b/src/seastar/dpdk/doc/guides/conf.py
+index c3cd0bd..d6ae3d4 100644
+--- a/src/seastar/dpdk/doc/guides/conf.py
++++ b/src/seastar/dpdk/doc/guides/conf.py
+@@ -31,7 +31,7 @@
+ from __future__ import print_function
+ import subprocess
+ from docutils import nodes
+-from distutils.version import LooseVersion
++from packaging.version import parse
+ from sphinx import __version__ as sphinx_version
+ from sphinx.highlighting import PygmentsBridge
+ from pygments.formatters.latex import LatexFormatter
+@@ -50,7 +50,7 @@
+ 
+ project = 'Data Plane Development Kit'
+ 
+-if LooseVersion(sphinx_version) >= LooseVersion('1.3.1'):
++if parse(sphinx_version) < parse('1.3.1'):
+     html_theme = "sphinx_rtd_theme"
+ html_logo = '../logo/DPDK_logo_vertical_rev_small.png'
+ latex_logo = '../logo/DPDK_logo_horizontal_tag.png'
+diff --git a/src/seastar/fmt/doc/build.py b/src/seastar/fmt/doc/build.py
+index e44ad7c..fd6563d 100755
+--- a/src/seastar/fmt/doc/build.py
++++ b/src/seastar/fmt/doc/build.py
+@@ -4,7 +4,7 @@
+ from __future__ import print_function
+ import errno, os, shutil, sys, tempfile
+ from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
+-from distutils.version import LooseVersion
++from packaging.version import parse
+ 
+ versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0', '5.0.0', '5.1.0', '5.2.0', '5.2.1']
+ 
+@@ -15,7 +15,8 @@ def pip_install(package, commit=None, **kwargs):
+     from pkg_resources import get_distribution, DistributionNotFound
+     try:
+       installed_version = get_distribution(os.path.basename(package)).version
+-      if LooseVersion(installed_version) >= min_version:
++      if parse(installed_version) < parse(min_version):
++
+         print('{} {} already installed'.format(package, min_version))
+         return
+     except DistributionNotFound:
+@@ -40,14 +41,14 @@ def create_build_env(dirname='virtualenv'):
+   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
+   # is broken (see #207) and it doesn't support the show command.
+   pip_version = get_distribution('pip').version
+-  if LooseVersion(pip_version) < LooseVersion('1.5.4'):
++  if parse(pip_version) < parse('1.5.4'):
+     print("Updating pip")
+     check_call(['pip', 'install', '--upgrade', 'pip'])
+   # Upgrade distribute because installation of sphinx with distribute 0.6.24
+   # available on Travis is broken (see #207).
+   try:
+     distribute_version = get_distribution('distribute').version
+-    if LooseVersion(distribute_version) <= LooseVersion('0.6.24'):
++    if parse(distribute_version) < parse('0.6.24'):
+       print("Updating distribute")
+       check_call(['pip', 'install', '--upgrade', 'distribute'])
+   except DistributionNotFound:
+diff --git a/src/seastar/fmt/support/manage.py b/src/seastar/fmt/support/manage.py
+index 9bd2e48..f0fdf06 100755
+--- a/src/seastar/fmt/support/manage.py
++++ b/src/seastar/fmt/support/manage.py
+@@ -11,7 +11,7 @@ from __future__ import print_function
+ import datetime, docopt, errno, fileinput, json, os
+ import re, requests, shutil, sys, tempfile
+ from contextlib import contextmanager
+-from distutils.version import LooseVersion
++from packaging.version import parse
+ from subprocess import check_call
+ 
+ 
+@@ -152,9 +152,9 @@ def update_site(env):
+         if os.path.exists(html_dir):
+             shutil.rmtree(html_dir)
+         include_dir = env.fmt_repo.dir
+-        if LooseVersion(version) >= LooseVersion('5.0.0'):
++        if parse(version) >= parse('5.0.0'):
+             include_dir = os.path.join(include_dir, 'include', 'fmt')
+-        elif LooseVersion(version) >= LooseVersion('3.0.0'):
++        elif parse(version) >= parse('3.0.0'):
+             include_dir = os.path.join(include_dir, 'fmt')
+         import build
+         build.build_docs(version, doc_dir=target_doc_dir,
+diff --git a/src/spdk/dpdk/doc/guides/conf.py b/src/spdk/dpdk/doc/guides/conf.py
+index c883306..9610614 100644
+--- a/src/spdk/dpdk/doc/guides/conf.py
++++ b/src/spdk/dpdk/doc/guides/conf.py
+@@ -4,7 +4,7 @@
+ from __future__ import print_function
+ import subprocess
+ from docutils import nodes
+-from distutils.version import LooseVersion
++from packaging.version import parse
+ from sphinx import __version__ as sphinx_version
+ from sphinx.highlighting import PygmentsBridge
+ from pygments.formatters.latex import LatexFormatter
+@@ -394,7 +394,7 @@ def setup(app):
+                             'Features availability in compression drivers',
+                             'Feature')
+ 
+-    if LooseVersion(sphinx_version) < LooseVersion('1.3.1'):
++    if parse(sphinx_version) < parse('1.3.1'):
+         print('Upgrade sphinx to version >= 1.3.1 for '
+               'improved Figure/Table number handling.')
+         # Add a role to handle :numref: references.

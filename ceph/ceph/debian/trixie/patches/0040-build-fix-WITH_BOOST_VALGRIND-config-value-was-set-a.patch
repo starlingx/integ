@@ -1,0 +1,26 @@
+From: Mark Kogan <mkogan@redhat.com>
+Date: Thu, 4 Aug 2022 09:07:59 +0000
+Subject: build: fix WITH_BOOST_VALGRIND config value was set after the fact
+
+https://tracker.ceph.com/issues/56500
+
+Signed-off-by: Mark Kogan <mkogan@redhat.com>
+---
+ CMakeLists.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a4c9ff2..efad131 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -657,6 +657,10 @@ if(WITH_SEASTAR)
+ endif()
+ 
+ set(Boost_USE_MULTITHREADED ON)
++
++include(CMakeDependentOption)
++CMAKE_DEPENDENT_OPTION(WITH_BOOST_VALGRIND "Boost support for valgrind" OFF
++  "NOT WITH_SYSTEM_BOOST" OFF)
+ # require minimally the bundled version
+ if(WITH_SYSTEM_BOOST)
+   if(ENABLE_SHARED)

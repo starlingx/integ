@@ -1,0 +1,26 @@
+From: Jesse Williamson <jesse.williamson@canonical.com>
+Date: Thu, 11 Sep 2025 21:04:52 +0000
+Subject: Adds max_connections to reference configuration.
+
+Origin: upstream, https://github.com/civetweb/civetweb/pull/776/commits/3b8eb36676f70d06f8918ccf62029207c49cdda0
+Bug: https://github.com/civetweb/civetweb/issues/775
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/ceph/+bug/1838109
+
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/ceph/+bug/1838109
+---
+ src/civetweb/resources/civetweb.conf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/civetweb/resources/civetweb.conf b/src/civetweb/resources/civetweb.conf
+index 00aacde..c511ae8 100644
+--- a/src/civetweb/resources/civetweb.conf
++++ b/src/civetweb/resources/civetweb.conf
+@@ -8,6 +8,8 @@
+ document_root .
+ listening_ports 8080
+ 
++#so_max_connections 100
++
+ # cgi_pattern **.cgi$|**.pl$|**.php$
+ # cgi_environment 
+ # put_delete_auth_file 

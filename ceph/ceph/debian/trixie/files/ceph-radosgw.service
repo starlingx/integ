@@ -1,0 +1,18 @@
+[Unit]
+Description=radosgw RESTful rados gateway
+After=network.target
+#After=remote-fs.target nss-lookup.target network-online.target time-sync.target
+#Wants=network-online.target
+
+[Service]
+Type=forking
+Restart=no
+KillMode=process
+RemainAfterExit=yes
+ExecStart=/etc/rc.d/init.d/ceph-radosgw start
+ExecStop=/etc/rc.d/init.d/ceph-radosgw stop
+ExecReload=/etc/rc.d/init.d/ceph-radosgw reload
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-# export DH_VERBOSE=1
+export DH_VERBOSE=1
 
 # Additional files
 SOURCE1 := ceph.sh
@@ -132,6 +132,8 @@ extraopts += -DWITH_TCMALLOC=ON
 extraopts += -DWITH_TESTS=OFF
 extraopts += -DWITH_VALGRIND=OFF
 extraopts += -DWITH_XIO=OFF
+
+extraopts += -DWITH_RADOSGW_KAFKA_ENDPOINT=OFF
 
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
   NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))

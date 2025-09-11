@@ -1,0 +1,77 @@
+From: Kefu Chai <kchai@redhat.com>
+Date: Tue, 30 Mar 2021 09:45:41 +0800
+Subject: cmake,install-deps,make-dist: use boost 1.75
+
+so we can use the latest boost
+
+Signed-off-by: Kefu Chai <kchai@redhat.com>
+---
+ CMakeLists.txt                 | 2 +-
+ cmake/modules/BuildBoost.cmake | 6 +++---
+ install-deps.sh                | 2 +-
+ make-dist                      | 4 ++--
+ 4 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ee9d297..3f66d75 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -673,7 +673,7 @@ else()
+     "max jobs for Boost build") # override w/-DBOOST_J=<n>
+   set(Boost_USE_STATIC_LIBS ON)
+   include(BuildBoost)
+-  build_boost(1.73
++  build_boost(1.75
+     COMPONENTS ${BOOST_COMPONENTS} ${BOOST_HEADER_COMPONENTS})
+ endif()
+ include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
+diff --git a/cmake/modules/BuildBoost.cmake b/cmake/modules/BuildBoost.cmake
+index eaab331..7cd7dc6 100644
+--- a/cmake/modules/BuildBoost.cmake
++++ b/cmake/modules/BuildBoost.cmake
+@@ -137,14 +137,14 @@ function(do_build_boost version)
+     check_boost_version("${PROJECT_SOURCE_DIR}/src/boost" ${version})
+     set(source_dir
+       SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/boost")
+-  elseif(version VERSION_GREATER 1.72)
++  elseif(version VERSION_GREATER 1.75)
+     message(FATAL_ERROR "Unknown BOOST_REQUESTED_VERSION: ${version}")
+   else()
+     message(STATUS "boost will be downloaded...")
+     # NOTE: If you change this version number make sure the package is available
+     # at the three URLs below (may involve uploading to download.ceph.com)
+-    set(boost_version 1.72.0)
+-    set(boost_sha256 59c9b274bc451cf91a9ba1dd2c7fdcaf5d60b1b3aa83f2c9fa143417cc660722)
++    set(boost_version 1.75.0)
++    set(boost_sha256 953db31e016db7bb207f11432bef7df100516eeb746843fa0486a222e3fd49cb)
+     string(REPLACE "." "_" boost_version_underscore ${boost_version} )
+     set(boost_url 
+       https://dl.bintray.com/boostorg/release/${boost_version}/source/boost_${boost_version_underscore}.tar.bz2)
+diff --git a/install-deps.sh b/install-deps.sh
+index 8a4c31d..5096d34 100755
+--- a/install-deps.sh
++++ b/install-deps.sh
+@@ -147,7 +147,7 @@ function install_pkg_on_ubuntu {
+ }
+ 
+ function install_boost_on_ubuntu {
+-    local ver=1.72
++    local ver=1.75
+     local installed_ver=$(apt -qq list --installed ceph-libboost*-dev 2>/dev/null |
+                               grep -e 'libboost[0-9].[0-9]\+-dev' |
+                               cut -d' ' -f2 |
+diff --git a/make-dist b/make-dist
+index 30ceafe..fb43eb9 100755
+--- a/make-dist
++++ b/make-dist
+@@ -143,8 +143,8 @@ ln -s . $outfile
+ tar cvf $outfile.version.tar $outfile/src/.git_version $outfile/ceph.spec $outfile/alpine/APKBUILD
+ # NOTE: If you change this version number make sure the package is available
+ # at the three URLs referenced below (may involve uploading to download.ceph.com)
+-boost_version=1.72.0
+-download_boost $boost_version 59c9b274bc451cf91a9ba1dd2c7fdcaf5d60b1b3aa83f2c9fa143417cc660722 \
++boost_version=1.75.0
++download_boost $boost_version 953db31e016db7bb207f11432bef7df100516eeb746843fa0486a222e3fd49cb \
+                https://dl.bintray.com/boostorg/release/$boost_version/source \
+                https://downloads.sourceforge.net/project/boost/boost/$boost_version \
+                https://download.ceph.com/qa

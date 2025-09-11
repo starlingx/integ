@@ -1,0 +1,35 @@
+From: Kefu Chai <kchai@redhat.com>
+Date: Mon, 16 Nov 2020 15:33:42 +0800
+Subject: mgr/PyModuleRegistry: do not call PyEval_InitThreads() on python3.9
+
+PyEval_InitThreads() and PyEval_ThreadsInitialized() are deprecated
+since python3.9, and GIL is initialized by Py_Initialize() in python3.9.
+so do not call them unless we are using python < 3.9.
+
+see https://docs.python.org/3/c-api/init.html#c.PyEval_InitThreads
+
+Signed-off-by: Kefu Chai <kchai@redhat.com>
+---
+ src/mgr/PyModuleRegistry.cc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/mgr/PyModuleRegistry.cc b/src/mgr/PyModuleRegistry.cc
+index b4bef83..ed6fe1c 100644
+--- a/src/mgr/PyModuleRegistry.cc
++++ b/src/mgr/PyModuleRegistry.cc
+@@ -50,13 +50,13 @@ void PyModuleRegistry::init()
+   }
+   PyImport_AppendInittab("ceph_module", PyModule::init_ceph_module);
+   Py_InitializeEx(0);
+-
++#if PY_VERSION_HEX < 0x03090000
+   // Let CPython know that we will be calling it back from other
+   // threads in future.
+   if (! PyEval_ThreadsInitialized()) {
+     PyEval_InitThreads();
+   }
+-
++#endif
+   // Drop the GIL and remember the main thread state (current
+   // thread state becomes NULL)
+   pMainThreadState = PyEval_SaveThread();

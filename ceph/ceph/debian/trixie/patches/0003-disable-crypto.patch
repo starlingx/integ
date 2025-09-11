@@ -1,0 +1,24 @@
+From: James Page <james.page@ubuntu.com>
+Date: Thu, 11 Sep 2025 22:50:22 +0000
+Subject: Using qat/isal optimizations on amd64 architecture only.
+
+---
+ src/os/CMakeLists.txt | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/os/CMakeLists.txt b/src/os/CMakeLists.txt
+index 8fc8d35..62411f3 100644
+--- a/src/os/CMakeLists.txt
++++ b/src/os/CMakeLists.txt
+@@ -110,8 +110,9 @@ endif()
+ target_link_libraries(os kv)
+ 
+ add_dependencies(os compressor_plugins)
+-add_dependencies(os crypto_plugins)
+-
++if(HAVE_INTEL AND HAVE_BETTER_YASM_ELF64 AND (NOT APPLE))
++    add_dependencies(os crypto_plugins)
++endif()
+ 
+ if(WITH_BLUESTORE)
+   add_executable(ceph-bluestore-tool

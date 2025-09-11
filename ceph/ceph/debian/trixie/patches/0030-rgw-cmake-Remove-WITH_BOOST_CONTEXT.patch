@@ -1,0 +1,517 @@
+From: "Adam C. Emerson" <aemerson@redhat.com>
+Date: Thu, 22 Oct 2020 14:55:17 -0400
+Subject: {rgw, cmake}: Remove WITH_BOOST_CONTEXT
+
+As Boost.Context now supports s390, there is no longer any need for
+the conditional compilation.
+
+Signed-off-by: Adam C. Emerson <aemerson@redhat.com>
+---
+ CMakeLists.txt                             | 14 +-------------
+ src/CMakeLists.txt                         |  8 +++-----
+ src/cls/CMakeLists.txt                     |  6 ++----
+ src/common/async/yield_context.h           | 11 -----------
+ src/include/config-h.in.cmake              |  3 ---
+ src/rgw/CMakeLists.txt                     | 14 +++-----------
+ src/rgw/rgw_http_client.cc                 |  2 --
+ src/rgw/rgw_pubsub_push.cc                 |  4 ----
+ src/rgw/rgw_reshard.cc                     |  2 --
+ src/rgw/rgw_tools.cc                       |  4 ----
+ src/test/CMakeLists.txt                    |  8 ++------
+ src/test/librados/CMakeLists.txt           | 10 +++-------
+ src/test/librados/asio.cc                  | 10 ----------
+ src/test/rgw/CMakeLists.txt                | 10 ++++------
+ src/test/rgw/test_rgw_dmclock_scheduler.cc |  5 -----
+ src/test/rgw/test_rgw_reshard_wait.cc      |  4 ----
+ 16 files changed, 18 insertions(+), 97 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1112fb2..a1173a6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -443,11 +443,6 @@ if(WITH_BLKIN)
+   include_directories(SYSTEM src/blkin/blkin-lib)
+ endif(WITH_BLKIN)
+ 
+-option(WITH_BOOST_CONTEXT "Enable boost::asio stackful coroutines" ON)
+-if(WITH_BOOST_CONTEXT)
+-  set(HAVE_BOOST_CONTEXT ON)
+-endif()
+-
+ #option for RGW
+ option(WITH_RADOSGW "Rados Gateway is enabled" ON)
+ option(WITH_RADOSGW_FCGI_FRONTEND "Rados Gateway's FCGI frontend is enabled" OFF)
+@@ -461,10 +456,6 @@ if(WITH_RADOSGW)
+   if(WITH_RADOSGW_FCGI_FRONTEND)
+     find_package(fcgi REQUIRED)
+   endif()
+-  if(WITH_RADOSGW_BEAST_FRONTEND AND NOT WITH_BOOST_CONTEXT)
+-    message(WARNING "disabling WITH_RADOSGW_BEAST_FRONTEND, which depends on WITH_BOOST_CONTEXT")
+-    set(WITH_RADOSGW_BEAST_FRONTEND OFF)
+-  endif()
+   find_package(OATH REQUIRED)
+ 
+ # https://curl.haxx.se/docs/install.html mentions the
+@@ -654,16 +645,13 @@ option(WITH_SYSTEM_BOOST "require and build with system Boost" OFF)
+ # Boost::thread depends on Boost::atomic, so list it explicitly.
+ set(BOOST_COMPONENTS
+   atomic chrono thread system regex random program_options date_time
+-  iostreams)
++  iostreams context coroutine)
+ set(BOOST_HEADER_COMPONENTS container)
+ 
+ if(WITH_MGR)
+   list(APPEND BOOST_COMPONENTS
+     python${MGR_PYTHON_VERSION_MAJOR}${MGR_PYTHON_VERSION_MINOR})
+ endif()
+-if(WITH_BOOST_CONTEXT)
+-  list(APPEND BOOST_COMPONENTS context coroutine)
+-endif()
+ if(WITH_SEASTAR)
+   list(APPEND BOOST_COMPONENTS filesystem timer)
+ endif()
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index be06fe5..1772a6c 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -691,11 +691,9 @@ if(WITH_RBD)
+   add_subdirectory(rbd_replay)
+ endif(WITH_RBD)
+ 
+-if(WITH_BOOST_CONTEXT)
+-  set(SPAWN_BUILD_TESTS OFF CACHE INTERNAL "disable building of spawn unit tests")
+-  set(SPAWN_INSTALL OFF CACHE INTERNAL "disable installation of spawn headers")
+-  add_subdirectory(spawn)
+-endif()
++set(SPAWN_BUILD_TESTS OFF CACHE INTERNAL "disable building of spawn unit tests")
++set(SPAWN_INSTALL OFF CACHE INTERNAL "disable installation of spawn headers")
++add_subdirectory(spawn)
+ 
+ # RadosGW
+ if(WITH_KVS)
+diff --git a/src/cls/CMakeLists.txt b/src/cls/CMakeLists.txt
+index dbe0a1b..0be878a 100644
+--- a/src/cls/CMakeLists.txt
++++ b/src/cls/CMakeLists.txt
+@@ -86,10 +86,8 @@ if (WITH_RADOSGW)
+     otp/cls_otp_types.cc
+     )
+   add_library(cls_otp_client STATIC ${cls_otp_client_srcs})
+-  if (WITH_BOOST_CONTEXT)
+-    target_include_directories(cls_otp_client PRIVATE
+-      $<TARGET_PROPERTY:spawn,INTERFACE_INCLUDE_DIRECTORIES>)
+-  endif()
++  target_include_directories(cls_otp_client PRIVATE
++    $<TARGET_PROPERTY:spawn,INTERFACE_INCLUDE_DIRECTORIES>)
+ endif (WITH_RADOSGW)
+ 
+ # cls_refcount
+diff --git a/src/common/async/yield_context.h b/src/common/async/yield_context.h
+index fdfb3f5..baa028f 100644
+--- a/src/common/async/yield_context.h
++++ b/src/common/async/yield_context.h
+@@ -20,19 +20,8 @@
+ 
+ #include "acconfig.h"
+ 
+-#ifndef HAVE_BOOST_CONTEXT
+-
+-// hide the dependency on boost::context
+-namespace spawn {
+-struct yield_context;
+-}
+-
+-#else // HAVE_BOOST_CONTEXT
+ #include <spawn/spawn.hpp>
+ 
+-#endif // HAVE_BOOST_CONTEXT
+-
+-
+ /// optional-like wrapper for a spawn::yield_context and its associated
+ /// boost::asio::io_context. operations that take an optional_yield argument
+ /// will, when passed a non-empty yield context, suspend this coroutine instead
+diff --git a/src/include/config-h.in.cmake b/src/include/config-h.in.cmake
+index acced69..82050bd 100644
+--- a/src/include/config-h.in.cmake
++++ b/src/include/config-h.in.cmake
+@@ -336,9 +336,6 @@
+ /* Defined if getentropy() is available */
+ #cmakedefine HAVE_GETENTROPY
+ 
+-/* Defined if boost::context is available */
+-#cmakedefine HAVE_BOOST_CONTEXT
+-
+ /* Defined if libradosstriper is enabled: */
+ #cmakedefine WITH_LIBRADOSSTRIPER
+ 
+diff --git a/src/rgw/CMakeLists.txt b/src/rgw/CMakeLists.txt
+index a195010..4360141 100644
+--- a/src/rgw/CMakeLists.txt
++++ b/src/rgw/CMakeLists.txt
+@@ -155,10 +155,8 @@ add_library(rgw_common OBJECT ${librgw_common_srcs})
+ target_include_directories(rgw_common SYSTEM PUBLIC "services")
+ target_include_directories(rgw_common PUBLIC "${CMAKE_SOURCE_DIR}/src/dmclock/support/src")
+ 
+-if(WITH_BOOST_CONTEXT)
+-  target_include_directories(rgw_common PRIVATE
+-    $<TARGET_PROPERTY:spawn,INTERFACE_INCLUDE_DIRECTORIES>)
+-endif()
++target_include_directories(rgw_common PRIVATE
++$<TARGET_PROPERTY:spawn,INTERFACE_INCLUDE_DIRECTORIES>)
+ 
+ if(WITH_LTTNG)
+   # rgw/rgw_op.cc includes "tracing/rgw_op.h"
+@@ -227,9 +225,7 @@ if(WITH_CURL_OPENSSL)
+   target_link_libraries(rgw_a PRIVATE OpenSSL::Crypto)
+ endif()
+ 
+-if(WITH_BOOST_CONTEXT)
+-  target_link_libraries(rgw_a PUBLIC spawn)
+-endif()
++target_link_libraries(rgw_a PUBLIC spawn)
+ 
+ set(rgw_libs rgw_a)
+ if(WITH_RADOSGW_AMQP_ENDPOINT)
+@@ -267,9 +263,7 @@ if(WITH_RADOSGW_BEAST_FRONTEND AND WITH_RADOSGW_BEAST_OPENSSL)
+   # used by rgw_asio_frontend.cc
+   target_link_libraries(radosgw_a PRIVATE OpenSSL::SSL)
+ endif()
+-if(WITH_BOOST_CONTEXT)
+   target_link_libraries(radosgw_a PUBLIC spawn)
+-endif()
+ 
+ add_executable(radosgw rgw_main.cc)
+ target_link_libraries(radosgw radosgw_a librados
+@@ -392,9 +386,7 @@ endif()
+ if(WITH_RADOSGW_KAFKA_ENDPOINT)
+   target_link_libraries(rgw_admin_user PRIVATE RDKafka::RDKafka)
+ endif()
+-if(WITH_BOOST_CONTEXT)
+   target_link_libraries(rgw_admin_user PRIVATE spawn)
+-endif()
+ 
+ if(WITH_TESTS)
+   add_executable(ceph_rgw_jsonparser
+diff --git a/src/rgw/rgw_http_client.cc b/src/rgw/rgw_http_client.cc
+index bb48758..0a4f0c0 100644
+--- a/src/rgw/rgw_http_client.cc
++++ b/src/rgw/rgw_http_client.cc
+@@ -70,7 +70,6 @@ struct rgw_http_req_data : public RefCountedObject {
+     if (done) {
+       return ret;
+     }
+-#ifdef HAVE_BOOST_CONTEXT
+     if (y) {
+       auto& context = y.get_io_context();
+       auto& yield = y.get_yield_context();
+@@ -78,7 +77,6 @@ struct rgw_http_req_data : public RefCountedObject {
+       async_wait(context, yield[ec]);
+       return -ec.value();
+     }
+-#endif
+     Mutex::Locker l(lock);
+     while (!done) {
+       cond.Wait(lock);
+diff --git a/src/rgw/rgw_pubsub_push.cc b/src/rgw/rgw_pubsub_push.cc
+index a1719d9..f35c615 100644
+--- a/src/rgw/rgw_pubsub_push.cc
++++ b/src/rgw/rgw_pubsub_push.cc
+@@ -353,7 +353,6 @@ public:
+       if (done) {
+         return ret;
+       }
+-#ifdef HAVE_BOOST_CONTEXT
+       if (y) {
+         auto& io_ctx = y.get_io_context();
+         auto& yield_ctx = y.get_yield_context();
+@@ -361,7 +360,6 @@ public:
+         async_wait(io_ctx, yield_ctx[ec]);
+         return -ec.value();
+       }
+-#endif
+       std::unique_lock l(lock);
+       cond.wait(l, [this]{return (done==true);});
+       return ret;
+@@ -626,7 +624,6 @@ public:
+       if (done) {
+         return ret;
+       }
+-#ifdef HAVE_BOOST_CONTEXT
+       if (y) {
+         auto& io_ctx = y.get_io_context();
+         auto& yield_ctx = y.get_yield_context();
+@@ -634,7 +631,6 @@ public:
+         async_wait(io_ctx, yield_ctx[ec]);
+         return -ec.value();
+       }
+-#endif
+       std::unique_lock l(lock);
+       cond.wait(l, [this]{return (done==true);});
+       return ret;
+diff --git a/src/rgw/rgw_reshard.cc b/src/rgw/rgw_reshard.cc
+index 835343b..0b075f3 100644
+--- a/src/rgw/rgw_reshard.cc
++++ b/src/rgw/rgw_reshard.cc
+@@ -937,7 +937,6 @@ int RGWReshardWait::wait(optional_yield y)
+     return -ECANCELED;
+   }
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+   if (y) {
+     auto& context = y.get_io_context();
+     auto& yield = y.get_yield_context();
+@@ -955,7 +954,6 @@ int RGWReshardWait::wait(optional_yield y)
+     waiters.erase(waiters.iterator_to(waiter));
+     return -ec.value();
+   }
+-#endif
+ 
+   cond.wait_for(lock, duration);
+ 
+diff --git a/src/rgw/rgw_tools.cc b/src/rgw/rgw_tools.cc
+index 057535e..b523fb9 100644
+--- a/src/rgw/rgw_tools.cc
++++ b/src/rgw/rgw_tools.cc
+@@ -197,7 +197,6 @@ int rgw_rados_operate(librados::IoCtx& ioctx, const std::string& oid,
+                       librados::ObjectReadOperation *op, bufferlist* pbl,
+                       optional_yield y)
+ {
+-#ifdef HAVE_BOOST_CONTEXT
+   // given a yield_context, call async_operate() to yield the coroutine instead
+   // of blocking
+   if (y) {
+@@ -214,14 +213,12 @@ int rgw_rados_operate(librados::IoCtx& ioctx, const std::string& oid,
+   if (is_asio_thread) {
+     dout(20) << "WARNING: blocking librados call" << dendl;
+   }
+-#endif
+   return ioctx.operate(oid, op, nullptr);
+ }
+ 
+ int rgw_rados_operate(librados::IoCtx& ioctx, const std::string& oid,
+                       librados::ObjectWriteOperation *op, optional_yield y)
+ {
+-#ifdef HAVE_BOOST_CONTEXT
+   if (y) {
+     auto& context = y.get_io_context();
+     auto& yield = y.get_yield_context();
+@@ -232,7 +229,6 @@ int rgw_rados_operate(librados::IoCtx& ioctx, const std::string& oid,
+   if (is_asio_thread) {
+     dout(20) << "WARNING: blocking librados call" << dendl;
+   }
+-#endif
+   return ioctx.operate(oid, op);
+ }
+ 
+diff --git a/src/test/CMakeLists.txt b/src/test/CMakeLists.txt
+index 56ea977..a38bcf0 100644
+--- a/src/test/CMakeLists.txt
++++ b/src/test/CMakeLists.txt
+@@ -301,9 +301,7 @@ target_link_libraries(ceph_test_librgw_file_nfsns
+   ${UNITTEST_LIBS}
+   ${EXTRALIBS}
+   )
+-if(WITH_BOOST_CONTEXT)
+-  target_link_libraries(ceph_test_librgw_file_nfsns spawn)
+-endif()
++target_link_libraries(ceph_test_librgw_file_nfsns spawn)
+ 
+ 
+ # ceph_test_librgw_file_aw (nfs write transaction [atomic write] tests)
+@@ -329,9 +327,7 @@ target_link_libraries(ceph_test_librgw_file_marker
+   ${UNITTEST_LIBS}
+   ${EXTRALIBS}
+   )
+-if(WITH_BOOST_CONTEXT)
+-  target_link_libraries(ceph_test_librgw_file_marker spawn)
+-endif()
++target_link_libraries(ceph_test_librgw_file_marker spawn)
+ 
+ # ceph_test_rgw_token
+ add_executable(ceph_test_rgw_token
+diff --git a/src/test/librados/CMakeLists.txt b/src/test/librados/CMakeLists.txt
+index d4d1c48..38c5f3c 100644
+--- a/src/test/librados/CMakeLists.txt
++++ b/src/test/librados/CMakeLists.txt
+@@ -61,9 +61,7 @@ target_link_libraries(ceph_test_rados_api_aio_pp
+ add_executable(ceph_test_rados_api_asio asio.cc)
+ target_link_libraries(ceph_test_rados_api_asio global
+   librados ${UNITTEST_LIBS})
+-if(WITH_BOOST_CONTEXT)
+-  target_link_libraries(ceph_test_rados_api_asio Boost::coroutine Boost::context)
+-endif()
++  librados ${UNITTEST_LIBS} Boost::coroutine Boost::context)
+ 
+ add_executable(ceph_test_rados_api_list
+   list.cc
+@@ -132,10 +130,8 @@ add_executable(ceph_test_rados_api_tier_pp
+   tier_cxx.cc
+   $<TARGET_OBJECTS:unit-main>)
+ target_link_libraries(ceph_test_rados_api_tier_pp
+-  librados global ${UNITTEST_LIBS} Boost::system radostest-cxx)
+-if(WITH_BOOST_CONTEXT)
+-  target_link_libraries(ceph_test_rados_api_tier_pp spawn)
+-endif()
++  librados global ${UNITTEST_LIBS} Boost::system radostest-cxx
++  spawn)
+ 
+ add_executable(ceph_test_rados_api_snapshots
+   snapshots.cc)
+diff --git a/src/test/librados/asio.cc b/src/test/librados/asio.cc
+index 8fa4bab..9dd6b00 100644
+--- a/src/test/librados/asio.cc
++++ b/src/test/librados/asio.cc
+@@ -19,12 +19,10 @@
+ #include "common/errno.h"
+ #include "global/global_init.h"
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+ #define BOOST_COROUTINES_NO_DEPRECATION_WARNING
+ #include <boost/range/begin.hpp>
+ #include <boost/range/end.hpp>
+ #include <boost/asio/spawn.hpp>
+-#endif
+ #include <boost/asio/use_future.hpp>
+ 
+ #define dout_subsys ceph_subsys_rados
+@@ -109,7 +107,6 @@ TEST_F(AsioRados, AsyncReadFuture)
+   EXPECT_THROW(f2.get(), boost::system::system_error);
+ }
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+ TEST_F(AsioRados, AsyncReadYield)
+ {
+   boost::asio::io_service service;
+@@ -131,7 +128,6 @@ TEST_F(AsioRados, AsyncReadYield)
+ 
+   service.run();
+ }
+-#endif
+ 
+ TEST_F(AsioRados, AsyncWriteCallback)
+ {
+@@ -173,7 +169,6 @@ TEST_F(AsioRados, AsyncWriteFuture)
+   EXPECT_THROW(f2.get(), boost::system::system_error);
+ }
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+ TEST_F(AsioRados, AsyncWriteYield)
+ {
+   boost::asio::io_service service;
+@@ -200,7 +195,6 @@ TEST_F(AsioRados, AsyncWriteYield)
+ 
+   service.run();
+ }
+-#endif
+ 
+ TEST_F(AsioRados, AsyncReadOperationCallback)
+ {
+@@ -251,7 +245,6 @@ TEST_F(AsioRados, AsyncReadOperationFuture)
+   EXPECT_THROW(f2.get(), boost::system::system_error);
+ }
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+ TEST_F(AsioRados, AsyncReadOperationYield)
+ {
+   boost::asio::io_service service;
+@@ -279,7 +272,6 @@ TEST_F(AsioRados, AsyncReadOperationYield)
+ 
+   service.run();
+ }
+-#endif
+ 
+ TEST_F(AsioRados, AsyncWriteOperationCallback)
+ {
+@@ -334,7 +326,6 @@ TEST_F(AsioRados, AsyncWriteOperationFuture)
+   EXPECT_THROW(f2.get(), boost::system::system_error);
+ }
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+ TEST_F(AsioRados, AsyncWriteOperationYield)
+ {
+   boost::asio::io_service service;
+@@ -362,7 +353,6 @@ TEST_F(AsioRados, AsyncWriteOperationYield)
+ 
+   service.run();
+ }
+-#endif
+ 
+ int main(int argc, char **argv)
+ {
+diff --git a/src/test/rgw/CMakeLists.txt b/src/test/rgw/CMakeLists.txt
+index 554444f..1e28674 100644
+--- a/src/test/rgw/CMakeLists.txt
++++ b/src/test/rgw/CMakeLists.txt
+@@ -147,12 +147,10 @@ add_executable(unittest_rgw_dmclock_scheduler test_rgw_dmclock_scheduler.cc $<TA
+ add_ceph_unittest(unittest_rgw_dmclock_scheduler)
+ 
+ target_link_libraries(unittest_rgw_dmclock_scheduler radosgw_a dmclock)
+-if(WITH_BOOST_CONTEXT)
+-  target_compile_definitions(unittest_rgw_dmclock_scheduler PRIVATE BOOST_COROUTINES_NO_DEPRECATION_WARNING)
+-  target_link_libraries(unittest_rgw_dmclock_scheduler Boost::coroutine Boost::context)
+-  target_include_directories(unittest_rgw_dmclock_scheduler PRIVATE
+-    $<TARGET_PROPERTY:spawn,INTERFACE_INCLUDE_DIRECTORIES>)
+-endif()
++target_compile_definitions(unittest_rgw_dmclock_scheduler PRIVATE BOOST_COROUTINES_NO_DEPRECATION_WARNING)
++target_link_libraries(unittest_rgw_dmclock_scheduler Boost::coroutine Boost::context)
++target_include_directories(unittest_rgw_dmclock_scheduler PRIVATE
++  $<TARGET_PROPERTY:spawn,INTERFACE_INCLUDE_DIRECTORIES>)
+ 
+ if(WITH_RADOSGW_AMQP_ENDPOINT)
+   add_executable(unittest_rgw_amqp test_rgw_amqp.cc)
+diff --git a/src/test/rgw/test_rgw_dmclock_scheduler.cc b/src/test/rgw/test_rgw_dmclock_scheduler.cc
+index b7e9b0e..d13c4fc 100644
+--- a/src/test/rgw/test_rgw_dmclock_scheduler.cc
++++ b/src/test/rgw/test_rgw_dmclock_scheduler.cc
+@@ -18,9 +18,7 @@
+ #include "rgw/rgw_dmclock_async_scheduler.h"
+ 
+ #include <optional>
+-#ifdef HAVE_BOOST_CONTEXT
+ #include <boost/asio/spawn.hpp>
+-#endif
+ #include <gtest/gtest.h>
+ #include "acconfig.h"
+ #include "global/global_context.h"
+@@ -78,7 +76,6 @@ TEST(Queue, SyncRequest)
+   EXPECT_EQ(0u, counters(client_id::auth)->get(queue_counters::l_cancel));
+ }
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+ TEST(Queue, RateLimit)
+ {
+   boost::asio::io_context context;
+@@ -428,6 +425,4 @@ TEST(Queue, SpawnAsyncRequest)
+   EXPECT_TRUE(context.stopped());
+ }
+ 
+-#endif
+-
+ } // namespace rgw::dmclock
+diff --git a/src/test/rgw/test_rgw_reshard_wait.cc b/src/test/rgw/test_rgw_reshard_wait.cc
+index a599a4c..fb7753e 100644
+--- a/src/test/rgw/test_rgw_reshard_wait.cc
++++ b/src/test/rgw/test_rgw_reshard_wait.cc
+@@ -13,9 +13,7 @@
+  */
+ 
+ #include "rgw/rgw_reshard.h"
+-#ifdef HAVE_BOOST_CONTEXT
+ #include <spawn/spawn.hpp>
+-#endif
+ 
+ #include <gtest/gtest.h>
+ 
+@@ -60,7 +58,6 @@ TEST(ReshardWait, stop_block)
+   short_waiter.stop();
+ }
+ 
+-#ifdef HAVE_BOOST_CONTEXT
+ TEST(ReshardWait, wait_yield)
+ {
+   constexpr ceph::timespan wait_duration = 10ms;
+@@ -165,4 +162,3 @@ TEST(ReshardWait, stop_multiple)
+   EXPECT_GT(long_duration, elapsed); // waited less than 10s
+   short_waiter.stop();
+ }
+-#endif // HAVE_BOOST_CONTEXT

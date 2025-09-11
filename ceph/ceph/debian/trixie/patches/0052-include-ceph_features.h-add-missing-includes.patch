@@ -1,0 +1,24 @@
+From: Max Kellermann <max.kellermann@ionos.com>
+Date: Fri, 25 Oct 2024 09:40:24 +0200
+Subject: include/ceph_features.h: add missing includes
+
+Signed-off-by: Max Kellermann <max.kellermann@ionos.com>
+---
+ src/include/ceph_features.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/include/ceph_features.h b/src/include/ceph_features.h
+index 6fec3a0..0820146 100644
+--- a/src/include/ceph_features.h
++++ b/src/include/ceph_features.h
+@@ -1,7 +1,9 @@
+ #ifndef __CEPH_FEATURES
+ #define __CEPH_FEATURES
+ 
+-#include "sys/types.h"
++#include <cstdint>
++
++#include <sys/types.h>
+ 
+ /*
+  * Each time we reclaim bits for reuse we need to specify another

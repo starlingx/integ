@@ -53,7 +53,6 @@ Build-Depends:
  libnss3-dev,
  liboath-dev,
  librabbitmq-dev,
- librdkafka-dev,
  librdmacm-dev,
  libsnappy-dev,
  libssl-dev,

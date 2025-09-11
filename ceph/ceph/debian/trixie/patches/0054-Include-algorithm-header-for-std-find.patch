@@ -1,0 +1,21 @@
+From: Robert Church <robert.church@windriver.com>
+Date: Mon, 15 Sep 2025 21:34:00 -0500
+Subject: Include algorithm header for std::find
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ src/common/bloom_filter.hpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/common/bloom_filter.hpp b/src/common/bloom_filter.hpp
+index 8484d4e..f141b3c 100644
+--- a/src/common/bloom_filter.hpp
++++ b/src/common/bloom_filter.hpp
+@@ -23,6 +23,7 @@
+ #define COMMON_BLOOM_FILTER_HPP
+ 
+ #include <cmath>
++#include <algorithm>
+ 
+ #include "include/mempool.h"
+ #include "include/encoding.h"

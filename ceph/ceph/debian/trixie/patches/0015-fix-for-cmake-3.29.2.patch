@@ -1,0 +1,27 @@
+From: Thomas Goirand <zigo@debian.org>
+Date: Fri, 12 Sep 2025 11:23:20 +0000
+Subject: Fix for CMake 3.29.2
+
+Forwarded: no
+Last-Update: 2024-04-25
+---
+ cmake/modules/CTags.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/cmake/modules/CTags.cmake b/cmake/modules/CTags.cmake
+index 55b2288..156d00e 100644
+--- a/cmake/modules/CTags.cmake
++++ b/cmake/modules/CTags.cmake
+@@ -16,10 +16,10 @@ function(add_tags name)
+       OUTPUT_VARIABLE submodules
+       OUTPUT_STRIP_TRAILING_WHITESPACE)
+     if(${result_code} EQUAL 0)
+-      string(REPLACE "${TAGS_SRC_DIR}/" "" submodules ${submodules})
++      string(REPLACE "${TAGS_SRC_DIR}/" "" submodules "${submodules}")
+       # cmake list uses ";" as the delimiter, so split the string manually
+       # before iterating in it.
+-      string(REPLACE "\n" ";" submodules ${submodules})
++      string(REPLACE "\n" ";" submodules "${submodules}")
+       list(APPEND excludes ${submodules})
+     endif()
+   endif()

@@ -1,0 +1,151 @@
+From: Kefu Chai <kchai@redhat.com>
+Date: Mon, 20 Apr 2020 18:29:49 +0800
+Subject: mgr: drop python2 support
+
+just stop checking for `PY_MAJOR_VERSION`, since we've moved to python3.
+no need to be python2 compatible.
+
+Signed-off-by: Kefu Chai <kchai@redhat.com>
+---
+ src/mgr/PyModule.cc         | 32 --------------------------------
+ src/mgr/PyModule.h          |  5 -----
+ src/mgr/PyModuleRegistry.cc |  4 ----
+ 3 files changed, 41 deletions(-)
+
+diff --git a/src/mgr/PyModule.cc b/src/mgr/PyModule.cc
+index 7a3787f..d84f3a9 100644
+--- a/src/mgr/PyModule.cc
++++ b/src/mgr/PyModule.cc
+@@ -120,7 +120,6 @@ namespace {
+     {nullptr, nullptr, 0, nullptr}
+   };
+ 
+-#if PY_MAJOR_VERSION >= 3
+   static PyModuleDef ceph_logger_module = {
+     PyModuleDef_HEAD_INIT,
+     "ceph_logger",
+@@ -128,7 +127,6 @@ namespace {
+     -1,
+     log_methods,
+   };
+-#endif
+ }
+ 
+ PyModuleConfig::PyModuleConfig() = default;  
+@@ -251,7 +249,6 @@ std::string PyModule::get_site_packages()
+   return site_packages.str();
+ }
+ 
+-#if PY_MAJOR_VERSION >= 3
+ PyObject* PyModule::init_ceph_logger()
+ {
+   auto py_logger = PyModule_Create(&ceph_logger_module);
+@@ -259,25 +256,12 @@ PyObject* PyModule::init_ceph_logger()
+   PySys_SetObject("stdout", py_logger);
+   return py_logger;
+ }
+-#else
+-void PyModule::init_ceph_logger()
+-{
+-  auto py_logger = Py_InitModule("ceph_logger", log_methods);
+-  PySys_SetObject(const_cast<char*>("stderr"), py_logger);
+-  PySys_SetObject(const_cast<char*>("stdout"), py_logger);
+-}
+-#endif
+ 
+-#if PY_MAJOR_VERSION >= 3
+ PyObject* PyModule::init_ceph_module()
+-#else
+-void PyModule::init_ceph_module()
+-#endif
+ {
+   static PyMethodDef module_methods[] = {
+     {nullptr, nullptr, 0, nullptr}
+   };
+-#if PY_MAJOR_VERSION >= 3
+   static PyModuleDef ceph_module_def = {
+     PyModuleDef_HEAD_INIT,
+     "ceph_module",
+@@ -290,9 +274,6 @@ void PyModule::init_ceph_module()
+     nullptr
+   };
+   PyObject *ceph_module = PyModule_Create(&ceph_module_def);
+-#else
+-  PyObject *ceph_module = Py_InitModule("ceph_module", module_methods);
+-#endif
+   ceph_assert(ceph_module != nullptr);
+   std::map<const char*, PyTypeObject*> classes{
+     {{"BaseMgrModule", &BaseMgrModuleType},
+@@ -310,9 +291,7 @@ void PyModule::init_ceph_module()
+ 
+     PyModule_AddObject(ceph_module, name, (PyObject *)type);
+   }
+-#if PY_MAJOR_VERSION >= 3
+   return ceph_module;
+-#endif
+ }
+ 
+ int PyModule::load(PyThreadState *pMainThreadState)
+@@ -332,26 +311,15 @@ int PyModule::load(PyThreadState *pMainThreadState)
+       pMyThreadState.set(thread_state);
+       // Some python modules do not cope with an unpopulated argv, so lets
+       // fake one.  This step also picks up site-packages into sys.path.
+-#if PY_MAJOR_VERSION >= 3
+       const wchar_t *argv[] = {L"ceph-mgr"};
+       PySys_SetArgv(1, (wchar_t**)argv);
+-#else
+-      const char *argv[] = {"ceph-mgr"};
+-      PySys_SetArgv(1, (char**)argv);
+-#endif
+       // Configure sys.path to include mgr_module_path
+       string paths = (g_conf().get_val<std::string>("mgr_module_path") + ":" +
+                       get_site_packages() + ':');
+-#if PY_MAJOR_VERSION >= 3
+       wstring sys_path(wstring(begin(paths), end(paths)) + Py_GetPath());
+       PySys_SetPath(const_cast<wchar_t*>(sys_path.c_str()));
+       dout(10) << "Computed sys.path '"
+ 	       << string(begin(sys_path), end(sys_path)) << "'" << dendl;
+-#else
+-      string sys_path(paths + Py_GetPath());
+-      PySys_SetPath(const_cast<char*>(sys_path.c_str()));
+-      dout(10) << "Computed sys.path '" << sys_path << "'" << dendl;
+-#endif
+     }
+   }
+   // Environment is all good, import the external module
+diff --git a/src/mgr/PyModule.h b/src/mgr/PyModule.h
+index 412fa38..1950523 100644
+--- a/src/mgr/PyModule.h
++++ b/src/mgr/PyModule.h
+@@ -108,13 +108,8 @@ public:
+     const std::string& value);
+ 
+   int load(PyThreadState *pMainThreadState);
+-#if PY_MAJOR_VERSION >= 3
+   static PyObject* init_ceph_logger();
+   static PyObject* init_ceph_module();
+-#else
+-  static void init_ceph_logger();
+-  static void init_ceph_module();
+-#endif
+ 
+   void set_enabled(const bool enabled_)
+   {
+diff --git a/src/mgr/PyModuleRegistry.cc b/src/mgr/PyModuleRegistry.cc
+index e391ad6..b4bef83 100644
+--- a/src/mgr/PyModuleRegistry.cc
++++ b/src/mgr/PyModuleRegistry.cc
+@@ -41,13 +41,9 @@ void PyModuleRegistry::init()
+   std::lock_guard locker(lock);
+ 
+   // Set up global python interpreter
+-#if PY_MAJOR_VERSION >= 3
+ #define WCHAR(s) L ## #s
+   Py_SetProgramName(const_cast<wchar_t*>(WCHAR(MGR_PYTHON_EXECUTABLE)));
+ #undef WCHAR
+-#else
+-  Py_SetProgramName(const_cast<char*>(MGR_PYTHON_EXECUTABLE));
+-#endif
+   // Add more modules
+   if (g_conf().get_val<bool>("daemonize")) {
+     PyImport_AppendInittab("ceph_logger", PyModule::init_ceph_logger);

@@ -1,0 +1,35 @@
+From: =?utf-8?q?Moritz_R=C3=B6hrich?= <moritz.rohrich@suse.com>
+Date: Fri, 1 Apr 2022 18:34:25 +0200
+Subject: cmake: configure boost build with concurrent jobs
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+When building boost, try to schedule multiple build jobs in parallel. If
+provided with `-DBOOST_J=<n>`, the given number of jobst is going to be
+used.
+
+Signed-off-by: Moritz Röhrich <moritz.rohrich@suse.com>
+---
+ CMakeLists.txt | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3f66d75..0313d2f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -669,8 +669,12 @@ if(WITH_SYSTEM_BOOST)
+   endif()
+   find_package(Boost 1.73 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+ else()
+-  set(BOOST_J 1 CACHE STRING
+-    "max jobs for Boost build") # override w/-DBOOST_J=<n>
++  include(ProcessorCount)
++  ProcessorCount(DEFAULT_BOOST_J)
++  if(DEFAULT_BOOST_J EQUAL 0)
++    set(DEFAULT_BOOST_J 1)
++  endif()
++  set(BOOST_J ${DEFAULT_BOOST_J} CACHE STRING "max jobs for Boost build") # override w/-DBOOST_J=<n>
+   set(Boost_USE_STATIC_LIBS ON)
+   include(BuildBoost)
+   build_boost(1.75

@@ -1,0 +1,27 @@
+From: =?utf-8?q?Tiago_St=C3=BCrmer_Daitx?= <tiago.daitx@ubuntu.com>
+Date: Thu, 11 Sep 2025 22:50:22 +0000
+Subject: use --release 7 instead of -source/-target (Closes: LP:1756854,
+ LP: 1766998)
+
+Instead of -source/-target ceph should be build with --release for OpenJDK 9
+or later so that the bootclasspath is also set, as per JEP-247, otherwise it
+risks incurring into binary incompatibility when run with an earlier OpenJDK.
+
+OpenJDK 21 minimum compatibility release has been updated to 8.
+---
+ src/java/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/java/CMakeLists.txt b/src/java/CMakeLists.txt
+index 62b5259..c089a12 100644
+--- a/src/java/CMakeLists.txt
++++ b/src/java/CMakeLists.txt
+@@ -21,7 +21,7 @@ set(java_srcs
+ #   warning: [options] bootstrap class path not set in conjunction with -source 1.7
+ # as per
+ #   https://blogs.oracle.com/darcy/entry/bootclasspath_older_source
+-set(CMAKE_JAVA_COMPILE_FLAGS "-source" "1.8" "-target" "1.8" "-Xlint:-options")
++set(CMAKE_JAVA_COMPILE_FLAGS "--release" "8" "-Xlint:-options")
+ set(jni_header_dir "${CMAKE_CURRENT_BINARY_DIR}/native")
+ if(CMAKE_VERSION VERSION_LESS 3.11)
+   set(CMAKE_JAVA_COMPILE_FLAGS ${CMAKE_JAVA_COMPILE_FLAGS} "-h" ${jni_header_dir})

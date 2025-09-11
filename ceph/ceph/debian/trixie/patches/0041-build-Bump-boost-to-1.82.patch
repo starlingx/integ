@@ -1,0 +1,117 @@
+From: "Adam C. Emerson" <aemerson@redhat.com>
+Date: Mon, 15 May 2023 18:31:38 -0400
+Subject: build: Bump boost to 1.82
+
+Needed to fix coroutine detection under Clang
+
+Signed-off-by: Adam C. Emerson <aemerson@redhat.com>
+---
+ CMakeLists.txt                 | 9 +++++++--
+ cmake/modules/BuildBoost.cmake | 6 +++---
+ cmake/modules/FindBoost.cmake  | 2 +-
+ install-deps.sh                | 4 ++--
+ make-dist                      | 4 ++--
+ 5 files changed, 15 insertions(+), 10 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index efad131..8a75032 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -671,7 +671,7 @@ if(WITH_SYSTEM_BOOST)
+   if(BOOST_ROOT AND CMAKE_LIBRARY_ARCHITECTURE)
+     set(BOOST_LIBRARYDIR "${BOOST_ROOT}/lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+   endif()
+-  find_package(Boost 1.79 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
++  find_package(Boost 1.82 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+ else()
+   include(ProcessorCount)
+   ProcessorCount(DEFAULT_BOOST_J)
+@@ -681,10 +681,15 @@ else()
+   set(BOOST_J ${DEFAULT_BOOST_J} CACHE STRING "max jobs for Boost build") # override w/-DBOOST_J=<n>
+   set(Boost_USE_STATIC_LIBS ON)
+   include(BuildBoost)
+-  build_boost(1.79
++  build_boost(1.82
+     COMPONENTS ${BOOST_COMPONENTS} ${BOOST_HEADER_COMPONENTS})
+ endif()
+ include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
++
++if(Boost_VERSION VERSION_EQUAL 1.81 OR Boost_VERSION VERSION_EQUAL 1.82)
++  # This is a workaround for https://github.com/boostorg/phoenix/issues/111
++  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-DBOOST_PHOENIX_STL_TUPLE_H_>)
++endif()
+ set(Boost_USE_MULTITHREADED ON)
+ 
+ # dashboard angular2 frontend
+diff --git a/cmake/modules/BuildBoost.cmake b/cmake/modules/BuildBoost.cmake
+index 06d1588..bfc543f 100644
+--- a/cmake/modules/BuildBoost.cmake
++++ b/cmake/modules/BuildBoost.cmake
+@@ -137,14 +137,14 @@ function(do_build_boost version)
+     check_boost_version("${PROJECT_SOURCE_DIR}/src/boost" ${version})
+     set(source_dir
+       SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/boost")
+-  elseif(version VERSION_GREATER 1.79)
++  elseif(version VERSION_GREATER 1.82)
+     message(FATAL_ERROR "Unknown BOOST_REQUESTED_VERSION: ${version}")
+   else()
+     message(STATUS "boost will be downloaded...")
+     # NOTE: If you change this version number make sure the package is available
+     # at the three URLs below (may involve uploading to download.ceph.com)
+-    set(boost_version 1.79.0)
+-    set(boost_sha256 475d589d51a7f8b3ba2ba4eda022b170e562ca3b760ee922c146b6c65856ef39)
++    set(boost_version 1.82.0)
++    set(boost_sha256 a6e1ab9b0860e6a2881dd7b21fe9f737a095e5f33a3a874afc6a345228597ee6)
+     string(REPLACE "." "_" boost_version_underscore ${boost_version} )
+     set(boost_url 
+       https://dl.bintray.com/boostorg/release/${boost_version}/source/boost_${boost_version_underscore}.tar.bz2)
+diff --git a/cmake/modules/FindBoost.cmake b/cmake/modules/FindBoost.cmake
+index fd3fa54..0514e50 100644
+--- a/cmake/modules/FindBoost.cmake
++++ b/cmake/modules/FindBoost.cmake
+@@ -1653,7 +1653,7 @@ else()
+   # _Boost_COMPONENT_HEADERS.  See the instructions at the top of
+   # _Boost_COMPONENT_DEPENDENCIES.
+   set(_Boost_KNOWN_VERSIONS ${Boost_ADDITIONAL_VERSIONS}
+-    "1.80.0" "1.80" "1.79.0" "1.79"
++    "1.82.0" "1.82" "1.81.0" "1.81" "1.80.0" "1.80" "1.79.0" "1.79"
+     "1.78.0" "1.78" "1.77.0" "1.77" "1.76.0" "1.76" "1.75.0" "1.75" "1.74.0" "1.74"
+     "1.73.0" "1.73" "1.72.0" "1.72" "1.71.0" "1.71" "1.70.0" "1.70" "1.69.0" "1.69"
+     "1.68.0" "1.68" "1.67.0" "1.67" "1.66.0" "1.66" "1.65.1" "1.65.0" "1.65"
+diff --git a/install-deps.sh b/install-deps.sh
+index 21a9ec3..8d039bb 100755
+--- a/install-deps.sh
++++ b/install-deps.sh
+@@ -147,7 +147,7 @@ function install_pkg_on_ubuntu {
+ }
+ 
+ function install_boost_on_ubuntu {
+-    local ver=1.79
++    local ver=1.82
+     local installed_ver=$(apt -qq list --installed ceph-libboost*-dev 2>/dev/null |
+                               grep -e 'libboost[0-9].[0-9]\+-dev' |
+                               cut -d' ' -f2 |
+@@ -162,7 +162,7 @@ function install_boost_on_ubuntu {
+     fi
+     local codename=$1
+     local project=libboost
+-    local sha1=892ab89e76b91b505ffbf083f6fb7f2a666d4132
++    local sha1=2804368f5b807ba8334b0ccfeb8af191edeb996f
+     install_pkg_on_ubuntu \
+ 	$project \
+ 	$sha1 \
+diff --git a/make-dist b/make-dist
+index d80a612..84b167f 100755
+--- a/make-dist
++++ b/make-dist
+@@ -143,8 +143,8 @@ ln -s . $outfile
+ tar cvf $outfile.version.tar $outfile/src/.git_version $outfile/ceph.spec $outfile/alpine/APKBUILD
+ # NOTE: If you change this version number make sure the package is available
+ # at the three URLs referenced below (may involve uploading to download.ceph.com)
+-boost_version=1.79.0
+-download_boost $boost_version 475d589d51a7f8b3ba2ba4eda022b170e562ca3b760ee922c146b6c65856ef39 \
++boost_version=1.82.0
++download_boost $boost_version a6e1ab9b0860e6a2881dd7b21fe9f737a095e5f33a3a874afc6a345228597ee6 \
+                https://dl.bintray.com/boostorg/release/$boost_version/source \
+                https://downloads.sourceforge.net/project/boost/boost/$boost_version \
+                https://download.ceph.com/qa

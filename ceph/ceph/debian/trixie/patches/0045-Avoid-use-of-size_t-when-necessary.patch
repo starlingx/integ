@@ -1,0 +1,123 @@
+From: "james.page@ubuntu.com" <james.page@ubuntu.com>
+Date: Thu, 11 Sep 2025 21:04:52 +0000
+Subject: Avoid use of size_t when necessary
+
+Forwarded: no
+
+On 32 bit architectures size_t is not a 64 bit type, which
+causes comparison mismatch failures during compilation.
+---
+ src/common/config_values.h    |  2 +-
+ src/common/options.cc         |  2 +-
+ src/os/bluestore/BlueFS.h     |  2 +-
+ src/os/bluestore/BlueStore.cc | 10 +++++-----
+ src/os/bluestore/BlueStore.h  |  2 +-
+ src/osd/PrimaryLogPG.cc       |  8 ++++----
+ 6 files changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/src/common/config_values.h b/src/common/config_values.h
+index fdfff2b..7df2aa4 100644
+--- a/src/common/config_values.h
++++ b/src/common/config_values.h
+@@ -49,7 +49,7 @@ public:
+ #define OPTION_OPT_U32(name) uint64_t name;
+ #define OPTION_OPT_U64(name) uint64_t name;
+ #define OPTION_OPT_UUID(name) uuid_d name;
+-#define OPTION_OPT_SIZE(name) size_t name;
++#define OPTION_OPT_SIZE(name) uint64_t name;
+ #define OPTION(name, ty)       \
+   public:                      \
+     OPTION_##ty(name)          
+diff --git a/src/common/options.cc b/src/common/options.cc
+index 41cd87c..38c18d4 100644
+--- a/src/common/options.cc
++++ b/src/common/options.cc
+@@ -189,7 +189,7 @@ int Option::parse_value(
+     }
+     *out = uuid;
+   } else if (type == Option::TYPE_SIZE) {
+-    Option::size_t sz{strict_iecstrtoll(val.c_str(), error_message)};
++    Option::size_t sz{static_cast<std::size_t>(strict_iecstrtoll(val.c_str(), error_message))};
+     if (!error_message->empty()) {
+       return -EINVAL;
+     }
+diff --git a/src/os/bluestore/BlueFS.h b/src/os/bluestore/BlueFS.h
+index 2115870..929eadf 100644
+--- a/src/os/bluestore/BlueFS.h
++++ b/src/os/bluestore/BlueFS.h
+@@ -72,7 +72,7 @@ public:
+    * @params
+    * alloc_size - allocation unit size to check
+    */
+-  virtual size_t available_freespace(uint64_t alloc_size) = 0;
++  virtual uint64_t available_freespace(uint64_t alloc_size) = 0;
+ };
+ 
+ class BlueFSVolumeSelector {
+diff --git a/src/os/bluestore/BlueStore.cc b/src/os/bluestore/BlueStore.cc
+index 793fb67..38c0030 100644
+--- a/src/os/bluestore/BlueStore.cc
++++ b/src/os/bluestore/BlueStore.cc
+@@ -5935,12 +5935,12 @@ int BlueStore::allocate_bluefs_freespace(
+   return 0;
+ }
+ 
+-size_t BlueStore::available_freespace(uint64_t alloc_size) {
+-  size_t total = 0;
+-  auto iterated_allocation = [&](size_t off, size_t len) {
++uint64_t BlueStore::available_freespace(uint64_t alloc_size) {
++  uint64_t total = 0;
++  auto iterated_allocation = [&](uint64_t off, uint64_t len) {
+     //only count in size that is alloc_size aligned
+-    size_t dist_to_alignment;
+-    size_t offset_in_block = off & (alloc_size - 1);
++    uint64_t dist_to_alignment;
++    uint64_t offset_in_block = off & (alloc_size - 1);
+     if (offset_in_block == 0)
+       dist_to_alignment = 0;
+     else
+diff --git a/src/os/bluestore/BlueStore.h b/src/os/bluestore/BlueStore.h
+index 4b65646..d915731 100644
+--- a/src/os/bluestore/BlueStore.h
++++ b/src/os/bluestore/BlueStore.h
+@@ -3107,7 +3107,7 @@ private:
+     PExtentVector& extents) override {
+     return allocate_bluefs_freespace(min_size, size, &extents);
+   };
+-  size_t available_freespace(uint64_t alloc_size) override;
++  uint64_t available_freespace(uint64_t alloc_size) override;
+ 
+ public:
+   struct sb_info_t {
+diff --git a/src/osd/PrimaryLogPG.cc b/src/osd/PrimaryLogPG.cc
+index 3b3e3e5..561d4cf 100644
+--- a/src/osd/PrimaryLogPG.cc
++++ b/src/osd/PrimaryLogPG.cc
+@@ -1611,7 +1611,7 @@ int PrimaryLogPG::do_scrub_ls(MOSDOp *m, OSDOp *osd_op)
+ 
+ void PrimaryLogPG::calc_trim_to()
+ {
+-  size_t target = cct->_conf->osd_min_pg_log_entries;
++  uint64_t target = cct->_conf->osd_min_pg_log_entries;
+   if (is_degraded() ||
+       state_test(PG_STATE_RECOVERING |
+                  PG_STATE_RECOVERY_WAIT |
+@@ -1627,15 +1627,15 @@ void PrimaryLogPG::calc_trim_to()
+   if (limit != eversion_t() &&
+       limit != pg_trim_to &&
+       pg_log.get_log().approx_size() > target) {
+-    size_t num_to_trim = std::min(pg_log.get_log().approx_size() - target,
+-                             cct->_conf->osd_pg_log_trim_max);
++    uint64_t num_to_trim = std::min(pg_log.get_log().approx_size() - target,
++                                    cct->_conf->osd_pg_log_trim_max);
+     if (num_to_trim < cct->_conf->osd_pg_log_trim_min &&
+         cct->_conf->osd_pg_log_trim_max >= cct->_conf->osd_pg_log_trim_min) {
+       return;
+     }
+     list<pg_log_entry_t>::const_iterator it = pg_log.get_log().log.begin();
+     eversion_t new_trim_to;
+-    for (size_t i = 0; i < num_to_trim; ++i) {
++    for (uint64_t i = 0; i < num_to_trim; ++i) {
+       new_trim_to = it->version;
+       ++it;
+       if (new_trim_to > limit) {

@@ -1,0 +1,39 @@
+From: Thomas Goirand <zigo@debian.org>
+Date: Thu, 11 Sep 2025 21:04:53 +0000
+Subject: Make Ceph Python 3.9 aware
+
+Forwarded: no
+Last-Update: 2020-11-28
+
+Add versions of interpreters Ceph didn't know about.
+---
+ cmake/modules/FindPython3Interp.cmake | 2 +-
+ cmake/modules/FindPython3Libs.cmake   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/cmake/modules/FindPython3Interp.cmake b/cmake/modules/FindPython3Interp.cmake
+index a1d076f..c34bd65 100644
+--- a/cmake/modules/FindPython3Interp.cmake
++++ b/cmake/modules/FindPython3Interp.cmake
+@@ -69,7 +69,7 @@
+ 
+ unset(_Python3_NAMES)
+ 
+-set(_PYTHON3_VERSIONS 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
++set(_PYTHON3_VERSIONS 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
+ 
+ if(Python3Interp_FIND_VERSION)
+     if(Python3Interp_FIND_VERSION_COUNT GREATER 1)
+diff --git a/cmake/modules/FindPython3Libs.cmake b/cmake/modules/FindPython3Libs.cmake
+index 38b44e2..cf90ebe 100644
+--- a/cmake/modules/FindPython3Libs.cmake
++++ b/cmake/modules/FindPython3Libs.cmake
+@@ -101,7 +101,7 @@ endif()
+ # To avoid picking up the system Python.h pre-maturely.
+ set(CMAKE_FIND_FRAMEWORK LAST)
+ 
+-set(_PYTHON3_VERSIONS 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
++set(_PYTHON3_VERSIONS 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
+ 
+ if(Python3Libs_FIND_VERSION)
+     if(Python3Libs_FIND_VERSION_COUNT GREATER 1)

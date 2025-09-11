@@ -1,0 +1,56 @@
+From: Robert Church <robert.church@windriver.com>
+Date: Fri, 12 Sep 2025 06:47:18 -0500
+Subject: pybind: Fix C type errors in Cython-generated Python bindings
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Several Ceph APIs use bool * types, which correspond to
+libcpp.bool * types in Cython.  The bint type has an incorrect
+size 4 and cannot be used as a replacement.
+
+This prevents a compilation failure with future compilers:
+
+…-build/src/pybind/rbd/rbd.c: In function ‘__pyx_pf_3rbd_3RBD_104namespace_exists’:
+…-build/src/pybind/rbd/rbd.c:42165:76: error: passing argument 3 of ‘rbd_namespace_exists’ from incompatible pointer type
+42165 |         __pyx_v_ret = rbd_namespace_exists(__pyx_v__ioctx, __pyx_v__name, (&__pyx_v__exists));
+      |                                                                           ~^~~~~~~~~~~~~~~~~
+      |                                                                            |
+      |                                                                            int *
+In file included from …-build/src/pybind/rbd/rbd.c:1268:
+…/src/include/rbd/librbd.h:1496:45: note: expected ‘_Bool *’ but argument is of type ‘int *’
+ 1496 |                                       bool *exists);
+      |                                             ^
+
+Signed-off-by: Florian Weimer <fweimer@redhat.com>
+---
+ src/pybind/rbd/rbd.pyx | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/pybind/rbd/rbd.pyx b/src/pybind/rbd/rbd.pyx
+index 798dbb9..266b07b 100644
+--- a/src/pybind/rbd/rbd.pyx
++++ b/src/pybind/rbd/rbd.pyx
+@@ -22,6 +22,7 @@ from libc cimport errno
+ from libc.stdint cimport *
+ from libc.stdlib cimport realloc, free
+ from libc.string cimport strdup
++cimport libcpp
+ 
+ try:
+     from collections.abc import Iterable
+@@ -2298,12 +2299,12 @@ class RBD(object):
+         cdef:
+             rados_ioctx_t _ioctx = convert_ioctx(ioctx)
+             const char *_name = name
+-            bint _exists = False
++            libcpp.bool _exists = False
+         with nogil:
+             ret = rbd_namespace_exists(_ioctx, _name, &_exists)
+         if ret != 0:
+             raise make_ex(ret, 'error verifying namespace')
+-        return bool(_exists != 0)
++        return _exists
+ 
+     def namespace_list(self, ioctx):
+         """

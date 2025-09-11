@@ -1,0 +1,104 @@
+From: Tim Serong <tserong@suse.com>
+Date: Wed, 8 Mar 2023 13:53:29 +1100
+Subject: common, librbd, msg, test: fix FTBFS on gcc 13
+
+This is based on 0024-gcc-13.patch from https://tracker.ceph.com/issues/58477
+but with an extra #include <cstdint> to avoid dropping std:: prefixes on
+integer types.
+
+Fixes: https://tracker.ceph.com/issues/58477
+Signed-off-by: Tim Serong <tserong@suse.com>
+---
+ src/common/Cycles.h                                | 2 ++
+ src/librbd/api/PoolMetadata.h                      | 1 +
+ src/rocksdb/db/compaction_iteration_stats.h        | 2 ++
+ src/rocksdb/include/rocksdb/utilities/checkpoint.h | 1 +
+ src/rocksdb/table/data_block_hash_index.h          | 1 +
+ src/rocksdb/util/string_util.h                     | 1 +
+ src/test/mon/test_log_rss_usage.cc                 | 1 +
+ 7 files changed, 9 insertions(+)
+
+diff --git a/src/common/Cycles.h b/src/common/Cycles.h
+index bb47d5c..9ad6f0d 100644
+--- a/src/common/Cycles.h
++++ b/src/common/Cycles.h
+@@ -32,6 +32,8 @@
+ #ifndef CEPH_CYCLES_H
+ #define CEPH_CYCLES_H
+ 
++#include <cstdint>
++
+ /**
+  * This class provides static methods that read the fine-grain CPU
+  * cycle counter and translate between cycle-level times and absolute
+diff --git a/src/librbd/api/PoolMetadata.h b/src/librbd/api/PoolMetadata.h
+index c0a8173..69ab574 100644
+--- a/src/librbd/api/PoolMetadata.h
++++ b/src/librbd/api/PoolMetadata.h
+@@ -7,6 +7,7 @@
+ #include "include/buffer_fwd.h"
+ #include "include/rados/librados_fwd.hpp"
+ 
++#include <cstdint>
+ #include <map>
+ #include <string>
+ 
+diff --git a/src/rocksdb/db/compaction_iteration_stats.h b/src/rocksdb/db/compaction_iteration_stats.h
+index ddb5346..06c78c3 100644
+--- a/src/rocksdb/db/compaction_iteration_stats.h
++++ b/src/rocksdb/db/compaction_iteration_stats.h
+@@ -5,6 +5,8 @@
+ 
+ #pragma once
+ 
++#include <cstdint>
++
+ struct CompactionIterationStats {
+   // Compaction statistics
+ 
+diff --git a/src/rocksdb/include/rocksdb/utilities/checkpoint.h b/src/rocksdb/include/rocksdb/utilities/checkpoint.h
+index aa0a394..281a05b 100644
+--- a/src/rocksdb/include/rocksdb/utilities/checkpoint.h
++++ b/src/rocksdb/include/rocksdb/utilities/checkpoint.h
+@@ -8,6 +8,7 @@
+ #pragma once
+ #ifndef ROCKSDB_LITE
+ 
++#include <cstdint>
+ #include <string>
+ #include "rocksdb/status.h"
+ 
+diff --git a/src/rocksdb/table/data_block_hash_index.h b/src/rocksdb/table/data_block_hash_index.h
+index 0af8b25..75a797b 100644
+--- a/src/rocksdb/table/data_block_hash_index.h
++++ b/src/rocksdb/table/data_block_hash_index.h
+@@ -5,6 +5,7 @@
+ 
+ #pragma once
+ 
++#include <cstdint>
+ #include <string>
+ #include <vector>
+ 
+diff --git a/src/rocksdb/util/string_util.h b/src/rocksdb/util/string_util.h
+index 6e125dd..7e1dbd2 100644
+--- a/src/rocksdb/util/string_util.h
++++ b/src/rocksdb/util/string_util.h
+@@ -6,6 +6,7 @@
+ 
+ #pragma once
+ 
++#include <cstdint>
+ #include <sstream>
+ #include <string>
+ #include <unordered_map>
+diff --git a/src/test/mon/test_log_rss_usage.cc b/src/test/mon/test_log_rss_usage.cc
+index f6e85f4..b8ca301 100644
+--- a/src/test/mon/test_log_rss_usage.cc
++++ b/src/test/mon/test_log_rss_usage.cc
+@@ -1,4 +1,5 @@
+ #include <sys/types.h>
++#include <cstdint>
+ #include <dirent.h>
+ #include <errno.h>
+ #include <vector>

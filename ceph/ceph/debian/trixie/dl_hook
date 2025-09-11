@@ -23,10 +23,10 @@ tar -acvvzf - -C ${STX_GIT_SRC_DIR} ceph | tar -xvvzf - --directory ${PKG_BUILD_
 rm -rf ${PKG_BUILD_DIR}/debian
 
 # Additional files
-cp ${PKG_BASE}/files/* ${PKG_BUILD_DIR}/
+cp ${PKG_BASE}/debian/trixie/files/* ${PKG_BUILD_DIR}/
 
 # External source modules
-SOURCE1='boost_1_72_0.tar.bz2'
+SOURCE1='boost_1_83_0.tar.bz2'
 SOURCE2='ceph-object-corpus/ceph-object-corpus-e32bf8ca3dc6151ebe7f205ba187815bc18e1cef.tar.gz'
 SOURCE3='src/civetweb/civetweb-bb99e93da00c3fe8c6b6a98520fb17cf64710ce7.tar.gz'
 SOURCE4='src/erasure-code/jerasure/jerasure/jerasure-96c76b89d661c163f65a014b8042c9354ccf7f31.tar.gz'

@@ -1,0 +1,26 @@
+[process]
+process  = ceph
+script   = /etc/init.d/ceph-init-wrapper
+
+style    = lsb
+severity = major          ; minor, major, critical
+restarts = 3              ; restart retries before error assertion
+interval = 30             ; number of seconds to wait between restarts
+
+mode = status             ; Monitoring mode: passive (default) or active
+                          ; passive: process death monitoring (default: always)
+                          ; active : heartbeat monitoring, i.e. request / response messaging
+                          ; status : determine process health with executing "status" command
+                          ;          "start" is used to start the process(es) again
+                          ; ignore : do not monitor or stop monitoring
+
+; Status and Active Monitoring Options
+
+period     = 30           ; monitor period in seconds
+timeout    = 120          ; for active mode, messaging timeout period in seconds, must be shorter than period
+                          ; for status mode, max amount of time for a command to execute
+
+; Status Monitoring Options
+start_arg      = start        ; start argument for the script
+status_arg     = status       ; status argument for the script
+status_failure_text = /tmp/ceph_status_failure.txt   ; text to be added to alarms or logs, this is optional

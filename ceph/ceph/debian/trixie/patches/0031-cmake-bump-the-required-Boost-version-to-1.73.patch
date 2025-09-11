@@ -1,0 +1,47 @@
+From: Willem Jan Withagen <wjw@digiware.nl>
+Date: Sun, 28 Mar 2021 23:52:08 +0200
+Subject: cmake: bump the required Boost version to 1.73
+
+because ssl::host_name_verification was introduced in Asio 1.16.1 / Boost 1.73, and we
+are using this class in src/librbd/migration/HttpClient.cc
+
+This is an known error with Boost:
+    https://cplusplus.github.io/LWG/issue3171
+
+without this change, on a host with boost 1.72
+it will complain (on FreeBSD/Clang):
+```
+
+/home/jenkins/workspace/ceph-master-compile/src/librbd/migration/HttpClient.cc:699:37: error: no member named 'host_name_verification' in namespace 'boost::asio::ssl'
+      [host, next=boost::asio::ssl::host_name_verification(host),
+                  ~~~~~~~~~~~~~~~~~~^
+/home/jenkins/workspace/ceph-master-compile/src/librbd/migration/HttpClient.cc:714:16: error: no matching function for call to 'next'
+        return next(preverified, ctx);
+               ^~~~
+```
+
+Signed-off-by: Willem Jan Withagen <wjw@digiware.nl>
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a1173a6..ee9d297 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -667,13 +667,13 @@ if(WITH_SYSTEM_BOOST)
+   if(BOOST_ROOT AND CMAKE_LIBRARY_ARCHITECTURE)
+     set(BOOST_LIBRARYDIR "${BOOST_ROOT}/lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+   endif()
+-  find_package(Boost 1.72 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
++  find_package(Boost 1.73 COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+ else()
+   set(BOOST_J 1 CACHE STRING
+     "max jobs for Boost build") # override w/-DBOOST_J=<n>
+   set(Boost_USE_STATIC_LIBS ON)
+   include(BuildBoost)
+-  build_boost(1.72
++  build_boost(1.73
+     COMPONENTS ${BOOST_COMPONENTS} ${BOOST_HEADER_COMPONENTS})
+ endif()
+ include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})

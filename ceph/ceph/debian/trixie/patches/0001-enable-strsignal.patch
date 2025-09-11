@@ -1,0 +1,22 @@
+From: James Page <james.page@ubuntu.com>
+Date: Thu, 11 Sep 2025 21:30:02 +0000
+Subject: This defines HAVE_REENTRANT_STRSIGNAL as sys_siglist no longer
+
+exists with glibc 2.32 and all programs should use strsignal instead.
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 979ccc1..a721a93 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -546,7 +546,7 @@ if(WITH_THREAD_SAFE_RES_QUERY)
+   set(HAVE_THREAD_SAFE_RES_QUERY 1 CACHE INTERNAL "Thread safe res_query supported.")
+ endif()
+ 
+-option(WITH_REENTRANT_STRSIGNAL "strsignal is reentrant" OFF)
++option(WITH_REENTRANT_STRSIGNAL "strsignal is reentrant" ON)
+ if(WITH_REENTRANT_STRSIGNAL)
+   set(HAVE_REENTRANT_STRSIGNAL 1 CACHE INTERNAL "Reentrant strsignal is supported.")
+ endif()

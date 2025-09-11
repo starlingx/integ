@@ -1,0 +1,26 @@
+From: Eric Long <i@hack3r.moe>
+Date: Thu, 11 Sep 2025 22:50:23 +0000
+Subject: Fix CheckCxxAtomic to detect more accurately
+
+Last-Update: 2022-08-30
+
+Some platforms like riscv64 does not have full support for atomic primitives,
+yet passes the test. Adding operator++ fixes this issue.
+===================================================================
+---
+ cmake/modules/CheckCxxAtomic.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/modules/CheckCxxAtomic.cmake b/cmake/modules/CheckCxxAtomic.cmake
+index f2d89cf..ecbadc3 100644
+--- a/cmake/modules/CheckCxxAtomic.cmake
++++ b/cmake/modules/CheckCxxAtomic.cmake
+@@ -32,7 +32,7 @@ int main() {
+   std::atomic<uint16_t> w2;
+   std::atomic<uint32_t> w4;
+   std::atomic<uint64_t> w8;
+-  return w1 + w2 + w4 + w8;
++  return ++w1 + ++w2 + ++w4 + ++w8;
+ }
+ " ${var})
+ endfunction(check_cxx_atomics)

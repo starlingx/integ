@@ -1,0 +1,25 @@
+From: Nathan Cutler <ncutler@suse.com>
+Date: Tue, 27 Jul 2021 15:27:58 +0200
+Subject: compression/snappy: use uint32_t to be compatible with 1.1.9
+
+The snappy project made the following change in snappy.h between version 1.1.8
+and 1.1.9:
+
+<   bool GetUncompressedLength(Source* source, uint32_t* result);
+---
+ src/compressor/snappy/SnappyCompressor.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/compressor/snappy/SnappyCompressor.h b/src/compressor/snappy/SnappyCompressor.h
+index 0291a92..352ab9a 100644
+--- a/src/compressor/snappy/SnappyCompressor.h
++++ b/src/compressor/snappy/SnappyCompressor.h
+@@ -96,7 +96,7 @@ class SnappyCompressor : public Compressor {
+     if (qat_enabled)
+       return qat_accel.decompress(p, compressed_len, dst);
+ #endif
+-    snappy::uint32 res_len = 0;
++    uint32_t res_len = 0;
+     BufferlistSource source_1(p, compressed_len);
+     if (!snappy::GetUncompressedLength(&source_1, &res_len)) {
+       return -1;

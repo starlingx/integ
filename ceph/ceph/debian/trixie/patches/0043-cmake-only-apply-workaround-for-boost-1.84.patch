@@ -1,0 +1,26 @@
+From: Kefu Chai <tchaikov@gmail.com>
+Date: Fri, 15 Dec 2023 18:04:53 +0800
+Subject: cmake: only apply workaround for boost < 1.84
+
+https://github.com/boostorg/phoenix/issues/111 was fixed in master.
+see the fix which addresses the issue:
+https://github.com/boostorg/phoenix/commit/8913607a3788cb82d48ed461ea59c919b7bad3df
+
+Signed-off-by: Kefu Chai <tchaikov@gmail.com>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8a75032..2fcef5b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -686,7 +686,7 @@ else()
+ endif()
+ include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
+ 
+-if(Boost_VERSION VERSION_EQUAL 1.81 OR Boost_VERSION VERSION_EQUAL 1.82)
++if(Boost_VERSION VERSION_LESS 1.84)
+   # This is a workaround for https://github.com/boostorg/phoenix/issues/111
+   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-DBOOST_PHOENIX_STL_TUPLE_H_>)
+ endif()

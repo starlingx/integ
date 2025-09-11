@@ -17,6 +17,7 @@ base/systemd-presets
 base/watchdog
 bmc/redfishtool
 centos-debian-compat
+ceph/ceph
 config/facter
 config/puppet-agent
 config/puppet-server
