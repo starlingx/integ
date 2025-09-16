@@ -11,5 +11,11 @@ Group=root
 KillMode=process
 SendSIGKILL=no
 
+# syscall filtering
+SystemCallFilter=@system-service
+SystemCallFilter=mount
+SystemCallFilter=umount
+SystemCallErrorNumber=EPERM
+
 [Install]
 WantedBy=multi-user.target
