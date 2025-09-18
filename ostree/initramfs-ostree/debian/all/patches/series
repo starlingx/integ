@@ -20,3 +20,4 @@
 0020-Make-sure-the-default-driver-is-the-in-tree-driver.patch
 0021-install-Make-sure-the-default-driver-is-the-in-tree-.patch
 0022-Add-partition-support-for-finding-embedded-partition.patch
+0023-Remove-the-drivers-switch-related-code.patch
