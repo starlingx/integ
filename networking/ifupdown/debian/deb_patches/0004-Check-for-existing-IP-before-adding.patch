@@ -145,9 +145,9 @@ index f6f3795..a79215c 100644
 -
 -    [[ /sbin/ip route add default via %gateway% [[metric %metric%]] dev %iface% onlink ]]
 +	[[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface% ; \
-+    /sbin/ip link set dev %iface% [[mtu %mtu%]] [[address %hwaddress%]] up ; \
-+    [[ /sbin/ip route add default via %gateway% [[metric %metric%]] dev %iface% onlink ]] \
 +    if (!address_exists())
++    /sbin/ip link set dev %iface% [[mtu %mtu%]] [[address %hwaddress%]] up ;
++    [[ /sbin/ip route replace default via %gateway% [[metric %metric%]] dev %iface% onlink ]]
  
    down
      [[ /sbin/ip route del default via %gateway% [[metric %metric%]] dev %iface% 2>&1 1>/dev/null || true ]]
