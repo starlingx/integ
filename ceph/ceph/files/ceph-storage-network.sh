@@ -118,6 +118,29 @@ has_ceph_network_carrier()
     return 0
 }
 
+# Verify if oam, cluster host and mgmt networks have carrier.
+# This is a special condition for AIO-DX Direct setup.
+# If all networks have no carrier, then the other host is down.
+# When the other host is down, ceph must start on this host.
+# Return 0 if no carrier is detected on all network interfaces.
+# Return 1 of carrier has been detected in at lease one network interface.
+has_all_network_no_carrier()
+{
+    ip link show "${oam_interface}" | grep NO-CARRIER
+    local oam_carrier=$?
+    ip link show "${cluster_host_interface}" | grep NO-CARRIER
+    local cluster_host_carrier=$?
+    ip link show "${management_interface}" | grep NO-CARRIER
+    local mgmt_carrier=$?
+
+    # Check if all networks have no carrier, meaning the other host is down
+    if [ "${oam_carrier}" -eq 0 ] && [ "${cluster_host_carrier}" -eq 0 ] && [ "${mgmt_carrier}" -eq 0 ]; then
+        log INFO "No carrier detected from all network interfaces"
+        return 0
+    fi
+    return 1
+}
+
 status()
 {
     has_ceph_network_carrier
@@ -127,9 +150,25 @@ status()
         # Service is "running" and has carrier.
         RETVAL=0
     else
-        # Force stop services only if carrier is not detected.
-        [ ${HAS_CARRIER} -ne 0 ] && stop
-        RETVAL=1
+        if [ ${HAS_CARRIER} -ne 0 ]; then
+            if [ "${system_mode}" == "duplex-direct" ]; then
+                has_all_network_no_carrier
+                if [ $? -eq 0 ]; then
+                    log INFO "All network interfaces are not functional, considering the other host is down. Keep Ceph running."
+                    RETVAL=0
+                else
+                    log INFO "Ceph network interface is not functional in duplex-direct, stopping Ceph."
+                    stop
+                    RETVAL=1
+                fi
+            else
+                log INFO "Ceph network interface is not functional, stopping Ceph."
+                stop
+                RETVAL=1
+            fi
+        else
+            RETVAL=1
+        fi
     fi
 
     # NOTE: The Status return is only used in the Start method to validate that there

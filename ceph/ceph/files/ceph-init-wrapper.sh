@@ -99,6 +99,28 @@ else
     IFS=" " read -r -a args <<< "$@"
 fi
 
+# Log Management
+# Adding PID and PPID informations
+log () {
+    local name=""
+    local log_level="$1"
+    # Checking if the first parameter is not a log level
+    if grep -q -v ${log_level} <<< "INFO DEBUG WARN ERROR"; then
+        name=" ($1)";
+        log_level="$2"
+        shift
+    fi
+
+    shift
+
+    local message="$@"
+    # prefix = <pid_subshell> <ppid_name>[<ppid>] <name|optional>
+    local prefix="${BASHPID} $(cat /proc/${PPID}/comm)[${PPID}]${name}"
+    # yyyy-MM-dd HH:mm:ss.SSSSSS /etc/init.d/ceph-init-wrapper <prefix> <log_level>: <message>
+    wlog "${prefix}" "${log_level}" "${message}"
+    return 0
+}
+
 is_ppid_sm()
 {
     local ppid_name
@@ -155,28 +177,6 @@ if is_ppid_sm && [ "${SM_CEPH_OSD_CURRENT_STATE}" != "${STATE_RUNNING}" ]; then
         save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_STOPPED}
     fi
 fi
-
-# Log Management
-# Adding PID and PPID informations
-log () {
-    local name=""
-    local log_level="$1"
-    # Checking if the first parameter is not a log level
-    if grep -q -v ${log_level} <<< "INFO DEBUG WARN ERROR"; then
-        name=" ($1)";
-        log_level="$2"
-        shift
-    fi
-
-    shift
-
-    local message="$@"
-    # prefix = <pid_subshell> <ppid_name>[<ppid>] <name|optional>
-    local prefix="${BASHPID} $(cat /proc/${PPID}/comm)[${PPID}]${name}"
-    # yyyy-MM-dd HH:mm:ss.SSSSSS /etc/init.d/ceph-init-wrapper <prefix> <log_level>: <message>
-    wlog "${prefix}" "${log_level}" "${message}"
-    return 0
-}
 
 # Identify the ceph network interface from /etc/platform/platform.conf file
 # The network interface will be set to the 'ceph_network_interface' variable
