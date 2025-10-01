@@ -746,6 +746,11 @@ daemon_is_running() {
         exit 1  # pid is something else" "" "okfail"
 }
 
+osd_is_configured() {
+    # Flag .osd_configured is created once the OSD is configured by puppet
+    [ -f "/var/lib/ceph/osd/ceph-$1/.osd_configured" ]
+}
+
 stop_daemon() {
     name=$1
     daemon=$2
@@ -978,6 +983,11 @@ for name in $what; do
     get_conf run_dir "/var/run/ceph" "run dir"
 
     get_conf pid_file "$run_dir/$type.$id.pid" "pid file"
+
+    if [ "$type" = "osd" ] && ! osd_is_configured "$id"; then
+        log "$name" "INFO" "Skipping Ceph $name as it is not configured"
+        continue
+    fi
 
     if [ "$command" = "start" -o "$command" = "onestart" ]; then
 	if [ -n "$pid_file" ]; then

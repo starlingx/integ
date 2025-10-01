@@ -605,10 +605,10 @@ status ()
     result=`${CEPH_SCRIPT} status $target {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-`
     RC=$?
     if [ "$RC" -ne 0 ]; then
-        erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
-        hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
-        blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
-        stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
+        erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
         invalid=0
         host=`hostname`
         if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
