@@ -1,2 +1,3 @@
 0001-1.1.8-versioning.patch
 0002-Add-config-file-based-BootSourceOverrideMode-handlin.patch
+0003-Add-config-file-based-setBootOverride-Url-handling-n.patch
