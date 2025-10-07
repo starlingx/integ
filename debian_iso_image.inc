@@ -350,9 +350,6 @@ puppet-module-keystone
 #puppet-module-horizon-17.4.0
 puppet-module-horizon
 
-#puppet-ldap
-puppet-ldap
-
 #puppet-lvm-1.4.0
 puppet-lvm
 
