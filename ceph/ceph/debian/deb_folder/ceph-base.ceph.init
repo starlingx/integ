@@ -746,9 +746,17 @@ daemon_is_running() {
         exit 1  # pid is something else" "" "okfail"
 }
 
+osd_is_mounted() {
+    findmnt -no SOURCE "/var/lib/ceph/osd/ceph-$1" > /dev/null 2>&1
+}
+
 osd_is_configured() {
     # Flag .osd_configured is created once the OSD is configured by puppet
     [ -f "/var/lib/ceph/osd/ceph-$1/.osd_configured" ]
+}
+
+is_restore_in_progress() {
+  [ -f /etc/platform/.restore_in_progress ]
 }
 
 stop_daemon() {
@@ -984,7 +992,9 @@ for name in $what; do
 
     get_conf pid_file "$run_dir/$type.$id.pid" "pid file"
 
-    if [ "$type" = "osd" ] && ! osd_is_configured "$id"; then
+    # Skip unconfigured OSDs only if they are already mounted.
+    # If not mounted, let this script proceed so it can handle the mount.
+    if [ "$type" = "osd" ] && osd_is_mounted "$id" && ! osd_is_configured "$id"; then
         log "$name" "INFO" "Skipping Ceph $name as it is not configured"
         continue
     fi
@@ -1052,6 +1062,16 @@ for name in $what; do
 
     case "$command" in
 	start|onestart)
+            # Check if the OSD device has the expected "ceph data" partition label.
+            # If not, Puppet hasn’t finished creating it, so skip startup to avoid errors.
+            if [ "$type" = "osd" ] && ! is_restore_in_progress; then
+              partlabel=$(lsblk -no PARTLABEL "$first_dev")
+              if [ "$partlabel" != "ceph data" ]; then
+                log "$name" "INFO" "Skipping Ceph $name as it is not created"
+                continue
+              fi
+            fi
+
 	    # Increase max_open_files, if the configuration calls for it.
 	    get_conf max_open_files "32768" "max open files"
 	    # Remove stale admin socket
