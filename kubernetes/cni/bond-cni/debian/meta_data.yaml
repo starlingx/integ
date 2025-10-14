@@ -1,11 +1,11 @@
 ---
 debname: bond-cni
-debver: 1.0-3f7fb0552cb825411030266d2246e943443d4d84
+debver: 1.0-2d3e3d9688257dc587ab784a282f31bdffee69d3
 dl_path:
-  name: bond-cni-1.0-3f7fb0552cb825411030266d2246e943443d4d84.tar.gz
-  url: https://api.github.com/repos/k8snetworkplumbingwg/bond-cni/tarball/3f7fb0552cb825411030266d2246e943443d4d84
-  md5sum: e97c5ac4ba8fbc7f328265ab940a40b5
-  sha256sum: e1fe1eea1d5655f3d0708a504b536ccdb6cc45f428410b9c78d90b7feb6db8b9
+  name: bond-cni-1.0-2d3e3d9688257dc587ab784a282f31bdffee69d3.tar.gz
+  url: https://api.github.com/repos/k8snetworkplumbingwg/bond-cni/tarball/2d3e3d9688257dc587ab784a282f31bdffee69d3
+  md5sum: 09a510fdc82ba48b56e44c1a0d219364
+  sha256sum: 702b0d3d61e401a241450dc85ef219276c3a4442d8b2d3e39f5e2371af97ae99
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

@@ -1,3 +1,8 @@
+bond-cni (1.0-2d3e3d9688257dc587ab784a282f31bdffee69d3) unstable; urgency=medium
+
+  * Updated using latest commit
+
+ -- Rakesh Boya <boya.rakesh@windriver.com>  Tue, 22 Oct 2025 14:49:52 -0400
 bond-cni (1.0-3f7fb0552cb825411030266d2246e943443d4d84) unstable; urgency=medium
 
   * Updated using latest commit

@@ -1,3 +1,8 @@
+golang-github-containernetworking-plugins (1.8.0) unstable; urgency=medium
+
+  * Updated for stx debian packaging
+
+ --  Rakesh Boya <boya.Rakesh@windriver.com>  Tue, 22 Oct 2025 14:49:15 -0400
 golang-github-containernetworking-plugins (1.7.1) unstable; urgency=medium
 
   * Updated for stx debian packaging
