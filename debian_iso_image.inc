@@ -66,6 +66,9 @@ containerd
 #crictl
 crictl
 
+#docker
+docker.io
+
 #dhcp
 #isc-dhcp-client-ddns  # not used
 isc-dhcp-client

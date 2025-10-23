@@ -9,4 +9,4 @@ revision:
   dist: $STX_DIST
   GITREVCOUNT:
     BASE_SRCREV: 999fcb6e5979b5d749b8cba7fb840616389ffa69
-    SRC_DIR: ${MY_REPO}/stx/integ/docker/python-docker
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/docker/python-docker

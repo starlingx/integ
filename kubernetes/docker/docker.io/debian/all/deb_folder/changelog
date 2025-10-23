@@ -1,0 +1,6 @@
+docker.io (28.5.1) unstable; urgency=medium
+
+  * Updated for stx debian packaging
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Wed, 22 Oct 2025 16:41:53 +0000
+

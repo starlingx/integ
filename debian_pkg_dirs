@@ -45,7 +45,6 @@ config/puppet-modules/puppet-rabbitmq
 config/puppet-modules/puppet-staging
 config/puppet-modules/puppet-vswitch
 config/puppet-modules/puppet-zitrlp-strongswan
-docker/python-docker
 filesystem/drbd/drbd-tools
 filesystem/luks
 filesystem/parted
@@ -61,7 +60,9 @@ kubernetes/cni/bond-cni
 kubernetes/cni/plugins
 kubernetes/containerd
 kubernetes/crictl
-kubernetes/docker-distribution
+kubernetes/docker/docker.io
+kubernetes/docker/docker-distribution
+kubernetes/docker/python-docker
 kubernetes/etcd
 kubernetes/flux2
 kubernetes/flux2-charts
