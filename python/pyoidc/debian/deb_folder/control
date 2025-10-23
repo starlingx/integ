@@ -1,0 +1,24 @@
+Source: pyoidc
+Section: python
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools,
+ python3-wheel,
+Standards-Version: 4.5.1
+
+Package: pyoidc
+Section: python
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends},
+Description: Python implementation of OAuth2 and OpenID Connect.
+
+Package: pyoidc-wheel
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3-wheel
+Description: Python implementation of OAuth2 and OpenID Connect.
+ .
+ This is the support package for the PEP 427 wheel version of the package,
+ required for using pip inside a virtual environment.
