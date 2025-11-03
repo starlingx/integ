@@ -102,6 +102,7 @@ librte-net-bond21
 librte-net-dpaa21
 librte-net-e1000-21
 librte-net-i40e21
+librte-net-ice21
 librte-net-ixgbe21
 librte-net-ring21
 librte-net-vhost21
