@@ -1,0 +1,15 @@
+Source: python3-durationpy
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+ dh-python,
+ flake8,
+ python3-setuptools,
+ python3-all,
+Standards-Version: 4.4.1
+
+Package: python3-durationpy
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Module for converting between datetime.timedelta and Go's Duration strings.

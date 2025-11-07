@@ -1,0 +1,12 @@
+---
+debname: python3-kubernetes
+debver: 34.1.0
+dl_path:
+    name: python3-kubernetes.34.1.0.tar.gz
+    url: https://github.com/kubernetes-client/python/archive/refs/tags/v34.1.0.tar.gz
+    sha256sum: 39f9fc9d4662c44ba5ddf1104a1000cbc7e16ae605cd906d56f0bee83211ce93
+revision:
+    dist: $STX_DIST
+    GITREVCOUNT:
+        BASE_SRCREV: 01a527933545ae8b4b9534ae0731c9814a441c6a
+        SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/python3-kubernetes
