@@ -1,10 +1,10 @@
 ---
 debname: containerd
-debver: 1.7.27
+debver: 2.0.7
 dl_path:
-  name: containerd-1.7.27-linux-amd64.tar.gz
-  url: https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-1.7.27-linux-amd64.tar.gz
-  sha256sum: 5b038fb22ab5dbb1ce57dd3d8f102460cd8619ff2afc78870837b06e8c4e840a
+  name: containerd-2.0.7-linux-amd64.tar.gz
+  url: https://github.com/containerd/containerd/releases/download/v2.0.7/containerd-2.0.7-linux-amd64.tar.gz
+  sha256sum: 6dc663cd245d19c3e68260ca86247469563a31decac925087b62a2a819dfcbee
 src_files:
   - debian/all/files/config.toml
   - debian/all/files/containerd.service
