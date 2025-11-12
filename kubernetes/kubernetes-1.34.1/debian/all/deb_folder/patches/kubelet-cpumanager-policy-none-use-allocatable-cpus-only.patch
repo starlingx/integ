@@ -1,0 +1,51 @@
+From 8c84c4489021a3b7a9f847f83d5c7e8a3a263d5c Mon Sep 17 00:00:00 2001
+From: Jim Gauld <James.Gauld@windriver.com>
+Date: Wed, 11 Jun 2025 20:39:10 +0000
+Subject: [PATCH] kubelet/cpumanager policy none use allocatable cpus only
+
+The following two upstream commits break WRS initialization of kubelet
+starting in Kubernetes 1.32, specifically for cpu_manager_policy 'none',
+using cgroupfs driver and cgroup v1. This appears to be upstream bug.
+
+kubelet/cm: move CPU reading from cm to cm/cpumanager
+https://github.com/kubernetes/kubernetes/pull/125923/commits/77d03e42cdaf7482c81f5406505a608a04691a8d
+
+kubelet/cm: fix bug where kubelet restarts from missing cpuset cgroup
+https://github.com/kubernetes/kubernetes/pull/125923/commits/c51195dbd02abcab28821a77f657c78857c43519
+
+In the case of cpu manager policy 'none', there are no allocatable cpus.
+Initializing the container manager cpuset using GetAllCPUs() produces a
+write violation for k8s-infra/kubepods/cpuset.cpus since the cpuset is
+larger than the parent cgroup k8s-infra/cpuset.cpus.
+
+This update initializes 'none' with GetAllocatableCPUs() which is an
+empty cpuset. Note that if GetAllCPUs() were to be used, we should also
+exclude reserved cpus.
+
+This fix will need to be carried forward until there is upstream fix.
+
+Signed-off-by: Jim Gauld <James.Gauld@windriver.com>
+---
+ pkg/kubelet/cm/node_container_manager_linux.go | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/pkg/kubelet/cm/node_container_manager_linux.go b/pkg/kubelet/cm/node_container_manager_linux.go
+index 7fa180cefdd..a848031349c 100644
+--- a/pkg/kubelet/cm/node_container_manager_linux.go
++++ b/pkg/kubelet/cm/node_container_manager_linux.go
+@@ -197,8 +197,11 @@ func (cm *containerManagerImpl) getCgroupConfig(rl v1.ResourceList, compressible
+ 	// and this is sufficient.
+ 	// Only do so on None policy, as Static policy will do its own updating of the cpuset.
+ 	// Please see the comment on policy none's GetAllocatableCPUs
++	// NOTE(jgauld): For None policy, there are no allocatable CPUs.
++	// We must configure a subset of the k8s-infra parent cpuset, otherwise
++	// writes to k8s-infra/kubepods cgroupfs cpuset.cpus will fail.
+ 	if cm.cpuManager.GetAllocatableCPUs().IsEmpty() {
+-		rc.CPUSet = cm.cpuManager.GetAllCPUs()
++		rc.CPUSet = cm.cpuManager.GetAllocatableCPUs()
+ 	}
+ 
+ 	return rc
+-- 
+2.34.1
+

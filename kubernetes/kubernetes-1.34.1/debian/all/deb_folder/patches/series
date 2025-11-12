@@ -1,1 +1,9 @@
+kubeadm-platform-pods-zero-cpu-resources-readiness-p.patch
+kubelet-isolcpus-SMT-aware-sorted-allocation.patch
+kubelet-cpumanager-keep-normal-containers-off-reserv.patch
+kubelet-cpumanager-platform-pods-on-reserved-cpus.patch
+kubelet-cpumanager-introduce-concept-of-isolated-CPU.patch
+kubeadm-reduce-UpgradeManifestTimeout.patch
 Revert-kubeadm-use-new-etcd-livez-and-readyz-endpoint.patch
+kubelet-cpumanager-policy-none-use-allocatable-cpus-only.patch
+
