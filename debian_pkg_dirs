@@ -3,6 +3,7 @@ base/cluster-resource-agents
 base/dhcp
 base/dnsmasq
 base/haproxy
+base/libbpf
 base/libfdt
 base/lighttpd
 base/linuxptp

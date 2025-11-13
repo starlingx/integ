@@ -1,0 +1,15 @@
+Metadata-Version: 0.1
+Name: libbpf
+Version: 0.4.0-1
+Summary: libbpf
+Home-page: https://salsa.debian.org/sudip/libbpf
+Author: Sudip Mukherjee
+Author-email: sudipm.mukherjee@gmail.com
+License: LGPL-2.1
+
+Description:
+eBPF helper library (shared library)
+libbpf is a library for loading eBPF programs and reading and
+manipulating eBPF objects from user-space.
+
+Platform: UNKNOWN
