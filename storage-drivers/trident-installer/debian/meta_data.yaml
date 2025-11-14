@@ -1,13 +1,13 @@
 ---
 debname: trident-installer
-debver: 25.02.1-0
+debver: 25.10.0-0
 dl_path:
-  name: trident-installer-25.02.1.tar.gz
-  url: https://github.com/NetApp/trident/releases/download/v25.02.1/trident-installer-25.02.1.tar.gz
-  md5sum: 09ac2835c8d92ae09c2feab09e57a760
-  sha256sum: 62683805e98071abd494776f49c400537577d3f2e191d3837fdf2939597a2554
+  name: trident-installer-25.10.0.tar.gz
+  url: https://github.com/NetApp/trident/releases/download/v25.10.0/trident-installer-25.10.0.tar.gz
+  md5sum: b0e71cf95cf6ba4129f141563d71a287
+  sha256sum: 0fe88a085ca81b9fb421853dad00287f6af803cfc678120ecca1dae7f5997a6a
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
-    BASE_SRCREV: 8d2248e4097abf5a54bc0e20da6fe1e9d40507ab
+    BASE_SRCREV: 8d41723448ef9c725d1d7de60feaa877f1a2b785
     SRC_DIR: ${MY_REPO}/stx/integ/storage-drivers/trident-installer
