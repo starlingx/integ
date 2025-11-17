@@ -1,4 +1,0 @@
-manifests usr/share/puppet/modules.available/puppet-ldap
-metadata.json usr/share/puppet/modules.available/puppet-ldap
-spec usr/share/puppet/modules.available/puppet-ldap
-templates usr/share/puppet/modules.available/puppet-ldap
