@@ -13,6 +13,7 @@ from ..common import NetlinkException
 from ..common import NetlinkFactory
 from .constants import DeviceFields
 from .constants import PinFields
+from .constants import PinParentFields
 from .devices import DpllDevice
 from .devices import DpllDevices
 from .pins import DpllPins
@@ -23,6 +24,7 @@ class DPLLCommands:
     __slots__ = ()
     DEVICE_GET = 'device-get'
     PIN_GET = 'pin-get'
+    PIN_SET = 'pin-set'
 
 
 class NetlinkDPLL:
@@ -177,3 +179,73 @@ class NetlinkDPLL:
         """
 
         return DpllPins.loadPins(self._get_all_devices(), self._get_all_pins())
+
+    def _set_pin(self, pin_info: dict):
+        """Change the pin configuration.
+
+        Changes the pin configuration according to the given pin information.
+        Not all pin field are mutable, use _get_pin_by_id() to print the pin
+        capabilities, and check which pin fields can be changed.
+
+        Raises NetlinkException class in case of error.
+        """
+
+        try:
+            result = self._ynl.do(DPLLCommands.PIN_SET, pin_info)
+
+            return result
+
+        except NlError as e:
+            raise NetlinkException(e)
+
+    def set_pin_direction(self, pin_id: int, pin_direction: int):
+        """Change pin direction.
+
+        Change the pin direction. All pin parents are changed at the same time.
+
+        Raises NetlinkException class in case of error.
+        """
+
+        pin_info = {
+            PinFields.ID: pin_id,
+            PinFields.PARENT_DEVICE: []
+        }
+
+        # get pin's parent ids, and set the direction in all of them.
+        pins = self.get_pins_by_id(pin_id)
+        parent_ids = list(pin.dev_id for pin in pins)
+        for parent_id in parent_ids:
+            pin_info[PinFields.PARENT_DEVICE].append(
+                {
+                    PinParentFields.PARENT_ID: parent_id,
+                    PinParentFields.DIRECTION: pin_direction
+                }
+            )
+
+        return self._set_pin(pin_info)
+
+    def set_pin_priority(self, pin_id: int, pin_priority: int):
+        """Change pin priority
+
+        Change the pin priority. All pin parents are changed at the same time.
+
+        Raises NetlinkException class in case of error.
+        """
+
+        pin_info = {
+            PinFields.ID: pin_id,
+            PinFields.PARENT_DEVICE: []
+        }
+
+        # get pin's parent ids, and set the priority in all of them.
+        pins = self.get_pins_by_id(pin_id)
+        parent_ids = list(pin.dev_id for pin in pins)
+        for parent_id in parent_ids:
+            pin_info[PinFields.PARENT_DEVICE].append(
+                {
+                    PinParentFields.PARENT_ID: parent_id,
+                    PinParentFields.PRIORITY: pin_priority
+                }
+            )
+
+        return self._set_pin(pin_info)
