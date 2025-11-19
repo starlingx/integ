@@ -1,0 +1,73 @@
+From 66726d7b42e2b36cb9707cf47a92616eaf4b454d Mon Sep 17 00:00:00 2001
+From: Andre Fernando Zanella Kantek
+ <AndreFernandoZanella.Kantek@windriver.com>
+Date: Tue, 6 Sep 2022 12:27:10 -0300
+Subject: [PATCH] use DHCPv6 FQDN hostname field to set hostname
+
+It was detected on StarlingX the lack of correct hostname after
+address atribution by the server. This change makes the script read
+the field fqdn_hostname to set the name.
+
+Also added the field to the dhclient debug script
+
+Signed-off-by: Andre Fernando Zanella Kantek <AndreFernandoZanella.Kantek@windriver.com>
+---
+ debian/debug                 |  3 ++-
+ debian/dhclient-script.linux | 20 +++++++++++++++++++-
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/debian/debug b/debian/debug
+index 593e7df..a2d8cf2 100644
+--- a/debian/debug
++++ b/debian/debug
+@@ -23,7 +23,8 @@ if [ "$RUN" = "yes" ]; then
+ 			       netbios_name_servers netbios_scope \
+ 			       ntp_servers \
+ 			       ip6_address ip6_prefix ip6_prefixlen \
+-			       dhcp6_domain_search dhcp6_name_servers ; do
++			       dhcp6_domain_search dhcp6_name_servers \
++			       fqdn_hostname ; do
+ 			var="${prefix}${basevar}"
+ 			eval "content=\$$var"
+ 
+diff --git a/debian/dhclient-script.linux b/debian/dhclient-script.linux
+index 915cc13..68a7252 100644
+--- a/debian/dhclient-script.linux
++++ b/debian/dhclient-script.linux
+@@ -142,6 +142,23 @@ set_hostname() {
+     fi
+ }
+ 
++# set host name using DHCPv6 FQDN hostname field
++set_hostname_v6() {
++    if [ -n "$new_fqdn_hostname" ]; then
++        local current_hostname=$(hostname)
++
++        # current host name is empty, '(none)' or 'localhost' or differs from new one from DHCP
++        if [ -z "$current_hostname" ] ||
++           [ "$current_hostname" = '(none)' ] ||
++           [ "$current_hostname" = 'localhost' ] ||
++           [ "$current_hostname" = "$old_fqdn_hostname" ]; then
++           if [ "$old_fqdn_hostname" != "$current_hostname" ]; then
++               hostname "$new_fqdn_hostname"
++           fi
++        fi
++    fi
++}
++
+ # run given script
+ run_hook() {
+     local script="$1"
+@@ -399,7 +416,8 @@ case "$reason" in
+         ;;
+ 
+     BOUND6|RENEW6|REBIND6)
+-        set_hostname
++        set_hostname    # use if host_name is provided
++        set_hostname_v6 # use if fqdn_hostname is provided
+ 
+         if [ "${new_ip6_address}" ]; then
+             # set leased IP
+-- 
+2.17.1
+

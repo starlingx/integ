@@ -1,0 +1,58 @@
+From 7a956384591eb929e97b5d75a115091f87237927 Mon Sep 17 00:00:00 2001
+From: Nidhi S Belur <nidhi.shivashankara.belur@intel.com>
+Date: Fri, 4 Aug 2023 12:51:47 -0500
+Subject: [PATCH] Patch for adding 1VF config file for VRB1
+
+- Added config file for VRB1 specifying 1 VF and 5G.
+
+Signed-off-by: Nidhi S Belur <nidhi.shivashankara.belur@intel.com>
+---
+ vrb1/vrb1_config_1vf_5g.cfg | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+ create mode 100644 vrb1/vrb1_config_1vf_5g.cfg
+
+diff --git a/vrb1/vrb1_config_1vf_5g.cfg b/vrb1/vrb1_config_1vf_5g.cfg
+new file mode 100644
+index 0000000..a0ae074
+--- /dev/null
++++ b/vrb1/vrb1_config_1vf_5g.cfg
+@@ -0,0 +1,36 @@
++; SPDX-License-Identifier: Apache-2.0
++; Copyright(c) 2020 Intel Corporation
++
++[MODE]
++pf_mode_en = 0
++
++[VFBUNDLES]
++num_vf_bundles = 1
++
++[MAXQSIZE]
++max_queue_size = 1024
++
++[QUL4G]
++num_qgroups = 0
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QDL4G]
++num_qgroups = 0
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QUL5G]
++num_qgroups = 4
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QDL5G]
++num_qgroups = 4
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
++
++[QFFT]
++num_qgroups = 4
++num_aqs_per_groups = 16
++aq_depth_log2 = 4
+-- 
+2.7.4
+

@@ -1,0 +1,24 @@
+The dhcp upstream commit 9261cb141 introduces a function
+set_hostname() set host name, and the commit also implements
+the DHCPv6 Handlers, so insert the set_hostname to the
+BOUND6|RENEW6|REBIND6 implementation.
+
+Yue Tao <yue.tao@windriver.com>
+
+---
+ client/scripts/linux | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/client/scripts/linux b/client/scripts/linux
+index 14655f0..59e764f 100755
+--- a/client/scripts/linux
++++ b/client/scripts/linux
+@@ -460,6 +460,8 @@ case "$reason" in
+             make_resolv_conf
+         fi
+ 
++        set_hostname
++
+         ;;
+ 
+     DEPREF6)

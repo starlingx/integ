@@ -1,0 +1,7 @@
+---
+debname: lsb
+debver: 11.1.0
+achive: https://snapshot.debian.org/archive/debian/20210103T144403Z/pool/main/l/lsb/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

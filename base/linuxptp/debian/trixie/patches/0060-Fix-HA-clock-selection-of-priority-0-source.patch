@@ -1,0 +1,37 @@
+From 718853cf344bc6ebc17c06e7a6c82601d8d76365 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Thu, 10 Oct 2024 16:56:34 -0300
+Subject: [PATCH 60/65] Fix HA clock selection of priority 0 source
+
+Fixed behavior where a clock set with ha_priority equal 0
+is not select, even when it matches all the requirements.
+
+Closes-bug: 2083981
+
+Test plan: two sources with priority 0
+PASS: Verify a clock source is selected active when it starts to match
+the requirements and the current active doesn't match them.
+PASS: Verify a clock source isn't selected active when it starts to
+match the requirements and the current active does too match them.
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index d89fb23..9e8751f 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1091,7 +1091,7 @@ static struct clock* ha_select_clock(struct phc2sys_private *priv, struct config
+ 	}
+ 
+ 	/* one or more sources match requirements, select highest priority */
+-	highest_priority = 0;
++	highest_priority = -1;
+ 	LIST_FOREACH(clock, &ha_available_clocks, ha_list) {/* select highest priority clock
+ 		   more than one clock with same priority, select first
+ 		   don't select clocks with ha_priority 0 */
+-- 
+2.34.1
+

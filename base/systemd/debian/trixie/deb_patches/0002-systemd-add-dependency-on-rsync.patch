@@ -1,0 +1,25 @@
+From 01f1df726f1bf2aaf460c009f925a9984c2b2ef3 Mon Sep 17 00:00:00 2001
+From: Jackie Huang <jackie.huang@windriver.com>
+Date: Sat, 17 Jun 2023 00:46:10 -0700
+Subject: [PATCH] systemd: add dependency on rsync
+
+Signed-off-by: Jackie Huang <jackie.huang@windriver.com>
+---
+ debian/control | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/control b/debian/control
+index 6174db7..57acfea 100644
+--- a/debian/control
++++ b/debian/control
+@@ -55,6 +55,7 @@ Build-Depends: debhelper-compat (= 13),
+                python3-lxml:native,
+                python3-pyparsing <!nocheck>,
+                python3-evdev <!nocheck>,
++               rsync,
+                tzdata <!nocheck>,
+                libcap2-bin <!nocheck>,
+                iproute2 <!nocheck>,
+-- 
+2.39.0
+

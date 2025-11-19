@@ -1,0 +1,136 @@
+From 78ad07ad266124cb5dad021e7bdc9d7ec5edc8f8 Mon Sep 17 00:00:00 2001
+From: Al Bailey <Al.Bailey@windriver.com>
+Date: Thu, 24 Oct 2019 11:53:01 -0500
+Subject: [PATCH 1/2] Change group,passwd
+
+Porting this patch from 'setup' package of CentOS. Removing the
+change of uidgid, because no such file in base-passwd, and Debian
+system. The file is installed into /usr/share/doc/setup-2.8.71/uidgid
+in CentOS, which is just a doc file, so ignore it.
+
+Signed-off-by: Andy Ning <andy.ning@windriver.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+Signed-off-by: Charles Short <charles.short@windriver.com>
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Luis Eduardo Bonatti <LuizEduardo.Bonatti@windriver.com>
+---
+ group.master  | 17 ++++++++++-------
+ passwd.master | 14 +++++++++-----
+ 2 files changed, 19 insertions(+), 12 deletions(-)
+
+From f3e68f872ee14750d3f27c1a6968a91419c64875 Mon Sep 17 00:00:00 2001
+From: Heitor Matsui <heitorvieira.matsui@windriver.com>
+Date: Thu, 13 Feb 2025 16:29:18 -0300
+Subject: [PATCH 1/1] Make platform services users uid/gid static
+
+This commit makes platform services users uid/gid static to
+avoid issues related to these values changing between releases,
+due to being dinamically allocated.
+
+Signed-off-by: Heitor Matsui <heitorvieira.matsui@windriver.com>
+---
+ group.master  | 25 ++++++++++++++++++-------
+ passwd.master | 23 ++++++++++++++++++-----
+ 2 files changed, 36 insertions(+), 12 deletions(-)
+
+diff --git a/group.master b/group.master
+index ad1dd2d..6514f99 100644
+--- a/group.master
++++ b/group.master
+@@ -1,15 +1,11 @@
+ root:*:0:
+-daemon:*:1:
+-bin:*:2:
+ sys:*:3:
+ adm:*:4:
+ tty:*:5:
+ disk:*:6:
+-lp:*:7:
+ mail:*:8:
+ news:*:9:
+ uucp:*:10:
+-man:*:12:
+ proxy:*:13:
+ kmem:*:15:
+ dialout:*:20:
+@@ -19,7 +15,6 @@ cdrom:*:24:
+ floppy:*:25:
+ tape:*:26:
+ sudo:*:27:
+-audio:*:29:
+ dip:*:30:
+ www-data:*:33:
+ backup:*:34:
+@@ -30,10 +25,26 @@ src:*:40:
+ gnats:*:41:
+ shadow:*:42:
+ utmp:*:43:
+-video:*:44:
+ sasl:*:45:
+ plugdev:*:46:
+ staff:*:50:
+-games:*:60:
+ users:*:100:
+ nogroup:*:65534:
++ssl-cert:*:163:postgres
++neutron:*:164:neutron
++barbican:*:165:barbican
++horizon:*:166:horizon
++docker:x:167:
++sysinv:*:168:sysinv
++snmpd:*:169:snmpd,fm
++puppet:x:170:
++docker-registry:x:171:
++ntp:x:174:
++haproxy:x:175:
++postgres:x:176:
++sssd:x:177:
++memcache:x:178:
++rabbitmq:x:179:
++fm:*:195:fm
++www:*:1877:www
++keystone:*:42424:keystone
+diff --git a/passwd.master b/passwd.master
+index f1e69a4..97037cf 100644
+--- a/passwd.master
++++ b/passwd.master
+@@ -1,12 +1,7 @@
+ root:*:0:0:root:/root:/bin/bash
+-daemon:*:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+-bin:*:2:2:bin:/bin:/usr/sbin/nologin
+ sys:*:3:3:sys:/dev:/usr/sbin/nologin
+ sync:*:4:65534:sync:/bin:/bin/sync
+-games:*:5:60:games:/usr/games:/usr/sbin/nologin
+ man:*:6:12:man:/var/cache/man:/usr/sbin/nologin
+-lp:*:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+-mail:*:8:8:mail:/var/mail:/usr/sbin/nologin
+ news:*:9:9:news:/var/spool/news:/usr/sbin/nologin
+ uucp:*:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+ proxy:*:13:13:proxy:/bin:/usr/sbin/nologin
+@@ -16,3 +11,21 @@ list:*:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+ irc:*:39:39:ircd:/run/ircd:/usr/sbin/nologin
+ gnats:*:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+ nobody:*:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
++neutron:*:164:164:OpenStack Neutron Daemons:/var/lib/neutron:/sbin/nologin
++barbican:*:165:165::/var/lib/barbican:/bin/false
++horizon:*:166:166::/var/lib/horizon:/usr/sbin/nologin
++sysinv:*:168:168:sysinv Daemons:/var/lib/sysinv:/sbin/nologin
++snmpd:*:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
++puppet:x:170:170:Puppet configuration management daemon,,,:/var/lib/puppet:/usr/sbin/nologin
++docker-registry:x:171:171::/var/lib/docker-registry:/usr/sbin/nologin
++ntp:x:174:174::/nonexistent:/usr/sbin/nologin
++haproxy:x:175:175::/var/lib/haproxy:/sbin/nologin
++postgres:x:176:176:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/sh
++sssd:x:177:177:SSSD system user,,,:/var/lib/sss:/usr/sbin/nologin
++memcache:x:178:178:Memcached,,,:/nonexistent:/bin/false
++rabbitmq:x:179:179:RabbitMQ messaging server,,,:/var/lib/rabbitmq:/usr/sbin/nologin
++dnsmasq:x:182:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
++strongswan:x:183:65534::/var/lib/strongswan:/usr/sbin/nologin
++fm:*:195:195:fm-mgr:/var/lib/fm:/sbin/nologin
++www:*:1877:1877:www:/home/www:/sbin/nologin
++keystone:*:42424:42424:OpenStack Keystone Daemons:/var/lib/keystone:/sbin/nologin
+-- 
+2.34.1
+
+

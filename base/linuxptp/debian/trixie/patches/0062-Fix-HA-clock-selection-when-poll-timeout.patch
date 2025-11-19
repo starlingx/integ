@@ -1,0 +1,145 @@
+From: Tara Subedi <Tara.Subedi@windriver.com>
+Date: Mon Apr 21 13:43:49 2025 -0400
+Subject: [PATCH 62/65] Fix HA clock selection when poll timeout
+
+PTP HA phc2sys not switching over when primary ptp instance is down
+
+PHC2SYS calls pmc_agent_update periodically, which reads
+DEFAULT_DATA_SET, PARENT_DATA_SET, TIME_PROPERTIES_DATA_SET through
+pmc_agent_query_dds, pmc_agent_query_pds and pmc_agent_query_utc_
+offset. This updates clock's internal data: clock-class, clock-
+accuracy, offset, gm clock-class, gm clock-accuracy, gm offset,
+time/freq traceability. Based upon these new update, clock
+selection algorithm re-triggered.
+
+When ptp4l instance is down, pmc read fails but the clock's internal
+data still stays on previous read values and it won't re-trigger
+clock selection algorithm.
+
+This commit fixes this issue by resetting clock's internal data when pmc
+read fails, and clock selection algorithm re-triggered. This reset
+values can be seen in ha socket.
+
+This also increases timeout of pmc_agent_query_dds, pmc_agent_query_pds
+and pmc_agent_query_utc_offset polling from 0 to 1000 milliseconds, as
+with 0 ms timeout, it would timeout very frequently, which is not
+desirable.
+
+TEST PLAN:
+PASS: Setup HA PHY2SYS with two PTP4l instances
+check clock internal data with:
+echo -n "status" | socat -t 1 - UNIX-CONNECT:/var/run/phc-ha
+PASS:  start ptp traffic on connected port
+Both ptp4l instances has slave portstate
+check phc-ha socket, primary clock has been chosen
+* stop primary ptp4l instance
+user.log shows "timeout reading pmc dds"
+check phc-ha socket, secondary clock is selected
+and primary clock data has been reset.
+* start primary ptp4l instance
+check phc-ha socket, primary clock is selected
+and primary clock data is changed.
+PASS: Setup non-HA PHY2SYS with two PTP4l instances
+confirm working normally.
+
+
+Story: 2011370
+Task: 51927
+
+Signed-off-by: Tara Subedi <Tara.Subedi@windriver.com>
+---
+pmc_agent.c | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 57 insertions(+), 3 deletions(-)
+
+diff --git a/pmc_agent.c b/pmc_agent.c
+index bf65897..7b25e01 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -284,6 +284,20 @@ int pmc_agent_query_dds(struct pmc_agent *node, int timeout)
+ 
+ 	res = run_pmc(node, timeout, MID_DEFAULT_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
++		// When there is timeout, treat dds data as invalid and reset too
++		if (res == RUN_PMC_TMO) {
++			pr_err("pmc agent index %d, timeout reading pmc dds", node->index);
++			if (node->dds_valid == true) {
++				node->dds_valid = false;
++				// reset values, when read don't present last time read values
++				current = &node->dds.clockQuality;
++				current->clockClass = 248;
++				current->clockAccuracy = 0xfe;
++				current->offsetScaledLogVariance = 0xffff;
++				// set as new dds
++				node->new_dds = true;
++			}
++		}
+ 		return run_pmc_err2errno(res);
+ 	}
+ 	dds = (struct defaultDS *) management_tlv_data(msg);
+@@ -348,6 +362,32 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 
+ 	res = run_pmc(node, timeout, MID_TIME_PROPERTIES_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
++		// When there is timeout error, reset tpd values
++		if (res == RUN_PMC_TMO) {
++			pr_err("pmc agent index %d, timeout reading pmc tpd", node->index);
++			/* save current state */
++			sync_offset = node->sync_offset;
++			leap = node->leap;
++			utc_offset_traceable = node->utc_offset_traceable;
++			time_traceable = node->time_traceable;
++			freq_traceable = node->freq_traceable;
++
++			// reset values
++			node->sync_offset = 0;
++			node->leap = 0;
++			node->utc_offset_traceable = 0;
++			node->time_traceable = 0;
++			node->freq_traceable = 0;
++
++			/* compare to new tpds */
++			if ((sync_offset != node->sync_offset) ||
++				(leap != node->leap) ||
++				(utc_offset_traceable != node->utc_offset_traceable) ||
++				(time_traceable != node->time_traceable) ||
++				(freq_traceable != node->freq_traceable)) {
++				node->new_tpds = true;
++			}
++	    }
+ 		return run_pmc_err2errno(res);
+ 	}
+ 
+@@ -401,6 +441,20 @@ int pmc_agent_query_pds(struct pmc_agent *node, int timeout)
+ 
+ 	res = run_pmc(node, timeout, MID_PARENT_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
++		// When there is timeout error, treat pds data as invalid and reset too
++		if (res == RUN_PMC_TMO) {
++			pr_err("pmc agent index %d, timeout reading pmc pds", node->index);
++			if (node->pds_valid == true) {
++				node->pds_valid = false;
++				// reset values, when read don't present last time read values
++				current = &node->pds.grandmasterClockQuality;
++				current->clockClass = 248;
++				current->clockAccuracy = 0xfe;
++				current->offsetScaledLogVariance = 0xffff;
++				// set as new pds
++				node->new_pds = true;
++			}
++		}
+ 		return run_pmc_err2errno(res);
+ 	}
+ 
+@@ -447,9 +501,9 @@ int pmc_agent_update(struct pmc_agent *node)
+ 		if (node->stay_subscribed) {
+ 			renew_subscription(node, 0);
+ 		}
+-		r = pmc_agent_query_utc_offset(node, 0);
+-		r += pmc_agent_query_dds(node, 0);
+-		r += pmc_agent_query_pds(node, 0);
++		r = pmc_agent_query_utc_offset(node, 1000);
++		r += pmc_agent_query_dds(node, 1000);
++		r += pmc_agent_query_pds(node, 1000);
+ 		if (!r) {
+ 			node->pmc_last_update = ts;
+ 		}

@@ -1,0 +1,48 @@
+From 9a3a48fde35fd02981b44ff6b2e184f33377d36c Mon Sep 17 00:00:00 2001
+From: Yu Watanabe <watanabe.yu+github@gmail.com>
+Date: Tue, 15 Jun 2021 02:03:02 +0900
+Subject: [PATCH 5/6] sd-event: make event_source_time_prioq_reshuffle() accept
+ all event source type
+
+But it does nothing for an event source which is neither a timer nor
+ratelimited.
+
+(cherry picked from commit 5c08c7ab23dbf02aaf4e4bbae8e08a195da230a4)
+
+Related: #1984406
+
+[commit 9f044118dbc6a0f04b3820ffaa9d4c7807ae48a7
+https://github.com/systemd-rhel/rhel-8/ (branch rhel-8.4.0)]
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/libsystemd/sd-event/sd-event.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 1cf1c41..6215bac 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -771,14 +771,15 @@ static void event_source_time_prioq_reshuffle(sd_event_source *s) {
+         assert(s);
+ 
+         /* Called whenever the event source's timer ordering properties changed, i.e. time, accuracy,
+-         * pending, enable state. Makes sure the two prioq's are ordered properly again. */
++         * pending, enable state, and ratelimiting state. Makes sure the two prioq's are ordered
++         * properly again. */
+ 
+         if (s->ratelimited)
+                 d = &s->event->monotonic;
+-        else {
+-                assert(EVENT_SOURCE_IS_TIME(s->type));
++        else if (EVENT_SOURCE_IS_TIME(s->type))
+                 assert_se(d = event_get_clock_data(s->event, s->type));
+-        }
++        else
++                return; /* no-op for an event source which is neither a timer nor ratelimited. */
+ 
+         prioq_reshuffle(d->earliest, s, &s->earliest_index);
+         prioq_reshuffle(d->latest, s, &s->latest_index);
+-- 
+2.17.1
+

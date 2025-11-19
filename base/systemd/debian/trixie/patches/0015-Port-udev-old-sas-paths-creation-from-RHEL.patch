@@ -1,0 +1,187 @@
+From a2403bcd26c154325871b8e99e809c47fe9f52b8 Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Wed, 19 Oct 2022 18:41:18 +0300
+Subject: [PATCH 15/15] Port udev old sas paths creation from RHEL
+
+This ports the following patch file from RHEL:
+0186-udev-also-create-old-sas-paths.patch [1]
+
+On CentOS in systemd-219-78.el7_9.3.src.rpm the above mentioned patch
+allows old naming scheme before upstream commit [2] merged.
+
+With current implementation we see a mix of disks linked to the same
+partitions, when multiple SAS disks are used, which is wrong.
+ls -la /dev/disk/by-path/
+pci-0000:04:00.0-sas-phy0-lun-0 -> ../../sda
+pci-0000:04:00.0-sas-phy0-lun-0-part1 -> ../../sde1
+pci-0000:04:00.0-sas-phy0-lun-0-part2 -> ../../sda2
+pci-0000:04:00.0-sas-phy0-lun-0-part3 -> ../../sda3
+pci-0000:04:00.0-sas-phy0-lun-0-part4 -> ../../sda4
+pci-0000:04:00.0-sas-phy0-lun-0-part5 -> ../../sda5
+pci-0000:04:00.0-sas-phy0-lun-0-part6 -> ../../sde6
+pci-0000:04:00.0-sas-phy1-lun-0 -> ../../sdf
+pci-0000:04:00.0-sas-phy1-lun-0-part1 -> ../../sdb1
+pci-0000:04:00.0-sas-phy2-lun-0 -> ../../sdg
+pci-0000:04:00.0-sas-phy3-lun-0 -> ../../sdd
+
+With patch applied we see the disk links unfolded as expected.
+ls -la /dev/disk/by-path/
+pci-0000:04:00.0-sas-0x5000c5006c3d93ad-lun-0 -> ../../sde
+pci-0000:04:00.0-sas-0x5000c5006c3d93ad-lun-0-part1 -> ../../sde1
+pci-0000:04:00.0-sas-0x5000c5006c3f97ad-lun-0 -> ../../sdf
+pci-0000:04:00.0-sas-0x5000c5006c3f97ad-lun-0-part1 -> ../../sdf1
+pci-0000:04:00.0-sas-0x5000c5006c3fa189-lun-0 -> ../../sdd
+pci-0000:04:00.0-sas-0x5000c5006c3fa189-lun-0-part1 -> ../../sdd1
+pci-0000:04:00.0-sas-0x5000c5006c3fa1fd-lun-0 -> ../../sdc
+pci-0000:04:00.0-sas-0x5000c5006c3fa1fd-lun-0-part1 -> ../../sdc1
+pci-0000:04:00.0-sas-0x5000c5006c4033fd-lun-0 -> ../../sdb
+pci-0000:04:00.0-sas-0x5000c5006c4033fd-lun-0-part1 -> ../../sdb1
+pci-0000:04:00.0-sas-0x5000c50071886b25-lun-0 -> ../../sdg
+pci-0000:04:00.0-sas-0x5000c50071886b25-lun-0-part1 -> ../../sdg1
+pci-0000:04:00.0-sas-0x5000c50071886b25-lun-0-part2 -> ../../sdg2
+pci-0000:04:00.0-sas-0x5000c50071886b25-lun-0-part3 -> ../../sdg3
+pci-0000:04:00.0-sas-0x5000c50071886b25-lun-0-part4 -> ../../sdg4
+pci-0000:04:00.0-sas-0x5000c50071886b25-lun-0-part5 -> ../../sdg5
+pci-0000:04:00.0-sas-0x5000c50071886b25-lun-0-part6 -> ../../sdg6
+pci-0000:04:00.0-sas-0x5001e67680f0d000-lun-0 -> ../../sda
+pci-0000:04:00.0-sas-0x5001e67680f0d000-lun-0-part1 -> ../../sda1
+pci-0000:04:00.0-sas-0x5001e67680f0d000-lun-0-part2 -> ../../sda2
+pci-0000:04:00.0-sas-0x5001e67680f0d000-lun-0-part3 -> ../../sda3
+pci-0000:04:00.0-sas-0x5001e67680f0d000-lun-0-part4 -> ../../sda4
+pci-0000:04:00.0-sas-0x5001e67680f0d000-lun-0-part5 -> ../../sda5
+
+Upside is we get to keep the same naming as on CentOS, making a
+smoother upgrade experience.
+Downside is we need to carry this patch until the upstream issue
+is fixed and we decide to swtich to the new naming scheme.
+
+Note: the code here was not redesigned to keep up with latest coding
+trends (for example between upsteam v247 and v219 labels were dropped
+in the modified functions, but the port introduces the 'restart'
+label).
+
+Don't port the changes in udev rules related to ID_SAS_PATH, since
+we have not been using them. If needed later, we can update the repo
+responsible for providing configuration files for systemd [3].
+
+[1]: https://git.centos.org/rpms/systemd/blob/
+c62b8ee391509d79d67dbdbbcc555ab3d4721409/f/SOURCES/
+0186-udev-also-create-old-sas-paths.patch
+[2]: https://github.com/systemd/systemd/commit/
+66bba0e701b95dc42ed53e8f0799a7e2b944c147
+[3]: https://opendev.org/starlingx/config-files/src/
+branch/master/systemd-config
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ src/udev/udev-builtin-path_id.c | 35 +++++++++++++++++++++++++--------
+ 1 file changed, 27 insertions(+), 8 deletions(-)
+
+diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
+index 0da59e2c75..eea6d7e798 100644
+--- a/src/udev/udev-builtin-path_id.c
++++ b/src/udev/udev-builtin-path_id.c
+@@ -148,7 +148,7 @@ static sd_device *handle_scsi_sas_wide_port(sd_device *parent, char **path) {
+         return parent;
+ }
+ 
+-static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
++static sd_device *handle_scsi_sas(sd_device *parent, char **path, bool enable_new_sas_path, bool *new_sas_path) {
+         sd_device *targetdev, *target_parent, *port, *expander;
+         _cleanup_(sd_device_unrefp) sd_device *target_sasdev = NULL, *expander_sasdev = NULL, *port_sasdev = NULL;
+         const char *sas_address = NULL;
+@@ -159,6 +159,8 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
+         assert(parent);
+         assert(path);
+ 
++        *new_sas_path = false;
++
+         if (sd_device_get_parent_with_subsystem_devtype(parent, "scsi", "scsi_target", &targetdev) < 0)
+                 return NULL;
+         if (sd_device_get_parent(targetdev, &target_parent) < 0)
+@@ -180,7 +182,7 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
+                 return NULL;
+ 
+         /* Check if we are simple disk */
+-        if (strncmp(phy_count, "1", 2) != 0)
++        if (strncmp(phy_count, "1", 2) != 0 || !enable_new_sas_path)
+                 return handle_scsi_sas_wide_port(parent, path);
+ 
+         /* Get connected phy */
+@@ -206,6 +208,8 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
+         else
+                  path_prepend(path, "sas-phy%s-%s", phy_id, lun);
+ 
++        *new_sas_path = true;
++
+         return parent;
+ }
+ 
+@@ -408,7 +412,7 @@ static sd_device *handle_scsi_hyperv(sd_device *parent, char **path, size_t guid
+         return parent;
+ }
+ 
+-static sd_device *handle_scsi(sd_device *parent, char **path, char **compat_path, bool *supported_parent) {
++static sd_device *handle_scsi(sd_device *parent, char **path, char **compat_path, bool *supported_parent, bool enable_new_sas_path, bool *new_sas_path) {
+         const char *devtype, *id, *name;
+ 
+         if (sd_device_get_devtype(parent, &devtype) < 0 ||
+@@ -433,7 +437,7 @@ static sd_device *handle_scsi(sd_device *parent, char **path, char **compat_path
+ 
+         if (strstr(name, "/end_device-")) {
+                 *supported_parent = true;
+-                return handle_scsi_sas(parent, path);
++                return handle_scsi_sas(parent, path, enable_new_sas_path, new_sas_path);
+         }
+ 
+         if (strstr(name, "/session")) {
+@@ -540,9 +544,13 @@ static int builtin_path_id(sd_device *dev, int argc, char *argv[], bool test) {
+         bool supported_transport = false;
+         bool supported_parent = false;
+         const char *subsystem;
++        bool enable_new_sas_path = true;
++        bool new_sas_path = false;
+ 
+         assert(dev);
+ 
++restart:
++        ;
+         /* walk up the chain of devices and compose path */
+         parent = dev;
+         while (parent) {
+@@ -554,7 +562,7 @@ static int builtin_path_id(sd_device *dev, int argc, char *argv[], bool test) {
+                 } else if (streq(subsys, "scsi_tape")) {
+                         handle_scsi_tape(parent, &path);
+                 } else if (streq(subsys, "scsi")) {
+-                        parent = handle_scsi(parent, &path, &compat_path, &supported_parent);
++                        parent = handle_scsi(parent, &path, &compat_path, &supported_parent, enable_new_sas_path, &new_sas_path);
+                         supported_transport = true;
+                 } else if (streq(subsys, "cciss")) {
+                         parent = handle_cciss(parent, &path);
+@@ -709,9 +717,20 @@ static int builtin_path_id(sd_device *dev, int argc, char *argv[], bool test) {
+                         i--;
+                 tag[i] = '\0';
+ 
+-                udev_builtin_add_property(dev, test, "ID_PATH", path);
+-                udev_builtin_add_property(dev, test, "ID_PATH_TAG", tag);
+-        }
++                if (new_sas_path) {
++                        udev_builtin_add_property(dev, test, "ID_SAS_PATH", path);
++                } else {
++                        udev_builtin_add_property(dev, test, "ID_PATH", path);
++                        udev_builtin_add_property(dev, test, "ID_PATH_TAG", tag);
++                }
++
++                if (new_sas_path) {
++                        free(path);
++                        path = NULL;
++                        enable_new_sas_path = false;
++                        goto restart;
++                }
++       }
+ 
+         /*
+          * Compatible link generation for ATA devices
+-- 
+2.34.1
+
