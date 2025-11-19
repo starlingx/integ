@@ -1,0 +1,630 @@
+From 9af1abca17d0760f4fa02e2078a77c680149af0c Mon Sep 17 00:00:00 2001
+From: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+Date: Tue, 10 Jun 2025 13:01:20 -0300
+Subject: [PATCH] Check for existing IP before adding
+
+Avoid redundant IP configuration by checking if the address is already
+assigned before adding it, for both IPv4 and IPv6.
+
+Signed-off-by: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+---
+ archcommon.c      | 81 +++++++++++++++++++++++++++++++++++++++++++++++
+ archcommon.h      |  2 ++
+ inet.defn         |  8 ++---
+ inet6.defn        |  4 +--
+ tests/linux/up.1  | 28 ++++------------
+ tests/linux/up.11 |  4 +--
+ tests/linux/up.16 | 22 ++++---------
+ tests/linux/up.2  | 24 ++++----------
+ tests/linux/up.3  | 20 ++++++------
+ tests/linux/up.4  |  4 +--
+ tests/linux/up.5  |  4 +--
+ tests/linux/up.6  |  4 +--
+ tests/linux/up.7  | 24 +++++---------
+ tests/linux/up.8  | 16 +++-------
+ 14 files changed, 134 insertions(+), 111 deletions(-)
+
+diff --git a/archcommon.c b/archcommon.c
+index 52a2666..32606db 100644
+--- a/archcommon.c
++++ b/archcommon.c
+@@ -1,3 +1,6 @@
++#include <ifaddrs.h>
++#include <net/if.h>
++#include <netinet/in.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -291,3 +294,81 @@ void if_set(interface_defn *ifd, char **pparam, int argc, char **argv) {
+ 		return;
+ 	strcpy(*pparam, argv[0]);
+ }
++
++bool iface_has_address(interface_defn *ifd) {
++	if (!ifd || !ifd->logical_iface)
++		return false;
++
++	char *address = get_var("address", strlen("address"), ifd);
++	char *family = get_var("address-family", strlen("address-family"), ifd);
++
++	if (!address) {
++		free(family);
++		return false;
++	}
++
++	struct ifaddrs *ifaddr, *ifa;
++	bool found = false;
++
++	if (getifaddrs(&ifaddr) == -1) {
++		free(address);
++		free(family);
++		return false;
++	}
++
++	int af = AF_INET;
++	if (strchr(address, ':') != NULL)
++		af = AF_INET6;
++
++	char buf[INET6_ADDRSTRLEN];
++
++	char *ifname_real = strdup(ifd->logical_iface);
++	if (!ifname_real) {
++		free(address);
++		free(family);
++		freeifaddrs(ifaddr);
++		return false;
++	}
++
++	// Extract the base interface name (e.g., "vlan11" from "vlan11:5-16")
++	char *sep = strchr(ifname_real, ':');
++	if (sep)
++		*sep = '\0';
++
++	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
++		if (!ifa->ifa_addr)
++			continue;
++
++		int fam = ifa->ifa_addr->sa_family;
++		const void *src = NULL;
++
++		if (fam == AF_INET) {
++			src = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
++		} else if (fam == AF_INET6) {
++			src = &((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
++		}
++
++		if (src && inet_ntop(fam, src, buf, sizeof(buf)) != NULL) {
++			// Extract base name from ifa->ifa_name (e.g., "lo" from "lo:1-2")
++			char ifa_name_base[IFNAMSIZ];
++			strncpy(ifa_name_base, ifa->ifa_name, IFNAMSIZ - 1);
++			ifa_name_base[IFNAMSIZ - 1] = '\0';
++			char *alias_sep = strchr(ifa_name_base, ':');
++			if (alias_sep)
++				*alias_sep = '\0';
++
++			if (fam == af &&
++			    strcmp(ifa_name_base, ifname_real) == 0 &&
++			    strcmp(buf, address) == 0) {
++				found = true;
++			}
++		}
++	}
++
++	freeifaddrs(ifaddr);
++	free(address);
++	free(family);
++	free(ifname_real);
++
++	return found;
++}
+\ No newline at end of file
+diff --git a/archcommon.h b/archcommon.h
+index fe99950..3323f63 100644
+--- a/archcommon.h
++++ b/archcommon.h
+@@ -5,7 +5,9 @@ bool execable(const char *);
+ #define iface_is_link() (!_iface_has(ifd->real_iface, ":."))
+ #define iface_has(s) _iface_has(ifd->real_iface, (s))
+ #define iface_is_lo() ((!strcmp(ifd->logical_iface, LO_IFACE)) && (!no_loopback))
++#define address_exists() iface_has_address(ifd)
+ 
++bool iface_has_address(interface_defn *ifd);
+ bool _iface_has(const char *, const char *);
+ void cleanup_hwaddress(interface_defn *ifd, char **pparam, int argc, char **argv);
+ void make_hex_address(interface_defn *ifd, char **pparam, int argc, char **argv);
+diff --git a/inet.defn b/inet.defn
+index f6f3795..a79215c 100644
+--- a/inet.defn
++++ b/inet.defn
+@@ -37,10 +37,10 @@ method static
+ 
+   up
+     /sbin/ip addr add %address%[[/%netmask%]] [[broadcast %broadcast%]] \
+-	[[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface%
+-    /sbin/ip link set dev %iface% [[mtu %mtu%]] [[address %hwaddress%]] up
+-
+-    [[ /sbin/ip route add default via %gateway% [[metric %metric%]] dev %iface% onlink ]]
++	[[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface% ; \
++    if (!address_exists())
++    /sbin/ip link set dev %iface% [[mtu %mtu%]] [[address %hwaddress%]] up ;
++    [[ /sbin/ip route replace default via %gateway% [[metric %metric%]] dev %iface% onlink ]]
+ 
+   down
+     [[ /sbin/ip route del default via %gateway% [[metric %metric%]] dev %iface% 2>&1 1>/dev/null || true ]]
+diff --git a/inet6.defn b/inet6.defn
+index 9817560..742d5b4 100644
+--- a/inet6.defn
++++ b/inet6.defn
+@@ -91,9 +91,9 @@ method static
+         if (var_set("accept_ra", ifd) && !var_true("accept_ra", ifd))
+     /sbin/ip link set dev %iface% [[address %hwaddress%]] up
+     /sbin/ip -6 addr add %address%[[/%netmask%]] [[scope %scope%]] dev %iface% [[preferred_lft %preferred-lifetime%]] \
+-                if (!var_set("dad-attempts", ifd) || var_true("dad-attempts", ifd))
++                if ((!address_exists()) && (!var_set("dad-attempts", ifd) || var_true("dad-attempts", ifd)))
+     /sbin/ip -6 addr add %address%[[/%netmask%]] [[scope %scope%]] dev %iface% [[preferred_lft %preferred-lifetime%]] nodad \
+-                if (var_set("dad-attempts", ifd) && !var_true("dad-attempts", ifd))
++                if ((!address_exists()) && (var_set("dad-attempts", ifd) && !var_true("dad-attempts", ifd)))
+     [[ /sbin/ip -6 route replace default via %gateway% [[metric %metric%]] dev %iface% onlink ]]
+     /lib/ifupdown/settle-dad.sh if (!no_act_commands && execable("/lib/ifupdown/settle-dad.sh") && (var_true("dad-attempts", ifd)))
+ 
+diff --git a/tests/linux/up.1 b/tests/linux/up.1
+index 06e2923..fccdbcb 100644
+--- a/tests/linux/up.1
++++ b/tests/linux/up.1
+@@ -5,57 +5,43 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.252.0.0 broadcast 1.3.255.255 	  dev eth1 label eth1
+-/sbin/ip link set dev eth1   up
+-
++/sbin/ip addr add 1.2.3.4/255.252.0.0 broadcast 1.3.255.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1   up ;
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth2=eth2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.128 broadcast 1.2.3.127 	  dev eth2 label eth2
+-/sbin/ip link set dev eth2   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.128 broadcast 1.2.3.127 	  dev eth2 label eth2 ;     /sbin/ip link set dev eth2   up ;
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.0 	  dev eth3 label eth3
+-/sbin/ip link set dev eth3   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.0 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.252 broadcast 1.2.3.4 	  dev eth3 label eth3
+-/sbin/ip link set dev eth3   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.252 broadcast 1.2.3.4 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 255.255.255.255 	  dev eth3 label eth3
+-/sbin/ip link set dev eth3   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 255.255.255.255 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 0.0.0.0 	  dev eth3 label eth3
+-/sbin/ip link set dev eth3   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 0.0.0.0 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.11 b/tests/linux/up.11
+index be6b803..46e14b8 100644
+--- a/tests/linux/up.11
++++ b/tests/linux/up.11
+@@ -11,8 +11,6 @@ configure lo
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.16 b/tests/linux/up.16
+index 93b3fe1..f2e4935 100644
+--- a/tests/linux/up.16
++++ b/tests/linux/up.16
+@@ -10,16 +10,12 @@ ifup: configuring interface lo=lo (inet)
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1
+-/sbin/ip link set dev eth1 mtu 1500 address 12:34:56:89:0a:bc up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1 mtu 1500 address 12:34:56:89:0a:bc up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth1=eth1 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -27,17 +23,15 @@ ifup: configuring interface eth1=eth1 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth1.autoconf=0
+-if [ "$(/bin/cat /sys/class/net/eth1/mtu)" -lt 1492 ]; then /sbin/ip link set dev eth1 mtu 1492; else /sbin/sysctl -q -e -w net.ipv6.conf.eth1.mtu=1492; fi
++intf=$(echo "eth1"|/usr/bin/awk -F ':' '{print $1}');if [ "$(/bin/cat /sys/class/net/${intf}/mtu)" -lt 1492 ]; then /sbin/ip link set dev eth1 mtu 1492; else /sbin/sysctl -q -e -w net.ipv6.conf.eth1.mtu=1492; fi
+ /sbin/ip link set dev eth1 address 12:34:ff:fe:0a:bc up
+-/sbin/ip -6 addr add 3ffe:ffff:120::fffe:1/64  dev eth1 
++/sbin/ip -6 addr add 3ffe:ffff:120::fffe:1/64  dev eth1
+ 
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth2=eth2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth2 label eth2
+-/sbin/ip link set dev eth2 mtu 1500 address 12:34:56:89:0a:bc up
+-
++/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth2 label eth2 ;     /sbin/ip link set dev eth2 mtu 1500 address 12:34:56:89:0a:bc up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth2=eth2 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -45,7 +39,7 @@ ifup: configuring interface eth2=eth2 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth2.autoconf=0
+-if [ "$(/bin/cat /sys/class/net/eth2/mtu)" -lt 1492 ]; then /sbin/ip link set dev eth2 mtu 1492; else /sbin/sysctl -q -e -w net.ipv6.conf.eth2.mtu=1492; fi
++intf=$(echo "eth2"|/usr/bin/awk -F ':' '{print $1}');if [ "$(/bin/cat /sys/class/net/${intf}/mtu)" -lt 1492 ]; then /sbin/ip link set dev eth2 mtu 1492; else /sbin/sysctl -q -e -w net.ipv6.conf.eth2.mtu=1492; fi
+ /sbin/ip link set dev eth2 address 12:34:ff:fe:0a:bc up
+ /sbin/ip -6 addr add 3ffe:ffff:120::fffe:1/64  dev eth2 
+ 
+@@ -53,8 +47,6 @@ if [ "$(/bin/cat /sys/class/net/eth2/mtu)" -lt 1492 ]; then /sbin/ip link set de
+ 
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth3 label eth3
+-/sbin/ip link set dev eth3 mtu 1500 address 12:34:56:89:0a:bc up
+-
++/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3 mtu 1500 address 12:34:56:89:0a:bc up ; 
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.2 b/tests/linux/up.2
+index d80702f..282e57b 100644
+--- a/tests/linux/up.2
++++ b/tests/linux/up.2
+@@ -5,43 +5,31 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.3.4.5/255.255.255.0 broadcast 1.3.4.255 	  dev eth1 label eth1
+-/sbin/ip link set dev eth1   up
+-
++/sbin/ip addr add 1.3.4.5/255.255.255.0 broadcast 1.3.4.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth2=eth2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.4.5.6/255.255.255.0 broadcast 1.4.5.255 	  dev eth2 label eth2
+-/sbin/ip link set dev eth2   up
+-
++/sbin/ip addr add 1.4.5.6/255.255.255.0 broadcast 1.4.5.255 	  dev eth2 label eth2 ;     /sbin/ip link set dev eth2   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.5.6.7/255.255.255.0 broadcast 1.5.6.255 	  dev eth3 label eth3
+-/sbin/ip link set dev eth3   up
+-
++/sbin/ip addr add 1.5.6.7/255.255.255.0 broadcast 1.5.6.255 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth4=eth4 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.7.8.9/255.255.255.0 broadcast 1.7.8.255 	  dev eth4 label eth4
+-/sbin/ip link set dev eth4   up
+-
++/sbin/ip addr add 1.7.8.9/255.255.255.0 broadcast 1.7.8.255 	  dev eth4 label eth4 ;     /sbin/ip link set dev eth4   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth5=eth5 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.8.9.10/255.255.255.0 broadcast 1.8.9.255 	  dev eth5 label eth5
+-/sbin/ip link set dev eth5   up
+-
++/sbin/ip addr add 1.8.9.10/255.255.255.0 broadcast 1.8.9.255 	  dev eth5 label eth5 ;     /sbin/ip link set dev eth5   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.3 b/tests/linux/up.3
+index d0f5d34..251d8f4 100644
+--- a/tests/linux/up.3
++++ b/tests/linux/up.3
+@@ -5,9 +5,7 @@ exit code: 1
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -15,7 +13,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+ 
+@@ -26,7 +24,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::2/64  dev eth0  nodad
+ 
+@@ -37,7 +35,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::3/64  dev eth0  nodad
+ 
+@@ -48,7 +46,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::4  dev eth0  nodad
+ 
+@@ -59,7 +57,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::5/128  dev eth0  nodad
+ 
+@@ -70,7 +68,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 64  dev eth0  nodad
+ 
+@@ -86,7 +84,7 @@ ifup: configuring interface eth1=eth1 (inet6)
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth1.accept_ra=0
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth1.autoconf=0
+-
++intf=$(echo "eth1"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip addr flush dev eth1 mngtmpaddr
+ /sbin/ip link set dev eth1  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f102::1/64  dev eth1  nodad
+@@ -98,7 +96,7 @@ ifup: configuring interface eth1=eth1 (inet6)
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth1.accept_ra=1
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth1.autoconf=0
+-
++intf=$(echo "eth1"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth1  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f102::6/64  dev eth1  nodad
+  /sbin/ip -6 route replace default via 3ffe:ffff:100:f102::fff  dev eth1 onlink 
+diff --git a/tests/linux/up.4 b/tests/linux/up.4
+index 575c9ae..7682c73 100644
+--- a/tests/linux/up.4
++++ b/tests/linux/up.4
+@@ -4,9 +4,7 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=work (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.5 b/tests/linux/up.5
+index ec6f493..bcd3de7 100644
+--- a/tests/linux/up.5
++++ b/tests/linux/up.5
+@@ -5,8 +5,6 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.6 b/tests/linux/up.6
+index ec6f493..bcd3de7 100644
+--- a/tests/linux/up.6
++++ b/tests/linux/up.6
+@@ -5,8 +5,6 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.7 b/tests/linux/up.7
+index 901a898..f18f144 100644
+--- a/tests/linux/up.7
++++ b/tests/linux/up.7
+@@ -5,9 +5,7 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -15,7 +13,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.use_tempaddr=2
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.accept_ra=0
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip addr flush dev eth0 mngtmpaddr
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+@@ -24,9 +22,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -34,7 +30,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.use_tempaddr=2
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.accept_ra=0
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip addr flush dev eth0 mngtmpaddr
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+@@ -48,7 +44,7 @@ ifup: configuring interface eth0.1=eth0.1 (inet6)
+ 
+ 
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0/1.autoconf=0
+-
++intf=$(echo "eth0.1"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip link set dev eth0.1  up
+ /sbin/ip -6 addr add 3ffe:ffff:120:f101::1/64  dev eth0.1  nodad
+ 
+@@ -56,9 +52,7 @@ ifup: configuring interface eth0.1=eth0.1 (inet6)
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0
+-/sbin/ip link set dev eth0   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -66,7 +60,7 @@ ifup: configuring interface eth0=eth0 (inet6)
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.use_tempaddr=2
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.accept_ra=0
+ /sbin/sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ /sbin/ip addr flush dev eth0 mngtmpaddr
+ /sbin/ip link set dev eth0  up
+ /sbin/ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+@@ -76,9 +70,7 @@ if test -d /sys/class/net/eth0 &&     	! ip link show eth0.0201 >/dev/null 2>&1;
+ 
+ ifup: configuring interface eth0.0201=eth0.0201 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 192.168.0.1/255.255.255.128 broadcast 192.168.0.127 	  dev eth0.0201 label eth0.0201
+-/sbin/ip link set dev eth0.0201   up
+-
++/sbin/ip addr add 192.168.0.1/255.255.255.128 broadcast 192.168.0.127 	  dev eth0.0201 label eth0.0201 ;     /sbin/ip link set dev eth0.0201   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ if test -d /sys/class/net/br0 &&     	! ip link show br0.0201 >/dev/null 2>&1;     then         if test `cat /sys/class/net/br0/type` -eq 32; then             echo 0x0201 > /sys/class/net/br0/create_child;         else             /sbin/ip link set up dev br0;             /sbin/ip link add link br0 name br0.0201 type vlan id 201; 	fi;     fi
+ 
+diff --git a/tests/linux/up.8 b/tests/linux/up.8
+index f1f3f59..d9cc9e1 100644
+--- a/tests/linux/up.8
++++ b/tests/linux/up.8
+@@ -5,18 +5,14 @@ exit code: 0
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1
+-/sbin/ip link set dev eth1   up
+-
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1   up ;
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1:1=eth1:1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.5.3.4/255.255.255.0 broadcast 1.5.3.255 	  dev eth1:1 label eth1:1
+-/sbin/ip link set dev eth1:1   up
+-
++/sbin/ip addr add 1.5.3.4/255.255.255.0 broadcast 1.5.3.255 	  dev eth1:1 label eth1:1 ;     /sbin/ip link set dev eth1:1   up ;
+ echo hihi
+ echo hellolo
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+@@ -24,16 +20,12 @@ if test -d /sys/class/net/eth2 &&     	! ip link show eth2.2 >/dev/null 2>&1;
+ 
+ ifup: configuring interface eth2.2=eth2.2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 2.3.4.5/255.255.255.0 broadcast 2.3.4.255 	  dev eth2.2 label eth2.2
+-/sbin/ip link set dev eth2.2   up
+-
++/sbin/ip addr add 2.3.4.5/255.255.255.0 broadcast 2.3.4.255 	  dev eth2.2 label eth2.2 ;     /sbin/ip link set dev eth2.2   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ if test -d /sys/class/net/eth2 &&     	! ip link show eth2.2 >/dev/null 2>&1;     then         if test `cat /sys/class/net/eth2/type` -eq 32; then             echo 0x2 > /sys/class/net/eth2/create_child;         else             /sbin/ip link set up dev eth2;             /sbin/ip link add link eth2 name eth2.2 type vlan id 2; 	fi;     fi
+ 
+ ifup: configuring interface eth2.2:3=eth2.2:3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 3.4.5.6/255.255.254.0 broadcast 3.4.5.255 	  dev eth2.2:3 label eth2.2:3
+-/sbin/ip link set dev eth2.2:3   up
+-
++/sbin/ip addr add 3.4.5.6/255.255.254.0 broadcast 3.4.5.255 	  dev eth2.2:3 label eth2.2:3 ;     /sbin/ip link set dev eth2.2:3   up ;
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+-- 
+2.34.1
+

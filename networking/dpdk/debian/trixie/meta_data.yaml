@@ -1,0 +1,13 @@
+---
+debname: dpdk
+debver: 20.11.7-1~deb11u1
+dl_path:
+  name: dpdk-debian-20.11.7-1_deb11u1.tar.gz
+  url: https://salsa.debian.org/debian/dpdk/-/archive/debian/20.11.7-1_deb11u1/dpdk-debian-20.11.7-1_deb11u1.tar.gz
+  md5sum: 4bb547ab663ec787833cd43fe3d20f1c
+  sha256sum: ae62bc916a41f14e957ee7440b94dfb0e22a1d0dd6c1371cb628eab4fb74befd
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: a806d997496740f2cec02db121c609e3c743c003
+    SRC_DIR: ${MY_REPO}/stx/integ/networking/dpdk

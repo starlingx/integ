@@ -1,0 +1,37 @@
+From ab7e1b45ce9c7cb9a43bc82edb706dd9e8b89ee3 Mon Sep 17 00:00:00 2001
+From: Lucas Ratusznei Fonseca <lucas.ratuszneifonseca@windriver.com>
+Date: Wed, 7 Aug 2024 01:30:19 -0300
+Subject: [PATCH] Fix long labels cause command to fail
+
+---
+ execute.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/execute.c b/execute.c
+index 05fdfd1..3a731f2 100644
+--- a/execute.c
++++ b/execute.c
+@@ -460,9 +460,20 @@ int strncmpz(const char *l, const char *r, size_t llen) {
+ 		return i;
+ }
+ 
++#define LINUX_MAX_IFNAME_LEN 15
++
+ char *get_var(const char *id, size_t idlen, interface_defn *ifd) {
+ 	if (strncmpz(id, "iface", idlen) == 0)
++	{
++		if(strlen(ifd->real_iface) > LINUX_MAX_IFNAME_LEN)
++		{
++			const char* colon_pos = strchr(ifd->real_iface, ':');
++			if(colon_pos)
++				return strndup(ifd->real_iface, colon_pos - ifd->real_iface);
++		}
++
+ 		return strdup(ifd->real_iface);
++	}
+ 
+ 	for (int i = 0; i < ifd->n_options; i++) {
+ 		if (strncmpz(id, ifd->option[i].name, idlen) == 0) {
+-- 
+2.34.1
+

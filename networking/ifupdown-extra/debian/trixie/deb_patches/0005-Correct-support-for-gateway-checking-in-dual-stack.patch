@@ -1,0 +1,238 @@
+From ffb43e6c855ce7f653128ca91f019c3648f4a0d9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Javier=20Fernandez-Sanguino=20Pe=C3=B1a?= <jfs@debian.org>
+Date: Fri, 6 Sep 2024 09:53:24 -0300
+Subject: [PATCH] Correct support for gateway checking in dual-stack
+
+This change contains the correct parsing for the real interface name,
+removing the label part (after ':') from the IFACE variable to be
+used by ndisc and arping
+
+Also enhanced log messages, now registering test result as error if
+failed or as info if passes since this kind of information is very
+useful for troubleshoot
+
+Added a final ICMP echo test (using ping) to enhance diagnosis, but
+only logging result as info since gateway is under no obligation to
+answer ECHO messages.
+
+Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+---
+ if-up-scripts/check-duplicate-ip  | 14 +++---
+ if-up-scripts/check-duplicate-ip6 |  5 +-
+ if-up-scripts/check-gateway       | 80 ++++++++++++++++++++++++-------
+ 3 files changed, 75 insertions(+), 24 deletions(-)
+
+diff --git a/if-up-scripts/check-duplicate-ip b/if-up-scripts/check-duplicate-ip
+index a975a90..ec9ff65 100755
+--- a/if-up-scripts/check-duplicate-ip
++++ b/if-up-scripts/check-duplicate-ip
+@@ -73,6 +73,9 @@ OUT_ERR="do_output err"
+ OUT_WARN="do_output warning"
+ OUT_DEBUG="do_output debug"
+ 
++# First determine physical interface in case aliased interfaces are used
++real_iface=$(echo "$IFACE" | awk -F ':' '{print $1}')
++
+ do_arping() {
+ # Send ARP pings to detect if there is a duplicate address "out there"
+ # Curiously enough, the script will return faster if there *is* a system
+@@ -83,12 +86,10 @@ do_arping() {
+ # does not have link, notice that ARPING will try to send the ARP requests
+ # even if there is no link so we use this to speed things up
+ 
+-# First determine physical interface in case aliased interfaces are used
+-        real_iface=$(echo "$IFACE" | sed -e 's|:[[:digit:]]\+||')
+-        if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) != "up" ]] ; then
+-            [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Interface $real_iface (for $IFACE) is not in UP state, skipping duplicate IPv4 address check"
+-            return
+-        fi
++    if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) != "up" ]] ; then
++        [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Interface $real_iface (for $IFACE) is not in UP state, skipping duplicate IPv4 address check"
++        return
++    fi
+ 
+ 	for ADDR in $IF_ADDRESS; do
+         # Skip interface is address is IPv6, arping only works for IPv4
+@@ -122,6 +123,7 @@ case $IFACE in
+         *) ;;
+ esac
+ 
++
+ [ -z "$IF_ADDRESS" ] && find_ip
+ # Still no IP? Bail out
+ if [ -z "$IF_ADDRESS" ] ; then
+diff --git a/if-up-scripts/check-duplicate-ip6 b/if-up-scripts/check-duplicate-ip6
+index fd4b453..0af95c1 100755
+--- a/if-up-scripts/check-duplicate-ip6
++++ b/if-up-scripts/check-duplicate-ip6
+@@ -71,6 +71,9 @@ OUT_ERR="do_output err"
+ OUT_WARN="do_output warning"
+ OUT_DEBUG="do_output debug"
+ 
++# First determine physical interface in case aliased interfaces are used
++real_iface=$(echo "$IFACE" | awk -F ':' '{print $1}')
++
+ do_ndisc() {
+ # Use the Network Discovery Protocol to detect if there is a duplicate address
+ # "out there"
+@@ -79,8 +82,6 @@ do_ndisc() {
+ # does not have link, notice that ARPING will try to send the ARP requests
+ # even if there is no link so we use this to speed things up
+ 
+-# First determine physical interface in case aliased interfaces are used
+-        real_iface=$(echo "$IFACE" | sed -e 's|:[[:digit:]]\+||')
+         if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) != "up" ]] ; then
+             [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Interface $real_iface (for $IFACE) is not in UP state, skipping duplicate IPv6 address check"
+             return
+diff --git a/if-up-scripts/check-gateway b/if-up-scripts/check-gateway
+index d2c45c1..8e24a82 100755
+--- a/if-up-scripts/check-gateway
++++ b/if-up-scripts/check-gateway
+@@ -43,6 +43,7 @@
+ # Defaults
+ ARPING=/usr/bin/arping
+ NDISC=/usr/bin/ndisc6
++PING=/usr/bin/ping
+ ARP_COUNT=${ARP_COUNT:-2}
+ ARP_TIMEOUT=${ARP_TIMEOUT:-3}
+ DO_SYSLOG=${DO_SYSLOG:-yes}
+@@ -54,6 +55,9 @@ HAS_ARPING=$?
+ [ -x "$NDISC" ]
+ HAS_NDISC=$?
+ 
++[ -x "$PING" ]
++HAS_PING=$?
++
+ # or if the user has told us to not do arpings
+ [ "$DO_ARPING" = "no" ]  && exit 0
+ 
+@@ -78,22 +82,41 @@ do_output() {
+ 
+ OUT_ERR="do_output err"
+ OUT_WARN="do_output warning"
++OUT_INFO="do_output info"
+ OUT_DEBUG="do_output debug"
+ 
+-# Try to obtain the IP address of our gateway (DHCP case)
+-if [ -z "$IF_GATEWAY" ] ; then
+-       IF_GATEWAY=$(ip route list | grep "^default " | grep "dev $IFACE" | awk '{print $3}')
+-        # Warn if there are multiple gateways
+-        echo $IF_GATEWAY | grep -q " " && [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Found multiple gateways as default routes for $IFACE"
+-fi
+-# Still no IP? Bail out
+-[ -z "$IF_GATEWAY" ] && exit 0
+-
+ 
+ # Set up our environment
+ LC_ALL=C
+ export LC_ALL
+ 
++log_ping_test() {
++# ICMP echo test (using ping) to enhance diagnosis, but only logging result as 
++# info since gateway is under no obligation to answer ECHO messages.
++    local GATEWAY=$1
++    local GATEWAY_FOUND=1
++    [ "${VERBOSITY}" -eq 1 ] && ${OUT_DEBUG} "Sending ICMP6 ECHO messages through ${real_iface} to detect if the gateway ${GATEWAY} is present"
++    ip_route_get=$(ip route get ${GATEWAY})
++    [ "$VERBOSITY" -eq 1 ] && ${OUT_DEBUG} "gateway route table resolution: '${ip_route_get}'"
++    if [[ "${GATEWAY}" =~ ":" ]] ; then
++        ${PING} -6 -i 0.3 -c 2 -q ${GATEWAY}
++        if [ $? -ne 0 ] ; then
++            GATEWAY_FOUND=0
++        fi
++    else
++        ${PING} -4 -i 0.3 -c 2 -q ${GATEWAY}
++        if [ $? -ne 0 ] ; then
++            GATEWAY_FOUND=0
++        fi
++    fi
++    if [ "${GATEWAY_FOUND}" = 1 ] ; then
++        ${OUT_INFO} "Gateway ${GATEWAY} in ${real_iface} is reachable via ICMP ECHO (ping)"
++    else
++        ${OUT_INFO} "Gateway ${GATEWAY} in ${real_iface} is not reachable via ICMP ECHO (ping)"
++    fi
++
++}
++
+ do_arping() {
+ # Send ARP pings to detect if the default gateway is "out there"
+ # Curiously enough, the script will return faster if there *is* a system
+@@ -105,10 +128,10 @@ do_arping() {
+ # even if there is no link so we use this to speed things up
+ 
+         local GATEWAY=$1
+-        local ARPING_OPTIONS="-q -c $ARP_COUNT -w $ARP_TIMEOUT -f -I $IFACE"
++        local ARPING_OPTIONS="-q -c $ARP_COUNT -w $ARP_TIMEOUT -f -I $real_iface"
+         local GATEWAY_FOUND=1
+ 
+-	[ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending arp pings through $IFACE to detect if the gateway $GATEWAY is present"
++        [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending arp pings through $real_iface to detect if the gateway $GATEWAY is present"
+         if [ "`id -u`" = 0 ] ; then
+             if $ARPING $ARPING_OPTIONS $GATEWAY ; then
+                 GATEWAY_FOUND=0
+@@ -123,19 +146,29 @@ do_arping() {
+         fi
+ 
+         if [ "$GATEWAY_FOUND" = 1 ] ; then
+-                $OUT_ERR "Cannot find default gateway $GATEWAY in the network where $IFACE is connected to"
+-	fi
++            $OUT_ERR "Cannot find with ARP default gateway $GATEWAY in the network where $real_iface is connected to"
++        else
++            $OUT_INFO "Gateway $GATEWAY in $real_iface is reachable via ARP"
++            if [ $HAS_PING -eq 0 ] ; then
++                log_ping_test $GATEWAY
++            fi
++        fi
+ }
+ 
+ do_ndisc() {
+ 
+     local GATEWAY=$1
+ 
+-	[ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending ICMP6 pings through $IFACE to detect if the gateway $GATEWAY is present"
++    [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending ICMPv6:NDP discovery messages through $real_iface to detect if the gateway $GATEWAY is present"
+ 
+     $NDISC -q $GATEWAY $real_iface >/dev/null 2>&1
+     if [ $? -ne 0 ] ; then
+-        $OUT_ERR "Cannot find default gateway $GATEWAY in the network where $IFACE is connected to"
++        $OUT_ERR "Cannot find with ICMPv6:NDP default gateway $GATEWAY in the network where $real_iface is connected to"
++    else
++        $OUT_INFO "Gateway $GATEWAY in $real_iface is reachable via ICMPv6:NDP"
++        if [ $HAS_PING -eq 0 ] ; then
++            log_ping_test $GATEWAY
++        fi
+     fi
+ 
+ }
+@@ -147,12 +180,27 @@ case "$IFACE" in
+ 	*) ;;
+ esac
+ 
+-real_iface=$(echo "$IFACE" | sed -e 's|:[[:digit:]]\+||')
++real_iface=$(echo "$IFACE" | awk -F ':' '{print $1}')
+ if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) != "up" ]] ; then
+     [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Interface $real_iface (for $IFACE) is not in UP state, skipping gateway detection"
+     exit 0
+ fi
+ 
++# Try to obtain the IP address of our gateway (DHCP case)
++if [ -z "$IF_GATEWAY" ] ; then
++        IF_GATEWAY4=$(ip -4 route list | grep "^default " | grep "dev $real_iface" | awk '{print $3}')
++        IF_GATEWAY6=$(ip -6 route list | grep "^default " | grep "dev $real_iface" | awk '{print $3}')
++        # Warn if there are multiple gateways
++        echo $IF_GATEWAY4 | grep -q " " && [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Found multiple IPv4 gateways as default routes for $real_iface"
++        echo $IF_GATEWAY6 | grep -q " " && [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Found multiple IPv6 gateways as default routes for $real_iface"
++        if [ -n "$IF_GATEWAY4" ] || [ -n "$IF_GATEWAY4" ]; then
++            IF_GATEWAY="${IF_GATEWAY4} ${IF_GATEWAY6}"
++        fi
++fi
++# Still no IP? Bail out
++[ -z "$IF_GATEWAY" ] && exit 0
++
++
+ for gateway in $IF_GATEWAY ; do
+     if [[ "$gateway" =~ ":" ]] ; then
+         if [ $HAS_NDISC -eq 0 ] ; then
+-- 
+2.34.1
+
