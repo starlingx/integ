@@ -1,0 +1,35 @@
+From ec1370a0a0e16b02f75d0d6c99fd2af258098b00 Mon Sep 17 00:00:00 2001
+From: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+Date: Tue, 5 Oct 2021 11:47:19 -0300
+Subject: [PATCH 1/2] suppress debian patch in tar
+
+Remove patch entries in series because parted 3.4 debian
+source tar includes code with these patches applied.
+
+Signed-off-by: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+---
+ debian/patches/series | 14 --------------
+ 1 file changed, 14 deletions(-)
+
+diff --git a/debian/patches/series b/debian/patches/series
+index da8a1ac..e69de29 100644
+--- a/debian/patches/series
++++ b/debian/patches/series
+@@ -1,14 +0,0 @@
+-doc-package.patch
+-preserve-hidden-parts.patch
+-kfreebsd-gnu.patch
+-freebsd-ufs.patch
+-zfs.patch
+-freebsd-zvol.patch
+-freebsd-geli.patch
+-kfreebsd_lvm.patch
+-hurd-partition-path.patch
+-hurd-reread.patch
+-gptsync.patch
+-udevadm-settle.patch
+-align-new-partitions-on-fresh-disks.patch
+-probe-lvs-again.patch
+-- 
+2.25.1
+

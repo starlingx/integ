@@ -1,0 +1,55 @@
+From 0d22ac37ddcdacfd97e95563c7f6a51a1f50f5da Mon Sep 17 00:00:00 2001
+From: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+Date: Tue, 5 Oct 2021 11:57:57 -0300
+Subject: [PATCH 1/2] syscalls
+
+Copy of syscalls.patch from CentOS.
+
+Signed-off-by: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+---
+ libparted/arch/linux.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/libparted/arch/linux.c b/libparted/arch/linux.c
+index 9bae57f..7b8b670 100644
+--- a/libparted/arch/linux.c
++++ b/libparted/arch/linux.c
+@@ -1798,12 +1798,14 @@ _device_close (PedDevice* dev)
+ 
+ #if SIZEOF_OFF_T < 8
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+ static _syscall5(int,_llseek,
+                  unsigned int, fd,
+                  unsigned long, offset_high,
+                  unsigned long, offset_low,
+                  loff_t*, result,
+                  unsigned int, origin)
++#endif
+ 
+ loff_t
+ llseek (unsigned int fd, loff_t offset, unsigned int whence)
+@@ -1811,11 +1813,20 @@ llseek (unsigned int fd, loff_t offset, unsigned int whence)
+         loff_t result;
+         int retval;
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+         retval = _llseek(fd,
+                          ((unsigned long long)offset) >> 32,
+                          ((unsigned long long)offset) & 0xffffffff,
+                          &result,
+                          whence);
++#else
++        retval = syscall(__NR__llseek, fd,
++                         ((unsigned long long)offset) >> 32,
++                         ((unsigned long long)offset) & 0xffffffff,
++                         &result,
++                         whence);
++#endif
++
+         return (retval==-1 ? (loff_t) retval : result);
+ }
+ 
+-- 
+2.25.1
+
