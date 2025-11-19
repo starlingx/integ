@@ -1,0 +1,22 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: makedumpfile
+Source: https://github.com/makedumpfile/makedumpfile/archive/refs/tags/1.7.7.tar.gz
+Files: *
+Copyright: (C) 2006, 2007, 2008, 2009, 2011  NEC Corporation
+           (C) Others (See individual files for more details)
+License: GPL-2.0
+ This program is free software; you can redistribute it and/or modify
+ it under the terms version 2 of the GNU General Public License
+ as published by the Free Software Foundation.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
+Comment:
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".

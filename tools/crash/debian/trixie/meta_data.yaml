@@ -1,0 +1,12 @@
+---
+debver: 8.0.6
+debname: crash
+dl_path:
+  name: crash_8.0.6.orig.tar.gz
+  url: https://snapshot.debian.org/archive/debian/20241212T204812Z/pool/main/c/crash/crash_8.0.6.orig.tar.gz
+  sha256sum: 097c6c94ded7e24db4af58de24744bd28276d6f5bae0828bc6b6a02664c4282a
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 999fcb6e5979b5d749b8cba7fb840616389ffa69
+    SRC_DIR: ${MY_REPO}/stx/integ/tools/crash

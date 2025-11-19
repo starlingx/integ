@@ -1,0 +1,13 @@
+source: crash
+Section: utils
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), bison, libncurses5-dev, texinfo, zlib1g-dev
+Standards-Version: 4.5.2
+Rules-Requires-Root: no
+
+package: crash
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: This package provides a self-contained tool that can be used to investigate either live systems, kernel core dumps created from dump creation facilities such as kdump
+ This package provides a self-contained tool that can be used to investigate either live systems, kernel core dumps created from dump creation facilities such as kdump

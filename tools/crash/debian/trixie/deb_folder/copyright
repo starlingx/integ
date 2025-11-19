@@ -1,0 +1,40 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: crash
+Source: https://snapshot.debian.org/archive/debian/20241212T204812Z/pool/main/c/crash/crash_8.0.6.orig.tar.gz
+Files: *
+Copyright: (C) 2002-2022  Red Hat, Inc.
+           (C) 2004, 2005, 2006, 2010  IBM Corporation
+           (C) 1999-2006  Hewlett-Packard Co
+           (C) 2005, 2006, 2011, 2012  Fujitsu Limited
+           (C) 2006, 2007  VA Linux Systems Japan K.K.
+           (C) 2005, 2011, 2020-2022  NEC Corporation
+           (C) 1999, 2002, 2007  Silicon Graphics, Inc.
+           (C) 1999, 2000, 2001, 2002  Mission Critical Linux, Inc.
+           (C) 2015, 2021  VMware, Inc.
+License: GNU General Public License
+ This program is free software: you can redistribute it and/or modify it under
+ the terms of the GNU General Public License as published by the Free Software
+ Foundation, version 3.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License along with
+ this program. If not, see <https://www.gnu.org/licenses/>.
+
+Files: gdb-10.2/*
+Copyright: 2013 Free Software Foundation, Inc.
+License: GPLv3+
+ This program is free software: you can redistribute it and/or modify it under
+ the terms of the GNU General Public License as published by the Free Software
+ Foundation, either version 3 of the License, or (at your option) any later
+ version.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License along with
+ this program. If not, see <https://www.gnu.org/licenses/>.

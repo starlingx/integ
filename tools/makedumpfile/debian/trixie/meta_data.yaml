@@ -1,0 +1,12 @@
+---
+debver: 1.7.7
+debname: makedumpfile
+dl_path:
+  name: 1.7.7.tar.gz
+  url: https://github.com/makedumpfile/makedumpfile/archive/refs/tags/1.7.7.tar.gz
+  sha256sum: 69b4d24ace3024cf2a41f343e162838b62b1b37d6edc7bbad4260fa36217efee
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 999fcb6e5979b5d749b8cba7fb840616389ffa69
+    SRC_DIR: ${MY_REPO}/stx/integ/tools/makedumpfile
