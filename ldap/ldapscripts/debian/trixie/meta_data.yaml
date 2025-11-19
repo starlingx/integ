@@ -1,0 +1,11 @@
+---
+debver: 2.0.8-2
+dl_path:
+  name: 2.0.8-2.tar.gz
+  url: https://github.com/gerasiov/ldapscripts/archive/refs/tags/debian/2.0.8-2.tar.gz
+  md5sum: f7c5d518d23319f0dd408cff4057a100
+  sha256sum: 68c189714d9ba4cc57d461654f3019b524b6094af167ff998133683542b01ec3
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 39bc6c35f15dc90edd5160a9e6486222cb2748ab

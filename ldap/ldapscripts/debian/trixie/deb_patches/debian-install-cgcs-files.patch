@@ -1,0 +1,23 @@
+--- a/debian/rules
++++ b/debian/rules
+@@ -3,10 +3,20 @@
+ %:
+ 	dh $@
+
++override_dh_usrlocal:
++
+ override_dh_auto_install:
+ 	$(MAKE) install DESTDIR=debian/ldapscripts PREFIX=/usr ETCDIR=/etc/ldapscripts LIBDIR=/usr/share/ldapscripts MANDIR=/usr/share/man
+ 	cp debian/runtime.debian debian/ldapscripts/usr/share/ldapscripts
+ 	rm debian/ldapscripts/etc/ldapscripts/*.sample
++	$(MAKE) install DESTDIR=debian/ldapscripts PREFIX=/usr ETCDIR=/usr/local/etc/ldapscripts
++	install -m 644 ldapscripts.conf.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
++	install -m 644 ldapadduser.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
++	install -m 644 ldapaddgroup.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
++	install -m 644 ldapmoduser.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
++	install -m 644 ldapaddsudo.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
++	install -m 644 ldapmodsudo.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
++	install -m 600 ldapscripts.passwd debian/ldapscripts/usr/local/etc/ldapscripts
+
+ override_dh_installdocs:
+ 	dh_installdocs README TODO

@@ -1,0 +1,30 @@
+From 7e1514545f00f90c4b20a20f8cc5eee824804a32 Mon Sep 17 00:00:00 2001
+From: Thiago Brito <thiago.brito@windriver.com>
+Date: Thu, 7 Jul 2022 20:53:58 -0300
+Subject: [PATCH] Chg default debconf slapd/no_configuration to true
+
+This is needed so we let StarlingX initialize the LDAP database.
+
+Signed-off-by: Thiago Brito <thiago.brito@windriver.com>
+---
+ debian/slapd.templates | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/debian/slapd.templates b/debian/slapd.templates
+index 444613c..31850c6 100644
+--- a/debian/slapd.templates
++++ b/debian/slapd.templates
+@@ -1,8 +1,8 @@
+ Template: slapd/no_configuration
+ Type: boolean
+-Default: false
++Default: true
+ _Description: Omit OpenLDAP server configuration?
+- If you enable this option, no initial configuration or database will be
++ If you disable this option, an initial configuration or database will be
+  created for you.
+ 
+ Template: slapd/dump_database
+-- 
+2.25.1
+
