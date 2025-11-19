@@ -1,0 +1,2 @@
+custom-library-search-path usr/lib/jni/libcephfs_jni.so.1.0.0 /usr/lib/jvm/default-java/lib
+custom-library-search-path usr/lib/jni/libcephfs_jni.so.1.0.0 /usr/lib/jvm/default-java/lib/server

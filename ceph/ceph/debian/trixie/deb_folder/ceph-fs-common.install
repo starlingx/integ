@@ -1,0 +1,4 @@
+usr/bin/cephfs
+usr/sbin/mount.ceph sbin
+usr/share/man/man8/cephfs.8
+usr/share/man/man8/mount.ceph.8

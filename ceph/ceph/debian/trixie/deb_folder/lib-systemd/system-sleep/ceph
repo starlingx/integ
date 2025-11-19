@@ -1,0 +1,12 @@
+#!/bin/sh
+
+#/lib/systemd/system-sleep/ceph
+
+case $1 in
+pre)
+    /bin/systemctl stop ceph
+;;
+post)
+    /bin/systemctl start ceph
+;;
+esac

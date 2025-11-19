@@ -1,0 +1,18 @@
+Description: Adds max_connections to reference configuration.
+Author: Jesse Williamson <jesse.williamson@canonical.com>
+Origin: upstream, https://github.com/civetweb/civetweb/pull/776/commits/3b8eb36676f70d06f8918ccf62029207c49cdda0
+Bug: https://github.com/civetweb/civetweb/issues/775
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/ceph/+bug/1838109
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/civetweb/resources/civetweb.conf
++++ b/src/civetweb/resources/civetweb.conf
+@@ -8,6 +8,8 @@
+ document_root .
+ listening_ports 8080
+ 
++#so_max_connections 100
++
+ # cgi_pattern **.cgi$|**.pl$|**.php$
+ # cgi_environment 
+ # put_delete_auth_file 

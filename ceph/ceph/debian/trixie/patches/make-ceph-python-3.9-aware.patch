@@ -1,0 +1,28 @@
+Description: Make Ceph Python 3.9 aware
+ Add versions of interpreters Ceph didn't know about.
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2020-11-28
+
+--- ceph-14.2.15.orig/cmake/modules/FindPython3Interp.cmake
++++ ceph-14.2.15/cmake/modules/FindPython3Interp.cmake
+@@ -69,7 +69,7 @@
+ 
+ unset(_Python3_NAMES)
+ 
+-set(_PYTHON3_VERSIONS 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
++set(_PYTHON3_VERSIONS 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
+ 
+ if(Python3Interp_FIND_VERSION)
+     if(Python3Interp_FIND_VERSION_COUNT GREATER 1)
+--- ceph-14.2.15.orig/cmake/modules/FindPython3Libs.cmake
++++ ceph-14.2.15/cmake/modules/FindPython3Libs.cmake
+@@ -101,7 +101,7 @@ endif()
+ # To avoid picking up the system Python.h pre-maturely.
+ set(CMAKE_FIND_FRAMEWORK LAST)
+ 
+-set(_PYTHON3_VERSIONS 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
++set(_PYTHON3_VERSIONS 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
+ 
+ if(Python3Libs_FIND_VERSION)
+     if(Python3Libs_FIND_VERSION_COUNT GREATER 1)
