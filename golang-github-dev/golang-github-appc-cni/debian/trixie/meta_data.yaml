@@ -1,0 +1,11 @@
+---
+debname: golang-github-appc-cni
+debver: 1.0.1-3
+dl_path:
+  name: golang-github-appc-cni-1.0.1-3.tar.gz
+  url: https://salsa.debian.org/go-team/packages/golang-github-appc-cni/-/archive/debian/1.0.1-3/golang-github-appc-cni-debian-1.0.1-3.tar.gz
+  md5sum: a884ffbc1eaa127efafd93e7599751c3
+  sha256sum: 5d7c277964860a2f6d15d8208e37909d89f47adba4292247c24f65ebba2566d0
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
