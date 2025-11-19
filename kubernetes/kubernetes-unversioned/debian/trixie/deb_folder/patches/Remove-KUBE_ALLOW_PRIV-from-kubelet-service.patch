@@ -1,0 +1,25 @@
+From c7f3a7c54c3fc5bbf8708e98e4cef145eaeb6983 Mon Sep 17 00:00:00 2001
+From: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Date: Fri, 2 Dec 2022 18:55:34 +0530
+Subject: [PATCH] Remove KUBE_ALLOW_PRIV from kubelet service
+
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+---
+ init/systemd/kubelet.service | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/init/systemd/kubelet.service b/init/systemd/kubelet.service
+index 1082bba..5808312 100644
+--- a/init/systemd/kubelet.service
++++ b/init/systemd/kubelet.service
+@@ -15,7 +15,6 @@ ExecStart=/usr/bin/kubelet \
+ 	    $KUBELET_ADDRESS \
+ 	    $KUBELET_PORT \
+ 	    $KUBELET_HOSTNAME \
+-	    $KUBE_ALLOW_PRIV \
+ 	    $KUBELET_ARGS
+ Restart=on-failure
+ KillMode=process
+-- 
+2.17.1
+

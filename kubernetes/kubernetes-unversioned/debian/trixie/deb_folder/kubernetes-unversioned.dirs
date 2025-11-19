@@ -1,0 +1,5 @@
+etc/systemd/system/kubelet.service.d
+usr/share/bash-completion/completions
+var/lib/kubelet
+var/lib/kubernetes
+run/kubernetes
