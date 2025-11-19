@@ -1,0 +1,25 @@
+From 364a0606c58f100bbec4447fb34e03fcba2821e3 Mon Sep 17 00:00:00 2001
+From: Davlet Panech <davlet.panech@windriver.com>
+Date: Tue, 29 Mar 2022 15:26:11 -0400
+Subject: [PATCH 1/2] Don't delete module metadata in deb package
+
+Pip requires module metadata to be present for installed modules,
+otherwise it can't "see" it.
+
+Signed-off-by: Davlet Panech <davlet.panech@windriver.com>
+---
+ debian/rules | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index 7955ffd..ef6314b 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -13,4 +13,3 @@ override_dh_auto_clean:
+ 
+ override_dh_auto_install:
+ 	dh_auto_install
+-	rm -rf debian/python*-nss/usr/lib/python*/dist-packages/python_nss-*.egg-info
+-- 
+2.30.2
+

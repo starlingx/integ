@@ -1,0 +1,7 @@
+---
+debname: pyzmq
+debver: 20.0.0-1
+archive: https://snapshot.debian.org/archive/debian/20240410T144822Z/pool/main/p/pyzmq/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
