@@ -1,0 +1,16 @@
+Source: grubby
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-dev@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), libblkid-dev, libpopt-dev
+Standards-Version: 4.5.1
+Homepage: https://www.github.com/rhboot/grubby
+Rules-Requires-Root: no
+
+Package: grubby
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Command line tool for updating bootloader configs
+ This package provides a grubby compatibility script that manages
+ BootLoaderSpec files and is meant to be backward compatible with
+ the previous grubby tool.
