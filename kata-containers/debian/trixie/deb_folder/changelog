@@ -1,0 +1,5 @@
+kata-containers (3.1.3) stable; urgency=medium
+
+  * Initial release
+
+   -- David Liu <david.liu@windriver.com>  Mon, 22 May 2023 23:10:58+0800
