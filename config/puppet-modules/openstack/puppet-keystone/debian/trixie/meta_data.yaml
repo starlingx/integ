@@ -1,0 +1,12 @@
+---
+debname: puppet-module-keystone
+debver: 17.4.0-2
+dl_path:
+  name: puppet-module-keystone-17.4.0-2.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-keystone/-/archive/debian/17.4.0-2/puppet-module-keystone-debian-17.4.0-2.tar.gz
+  md5sum: f9169143977abe9ef998981916a07c25
+  sha256sum: 500056d23bb29a6866c311906b9a36c580dd2bafb891444d8d3f87bb3d973207
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 8a881309730bc8338e17c08316d208309af05abb

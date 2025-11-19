@@ -1,0 +1,7 @@
+files usr/share/puppet/modules.available/puppet-puppi
+lib usr/share/puppet/modules.available/puppet-puppi
+LICENSE usr/share/puppet/modules.available/puppet-puppi
+manifests usr/share/puppet/modules.available/puppet-puppi
+metadata.json usr/share/puppet/modules.available/puppet-puppi
+spec usr/share/puppet/modules.available/puppet-puppi
+templates usr/share/puppet/modules.available/puppet-puppi

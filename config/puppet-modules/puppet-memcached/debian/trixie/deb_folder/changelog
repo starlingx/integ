@@ -1,0 +1,5 @@
+puppet-memcached (8.2.0-0) unstable; urgency=medium
+
+  * Initial release
+
+ -- Fabiano Mercer <fabiano.correamercer@windriver.com>  Mon, 01 Jul 2023 11:50:43 +0000

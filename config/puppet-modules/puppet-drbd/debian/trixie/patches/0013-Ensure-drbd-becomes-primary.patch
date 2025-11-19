@@ -1,0 +1,56 @@
+From 463dec51aae0a996a3ca9c781a6d3eeffd501bd2 Mon Sep 17 00:00:00 2001
+From: Erickson Silva de Oliveira <Erickson.SilvadeOliveira@windriver.com>
+Date: Thu, 9 Nov 2023 15:00:31 -0300
+Subject: [PATCH] Ensure drbd becomes primary
+
+Sometimes BnR does not complete because the drbd-cephmon manifest
+is not applied when trying to make it primary. To ensure that
+drbd becomes primary, a loop was added so that multiple
+attempts are made, not just one.
+
+Signed-off-by: Erickson Silva de Oliveira <Erickson.SilvadeOliveira@windriver.com>
+---
+ manifests/resource/up.pp | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/manifests/resource/up.pp b/manifests/resource/up.pp
+index 8d2f901..732634b 100644
+--- a/manifests/resource/up.pp
++++ b/manifests/resource/up.pp
+@@ -72,12 +72,23 @@ define drbd::resource::up (
+   # these resources should only be applied if we are configuring the
+   # primary node in our HA setup
+   if $ha_primary {
++    $cmd =  "/bin/true # comment to satisfy puppet syntax requirements
++set -ex
++if ! drbdadm primary ${name} ; then
++  for i in {1..10}; do
++    if drbdadm primary ${name} --force ; then
++      exit 0
++    fi
++    sleep 0.1
++  done
++  drbdadm primary ${name} --force
++fi
++"
+     # these things should only be done on the primary during initial setup
+     if $initial_setup {
+       exec { "drbd_make_primary_${name}":
+-        command => "drbdadm -- --overwrite-data-of-peer primary ${name}",
++        command => $cmd,
+         unless  => "drbdadm role ${name} | egrep '^Primary'",
+-        onlyif  => "drbdadm dstate ${name} | egrep '^Inconsistent'",
+         notify  => Exec["drbd_format_volume_${name}"],
+         before  => Exec["drbd_make_primary_again_${name}"],
+         require => Service['drbd'],
+@@ -96,7 +107,7 @@ define drbd::resource::up (
+     }
+
+     exec { "drbd_make_primary_again_${name}":
+-      command => "drbdadm primary ${name}",
++      command => $cmd,
+       unless  => "drbdadm role ${name} | egrep '^Primary'",
+       require => Service['drbd'],
+     }
+--
+2.34.1

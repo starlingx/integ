@@ -1,0 +1,15 @@
+Source: puppet-zitrlp-strongswan
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: puppet-zitrlp-strongswan
+Architecture: any
+Depends:  puppet (>= 5.2.22),
+          puppet-module-puppetlabs-stdlib,
+          ${misc:depends}
+Description: Puppet module named puppet-zitrlp-strongswan
+  This module allows management of strongswan on Debian via swanctl / VICI, route-based or otherwise.

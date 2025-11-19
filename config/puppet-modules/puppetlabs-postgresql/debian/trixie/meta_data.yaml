@@ -1,0 +1,11 @@
+---
+debname: puppet-module-puppetlabs-postgresql
+debver: 8.0.0-1
+dl_path:
+    name: puppet-module-puppetlabs-postgresql-8.0.0.tar.gz
+    url: https://github.com/puppetlabs/puppetlabs-postgresql/archive/refs/tags/v8.0.0.tar.gz
+    md5sum: 0a8e1961b31d26c83fe1f13a0238cea3
+    sha256sum: e0abbc0e39d12abff49d0f72e7765c3114276c5b2a430692fdc049d268789fd9
+revision:
+    dist: $STX_DIST
+    PKG_GITREVCOUNT: true

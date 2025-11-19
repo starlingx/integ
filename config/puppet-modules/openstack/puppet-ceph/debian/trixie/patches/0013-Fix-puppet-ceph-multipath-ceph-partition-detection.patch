@@ -1,0 +1,44 @@
+From df61ca00f106f0dbf3a2add926d55d323ca6d941 Mon Sep 17 00:00:00 2001
+From: Felipe Sanches Zanoni <Felipe.SanchesZanoni@windriver.com>
+Date: Sat, 11 Mar 2023 10:35:01 -0300
+Subject: [PATCH] Fix puppet-ceph multipath ceph partition detection
+
+The puppet-ceph module is not correctly checking the OSD
+partition when it belongs to a multipath disk or any /dev/dm-X
+device.
+
+This fix changes the parsing string when running ceph-disk list
+command to verify osd disk is already created.
+
+Signed-off-by: Felipe Sanches Zanoni <Felipe.SanchesZanoni@windriver.com>
+---
+ manifests/osd.pp | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index f77e851..f97a3ab 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -160,8 +160,17 @@ umount /var/lib/ceph/osd/ceph-${osdid}
+         # 2. The uuid for the OSD we are configuring matches the uuid for the
+         #    OSD on the disk. We don't want to attempt to re-use an OSD that
+         #    had previously been deleted.
+-        unless    => "/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep \" *$(readlink -f ${data}).*ceph data\" | grep -v unprepared | grep 'osd uuid ${uuid}'",
+-
++        unless    => "/bin/true # comment to satisfy puppet syntax requirements
++set -e
++disk=$(readlink -f ${data})
++# If disk is multipath, must add partition number at the end of string.
++if [[ \${disk} == *dm-* ]]; then
++   ceph_part=${data}-part1
++else
++   ceph_part=${data}
++fi
++/usr/sbin/ceph-disk list | grep -v 'unknown cluster' | grep \" *$(readlink -f \${ceph_part}).*ceph data\" | grep -v unprepared | grep 'osd uuid ${uuid}'
++",
+         logoutput => true,
+         timeout   => $exec_timeout,
+         tag       => 'prepare',
+-- 
+2.25.1
+

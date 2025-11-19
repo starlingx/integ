@@ -1,0 +1,3 @@
+version=3
+opts="uversionmangle=s/\.0rc/~rc/;s/\.0b1/~b1/;s/\.0b2/~b2/;s/\.0b3/~b3/" \
+https://github.com/openstack/puppet-vswitch/tags .*/(\d[brc\d\.]+)\.tar\.gz

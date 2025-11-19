@@ -1,0 +1,10 @@
+---
+debname: puppet-zitrlp-strongswan
+debver: 0.1.0
+dl_path:
+    name: zitrlp-strongswan-0.1.0.tar.gz
+    url: https://forge.puppet.com/v3/files/zitrlp-strongswan-0.1.0.tar.gz
+    sha256sum: bf145ac0f974cd2f0fa3a1f8da2d5cb86fcd2d9c116d737839c3ea5decd298d5
+revision:
+    dist: $STX_DIST
+    BASE_SRCREV: 9ddd3705b5dcb2b13741fb5698809c101267ef26

@@ -1,0 +1,13 @@
+---
+debname: puppet-module-cristifalcas-etcd
+debver: 1.12.3-3
+dl_path:
+  name: puppet-module-cristifalcas-etcd-1.12.3-3.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-cristifalcas-etcd/-/archive/debian/1.12.3-3/puppet-module-cristifalcas-etcd-debian-1.12.3-3.tar.gz  # yamllint disable-line rule:line-length
+  md5sum: 9ca374f32dad83478801a6eb4c1c52dd
+  sha256sum: ce3d08c990c390b3927e9f62a8eb1beff4d49b60da7e997f3a886fc49cf3d911
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 7a094af9d56e05d5ef15bbc41978d376818b8150
+    SRC_DIR: ${MY_REPO}/stx/integ/config/puppet-modules/puppet-etcd-1.12.3

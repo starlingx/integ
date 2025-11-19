@@ -1,0 +1,30 @@
+From 3225b87daa590664df84f87291277fa1377ab351 Mon Sep 17 00:00:00 2001
+From: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+Date: Fri, 29 Sep 2023 18:23:35 -0700
+Subject: [PATCH] Rename package name to etcd-server
+
+etcd-3.4.27 does not generate binary/package 'etcd'.
+Without this change, puppet manifest fails as it can not
+find the package etcd.
+
+Signed-off-by: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+---
+ manifests/params.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/params.pp b/manifests/params.pp
+index ea3d7f2..6ff3d44 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -4,7 +4,7 @@
+ #
+ class etcd::params {
+   $ensure = 'present'
+-  $package_name = 'etcd'
++  $package_name = 'etcd-server'
+   $manage_package = true
+   $manage_service = true
+ 
+-- 
+2.25.1
+

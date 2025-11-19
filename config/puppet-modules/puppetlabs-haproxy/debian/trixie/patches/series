@@ -1,0 +1,5 @@
+0001-Adapt-first-set-of-legacy-patches.patch
+0002-Disable-configuration-validation-during-manifest-app.patch
+0003-Fix-global_options-log-default-value.patch
+0004-Stop-invalid-warning-message.patch
+0005-Adjust-puppet-haproxy-dependency-requirements.patch

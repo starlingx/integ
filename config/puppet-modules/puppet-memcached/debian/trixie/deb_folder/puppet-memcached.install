@@ -1,0 +1,6 @@
+lib usr/share/puppet/modules.available/puppet-memcached
+LICENSE usr/share/puppet/modules.available/puppet-memcached
+manifests usr/share/puppet/modules.available/puppet-memcached
+metadata.json usr/share/puppet/modules.available/puppet-memcached
+spec usr/share/puppet/modules.available/puppet-memcached
+templates usr/share/puppet/modules.available/puppet-memcached

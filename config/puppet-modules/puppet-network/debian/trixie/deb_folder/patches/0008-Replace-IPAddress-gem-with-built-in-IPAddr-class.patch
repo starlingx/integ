@@ -1,0 +1,139 @@
+From cd56008065f243edad1b5637565572f766b28dea Mon Sep 17 00:00:00 2001
+From: Luis Marquitti <luis.eduardoangelinimarquitti@windriver.com>
+Date: Mon, 12 Jun 2023 18:25:11 -0300
+Subject: [PATCH] Replace IPAddress gem with built-in IPAddr class
+
+During bootstrap, puppet throws a warning message that 'ipaddress gem
+was not found'.
+The puppet-network module uses the IPAddress gem to perform some
+validations.
+This gem can be replaced by the built-in class IPAddr and that way does
+not require the custom gem installation.
+
+Signed-off-by: Luis Marquitti <luis.eduardoangelinimarquitti@windriver.com>
+---
+ README.md                         | 10 ++--------
+ lib/puppet/type/network_config.rb | 22 ++++++++++++++++------
+ manifests/init.pp                 | 12 +++++-------
+ 3 files changed, 23 insertions(+), 21 deletions(-)
+
+diff --git a/README.md b/README.md
+index 2d1d6d0..2eaa0dd 100644
+--- a/README.md
++++ b/README.md
+@@ -109,10 +109,8 @@ This module requires the FileMapper mixin, available at <https://github.com/voxp
+ The network_config type requires the Boolean mixin, available at <https://github.com/adrienthebo/puppet-boolean>.
+ 
+ The debian routes provider requires the package [ifupdown-extra](http://packages.debian.org/search?suite=all&section=all&arch=any&searchon=names&keywords=ifupdown-extra).
+-The `network_config` class requires the `ipaddress` gem, which needs to be
+-installed on both the puppet master and the nodes. `ifupdown-extra` and
+-`ipaddress` can be installed automatically using the `network` class. To use it,
+-include it like so in your manifests:
++`ifupdown-extra` can be installed automatically using the `network` class.
++To use it, include it like so in your manifests:
+ 
+ ```puppet
+ include '::network'
+@@ -122,10 +120,6 @@ This class also provides fine-grained control over which packages to install and
+ how to install them. The documentation for the parameters exposed can be found
+ [here](https://github.com/voxpupuli/puppet-network/blob/master/manifests/init.pp).
+ 
+-The `ipaddress` gem can also be installed manually with:
+-
+-    sudo gem install ipaddress --no-ri --no-rdoc
+-
+ Note: you may also need to update your master's plugins (run on your puppet master):
+ 
+     puppet agent -t --noop
+diff --git a/lib/puppet/type/network_config.rb b/lib/puppet/type/network_config.rb
+index e776617..9822c3b 100644
+--- a/lib/puppet/type/network_config.rb
++++ b/lib/puppet/type/network_config.rb
+@@ -1,9 +1,9 @@
+ require 'puppet/property/boolean'
+ 
+ begin
+-  require 'ipaddress'
++  require 'ipaddr'
+ rescue LoadError
+-  Puppet.warning("#{__FILE__}:#{__LINE__}: ipaddress gem was not found")
++  Puppet.warning("#{__FILE__}:#{__LINE__}: ipaddr gem was not found")
+ end
+ 
+ Puppet::Type.newtype(:network_config) do
+@@ -31,9 +31,11 @@ Puppet::Type.newtype(:network_config) do
+ 
+   newproperty(:ipaddress) do
+     desc 'The IP address of the network interfaces'
+-    if defined? IPAddress
++    if defined? IPAddr
+       validate do |value|
+-        raise ArgumentError, "#{self.class} requires a valid ipaddress for the ipaddress property" unless IPAddress.valid? value
++        IPAddr.new value
++      rescue IPAddr::InvalidAddressError
++        raise ArgumentError, "#{self.class} requires a valid ipaddress for the ipaddress property"
+         # provider.validate
+       end
+     end
+@@ -41,9 +43,17 @@ Puppet::Type.newtype(:network_config) do
+ 
+   newproperty(:netmask) do
+     desc 'The subnet mask to apply to the interface'
+-    if defined? IPAddress
++    if defined? IPAddr
+       validate do |value|
+-        raise ArgumentError, "#{self.class} requires a valid netmask for the netmask property" unless IPAddress.valid_ipv4_netmask? value
++        ipa = IPAddr.new '127.0.0.1'
++        ipa.mask(value)
++      rescue IPAddr::InvalidAddressError
++        begin
++          ipz = IPAddr.new '::1'
++          ipz.mask(value)
++        rescue IPAddr::InvalidAddressError
++          raise ArgumentError, "#{self.class} requires a valid netmask for the netmask property"
++        end
+         # provider.validate
+       end
+     end
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 5465c58..03f736f 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -48,12 +48,12 @@
+ #
+ # [*ensure_ipaddress*]
+ #
+-# What state the ifupdown-extra package should be in
++# What state the ipaddress package should be in
+ #
+-# Default: present
++# Default: absent
+ #
+ 
+-class network(
++class network (
+   $ifupdown_extra          = 'ifupdown-extra',
+   $ifupdown_extra_provider = undef,
+   $manage_ifupdown_extra   = true,
+@@ -61,10 +61,9 @@ class network(
+   $ipaddress               = 'ipaddress',
+   $ipaddress_provider      = 'puppet_gem',
+   $manage_ipaddress        = true,
+-  $ensure_ipaddress        = present,
++  $ensure_ipaddress        = absent,
+ ) {
+-
+-  if $::osfamily == 'Debian' and $manage_ifupdown_extra {
++  if $facts['os']['family'] == 'Debian' and $manage_ifupdown_extra {
+     package { $ifupdown_extra:
+       ensure   => $ensure_ifupdown_extra,
+       provider => $ifupdown_extra_provider,
+@@ -79,5 +78,4 @@ class network(
+     }
+     Package[$ipaddress] -> Network_config <| |>
+   }
+-
+ }
+-- 
+2.25.1
+

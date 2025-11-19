@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "${1}" = "remove" ] || [ "${1}" = "upgrade" || [ "${1}" = "deconfigure" ]; then
+    update-alternatives --remove puppet-module-ceph /usr/share/puppet/modules.available/puppet-ceph
+fi
+
+#DEBHELPER#
+
+exit 0

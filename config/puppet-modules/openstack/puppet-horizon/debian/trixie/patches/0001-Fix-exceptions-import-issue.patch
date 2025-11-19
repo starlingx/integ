@@ -1,0 +1,32 @@
+From f8345f5a23f681d799acd7ed0288f37dbedbe619 Mon Sep 17 00:00:00 2001
+From: lsampaio <luis.sampaio@windriver.com>
+Date: Mon, 9 May 2022 15:05:43 -0300
+Subject: [PATCH] Fix exceptions import issue
+
+The puppet-module horizon 17.4.0-4 version has an error in the
+debian packaging. The "fix-local-settings-for-debian.patch"
+(included in the package) removes wrongly the
+openstack_dashboard.exceptions import. This module overrides the
+openstack-dashboard local_settings.py module during the unlocking
+process and horizon service fails to get enabled.
+
+Signed-off-by: Jorge Saffe <jorge.saffe@windriver.com>
+---
+ templates/local_settings.py.erb | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/templates/local_settings.py.erb b/templates/local_settings.py.erb
+index 5796a0f..cb24bf4 100644
+--- a/templates/local_settings.py.erb
++++ b/templates/local_settings.py.erb
+@@ -19,6 +19,7 @@ from django.utils.translation import ugettext_lazy as _
+ from horizon.utils import secret_key
+ 
+ from openstack_dashboard.settings import HORIZON_CONFIG
++from openstack_dashboard import exceptions
+ 
+ DEBUG = <%= @django_debug.to_s.capitalize %>
+ 
+-- 
+2.35.1
+

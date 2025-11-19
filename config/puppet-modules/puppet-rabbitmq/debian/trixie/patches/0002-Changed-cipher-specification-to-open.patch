@@ -1,0 +1,35 @@
+From 9bccb304fba160beff7cf6c8301bc08abcb2dfc8 Mon Sep 17 00:00:00 2001
+From: Al Bailey <Al.Bailey@windriver.com>
+Date: Thu, 2 Nov 2017 09:22:58 -0500
+Subject: [PATCH] WRS: Patch2:
+ 0002-Changed-cipher-specification-to-openssl-format.patch
+
+---
+ templates/rabbitmq.config.erb | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/templates/rabbitmq.config.erb b/templates/rabbitmq.config.erb
+index af45aa8..606034a 100644
+--- a/templates/rabbitmq.config.erb
++++ b/templates/rabbitmq.config.erb
+@@ -79,7 +79,7 @@
+                    <%- end -%>
+                    <%- if @ssl_ciphers and @ssl_ciphers.size > 0 -%>
+                    ,{ciphers,[
+-                     <%= @ssl_ciphers.sort.map{|k| "{#{k}}"}.join(",\n                     ") %>
++                     <%= @ssl_ciphers.sort.map{|k| "\"#{k}\""}.join(",\n                     ") %>
+                    ]}
+                    <%- end -%>
+                   ]},
+@@ -122,7 +122,7 @@
+                    <%- end -%>
+                   <%- if @ssl_ciphers and @ssl_ciphers.size > 0 -%>
+                   ,{ciphers,[
+-                      <%= @ssl_ciphers.sort.map{|k| "{#{k}}"}.join(",\n                      ") %>
++                      <%= @ssl_ciphers.sort.map{|k| "\"#{k}\""}.join(",\n                      ") %>
+                   ]}
+                   <%- end -%>
+                  ]}
+-- 
+2.30.0
+
