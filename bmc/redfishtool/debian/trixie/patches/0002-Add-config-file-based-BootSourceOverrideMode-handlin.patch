@@ -1,0 +1,131 @@
+From: Eric Macdonald <eric.macdonald@windriver.com>
+Date: Sun, 15 Dec 2024 22:41:27 +0000
+Subject: Add config file based BootSourceOverrideMode handling to
+ setBootOveride
+
+This patch reads /etc/redfishtool/redfishtool.ini config file in
+search for the setBootOverride_overrides section that has a
+list of manufacturers and models that should not receive the
+BootSourceOverrideMode key:value pair as part of the payload
+to the 'setBootOverride Once <target>' patch request.
+
+[setBootOverride_overrides]
+   exclude_BootSourceOverrideMode_Models = "<model>", "<model>"
+   exclude_BootSourceOverrideMode_Manufacturers = "<manufacturer>"
+
+If current server is found in either the models or manufacturers lists
+then it is excluded from getting the BootSourceOverrideMode key:value
+pair added to the 'setBootOverride Once <target>' patch request.
+
+Signed-off-by: Eric Macdonald <eric.macdonald@windriver.com>
+---
+ redfishtoollib/Systems.py | 78 ++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 73 insertions(+), 5 deletions(-)
+
+diff --git a/redfishtoollib/Systems.py b/redfishtoollib/Systems.py
+index a0be4ad..6abee66 100644
+--- a/redfishtoollib/Systems.py
++++ b/redfishtoollib/Systems.py
+@@ -503,6 +503,65 @@ class RfSystemsOperations():
+         return op.iterate_op(op.setIndicatorLed_single, sc, op, rft, cmdTop=cmdTop, prop=prop)
+ 
+ 
++    def get_exclude_BootSourceOverrideMode(self, rft, d):
++        """
++        Query redfishtool.ini for models or manufacturers that should not
++        not have the BootSourceOverrideMode key:value pair added to the
++        setBootOverride patch request.
++        """
++
++        # include the config file parser
++        import configparser
++
++        manufacturer=d["Manufacturer"]
++        model=d["Model"]
++        rft.printVerbose(4, "Manufacturer: {}".format(d["Manufacturer"]))
++        rft.printVerbose(4, "Model       : {}".format(d["Model"]))
++
++        # the config file path
++        config_file="/etc/redfishtool/redfishtool.ini"
++        config = configparser.ConfigParser()
++        # read the configuration file
++        files_read = config.read(config_file)
++        if not files_read:
++            rft.printVerbose(0, "Configuration file '{}' not found or could not be read.".format(config_file))
++            return(False)
++
++        section="setBootOverride_overrides"
++        exclude_BootSourceOverrideMode_Models="exclude_BootSourceOverrideMode_Models"
++        exclude_BootSourceOverrideMode_Manufacturers="exclude_BootSourceOverrideMode_Manufacturers"
++
++        # get the model and manufacturers exclude lists
++        exclude_models_list=[]
++        exclude_manufacturers_list=[]
++        exclude_BootSourceOverrideMode=False
++
++        # don't fail based on missing file. Just run with default behavior.
++        if section in config:
++            if exclude_BootSourceOverrideMode_Models not in config[section]:
++                rft.printVerbose(4, "Option '{}' not found in section '{}' of the configuration file {}."\
++                                 .format(exclude_BootSourceOverrideMode_Models, section, config_file))
++            else:
++                exclude_models_list = config[section][exclude_BootSourceOverrideMode_Models]
++                rft.printVerbose(4, "Models Exclude List: {}".format(exclude_models_list))
++
++            if exclude_BootSourceOverrideMode_Manufacturers not in config[section]:
++                rft.printVerbose(4, "Option '{}' not found in section '{}' of the configuration file {}."\
++                                 .format(exclude_BootSourceOverrideMode_Manufacturers, section, config_file))
++            else:
++                exclude_manufacturers_list = config[section][exclude_BootSourceOverrideMode_Manufacturers]
++                rft.printVerbose(4, "Manufacturer Exclude List: {}".format(exclude_manufacturers_list))
++
++            exclude_BootSourceOverrideMode=False
++            if model in exclude_models_list:
++                rft.printVerbose(0, "Excluding BootSourceOverrideMode for server model: '{}'".format(model))
++                exclude_BootSourceOverrideMode = True
++            elif manufacturer in exclude_manufacturers_list:
++                rft.printVerbose(0, "Excluding BootSourceOverrideMode for server manufacturer: '{}'".format(manufacturer))
++                exclude_BootSourceOverrideMode = True
++        return (exclude_BootSourceOverrideMode)
++
++
+     def setBootOverride_single(self,sc,op,rft,cmdTop=False, prop=None):
+         # this operation has argument syntaxes below:
+         #     ...setBootOverride <enabledVal> [<targetVal>]
+@@ -533,11 +592,17 @@ class RfSystemsOperations():
+         #now read target,
+         # we will need to check that the properties we are patching are there, and chk for etag hdr
+         #  and to see if the value specified is one of the allowable values for this rhost
+-        rc,r,j,d=op.get(sc,op,rft,prop="Boot")
++        rc,r,j,d=op.get(sc,op,rft)
+         if(rc != 0):
+             print("Error, can't read boot properties from remote service")
+             return(8,None,False,None)
+-        
++
++        # this call will open the redfishtool.ini file and search for server models or
++        # manufacturers that don't support or behave well when the 'setBootOverride Once <target>'
++        # key:value pair is part of the payload of the PATCH method.
++        # If found then a True (to exclude) is returned.
++        exclude_BootSourceOverrideMode = op.get_exclude_BootSourceOverrideMode(rft, d)
++
+         # verify that they have a BootSourceOverrideEnabled  prop
+         bootRes=d["Boot"]
+         if( not "BootSourceOverrideEnabled" in bootRes ):
+@@ -587,10 +652,13 @@ class RfSystemsOperations():
+ 
+             # Get the value of "BootSourceOverrideTarget" property and pass it in the patch request.
+             # Some HW vendors need this property to be passed explicitly.
+-            if "BootSourceOverrideMode" in d["Boot"]:
+-                patchData={"Boot": {"BootSourceOverrideEnabled": enabledVal, "BootSourceOverrideTarget": targetVal, "BootSourceOverrideMode": d["Boot"]["BootSourceOverrideMode"] } }
++            if exclude_BootSourceOverrideMode is True:
++                patchData={"Boot": {"BootSourceOverrideEnabled": enabledVal,\
++                                    "BootSourceOverrideTarget": targetVal } }
+             else:
+-                patchData={"Boot": {"BootSourceOverrideEnabled": enabledVal, "BootSourceOverrideTarget": targetVal } }
++                patchData={"Boot": {"BootSourceOverrideEnabled": enabledVal,\
++                                    "BootSourceOverrideTarget": targetVal,\
++                                    "BootSourceOverrideMode": d["Boot"]["BootSourceOverrideMode"] } }
+ 
+             #call the generic patch command to send the patch.  This takes care of etag support
+             rc,r,j,d=rft.patchResource(rft, r, patchData)

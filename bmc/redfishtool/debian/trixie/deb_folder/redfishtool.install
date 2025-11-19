@@ -1,0 +1,4 @@
+usr/bin/redfishtool
+usr/bin/redfishtool.py
+usr/lib/python3/dist-packages/redfishtoollib/*
+etc/redfishtool/redfishtool.ini
