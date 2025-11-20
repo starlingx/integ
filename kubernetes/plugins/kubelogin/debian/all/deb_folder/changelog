@@ -1,0 +1,5 @@
+kubelogin (1.34.2) unstable; urgency=medium
+
+  * Initial packaging
+
+ -- Rei Oliveira <Reinildes.JoseMateusOliveira@windriver.com>  Mon, 24 Nov 2025 14:16:48 +0000

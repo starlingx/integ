@@ -1,0 +1,12 @@
+Source: kubelogin
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), unzip
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: kubelogin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, unzip
+Description: Kubernetes Kube OIDC Login Plugin

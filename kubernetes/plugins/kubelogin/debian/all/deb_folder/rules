@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+# vim: set expandtab!
+# export DH_VERBOSE = 1
+
+export KUBELOGIN_PKG = kubelogin_linux_amd64.zip
+export ROOT = debian/tmp
+export SBIN_DIR = $(ROOT)/usr/sbin
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Extract the third party kubelogin downloaded in files folder
+	unzip $(KUBELOGIN_PKG)
+	cp kubelogin kubectl-oidc_login
+
+override_dh_auto_install:
+	install -d -m 755 $(SBIN_DIR)
+	install -p -D -m 755 kubectl-oidc_login $(SBIN_DIR)
+
+override_dh_usrlocal:
+	# Do Nothing
+
+override_dh_dwz:
+	@echo "Skipping dwz for Go binaries"
