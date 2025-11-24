@@ -1,6 +1,6 @@
 From: Miroslav Lichvar <mlichvar@redhat.com>
 Date: Wed, 18 May 2022 11:33:38 +0200
-Subject: [PATCH 10/65] phc2sys: Don't exit when reading of PHC fails with
+Subject: [PATCH 10/67] phc2sys: Don't exit when reading of PHC fails with
  EBUSY.
 
 Reading of the PHC can occasionally fail with some drivers, e.g. the ice

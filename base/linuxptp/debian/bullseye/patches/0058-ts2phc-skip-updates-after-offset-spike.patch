@@ -1,6 +1,6 @@
 From: cwalker <cole.walker@windriver.com>
 Date: Tue, 20 Feb 2024 17:25:17 +0000
-Subject: [PATCH 58/65] Implement logic to skip updates with offset spike.
+Subject: [PATCH 58/67] Implement logic to skip updates with offset spike.
 
 This change allows ts2phc to be configured to ignore timing updates that
 have a large offset spike in order to mitigate the resulting timing

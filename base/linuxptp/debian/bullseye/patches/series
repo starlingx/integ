@@ -64,3 +64,4 @@
 0064-Fix-HA-PTP4l-instance-down-osclock-swinging.patch
 0065-Fix-osclock-swinging-when-pmc-timeout.patch
 0066-ts2phc-Add-serial-baudrate-option.patch
+0067-phc2sys-Downgrade-log-message-timeout-read-pmc.patch

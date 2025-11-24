@@ -1,6 +1,6 @@
 From: Tara Subedi <Tara.Subedi@windriver.com>
 Date: Tue Jun 17 11:15:26 2025 -0400
-Subject: [PATCH 65/65] Fix osclock swinging when pmc timeout
+Subject: [PATCH 65/67] Fix osclock swinging when pmc timeout
 
 Phc2sys error 'timeout reading pmc tpd' causes rms spike
 
