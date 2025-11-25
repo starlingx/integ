@@ -1,11 +1,11 @@
 ---
 debname: dpdk
-debver: 20.11.7-1~deb11u1
+debver: 24.11.2-2
 dl_path:
-  name: dpdk-debian-20.11.7-1_deb11u1.tar.gz
-  url: https://salsa.debian.org/debian/dpdk/-/archive/debian/20.11.7-1_deb11u1/dpdk-debian-20.11.7-1_deb11u1.tar.gz
-  md5sum: 4bb547ab663ec787833cd43fe3d20f1c
-  sha256sum: ae62bc916a41f14e957ee7440b94dfb0e22a1d0dd6c1371cb628eab4fb74befd
+  name: dpdk-debian-24.11.2-2.tar.gz
+  url: https://salsa.debian.org/debian/dpdk/-/archive/debian/24.11.2-2/dpdk-debian-24.11.2-2.tar.gz
+  md5sum: 2e1fccac5e60e5388c3f0de03b0a94ed
+  sha256sum: 9671fda5880e9371ecf3aa294e106ee0f4988313989c81da1c62d67b36af6b96
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
