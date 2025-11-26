@@ -6,9 +6,9 @@ dl_path:
   url: https://github.com/containerd/containerd/releases/download/v1.7.27/containerd-1.7.27-linux-amd64.tar.gz
   sha256sum: 5b038fb22ab5dbb1ce57dd3d8f102460cd8619ff2afc78870837b06e8c4e840a
 src_files:
-  - debian/files/config.toml
-  - debian/files/containerd.service
-  - debian/files/k8s-container-cleanup.sh
+  - debian/all/files/config.toml
+  - debian/all/files/containerd.service
+  - debian/all/files/k8s-container-cleanup.sh
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
