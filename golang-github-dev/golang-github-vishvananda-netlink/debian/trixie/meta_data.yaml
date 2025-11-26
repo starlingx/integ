@@ -1,11 +1,11 @@
 ---
 debname: golang-github-vishvananda-netlink
-debver: 1.1.0.125.gf243826-4
+debver: 1.3.0-2
 dl_path:
-  name: golang-github-vishvananda-debian-1.1.0.125.gf243826-4.tar.gz
-  url: https://salsa.debian.org/go-team/packages/golang-github-vishvananda-netlink/-/archive/debian/1.1.0.125.gf243826-4/golang-github-vishvananda-netlink-debian-1.1.0.125.gf243826-4.tar.gz  # yamllint disable-line rule:line-length
-  md5sum: f6446c199670cdd89690f3366cf18916
-  sha256sum: 8db9eaf59ab220c5205c97ff1bb38ca76ad7760afdf8778746db318b76515c95
+  name: golang-github-vishvananda-debian-1.3.0-2.tar.gz
+  url: https://salsa.debian.org/go-team/packages/golang-github-vishvananda-netlink/-/archive/debian/1.3.0-2/golang-github-vishvananda-netlink-debian-1.3.0-2.tar.gz  # yamllint disable-line rule:line-length
+  md5sum: 95cabab829db924159014c3aeb7d2676
+  sha256sum: b75a3337c0f1b839799fb2e670fcf28fde094a0f246a421e426d4862b737f227
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
