@@ -1,7 +1,7 @@
 ---
-debver: 5.16-1
+debver: 5.16-1.1
 dl_hook: dl_hook
-archive: https://snapshot.debian.org/archive/debian/20200424T151944Z/pool/main/w/watchdog
+archive: https://snapshot.debian.org/archive/debian/20250721T022532Z/pool/main/w/watchdog/
 dl_files:
   meta-lat.tar.gz:
     topdir: null

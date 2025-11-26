@@ -1,0 +1,24 @@
+From 4377c7dfb2e434b742fa9e94f1bd0e0b4fc25a18 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 4 Jul 2025 05:15:45 +0000
+Subject: [PATCH] Fix build issues
+
+---
+ debian/control | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/control b/debian/control
+index c42e324..9802fca 100644
+--- a/debian/control
++++ b/debian/control
+@@ -6,6 +6,7 @@ Uploaders: Timo Aaltonen <tjaalton@debian.org>
+ Build-Depends: debhelper-compat (= 12),
+  dh-python,
+  python3-all-dev,
++ python3-setuptools,
+  libnss3-dev,
+ Standards-Version: 4.5.1
+ Homepage: https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/Python_binding_for_NSS
+-- 
+2.47.2
+
