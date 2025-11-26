@@ -30,16 +30,17 @@ index f30c171..b236c4a 100644
 @@ -262,15 +271,6 @@ if_register_socket(struct interface_info
  		log_fatal("includes a bootp server.");
  	}
- 
+
 -#if defined(SO_BINDTODEVICE)
 -	/* Bind this socket to this interface. */
 -	if ((local_family != AF_INET6) && (info->ifp != NULL) &&
 -	    setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,
--			(char *)(info -> ifp), sizeof(*(info -> ifp))) < 0) {
--		log_fatal("setsockopt: SO_BINDTODEVICE: %m");
+-		       (char *)(info -> ifp), sizeof(*(info -> ifp))) < 0) {
+-		log_fatal("Can't set SO_BINDTODEVICE on dhcp socket for"
+-			  " %s : %m", (char *)(info->ifp));
 -	}
 -#endif
--
+
  	/* IP_BROADCAST_IF instructs the kernel which interface to send
  	 * IP packets whose destination address is 255.255.255.255.  These
  	 * will be treated as subnet broadcasts on the interface identified
