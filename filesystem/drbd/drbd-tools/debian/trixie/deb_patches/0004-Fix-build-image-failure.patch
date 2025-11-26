@@ -1,0 +1,24 @@
+From 3cc1b0f93d6391bf197256324be46180e7cd3aa2 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Wed, 10 Sep 2025 06:28:42 -0400
+Subject: [PATCH] Fix build-image failure
+
+---
+ debian/rules | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index 9d841ca..4a2f27c 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -22,7 +22,6 @@ override_dh_auto_configure:
+ 		--with-rgmanager \
+ 		--with-bashcompletion \
+ 		--with-initscripttype=both \
+-		--with-systemdunitdir=/lib/systemd/system \
+ 		--with-bashcompletion=no
+ 
+ override_dh_auto_install:
+-- 
+2.43.0
+
