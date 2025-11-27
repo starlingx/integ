@@ -1,0 +1,47 @@
+From bd35dbddcfb439709a3812c3884dc969db83113f Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Mon, 13 Oct 2025 13:27:05 -0400
+Subject: [PATCH] Fix deprecated $:: syntax for Puppet 8.10 compatibility
+
+Remove deprecated $:: prefix from all variable references for 
+Puppet 8.10 compatibility.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/iscsid.pp          | 2 +-
+ manifests/openstackclient.pp | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/manifests/iscsid.pp b/manifests/iscsid.pp
+index c4d727d..315a889 100644
+--- a/manifests/iscsid.pp
++++ b/manifests/iscsid.pp
+@@ -26,7 +26,7 @@ class openstacklib::iscsid(
+ 
+   package { 'open-iscsi':
+     ensure => $package_ensure,
+-    name   => $::openstacklib::params::open_iscsi_package_name,
++    name   => $openstacklib::params::open_iscsi_package_name,
+     tag    => 'openstack',
+   }
+ 
+diff --git a/manifests/openstackclient.pp b/manifests/openstackclient.pp
+index eee6876..1e600ac 100644
+--- a/manifests/openstackclient.pp
++++ b/manifests/openstackclient.pp
+@@ -10,10 +10,10 @@
+ #
+ #  [*package_name*]
+ #    (Optional) The name of the package to install
+-#    Defaults to $::openstacklib::params::openstackclient_package_name
++#    Defaults to $openstacklib::params::openstackclient_package_name
+ #
+ class openstacklib::openstackclient(
+-  $package_name   = $::openstacklib::params::openstackclient_package_name,
++  $package_name   = $openstacklib::params::openstackclient_package_name,
+   $package_ensure = 'present',
+ ) inherits openstacklib::params {
+ 
+-- 
+2.43.0
+
