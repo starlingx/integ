@@ -4,7 +4,7 @@
 	dh $@
 
 override_dh_auto_build:
-	go build -mod=vendor -ldflags=-linkmode=external
+	GO111MODULE=on go build -mod=vendor -ldflags=-linkmode=external
 
 override_dh_auto_test:
 	echo "do nothing"
