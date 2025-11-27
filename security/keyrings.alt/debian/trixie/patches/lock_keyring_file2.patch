@@ -1,52 +1,63 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so porting lock_keyring_file2.patch
-to package keyrings.alt
+From e9a1bd393fe39fed7aa65b5462d92add85e2124a Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Tue, 2 Sep 2025 16:20:14 -0400
+Subject: [PATCH 03/10] Load and update keyring only when get the lock
 
-Index: keyring-5.3/keyrings/alt/file_base.py
-===================================================================
---- keyring-5.3.orig/keyrings/alt/file_base.py
-+++ keyring-5.3/keyrings/alt/file_base.py
-@@ -135,10 +135,6 @@ class Keyring(FileBacked, KeyringBackend
+This patch improved the locking introduced in previoue patch. Only load
+the kerying and update it when the lock is obtained.
+
+Signed-off-by: Andy Ning <andy.ning@windriver.com>
+---
+ keyrings/alt/file_base.py | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index 5c647bb..1d8b769 100644
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -135,10 +135,6 @@ class Keyring(FileBacked, KeyringBackend):
          # ensure the file exists
          self._ensure_file_path()
  
 -        # load the keyring from the disk
 -        config = configparser.RawConfigParser()
--        config.read(self.file_path)
+-        config.read(self.file_path, encoding='utf-8')
 -
          # obtain lock for the keyring file
          lock = ''
          i = 60
-@@ -150,18 +146,23 @@ class Keyring(FileBacked, KeyringBackend
+@@ -150,18 +146,23 @@ class Keyring(FileBacked, KeyringBackend):
                  time.sleep(0.500)
                  i=i-1
  
 -        service = escape_for_ini(service)
 -        key = escape_for_ini(key)
--
++        if i:
++            # Load the keyring from the disk
++            config = configparser.RawConfigParser()
++            config.read(self.file_path, encoding='utf-8')
+ 
 -        # update the keyring with the password
 -        if not config.has_section(service):
 -            config.add_section(service)
 -        config.set(service, key, value)
--
-         if i:
--            # save the keyring back to the file
-+            # Load the keyring from the disk
-+            config = configparser.RawConfigParser()
-+            config.read(self.file_path)
-+
 +            service = escape_for_ini(service)
 +            key = escape_for_ini(key)
-+
+ 
+-        if i:
+-            # save the keyring back to the file
 +            # Update the keyring with the password
 +            if not config.has_section(service):
 +                config.add_section(service)
 +            config.set(service, key, value)
 +
 +            # Save the keyring back to the file
-             with open(self.file_path, 'w') as config_file:
+             with open(self.file_path, 'w', encoding='utf-8') as config_file:
                  config.write(config_file)
 +
              lock.close()
              os.remove('/tmp/.keyringlock')
  
+-- 
+2.34.1
+

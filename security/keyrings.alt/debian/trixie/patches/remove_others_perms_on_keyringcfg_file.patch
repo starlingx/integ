@@ -1,19 +1,32 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so porting remove_others_perms_on_keyringcfg_file.patch
-to package keyrings.alt
+From 7afc65b67c400e3fcd0c6321e23a7da46da575b7 Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Tue, 16 Sep 2025 14:16:32 +0000
+Subject: [PATCH 10/10] remove others read permission from keyring file
 
+A previous change had set permission 644 on the crypted password file.
+Update this to 640.
+
+A pre-StarlingX patch.  This file should only be readable by root user
+or root group member.
+
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
 ---
- keyring/backends/file.py |    2 +-
+ keyrings/alt/file_base.py | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index 8e25b13..3c2e36b 100644
 --- a/keyrings/alt/file_base.py
 +++ b/keyrings/alt/file_base.py
-@@ -197,7 +197,7 @@ class Keyring(FileBacked, KeyringBackend
+@@ -193,7 +193,7 @@ class Keyring(FileBacked, KeyringBackend):
              # create the file without group/world permissions
-             with open(self.file_path, 'w'):
+             with open(self.file_path, 'w', encoding='utf-8'):
                  pass
 -            user_read_write = 0o644
 +            user_read_write = 0o640
              os.chmod(self.file_path, user_read_write)
          if not os.path.isfile(lockdir + "/" + lockfile):
              with open(lockdir + "/" + lockfile, 'w'):
+-- 
+2.34.1
+

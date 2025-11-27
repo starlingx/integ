@@ -1,21 +1,35 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so moving the codes related to keyring
-backends of use_new_lock.patch to package keyrings.alt
+From d647785a7a0fb60feac1059863a6352f2190efd7 Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Wed, 3 Sep 2025 13:55:10 -0400
+Subject: [PATCH 04/10] Update to use oslo_concurrency lock
 
+This patch updated the keyring access locking to use oslo_concurrency
+lock, which is better implementation than using arbitrary file.
+
+This patch also introduced a backup of keyring storage file.
+
+Signed-off-by: Andy Ning <andy.ning@windriver.com>
+---
+ keyrings/alt/file.py      |  56 ++++++++++++++++++---
+ keyrings/alt/file_base.py | 100 ++++++++++++++++++++++++++------------
+ 2 files changed, 117 insertions(+), 39 deletions(-)
+
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index 1d8b769..58ac0c5 100644
 --- a/keyrings/alt/file_base.py
 +++ b/keyrings/alt/file_base.py
-@@ -3,6 +3,8 @@ from __future__ import with_statement
- import os
+@@ -1,6 +1,8 @@
  import abc
- import time
-+import logging
-+import shutil
  import configparser
- from base64 import encodebytes, decodebytes
++import logging
+ import os
++import shutil
+ import time
+ from base64 import decodebytes, encodebytes
  
-@@ -10,6 +12,7 @@ from keyring.errors import PasswordDelet
- from keyring.backend import KeyringBackend
- from keyring.util import platform_, properties
+@@ -10,6 +12,7 @@ from keyring.errors import PasswordDeleteError
+ from keyring.util import platform_
+ 
  from .escape import escape as escape_for_ini
 +from oslo_concurrency import lockutils
  
@@ -36,7 +50,7 @@ backends of use_new_lock.patch to package keyrings.alt
      @abc.abstractproperty
      def scheme(self):
          """
-@@ -112,6 +123,16 @@ class Keyring(FileBacked, KeyringBackend
+@@ -112,6 +123,16 @@ class Keyring(FileBacked, KeyringBackend):
              password = None
          return password
  
@@ -53,13 +67,13 @@ backends of use_new_lock.patch to package keyrings.alt
      def set_password(self, service, username, password):
          """Write the password in the file."""
          if not username:
-@@ -132,24 +153,36 @@ class Keyring(FileBacked, KeyringBackend
+@@ -132,24 +153,35 @@ class Keyring(FileBacked, KeyringBackend):
          return (escape_for_ini(service) + r'\0' + escape_for_ini(username)).encode()
  
      def _write_config_value(self, service, key, value):
 -        # ensure the file exists
 -        self._ensure_file_path()
- 
+-
 -        # obtain lock for the keyring file
 -        lock = ''
 -        i = 60
@@ -70,6 +84,12 @@ backends of use_new_lock.patch to package keyrings.alt
 -            else:
 -                time.sleep(0.500)
 -                i=i-1
+-
+-        if i:
+-            # Load the keyring from the disk
+-            config = configparser.RawConfigParser()
+-            config.read(self.file_path, encoding='utf-8')
++
 +        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
 +
 +            # ensure the file exists
@@ -79,7 +99,7 @@ backends of use_new_lock.patch to package keyrings.alt
 +            try:
 +                # Load the keyring from the disk
 +                config = configparser.RawConfigParser()
-+                config.read(self.file_path)
++                config.read(self.file_path, encoding='utf-8')
 +            except configparser.ParsingError as e:
 +                logging.warning("set_password: keyring file corrupted, Reverting to Backup")
 +                # Revert to the backup file (copy backup over current file)
@@ -93,20 +113,15 @@ backends of use_new_lock.patch to package keyrings.alt
 +                # Load the keyring from the disk, if this fails exception is raised
 +                try:
 +                    config = configparser.RawConfigParser()
-+                    config.read(self.file_path)
++                    config.read(self.file_path, encoding='utf-8')
 +                except:
 +                    e = sys.exc_info()[0]
 +                    logging.warning("set_password: Both keyring files are non useable. Error: %s" % e)
 +                    raise
  
--        if i:
--            # Load the keyring from the disk
--            config = configparser.RawConfigParser()
--            config.read(self.file_path)
- 
              service = escape_for_ini(service)
              key = escape_for_ini(key)
-@@ -159,12 +192,20 @@ class Keyring(FileBacked, KeyringBackend
+@@ -159,13 +191,18 @@ class Keyring(FileBacked, KeyringBackend):
                  config.add_section(service)
              config.set(service, key, value)
  
@@ -119,29 +134,28 @@ backends of use_new_lock.patch to package keyrings.alt
 +                logging.warning("set_password: Backup failed. Error: %s" % e)
 +
              # Save the keyring back to the file
-             with open(self.file_path, 'w') as config_file:
+             with open(self.file_path, 'w', encoding='utf-8') as config_file:
                  config.write(config_file)
  
 -            lock.close()
 -            os.remove('/tmp/.keyringlock')
-+
-+
- 
- 
+-
      def _ensure_file_path(self):
-@@ -187,14 +228,15 @@ class Keyring(FileBacked, KeyringBackend
+         """
+         Ensure the storage path exists.
+@@ -186,14 +223,15 @@ class Keyring(FileBacked, KeyringBackend):
          """Delete the password for the username of the service."""
          service = escape_for_ini(service)
          username = escape_for_ini(username)
 -        config = configparser.RawConfigParser()
 -        if os.path.exists(self.file_path):
--            config.read(self.file_path)
+-            config.read(self.file_path, encoding='utf-8')
 -        try:
 -            if not config.remove_option(service, username):
 +        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
 +            config = configparser.RawConfigParser()
 +            if os.path.exists(self.file_path):
-+                config.read(self.file_path)
++                config.read(self.file_path, encoding='utf-8')
 +            try:
 +                if not config.remove_option(service, username):
 +                    raise PasswordDeleteError("Password not found")
@@ -150,16 +164,16 @@ backends of use_new_lock.patch to package keyrings.alt
 -        except configparser.NoSectionError:
 -            raise PasswordDeleteError("Password not found")
 -        # update the file
--        with open(self.file_path, 'w') as config_file:
+-        with open(self.file_path, 'w', encoding='utf-8') as config_file:
 -            config.write(config_file)
 +            # update the file
-+            with open(self.file_path, 'w') as config_file:
++            with open(self.file_path, 'w', encoding='utf-8') as config_file:
 +                config.write(config_file)
-Index: keyring-5.3/keyrings/alt/file.py
-===================================================================
---- keyring-5.3.orig/keyrings/alt/file.py
-+++ keyring-5.3/keyrings/alt/file.py
-@@ -19,6 +19,7 @@ class PlaintextKeyring(Keyring):
+diff --git a/keyrings/alt/file.py b/keyrings/alt/file.py
+index b406c3d..8e1301a 100644
+--- a/keyrings/alt/file.py
++++ b/keyrings/alt/file.py
+@@ -18,6 +18,7 @@ class PlaintextKeyring(Keyring):
      "Applicable for all platforms, but not recommended"
  
      filename = 'keyring_pass.cfg'
@@ -167,15 +181,15 @@ Index: keyring-5.3/keyrings/alt/file.py
      scheme = 'no encyption'
      version = '1.0'
  
-@@ -73,6 +74,7 @@ class EncryptedKeyring(Encrypted, Keyrin
+@@ -86,6 +87,7 @@ class EncryptedKeyring(Encrypted, Keyring):
      """PyCryptodome File Keyring"""
  
      filename = 'crypted_pass.cfg'
 +    backup_filename = 'crypted_pass_backup.cfg'
-     pw_prefix = 'pw:'.encode()
+     pw_prefix = b'pw:'
  
-     @properties.ClassProperty
-@@ -105,6 +107,19 @@ class EncryptedKeyring(Encrypted, Keyrin
+     @properties.classproperty
+@@ -115,6 +117,19 @@ class EncryptedKeyring(Encrypted, Keyring):
          self.keyring_key = self._get_new_password()
          # set a reference password, used to check that the password provided
          #  matches for subsequent checks.
@@ -195,12 +209,12 @@ Index: keyring-5.3/keyrings/alt/file.py
          self.set_password(
              'keyring-setting', 'password reference', 'password reference value'
          )
-@@ -118,14 +133,39 @@ class EncryptedKeyring(Encrypted, Keyrin
+@@ -128,14 +143,39 @@ class EncryptedKeyring(Encrypted, Keyring):
          if not os.path.exists(self.file_path):
              return False
          self._migrate()
 -        config = configparser.RawConfigParser()
--        config.read(self.file_path)
+-        config.read(self.file_path, encoding='utf-8')
 -        try:
 -            config.get(
 -                escape_for_ini('keyring-setting'), escape_for_ini('password reference')
@@ -212,17 +226,17 @@ Index: keyring-5.3/keyrings/alt/file.py
 +        # to while while we're checking for keyring-setting
 +        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
 +            config = configparser.RawConfigParser()
-+            config.read(self.file_path)
++            config.read(self.file_path, encoding='utf-8')
 +            try:
 +                config.get(
-+                    escape_for_ini('keyring-setting'), escape_for_ini('password reference'),
++                    escape_for_ini('keyring-setting'), escape_for_ini('password reference')
 +                )
 +            except (configparser.NoSectionError, configparser.NoOptionError):
 +                # The current file doesn't have the keyring-setting, check the backup
 +                logging.warning("_check_file: The current file doesn't have the keyring-setting, check the backup")
 +                if os.path.exists(self.backup_file_path):
 +                    config = configparser.RawConfigParser()
-+                    config.read(self.backup_file_path)
++                    config.read(self.backup_file_path, encoding='utf-8')
 +                    try:
 +                        config.get(
 +                            escape_for_ini('keyring-setting'), escape_for_ini('password reference')
@@ -243,3 +257,6 @@ Index: keyring-5.3/keyrings/alt/file.py
          try:
              self._check_scheme(config)
          except AttributeError:
+-- 
+2.34.1
+
