@@ -1,0 +1,2 @@
+usr/bin/*	/usr/bin
+usr/share/makedumpfile/makedumpfile.conf.sample	/usr/share/makedumpfile

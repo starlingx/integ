@@ -2,7 +2,13 @@ source: makedumpfile
 Section: devel
 Priority: optional
 Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
-Build-Depends: debhelper-compat (= 13), libelf-dev, libdw-dev, libbz2-dev
+Build-Depends: debhelper-compat (= 13),
+               libbz2-dev,
+               libdw-dev (>= 0.141-2ubuntu1),
+               libelf-dev,
+               liblzo2-dev,
+               libz-dev,
+	             libzstd-dev
 Standards-Version: 4.5.2
 Rules-Requires-Root: no
 
