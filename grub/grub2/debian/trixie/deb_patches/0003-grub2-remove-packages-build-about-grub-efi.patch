@@ -1,28 +1,28 @@
-From db378eae439f7d2d356441ec130ba12321815979 Mon Sep 17 00:00:00 2001
-From: Li Zhou <li.zhou@windriver.com>
-Date: Thu, 1 Sep 2022 14:41:02 +0800
-Subject: [PATCH 3/4] grub2: remove packages' build about grub-efi
+From 7983bb4f8492c88fd1b4d629ec26ee54195c0e9a Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Mon, 8 Sep 2025 03:35:30 -0400
+Subject: [PATCH] grub2: remove packages build about grub efi
 
 Packages related with grub-efi will be built separately with special
 patches about secure boot.
 
-Signed-off-by: Li Zhou <li.zhou@windriver.com>
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
 ---
- debian/control | 287 -------------------------------------------------
- 1 file changed, 287 deletions(-)
+ debian/control | 549 -------------------------------------------------
+ 1 file changed, 549 deletions(-)
 
 diff --git a/debian/control b/debian/control
-index 591394f..b318ec8 100644
+index 11e9e7e..884f6fc 100644
 --- a/debian/control
 +++ b/debian/control
-@@ -60,15 +60,6 @@ Multi-Arch: foreign
+@@ -62,15 +62,6 @@ Multi-Arch: foreign
  Description: GRand Unified Bootloader, version 2 (dummy package)
   This is a dummy transitional package that depends on grub-coreboot.
  
 -Package: grub-efi
--Architecture: any-i386 any-amd64 any-arm64 any-ia64 any-arm
+-Architecture: any-i386 any-amd64 any-arm64 any-ia64 any-arm any-riscv64 any-loong64
 -Pre-Depends: ${misc:Pre-Depends}
--Depends: ${misc:Depends}, grub-efi-ia32 (= ${binary:Version}) [any-i386], grub-efi-amd64 (= ${binary:Version}) [any-amd64], grub-efi-arm64 (= ${binary:Version}) [any-arm64], grub-efi-ia64 (= ${binary:Version}) [any-ia64], grub-efi-arm (= ${binary:Version}) [any-arm]
+-Depends: ${misc:Depends}, grub-efi-ia32 (= ${binary:Version}) [any-i386], grub-efi-amd64 (= ${binary:Version}) [any-amd64], grub-efi-arm64 (= ${binary:Version}) [any-arm64], grub-efi-ia64 (= ${binary:Version}) [any-ia64], grub-efi-arm (= ${binary:Version}) [any-arm], grub-efi-riscv64 (= ${binary:Version}) [any-riscv64], grub-efi-loong64 (= ${binary:Version}) [any-loong64]
 -Multi-Arch: foreign
 -Description: GRand Unified Bootloader, version 2 (dummy package)
 - This is a dummy package that depends on the grub-efi-$ARCH package most likely
@@ -30,14 +30,15 @@ index 591394f..b318ec8 100644
 -
  Package: grub-common
  Architecture: any
- Depends: ${shlibs:Depends}, ${misc:Depends}, gettext-base, ${lsb-base-depends}
-@@ -245,284 +236,6 @@ Description: GRand Unified Bootloader, version 2 (Coreboot version)
+ Built-Using: ${Built-Using}
+@@ -248,546 +239,6 @@ Description: GRand Unified Bootloader, version 2 (Coreboot version)
   use with platforms running the Coreboot firmware.  Installing this package
   indicates that this version of GRUB should be the active boot loader.
  
 -Package: grub-efi-ia32-bin
 -Architecture: any-i386 any-amd64
--Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version}), grub-efi-ia32-unsigned
+-Breaks: grub-efi-ia32-signed (<< 1+2.12~rc1)
 -Recommends: grub-efi-ia32-signed [i386], efibootmgr [linux-any]
 -Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi, grub-efi-ia32 (<< 1.99-1)
 -Multi-Arch: foreign
@@ -53,6 +54,30 @@ index 591394f..b318ec8 100644
 -    update-grub.
 - .
 - This package contains GRUB modules that have been built for use with the
+- EFI-IA32 architecture, as used by Intel Macs (unless a BIOS interface has
+- been activated).  It can be installed in parallel with other flavours, but
+- will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-ia32 is also
+- installed.
+-
+-Package: grub-efi-ia32-unsigned
+-Architecture: any-i386 any-amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub-efi-ia32-bin (<< 2.12-3~)
+-Breaks: grub-efi-ia32-bin (<< 2.12-3~)
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (EFI-IA32 images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use with the
 - EFI-IA32 architecture, as used by Intel Macs (unless a BIOS interface has
 - been activated).  It can be installed in parallel with other flavours, but
 - will not automatically install GRUB as the active boot loader nor
@@ -92,15 +117,17 @@ index 591394f..b318ec8 100644
 -
 -Package: grub-efi-ia32-signed-template
 -Architecture: i386
+-Depends: ${misc:Depends}
 -Description: GRand Unified Bootloader, version 2 (EFI-IA32 signing template)
 - This package contains template files for grub-efi-ia32-signed.
 - This is only needed for Secure Boot signing.
 -
 -Package: grub-efi-amd64-bin
 -Architecture: i386 kopensolaris-i386 any-amd64
--Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version}), grub-efi-amd64-unsigned
 -Recommends: grub-efi-amd64-signed [amd64], efibootmgr [linux-any]
 -Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64 (<< 1.99-1)
+-Breaks: grub-efi-amd64-signed (<< 1+2.12~rc1)
 -Multi-Arch: foreign
 -XB-Efi-Vendor: ${efi:Vendor}
 -Description: GRand Unified Bootloader, version 2 (EFI-AMD64 modules)
@@ -114,6 +141,30 @@ index 591394f..b318ec8 100644
 -    update-grub.
 - .
 - This package contains GRUB modules that have been built for use with the
+- EFI-AMD64 architecture, as used by Intel Macs (unless a BIOS interface has
+- been activated).  It can be installed in parallel with other flavours, but
+- will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-amd64 is also
+- installed.
+-
+-Package: grub-efi-amd64-unsigned
+-Architecture: i386 kopensolaris-i386 any-amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub-efi-amd64-bin (<< 2.12-3~)
+-Breaks: grub-efi-amd64-bin (<< 2.12-3~)
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (EFI-AMD64 images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use with the
 - EFI-AMD64 architecture, as used by Intel Macs (unless a BIOS interface has
 - been activated).  It can be installed in parallel with other flavours, but
 - will not automatically install GRUB as the active boot loader nor
@@ -153,15 +204,17 @@ index 591394f..b318ec8 100644
 -
 -Package: grub-efi-amd64-signed-template
 -Architecture: amd64
+-Depends: ${misc:Depends}
 -Description: GRand Unified Bootloader, version 2 (EFI-AMD64 signing template)
 - This package contains template files for grub-efi-amd64-signed.
 - This is only needed for Secure Boot signing.
 -
 -Package: grub-efi-ia64-bin
 -Architecture: any-ia64
--Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version}), grub-efi-ia64-unsigned
 -Multi-Arch: foreign
 -XB-Efi-Vendor: ${efi:Vendor}
+-Recommends: grub-efi-ia64-unsigned
 -Description: GRand Unified Bootloader, version 2 (IA64 modules)
 - GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
 - cleaner design than its predecessors, and provides the following new features:
@@ -173,6 +226,26 @@ index 591394f..b318ec8 100644
 -    update-grub.
 - .
 - This package contains GRUB modules that have been built for use on IA64.
+- It can be installed in parallel with other flavours, but will not
+- automatically install GRUB as the active boot loader nor automatically
+- update grub.cfg on upgrade unless grub-efi-ia64 is also installed.
+-
+-Package: grub-efi-ia64-unsigned
+-Architecture: any-ia64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (IA64 images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use on IA64.
 - It can be installed in parallel with other flavours, but will not
 - automatically install GRUB as the active boot loader nor automatically
 - update grub.cfg on upgrade unless grub-efi-ia64 is also installed.
@@ -208,8 +281,8 @@ index 591394f..b318ec8 100644
 -
 -Package: grub-efi-arm-bin
 -Architecture: any-arm
--Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
--Recommends: efibootmgr [linux-any]
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version}), grub-efi-arm-unsigned
+-Recommends: efibootmgr [linux-any], grub-efi-arm-unsigned
 -Multi-Arch: foreign
 -XB-Efi-Vendor: ${efi:Vendor}
 -Description: GRand Unified Bootloader, version 2 (ARM UEFI modules)
@@ -223,6 +296,28 @@ index 591394f..b318ec8 100644
 -    update-grub.
 - .
 - This package contains GRUB modules that have been built for use on ARM
+- systems with UEFI.  It can be installed in parallel with other flavours,
+- but will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-arm is also
+- installed.
+-
+-Package: grub-efi-arm-unsigned
+-Architecture: any-arm
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Recommends: efibootmgr [linux-any]
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (ARM UEFI images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use on ARM
 - systems with UEFI.  It can be installed in parallel with other flavours,
 - but will not automatically install GRUB as the active boot loader nor
 - automatically update grub.cfg on upgrade unless grub-efi-arm is also
@@ -259,7 +354,8 @@ index 591394f..b318ec8 100644
 -
 -Package: grub-efi-arm64-bin
 -Architecture: any-arm64
--Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version}), grub-efi-arm64-unsigned
+-Breaks: grub-efi-arm64-signed (<< 1+2.12~rc1)
 -Recommends: grub-efi-arm64-signed [arm64], efibootmgr [linux-any]
 -Multi-Arch: foreign
 -XB-Efi-Vendor: ${efi:Vendor}
@@ -274,6 +370,29 @@ index 591394f..b318ec8 100644
 -    update-grub.
 - .
 - This package contains GRUB modules that have been built for use on ARM64
+- systems with UEFI.  It can be installed in parallel with other flavours,
+- but will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-arm64 is also
+- installed.
+-
+-Package: grub-efi-arm64-unsigned
+-Architecture: any-arm64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Breaks: grub-efi-arm64-bin (<< 2.12-3~)
+-Replaces: grub-efi-arm64-bin (<< 2.12-3~)
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (ARM64 UEFI images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use on ARM64
 - systems with UEFI.  It can be installed in parallel with other flavours,
 - but will not automatically install GRUB as the active boot loader nor
 - automatically update grub.cfg on upgrade unless grub-efi-arm64 is also
@@ -309,13 +428,156 @@ index 591394f..b318ec8 100644
 -
 -Package: grub-efi-arm64-signed-template
 -Architecture: arm64
+-Depends: ${misc:Depends}
 -Description: GRand Unified Bootloader, version 2 (ARM64 UEFI signing template)
 - This package contains template files for grub-efi-arm64-signed.
 - This is only needed for Secure Boot signing.
 -
+-Package: grub-efi-riscv64-bin
+-Architecture: any-riscv64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (>= 2.02~beta2-9), grub-efi-riscv64-unsigned
+-Recommends: efibootmgr [linux-any], grub-efi-riscv64-unsigned
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (riscv64 UEFI modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use on riscv64
+- systems with UEFI.  It can be installed in parallel with other flavours,
+- but will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-riscv64 is also
+- installed.
+-
+-Package: grub-efi-riscv64-unsigned
+-Architecture: any-riscv64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (>= 2.02~beta2-9)
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (riscv64 UEFI images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use on riscv64
+- systems with UEFI.  It can be installed in parallel with other flavours,
+- but will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-riscv64 is also
+- installed.
+-
+-Package: grub-efi-riscv64-dbg
+-Section: debug
+-Architecture: any-riscv64
+-Depends: ${misc:Depends}, grub-efi-riscv64-bin (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (riscv64 UEFI debug files)
+- This package contains debugging files for grub-efi-riscv64-bin.  You only
+- need these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-efi-riscv64
+-Architecture: any-riscv64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (>= 2.02~beta2-9), grub-efi-riscv64-bin (= ${binary:Version}), ucf
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (riscv64 UEFI version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use on RISC-V 64-bit systems with UEFI.  Installing this package indicates that
+- this version of GRUB should be the active boot loader.
+-
+-Package: grub-efi-loong64-bin
+-Architecture: any-loong64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (>= 2.02~beta2-9)
+-Recommends: efibootmgr [linux-any], grub-efi-loong64-unsigned
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (loong64 UEFI modules)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB modules that have been built for use on loong64
+- systems with UEFI.  It can be installed in parallel with other flavours,
+- but will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-loong64 is also
+- installed.
+-
+-Package: grub-efi-loong64-unsigned
+-Architecture: any-loong64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (>= 2.02~beta2-9)
+-Recommends: efibootmgr [linux-any]
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (loong64 UEFI images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use on loong64
+- systems with UEFI.  It can be installed in parallel with other flavours,
+- but will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-loong64 is also
+- installed.
+-
+-Package: grub-efi-loong64-dbg
+-Section: debug
+-Architecture: any-loong64
+-Depends: ${misc:Depends}, grub-efi-loong64-bin (= ${binary:Version})
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (loong64 UEFI debug files)
+- This package contains debugging files for grub-efi-loong64-bin.  You only
+- need these if you are trying to debug GRUB using its GDB stub.
+-
+-Package: grub-efi-loong64
+-Architecture: any-loong64
+-Pre-Depends: ${misc:Pre-Depends}
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (>= 2.02~beta2-9), grub-efi-loong64-bin (= ${binary:Version}), grub-efi-loong64-unsigned (= ${binary:Version}), ucf
+-Multi-Arch: foreign
+-Description: GRand Unified Bootloader, version 2 (loong64 UEFI version)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This is a dependency package for a version of GRUB that has been built for
+- use on LoongArch 64-bit systems with UEFI.  Installing this package indicates that
+- this version of GRUB should be the active boot loader.
+ 
  Package: grub-ieee1275-bin
  Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64
- Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
 -- 
-2.17.1
+2.43.0
 

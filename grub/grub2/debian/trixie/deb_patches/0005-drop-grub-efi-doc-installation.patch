@@ -1,0 +1,30 @@
+From ba712e0ec9ddbfef83fe945ba632903505e4bb95 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Mon, 8 Sep 2025 06:59:13 -0400
+Subject: [PATCH] grub2: drop grub-efi doc installation
+
+Remove the EFI-specific dh_installdocs calls so the build only
+installs documentation for packages actually present in control.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com> 
+---
+ debian/rules | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/debian/rules b/debian/rules
+index 00a2ec3..7272589 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -561,9 +561,6 @@ endif
+ 
+ override_dh_installdocs:
+ 	dh_installdocs $(patsubst %,-p%,$(filter grub-common grub-rescue-pc grub-firmware-qemu grub-xen-host,$(BUILD_PACKAGES))) -A AUTHORS NEWS README THANKS TODO
+-	dh_installdocs $(patsubst %,-p%,$(filter grub-efi-%-signed-template,$(BUILD_PACKAGES)))
+-	dh_installdocs -pgrub-efi-amd64 -pgrub-efi-amd64-bin -pgrub-efi-amd64-dbg --link-doc=grub-efi-amd64-bin
+-	dh_installdocs -pgrub-efi-arm64 -pgrub-efi-arm64-bin -pgrub-efi-arm64-dbg --link-doc=grub-efi-arm64-bin
+ 	dh_installdocs --remaining-packages --link-doc=grub-common
+ 
+ ifeq ($(FLICKER_FREE_BOOT),yes)
+-- 
+2.43.0
+

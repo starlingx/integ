@@ -1,30 +1,30 @@
-From 215aa0657ab2f7b52c7b7eebec465ffdda1ff0d1 Mon Sep 17 00:00:00 2001
+From 21b5ed10615d391301b95bcd551f725f569f189c Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
-Date: Wed, 31 Aug 2022 13:53:19 +0800
-Subject: [PATCH 2/4] grub2: remove unnecessary patches
+Date: Thu, 9 Oct 2025 06:29:21 +0000
+Subject: [PATCH] grub2: remove unnecessary patches
 
 Clean the patches from debian release to get a clean grub source
 and only keep 2 patches necessary for debian packages' build.
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[lz: adapt the patch for debian folder version has been changed
+from 2.06-1 to 2.12-9.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- debian/patches/series | 59 -------------------------------------------
- 1 file changed, 59 deletions(-)
+ debian/patches/series | 144 ------------------------------------------
+ 1 file changed, 144 deletions(-)
 
 diff --git a/debian/patches/series b/debian/patches/series
-index 748318a..0478754 100644
+index 789b0dc..86524f1 100644
 --- a/debian/patches/series
 +++ b/debian/patches/series
-@@ -1,61 +1,2 @@
+@@ -1,146 +1,2 @@
 -olpc-prefix-hack.patch
 -core-in-fs.patch
--dpkg-version-comparison.patch
 -grub-legacy-0-based-partitions.patch
 -disable-floppies.patch
--grub.cfg-400.patch
 -gfxpayload-keep-default.patch
 -install-stage2-confusion.patch
--mkrescue-efi-modules.patch
 -mkconfig-loopback.patch
  restore-mkdevicemap.patch
 -gettext-quiet.patch
@@ -34,11 +34,7 @@ index 748318a..0478754 100644
 -mkconfig-nonexistent-loopback.patch
 -default-grub-d.patch
 -blacklist-1440x900x32.patch
--mkconfig-ubuntu-distributor.patch
--linuxefi.patch
--mkconfig-signed-kernel.patch
--install-signed.patch
--wubi-no-windows.patch
+-mkconfig-distributor.patch
 -maybe-quiet.patch
 -install-efi-adjust-distributor.patch
 -quick-boot.patch
@@ -53,30 +49,122 @@ index 748318a..0478754 100644
 -ppc64el-disable-vsx.patch
 -grub-install-pvxen-paths.patch
 -insmod-xzio-and-lzopio-on-xen.patch
--grub-install-extra-removable.patch
--mkconfig-other-inits.patch
 -zpool-full-device-name.patch
--net-read-bracketed-ipv6-addr.patch
--bootp-new-net_bootp6-command.patch
--efinet-uefi-ipv6-pxe-support.patch
--bootp-process-dhcpack-http-boot.patch
--efinet-set-network-from-uefi-devpath.patch
--efinet-set-dns-from-uefi-proto.patch
--fix-lockdown.patch
+-network/net-http-check-result-of-grub_netbuff_put-in-http_receive.patch
+-network/bootp-new-net_bootp6-command.patch
+-network/efinet-add-structures-for-PXE-messages.patch
+-network/bootp-process-dhcpack-http-boot.patch
+-network/efinet-Configure-network-from-UEFI-device-path.patch
+-network/efinet-set-dns-from-uefi-proto.patch
+-network/support-uefi-networking-protocols.patch
+-network/efinet-also-use-the-firmware-acceleration-for-http.patch
+-network/efi-http-match-protocol-hostname-of-boot-url-in-root.patch
+-network/add-fw_path-variable-to-detect-config-file-on-efi.patch
+-network/use-fw_path-prefix-when-fallback-searching-for-grub-config.patch
+-network/try-prefixes-for-tftp-config-file.patch
+-network/prepend-prefix-when-http-path-is-relative.patch
+-network/efi-http-enclose-literal-ipv6-addresses-in-square-br.patch
+-network/http-prepend-prefix-when-the-http-path-is-relative.patch
+-network/discover-the-device-to-read-the-config-from-as-fallback.patch
+-network/efinet-add-dhcp-proxy-support.patch
+-network/rhboot-http-message-field-size.patch
 -skip-grub_cmd_set_date.patch
 -bash-completion-drop-have-checks.patch
 -at_keyboard-module-init.patch
 -uefi-secure-boot-cryptomount.patch
 -efi-variable-storage-minimise-writes.patch
--grub-install-removable-shim.patch
- dejavu-font-path.patch
 -xen-no-xsm-policy-in-non-xsm-options.patch
 -pc-verifiers-module.patch
 -debug_verifiers.patch
 -mkimage-fix-section-sizes.patch
--tpm-unknown-error-non-fatal.patch
--xfs-fix-v4-superblock.patch
--tests-ahci-update-qemu-device-name.patch
+-987008-lvrename-boot-fail.patch
+-grub_os-prober.patch
+-secure-boot/revert-efi-fallback-to-legacy.patch
+-secure-boot/loader-framework.patch
+-secure-boot/efi-use-peimage-shim.patch
+-zstd-require-8-byte-buffer.patch
+-recovery-dis_ucode_ldr.patch
+-hwmatch-only-on-grub-pc-platform.patch
+-fat-fix-listing-the-root-directory.patch
+-efivar-check-that-efivarfs-is-writeable.patch
+-fdt-add-debug-output-to-devicetree-command.patch
+-fdt-device-tree-fixup-protocol.patch
+ extra_deps_lst.patch
+-upstream/acpi-Fix-out-of-bounds-access-in-grub_acpi_xsdt_find_tabl.patch
+-install-signed.patch
+-grub-install-extra-removable.patch
+-grub-install-removable-shim.patch
+-cve-2025-jan/misc-Implement-grub_strlcpy.patch
+-cve-2025-jan/fs-ufs-Fix-a-heap-OOB-write.patch
+-cve-2025-jan/fs-hfs-Fix-stack-OOB-write-with-grub_strcpy.patch
+-cve-2025-jan/fs-tar-Initialize-name-in-grub_cpio_find_file.patch
+-cve-2025-jan/fs-tar-Integer-overflow-leads-to-heap-OOB-write.patch
+-cve-2025-jan/fs-f2fs-Set-a-grub_errno-if-mount-fails.patch
+-cve-2025-jan/fs-hfsplus-Set-a-grub_errno-if-mount-fails.patch
+-cve-2025-jan/fs-iso9660-Set-a-grub_errno-if-mount-fails.patch
+-cve-2025-jan/fs-iso9660-Fix-invalid-free.patch
+-cve-2025-jan/fs-jfs-Fix-OOB-read-in-jfs_getent.patch
+-cve-2025-jan/fs-jfs-Fix-OOB-read-caused-by-invalid-dir-slot-index.patch
+-cve-2025-jan/fs-jfs-Use-full-40-bits-offset-and-address-for-a-data-ext.patch
+-cve-2025-jan/fs-jfs-Inconsistent-signed-unsigned-types-usage-in-return.patch
+-cve-2025-jan/fs-ext2-Fix-out-of-bounds-read-for-inline-extents.patch
+-cve-2025-jan/fs-xfs-Fix-out-of-bounds-read.patch
+-cve-2025-jan/fs-xfs-Ensuring-failing-to-mount-sets-a-grub_errno.patch
+-cve-2025-jan/kern-file-Ensure-file-data-is-set.patch
+-cve-2025-jan/kern-file-Implement-filesystem-reference-counting.patch
+-cve-2025-jan/disk-loopback-Reference-tracking-for-the-loopback.patch
+-cve-2025-jan/kern-disk-Limit-recursion-depth.patch
+-cve-2025-jan/kern-partition-Limit-recursion-in-part_iterate.patch
+-cve-2025-jan/script-execute-Limit-the-recursion-depth.patch
+-cve-2025-jan/net-Unregister-net_default_ip-and-net_default_mac-variabl.patch
+-cve-2025-jan/net-Remove-variables-hooks-when-interface-is-unregisted.patch
+-cve-2025-jan/net-Fix-OOB-write-in-grub_net_search_config_file.patch
+-cve-2025-jan/net-tftp-Fix-stack-buffer-overflow-in-tftp_open.patch
+-cve-2025-jan/video-readers-jpeg-Do-not-permit-duplicate-SOF0-markers-i.patch
+-cve-2025-jan/kern-dl-Fix-for-an-integer-overflow-in-grub_dl_ref.patch
+-cve-2025-jan/kern-dl-Check-for-the-SHF_INFO_LINK-flag-in-grub_dl_reloc.patch
+-cve-2025-jan/commands-extcmd-Missing-check-for-failed-allocation.patch
+-cve-2025-jan/commands-ls-Fix-NULL-dereference.patch
+-cve-2025-jan/commands-pgp-Unregister-the-check_signatures-hooks-on-mod.patch
+-cve-2025-jan/normal-Remove-variables-hooks-on-module-unload.patch
+-cve-2025-jan/gettext-Remove-variables-hooks-on-module-unload.patch
+-cve-2025-jan/gettext-Integer-overflow-leads-to-heap-OOB-write-or-read.patch
+-cve-2025-jan/gettext-Integer-overflow-leads-to-heap-OOB-write.patch
+-cve-2025-jan/commands-read-Fix-an-integer-overflow-when-supplying-more.patch
+-cve-2025-jan/commands-test-Stack-overflow-due-to-unlimited-recursion-d.patch
+-cve-2025-jan/commands-minicmd-Block-the-dump-command-in-lockdown-mode.patch
+-cve-2025-jan/commands-memrw-Disable-memory-reading-in-lockdown-mode.patch
+-cve-2025-jan/commands-hexdump-Disable-memory-reading-in-lockdown-mode.patch
+-cve-2025-jan/fs-bfs-Disable-under-lockdown.patch
+-cve-2025-jan/fs-Disable-many-filesystems-under-lockdown.patch
+-cve-2025-jan/disk-Use-safe-math-macros-to-prevent-overflows.patch
+-cve-2025-jan/disk-Prevent-overflows-when-allocating-memory-for-arrays.patch
+-cve-2025-jan/disk-Check-if-returned-pointer-for-allocated-memory-is-NU.patch
+-cve-2025-jan/disk-ieee1275-ofdisk-Call-grub_ieee1275_close-when-grub_m.patch
+-cve-2025-jan/fs-Use-safe-math-macros-to-prevent-overflows.patch
+-cve-2025-jan/fs-Prevent-overflows-when-allocating-memory-for-arrays.patch
+-cve-2025-jan/fs-Prevent-overflows-when-assigning-returned-values-from-.patch
+-cve-2025-jan/fs-zfs-Use-safe-math-macros-to-prevent-overflows.patch
+-cve-2025-jan/fs-zfs-Prevent-overflows-when-allocating-memory-for-array.patch
+-cve-2025-jan/fs-zfs-Check-if-returned-pointer-for-allocated-memory-is-.patch
+-cve-2025-jan/fs-zfs-Add-missing-NULL-check-after-grub_strdup-call.patch
+-cve-2025-jan/net-Use-safe-math-macros-to-prevent-overflows.patch
+-cve-2025-jan/net-Prevent-overflows-when-allocating-memory-for-arrays.patch
+-cve-2025-jan/net-Check-if-returned-pointer-for-allocated-memory-is-NUL.patch
+-cve-2025-jan/fs-sfs-Check-if-allocated-memory-is-NULL.patch
+-cve-2025-jan/script-execute-Fix-potential-underflow-and-NULL-dereferen.patch
+-cve-2025-jan/osdep-unix-getroot-Fix-potential-underflow.patch
+-cve-2025-jan/misc-Ensure-consistent-overflow-error-messages.patch
+-cve-2025-jan/bus-usb-ehci-Define-GRUB_EHCI_TOGGLE-as-grub_uint32_t.patch
+-cve-2025-jan/normal-menu-Use-safe-math-to-avoid-an-integer-overflow.patch
+-cve-2025-jan/kern-partition-Add-sanity-check-after-grub_strtoul-call.patch
+-cve-2025-jan/kern-misc-Add-sanity-check-after-grub_strtoul-call.patch
+-cve-2025-jan/loader-i386-linux-Cast-left-shift-to-grub_uint32_t.patch
+-cve-2025-jan/loader-i386-bsd-Use-safe-math-to-avoid-underflow.patch
+-cve-2025-jan/fs-ext2-Rework-out-of-bounds-read-for-inline-and-external.patch
+-cve-2025-jan/fs-xfs-Fix-grub_xfs_iterate_dir-return-value-in-case-of-f.patch
+-cve-2025-jan/fs-xfs-Propagate-incorrect-inode-error-from-grub_xfs_read.patch
+-cve-2025-jan/fs-xfs-Handle-root-inode-read-failure-in-grub_xfs_mount.patch
 -- 
-2.17.1
+2.49.0
 
