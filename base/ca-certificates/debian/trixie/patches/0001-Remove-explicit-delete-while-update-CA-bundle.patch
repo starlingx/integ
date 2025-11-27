@@ -1,0 +1,24 @@
+From c0006b7d23fc1c9014ecc8b5da51042e912bcac2 Mon Sep 17 00:00:00 2001
+From: Rei Oliveira <Reinildes.JoseMateusOliveira@windriver.com>
+Date: Mon, 17 Jun 2024 19:00:28 -0300
+Subject: [PATCH] Remove explicity delete while update CA bundle
+
+---
+ sbin/update-ca-certificates | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/sbin/update-ca-certificates b/sbin/update-ca-certificates
+index b27c6bd..473e90e 100755
+--- a/sbin/update-ca-certificates
++++ b/sbin/update-ca-certificates
+@@ -164,8 +164,6 @@ then
+   done
+ fi
+
+-rm -f "$CERTBUNDLE"
+-
+ ADDED_CNT=$(wc -l < "$ADDED")
+ REMOVED_CNT=$(wc -l < "$REMOVED")
+
+--
+2.34.1

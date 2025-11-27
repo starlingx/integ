@@ -1,0 +1,35 @@
+From ad1e3a89aa561292e745f58508b904cecbf8f928 Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Tue, 19 Apr 2022 12:05:09 +0300
+Subject: [PATCH 2/2] Update dn and dns only with diff upon RENEW
+
+This prevents resolv.conf being updated on lease renewal.
+This aligns to the behavior exhibited on CentOS.
+This prevents resolv.conf being changed during bootstrap, which
+is in fact the design.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ debian/dhclient-script.linux | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/debian/dhclient-script.linux b/debian/dhclient-script.linux
+index 895116c..8b29988 100644
+--- a/debian/dhclient-script.linux
++++ b/debian/dhclient-script.linux
+@@ -40,6 +40,12 @@ wait_for_rw() {
+ make_resolv_conf() {
+     local new_resolv_conf
+ 
++    if [ "${reason}" = "RENEW" ] &&
++       [ "${new_domain_name}" = "${old_domain_name}" ] &&
++       [ "${new_domain_name_servers}" = "${old_domain_name_servers}" ]; then
++        return
++    fi
++
+     # DHCPv4
+     if [ -n "$new_domain_search" ] || [ -n "$new_domain_name" ] ||
+        [ -n "$new_domain_name_servers" ]; then
+-- 
+2.30.0
+

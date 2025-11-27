@@ -1,0 +1,110 @@
+From 6ba5057d343410d5b5f810974d9f4388cb7a9418 Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Wed, 18 May 2022 13:20:33 +0300
+Subject: [PATCH 14/14] Introduce and use custom NIC naming scheme
+
+To add some context we start by referencing [1].
+More lab tests are enabled now, which reveal more systemd naming
+inconsistencies: searching parent slots ([2] vs [3]),
+usage of port_name for path and slot ([4] vs [5], [6] vs [7]).
+Based on previous observations infer that port_name[8] has to be
+dropped from [9], even though it is not yet observed in any lab.
+We observe we can't rely on a particular naming scheme already
+implemented in systemd, thus we must create a custom one.
+Name based on upcoming STX7.0 release.
+Align naming to CentOS for discovered differences.
+
+[1]: https://review.opendev.org/c/starlingx/kernel/+/841369
+[2]: https://github.com/systemd/systemd/blob/v247/src/udev/
+udev-builtin-net_id.c#L362,L373
+[3]: https://github.com/systemd/systemd/blob/v219/src/udev/
+udev-builtin-net_id.c#L229,L237
+[4]: https://github.com/systemd/systemd/blob/v247/src/udev/
+udev-builtin-net_id.c#L321-L324
+[5]: https://github.com/systemd/systemd/blob/v219/src/udev/
+udev-builtin-net_id.c#L198-L199
+[6]: https://github.com/systemd/systemd/blob/v247/src/udev/
+udev-builtin-net_id.c#L391-L394
+[7]: https://github.com/systemd/systemd/blob/v219/src/udev/
+udev-builtin-net_id.c#L248-L249
+[8]: https://github.com/systemd/systemd/commit/
+4887b656c22af059d4e833de7b56544f24951184
+[9]: https://github.com/systemd/systemd/blob/v247/src/udev/
+udev-builtin-net_id.c#L204-L207
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ src/shared/netif-naming-scheme.c | 3 +++
+ src/shared/netif-naming-scheme.h | 6 ++++++
+ src/udev/udev-builtin-net_id.c   | 6 +++---
+ 3 files changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/src/shared/netif-naming-scheme.c b/src/shared/netif-naming-scheme.c
+index df520ab..150fe0d 100644
+--- a/src/shared/netif-naming-scheme.c
++++ b/src/shared/netif-naming-scheme.c
+@@ -14,6 +14,9 @@ static const NamingScheme naming_schemes[] = {
+         { "v245", NAMING_V245 },
+         { "v247", NAMING_V247 },
+         /* … add more schemes here, as the logic to name devices is updated … */
++        /* Need a custom naming scheme to keep naming the same as on CentOS.
++         * At least for initial release, until upgrade logic is implemented. */
++        { "vSTX7_0", NAMING_VSTX7_0 },
+ };
+ 
+ static const NamingScheme* naming_scheme_from_name(const char *name) {
+diff --git a/src/shared/netif-naming-scheme.h b/src/shared/netif-naming-scheme.h
+index 503a74e..5c90416 100644
+--- a/src/shared/netif-naming-scheme.h
++++ b/src/shared/netif-naming-scheme.h
+@@ -33,6 +33,8 @@ typedef enum NamingSchemeFlags {
+         NAMING_NSPAWN_LONG_HASH    = 1 << 8, /* Shorten nspawn interfaces by including 24bit hash, instead of simple truncation  */
+         NAMING_BRIDGE_NO_SLOT      = 1 << 9, /* Don't use PCI hotplug slot information if the corresponding device is a PCI bridge */
+ 
++        NAMING_VSTX7_0 = NAMING_BRIDGE_NO_SLOT,
++
+         /* And now the masks that combine the features above */
+         NAMING_V238 = 0,
+         NAMING_V239 = NAMING_V238 | NAMING_SR_IOV_V | NAMING_NPAR_ARI,
+@@ -55,3 +57,7 @@ const NamingScheme* naming_scheme(void);
+ static inline bool naming_scheme_has(NamingSchemeFlags flags) {
+         return FLAGS_SET(naming_scheme()->flags, flags);
+ }
++
++static inline bool naming_scheme_is(NamingSchemeFlags flags) {
++        return naming_scheme()->flags == flags;
++}
+diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
+index d06a8c7..825e9f8 100644
+--- a/src/udev/udev-builtin-net_id.c
++++ b/src/udev/udev-builtin-net_id.c
+@@ -201,7 +201,7 @@ static int dev_pci_onboard(sd_device *dev, struct netnames *names) {
+         s = names->pci_onboard;
+         l = sizeof(names->pci_onboard);
+         l = strpcpyf(&s, l, "o%lu", idx);
+-        if (port_name)
++        if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
+                 l = strpcpyf(&s, l, "n%s", port_name);
+         else if (dev_port > 0)
+                 l = strpcpyf(&s, l, "d%lu", dev_port);
+@@ -318,7 +318,7 @@ static int dev_pci_slot(sd_device *dev, struct netnames *names) {
+         l = strpcpyf(&s, l, "p%us%u", bus, slot);
+         if (func > 0 || is_pci_multifunction(names->pcidev))
+                 l = strpcpyf(&s, l, "f%u", func);
+-        if (port_name)
++        if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
+                 l = strpcpyf(&s, l, "n%s", port_name);
+         else if (dev_port > 0)
+                 l = strpcpyf(&s, l, "d%lu", dev_port);
+@@ -388,7 +388,7 @@ static int dev_pci_slot(sd_device *dev, struct netnames *names) {
+                 l = strpcpyf(&s, l, "s%d", hotplug_slot);
+                 if (func > 0 || is_pci_multifunction(names->pcidev))
+                         l = strpcpyf(&s, l, "f%d", func);
+-                if (port_name)
++                if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
+                         l = strpcpyf(&s, l, "n%s", port_name);
+                 else if (dev_port > 0)
+                         l = strpcpyf(&s, l, "d%lu", dev_port);
+-- 
+2.36.1
+

@@ -1,0 +1,6 @@
+---
+debver: 2.85-1+deb11u1
+archive: https://snapshot.debian.org/archive/debian-security/20241129T154347Z/pool/updates/main/d/dnsmasq/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

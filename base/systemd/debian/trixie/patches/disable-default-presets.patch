@@ -1,0 +1,50 @@
+From 0200eca21c9d16751825779bec47945efc787b70 Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Wed, 31 Aug 2022 12:54:33 -0400
+Subject: [PATCH] disable default presets
+
+Disable the following services:
+
+- systemd-timesyncd
+- systemd-networkd
+- systemd-network-generator
+- sysstemd-resolved
+- systemd-homed
+- systemd-userdbd
+- systemd-boot-update
+
+The reason these services are being disabled is because when systemctl
+preset-all is run to turn on the new "system traits" feature these
+services will be enabled when the machine is started, and we want to
+keep the original state that we had before the feature enabled.
+
+Signed-off-by: Charles Short <charles.short@windriver.com>
+---
+ presets/90-systemd.preset | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/presets/90-systemd.preset b/presets/90-systemd.preset
+index d26087445c..ec72f0387f 100644
+--- a/presets/90-systemd.preset
++++ b/presets/90-systemd.preset
+@@ -16,12 +16,12 @@ enable remote-cryptsetup.target
+ enable machines.target
+ 
+ enable getty@.service
+-enable systemd-timesyncd.service
+-enable systemd-networkd.service
+-enable systemd-resolved.service
+-enable systemd-homed.service
+-enable systemd-userdbd.socket
+ enable systemd-pstore.service
++disable systemd-timesyncd.service
++disable systemd-networkd.service
++disable systemd-resolved.service
++disable systemd-homed.service
++disable systemd-userdbd.socket
+ 
+ disable console-getty.service
+ disable debug-shell.service
+-- 
+2.25.1
+
