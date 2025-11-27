@@ -1,0 +1,4 @@
+Tests: run
+Depends:
+ @,
+Restrictions: needs-root,isolation-container,allow-stderr

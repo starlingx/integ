@@ -1,0 +1,28 @@
+From 0071ccbc87326971769e207af6b6a592571e3bf1 Mon Sep 17 00:00:00 2001
+From: Guilherme Schons <guilherme.dossantosschons@windriver.com>
+Date: Fri, 19 May 2023 02:22:26 -0300
+Subject: [PATCH] Fix hiera_lookup function to unescape characters
+
+Fix the 'puppet lookup' command to unescape special characters.
+
+Signed-off-by: Guilherme Schons <guilherme.dossantosschons@windriver.com>
+---
+ lib/puppet/provider/keystone.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/keystone.rb b/lib/puppet/provider/keystone.rb
+index 2544942..2dd9ce9 100644
+--- a/lib/puppet/provider/keystone.rb
++++ b/lib/puppet/provider/keystone.rb
+@@ -227,7 +227,7 @@ class Puppet::Provider::Keystone < Puppet::Provider::Openstack
+   ### STX Modifications (Start) ###
+
+   def self.hiera_lookup(key)
+-    %x(sudo puppet lookup #{key})[4...-1]
++    %x(sudo puppet lookup #{key} | sed 's,\",,g')[4...-1]
+   end
+
+   def self.initial_config_primary?
+-- 
+2.25.1
+

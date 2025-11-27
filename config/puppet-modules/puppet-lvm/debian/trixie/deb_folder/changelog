@@ -1,0 +1,5 @@
+puppet-lvm (1.4.0-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Chuck Short <charles.short@windriver.com>  Wed, 22 Sep 2021 11:07:19 -0400

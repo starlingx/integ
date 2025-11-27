@@ -1,0 +1,110 @@
+From e6f5d2cd267564ee97f53447ba1419d1ace641a1 Mon Sep 17 00:00:00 2001
+From: Hediberto C Silva <hediberto.cavalcantedasilva@windriver.com>
+Date: Tue, 19 Mar 2024 17:17:10 -0300
+Subject: [PATCH] Add mon_data parameter
+
+If supplied, the mon_data parameter defines where the ceph-mon data
+will be located.
+
+Signed-off-by: Hediberto C Silva <hediberto.cavalcantedasilva@windriver.com>
+---
+ manifests/mon.pp | 33 ++++++++++++++++++++++++++-------
+ 1 file changed, 26 insertions(+), 7 deletions(-)
+
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index 6d1294e..4615d3c 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -60,6 +60,7 @@
+ define ceph::mon (
+   $ensure = present,
+   $mon_enable = true,
++  $mon_data = '',
+   $public_addr = undef,
+   $cluster = undef,
+   $authentication_type = 'cephx',
+@@ -139,7 +140,10 @@ chmod 0444 ${keyring_path}
+ ",
+             unless  => "/bin/true # comment to satisfy puppet syntax requirements
+ set -ex
+-mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data) || exit 1
++mon_data=\"${mon_data}\"
++if [ -z \${mon_data} ]; then
++  mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data) || exit 1
++fi
+ # if ceph-mon fails then the mon is probably not configured yet
+ test -e \$mon_data/done
+ ",
+@@ -178,7 +182,10 @@ test -e /etc/ceph/${cluster_name}.client.admin.keyring",
+       -> exec { $ceph_mkfs:
+         command   => "/bin/true # comment to satisfy puppet syntax requirements
+ set -ex
+-mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++mon_data=\"${mon_data}\"
++if [ -z \${mon_data} ]; then
++  mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++fi
+ if [ ! -d \$mon_data ] ; then
+     mkdir -p \$mon_data
+     if getent passwd ceph >/dev/null 2>&1; then
+@@ -188,7 +195,8 @@ if [ ! -d \$mon_data ] ; then
+               --mkfs \
+               --id ${id} \
+               --keyring ${keyring_path} \
+-              ${fsid_option} ; then
++              ${fsid_option} \
++              --mon-data \$mon_data ; then
+             touch \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+             chown -h ceph:ceph \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+         else
+@@ -199,7 +207,8 @@ if [ ! -d \$mon_data ] ; then
+               --mkfs \
+               --id ${id} \
+               --keyring ${keyring_path} \
+-              ${fsid_option} ; then
++              ${fsid_option} \
++              --mon-data \$mon_data ; then
+             touch \$mon_data/done \$mon_data/${init} \$mon_data/keyring
+         else
+             rm -fr \$mon_data
+@@ -209,7 +218,10 @@ fi
+ ",
+         unless    => "/bin/true # comment to satisfy puppet syntax requirements
+ set -ex
+-mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++mon_data=\"${mon_data}\"
++if [ -z \${mon_data} ]; then
++  mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++fi
+ test -d  \$mon_data
+ ",
+         logoutput => true,
+@@ -244,13 +256,19 @@ test ! -e ${keyring_path}
+       -> exec { "remove-mon-${id}":
+         command   => "/bin/true # comment to satisfy puppet syntax requirements
+ set -ex
+-mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++mon_data=\"${mon_data}\"
++if [ -z \${mon_data} ]; then
++  mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++fi
+ rm -fr \$mon_data
+ ",
+         unless    => "/bin/true # comment to satisfy puppet syntax requirements
+ set -ex
+ which ceph-mon || exit 0 # if ceph-mon is not available we already uninstalled ceph and there is nothing to do
+-mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++mon_data=\"${mon_data}\"
++if [ -z \${mon_data} ]; then
++  mon_data=\$(ceph-mon ${cluster_option} --id ${id} --show-config-value mon_data)
++fi
+ test ! -d \$mon_data
+ ",
+         logoutput => true,
+@@ -263,3 +281,4 @@ test ! -d \$mon_data
+       fail('Ensure on MON must be either present or absent')
+     }
+   }
++
+-- 
+2.34.1

@@ -1,0 +1,26 @@
+From 156c61ec9ca335a09e8964f92f23b65e4e98c9a4 Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Thu, 31 Mar 2022 07:47:34 -0400
+Subject: [PATCH] use python3-psycopg2
+
+Signed-off-by: Charles Short <charles.short@windriver.com>
+---
+ manifests/params.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 0303d02..a72e299 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -177,7 +177,7 @@ class postgresql::params inherits postgresql::globals {
+       $perl_package_name      = pick($perl_package_name, 'libdbd-pg-perl')
+       $plperl_package_name    = pick($plperl_package_name, "postgresql-plperl-${version}")
+       $plpython_package_name  = pick($plpython_package_name, "postgresql-plpython-${version}")
+-      $python_package_name    = pick($python_package_name, 'python-psycopg2')
++      $python_package_name    = pick($python_package_name, 'python3-psycopg2')
+ 
+       $bindir                 = pick($bindir, "/usr/lib/postgresql/${version}/bin")
+       $datadir                = pick($datadir, "/var/lib/postgresql/${version}/main")
+-- 
+2.25.1
+

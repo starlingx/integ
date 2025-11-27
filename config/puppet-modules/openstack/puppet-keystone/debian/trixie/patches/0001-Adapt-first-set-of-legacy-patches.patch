@@ -1,0 +1,333 @@
+From ff270d806958405b35170dbb6b57da6a13ed14ed Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Mon, 20 Sep 2021 16:17:56 +0300
+Subject: [PATCH 1/3] Adapt first set of legacy patches
+
+Adapt 0001-pike-rebase-squash-titanium-patches.patch from CentOS.
+Big logic changes in upstream version, here are 3 examples:
+
+many divergences:
+https://github.com/openstack/puppet-keystone/commit/bc1ff1d7cb01ac02790c3302a3da6e994598d9f6"
+admin_endpoint->public_endpoint:
+https://github.com/openstack/puppet-keystone/commit/58dfc07b3a90a8b05aeb0cbeae17c1b7cfc35594"
+url->endpoint:
+https://github.com/openstack/puppet-keystone/commit/329ab549a2a127ae41dda5e2c2a906313e5ff911"
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ lib/puppet/provider/keystone.rb               | 77 ++++++++++++++++++-
+ manifests/db/sync.pp                          |  3 +
+ manifests/init.pp                             | 45 +++++++++--
+ manifests/ldap.pp                             |  7 ++
+ manifests/logging.pp                          |  2 +-
+ manifests/resource/service_identity.pp        |  7 ++
+ .../keystone_security_compliance_spec.rb      | 12 +--
+ 7 files changed, 140 insertions(+), 13 deletions(-)
+
+diff --git a/lib/puppet/provider/keystone.rb b/lib/puppet/provider/keystone.rb
+index 9911b6e..b0756fd 100644
+--- a/lib/puppet/provider/keystone.rb
++++ b/lib/puppet/provider/keystone.rb
+@@ -3,6 +3,7 @@ require 'puppet/provider/openstack'
+ require 'puppet/provider/openstack/auth'
+ require 'puppet/provider/openstack/credentials'
+ require File.join(File.dirname(__FILE__), '..','..', 'puppet/provider/keystone/util')
++require 'hiera_puppet'
+ 
+ class Puppet::Provider::Keystone < Puppet::Provider::Openstack
+ 
+@@ -224,12 +225,86 @@ class Puppet::Provider::Keystone < Puppet::Provider::Openstack
+     end
+   end
+ 
++  ### STX Modifications (Start) ###
++
++  def self.hiera_lookup(key)
++    HieraPuppet.lookup(key, :undef, self, nil, :priority)
++  end
++
++  def self.initial_config_primary?
++    return true if ENV['INITIAL_CONFIG_PRIMARY'] == "true"
++  end
++
++  def self.upgrading?
++    return true if hiera_lookup('platform::params::controller_upgrade') == true
++  end
++
+   def self.request(service, action, properties=nil, options={})
+     super
+   rescue Puppet::Error::OpenstackAuthInputError, Puppet::Error::OpenstackUnauthorizedError => error
+-    keystone_request(service, action, error, properties)
++    if initial_config_primary?
++      # admin user account might not have been created
++      keystone_request(service, action, error, properties)
++    else
++      if upgrading?
++        # when running the Keystone manifest during an upgrade
++        # (on controller-1), we need to use an AUTH token and
++        # a bypass URL since using the default AUTL URL will
++        # send the Request to the service catalog URL (internalURL),
++        # running on the non-upgraded controller-0 which cannot
++        # service this request
++        request_by_upgrading_token(service, action, error, properties)
++      else
++        request_by_admin_credential(service, action, error, properties)
++      end
++    end
+   end
+ 
++  def self.request_by_admin_credential(service, action, error, properties=nil)
++    properties ||= []
++    @credentials.username = hiera_lookup('platform::client::params::admin_username')
++    @credentials.password = hiera_lookup('keystone::admin_password')
++    @credentials.project_name = 'admin'
++    @credentials.auth_url = get_auth_url
++    @credentials.identity_api_version = @credentials.version
++    if @credentials.version == '3'
++      @credentials.user_domain_name = hiera_lookup('platform::client::params::admin_user_domain')
++      @credentials.project_domain_name = hiera_lookup('platform::client::params::admin_project_domain')
++    end
++    raise error unless @credentials.set?
++    Puppet::Provider::Openstack.request(service, action, properties, @credentials)
++  end
++
++  def self.get_upgrade_token
++    upgrade_token_file = hiera_lookup('openstack::keystone::upgrade::upgrade_token_file')
++    # the upgrade token file may get refreshed by the same Puppet event
++    # that triggered this call, and therefore may not be available
++    # immediately. Try for timeout before quitting with error
++    timeout = 10 # 10 seconds
++    1.upto(timeout) do |iter|
++      if File.exists?(upgrade_token_file)
++        upgrade_token = File.read(upgrade_token_file).strip
++        notice("Found #{upgrade_token_file} token file and upgrade token #{upgrade_token}.")
++        return upgrade_token
++      else
++        Puppet.debug("#{upgrade_token_file} not found. Retrying for #{iter} more seconds.")
++        sleep(1)
++      end
++    end
++    raise(Puppet::ExecutionFailure, "Can't retrieve #{upgrade_token_file} in #{timeout}s retry attempts.")
++  end
++
++  def self.request_by_upgrading_token(service, action, error, properties=nil, options={})
++    properties ||= []
++    @credentials.token = get_upgrade_token
++    @credentials.endpoint   = hiera_lookup('openstack::keystone::upgrade::url')
++    raise error unless @credentials.service_token_set?
++    Puppet::Provider::Openstack.request(service, action, properties, @credentials, options)
++  end
++
++  ### STX Additions (End) ###
++
++
+   def self.keystone_request(service, action, error, properties=nil)
+     properties ||= []
+     @credentials.username = keystone_puppet_credentials['username']
+diff --git a/manifests/db/sync.pp b/manifests/db/sync.pp
+index f1bb758..6dbc202 100644
+--- a/manifests/db/sync.pp
++++ b/manifests/db/sync.pp
+@@ -36,5 +36,8 @@ class keystone::db::sync(
+     ],
+     notify      => Anchor['keystone::dbsync::end'],
+     tag         => ['keystone-exec', 'openstack-db']
++    # Only do the db sync if both controllers are running the same software
++    # version. Avoids impacting mate controller during an upgrade.
++    onlyif      => "test $::controller_sw_versions_match = true",
+   }
+ }
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 35860f2..ee07bd3 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -55,6 +55,15 @@
+ #   other than KVS, which stores events in memory.
+ #   Defaults to true.
+ #
++# [*upgrade_token_cmd*]
++#   (Optional) STX - if we are in an upgrade scenario, an upgrade token
++#   will be required to bypass authentication.
++#   Defaults to undef
++#
++# [*upgrade_token_file*]
++#   (Optional) STX - the file where the upgrade token will be stowed
++#   Defaults to undef
++#
+ # [*manage_service*]
+ #   (Optional) If Puppet should manage service startup / shutdown.
+ #   Defaults to true.
+@@ -480,6 +489,8 @@ class keystone(
+   $max_request_body_size                = $::os_service_default,
+   $purge_config                         = false,
+   $amqp_durable_queues                  = $::os_service_default,
++  $upgrade_token_cmd                    = undef,
++  $upgrade_token_file                   = undef,
+ ) inherits keystone::params {
+ 
+   include keystone::deps
+@@ -553,18 +564,21 @@ class keystone(
+   # ssl config
+   if ($enable_ssl) {
+     keystone_config {
+-      'ssl/enable':              value  => true;
++      # STX ssl/enable is deprecated for removal
++      #'ssl/enable':              value  => true;
+       'ssl/certfile':            value  => $ssl_certfile;
+       'ssl/keyfile':             value  => $ssl_keyfile;
+       'ssl/ca_certs':            value  => $ssl_ca_certs;
+       'ssl/ca_key':              value  => $ssl_ca_key;
+       'ssl/cert_subject':        value  => $ssl_cert_subject;
+     }
+-  } else {
+-    keystone_config {
+-      'ssl/enable':              value  => false;
+-    }
+   }
++  # STX ssl/enable is deprecated for removal
++  #else {
++  #  keystone_config {
++  #    'ssl/enable':              value  => false;
++  #  }
++  #}
+ 
+   oslo::middleware { 'keystone_config':
+     enable_proxy_headers_parsing => $enable_proxy_headers_parsing,
+@@ -788,6 +802,27 @@ running as a standalone service, or httpd for being run by a httpd server")
+     fail('You must activate domain configuration using "using_domain_config" parameter to keystone class.')
+   }
+ 
++  # STX: Now that the keystone service has started,
++  # check if we are in an Upgrade scenario, and generate
++  # an upgrade token which will be used to bypass Keystone
++  # authentication (specifically the service catalog) for
++  # all operations during upgrades.
++  # This operation is similar to the keystone bootstrap
++  # operation (above) which would generate an admin
++  # token, and therefore also requires the database to
++  # be up and running and configured and is only run once,
++  # so we don't need to notify the service
++  if $upgrade_token_cmd and $upgrade_token_file {
++    exec { 'upgrade token issue':
++      command     => "${upgrade_token_cmd} > ${upgrade_token_file}",
++      path        => '/usr/bin',
++      creates     => $upgrade_token_file,
++      subscribe   => Service[$service_name],
++      notify      => Anchor['keystone::service::end'],
++      tag         => 'keystone-exec',
++    }
++  }
++
+   if $using_domain_config {
+     validate_legacy(Stdlib::Absolutepath, 'validate_absolute_path', $domain_config_directory)
+ 
+diff --git a/manifests/ldap.pp b/manifests/ldap.pp
+index 79c49e7..e87181f 100644
+--- a/manifests/ldap.pp
++++ b/manifests/ldap.pp
+@@ -4,6 +4,11 @@
+ #
+ # === Parameters:
+ #
++# [*debug_level*]
++#   LDAP debugging level for LDAP calls; a value of zero("0") disables
++#   debugging. (integer value)
++#  Defaults to 'undef'
++#
+ # [*url*]
+ #   URL for connecting to the LDAP server. (string value)
+ #   Defaults to 'undef'
+@@ -364,6 +369,7 @@
+ # Copyright 2012 Puppetlabs Inc, unless otherwise noted.
+ #
+ class keystone::ldap(
++  $debug_level                          = undef,
+   $url                                  = undef,
+   $user                                 = undef,
+   $password                             = undef,
+@@ -462,6 +468,7 @@ class keystone::ldap(
+   }
+ 
+   keystone_config {
++    'ldap/debug_level':                          value => $debug_level;
+     'ldap/url':                                  value => $url;
+     'ldap/user':                                 value => $user;
+     'ldap/password':                             value => $password, secret => true;
+diff --git a/manifests/logging.pp b/manifests/logging.pp
+index 0396cd9..cffaf00 100644
+--- a/manifests/logging.pp
++++ b/manifests/logging.pp
+@@ -120,7 +120,7 @@ class keystone::logging(
+   $log_file                      = $::os_service_default,
+   $debug                         = $::os_service_default,
+   $logging_context_format_string = $::os_service_default,
+-  $logging_default_format_string = $::os_service_default,
++  $logging_default_format_string = 'keystone:log %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s',
+   $logging_debug_format_suffix   = $::os_service_default,
+   $logging_exception_prefix      = $::os_service_default,
+   $logging_user_identity_format  = $::os_service_default,
+diff --git a/manifests/resource/service_identity.pp b/manifests/resource/service_identity.pp
+index ef09dab..0caf3bb 100644
+--- a/manifests/resource/service_identity.pp
++++ b/manifests/resource/service_identity.pp
+@@ -195,6 +195,8 @@ define keystone::resource::service_identity(
+     if $service_type {
+       ensure_resource('keystone_service', "${service_name_real}::${service_type}", {
+         'ensure'      => $ensure,
++        'name'        => $service_name_real,
++        'type'        => $service_type,
+         'description' => $service_description,
+       })
+     } else {
+@@ -207,6 +209,9 @@ define keystone::resource::service_identity(
+       if $public_url and $admin_url and $internal_url {
+         ensure_resource('keystone_endpoint', "${region}/${service_name_real}::${service_type}", {
+           'ensure'       => $ensure,
++          'name'         => $service_name_real,
++          'type'         => $service_type,
++          'region'       => $region,
+           'public_url'   => $public_url,
+           'admin_url'    => $admin_url,
+           'internal_url' => $internal_url,
+@@ -218,6 +223,8 @@ define keystone::resource::service_identity(
+       if $public_url and $admin_url and $internal_url {
+         ensure_resource('keystone_endpoint', "${region}/${service_name_real}", {
+           'ensure'       => $ensure,
++          'name'         => $service_name_real,
++          'region'       => $region,
+           'public_url'   => $public_url,
+           'admin_url'    => $admin_url,
+           'internal_url' => $internal_url,
+diff --git a/spec/classes/keystone_security_compliance_spec.rb b/spec/classes/keystone_security_compliance_spec.rb
+index 4856f3f..4287476 100644
+--- a/spec/classes/keystone_security_compliance_spec.rb
++++ b/spec/classes/keystone_security_compliance_spec.rb
+@@ -23,9 +23,9 @@ describe 'keystone::security_compliance' do
+           :lockout_failure_attempts           => 3,
+           :minimum_password_age               => 4,
+           :password_expires_days              => 5,
+-          :password_regex                     => 'SomeRegex',
+-          :password_regex_description         => 'this is some regex',
+-          :unique_last_password_count         => 6,
++          :password_regex                     => '^(?=.*\d)(?=.*[a-zA-Z]).{7,}$',
++          :password_regex_description         => 'password must be at least 7 characters long and contain 1 digit',
++          :unique_last_password_count         => 2,
+         }
+       end
+       it 'should have configure security compliance with params' do
+@@ -35,9 +35,9 @@ describe 'keystone::security_compliance' do
+         is_expected.to contain_keystone_config('security_compliance/lockout_failure_attempts').with_value(3)
+         is_expected.to contain_keystone_config('security_compliance/minimum_password_age').with_value(4)
+         is_expected.to contain_keystone_config('security_compliance/password_expires_days').with_value(5)
+-        is_expected.to contain_keystone_config('security_compliance/password_regex').with_value('SomeRegex')
+-        is_expected.to contain_keystone_config('security_compliance/password_regex_description').with_value('this is some regex')
+-        is_expected.to contain_keystone_config('security_compliance/unique_last_password_count').with_value(6)
++        is_expected.to contain_keystone_config('security_compliance/password_regex').with_value('^(?=.*\d)(?=.*[a-zA-Z]).{7,}$')
++        is_expected.to contain_keystone_config('security_compliance/password_regex_description').with_value('password must be at least 7 characters long and contain 1 digit')
++        is_expected.to contain_keystone_config('security_compliance/unique_last_password_count').with_value(2)
+       end
+     end
+   end
+-- 
+2.30.0
+

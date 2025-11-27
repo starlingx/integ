@@ -1,0 +1,30 @@
+Source: puppet-module-ceph
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends:
+ debhelper-compat (= 11),
+ openstack-pkg-tools,
+ python3-all,
+ python3-pbr,
+ python3-setuptools,
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: puppet-module-ceph
+Architecture: all
+Depends:  ${misc:Depends},
+ puppet,
+ puppet-module-duritong-sysctl,
+ puppet-module-puppetlabs-apache,
+ puppet-module-puppetlabs-concat,
+ puppet-module-puppetlabs-inifile,
+ puppet-module-puppetlabs-stdlib,
+Description: Puppet module for Ceph
+ Puppet lets you centrally manage every important aspect of your system using a
+ cross-platform specification language that manages all the separate elements
+ normally aggregated in different files, like users, cron jobs, and hosts,
+ along with obviously discrete elements like packages, services, and files.
+ .
+ This module manages both the installation and configuration of the Ceph
+ distributed storage system.

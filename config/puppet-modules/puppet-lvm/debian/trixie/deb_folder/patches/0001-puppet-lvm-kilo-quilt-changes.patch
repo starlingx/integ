@@ -1,0 +1,631 @@
+From: Al Bailey <al.bailey@windriver.com>
+Date: Tue, 7 Jun 2016 10:36:17 -0400
+Subject: puppet-lvm kilo quilt changes
+
+---
+ lib/puppet/provider/logical_volume/lvm.rb          | 168 ++++++++++++++-------
+ lib/puppet/provider/physical_volume/lvm.rb         |   2 +-
+ lib/puppet/provider/volume_group/lvm.rb            |  51 ++++++-
+ lib/puppet/type/logical_volume.rb                  |  32 +++-
+ manifests/logical_volume.pp                        |   4 +
+ manifests/volume.pp                                |  31 ++--
+ .../puppet/provider/logical_volume/lvm_spec.rb     |  47 +++---
+ 7 files changed, 246 insertions(+), 89 deletions(-)
+
+diff --git a/lib/puppet/provider/logical_volume/lvm.rb b/lib/puppet/provider/logical_volume/lvm.rb
+index d9eb485..76c7ec0 100644
+--- a/lib/puppet/provider/logical_volume/lvm.rb
++++ b/lib/puppet/provider/logical_volume/lvm.rb
+@@ -5,9 +5,10 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+ 
+   commands lvcreate: 'lvcreate',
+            lvremove: 'lvremove',
++           lvresize: 'lvresize',
+            lvextend: 'lvextend',
+            lvs: 'lvs',
+-           resize2fs: 'resize2fs',
++           vgs: 'vgs',
+            mkswap: 'mkswap',
+            swapoff: 'swapoff',
+            swapon: 'swapon',
+@@ -16,10 +17,28 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+            dmsetup: 'dmsetup',
+            lvconvert: 'lvconvert',
+            lvdisplay: 'lvdisplay',
+-           lsblk: 'lsblk'
+-
+-  optional_commands xfs_growfs: 'xfs_growfs',
+-                    resize4fs: 'resize4fs'
++           lsblk: 'lsblk',
++           dd: 'dd',
++           fsadm: 'fsadm'
++
++  def round_to_extent(size)
++    lvm_size_units = {
++      "K" => 1**0, "M" => 1024**1, "G" => 1024**2, "T" => 1024**3, "P" => 1024**4, "E" => 1025**5,
++    }
++
++    if @resource[:size] =~ /^([0-9]+(\.[0-9]+)?)([KMGTPE])/i
++      size_value = $1.to_f
++      size_unit  = $3.upcase
++      size_kibi = (size_value * lvm_size_units[size_unit]).to_i
++      if vgs('--noheading', '-o', 'vg_extent_size', '--units', 'k', "#{@resource[:volume_group]}") =~ /\s+(\d+)\.\d+k/i
++        vg_extent_size_kibi = $1.to_i
++      end
++      new_size_kibi = ((size_kibi + vg_extent_size_kibi - 1) / vg_extent_size_kibi) * vg_extent_size_kibi
++      "#{new_size_kibi}k"
++    else
++      size
++    end
++  end
+ 
+   def self.instances
+     get_logical_volumes.map do |logical_volumes_line|
+@@ -76,9 +95,20 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+     end
+ 
+     if @resource[:size]
+-      args.push(size_option, @resource[:size])
++      size = @resource[:size]
++      if size == 'max'
++          size = vgs('--noheading', '-o', 'vg_size', '--units', 'k', "#{@resource[:volume_group]}").strip
++      elsif @resource[:round_to_extent] then
++          size = round_to_extent(size)
++      end
++      args.push(size_option, size)
+     elsif @resource[:initial_size]
+-      args.push(size_option, @resource[:initial_size])
++      args.push('--size',
++        if @resource[:round_to_extent] then
++            round_to_extent(@resource[:initial_size])
++        else
++            @resource[:initial_size]
++        end)
+     end
+     if @resource[:extents]
+       args.push('--extents', @resource[:extents])
+@@ -145,6 +175,7 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+       args << @resource[:volume_group]
+     end
+     lvcreate(*args)
++    lvzero
+   end
+ 
+   def destroy
+@@ -165,13 +196,18 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+     nil
+   end
+ 
++  def exec_cmd(*cmd)
++    output = Puppet::Util::Execution.execute(cmd, :failonfail => false, :combine => true)
++    {:out => output, :exit => $CHILD_STATUS.exitstatus}
++  end
++
+   def size
+     unit = if @resource[:size] =~ %r{^\d+\.?\d{0,2}([KMGTPE])}i
+              Regexp.last_match(1).downcase
+            else
+              # If we are getting the size initially we don't know what the
+-             # units will be, default to GB
+-             'g'
++             # units will be, default to KB
++             'k'
+            end
+ 
+     raw = lvs('--noheading', '--unit', unit, path)
+@@ -188,69 +224,82 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+   def size=(new_size)
+     lvm_size_units = { 'K' => 1, 'M' => 1024, 'G' => 1024**2, 'T' => 1024**3, 'P' => 1024**4, 'E' => 1024**5 }
+ 
+-    resizeable = false
+     current_size = size
+ 
+     if current_size =~ %r{^([0-9]+(\.[0-9]+)?)([KMGTPE])}i
+-      current_size_bytes = Regexp.last_match(1).to_f
++      current_size_value = Regexp.last_match(1).to_f
+       current_size_unit = Regexp.last_match(3).upcase
++      current_size = (current_size_value * lvm_size_units[current_size_unit]).to_i
++    end
++
++    info( "Current: value=#{current_size_value}, unit=#{current_size_unit}, kibi=#{current_size}" )
++
++    if new_size == 'max'
++      new_size = vgs('--noheading', '-o', 'vg_size', '--units', 'k', "#{@resource[:volume_group]}").strip
+     end
+ 
+     if new_size =~ %r{^([0-9]+(\.[0-9]+)?)([KMGTPE])}i
+-      new_size_bytes = Regexp.last_match(1).to_f
++      new_size_value = Regexp.last_match(1).to_f
+       new_size_unit = Regexp.last_match(3).upcase
++      new_size = (new_size_value * lvm_size_units[new_size_unit]).to_i
+     end
+ 
++    info( "New: value=#{new_size_value}, unit=#{new_size_unit}, kibi=#{new_size}" )
++
+     ## Get the extend size
+     if lvs('--noheading', '-o', 'vg_extent_size', '--units', 'k', path) =~ %r{\s+(\d+)\.\d+k}i
+       vg_extent_size = Regexp.last_match(1).to_i
+     end
+ 
+-    ## Verify that it's a extension: Reduce is potentially dangerous and should be done manually
+-    if lvm_size_units[current_size_unit] < lvm_size_units[new_size_unit]
+-      resizeable = true
+-    elsif lvm_size_units[current_size_unit] > lvm_size_units[new_size_unit]
+-      if (current_size_bytes * lvm_size_units[current_size_unit]) < (new_size_bytes * lvm_size_units[new_size_unit])
+-        resizeable = true
+-      end
+-    elsif lvm_size_units[current_size_unit] == lvm_size_units[new_size_unit]
+-      if new_size_bytes > current_size_bytes
+-        resizeable = true
+-      end
+-    end
+-
+-    if !resizeable
+-      if @resource[:size_is_minsize] == :true || @resource[:size_is_minsize] == true || @resource[:size_is_minsize] == 'true'
+-        info("Logical volume already has minimum size of #{new_size} (currently #{current_size})")
++    if new_size < current_size
++      if @resource[:size_is_minsize] == :true or @resource[:size_is_minsize] == true or @resource[:size_is_minsize] == 'true'
++        info( "Logical volume already has minimum size of #{new_size} (currently #{current_size})" )
+       else
+-        raise(Puppet::Error, "Decreasing the size requires manual intervention (#{new_size} < #{current_size})")
+-      end
+-    else
+-      lvextend('-L', new_size, path) || raise("Cannot extend to size #{new_size} because lvextend failed.")
+-
+-      unless @resource[:resize_fs] == :false || @resource[:resize_fs] == false || @resource[:resize_fs] == 'false'
+-        begin
+-          blkid_type = blkid(path)
+-          if command(:resize4fs) && blkid_type =~ %r{\bTYPE=\"(ext4)\"}
+-            resize4fs(path) || raise("Cannot resize file system to size #{new_size} because resize2fs failed.")
+-          elsif blkid_type =~ %r{\bTYPE=\"(ext[34])\"}
+-            resize2fs(path) || raise("Cannot resize file system to size #{new_size} because resize2fs failed.")
+-          elsif blkid_type =~ %r{\bTYPE=\"(xfs)\"}
+-            # New versions of xfs_growfs only support resizing by mount point, not by volume (e.g. under RHEL8)
+-            # * https://tickets.puppetlabs.com/browse/MODULES-9004
+-            mount_point = lsblk('-o', 'MOUNTPOINT', '-nr', path).chomp
+-            xfs_growfs(mount_point) || raise("Cannot resize filesystem to size #{new_size} because xfs_growfs failed.")
+-          elsif blkid_type =~ %r{\bTYPE=\"(swap)\"}
+-            swapoff(path) && mkswap(path) && swapon(path) || raise("Cannot resize swap to size #{new_size} because mkswap failed.")
++        if not @resource[:allow_reduce]
++          fail( "Decreasing the size requires manual intervention (#{new_size} < #{current_size})" )
++        end
++        if new_size % vg_extent_size != 0
++          if @resource[:round_to_extent]
++            new_size = ((new_size + vg_extent_size - 1) / vg_extent_size) * vg_extent_size
++            if new_size >= current_size
++              info( "Logical volume already has a size of #{current_size}" )
++              return
++            end
++          else
++            fail( "Cannot reduce to size #{new_size} because VG extent size is #{vg_extent_size} KB" )
+           end
+-        rescue Puppet::ExecutionFailure => detail
+-          ## If blkid returned 2, there is no filesystem present or the file doesn't exist.  This should not be a failure.
+-          if detail.message =~ %r{ returned 2:} # rubocop:disable Metrics/BlockNesting
+-            Puppet.debug(detail.message)
++        end
++        exec_cmd('umount', path)
++        exec_cmd('fsadm', '-y', 'check', path )
++        r = exec_cmd('fsadm', '-y', 'resize', path, "#{new_size}k")
++        if r[:exit] != 0 and @resource[:nuke_fs_on_resize_failure]
++          exec_cmd('dd', 'if=/dev/zero', "of=#{path}", "bs=512", "count=16", "conv=notrunc")
++          blkid('-g')
++        end
++        lvresize( '-f', '-L', "#{new_size}k", path) || fail( "Cannot reduce to size #{new_size} because lvresize failed." )
++      end
++    elsif new_size > current_size
++      if new_size % vg_extent_size != 0
++        if @resource[:round_to_extent]
++          new_size = ((new_size + vg_extent_size - 1) / vg_extent_size) * vg_extent_size
++          if new_size <= current_size
++            info( "Logical volume already has a size of #{current_size}" )
++            return
+           end
++        else
++          fail( "Cannot extend to size #{new_size} because VG extent size is #{vg_extent_size} KB" )
+         end
+       end
+-
++      lvextend( '-L', "#{new_size}k", path) || fail( "Cannot extend to size #{new_size} because lvextend failed." )
++      exec_cmd('umount', path)
++      exec_cmd('fsadm', '-y', 'check', path )
++      r = exec_cmd('fsadm', '-y', 'resize', path, "#{new_size}k")
++      if r[:exit] != 0 and @resource[:nuke_fs_on_resize_failure]
++        exec_cmd('dd', 'if=/dev/zero', "of=#{path}", "bs=512", "count=16", "conv=notrunc")
++        blkid('-g')
++      end
++    else
++      info( "Logical volume already has a size of #{current_size}" )
+     end
+   end
+ 
+@@ -339,4 +388,19 @@ Puppet::Type.type(:logical_volume).provide :lvm do
+   def vgpath
+     "/dev/#{@resource[:volume_group]}"
+   end
++
++  def lvzero
++    if lvs('--noheading', '-o', 'lv_size', '--units', 'm', path) =~ /\s+(\d+)\.\d+m/i
++      lv_size = $1.to_i
++      lv_size = lv_size - 2
++      begin
++        dd('if=/dev/zero', 'of=' + path, 'bs=1M', "seek=#{lv_size}")
++      rescue
++      end
++      begin
++        dd('if=/dev/zero', 'of=' + path, 'bs=1M', 'count=100')
++      rescue
++      end
++    end
++  end
+ end
+diff --git a/lib/puppet/provider/physical_volume/lvm.rb b/lib/puppet/provider/physical_volume/lvm.rb
+index 479fe43..3d92a55 100644
+--- a/lib/puppet/provider/physical_volume/lvm.rb
++++ b/lib/puppet/provider/physical_volume/lvm.rb
+@@ -76,7 +76,7 @@ Puppet::Type.type(:physical_volume).provide(:lvm) do
+     private
+ 
+   def create_physical_volume(path)
+-    args = []
++    args = ['-y']
+     if @resource[:force] == :true
+       args.push('--force')
+     end
+diff --git a/lib/puppet/provider/volume_group/lvm.rb b/lib/puppet/provider/volume_group/lvm.rb
+index 5727339..4d6e426 100644
+--- a/lib/puppet/provider/volume_group/lvm.rb
++++ b/lib/puppet/provider/volume_group/lvm.rb
+@@ -1,3 +1,5 @@
++require 'csv'
++
+ Puppet::Type.type(:volume_group).provide :lvm do
+   desc 'Manages LVM volume groups on Linux'
+ 
+@@ -5,10 +7,14 @@ Puppet::Type.type(:volume_group).provide :lvm do
+ 
+   commands vgcreate: 'vgcreate',
+            vgremove: 'vgremove',
++           pvremove: 'pvremove',
+            vgs: 'vgs',
+            vgextend: 'vgextend',
+            vgreduce: 'vgreduce',
+-           pvs: 'pvs'
++           vgscan: 'vgscan',
++           pvs: 'pvs',
++           lvremove: 'lvremove',
++           umount: 'umount'
+ 
+   def self.instances
+     get_volume_groups.map do |volume_groups_line|
+@@ -57,6 +63,11 @@ Puppet::Type.type(:volume_group).provide :lvm do
+     false
+   end
+ 
++  def exec_cmd(*cmd)
++    output = Puppet::Util::Execution.execute(cmd, :failonfail => false, :combine => true)
++    {:out => output, :exit => $CHILD_STATUS.exitstatus}
++  end
++
+   def physical_volumes=(new_volumes = [])
+     # Only take action if createonly is false just to be safe
+     #  this is really only here to enforce the createonly setting
+@@ -64,9 +75,41 @@ Puppet::Type.type(:volume_group).provide :lvm do
+     if @resource[:createonly].to_s == 'false'
+       existing_volumes = physical_volumes
+       extraneous = existing_volumes - new_volumes
+-      extraneous.each { |volume| reduce_with(volume) }
+-      missing = new_volumes - existing_volumes
+-      missing.each { |volume| extend_with(volume) }
++      pv_to_lv={}
++      pv_to_dev={}
++      csv = CSV.new(pvs('-o', 'pv_name,vg_name,lv_name', '--separator', ','),
++                   :headers => true, :header_converters => :symbol)
++      csv.to_a.map {|row| row.to_hash}.each do |m|
++        unless m[:lv].nil?
++          pv_to_lv[m[:_pv].strip] = "#{m[:vg]}/#{m[:lv]}"
++          pv_to_dev[m[:_pv].strip] = "#{m[:vg].gsub('-','--')}-#{m[:lv].gsub('-','--')}"
++        end
++      end
++
++      if extraneous == existing_volumes
++        extraneous.each do |volume|
++          if pv_to_lv.has_key?(volume)
++            exec_cmd('/bin/umount', "/dev/mapper/#{pv_to_dev[volume]}")
++            lvremove('-f', pv_to_lv[volume])
++          end
++        end
++        vgremove(@resource[:name], '--force')
++        extraneous.each do |volume|
++            pvremove(volume)
++        end
++        vgcreate(@resource[:name], *new_volumes)
++      else
++        extraneous.each do |volume|
++          if pv_to_lv.has_key?(volume)
++            exec_cmd('/bin/umount', "/dev/mapper/#{pv_to_dev[volume]}")
++            lvremove('-f', pv_to_lv[volume])
++          end
++          reduce_with(volume)
++          pvremove(volume)
++        end
++        missing = new_volumes - existing_volumes
++        missing.each { |volume| extend_with(volume) }
++      end
+     end
+   end
+ 
+diff --git a/lib/puppet/type/logical_volume.rb b/lib/puppet/type/logical_volume.rb
+index e6f2791..82e5620 100644
+--- a/lib/puppet/type/logical_volume.rb
++++ b/lib/puppet/type/logical_volume.rb
+@@ -42,7 +42,7 @@ Puppet::Type.newtype(:logical_volume) do
+   newproperty(:size) do
+     desc 'The size of the logical volume. Set to undef to use all available space'
+     validate do |value|
+-      unless value =~ %r{^[0-9]+(\.[0-9]+)?[KMGTPE]}i
++      unless value =~ %r{^[0-9]+(\.[0-9]+)?[KMGTPE]|max}i
+         raise ArgumentError, "#{value} is not a valid logical volume size"
+       end
+     end
+@@ -126,6 +126,36 @@ Puppet::Type.newtype(:logical_volume) do
+     desc 'Configures the logical volume type.'
+   end
+ 
++  newparam(:allow_reduce) do
++    desc "Allow reducing logical volume size."
++    validate do |value|
++      unless [:true, true, "true", :false, false, "false"].include?(value)
++        raise ArgumentError , "allow_reduce must either be true or false"
++      end
++    end
++    defaultto :false
++  end
++
++  newparam(:round_to_extent) do
++    desc "Allow rounding of logical volume size to extent size."
++    validate do |value|
++      unless [:true, true, "true", :false, false, "false"].include?(value)
++        raise ArgumentError , "round_to_extent must either be true or false"
++      end
++    end
++    defaultto :false
++  end
++
++  newparam(:nuke_fs_on_resize_failure) do
++    desc "Remove filesystem on logical volume resize failure."
++    defaultto :false
++    validate do |value|
++      unless [:true, true, "true", :false, false, "false"].include?(value)
++        raise ArgumentError , "nuke_fs_on_resize_failure must either be true or false"
++      end
++    end
++  end
++
+   newparam(:range) do
+     desc 'Sets the inter-physical volume allocation policy. AIX only'
+     validate do |value|
+diff --git a/manifests/logical_volume.pp b/manifests/logical_volume.pp
+index bd50a3f..e6486a4 100644
+--- a/manifests/logical_volume.pp
++++ b/manifests/logical_volume.pp
+@@ -3,7 +3,9 @@
+ define lvm::logical_volume (
+   $volume_group,
+   $size                              = undef,
++  $size_is_minsize                   = false,
+   $initial_size                      = undef,
++  $round_to_extent                   = false,
+   Enum['absent', 'present'] $ensure  = present,
+   $options                           = 'defaults',
+   $pass                              = '2',
+@@ -13,6 +15,7 @@ define lvm::logical_volume (
+   Stdlib::Absolutepath $mountpath    = "/${name}",
+   Boolean $mountpath_require         = false,
+   Boolean $mounted                   = true,
++  Boolean $remounts                  = true,
+   Boolean $createfs                  = true,
+   $extents                           = undef,
+   $stripes                           = undef,
+@@ -119,6 +122,7 @@ define lvm::logical_volume (
+       pass    => $fixed_pass,
+       dump    => $fixed_dump,
+       atboot  => true,
++      remounts => $remounts,
+     }
+   }
+ }
+diff --git a/manifests/volume.pp b/manifests/volume.pp
+index a6310ce..9333ed6 100644
+--- a/manifests/volume.pp
++++ b/manifests/volume.pp
+@@ -59,7 +59,10 @@ define lvm::volume (
+   $fstype  = undef,
+   $size    = undef,
+   $extents = undef,
+-  $initial_size = undef
++  $initial_size = undef,
++  $allow_reduce = false,
++  $round_to_extent = false,
++  $nuke_fs_on_resize_failure = false
+ ) {
+ 
+   if ($name == undef) {
+@@ -84,11 +87,14 @@ define lvm::volume (
+         }
+ 
+         logical_volume { $name:
+-          ensure       => present,
+-          volume_group => $vg,
+-          size         => $size,
+-          initial_size => $initial_size,
+-          before       => Volume_group[$vg]
++          ensure                    => present,
++          volume_group              => $vg,
++          size                      => $size,
++          initial_size              => $initial_size,
++          allow_reduce              => $allow_reduce,
++          round_to_extent           => $round_to_extent,
++          nuke_fs_on_resize_failure => $nuke_fs_on_resize_failure,
++          before                    => Volume_group[$vg]
+         }
+       }
+     }
+@@ -120,11 +126,14 @@ define lvm::volume (
+       }
+ 
+       logical_volume { $name:
+-        ensure       => present,
+-        volume_group => $vg,
+-        size         => $size,
+-        extents      => $extents,
+-        require      => Volume_group[$vg]
++        ensure                    => present,
++        volume_group              => $vg,
++        size                      => $size,
++        extents                   => $extents,
++        allow_reduce              => $allow_reduce,
++        round_to_extent           => $round_to_extent,
++        nuke_fs_on_resize_failure => $nuke_fs_on_resize_failure,
++        require                   => Volume_group[$vg]
+       }
+ 
+       if $fstype != undef {
+diff --git a/spec/unit/puppet/provider/logical_volume/lvm_spec.rb b/spec/unit/puppet/provider/logical_volume/lvm_spec.rb
+index 7ad3ed6..24017e8 100644
+--- a/spec/unit/puppet/provider/logical_volume/lvm_spec.rb
++++ b/spec/unit/puppet/provider/logical_volume/lvm_spec.rb
+@@ -66,37 +66,40 @@ describe provider_class do
+   describe 'when creating' do
+     context 'with size' do
+       it "executes 'lvcreate' with a '--size' option" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:size).returns('1g').at_least_once
++        @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', 'myvg')
+         @provider.create
+       end
+     end
+     context 'with size and type' do
+       it "executes 'lvcreate' with a '--size' option" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:size).returns('1g').at_least_once
+         @resource.expects(:[]).with(:type).returns('linear').at_least_once
++        @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', '--type', 'linear', 'myvg')
+         @provider.create
+       end
+     end
+     context 'with initial_size' do
+       it "executes 'lvcreate' with a '--size' option" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:initial_size).returns('1g').at_least_once
+         @resource.expects(:[]).with(:size).returns(nil).at_least_once
++        @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', 'myvg')
+         @provider.create
+       end
+     end
+     context 'without size and without extents' do
+       it "executes 'lvcreate' without a '--size' option or a '--extents' option" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:size).returns(nil).at_least_once
+         @resource.expects(:[]).with(:initial_size).returns(nil).at_least_once
+         @resource.expects(:[]).with(:extents).returns(nil).at_least_once
+@@ -106,39 +109,40 @@ describe provider_class do
+     end
+     context 'with extents' do
+       it "executes 'lvcreate' with a '--extents' option" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:size).returns('1g').at_least_once
+         @resource.expects(:[]).with(:extents).returns('80%vg').at_least_once
++        @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', '--extents', '80%vg', 'myvg')
+         @provider.create
+       end
+     end
+     context 'without extents' do
+       it "executes 'lvcreate' without a '--extents' option" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:size).returns('1g').at_least_once
++        @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', 'myvg')
+         @provider.create
+       end
+     end
+     context 'with initial_size and mirroring' do
+       it "executes 'lvcreate' with '--size' and '--mirrors' and '--mirrorlog' options" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:initial_size).returns('1g').at_least_once
+         @resource.expects(:[]).with(:mirror).returns('1').at_least_once
+         @resource.expects(:[]).with(:mirrorlog).returns('core').at_least_once
++        @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', '--mirrors', '1', '--mirrorlog', 'core', 'myvg')
+         @provider.create
+       end
+     end
+     context 'with persistent minor block device' do
+       it "executes 'lvcreate' with '--persistent y' and '--minor 100' option" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
+-        @resource.expects(:[]).with(:size).returns('1g').at_least_once
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
+         @resource.expects(:[]).with(:persistent).returns(:true).at_least_once
+         @resource.expects(:[]).with(:minor).returns('100').at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', '--persistent', 'y', '--minor', '100', 'myvg')
+@@ -147,8 +151,8 @@ describe provider_class do
+     end
+     context 'with named thinpool option' do
+       it "executes 'lvcreate' with '--virtualsize 1g' and '--thin myvg/mythinpool' options" do
+-        @resource.expects(:[]).with(:name).returns('mylv')
+-        @resource.expects(:[]).with(:volume_group).returns('myvg')
++        @resource.expects(:[]).with(:name).returns('mylv').at_least_once
++        @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+         @resource.expects(:[]).with(:size).returns('1g').at_least_once
+         @resource.expects(:[]).with(:thinpool).returns('mythinpool').at_least_once
+         @provider.expects(:lvcreate).with('-n', 'mylv', '--virtualsize', '1g', '--thin', 'myvg/mythinpool')
+@@ -164,12 +168,14 @@ describe provider_class do
+           @resource.expects(:[]).with(:name).returns('mylv').at_least_once
+           @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+           @resource.expects(:[]).with(:size).returns('1g').at_least_once
++          @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
++          @resource.expects(:[]).with(:nuke_fs_on_resize_failure).returns(false).at_least_once
+           @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', 'myvg')
+           @provider.create
+           @provider.expects(:lvs).with('--noheading', '--unit', 'g', '/dev/myvg/mylv').returns(' 1.00g').at_least_once
+           @provider.expects(:lvs).with('--noheading', '-o', 'vg_extent_size', '--units', 'k', '/dev/myvg/mylv').returns(' 1000.00k')
+           @provider.expects(:lvextend).with('-L', '2000000k', '/dev/myvg/mylv').returns(true)
+-          @provider.expects(:blkid).with('/dev/myvg/mylv')
++          #@provider.expects(:blkid).with('/dev/myvg/mylv')
+           @provider.size = '2000000k'
+         end
+         context 'with resize_fs flag' do
+@@ -232,6 +238,7 @@ describe provider_class do
+           @resource.expects(:[]).with(:volume_group).returns('myvg').at_least_once
+           @resource.expects(:[]).with(:size).returns('1g').at_least_once
+           @resource.expects(:[]).with(:extents).returns(nil).at_least_once
++          @resource.expects(:[]).with(:round_to_extent).returns(false).at_least_once
+           @provider.expects(:lvcreate).with('-n', 'mylv', '--size', '1g', 'myvg')
+           @provider.create
+           @provider.expects(:lvs).with('--noheading', '--unit', 'g', '/dev/myvg/mylv').returns(' 1.00g').at_least_once

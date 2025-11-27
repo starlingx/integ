@@ -1,0 +1,32 @@
+Source: puppet-module-vswitch
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends:
+ debhelper-compat (= 11),
+ openstack-pkg-tools,
+ python3-all,
+ python3-pbr,
+ python3-setuptools,
+Standards-Version: 4.5.0
+Vcs-Browser: https://salsa.debian.org/openstack-team/puppet/puppet-module-vswitch
+Vcs-Git: https://salsa.debian.org/openstack-team/puppet/puppet-module-vswitch.git
+Homepage: https://github.com/openstack/puppet-vswitch
+
+Package: puppet-module-vswitch
+Architecture: all
+Depends:
+ puppet,
+ puppet-module-camptocamp-kmod,
+ puppet-module-openstacklib (>= 17.0.0),
+ puppet-module-puppetlabs-stdlib,
+ ${misc:Depends},
+Description: provides puppet things for vSwitches
+ Puppet lets you centrally manage every important aspect of your system using a
+ cross-platform specification language that manages all the separate elements
+ normally aggregated in different files, like users, cron jobs, and hosts,
+ along with obviously discrete elements like packages, services, and files.
+ .
+ This module provides things for vSwitches. At the moment OVS is the only one
+ supported. It's based upon types and providers so it may support more than just
+ OVS or one vSwitch type in the future.
