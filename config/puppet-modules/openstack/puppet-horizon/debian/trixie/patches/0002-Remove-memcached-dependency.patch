@@ -1,29 +1,27 @@
-From 37e6c4120d18c11e20261f3050399267f927fe00 Mon Sep 17 00:00:00 2001
-From: Teresa Ho <teresa.ho@windriver.com>
-Date: Mon, 17 Jul 2023 17:57:38 -0400
-Subject: [PATCH 2/2] Remove memcached dependency
+From 5cda549b534cd4ffe09da7c69a547618d56141cf Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 18 Jul 2025 06:42:05 +0000
+Subject: [PATCH] Remove memcached dependency
 
-Signed-off-by: Teresa Ho <teresa.ho@windriver.com>
-Signed-off-by: Fabiano Correa Mercer <fabiano.correamercer@windriver.com>
 ---
  metadata.json | 4 ----
  1 file changed, 4 deletions(-)
 
 diff --git a/metadata.json b/metadata.json
-index 4f3d431..d0c7643 100644
+index fc7b0de..2d54a8c 100644
 --- a/metadata.json
 +++ b/metadata.json
-@@ -9,10 +9,6 @@
+@@ -13,10 +13,6 @@
              "name": "puppetlabs/stdlib",
-             "version_requirement": ">=5.0.0 <7.0.0"
+             "version_requirement": ">=5.0.0 <10.0.0"
          },
 -        {
 -            "name": "saz/memcached",
--            "version_requirement": ">=2.0.2 <3.5.0"
+-            "version_requirement": ">=2.0.2 <10.0.0"
 -        },
          {
              "name": "openstack/openstacklib",
-             "version_requirement": ">=17.4.0 <18.0.0"
+             "version_requirement": ">=25.0.0 <26.0.0"
 -- 
-2.25.1
+2.47.2
 
