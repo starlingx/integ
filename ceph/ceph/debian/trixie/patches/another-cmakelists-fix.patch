@@ -1,0 +1,35 @@
+Description: Another cmakelists fix
+ This fixes the last Boost 1.74 compatibility problems.
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2021-01-08
+
+Index: ceph/CMakeLists.txt
+===================================================================
+--- ceph.orig/CMakeLists.txt
++++ ceph/CMakeLists.txt
+@@ -30,6 +30,9 @@ endif()
+ if(POLICY CMP0093)
+   cmake_policy(SET CMP0093 NEW)
+ endif()
++if(POLICY CMP0093)
++  cmake_policy(SET CMP0093 NEW)
++endif()
+ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules/")
+ 
+ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+Index: ceph/src/rgw/CMakeLists.txt
+===================================================================
+--- ceph.orig/src/rgw/CMakeLists.txt
++++ ceph/src/rgw/CMakeLists.txt
+@@ -23,6 +23,10 @@ if(Boost_VERSION VERSION_GREATER 1.73)
+   add_definitions(-DBOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT)
+ endif()
+ 
++if(Boost_VERSION VERSION_GREATER_EQUAL 1.74)
++  add_definitions(-DBOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT)
++endif()
++
+ set(librgw_common_srcs
+   services/svc_finisher.cc
+   services/svc_notify.cc

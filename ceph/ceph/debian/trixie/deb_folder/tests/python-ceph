@@ -1,0 +1,7 @@
+#!/usr/bin/python3
+
+# Test that rbd and rados can be imported OK
+import rbd
+import rados
+
+print("python-ceph: OK")

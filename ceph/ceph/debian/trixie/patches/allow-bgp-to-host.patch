@@ -1,0 +1,18 @@
+Description: allow BGP-to-the-host style binding
+Author: Thomas Goirand
+Forwarded: no
+Last-Update: 2021-04-21
+
+diff --git a/src/common/ipaddr.cc b/src/common/ipaddr.cc
+index 0abf7f20ca..ce81e7e735 100644
+--- a/src/common/ipaddr.cc
++++ b/src/common/ipaddr.cc
+@@ -56,7 +56,7 @@ const struct ifaddrs *find_ipv4_in_subnet(const struct ifaddrs *addrs,
+     if (addrs->ifa_addr == NULL)
+       continue;
+ 
+-    if (strcmp(addrs->ifa_name, "lo") == 0 || boost::starts_with(addrs->ifa_name, "lo:"))
++    if (boost::starts_with(addrs->ifa_name, "lo:"))
+       continue;
+ 
+     if (numa_node >= 0 && !match_numa_node(addrs->ifa_name, numa_node))

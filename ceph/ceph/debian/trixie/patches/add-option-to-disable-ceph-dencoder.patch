@@ -1,0 +1,11 @@
+Index: ceph/src/tools/CMakeLists.txt
+===================================================================
+--- ceph.orig/src/tools/CMakeLists.txt
++++ ceph/src/tools/CMakeLists.txt
+@@ -126,4 +126,6 @@ if(WITH_RBD)
+   endif()
+ endif(WITH_RBD)
+ 
++if(NOT DISABLE_DENCODER)
+ add_subdirectory(ceph-dencoder)
++endif(DISABLE_DENCODER)

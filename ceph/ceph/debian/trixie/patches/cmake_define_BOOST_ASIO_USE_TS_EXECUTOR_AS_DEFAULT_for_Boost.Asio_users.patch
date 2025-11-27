@@ -1,0 +1,30 @@
+Description: cmake: define BOOST_ASIO_USE_TS_EXECUTOR_AS_DEFAULT for
+ Boost.Asio users
+ .
+ see also
+ https://www.boost.org/doc/libs/1_74_0/doc/html/boost_asio/std_executors.html#boost_asio.std_executors.polymorphic_i_o_executor
+ .
+ we could use `asio::any_io_executor` later on though for better
+ performance.
+ .
+ also, define CMP0093, so FindBoost reports Boost_VERSION in x.y.z
+ format. it is simpler to use `VERSION_GREATER_EQUAL` to compare its
+ version with 1.74 instead of its C macro version ("107000").
+Signed-off-by: Kefu Chai <kchai@redhat.com>
+Author: Kefu Chai <kchai@redhat.com>
+Origin: upstream, https://github.com/ceph/ceph/commit/3d708219092d0e89a1434c30ffc8a4999f062cc0.patch
+Bug-Debian: https://bugs.debian.org/977243
+Last-Update: 2021-03-24
+
+--- ceph-14.2.15.orig/CMakeLists.txt	2020-12-14 09:42:50.543215302 +0100
++++ ceph-14.2.15/CMakeLists.txt	2020-12-14 09:44:07.827084724 +0100
+@@ -21,6 +21,9 @@
+ if(POLICY CMP0051)
+   cmake_policy(SET CMP0051 NEW)
+ endif()
++if(POLICY CMP0074)
++  cmake_policy(SET CMP0074 NEW)
++endif()
+ if(POLICY CMP0075)
+   cmake_policy(SET CMP0075 NEW)
+ endif()

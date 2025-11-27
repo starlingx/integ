@@ -1,0 +1,31 @@
+debian/udev/* lib/udev/rules.d
+etc/sudoers.d/ceph-osd-smartctl
+etc/sysctl.d/30-ceph-osd.conf
+
+# %if %{without stx}
+# lib/systemd/system/ceph-osd*
+# lib/systemd/system/ceph-volume@.service
+
+usr/bin/ceph-bluestore-tool
+usr/bin/ceph-clsinfo
+usr/bin/ceph-objectstore-tool
+usr/bin/ceph-osd
+usr/bin/ceph-osdomap-tool
+usr/lib/ceph/ceph-osd-prestart.sh
+usr/lib/python*/dist-packages/ceph_volume-*
+usr/lib/python*/dist-packages/ceph_volume/*
+usr/sbin/ceph-volume
+usr/sbin/ceph-volume-systemd
+usr/share/man/man8/ceph-bluestore-tool.8
+usr/share/man/man8/ceph-clsinfo.8
+usr/share/man/man8/ceph-osd.8
+usr/share/man/man8/ceph-volume-systemd.8
+usr/share/man/man8/ceph-volume.8
+
+# if %{with stx}
+usr/sbin/ceph-manage-journal
+
+lib/udev/rules.d/60-ceph-by-parttypeuuid.rules
+
+# %if %{without stx}
+# lib/udev/rules.d/95-ceph-osd.rules
