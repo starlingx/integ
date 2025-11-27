@@ -1,3 +1,4 @@
-0001-Allow-use-with-stdlib-5.0.0.patch
 0002-Remove-etcd-yaml-config-file.patch
 0003-Rename-package-name-to-etcd-server.patch
+0004-Puppet-8.10-compatibility.patch
+0001-Remove-validate-layer.patch
