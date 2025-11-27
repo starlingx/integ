@@ -1,39 +1,36 @@
-From f692f32676c5f4cf22abc97598e049578e1e7bf7 Mon Sep 17 00:00:00 2001
-From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
-Date: Mon, 20 Sep 2021 13:02:19 +0300
-Subject: [PATCH 1/2] Remove log_dir from conf files
+From 89efbb13060c483639ce94edeba47c4fcdcad388 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 18 Jul 2025 09:48:51 +0000
+Subject: [PATCH] Remove log_dir from conf files
 
 Adapt 0001-Remove-log_dir-from-conf-files.patch from CentOS.
 
-Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
 ---
- manifests/log.pp | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ manifests/log.pp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/manifests/log.pp b/manifests/log.pp
-index 96ce363..bb6876f 100644
+index 3f7f4e1..4811284 100644
 --- a/manifests/log.pp
 +++ b/manifests/log.pp
-@@ -27,9 +27,7 @@
- #   Defaults to $::os_service_default
- #
- # [*log_dir*]
--#   (Optional) Directory where logs should be stored.
--#   If set to $::os_service_default, it will not log to any directory.
--#   Defaults to $::os_service_default
+@@ -30,6 +30,7 @@
+ #   (Optional) Directory where logs should be stored.
+ #   If set to $facts['os_service_default'], it will not log to any directory.
+ #   Defaults to $facts['os_service_default']
 +#   STX: Remove log_dir to ensure services log via syslog
  #
- # [*watch_log_file*]
- #   (Optional) Uses logging handler designed to watch file system (boolean value).
-@@ -154,7 +152,7 @@ define oslo::log(
+ # [*use_syslog*]
+ #   (Optional) Use syslog for logging (boolean value).
+@@ -164,7 +165,7 @@ and will be removed in a future release.")
      'DEFAULT/log_config_append'             => { value => $log_config_append },
      'DEFAULT/log_date_format'               => { value => $log_date_format },
      'DEFAULT/log_file'                      => { value => $log_file },
 -    'DEFAULT/log_dir'                       => { value => $log_dir },
 +    'DEFAULT/log_dir'                       => { ensure => absent },
-     'DEFAULT/watch_log_file'                => { value => $watch_log_file },
+     'DEFAULT/watch_log_file'                => { value => $watch_log_file_real },
      'DEFAULT/use_syslog'                    => { value => $use_syslog },
      'DEFAULT/use_journal'                   => { value => $use_journal },
 -- 
-2.30.0
+2.47.2
 
