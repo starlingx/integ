@@ -10,4 +10,5 @@ revision:
   dist: $STX_DIST
   GITREVCOUNT:
     BASE_SRCREV: 7a094af9d56e05d5ef15bbc41978d376818b8150
-    SRC_DIR: ${MY_REPO}/stx/integ/config/puppet-modules/puppet-etcd-1.12.3
+    SRC_DIR: ${MY_REPO}/stx/integ/config/puppet-modules/puppet-etcd
+  stx_patch: 2

@@ -10,5 +10,5 @@ dl_files:
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
-    BASE_SRCREV: 0ee124c2fcc0491ab3a28d8fad58ffb117bf1844
+    BASE_SRCREV: 15d3f6913ecbd774422253e1692b0157a4740f38
     SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/plugins/kubelogin
