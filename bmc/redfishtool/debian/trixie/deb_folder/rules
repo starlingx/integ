@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE=1
+
+export PYBUILD_NAME=redfishtool
+
+export PBR_VERSION=1.0.0
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_install:
+	mkdir -p $(CURDIR)/debian/redfishtool/etc/redfishtool
+	cp $(CURDIR)/redfishtool.ini $(CURDIR)/debian/redfishtool/etc/redfishtool
