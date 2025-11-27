@@ -1,2 +1,1 @@
-0001-use-python3-psycopg2.patch
-0002-update-auth-encryption-method.patch
+0001-Add-Debian-13-Trixie-to-PostgreSQL-version-mapping.patch

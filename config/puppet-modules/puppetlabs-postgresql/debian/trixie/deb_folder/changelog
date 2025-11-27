@@ -1,4 +1,4 @@
-puppet-module-puppetlabs-postgresql (8.0.0-1) unstable; urgency=medium
+puppet-module-puppetlabs-postgresql (10.5.0-1) unstable; urgency=medium
 
   * New upstream release.
 

@@ -5,3 +5,4 @@ manifests 	usr/share/puppet/modules.available/puppetlabs-postgresql
 metadata.json 	usr/share/puppet/modules.available/puppetlabs-postgresql
 tasks		usr/share/puppet/modules.available/puppetlabs-postgresql
 templates 	usr/share/puppet/modules.available/puppetlabs-postgresql
+types       usr/share/puppet/modules.available/puppetlabs-postgresql
