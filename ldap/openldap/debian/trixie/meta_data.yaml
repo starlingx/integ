@@ -1,16 +1,10 @@
 ---
-debver: 2.4.57+dfsg-3+deb11u1
+debver: 2.6.10+dfsg-1
 dl_path:
-  name: openldap-2.4.57+dfsg-3+deb11u1.tar.gz
-  url: https://salsa.debian.org/openldap-team/openldap/-/archive/2.4.57+dfsg-3+deb11u1/openldap-2.4.57+dfsg-3+deb11u1.tar.gz
-  md5sum: da9dfefcd48f1715c9381d86ab5c071c
-  sha256sum: d59d4f5114e6e0991618adc5ae458eab53a8b76b74ffcf7d1355bc3886349a49
-dl_files:
-  ppolicy-check-password-debian-stretch.zip:
-    topdir: null
-    url: https://github.com/cedric-dufour/ppolicy-check-password/archive/refs/heads/debian-stretch.zip
-    md5sum: 3d9c40e10568255d1db1271cc5f5e203
-    sha256sum: 5a6e0222e948cb3cbafef769ecbbea718d2f724f9c34b8dfb0a2266735a451c9
+  name: openldap-2.6.10+dfsg-1.tar.gz
+  url: https://salsa.debian.org/openldap-team/openldap/-/archive/2.6.10+dfsg-1/openldap-2.6.10+dfsg-1.debian.tar.gz
+  md5sum: 1cd711ca14c311f719b4d830ff069ad1
+  sha256sum: 0370612c4227acc09f2c353048a658ba96634cb7ed49a2b3e64d77f1802b59b7
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
