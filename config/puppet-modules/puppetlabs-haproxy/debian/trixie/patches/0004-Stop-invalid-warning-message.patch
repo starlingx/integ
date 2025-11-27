@@ -1,31 +1,31 @@
-From 8cc5a40c7a1d029b4a82b8e3880ae0e56590ca03 Mon Sep 17 00:00:00 2001
-From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
-Date: Wed, 15 Sep 2021 14:10:20 +0300
-Subject: [PATCH 4/4] Stop invalid warning message
+From 8332d228aaba97c5928e9ffd662bbf7d7fade5ea Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 1 Aug 2025 07:15:24 +0000
+Subject: [PATCH] Stop invalid warning message
 
 It can fix config_controller failure at step 6.
 
 The upstream fix is at below link
 https://github.com/puppetlabs/puppetlabs-haproxy/commit/20db4474c5938c21ac441f0092254c78b5978cc4
 
-Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
 ---
  manifests/frontend.pp | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/manifests/frontend.pp b/manifests/frontend.pp
-index afd8c7b..24db454 100644
+index 89a4375..63537ff 100644
 --- a/manifests/frontend.pp
 +++ b/manifests/frontend.pp
-@@ -102,7 +102,7 @@ define haproxy::frontend (
-   $defaults_use_backend                        = true,
-   Optional[Stdlib::Absolutepath] $config_file  = undef,
+@@ -109,7 +109,7 @@ define haproxy::frontend (
+   Boolean                                 $defaults_use_backend     = true,
+   Optional[Stdlib::Absolutepath]          $config_file              = undef,
    # Deprecated
--  $bind_options                                = undef,
-+  $bind_options                                = '',
+-  Optional[Array]                         $bind_options             = undef,
++  Optional[Array]                         $bind_options             = '',
  ) {
    if $ports and $bind {
      fail('The use of $ports and $bind is mutually exclusive, please choose either one')
 -- 
-2.30.0
+2.47.2
 

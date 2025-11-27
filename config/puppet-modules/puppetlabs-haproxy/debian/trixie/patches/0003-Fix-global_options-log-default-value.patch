@@ -1,26 +1,26 @@
-From b06ab65ba88a9f87f68de05bb21ee95fa78f39ef Mon Sep 17 00:00:00 2001
-From: Don Penney <don.penney@windriver.com>
-Date: Tue, 4 Sep 2018 20:01:53 +0800
-Subject: [PATCH 3/4] Fix global_options log default value
+From d73642245141b4a3896e5f011987a244aed5b2cc Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 1 Aug 2025 07:13:28 +0000
+Subject: [PATCH] Fix global_options log default value
 
-Signed-off-by: zhipengl <zhipengs.liu@intel.com>
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
 ---
  manifests/params.pp | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/manifests/params.pp b/manifests/params.pp
-index 6c094f6..876d068 100644
+index bc892d9..d54e31d 100644
 --- a/manifests/params.pp
 +++ b/manifests/params.pp
-@@ -15,7 +15,7 @@ class haproxy::params {
-     'Archlinux', 'Debian', 'Redhat', 'Gentoo', 'Suse' : {
+@@ -16,7 +16,7 @@ class haproxy::params {
        $package_name      = 'haproxy'
+       $service_name      = 'haproxy'
        $global_options    = {
--        'log'     => "${::ipaddress} local0",
+-        'log'     => "${facts['networking']['ip']} local0",
 +        'log'     => 'global',
          'chroot'  => '/var/lib/haproxy',
          'pidfile' => '/var/run/haproxy.pid',
          'maxconn' => '4000',
 -- 
-2.30.0
+2.47.2
 
