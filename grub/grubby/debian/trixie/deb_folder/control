@@ -10,6 +10,7 @@ Rules-Requires-Root: no
 Package: grubby
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: debianutils
 Description: Command line tool for updating bootloader configs
  This package provides a grubby compatibility script that manages
  BootLoaderSpec files and is meant to be backward compatible with
