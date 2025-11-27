@@ -1,16 +1,17 @@
-0001-Roll-up-TIS-patches.patch
-0002-Newton-rebase-fixes.patch
-0003-Ceph-Jewel-rebase.patch
-0004-US92424-Add-OSD-support-for-persistent-naming.patch
-0006-ceph-disk-prepare-invalid-data-disk-value.patch
-0007-Add-StarlingX-specific-restart-command-for-Ceph-moni.patch
-0008-ceph-mimic-prepare-activate-osd.patch
-0009-fix-ceph-osd-disk-partition-for-nvme-disks.patch
-0010-wipe-unprepared-disks.patch
-0011-Fix-service-parameter-passing.patch
-0012-Add-multipath-disk-support.patch
-0013-Fix-puppet-ceph-multipath-ceph-partition-detection.patch
-0014-Adjust-puppet-ceph-dependency-requirements.patch
-0015-Fix-the-unless-condition-of-ceph-osd-prepare.patch
-0016-Add-ms_bind_ipv4-option-to-ceph-paremeters.patch
-0017-Add-mon_data-parameter.patch
+0018-Update-top-scope-variables-for-Puppet-8.10-compatibility.patch
+# 0001-Roll-up-TIS-patches.patch
+# 0002-Newton-rebase-fixes.patch
+# 0003-Ceph-Jewel-rebase.patch
+# 0004-US92424-Add-OSD-support-for-persistent-naming.patch
+# 0006-ceph-disk-prepare-invalid-data-disk-value.patch
+# 0007-Add-StarlingX-specific-restart-command-for-Ceph-moni.patch
+# 0008-ceph-mimic-prepare-activate-osd.patch
+# 0009-fix-ceph-osd-disk-partition-for-nvme-disks.patch
+# 0010-wipe-unprepared-disks.patch
+# 0011-Fix-service-parameter-passing.patch
+# 0012-Add-multipath-disk-support.patch
+# 0013-Fix-puppet-ceph-multipath-ceph-partition-detection.patch
+# 0014-Adjust-puppet-ceph-dependency-requirements.patch
+# 0015-Fix-the-unless-condition-of-ceph-osd-prepare.patch
+# 0016-Add-ms_bind_ipv4-option-to-ceph-paremeters.patch
+# 0017-Add-mon_data-parameter.patch
