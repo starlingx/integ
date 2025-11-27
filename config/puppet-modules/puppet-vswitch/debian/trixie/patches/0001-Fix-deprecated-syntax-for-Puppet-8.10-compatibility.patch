@@ -1,0 +1,26 @@
+From 7b20eab949ee83e584f7fccb9d3948efe810d1e6 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Wed, 15 Oct 2025 00:08:59 -0400
+Subject: [PATCH] Fix deprecated :: syntax for Puppet 8.10 compatibility
+
+Remove deprecated :: prefix from class name reference in init.pp.
+The :: prefix for absolute class names is deprecated in Puppet 8.10.
+---
+ manifests/init.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 4157362..eeebe41 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -28,6 +28,6 @@
+ class vswitch (
+   Enum['ovs', 'dpdk'] $provider = 'ovs'
+ ) {
+-  $cls = "::vswitch::${provider}"
++  $cls = "vswitch::${provider}"
+   include $cls
+ }
+-- 
+2.43.0
+
