@@ -15,7 +15,6 @@ Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends},
  libzmq5,
  python3-eventlet,
- python3-future,
  python3-greenlet,
  python3-msgpack,
  python3-zmq
