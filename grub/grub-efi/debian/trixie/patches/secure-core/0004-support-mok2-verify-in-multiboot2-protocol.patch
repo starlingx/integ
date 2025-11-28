@@ -1,0 +1,72 @@
+From 683525831c8e145e5109ab13f6fa01bc2bb1219a Mon Sep 17 00:00:00 2001
+From: Dmitry Eremin-Solenikov <dmitry_eremin-solenikov@mentor.com>
+Date: Tue, 25 Jul 2023 15:59:20 +0800
+Subject: [PATCH] support mok2 verify in multiboot2 protocol
+
+Add support for verifying PKCS#7 signatures via MOK2 protocol to
+multiboot2 command enabling one to load multiboot-capable kernels.
+
+Upstream-Status: Inappropriate [embedded specific]
+
+Signed-off-by: Dmitry Eremin-Solenikov <dmitry_eremin-solenikov@mentor.com>
+---
+ grub-core/loader/multiboot.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/grub-core/loader/multiboot.c b/grub-core/loader/multiboot.c
+index 94be512..2fa2549 100644
+--- a/grub-core/loader/multiboot.c
++++ b/grub-core/loader/multiboot.c
+@@ -55,6 +55,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ #ifdef GRUB_MACHINE_EFI
+ #include <grub/efi/efi.h>
++#include <grub/efi/mok2verify.h>
+ #endif
+ 
+ struct grub_relocator *GRUB_MULTIBOOT (relocator) = NULL;
+@@ -325,6 +326,20 @@ grub_cmd_multiboot (grub_command_t cmd __attribute__ ((unused)),
+   if (! file)
+     return grub_errno;
+ 
++#if GRUB_MACHINE_EFI
++  err = grub_verify_file (argv[0]);
++  if (err != GRUB_ERR_NONE)
++    {
++      grub_error(err, N_("Failed to verify module %s"), argv[0]);
++
++      /* An unauthenticated module always causes a complete boot failure. */
++      if (grub_is_secured () == 1)
++	grub_loader_unset();
++
++      return err;
++    }
++#endif
++
+   grub_dl_ref (my_mod);
+ 
+   /* Skip filename.  */
+@@ -392,6 +407,20 @@ grub_cmd_module (grub_command_t cmd __attribute__ ((unused)),
+   if (! file)
+     return grub_errno;
+ 
++#if GRUB_MACHINE_EFI
++  err = grub_verify_file (argv[0]);
++  if (err != GRUB_ERR_NONE)
++    {
++      grub_error(err, N_("Failed to verify module %s"), argv[0]);
++
++      /* An unauthenticated module always causes a complete boot failure. */
++      if (grub_is_secured () == 1)
++	grub_loader_unset();
++
++      return err;
++    }
++#endif
++
+ #ifndef GRUB_USE_MULTIBOOT2
+   lowest_addr = 0x100000;
+   if (grub_multiboot_quirks & GRUB_MULTIBOOT_QUIRK_MODULES_AFTER_KERNEL)
+-- 
+2.25.1
+

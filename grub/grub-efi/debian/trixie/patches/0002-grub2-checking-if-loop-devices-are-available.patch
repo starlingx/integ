@@ -1,48 +1,48 @@
-From bbd8d33b8646785ee31b435e9decf4271d6ecb68 Mon Sep 17 00:00:00 2001
-From: Yue Tao <Yue.Tao@windriver.com>
-Date: Sun, 5 Dec 2021 10:01:05 +0800
-Subject: [PATCH] grub2: checking if loop devices are available
+From b267755cd3bfc260587e76f87635de2cefff3fd1 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Thu, 28 Aug 2025 06:28:09 -0400
+Subject: [PATCH] grub2-checking-if-loop-devices-are-available
 
 Building in a chroot environment, may not have loop device.
 
-Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
 ---
  tests/ext234_test.in | 5 +++++
  tests/fat_test.in    | 5 +++++
  2 files changed, 10 insertions(+)
 
 diff --git a/tests/ext234_test.in b/tests/ext234_test.in
-index 4f1eb52..380850e 100644
+index 4df6967..27e0415 100644
 --- a/tests/ext234_test.in
 +++ b/tests/ext234_test.in
 @@ -25,6 +25,11 @@ if ! which mkfs.ext4 >/dev/null 2>&1; then
-    exit 77
+    exit 99
  fi
  
 +if ! losetup -f >/dev/null 2>&1; then
 +   echo "No loop device, cannot test."
-+   exit 77
++   exit 99
 +fi
 +
  "@builddir@/grub-fs-tester" ext2_old
  "@builddir@/grub-fs-tester" ext2
  "@builddir@/grub-fs-tester" ext3
 diff --git a/tests/fat_test.in b/tests/fat_test.in
-index b6b4748..ab5348a 100644
+index 8a2b37c..3f3e951 100644
 --- a/tests/fat_test.in
 +++ b/tests/fat_test.in
 @@ -15,6 +15,11 @@ if ! which mkfs.vfat >/dev/null 2>&1; then
-    exit 77
+    exit 99
  fi
  
 +if ! losetup -f >/dev/null 2>&1; then
 +   echo "No loop device, cannot test."
-+   exit 77
++   exit 99
 +fi
 +
  "@builddir@/grub-fs-tester" vfat16a
  "@builddir@/grub-fs-tester" vfat12a
  "@builddir@/grub-fs-tester" vfat12
 -- 
-2.25.1
+2.43.0
 
