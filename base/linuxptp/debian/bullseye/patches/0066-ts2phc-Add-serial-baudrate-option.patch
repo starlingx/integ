@@ -1,7 +1,7 @@
 From 47c9a2d35d567e7f4e87d2c01872fa1cce3c20b2 Mon Sep 17 00:00:00 2001
 From: Lars Munch <lars@segv.dk>
 Date: Fri, 14 May 2021 13:33:44 +0200
-Subject: [PATCH] ts2phc: Add serial baudrate option
+Subject: [PATCH 66/67] ts2phc: Add serial baudrate option
 
 Add serial baudrate configuration option. Default to 9600 bps.
 

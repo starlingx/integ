@@ -1,6 +1,6 @@
 From: Tara Subedi <Tara.Subedi@windriver.com>
 Date: Thu May 8 16:28:05 2025 -0400
-Subject: [PATCH 64/65] Fix HA PTP4l instance down osclock swinging
+Subject: [PATCH 64/67] Fix HA PTP4l instance down osclock swinging
 
 PTP Redundant T-BC, when one ptp4l instance is down, os clock is swinging
 
