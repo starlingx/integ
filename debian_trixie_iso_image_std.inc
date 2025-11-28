@@ -340,6 +340,9 @@ puppet-zitrlp-strongswan
 #python-docker
 python3-docker
 
+#python-eventlet
+python3-eventlet
+
 #python-keyring
 python3-keyring
 
