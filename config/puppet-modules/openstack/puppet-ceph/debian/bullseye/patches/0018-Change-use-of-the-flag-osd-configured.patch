@@ -1,0 +1,39 @@
+From 948b1a0d05c5c16456cdc09532e20d4a29301e46 Mon Sep 17 00:00:00 2001
+From: Raphael Santos <raphael.dasilvasantos@windriver.com>
+Date: Tue, 20 Jan 2026 16:01:15 -0300
+Subject: [PATCH] Added flag during OSD configuration
+
+The flag .osd-N_configuring will be created during configuration, to
+indicate when an OSD is being provisioned by puppet.
+This will be used in other places, to avoid starting an OSD that is
+not yet fully configured.
+
+
+Signed-off-by: Raphael Santos <raphael.dasilvasantos@windriver.com>
+---
+ manifests/osd.pp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index cea5512..11cf492 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -153,6 +153,8 @@ ceph_disk_output=$(/usr/sbin/ceph-disk list)
+ if echo \${ceph_disk_output} | grep -v 'unknown cluster' | grep \" *$(readlink -f \${ceph_part}).*ceph data\" | grep -v unprepared | grep 'osd uuid ${uuid}'; then
+    exit 0
+ fi
++touch /var/lib/ceph/osd/.osd-${osdid}_configuring
++/etc/init.d/ceph stop osd.${osdid}
+ ceph-disk --verbose --log-stdout prepare --filestore  ${cluster_uuid_option} ${uuid_option} ${osdid_option} --fs-type xfs --zap-disk \${disk} $(readlink -f ${journal})
+ mkdir -p /var/lib/ceph/osd/ceph-${osdid}
+ ceph auth del osd.${osdid} || true
+@@ -284,4 +286,7 @@ fi
+     } else {
+       fail('Ensure on OSD must be either present or absent')
+     }
++    file { "/var/lib/ceph/osd/.osd-${osdid}_configuring":
++      ensure  => absent,
++    }
+ }
+--
+2.34.1
