@@ -1,0 +1,24 @@
+Align the permission with the CentOS, and remove the
+ldapaddmachine.template.sample which is deleted during
+CentOS install step.
+
+Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
+
+--- a/debian/rules
++++ b/debian/rules
+@@ -17,6 +17,7 @@ override_dh_auto_install:
+ 	install -m 644 ldapaddsudo.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+ 	install -m 644 ldapmodsudo.template.cgcs debian/ldapscripts/usr/local/etc/ldapscripts
+ 	install -m 600 ldapscripts.passwd debian/ldapscripts/usr/local/etc/ldapscripts
++	rm -rf ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapaddmachine.template.sample
+ 
+ override_dh_installdocs:
+ 	dh_installdocs README TODO
+@@ -29,3 +30,7 @@ override_dh_installexamples:
+ 
+ override_dh_fixperms:
+ 	dh_fixperms --exclude etc/ldapscripts/ldapscripts.passwd
++	chmod 440 ./debian/ldapscripts/usr/lib/ldapscripts/runtime
++	chmod 440 ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapaddgroup.template.sample
++	chmod 440 ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapadduser.template.sample
++	chmod 440 ./debian/ldapscripts/usr/local/etc/ldapscripts/ldapscripts.conf.sample
