@@ -1,0 +1,39 @@
+From b1cd41d5b8b29c6137ae7cf7ce911725c41f7ef3 Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Thu, 30 Sep 2021 14:23:11 +0300
+Subject: [PATCH 1/5] drbd script
+
+Clean copy of 0001_915-drbd-script.patch from CentOS.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ scripts/drbd | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/drbd b/scripts/drbd
+index bb70877..b422bff 100755
+--- a/scripts/drbd
++++ b/scripts/drbd
+@@ -211,7 +211,9 @@ case "$1" in
+ 
+ 	[ -d /var/lock/subsys ] && touch /var/lock/subsys/drbd	# for RedHat
+ 	run_hook start_before-wait
+-	$DRBDADM wait-con-int # User interruptible version of wait-connect all
++    if [ ! -e /etc/platform/simplex ] ; then # Skip if simplex
++        $DRBDADM wait-con-int # User interruptible version of wait-connect all
++    fi
+ 	run_hook start
+ 
+ 	# Become primary if configured
+@@ -265,7 +267,7 @@ case "$1" in
+ 		for d in /dev/drbd* ; do
+ 			[ -L "$d" ] && continue
+ 			[ -b "$d" ] || continue
+-			M=$(umount "$d" 2>&1)
++			M=$(umount --all-targets "$d" 2>&1)
+ 			case $M in
+ 			*" not mounted") :;;
+ 			*) stop_failed=1; echo "$M" >&2 ;;
+-- 
+2.30.0
+

@@ -1,0 +1,47 @@
+From 1af84a759edaf5029fd8531363538e7dee970d34 Mon Sep 17 00:00:00 2001
+From: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+Date: Tue, 5 Oct 2021 12:00:52 -0300
+Subject: [PATCH 2/2] add resizepart.sh
+
+resizepart.sh is a script without needing to handle command
+prompts interactively (clean copied from CentOS)
+
+Signed-off-by: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+---
+ resizepart.sh | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 resizepart.sh
+
+diff --git a/resizepart.sh b/resizepart.sh
+new file mode 100644
+index 0000000..29be2a0
+--- /dev/null
++++ b/resizepart.sh
+@@ -0,0 +1,24 @@
++#!/bin/bash
++
++################################################################################
++# Copyright (c) 2015 Wind River Systems, Inc.
++# 
++# SPDX-License-Identifier: Apache-2.0
++#
++################################################################################
++
++DEVICE=$1
++PARTITION=$2
++SIZE=$(blockdev --getsize64 ${DEVICE})
++SIZE_MB=$((SIZE / (1024*1024)))
++
++## This is a workaround to allow cloud-init to invoke parted without needing to
++## handle command prompts interactively.  Support for non-interactive parted
++## commands are not supported on mounted partitions.
++##
++/usr/sbin/parted ---pretend-input-tty ${DEVICE} resizepart ${PARTITION} << EOF
++yes
++${SIZE_MB}
++EOF
++
++exit $?
+-- 
+2.25.1
+

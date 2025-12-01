@@ -1,0 +1,664 @@
+From 4ed13a54168847b9ef6f48e39021b5f365ddb52c Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Thu, 30 Sep 2021 14:23:25 +0300
+Subject: [PATCH 2/5] drbd ocf
+
+Clean copy of 0002_915-drbd_ocf.patch from CentOS.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ scripts/drbd.ocf | 471 ++++++++++++++++-------------------------------
+ 1 file changed, 161 insertions(+), 310 deletions(-)
+
+diff --git a/scripts/drbd.ocf b/scripts/drbd.ocf
+index 7aafdcf..ff77c91 100755
+--- a/scripts/drbd.ocf
++++ b/scripts/drbd.ocf
+@@ -5,6 +5,8 @@
+ #
+ # Copyright (c) 2009 LINBIT HA-Solutions GmbH,
+ # Copyright (c) 2009 Florian Haas, Lars Ellenberg
++# Copyright (c) 2014 Wind River Systems, Inc. All rights reserved.
++#
+ # Based on the Heartbeat drbd OCF Resource Agent by Lars Marowsky-Bree
+ # (though it turned out to be an almost complete rewrite)
+ #
+@@ -112,15 +114,6 @@ OCF_RESKEY_require_drbd_module_version_lt_default=9.1.0
+ 
+ init_optional_params()
+ {
+-	remove_master_score_if_peer_primary=false
+-	remove_master_score_if_peer_primary_only_if_unexpected=false
+-	if ocf_is_true ${OCF_RESKEY_remove_master_score_if_peer_primary:=false}; then
+-		remove_master_score_if_peer_primary=true
+-	elif [[ ${OCF_RESKEY_remove_master_score_if_peer_primary} = "unexpected" ]]; then
+-		remove_master_score_if_peer_primary=true
+-		remove_master_score_if_peer_primary_only_if_unexpected=true
+-	fi
+-
+ 	if ocf_is_true ${OCF_RESKEY_fail_promote_early_if_peer_primary:=false}; then
+ 		fail_promote_early_if_peer_primary=true
+ 	else
+@@ -562,35 +555,6 @@ do_drbdadm() {
+ 	return $ret
+ }
+ 
+-# cached value
+-unset current_master_score
+-get_current_master_score()
+-{
+-	# only call crm_master once
+-	[[ ${current_master_score+set} ]] ||
+-	current_master_score=$(crm_master -q -l reboot -G 2>/dev/null)
+-	# return value of this function:
+-	# true if master_score is present
+-	# false if master_score is not present
+-	[[ $current_master_score ]]
+-}
+-
+-set_master_score() {
+-	# Use quiet mode (-Q) to quench logging. Actual score updates
+-	# will get logged by attrd anyway
+-	if [[ $1 -le 0 ]]; then
+-		remove_master_score
+-	else
+-		do_cmd ${HA_SBIN_DIR}/crm_master -Q -l reboot -v $1 &&
+-		current_master_score=$1
+-	fi
+-}
+-
+-remove_master_score() {
+-	do_cmd ${HA_SBIN_DIR}/crm_master -l reboot -D
+-	current_master_score=""
+-}
+-
+ source_drbd_shellfuncs()
+ {
+ 	local dir=.
+@@ -668,18 +632,11 @@ maybe_outdate_self()
+ 	ocf_log notice "outdating $DRBD_RESOURCE: according to OCF_RESKEY_CRM_meta_notify_master_uname, '$host' is still master"
+ 	do_drbdadm outdate $DRBD_RESOURCE
+ 
+-	# on some pacemaker versions, -INFINITY may cause resource instance stop/start.
+-	# But in this case that is ok, it may even clear the replication link
+-	# problem.
+-	set_master_score -INFINITY
+-
+ 	return 0
+ }
+ 
+ unexpected_primary_rejects_promote()
+ {
+-	crm_resource_locate_master
+-
+ 	: "single master config?"
+ 	[[ $OCF_RESKEY_CRM_meta_master_max = 1 ]] || return 1
+ 	: "not primary myself?" # because, if I am, I can no longer reject this...
+@@ -691,208 +648,6 @@ unexpected_primary_rejects_promote()
+ 	return 0
+ }
+ 
+-removed_master_score_because_peer_is_primary()
+-{
+-	: "remove master score if peer primary?"; $remove_master_score_if_peer_primary || return 1
+-	: "primary myself?"; $status_primary && return 1
+-	: "some peer primary?"; $status_some_peer_primary || return 1
+-
+-	if : "SOME peer ALL up-to-date?"; $status_some_peer_all_up_to_date ; then
+-		# FIXME this should check if that same primary peer has all healthy
+-		# disks, not if "some" peer has all healthy disks.
+-		# But I think this option only makes sense in two node setups,
+-		# so "some" peer becomes "the" peer anyways.
+-		: "Okay, peer apparently has healthy disks"
+-	else
+-		: "peer is primary, but does not look healthy, use regular master score adjustment"
+-		return 1
+-	fi
+-
+-	if : "remove only if unexpected"; $remove_master_score_if_peer_primary_only_if_unexpected; then
+-		if  unexpected_primary_rejects_promote; then
+-			## Do not log "err", if this may be intentional (independent clusters),
+-			## and this pacemaker was told to not even try to promote
+-			# case $OCF_RESKEY_CRM_meta_target_role in
+-			# [Mm]aster|[Ss]tarted|"")
+-			#
+-			## But what if they control it via booth and tickets?
+-			## Or other constraints?
+-
+-			# do we even have a master score, currently?
+-			# logging this with every monitoring interval may be too noisy.
+-			if get_current_master_score ; then
+-				ocf_log info "I am connected to a Primary that Pacemaker does not know about! Removing master score."
+-				remove_master_score
+-			fi
+-			return 0
+-		fi
+-		: "not unexpected, no special treatment"
+-		return 1
+-	fi
+-
+-	: "connected to (apparently healthy) Primary peer, do not allow promote"
+-	remove_master_score
+-	return 0
+-}
+-
+-drbd_update_master_score() {
+-	set -- $OCF_RESKEY_adjust_master_score
+-	local only_consistent=$1 only_remote=$2 local_ok=$3 as_good_as_it_gets=$4
+-
+-	# NOTE
+-	# there may be constraint scores from rules on role=Master,
+-	# that in some ways can add to the node attribute based master score we
+-	# specify below. If you think you want to add personal preferences,
+-	# in case the scores given by this RA do not suffice, this is the
+-	# value space you can work with:
+-	# -INFINITY: Do not promote. Really. Won't work anyways.
+-		# Too bad, at least with current (Oktober 2009) Pacemaker,
+-		# negative master scores cause instance stop; restart cycle :(
+-	# missing, zero: Do not promote.
+-	#        I think my data is not good enough.
+-	#        Though, of course, you may try, and it might even work.
+-	#     5: please, do not promote, unless this is your only option.
+-	#    10: promotion is probably a bad idea, our local data is no good,
+-	#        you'd probably run into severe performance problems, and risk
+-	#        application crashes or blocking IO in case you lose the
+-	#        replication connection.
+-	#  1000: Ok to be promoted, we have good data locally (though we don't
+-	#        know about the peer, so possibly it has even better data?).
+-	#        You sould use the crm-fence-peer.sh handler or similar
+-	#        mechanism to avoid data divergence.
+-	# 10000: Please promote me/keep me Primary.
+-	#        I'm confident that my data is as good as it gets.
+-	#
+-	# TODO: separately configure the master score for diskless clients
+-	# For now: if it is "intentionally" diskless, and has access to
+-	# remote UpToDate, consider it slighly worse than "local_ok".
+-	#
+-	if : "have quorum?"; $status_have_quorum ; then
+-		: "quorate, evaluate status in more detail below"
+-	else
+-		: "NOT quorate, should not be master."
+-		remove_master_score
+-		return
+-	fi
+-
+-	# I'd like to remove the master score, if we find ourselves be
+-	# connected to an "unexpected" primary:
+-	# # unexpected_primary_rejects_promote && remove_master_score
+-	#
+-	# BUT.
+-	# Given bad timing, DRBD may still think it is connected
+-	# but pacemaker already knows the peer is dead.
+-	# If now a "monitor" squeezes in between "peer known dead"
+-	# and the soon to be expected "promote", while DRBD still thinks it was
+-	# connected to a Primary (likely optimistically waiting for generously
+-	# configured internal timeouts), if we remove the master score from
+-	# this monitor action, we delay the failover for up to
+-	# time-for-DRBD-internals-to-declare-peer-dead
+-	# plus one extra monitor interval.
+-	#
+-	# So at least don't do that by default, check for
+-	# remove_master_score_if_peer_primary and
+-	# remove_master_score_if_peer_primary_only_if_unexpected
+-	#
+-	if removed_master_score_because_peer_is_primary ; then
+-		return
+-	fi
+-
+-	if	: "diskless client?"; $status_diskless_client ; then
+-		if	: "primary and access to good data?" ;
+-			$status_primary && $status_some_peer_all_up_to_date; then
+-
+-			set_master_score $(( as_good_as_it_gets -1 ))
+-		elif	: "ALL peer-disks up-to-date?"; $status_pdsk_all_up_to_date; then
+-			set_master_score $(( as_good_as_it_gets -1 ))
+-		elif	: "SOME peer-disks up-to-date?"; $status_some_peer_all_up_to_date ; then
+-			set_master_score $(( local_ok - 1 ))
+-		else	: "Diskless client, without access to good data :("
+-			remove_master_score
+-		fi
+-
+-	elif	: "all disks up-to-date?"; $status_disk_all_up_to_date ; then
+-
+-		if	: "primary?" ; $status_primary ; then
+-
+-			# I am Primary, all local disks are UpToDate
+-			set_master_score $as_good_as_it_gets
+-
+-			if  : "all peer-disks up-to-date?"; $status_pdsk_all_up_to_date; then
+-				# I am Primary, all local disks are UpToDate,
+-				# AND all peer disks are UpToDate
+-				: == DEBUG == unfence_if_all_uptodate=$unfence_if_all_uptodate
+-				$unfence_if_all_uptodate && call_unfence
+-
+-			# else: not so sure about the peer's disks
+-			fi
+-		else : "Not primary."
+-			if : "any peer-disk unknown?"; $status_pdsk_any_unknown ; then
+-				# all local disks are UpToDate,
+-				# but I'm not Primary,
+-				# and I'm not sure about some peer's disk state(s).
+-				# We may need to outdate ourselves?
+-				# But if we outdate in a MONITOR, and are disconnected
+-				# secondary because of a hard primary crash, before CRM noticed
+-				# that there is no more master, we'd make us utterly useless!
+-				# Trust that the primary will also notice the disconnect,
+-				# and will place an appropriate fencing constraint via
+-				# its fence-peer handler callback.
+-				set_master_score  $local_ok
+-			else : "all peer disk states known."
+-				# We know something about our peer, which means that either the
+-				# replication link is established, or it was not even
+-				# consistent last time we talked to each other.
+-				# Also all our local disks are UpToDate, which means even if we are
+-				# currently synchronizing, we do so as SyncSource.
+-				set_master_score $as_good_as_it_gets
+-			fi
+-		fi
+-
+-	elif	: "some peer with all peer-disks up-to-date?" ; $status_some_peer_all_up_to_date ; then
+-
+-		# At least one of our local disks is not up to date.
+-		# But at least one of our peers is ALL OK.
+-		# We can expect to have access to useful
+-		# data, but with possibly degraded performance,
+-		# (some) reads need to fetch from the peer.
+-		set_master_score $only_remote
+-	
+-	elif	: "in transitional state?"; $status_disk_transitional_state ; then
+-		# some transitional state.
+-		# just don't do anything
+-		: "ignore"
+-
+-	elif	: "all disks consistent?" ; $status_disk_all_consistent ; then
+-		# All local disks seem to be Consistent.
+-		# They _may_ be up to date, or not.
+-		# We hope that fencing mechanisms have put constraints in
+-		# place, so we won't be promoted with stale data.
+-		# But in case this was a cluster crash,
+-		# at least allow _someone_ to be promoted.
+-		set_master_score $only_consistent
+-
+-	else # not $status_disk_all_consistent and not $status_disk_transitional_state
+-
+-		# ALWAYS put the cluster in MAINTENANCE MODE
+-		# if you add a volume to a live replication group,
+-		# because the new volume will typically come up as Inconsistent
+-		# the first time, which would cause a monitor to revoke the
+-		# master score!
+-		#
+-		# At least some of our local disks are not really useable.
+-		# Our peer is not all good either (or some previous case block
+-		# would have matched).  We have no access to useful data.
+-		# DRBD would refuse to be promoted, anyways.
+-		#
+-		# set_master_score -INFINITY
+-		# Too bad, at least with current (Oktober 2009) Pacemaker,
+-		# negative master scores cause instance stop; restart cycle :(
+-		# Hope that this will suffice.
+-		remove_master_score
+-	fi
+-}
+-
+ is_drbd_enabled() {
+ 	test -f /proc/drbd
+ }
+@@ -939,6 +694,139 @@ drbd_status() {
+ 	return $rc
+ }
+ 
++drbd_condition() {
++    local status
++    local rc
++
++    status=$1
++    rc=$status
++
++    if [ $status -ne $OCF_SUCCESS -a $status -ne $OCF_RUNNING_MASTER ]
++    then
++        return $rc
++    fi
++
++    drbd_set_status_variables
++
++    ocf_log info "${OCF_RESKEY_drbd_resource} ${DRBD_ROLE_LOCAL}/${DRBD_DSTATE_LOCAL}/${DRBD_DSTATE_REMOTE} ${DRBD_CSTATE}"
++
++    case "${DRBD_DSTATE_LOCAL}" in
++        UpToDate)
++            case "${DRBD_CSTATE}" in
++                StandAlone)
++                    rc=$OCF_DATA_STANDALONE
++                    ocf_log info "${OCF_RESKEY_drbd_resource} standalone, attempting to reconnect."
++                    do_drbdadm connect ${OCF_RESKEY_drbd_resource}
++                    ;;
++                StartingSyncT | WFBitMapT | WFSyncUUID | SyncTarget | \
++                PausedSyncT)
++                    rc=$OCF_DATA_SYNC
++                    #drbd-overview | grep -A 1 drbd-cgcs | grep sync\'ed | cut -f2,3 -d' '
++                    ocf_log info "${OCF_RESKEY_drbd_resource} syncing"
++                    ;;
++                *)
++                    ;;
++             esac
++            ;;
++        Consistent)
++            case "${DRBD_CSTATE}" in
++                StandAlone)
++                    rc=$OCF_DATA_STANDALONE
++                    ocf_log info "${OCF_RESKEY_drbd_resource} standalone, attempting to reconnect"
++                    do_drbdadm connect ${OCF_RESKEY_drbd_resource}
++                    ;;
++                *)
++                    rc=$OCF_DATA_CONSISTENT
++                    ocf_log info "${OCF_RESKEY_drbd_resource} consistent"
++                    ;;
++            esac
++            ;;
++        Outdated)
++            case "${DRBD_CSTATE}" in
++                StandAlone)
++                    rc=$OCF_DATA_STANDALONE
++                    if [ $status -eq $OCF_SUCCESS ]
++                    then
++                        ocf_log info "${OCF_RESKEY_drbd_resource} outdated standalone, attempting to reconnect."
++                        do_drbdadm -- --discard-my-data connect ${OCF_RESKEY_drbd_resource}
++                    else
++                        ocf_log info "${OCF_RESKEY_drbd_resource} outdated"
++                    fi
++                    ;;
++                *)
++                    rc=$OCF_DATA_OUTDATED
++                    ocf_log info "${OCF_RESKEY_drbd_resource} outdated"
++            esac
++            ;;
++        Inconsistent)
++            case "${DRBD_CSTATE}" in
++                StandAlone)
++                    rc=$OCF_DATA_STANDALONE
++                    if [ $status -eq $OCF_SUCCESS ]
++                    then
++                        ocf_log info "${OCF_RESKEY_drbd_resource} standby standalone, attempting to reconnect."
++                        do_drbdadm connect ${OCF_RESKEY_drbd_resource}
++                    else
++                        ocf_log info "${OCF_RESKEY_drbd_resource} standalone"
++                    fi
++                    ;;
++                StartingSyncT | WFBitMapT | WFSyncUUID | SyncTarget | \
++                PausedSyncT)
++                    rc=$OCF_DATA_SYNC
++                    ocf_log info "${OCF_RESKEY_drbd_resource} sync"
++                    ;;
++                *)
++                    rc=$OCF_DATA_INCONSISTENT
++                    ocf_log info "${OCF_RESKEY_drbd_resource} inconsistent"
++                    ;;
++            esac
++            ;;
++        *)
++            case "${DRBD_CSTATE}" in
++                StandAlone)
++                    rc=$OCF_DATA_STANDALONE
++                    ocf_log info "${OCF_RESKEY_drbd_resource} standalone"
++                    ;;
++                StartingSyncT | WFBitMapT | WFSyncUUID | SyncTarget | \
++                PausedSyncT)
++                    rc=$OCF_DATA_SYNC
++                    ocf_log info "${OCF_RESKEY_drbd_resource} sync"
++                    ;;
++                *)
++                    rc=$OCF_DATA_INCONSISTENT
++                    ocf_log info "${OCF_RESKEY_drbd_resource} inconsistent"
++                    ;;
++            esac
++            ;;
++    esac
++
++    if [ $status -eq $OCF_RUNNING_MASTER ]
++    then
++        if [ $rc -eq $OCF_DATA_INCONSISTENT ]
++        then
++            rc=$OCF_RUNNING_MASTER_DATA_INCONSISTENT
++
++        elif [ $rc -eq $OCF_DATA_OUTDATED ]
++        then
++            rc=$OCF_RUNNING_MASTER_DATA_OUTDATED
++
++        elif [ $rc -eq $OCF_DATA_CONSISTENT ]
++        then
++            rc=$OCF_RUNNING_MASTER_DATA_CONSISTENT
++
++        elif [ $rc -eq $OCF_DATA_SYNC ]
++        then
++            rc=$OCF_RUNNING_MASTER_DATA_SYNC
++
++        elif [ $rc -eq $OCF_DATA_STANDALONE ]
++        then
++            rc=$OCF_RUNNING_MASTER_DATA_STANDALONE
++        fi
++    fi
++
++    return $rc
++}
++
+ # I'm sorry, but there is no $OCF_DEGRADED_MASTER or similar yet.
+ drbd_monitor() {
+ 	local status
+@@ -954,7 +842,8 @@ drbd_monitor() {
+ 		# ---
+ 		: "do nothing" ;
+ 	else
+-		drbd_update_master_score
++        drbd_condition $status
++        status=$?
+ 	fi
+ 
+ 	case $status in
+@@ -976,17 +865,6 @@ drbd_monitor() {
+ 	return $status
+ }
+ 
+-called_crm_resource_locate=false
+-crm_resource_locate_master()
+-{
+-	$called_crm_resource_locate && return
+-	called_crm_resource_locate=true
+-	DRBD_PRIMARY_PEER_according_to_pcmk=$(
+-		crm_resource --resource "$OCF_RESOURCE_INSTANCE" --locate 2>/dev/null |
+-		sed -ne 's/^.*is running on: \([^ ]*\) Master.*$/\1/p' |
+-		grep -vix -m1 -e "$HOSTNAME")
+-}
+-
+ figure_out_drbd_peer_uname()
+ {
+ 	# depending on whether or not the peer is currently
+@@ -1002,7 +880,6 @@ figure_out_drbd_peer_uname()
+ 		$OCF_RESKEY_CRM_meta_notify_demote_uname |
+ 		grep -vix -m1 -e "$HOSTNAME" )
+ 	DRBD_TO_PEER=${x:+ --peer $x}
+-	crm_resource_locate_master
+ }
+ 
+ my_udevsettle()
+@@ -1020,6 +897,7 @@ my_udevsettle()
+ 	trap - TERM
+ 	return 0
+ }
++
+ create_device_udev_settle()
+ {
+ 	local dev
+@@ -1129,7 +1007,8 @@ drbd_start()
+ 			# this is probably dead code.
+ 			# Also, ignore the exit code of adjust, as we are
+ 			# "running" already, anyways, right?
+-			rc=$OCF_SUCCESS
++			drbd_condition $OCF_SUCCESS
++			rc=$?
+ 			$connect_only_after_promote && break
+ 			do_connect
+ 			drbd_set_status_variables
+@@ -1166,9 +1045,6 @@ drbd_start()
+ 		$first_try || sleep 1
+ 		first_try=false
+ 	done
+-	# in case someone does not configure monitor,
+-	# we must at least call it once after start.
+-	drbd_update_master_score
+ 
+ 	return $rc
+ }
+@@ -1187,14 +1063,13 @@ drbd_reload() {
+ 		# Adjust resource just in case reload was requested manually
+ 		# Changes to resource parameters do not require this
+ 		do_drbdadm adjust $DRBD_RESOURCE
+-		rc=$OCF_SUCCESS
++		drbd_condition $OCF_SUCCESS
++		rc=$?
+ 		;;
+ 	$OCF_NOT_RUNNING)
+ 		:
+ 		;;
+ 	esac
+-	# Update score as adjust_master_score may be changed
+-	drbd_update_master_score
+ 
+ 	return $rc
+ }
+@@ -1217,7 +1092,6 @@ drbd_promote() {
+ 			if ! $first_try && unexpected_primary_rejects_promote ; then
+ 				if $fail_promote_early_if_peer_primary ; then
+ 					drbd_ocf_exit_reason "Peer node already/still Primary"
+-					remove_master_score
+ 					break
+ 				else
+ 					ocf_log info "Peer node already/still Primary, promote will likely fail or need several attempts. Retrying anyways."
+@@ -1239,7 +1113,8 @@ drbd_promote() {
+ 			break
+ 			;;
+ 		$OCF_RUNNING_MASTER)
+-			rc=$OCF_SUCCESS
++			drbd_condition $OCF_SUCCESS
++			rc=$?
+ 			if $connect_only_after_promote; then
+ 				figure_out_drbd_peer_uname
+ 				do_drbdadm $DRBD_TO_PEER -v adjust $DRBD_RESOURCE
+@@ -1274,7 +1149,8 @@ drbd_demote() {
+ 		status=$?
+ 		case "$status" in
+ 		$OCF_SUCCESS)
+-			rc=$OCF_SUCCESS
++			drbd_condition $OCF_SUCCESS
++			rc=$?
+ 			break
+ 			;;
+ 		$OCF_NOT_RUNNING)
+@@ -1316,7 +1192,21 @@ drbd_stop() {
+ 			;;
+ 		$OCF_RUNNING_MASTER)
+ 			ocf_log warn "$DRBD_RESOURCE still Primary, demoting."
+-			do_drbdadm secondary  $DRBD_RESOURCE
++            found=no
++			for dev in ${DRBD_DEVICES[@]} ""; do
++				cat /proc/mounts | grep -q "^${dev} "
++				if [ $? -eq 0 ]; then
++					ocf_log warn "${DRBD_RESOURCE} is still mounted via $dev"
++					found=yes
++					break
++				fi
++			done
++			if [ "${found}" = "yes" ]; then
++				ocf_log warn "Waiting to drop $DRBD_RESOURCE"
++			else
++				ocf_log warn "Dropping $DRBD_RESOURCE to Secondary"
++				do_drbdadm secondary  $DRBD_RESOURCE
++			fi
+ 		esac
+ 		$first_try || sleep 1
+ 		first_try=false
+@@ -1326,14 +1216,9 @@ drbd_stop() {
+ 	# outdate myself in drbd on-disk meta data.
+ 	maybe_outdate_self
+ 
+-	# do not let old master scores laying around.
+-	# they may confuse crm if this node was set to standby.
+-	remove_master_score
+-
+ 	return $rc
+ }
+ 
+-
+ drbd_notify() {
+ 	local n_type=$OCF_RESKEY_CRM_meta_notify_type
+ 	local n_op=$OCF_RESKEY_CRM_meta_notify_operation
+@@ -1370,7 +1255,6 @@ drbd_notify() {
+ 		# After something has been done is a good time to
+ 		# recheck our status:
+ 		drbd_set_status_variables
+-		drbd_update_master_score
+ 
+ 		if : "any unknown peer device?"; $status_pdsk_any_unknown ; then
+ 			# Still not properly communicating.
+@@ -1402,27 +1286,6 @@ ls_stat_is_block_maj_147() {
+ 	[[ $1 = b* ]] && [[ $5 == 147,* ]]
+ }
+ 
+-check_crm_feature_set()
+-{
+-	set -- ${OCF_RESKEY_crm_feature_set//[!0-9]/ }
+-	local a=${1:-0} b=${2:-0} c=${3:-0}
+-	
+-	(( a > 3 )) ||
+-	(( a == 3 && b > 0 )) ||
+-	(( a == 3 && b == 0 && c > 0 )) ||
+-	ocf_log warn "You may be disappointed: This RA is intended for pacemaker 1.0 or better!"
+-
+-	PCMK_OCF_DEGRADED=$OCF_SUCCESS
+-	PCMK_OCF_DEGRADED_MASTER=$OCF_RUNNING_MASTER
+-
+-	## pacemaker since crm_feature_set 3.0.10 knows about "degraded" states.
+-	## But it does not work yet, because LRMD filters the exit codes...
+-	# if (( a > 3 )) || (( a == 3 && b > 0 )) || (( a == 3 && b == 0 && c >= 10 )); then
+-	# 	PCMK_OCF_DEGRADED=190
+-	# 	PCMK_OCF_DEGRADED_MASTER=191
+-	# fi
+-}
+-
+ require_drbd_module_version()
+ {
+ 	local v k op version_code
+@@ -1489,7 +1352,6 @@ _drbd_validate_all () {
+ 		DRBD_HAS_EVENTS2=true
+ 		DRBD_IS_v9=true
+ 	fi
+-	check_crm_feature_set
+ 
+ 	if [[ $__OCF_ACTION != stop ]] ; then
+ 		meta_expect clone-node-max = 1			|| return
+@@ -1573,7 +1435,6 @@ _drbd_validate_all () {
+ 			# hm. probably misconfigured constraint somewhere.
+ 			# sorry. don't retry anywhere.
+ 			drbd_ocf_exit_reason "%s" "DRBD resource ${DRBD_RESOURCE} not found in configuration file ${OCF_RESKEY_drbdconf}."
+-			remove_master_score
+ 			: "$OCF_ERR_INSTALLED = OCF_ERR_INSTALLED"
+ 			return $OCF_ERR_INSTALLED
+ 		fi
+@@ -1611,16 +1472,6 @@ _drbd_validate_all () {
+ 		fi
+ 	esac
+ 
+-	local i j n=0 fallback=false
+-	for i in $OCF_RESKEY_adjust_master_score; do
+-		[[ $i = *[!0-9]* ]]   && fallback=true && ocf_log err "BAD adjust_master_score value $i ; falling back to default"
+-		[[ $j && $i -lt $j ]] && fallback=true && ocf_log err "BAD adjust_master_score value $j > $i ; falling back to default"
+-		j=$i
+-		n=$(( n+1 ))
+-	done
+-	[[ $n != 4 ]] && fallback=true && ocf_log err "Not enough adjust_master_score values ($n != 4); falling back to default"
+-	$fallback && OCF_RESKEY_adjust_master_score=$OCF_RESKEY_adjust_master_score_default
+-
+ 	# we use it in various places,
+ 	# just make sure it contains what we expect.
+ 	HOSTNAME=`uname -n`
+-- 
+2.30.0
+
