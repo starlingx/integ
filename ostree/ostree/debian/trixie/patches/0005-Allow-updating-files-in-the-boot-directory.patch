@@ -1,0 +1,120 @@
+From 13fe15e2040fe52864e7da25cbeb57ab0fd9313a Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Tue, 16 Sep 2025 07:38:34 -0400
+Subject: [PATCH] Allow updating files in the /boot directory
+
+This patch adds support for copying all files from the deployment's
+/usr/lib/ostree-boot directory to the relevant /boot/ostree/$os-$bootcsum/
+directory. This feature can be enabled by 'touch .ostree-bootcsumdir-source'
+in /usr/lib/ostree-boot.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+Signed-off-by: Jiang Lu <lu.jiang@windriver.com>
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+---
+ src/libostree/ostree-sysroot-deploy.c | 81 +++++++++++++++++++++------
+ 1 file changed, 63 insertions(+), 18 deletions(-)
+
+diff --git a/src/libostree/ostree-sysroot-deploy.c b/src/libostree/ostree-sysroot-deploy.c
+index 6880102..a43710c 100644
+--- a/src/libostree/ostree-sysroot-deploy.c
++++ b/src/libostree/ostree-sysroot-deploy.c
+@@ -125,24 +125,6 @@ install_into_boot (OstreeRepo *repo, OstreeSePolicy *sepolicy, int src_dfd, cons
+   if (!glnx_openat_rdonly (src_dfd, src_subpath, FALSE, &src_fd, error))
+     return FALSE;
+ 
+-  /* Be sure we relabel when copying the kernel, as in current
+-   * e.g. Fedora it might be labeled module_object_t or usr_t,
+-   * but policy may not allow other processes to read from that
+-   * like kdump.
+-   * See also
+-   * https://github.com/fedora-selinux/selinux-policy/commit/747f4e6775d773ab74efae5aa37f3e5e7f0d4aca
+-   * This means we also drop xattrs but...I doubt anyone uses
+-   * non-SELinux xattrs for the kernel anyways aside from perhaps
+-   * IMA but that's its own story.
+-   */
+-  g_auto (OstreeSepolicyFsCreatecon) fscreatecon = {
+-    0,
+-  };
+-  const char *boot_path = glnx_strjoina ("/boot/", glnx_basename (dest_subpath));
+-  if (!_ostree_sepolicy_preparefscreatecon (&fscreatecon, sepolicy, boot_path, S_IFREG | 0644,
+-                                            error))
+-    return FALSE;
+-
+   g_auto (GLnxTmpfile) tmp_dest = {
+     0,
+   };
+@@ -2016,7 +1998,70 @@ install_deployment_kernel (OstreeSysroot *sysroot, int new_bootversion,
+       /* these are used lower down to populate the bootconfig */
+       g_ptr_array_add (overlay_initrds, g_steal_pointer (&destpath));
+     }
++    if (fstatat (kernel_layout->boot_dfd, ".ostree-bootcsumdir-source", &stbuf, 0) == 0)
++    {
++      g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
++      if (!glnx_dirfd_iterator_init_at (kernel_layout->boot_dfd, ".", FALSE, &dfd_iter, error))
++        return FALSE;
+ 
++      while (TRUE)
++        {
++          struct dirent *dent;
++
++          if (!glnx_dirfd_iterator_next_dent (&dfd_iter, &dent, cancellable, error))
++            return FALSE;
++          if (dent == NULL)
++            break;
++
++          /* Skip special files - initramfs-* are handled separately */
++          if (g_str_has_prefix (dent->d_name, "initramfs-"))
++            continue;
++
++          /* Skip special kernel file - vmlinuz-<sha256sum> is handled separately */
++          if (g_str_has_prefix (dent->d_name, "vmlinuz-"))
++          {
++            const char *dash = strrchr (dent->d_name, '-');
++            if (ostree_validate_structureof_checksum_string (dash + 1, NULL))
++              continue;
++          }
++
++          if (fstatat (bootcsum_dfd, dent->d_name, &stbuf, AT_SYMLINK_NOFOLLOW) != 0)
++            {
++              if (errno != ENOENT)
++                {
++                  glnx_set_prefix_error_from_errno (error, "fstatat %s", dent->d_name);
++                  return FALSE;
++                }
++
++              if (fstatat (dfd_iter.fd, dent->d_name, &stbuf, AT_SYMLINK_NOFOLLOW) != 0)
++                {
++                  glnx_set_error_from_errno (error);
++                  return FALSE;
++                }
++              if (S_ISDIR (stbuf.st_mode))
++                {
++                  if (!copy_dir_recurse (kernel_layout->boot_dfd, bootcsum_dfd, dent->d_name,
++                                                     sysroot->debug_flags, cancellable, error))
++                    return FALSE;
++                }
++              else
++                {
++                  if (!install_into_boot (repo, sepolicy,kernel_layout->boot_dfd, dent->d_name,
++                                            bootcsum_dfd, dent->d_name,
++                                            cancellable, error))
++                    return FALSE;
++                }
++            }
++        }
++    }
++    else
++    {
++      if (errno != ENOENT)
++        {
++          glnx_set_prefix_error_from_errno (error, "fstatat %s", ".ostree-bootcsumdir-source");
++          return FALSE;
++         }
++     }
+   g_autofree char *contents = NULL;
+   if (!glnx_fstatat_allow_noent (deployment_dfd, "usr/lib/os-release", &stbuf, 0, error))
+     return FALSE;
+-- 
+2.43.0
+

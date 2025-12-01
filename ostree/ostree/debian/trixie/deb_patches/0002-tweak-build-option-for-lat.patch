@@ -1,0 +1,55 @@
+From 7d6956aadbe4985c619fd9ca31b555a95dbed423 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Tue, 16 Sep 2025 05:12:09 -0400
+Subject: [PATCH] tweak build option for lat
+
+Upstream-Status: Inappropriate [lat specific]
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+---
+ debian/rules | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/debian/rules b/debian/rules
+index 372fc8d..1d46179 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -1,5 +1,6 @@
+ #!/usr/bin/make -f
+ 
++export DEB_CFLAGS_MAINT_APPEND = -Werror=implicit-function-declaration -Werror=int-conversion
+ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+ 
+ binaries := $(shell dh_listpackages)
+@@ -15,22 +16,24 @@ endif
+ 	env NOCONFIGURE=1 PATH=$(CURDIR)/debian/tmp-path:$(PATH) dh_autoreconf ./autogen.sh
+ 
+ configure_options = \
++	GJS=some-nonexistent-gjs-binary \
+ 	--enable-installed-tests \
++	--libexecdir='$${prefix}/libexec' \
+ 	--with-avahi \
+ 	--with-curl \
+-	--with-dracut \
++	--without-dracut \
+ 	--with-grub2 \
+ 	--with-grub2-mkconfig-path=/usr/sbin/grub-mkconfig \
+ 	--with-libarchive \
+ 	--with-libsystemd \
+ 	--with-libmount \
+-	--with-modern-grub \
+ 	--with-soup3 \
+-	--with-selinux \
++	--without-selinux \
+ 	--with-systemdsystemgeneratordir=/usr/lib/systemd/system-generators \
+ 	--with-systemdsystemunitdir=/usr/lib/systemd/system \
+ 	--without-composefs \
+ 	--without-smack \
++	--with-builtin-grub2-mkconfig \
+ 	$(NULL)
+ 
+ ifneq ($(filter alpha armel hppa ia64 m68k sh4 sparc64 x32,$(DEB_HOST_ARCH)),)
+-- 
+2.43.0
+

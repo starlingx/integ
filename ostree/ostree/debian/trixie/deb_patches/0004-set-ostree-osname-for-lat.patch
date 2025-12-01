@@ -1,0 +1,28 @@
+From 5bfcf099c196f93f028827574c5f989440dc7a8e Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Tue, 16 Sep 2025 05:17:12 -0400
+Subject: [PATCH] set ostree osname for lat
+
+Upstream-Status: Inappropriate [lat specific]
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+---
+ debian/rules | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/rules b/debian/rules
+index 1d46179..5f57365 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -13,6 +13,7 @@ override_dh_autoreconf:
+ ifneq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+ 	ln -fns /bin/true debian/tmp-path/gtkdocize
+ endif
++	sed -i -e "s#@OSTREE_OSNAME@#${OSTREE_OSNAME}#g" ./src/libostree/ostree-impl-system-generator.c
+ 	env NOCONFIGURE=1 PATH=$(CURDIR)/debian/tmp-path:$(PATH) dh_autoreconf ./autogen.sh
+ 
+ configure_options = \
+-- 
+2.43.0
+

@@ -1,0 +1,4 @@
+0001-disable-runtime-test.patch
+0002-tweak-build-option-for-lat.patch
+0003-customize-do_install-for-lat.patch
+0004-set-ostree-osname-for-lat.patch

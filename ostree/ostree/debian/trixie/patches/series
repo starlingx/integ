@@ -1,0 +1,6 @@
+0001-fsck-Throw-and-error-and-return-non-zero-for-non-ver.patch
+0002-u-boot-add-bootdir-to-the-generated-uEnv.txt.patch
+0003-deploy-using-etc-in-runtime-as-merge-source.patch
+0004-create-links-to-the-deploy-directory-in-boot-and-ost.patch
+0005-Allow-updating-files-in-the-boot-directory.patch
+0006-deploy-Handle-a-read-only-boot-efi.patch

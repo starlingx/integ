@@ -1,0 +1,66 @@
+From 87ae523c78f98705d816c6738c7c4e9cc50ec2c7 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Tue, 16 Sep 2025 06:44:12 -0400
+Subject: [PATCH] deploy:using /etc in runtime as merge source
+
+When deploy new ostree image, using /etc in runtime image as source for merge
+operation, instead of /etc in previouse image.
+
+For when upgrading a repo, user expected configuration in running system come
+into new ostree image.
+
+ostree-sysroot-deploy: if OSTREE_ETC_MERGE_DIR = none skip merge
+
+Upstream-Status: Inappropriate [LAT specific]
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+Signed-off-by: Jiang Lu <lu.jiang@windriver.com>
+Signed-off-by: Jason Wessel <jason.wessel@windriver.com>
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+Signed-off-by: Zhang Xiao <xiao.zhang@windriver.com>
+---
+ src/libostree/ostree-sysroot-deploy.c | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/src/libostree/ostree-sysroot-deploy.c b/src/libostree/ostree-sysroot-deploy.c
+index 5d356d4..33ac815 100644
+--- a/src/libostree/ostree-sysroot-deploy.c
++++ b/src/libostree/ostree-sysroot-deploy.c
+@@ -522,7 +522,16 @@ merge_configuration_from (OstreeSysroot *sysroot, OstreeDeployment *merge_deploy
+ 
+   /* TODO: get rid of GFile usage here */
+   g_autoptr (GFile) orig_etc = ot_fdrel_to_gfile (merge_deployment_dfd, "usr/etc");
+-  g_autoptr (GFile) modified_etc = ot_fdrel_to_gfile (merge_deployment_dfd, "etc");
++  char *etc_merge_dir = getenv("OSTREE_ETC_MERGE_DIR");
++  g_autoptr(GFile) modified_etc;
++  if (etc_merge_dir) {
++    /* if OSTREE_ETC_MERGE_DIR = "none" skip merge */
++    if (!strcmp(etc_merge_dir, "none"))
++      return TRUE;
++    modified_etc = g_file_new_for_path(etc_merge_dir);
++  } else {
++    modified_etc = ot_fdrel_to_gfile (merge_deployment_dfd, "etc");
++  }
+   /* Return values for below */
+   g_autoptr (GPtrArray) modified
+       = g_ptr_array_new_with_free_func ((GDestroyNotify)ostree_diff_item_unref);
+@@ -554,8 +563,14 @@ merge_configuration_from (OstreeSysroot *sysroot, OstreeDeployment *merge_deploy
+   if (!glnx_opendirat (merge_deployment_dfd, "usr/etc", TRUE, &orig_etc_fd, error))
+     return FALSE;
+   glnx_autofd int modified_etc_fd = -1;
+-  if (!glnx_opendirat (merge_deployment_dfd, "etc", TRUE, &modified_etc_fd, error))
+-    return FALSE;
++  if (etc_merge_dir)
++    {
++      if (!glnx_opendirat (-1, etc_merge_dir, TRUE, &modified_etc_fd, error))
++        return FALSE;
++    }
++  else
++    if (!glnx_opendirat (merge_deployment_dfd, "etc", TRUE, &modified_etc_fd, error))
++      return FALSE;
+   glnx_autofd int new_etc_fd = -1;
+   if (!glnx_opendirat (new_deployment_dfd, "etc", TRUE, &new_etc_fd, error))
+     return FALSE;
+-- 
+2.43.0
+
