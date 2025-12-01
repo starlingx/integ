@@ -1,0 +1,24 @@
+#!/bin/bash
+
+PKGNAME=ostree
+META_LAT_TARBALL=meta-lat.tar.gz
+META_LAT=meta-lat
+OSTREE_TARBALL=ostree.tar.gz
+OSTREE=$1
+
+mkdir -p ${META_LAT}
+tar xzvf ${META_LAT_TARBALL} --strip-components 1 -C ${META_LAT}
+mkdir -p ${OSTREE}
+tar xzvf ${OSTREE_TARBALL} --strip-components 1 -C ${OSTREE}
+
+BASE_DIR=$(realpath ${META_LAT})
+SRC_DIR=$(realpath ${OSTREE})
+META_DIR=${BASE_DIR}/data/debian/${PKGNAME}/metadata_patches
+PATCHES_DIR=${BASE_DIR}/data/debian/${PKGNAME}/source_patches
+
+cd ${SRC_DIR}
+for patch in `ls ${META_DIR}/*.patch`; do
+	patch -p1 < $patch || exit 1
+done
+mkdir debian/patches/lat
+cp -f ${PATCHES_DIR}/*.patch debian/patches/lat/
