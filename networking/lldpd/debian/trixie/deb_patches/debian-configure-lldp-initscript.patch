@@ -1,0 +1,23 @@
+From yue.tao@windriver.com
+
+Subject: install the i40e-lldp-configure.sh to /etc/init.d. The script allows 
+a user to enable and disable the internal LLDP agent.
+
+--- a/debian/rules
++++ b/debian/rules
+@@ -9,3 +9,8 @@ override_dh_auto_configure:
+ 		--with-snmp \
+ 		--with-xml \
+ 		--with-systemdsystemunitdir=/lib/systemd/system
++
++override_dh_install:
++	install -d -m 755 debian/tmp/etc/init.d
++	install -m 755 i40e-lldp-configure.sh debian/tmp/etc/init.d
++	dh_install
+--- a/debian/lldpd.install
++++ b/debian/lldpd.install
+@@ -5,3 +5,4 @@ debian/tmp/usr/sbin/lldp*
+ debian/tmp/usr/share/bash-completion/completions/*
+ debian/tmp/usr/share/zsh/vendor-completions/*
+ debian/tmp/etc/lldpd.d/*
++debian/tmp/etc/init.d/*

@@ -1,0 +1,435 @@
+From 301be9cc3629927620206132dc00dba8b83045eb Mon Sep 17 00:00:00 2001
+From: Lucas Ratusznei Fonseca <lucas.ratuszneifonseca@windriver.com>
+Date: Mon, 5 Feb 2024 01:15:33 -0300
+Subject: [PATCH] Fix DAD and gateway detection, improve logs
+
+---
+ if-up-scripts/check-duplicate-ip  | 51 ++++++++++++----------
+ if-up-scripts/check-duplicate-ip6 | 34 ++++++++++-----
+ if-up-scripts/check-gateway       | 72 +++++++++++++++++++++++--------
+ if-up-scripts/check-network-cable | 54 +++++++++++++----------
+ 4 files changed, 138 insertions(+), 73 deletions(-)
+
+diff --git a/if-up-scripts/check-duplicate-ip b/if-up-scripts/check-duplicate-ip
+index 347639d..a975a90 100755
+--- a/if-up-scripts/check-duplicate-ip
++++ b/if-up-scripts/check-duplicate-ip
+@@ -56,11 +56,22 @@ VERBOSITY=${VERBOSITY:-0}
+ LC_ALL=C
+ export LC_ALL
+ 
+-if [ "$DO_SYSLOG" = "yes" ] ; then
+-	OUTPUT="logger -i -p daemon.err -s"
+-else
+-	OUTPUT="echo"
+-fi
++do_output() {
++    local REDIR_ECHO=""
++    if [[ " err warning " =~ " $1 " ]] ; then
++        REDIR_ECHO="1>&2"
++    fi
++
++    if [ "$DO_SYSLOG" = "yes" ] ; then
++        logger -i -p daemon.$1 ifupdown: "${@:2}"
++    else
++        eval echo 'ifupdown: "${@:2}"' $REDIR_ECHO
++    fi
++}
++
++OUT_ERR="do_output err"
++OUT_WARN="do_output warning"
++OUT_DEBUG="do_output debug"
+ 
+ do_arping() {
+ # Send ARP pings to detect if there is a duplicate address "out there"
+@@ -74,18 +85,18 @@ do_arping() {
+ 
+ # First determine physical interface in case aliased interfaces are used
+         real_iface=$(echo "$IFACE" | sed -e 's|:[[:digit:]]\+||')
+-
+-        if [ -z "`ip link show $real_iface up 2>/dev/null`" ]; then
++        if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) != "up" ]] ; then
++            [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Interface $real_iface (for $IFACE) is not in UP state, skipping duplicate IPv4 address check"
+             return
+         fi
+ 
+ 	for ADDR in $IF_ADDRESS; do
+         # Skip interface is address is IPv6, arping only works for IPv4
+             if ! echo ${ADDR} | grep -q ":" ; then
+-		[ "$VERBOSITY" -eq 1 ] && $OUTPUT "DEBUG: Sending arp pings through $real_iface (for $IFACE) to detect other systems using $ADDR"
+-                $ARPING -c $ARP_COUNT -w $ARP_TIMEOUT -D -I $real_iface $ADDR $ARPING_EXTRAOPTS >$ARPING_REDIR
++		[ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending arp pings through $real_iface (for $IFACE) to detect other systems using $ADDR"
++                $ARPING -c $ARP_COUNT -w $ARP_TIMEOUT -D -I $real_iface $ADDR $ARPING_EXTRAOPTS >/dev/null
+ 		if [ $? -ne 0 ] ; then
+-                    $OUTPUT "ERROR: Duplicate address $ADDR assigned in the network where $real_iface is connected to."
++                    $OUT_ERR "Duplicate address $ADDR assigned in the network where $real_iface is connected to."
+ 		fi
+             fi
+ 	done
+@@ -99,7 +110,7 @@ find_ip() {
+ }
+ 
+ if [ -z "$IFACE" ] ; then
+-    echo "ERROR: Do not know what interface to check. IFACE environment variable is not defined!" >&2
++    $OUT_ERR "Do not know what interface to check. IFACE environment variable is not defined!"
+     exit 0
+ fi
+ 
+@@ -111,6 +122,12 @@ case $IFACE in
+         *) ;;
+ esac
+ 
++[ -z "$IF_ADDRESS" ] && find_ip
++# Still no IP? Bail out
++if [ -z "$IF_ADDRESS" ] ; then
++    $OUT_WARN "Cannot check for duplicate IPv4 address in the network as the script could not find the IPv4 address of $IFACE. You can disable this test by setting DO_ARPING to 'no' in $DEFAULT ."
++    exit 0
++fi
+ 
+ # For arping:
+ # Two possible arpings: iputils-arping or arping, with different
+@@ -120,30 +137,20 @@ if [ -x /usr/bin/arping ] ; then
+     ARPING=/usr/bin/arping
+     ARP_TIMEOUT=${ARP_TIMEOUT:-3} # Time here is measured in seconds
+     ARPING_EXTRAOPTS="-q"         # Use -q(uiet) in iputil's arping
+-    ARPING_REDIR="/dev/stdout"    # Do not redirect output
+ else
+     if [ -x /usr/sbin/arping ] ; then
+         ARPING=/usr/sbin/arping
+         ARP_TIMEOUT=${ARP_TIMEOUT:-1500} # Time here is measures in milliseconds
+                                          # experiments show anything less than 1500 is unreliable.
+         ARPING_EXTRAOPTS=""              # No '-q' option in arping
+-        ARPING_REDIR="/dev/null"        # Send output to /dev/null if using this program
+     else
+         # Do not continue if ARPING is not available
+-        echo "WARNING: Cannot check for duplicate IP address in the network. The script cannot find the 'arping' program (tried /usr/bin/arping and /usr/sbin/arping. Please either install the iputils-arping or arping packages or disable this test by setting DO_ARPING to 'no' in $DEFAULT ." >&2
++        $OUT_WARN "Cannot check for duplicate IP address in the network. The script cannot find the 'arping' program (tried /usr/bin/arping and /usr/sbin/arping. Please either install the iputils-arping or arping packages or disable this test by setting DO_ARPING to 'no' in $DEFAULT ."
+         exit 0
+     fi
+ fi
+ ARP_COUNT=${ARP_COUNT:-2}
+ 
+-
+-
+-[ -z "$IF_ADDRESS" ] && find_ip
+-# Still no IP? Bail out
+-if [ -z "$IF_ADDRESS" ] ; then
+-    echo "WARNING: Cannot check for duplicate IP address in the network as the script could not find the ip address of $IFACE. You can disable this test by setting DO_ARPING to 'no' in $DEFAULT ." >&2
+-    exit 0
+-fi
+ do_arping
+ 
+ exit 0
+diff --git a/if-up-scripts/check-duplicate-ip6 b/if-up-scripts/check-duplicate-ip6
+index b9ff87a..fd4b453 100755
+--- a/if-up-scripts/check-duplicate-ip6
++++ b/if-up-scripts/check-duplicate-ip6
+@@ -54,11 +54,22 @@ VERBOSITY=${VERBOSITY:-0}
+ LC_ALL=C
+ export LC_ALL
+ 
+-if [ "$DO_SYSLOG" = "yes" ] ; then
+-	OUTPUT="logger -i -p daemon.err -s"
+-else
+-	OUTPUT="echo"
+-fi
++do_output() {
++    local REDIR_ECHO=""
++    if [[ " err warning " =~ " $1 " ]] ; then
++        REDIR_ECHO="1>&2"
++    fi
++
++    if [ "$DO_SYSLOG" = "yes" ] ; then
++        logger -i -p daemon.$1 ifupdown: "${@:2}"
++    else
++        eval echo 'ifupdown: "${@:2}"' $REDIR_ECHO
++    fi
++}
++
++OUT_ERR="do_output err"
++OUT_WARN="do_output warning"
++OUT_DEBUG="do_output debug"
+ 
+ do_ndisc() {
+ # Use the Network Discovery Protocol to detect if there is a duplicate address
+@@ -70,23 +81,24 @@ do_ndisc() {
+ 
+ # First determine physical interface in case aliased interfaces are used
+         real_iface=$(echo "$IFACE" | sed -e 's|:[[:digit:]]\+||')
+-        link_address=$(ip link show wlan0 | grep link | awk '{print toupper($2)}')
+-
+-        if [ -z "`ip link show $real_iface up`" ]; then
++        if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) != "up" ]] ; then
++            [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Interface $real_iface (for $IFACE) is not in UP state, skipping duplicate IPv6 address check"
+             return
+         fi
+ 
++        link_address=$(ip link show "$real_iface" | grep link | awk '{print toupper($2)}')
++
+         for ADDR in $IF_ADDRESS; do
+         # Only check IP address if it is IPv6
+             if echo ${ADDR} | grep -q ":" ; then
+-		[ "$VERBOSITY" -eq 1 ] && $OUTPUT "DEBUG: Sending arp pings through $real_iface (for $IFACE) to detect other systems using $ADDR"
++		[ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending arp pings through $real_iface (for $IFACE) to detect other systems using $ADDR"
+                 dup_link_address=$($NDISC -q $ADDR $real_iface)
+ 		if [ $? -eq 0 ] ; then
+                     # If the link address is the same as our address this is not a problem
+                     # (ndisc returns it in at least Wireless interfaces), only report if the link 
+                     # address does not match
+                     if [ "$link_address" != "$dup_link_address" ] ; then
+-                        $OUTPUT "ERROR: Duplicate address $ADDR assigned in the network where $real_iface is connected to."
++                        $OUT_ERR "Duplicate address $ADDR assigned in the network where $real_iface is connected to."
+                     fi
+ 		fi
+             fi
+@@ -101,7 +113,7 @@ find_ip6() {
+ }
+ 
+ if [ -z "$IFACE" ] ; then
+-    echo "ERROR: Do not know what interface to check. IFACE environment variable is not defined!" >&2
++    $OUT_ERR "Do not know what interface to check. IFACE environment variable is not defined!"
+     exit 1
+ fi
+ 
+diff --git a/if-up-scripts/check-gateway b/if-up-scripts/check-gateway
+index 97c93b1..d2c45c1 100755
+--- a/if-up-scripts/check-gateway
++++ b/if-up-scripts/check-gateway
+@@ -42,13 +42,18 @@
+ 
+ # Defaults
+ ARPING=/usr/bin/arping
++NDISC=/usr/bin/ndisc6
+ ARP_COUNT=${ARP_COUNT:-2}
+ ARP_TIMEOUT=${ARP_TIMEOUT:-3}
+ DO_SYSLOG=${DO_SYSLOG:-yes}
+ VERBOSITY=${VERBOSITY:-0}
+ 
+-# Do not continue if ARPING is not available
+-[ ! -x "$ARPING" ] && exit 0
++[ -x "$ARPING" ]
++HAS_ARPING=$?
++
++[ -x "$NDISC" ]
++HAS_NDISC=$?
++
+ # or if the user has told us to not do arpings
+ [ "$DO_ARPING" = "no" ]  && exit 0
+ 
+@@ -58,17 +63,28 @@ VERBOSITY=${VERBOSITY:-0}
+ # Ignore "--all"
+ [ "$IFACE" = "--all" ] && exit 0
+ 
+-if [ "$DO_SYSLOG" = "yes" ] ; then
+-	OUTPUT="logger -i -p daemon.err -s"
+-else
+-	OUTPUT="echo"
+-fi
++do_output() {
++    local REDIR_ECHO=""
++    if [[ " err warning " =~ " $1 " ]] ; then
++        REDIR_ECHO="1>&2"
++    fi
++
++    if [ "$DO_SYSLOG" = "yes" ] ; then
++        logger -i -p daemon.$1 ifupdown: "${@:2}"
++    else
++        eval echo 'ifupdown: "${@:2}"' $REDIR_ECHO
++    fi
++}
++
++OUT_ERR="do_output err"
++OUT_WARN="do_output warning"
++OUT_DEBUG="do_output debug"
+ 
+ # Try to obtain the IP address of our gateway (DHCP case)
+ if [ -z "$IF_GATEWAY" ] ; then
+        IF_GATEWAY=$(ip route list | grep "^default " | grep "dev $IFACE" | awk '{print $3}')
+         # Warn if there are multiple gateways
+-        echo $IF_GATEWAY | grep -q " " && [ "$VERBOSITY" -eq 1 ] && $OUTPUT "Found multiple gateways as default routes for $IFACE"
++        echo $IF_GATEWAY | grep -q " " && [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Found multiple gateways as default routes for $IFACE"
+ fi
+ # Still no IP? Bail out
+ [ -z "$IF_GATEWAY" ] && exit 0
+@@ -92,12 +108,7 @@ do_arping() {
+         local ARPING_OPTIONS="-q -c $ARP_COUNT -w $ARP_TIMEOUT -f -I $IFACE"
+         local GATEWAY_FOUND=1
+ 
+-        # Check if the interface is up 
+-        if [ -z "`ip link show $real_iface up 2>/dev/null`" ]; then
+-            return 0
+-        fi
+-
+-	[ "$VERBOSITY" -eq 1 ] && $OUTPUT "DEBUG: Sending arp pings through $IFACE to detect if the gateway $GATEWAY is present"
++	[ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending arp pings through $IFACE to detect if the gateway $GATEWAY is present"
+         if [ "`id -u`" = 0 ] ; then
+             if $ARPING $ARPING_OPTIONS $GATEWAY ; then
+                 GATEWAY_FOUND=0
+@@ -112,10 +123,23 @@ do_arping() {
+         fi
+ 
+         if [ "$GATEWAY_FOUND" = 1 ] ; then
+-                $OUTPUT "ERROR: Cannot find default gateway $GATEWAY in the network where $IFACE is connected to"
++                $OUT_ERR "Cannot find default gateway $GATEWAY in the network where $IFACE is connected to"
+ 	fi
+ }
+ 
++do_ndisc() {
++
++    local GATEWAY=$1
++
++	[ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Sending ICMP6 pings through $IFACE to detect if the gateway $GATEWAY is present"
++
++    $NDISC -q $GATEWAY $real_iface >/dev/null 2>&1
++    if [ $? -ne 0 ] ; then
++        $OUT_ERR "Cannot find default gateway $GATEWAY in the network where $IFACE is connected to"
++    fi
++
++}
++
+ # Check our IFACE name, if it is a serial line or loopback skip it as ARP ping is not possible there
+ 
+ case "$IFACE" in 
+@@ -123,8 +147,22 @@ case "$IFACE" in
+ 	*) ;;
+ esac
+ 
+-for gateway in $IF_GATEWAY ; do 
+-    do_arping $gateway
++real_iface=$(echo "$IFACE" | sed -e 's|:[[:digit:]]\+||')
++if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) != "up" ]] ; then
++    [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Interface $real_iface (for $IFACE) is not in UP state, skipping gateway detection"
++    exit 0
++fi
++
++for gateway in $IF_GATEWAY ; do
++    if [[ "$gateway" =~ ":" ]] ; then
++        if [ $HAS_NDISC -eq 0 ] ; then
++            do_ndisc $gateway
++        fi
++    else
++        if [ $HAS_ARPING -eq 0 ] ; then
++            do_arping $gateway
++        fi
++    fi
+ done
+ 
+ exit 0
+diff --git a/if-up-scripts/check-network-cable b/if-up-scripts/check-network-cable
+index f8e9044..be3d5b3 100755
+--- a/if-up-scripts/check-network-cable
++++ b/if-up-scripts/check-network-cable
+@@ -58,11 +58,22 @@ if [ "$DO_CABLETEST" = "no" ]; then
+     exit 0
+ fi
+ 
+-if [ "$DO_SYSLOG" = yes ]; then
+-	OUTPUT="logger -i -p daemon.err -s"
+-else
+-	OUTPUT=echo
+-fi
++do_output() {
++    local REDIR_ECHO=""
++    if [[ " err warning " =~ " $1 " ]] ; then
++        REDIR_ECHO="1>&2"
++    fi
++
++    if [ "$DO_SYSLOG" = "yes" ] ; then
++        logger -i -p daemon.$1 ifupdown: "${@:2}"
++    else
++        eval echo 'ifupdown: "${@:2}"' $REDIR_ECHO
++    fi
++}
++
++OUT_ERR="do_output err"
++OUT_WARN="do_output warning"
++OUT_DEBUG="do_output debug"
+ 
+ # Set our locale environment, just in case any of the tools get translated
+ LC_ALL=C
+@@ -91,16 +102,8 @@ check_status_ethtool() {
+ 	return $status
+ }
+ 
+-check_status_iplink() {
+-	local status=0
+-        local info=""
+-
+-	[ -x "$IPTOOL" ] || return 0
+-	info=$($IPTOOL link show "$IFACE" up 2>&1)
+-	if [ -z "$info" ] ; then
+-		status=1
+-	fi
+-	return $status
++check_status_sysfs() {
++	[ -f /sys/class/net/${IFACE}/operstate ] && [[ $(< /sys/class/net/${IFACE}/operstate) != "down" ]]
+ }
+ 
+ # Status check function for all types of interfaces
+@@ -108,14 +111,14 @@ check_status () {
+ 	local status=0 myid=$(id -u)
+ 
+         $IPTOOL link show "$IFACE" >/dev/null 2>&1 || {
+-		$OUTPUT "ERROR: Interface $IFACE does not seem to be present" \
++		$OUT_ERR "Interface $IFACE does not seem to be present" \
+ 			"in the system"
+ 		return 0
+ 	}
+ 
+-        check_status_iplink || status=$?
++        check_status_sysfs || status=$?
+ 	[ $status -eq 0 ] ||
+-		$OUTPUT "WARNING: Initialising interface $IFACE which does" \
++		$OUT_WARN "Initialising interface $IFACE which does" \
+ 			"not have a link"
+ 	return $status
+ }
+@@ -126,7 +129,7 @@ check_ethernet_status() {
+ 	local status=0 myid=$(id -u)
+ 
+         $IPTOOL link show "$IFACE" >/dev/null 2>&1 || {
+-		$OUTPUT "ERROR: Interface $IFACE does not seem to be present" \
++		$OUT_ERR "Interface $IFACE does not seem to be present" \
+ 			"in the system"
+ 		return 0
+ 	}
+@@ -138,10 +141,10 @@ check_ethernet_status() {
+ 	elif [ -x "$MIITOOL" ] && [ $myid -eq 0 ]; then
+ 		check_status_miitool || status=$?
+ 	else
+-		check_status_iplink || status=$?
++		check_status_sysfs || status=$?
+ 	fi
+ 	[ $status -eq 0 ] ||
+-		$OUTPUT "WARNING: Initialising interface $IFACE which does" \
++		$OUT_WARN "Initialising interface $IFACE which does" \
+ 			"not have a link"
+ 	return $status
+ }
+@@ -162,16 +165,21 @@ check_bond_status() {
+ 			[ $status -ne 0 ] || return 0
+ 		done
+ 	done <$slaves
+-	$OUTPUT "WARNING: Initialising bond $IFACE which does not have link" \
++	$OUT_WARN "Initialising bond $IFACE which does not have link" \
+ 		"on any slave"
+ 	return $status
+ }
+ 
+ [ "$IFACE" ] || {
+-    $OUTPUT "ERROR: Variable IFACE not set in environment"
++    $OUT_ERR "Variable IFACE not set in environment"
+     exit 1
+ }
+ 
++# If it is a labeled interface, skip
++if [[ "$IFACE" =~ ":" ]] ; then
++	exit 0
++fi
++
+ # Check our IFACE name, run the status check depending on the type of interface
+ case $IFACE in
+ 	en* | eth*)
+-- 
+2.34.1
+

@@ -1,0 +1,9 @@
+---
+debname: openvswitch
+debver: 2.15.0+ds1-2+deb11u5
+archive: https://snapshot.debian.org/archive/debian-security/20240320T004512Z/pool/updates/main/o/openvswitch/
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: a806d997496740f2cec02db121c609e3c743c003
+    SRC_DIR: ${MY_REPO}/stx/integ/networking/openvswitch

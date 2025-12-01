@@ -1,0 +1,31 @@
+From 32c9dd776dc75b3ddfe30311adc2657d5ae2901f Mon Sep 17 00:00:00 2001
+From: Charles Short <charles.short@windriver.com>
+Date: Tue, 18 Oct 2022 10:51:41 -0400
+Subject: [PATCH 3/3] fix openvswitch-vtep race
+
+Don't try to stop openvswitch-switch if openvswitch-vtep is
+disabled in the /etc/default/openvswitch-vtep. Otherwise systemd
+timesout when the system is shutting down.
+
+Signed-off-by: Charles Short <charles.short@windriver.com>
+---
+ debian/openvswitch-vtep.init | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/debian/openvswitch-vtep.init b/debian/openvswitch-vtep.init
+index 6200029dc..5bdea18e6 100644
+--- a/debian/openvswitch-vtep.init
++++ b/debian/openvswitch-vtep.init
+@@ -56,6 +56,9 @@ start () {
+ }
+ 
+ stop () {
++    if [ "$ENABLE_OVS_VTEP" = "false" ]; then
++        exit 0
++    fi
+     /etc/init.d/openvswitch-switch stop
+ }
+ 
+-- 
+2.25.1
+
