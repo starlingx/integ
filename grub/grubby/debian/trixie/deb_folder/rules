@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+
+%:
+	dh $@
+
+override_dh_install:
+	# nothing to be done here
+
+override_dh_auto_install:
+	mkdir -p $(CURDIR)/debian/grubby/usr/sbin
+	mkdir -p $(CURDIR)/debian/grubby/usr/share/man/man8
+	install -m 755 grubby $(CURDIR)/debian/grubby/usr/sbin/grubby
+	install -m 755 installkernel $(CURDIR)/debian/grubby/usr/sbin/installkernel
+	install -m 755 new-kernel-pkg $(CURDIR)/debian/grubby/usr/sbin/new-kernel-pkg
+	cp grubby.8 $(CURDIR)/debian/grubby/usr/share/man/man8
+	cp new-kernel-pkg.8 $(CURDIR)/debian/grubby/usr/share/man/man8
+	dh_install
+
+override_dh_auto_test:
+	# nothing to be done here
