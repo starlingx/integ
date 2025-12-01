@@ -3,3 +3,4 @@
 0003-kdump-tools-disable-AER-to-fix-kdump-hung-issue.patch
 0004-Do-not-load-unnecessary-device-drivers-in-the-kdump-.patch
 0005-Keep-the-default-value-for-MODULES.patch
+0006-Pre-and-post-hook-support-for-kdump.patch
