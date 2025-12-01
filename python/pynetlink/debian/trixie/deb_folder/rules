@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# Uncomment to force running of the unit tests
+#export DEB_BUILD_OPTIONS=""
+
+# Disable python byte compiling
+export PYTHONDONTWRITEBYTECODE=1
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_install:
+	python3 setup.py bdist_wheel -d debian/pynetlink-wheel/usr/share/python-wheels
+	dh_install
+
+override_dh_auto_test:
+	dh_auto_test -- --system=custom --test-args="{interpreter} -m pynetlink.tests.run"
+
+override_dh_python3:
+	dh_python3 --shebang=/usr/bin/python3

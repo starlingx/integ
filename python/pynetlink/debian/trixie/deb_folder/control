@@ -1,0 +1,33 @@
+Source: pynetlink
+Section: python
+Priority: optional
+Maintainer: Starlingx Developers <StarlingX-discuss@lists.StarlingX.io>
+Build-Depends: debhelper-compat (= 13),
+ dh-python,
+ python3-dev,
+ python3-jsonschema,
+ python3-setuptools,
+ python3-yaml,
+ python3-wheel
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+Rules-Requires-Root: no
+
+Package: pynetlink
+Architecture: any
+Depends: ${python3:Depends},
+ python3-jsonschema,
+ python3-yaml
+Description: Python Netlink library for StarlingX
+ This package provides the Python library to interact with the Linux Kernel
+ using the Netlink protocol.
+
+Package: pynetlink-wheel
+Architecture: any
+Depends: ${python3:Depends},
+ python3-jsonschema,
+ python3-yaml,
+ python3-wheel
+Description: Python Netlink library for StarlingX - wheel
+ This package provides the Python library to interact with the Linux Kernel
+ using the Netlink protocol.

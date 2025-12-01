@@ -1,0 +1,16 @@
+Source: nsenter
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 12),
+ dh-python,
+ flake8,
+ python3-setuptools,
+ python3-all
+Standards-Version: 4.4.1
+
+Package: python3-nsenter
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Enables entering the Linux kernel namespaces
+ A python client library for Linux kernel namespaces

@@ -1,0 +1,5 @@
+nsenter (0.2) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Adriano Oliveira <adriano.oliveira@windriver.com>  Wed, 24 Aug 2023 10:14:40 -0300

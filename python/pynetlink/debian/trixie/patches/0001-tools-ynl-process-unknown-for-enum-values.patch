@@ -1,0 +1,73 @@
+From 8c2e602225f0a96f2c5c65de8ab06e304081e542 Mon Sep 17 00:00:00 2001
+From: Donald Hunter <donald.hunter@gmail.com>
+Date: Fri, 11 Jul 2025 18:04:56 +0100
+Subject: [PATCH] tools: ynl: process unknown for enum values
+
+Extend the process_unknown handing to enum values and flags.
+
+Tested by removing entries from rt-link.yaml and rt-neigh.yaml:
+
+./tools/net/ynl/pyynl/cli.py --family rt-link --dump getlink \
+    --process-unknown --output-json | jq '.[0] | ."ifi-flags"'
+[
+  "up",
+  "Unknown(6)",
+  "loopback",
+  "Unknown(16)"
+]
+
+./tools/net/ynl/pyynl/cli.py --family rt-neigh --dump getneigh \
+    --process-unknown --output-json | jq '.[] | ."ndm-type"'
+"unicast"
+"Unknown(5)"
+"Unknown(5)"
+"unicast"
+"Unknown(5)"
+"unicast"
+"broadcast"
+
+Signed-off-by: Donald Hunter <donald.hunter@gmail.com>
+Reviewed-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ pynetlink/base/ynl.py | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/pynetlink/base/ynl.py b/pynetlink/base/ynl.py
+index 7529bce174ff..006b359294a4 100644
+--- a/pynetlink/base/ynl.py
++++ b/pynetlink/base/ynl.py
+@@ -618,6 +618,16 @@ class YnlFamily(SpecFamily):
+         pad = b'\x00' * ((4 - len(attr_payload) % 4) % 4)
+         return struct.pack('HH', len(attr_payload) + 4, nl_type) + attr_payload + pad
+ 
++    def _get_enum_or_unknown(self, enum, raw):
++        try:
++            name = enum.entries_by_val[raw].name
++        except KeyError as error:
++            if self.process_unknown:
++                name = f"Unknown({raw})"
++            else:
++                raise error
++        return name
++
+     def _decode_enum(self, raw, attr_spec):
+         enum = self.consts[attr_spec['enum']]
+         if enum.type == 'flags' or attr_spec.get('enum-as-flags', False):
+@@ -625,11 +635,11 @@ class YnlFamily(SpecFamily):
+             value = set()
+             while raw:
+                 if raw & 1:
+-                    value.add(enum.entries_by_val[i].name)
++                    value.add(self._get_enum_or_unknown(enum, i))
+                 raw >>= 1
+                 i += 1
+         else:
+-            value = enum.entries_by_val[raw].name
++            value = self._get_enum_or_unknown(enum, raw)
+         return value
+ 
+     def _decode_binary(self, attr, attr_spec):
+-- 
+2.34.1
+

@@ -1,0 +1,174 @@
+From 77494165e479af6bd6839f36261dbdea0b744788 Mon Sep 17 00:00:00 2001
+From: Isac Souza <IsacSacchi.Souza@windriver.com>
+Date: Wed, 10 Aug 2022 09:49:17 -0300
+Subject: [PATCH] Refactor the use of triggers in tests
+
+---
+ tests/test_middleware.py                   |  3 --
+ tests/test_middleware_before_after_exec.py | 40 +++++++++++++++++-----
+ tests/test_pubpush.py                      |  8 ++---
+ 3 files changed, 34 insertions(+), 17 deletions(-)
+
+diff --git a/tests/test_middleware.py b/tests/test_middleware.py
+index 7d71225..6ab1efd 100644
+--- a/tests/test_middleware.py
++++ b/tests/test_middleware.py
+@@ -340,7 +340,6 @@ def test_task_context_pushpull():
+     c = zerorpc.Pusher(context=pusher_ctx)
+     c.connect(endpoint)
+ 
+-    trigger.reset()
+     c.echo('hello')
+     trigger.wait()
+ 
+@@ -378,7 +377,6 @@ def test_task_context_pubsub():
+     c = zerorpc.Publisher(context=publisher_ctx)
+     c.connect(endpoint)
+ 
+-    trigger.reset()
+     # We need this retry logic to wait that the subscriber.run coroutine starts
+     # reading (the published messages will go to /dev/null until then).
+     while not trigger.ready():
+@@ -463,7 +461,6 @@ def test_server_inspect_exception_middleware_puller():
+     client = zerorpc.Pusher()
+     client.connect(endpoint)
+ 
+-    # barrier.reset()
+     client.echo('This is a test which should call the InspectExceptionMiddleware')
+     barrier.wait(timeout=TIME_FACTOR * 2)
+ 
+diff --git a/tests/test_middleware_before_after_exec.py b/tests/test_middleware_before_after_exec.py
+index c457b7b..266414f 100644
+--- a/tests/test_middleware_before_after_exec.py
++++ b/tests/test_middleware_before_after_exec.py
+@@ -83,7 +83,7 @@ def test_hook_server_before_exec():
+     test_server.stop()
+     wait_and_ignore(test_server_task)
+ 
+-def test_hook_server_before_exec_puller():
++def test_hook_server_before_exec_puller_no_middleware():
+     zero_ctx = zerorpc.Context()
+     trigger = eventlet.event.Event()
+     endpoint = random_ipc_endpoint()
+@@ -95,13 +95,25 @@ def test_hook_server_before_exec_puller():
+     test_client = zerorpc.Pusher()
+     test_client.connect(endpoint)
+ 
+-    # Test without a middleware
+     test_client.echo("test")
+     trigger.wait(timeout=TIME_FACTOR * 2)
+     assert echo_module.last_msg == "echo: test"
+-    trigger.reset()
+ 
+-    # Test with a middleware
++    test_server.stop()
++    wait_and_ignore(test_server_task)
++
++def test_hook_server_before_exec_puller_with_middleware():
++    zero_ctx = zerorpc.Context()
++    trigger = eventlet.event.Event()
++    endpoint = random_ipc_endpoint()
++
++    echo_module = EchoModule(trigger)
++    test_server = zerorpc.Puller(echo_module, context=zero_ctx)
++    test_server.bind(endpoint)
++    test_server_task = eventlet.spawn(test_server.run)
++    test_client = zerorpc.Pusher()
++    test_client.connect(endpoint)
++
+     test_middleware = ServerBeforeExecMiddleware()
+     zero_ctx.register_middleware(test_middleware)
+     assert test_middleware.called == False
+@@ -175,7 +187,7 @@ def test_hook_server_after_exec():
+     test_server.stop()
+     wait_and_ignore(test_server_task)
+     
+-def test_hook_server_after_exec_puller():
++def test_hook_server_after_exec_puller_no_middleware():
+     zero_ctx = zerorpc.Context()
+     trigger = eventlet.event.Event()
+     endpoint = random_ipc_endpoint()
+@@ -187,13 +199,25 @@ def test_hook_server_after_exec_puller():
+     test_client = zerorpc.Pusher()
+     test_client.connect(endpoint)
+ 
+-    # Test without a middleware
+     test_client.echo("test")
+     trigger.wait(timeout=TIME_FACTOR * 2)
+     assert echo_module.last_msg == "echo: test"
+-    trigger.reset()
+ 
+-    # Test with a middleware
++    test_server.stop()
++    wait_and_ignore(test_server_task)
++
++def test_hook_server_after_exec_puller_with_middleware():
++    zero_ctx = zerorpc.Context()
++    trigger = eventlet.event.Event()
++    endpoint = random_ipc_endpoint()
++
++    echo_module = EchoModule(trigger)
++    test_server = zerorpc.Puller(echo_module, context=zero_ctx)
++    test_server.bind(endpoint)
++    test_server_task = eventlet.spawn(test_server.run)
++    test_client = zerorpc.Pusher()
++    test_client.connect(endpoint)
++
+     test_middleware = ServerAfterExecMiddleware()
+     zero_ctx.register_middleware(test_middleware)
+     assert test_middleware.called == False
+diff --git a/tests/test_pubpush.py b/tests/test_pubpush.py
+index c59f143..898818d 100644
+--- a/tests/test_pubpush.py
++++ b/tests/test_pubpush.py
+@@ -50,7 +50,6 @@ def test_pushpull_inheritance():
+     puller.connect(endpoint)
+     eventlet.spawn(puller.run)
+ 
+-    trigger.reset()
+     pusher.lolita(1, 2)
+     trigger.wait()
+     print('done')
+@@ -67,13 +66,12 @@ def test_pubsub_inheritance():
+         def lolita(self, a, b):
+             print('lolita', a, b)
+             assert a + b == 3
+-            trigger.send()
++            trigger.send(True)
+ 
+     subscriber = Subscriber()
+     subscriber.connect(endpoint)
+     eventlet.spawn(subscriber.run)
+ 
+-    trigger.reset()
+     # We need this retry logic to wait that the subscriber.run coroutine starts
+     # reading (the published messages will go to /dev/null until then).
+     for attempt in range(0, 10):
+@@ -102,7 +100,6 @@ def test_pushpull_composite():
+     puller.connect(endpoint)
+     eventlet.spawn(puller.run)
+ 
+-    trigger.reset()
+     pusher.lolita(1, 2)
+     trigger.wait()
+     print('done')
+@@ -116,7 +113,7 @@ def test_pubsub_composite():
+         def lolita(self, a, b):
+             print('lolita', a, b)
+             assert a + b == 3
+-            trigger.send()
++            trigger.send(True)
+ 
+     publisher = zerorpc.Publisher()
+     publisher.bind(endpoint)
+@@ -126,7 +123,6 @@ def test_pubsub_composite():
+     subscriber.connect(endpoint)
+     eventlet.spawn(subscriber.run)
+ 
+-    trigger.reset()
+     # We need this retry logic to wait that the subscriber.run coroutine starts
+     # reading (the published messages will go to /dev/null until then).
+     for attempt in range(0, 10):
+-- 
+2.25.1
+
