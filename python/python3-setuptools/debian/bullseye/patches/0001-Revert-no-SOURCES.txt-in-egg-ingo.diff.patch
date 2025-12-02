@@ -1,0 +1,31 @@
+From 70f8bcd677d9973193bba33b4ec45e3d09b57aab Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Mon, 20 Dec 2021 14:24:46 +0200
+Subject: [PATCH] Revert no-SOURCES.txt-in-egg-ingo.diff
+
+Typo in upstream patchname aside, revert the upstream patch that
+removes SOURCES.txt from egg.
+
+Partial-Bug: https://bugs.launchpad.net/starlingx/+bug/1955648
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ setuptools/command/install_egg_info.py | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/setuptools/command/install_egg_info.py b/setuptools/command/install_egg_info.py
+index 5f405bc..76fb20e 100644
+--- a/setuptools/command/install_egg_info.py
++++ b/setuptools/command/install_egg_info.py
+@@ -72,9 +72,6 @@ class install_egg_info(namespaces.Installer, Command):
+             for skip in '.svn/', 'CVS/':
+                 if src.startswith(skip) or '/' + skip in src:
+                     return None
+-            if self.install_layout and self.install_layout in ['deb'] and src.startswith('SOURCES.txt'):
+-                log.info("Skipping SOURCES.txt")
+-                return None
+             self.outputs.append(dst)
+             log.debug("Copying %s to %s", src, dst)
+             return dst
+-- 
+2.30.0
+
