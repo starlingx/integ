@@ -1,25 +1,20 @@
-From a199540ebeb3be34ce8602f5977cdaf867c578d9 Mon Sep 17 00:00:00 2001
-From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
-Date: Thu, 23 Dec 2021 15:00:17 +0200
+From f19fe3f4d454d77661bae46a85c9f1774e9b8eff Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Wed, 2 Jul 2025 09:35:54 +0000
 Subject: [PATCH] Keep SOURCES.txt
 
-Sysinv logic is based on the fact that the source files are listed
-in SOURCES.txt.
-
-Partial-Bug: https://bugs.launchpad.net/starlingx/+bug/1955648
-Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 ---
  dhpython/fs.py | 3 ---
  1 file changed, 3 deletions(-)
 
 diff --git a/dhpython/fs.py b/dhpython/fs.py
-index 08fd8a9..6d411e2 100644
+index ce3b90e..6e9488f 100644
 --- a/dhpython/fs.py
 +++ b/dhpython/fs.py
-@@ -400,9 +400,6 @@ class Scan:
-                 self.result['requires.txt'].add(join(dpath, 'requires.txt'))
-             if 'namespace_packages.txt' in file_names:
+@@ -479,9 +479,6 @@ class Scan:
                  self.result['nsp.txt'].add(join(dpath, 'namespace_packages.txt'))
+             if 'PKG-INFO' in file_names:
+                 self.result['egg-info'].add(join(dpath, 'PKG-INFO'))
 -            if 'SOURCES.txt' in file_names:
 -                os.remove(join(dpath, 'SOURCES.txt'))
 -                file_names.remove('SOURCES.txt')
@@ -27,5 +22,5 @@ index 08fd8a9..6d411e2 100644
      def is_egg_file(self, fpath):
          """Check if given file contains egg-info."""
 -- 
-2.30.0
+2.47.2
 
