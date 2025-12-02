@@ -1,4 +1,0 @@
-dn: uid=<user>,<usuffix>,<suffix>
-changeType: modify
-<action>: <field>
-<field>: <value>
