@@ -1,4 +1,4 @@
-puppet-module-ceph (2.4.1-1) unstable; urgency=medium
+puppet-module-ceph (3.1.1-2) unstable; urgency=medium
 
   * Initial release.
 
