@@ -1,11 +1,11 @@
 ---
-debver: 1:1.6.8.4
+debver: 1:1.10.7
 debname: kdump-tools
 dl_path:
-  name: kdump-tools_1.6.8.4.tar.xz
-  url: "https://deb.debian.org/debian/pool/main/k/kdump-tools/kdump-tools_1.6.8.4.tar.xz"
-  md5sum: 26bcae7c27b729d614a4a85e2a01cb64
-  sha256sum: 5d91fb4277e305e7d621d0205131ca69e1677a10645f74657e0e0eaaf2f73fe7
+  name: kdump-tools_1.10.7.tar.xz
+  url: "https://snapshot.debian.org/archive/debian/20250721T022532Z/pool/main/k/kdump-tools/kdump-tools_1.10.7.tar.xz"
+  md5sum: 8a29aa85664696551fa8ac0601e649f3
+  sha256sum: 3630506f228420a96c030605009a94a7a3b878df89d1903e8bd1205dafb913bd
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
