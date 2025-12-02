@@ -44,13 +44,10 @@ for dev in /dev/rbd[0-9]*; do
     logger -t ${script} "Unmapped $dev"
 done
 
-# Manually failing MDS rank 0 to drop any active connections
-ceph mds fail 0
-
-# Stopping Ceph services in the correct order: MDS -> OSD -> MON
-/etc/init.d/ceph-init-wrapper stop mds
-/etc/init.d/ceph-init-wrapper stop osd
-/etc/init.d/ceph-init-wrapper stop mon
+# Stop Ceph MDS, OSD, MON with 10s timeout
+timeout 10s /etc/init.d/ceph-init-wrapper stop mds
+timeout 10s /etc/init.d/ceph-init-wrapper stop osd
+timeout 10s /etc/init.d/ceph-init-wrapper stop mon
 
 lsmod | grep -q '^rbd\>' && /usr/sbin/modprobe -r rbd
 lsmod | grep -q '^libceph\>' && /usr/sbin/modprobe -r libceph
