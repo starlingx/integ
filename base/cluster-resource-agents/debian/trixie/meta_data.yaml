@@ -1,11 +1,11 @@
 ---
-debver: 1:4.7.0-1
+debver: 1:4.16.0-3
 debname: resource-agents
 dl_path:
-  name: resource-agents-debian-1%254.7.0-1.tar.gz
-  url: https://salsa.debian.org/ha-team/resource-agents/-/archive/debian/1%254.7.0-1/resource-agents-debian-1%254.7.0-1.tar.gz
-  md5sum: 0b11082c28da42bd64c815a755cafc91
-  sha256sum: cb9182eb19f907899ec75494c17a93a3d8437123c0055311e40c233e3fe15764
+  name: resource-agents-debian-1%254.16.0-3.tar.gz
+  url: https://salsa.debian.org/ha-team/resource-agents/-/archive/debian/1%254.16.0-3/resource-agents-debian-1%254.16.0-3.tar.gz
+  md5sum: 32ed3940127d402d8dd680fe9a625ffb
+  sha256sum: 128df71eaf4e821d725240b92b4e48824ec5b58b308d3bf3fc9609f9de216b8d
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

@@ -4,14 +4,14 @@ Date: Mon, 2 Oct 2017 15:12:36 -0400
 Subject: [PATCH 03/13] WRS: Patch1107: ipaddr2_check_if_state.patch
 
 ---
- heartbeat/IPaddr2 | 21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
+ heartbeat/IPaddr2 | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
 
 diff --git a/heartbeat/IPaddr2 b/heartbeat/IPaddr2
-index aef6dc7..67a7ca3 100755
+index 27cae2d..4a39157 100755
 --- a/heartbeat/IPaddr2
 +++ b/heartbeat/IPaddr2
-@@ -1002,7 +1002,12 @@ ip_start() {
+@@ -1069,7 +1069,12 @@ ip_start() {
  	local ip_status=`ip_served`
  
  	if [ "$ip_status" = "ok" ]; then
@@ -23,13 +23,14 @@ index aef6dc7..67a7ca3 100755
 +			exit $OCF_ERR_GENERIC
 +		fi
  	fi
- 	
- 	if [ -n "$IP_CIP" ] && ([ $ip_status = "no" ] || [ $ip_status = "partial2" ]); then
-@@ -1061,7 +1066,12 @@ ip_start() {
+ 
+ 	if [ "$ip_status" = "partial3" ]; then
+@@ -1139,7 +1144,13 @@ ip_start() {
  		fi
  		;;
  	esac
 -	exit $OCF_SUCCESS
++
 +	if [ -n "`ip link show $NIC | grep \"state UP\"`" ]
 +	then
 +		exit $OCF_SUCCESS
@@ -39,7 +40,7 @@ index aef6dc7..67a7ca3 100755
  }
  
  ip_stop() {
-@@ -1137,7 +1147,12 @@ ip_monitor() {
+@@ -1215,7 +1226,12 @@ ip_monitor() {
  	case $ip_status in
  	ok)
  		run_arp_sender refresh
@@ -51,8 +52,8 @@ index aef6dc7..67a7ca3 100755
 +			return $OCF_NOT_RUNNING
 +		fi
  		;;
- 	partial|no|partial2)
+ 	no)
  		exit $OCF_NOT_RUNNING
 -- 
-1.9.1
+2.47.2
 

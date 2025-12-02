@@ -25,7 +25,7 @@ index 86009b9..2da5c5e 100755
 +			exit $OCF_SUCCESS
  		fi
  	fi
- 	
+
 @@ -1037,12 +1033,8 @@ ip_start() {
  	then
  		exit $OCF_SUCCESS
@@ -55,7 +55,7 @@ index 86009b9..2da5c5e 100755
 +			exit $OCF_SUCCESS
  		fi
  		;;
- 	partial|no|partial2)
+ 	no)
 -- 
 1.8.3.1
 

@@ -21,9 +21,9 @@ index 2cd822d..59620d2 100755
  			exit $OCF_SUCCESS
  		else
 @@ -1033,7 +1033,7 @@ ip_start() {
- 		fi
  		;;
  	esac
+
 -	if [ -n "`ip link show $NIC | grep \"state UP\"`" ]
 +	if [ -n "`ip link show $NIC | grep \"state UP\"`" ] || [ "$NIC" = "lo" ]
  	then
