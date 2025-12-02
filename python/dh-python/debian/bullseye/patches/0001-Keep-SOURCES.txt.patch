@@ -1,0 +1,31 @@
+From a199540ebeb3be34ce8602f5977cdaf867c578d9 Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Thu, 23 Dec 2021 15:00:17 +0200
+Subject: [PATCH] Keep SOURCES.txt
+
+Sysinv logic is based on the fact that the source files are listed
+in SOURCES.txt.
+
+Partial-Bug: https://bugs.launchpad.net/starlingx/+bug/1955648
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ dhpython/fs.py | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/dhpython/fs.py b/dhpython/fs.py
+index 08fd8a9..6d411e2 100644
+--- a/dhpython/fs.py
++++ b/dhpython/fs.py
+@@ -400,9 +400,6 @@ class Scan:
+                 self.result['requires.txt'].add(join(dpath, 'requires.txt'))
+             if 'namespace_packages.txt' in file_names:
+                 self.result['nsp.txt'].add(join(dpath, 'namespace_packages.txt'))
+-            if 'SOURCES.txt' in file_names:
+-                os.remove(join(dpath, 'SOURCES.txt'))
+-                file_names.remove('SOURCES.txt')
+ 
+     def is_egg_file(self, fpath):
+         """Check if given file contains egg-info."""
+-- 
+2.30.0
+
