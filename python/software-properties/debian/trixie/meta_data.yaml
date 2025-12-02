@@ -1,0 +1,6 @@
+debname: software-properties
+debver: 0.99.30-4.1~deb12u1
+archive: https://snapshot.debian.org/archive/debian/20250824T145108Z/pool/main/s/software-properties/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
