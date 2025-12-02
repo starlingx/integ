@@ -3,7 +3,7 @@
 
 export ROOT = debian/tmp
 export LOCAL_SBINDIR = $(ROOT)/usr/local/sbin
-export UNITDIR = $(ROOT)/lib/systemd/system
+export UNITDIR = $(ROOT)/usr/lib/systemd/system
 export CONFIGDIR = $(ROOT)/etc/luks-fs-mgr.d
 export PMONDIR = $(ROOT)/usr/share/starlingx/pmon.d
 
