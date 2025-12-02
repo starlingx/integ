@@ -83,7 +83,7 @@
 # kubernetes/plugins/isolcpus-device-plugin
 # kubernetes/plugins/kubectl-cert-manager
 # kubernetes/runc
-# ldap/ldapscripts
+ldap/ldapscripts
 # ldap/openldap
 # networking/dpdk
 # networking/ifupdown
