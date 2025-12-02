@@ -2,5 +2,3 @@ dhclient-restrict-interfaces-to-command-line.patch
 dhclient-ipv6-bind-to-interface.patch
 dhclient-ipv6-conditionally-set-hostname.patch
 dhclient-set-the-default-prefix-length-to-64.patch
-CVE-2022-2928.patch
-CVE-2022-2929.patch
