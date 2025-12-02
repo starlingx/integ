@@ -19,7 +19,7 @@ Source: libfdt
 Section: admin
 Priority: optional
 Maintainer: Starlingx Developers <starlingx-discuss@lists.starlingx.io>
-Build-Depends: debhelper-compat (= 12), bison, flex, gcc
+Build-Depends: debhelper-compat (= 12), bison, flex, gcc, pkg-config
 Standards-Version: 4.5.0
 Homepage: https://www.starlingx.io
 
