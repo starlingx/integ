@@ -1,10 +1,10 @@
 ---
-debver: 4.1.0-1.2
+debver: 7.1.0-2
 dl_path:
-  name: python-docker-debian-4.1.0-1.tar.gz
-  url: https://salsa.debian.org/docker-compose-team/python-docker/-/archive/debian/4.1.0-1/python-docker-debian-4.1.0-1.tar.gz
-  md5sum: 234c4ab71eec74778c7bc26afb2a04a5
-  sha256sum: 339b7d5cbec3c053701940dd3f384bfc1c19a1ef7a2a528adb4b3a4fce7eb0dc
+  name: python-docker-debian-7.1.0-2.tar.gz
+  url: https://salsa.debian.org/docker-compose-team/python-docker/-/archive/debian/7.1.0-1/python-docker-debian-7.1.0-2.tar.gz
+  md5sum: 28efcfe74068649d7556ec7e07ab6d9f
+  sha256sum: 8bb04d749dbe351692661272e42acb7528341704c2d3c58296746c67ff347d1b
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
