@@ -471,14 +471,6 @@ index 7aafdcf..ff77c91 100755
  figure_out_drbd_peer_uname()
  {
  	# depending on whether or not the peer is currently
-@@ -1002,7 +880,6 @@ figure_out_drbd_peer_uname()
- 		$OCF_RESKEY_CRM_meta_notify_demote_uname |
- 		grep -vix -m1 -e "$HOSTNAME" )
- 	DRBD_TO_PEER=${x:+ --peer $x}
--	crm_resource_locate_master
- }
- 
- my_udevsettle()
 @@ -1020,6 +897,7 @@ my_udevsettle()
  	trap - TERM
  	return 0
