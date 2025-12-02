@@ -7,3 +7,4 @@
 0007-Add-IPV6-support.patch
 0008-Change-unable-to-route-event-message-log-level-to-de.patch
 0009-Add-heartbeat-to-zmq-socket.patch
+0010-Remove-unnecessary-__future__-imports-for-Python-3.patch
