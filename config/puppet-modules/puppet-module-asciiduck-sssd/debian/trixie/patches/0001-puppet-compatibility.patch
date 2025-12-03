@@ -1,0 +1,64 @@
+From ba712e0ec9ddbfef83fe945ba632903505e4bb95 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Thu, 10 Oct 2025 09:30:00 -0400
+Subject: [PATCH] puppet-sssd: update top-scope variables for Puppet 8.10 compatibility
+
+Replace deprecated $:: top-scope variable syntax with modern $facts[] hash
+syntax to ensure compatibility with Puppet 8.10 where the legacy syntax
+has been removed.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/init.pp    | 2 +-
+ manifests/params.pp  | 8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 1234567..abcdefg 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -47,7 +47,7 @@ class sssd (
+   ) inherits sssd::params {
+ 
+   if $sssd::unsupported and ! $sssd::override_unsupported {
+-    fail("Unsupported OS ${::operatingsystem} ${::operatingsystemrelease}")
++    fail("Unsupported OS ${facts['os']['name']} ${facts['os']['release']['full']}")
+   }
+ 
+   validate_bool($manage_package)
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 2345678..bcdefgh 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -5,7 +5,7 @@
+ #
+ 
+ class sssd::params {
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     'RedHat': {
+       $unsupported = false
+ 
+@@ -27,17 +27,17 @@ class sssd::params {
+       $sss_cache_path = [ '/usr/sbin/' ]
+     }
+     'Debian': {
+-      case $::operatingsystem {
++      case $facts['os']['name'] {
+         'Ubuntu': {
+           # Check that we're running 14.04 or newer
+-          if versioncmp($::operatingsystemrelease, '14.04') >= 0 {
++          if versioncmp($facts['os']['release']['full'], '14.04') >= 0 {
+             $unsupported = false
+           } else {
+             $unsupported = true
+           }
+         }
+         'Debian': {
+-          if versioncmp("${::operatingsystemrelease}", '8.0') >= 0 {
++          if versioncmp("${facts['os']['release']['full']}", '8.0') >= 0 {
+             $unsupported = false
+           } else {
+             $unsupported = true
+-- 
+2.43.0
