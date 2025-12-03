@@ -23,16 +23,16 @@
 # be put at the same path where this script is located.
 # Tools needed: tar
 
-tar xvf grub2_2.06.orig.tar.xz
+tar xvf grub2_2.12.orig.tar.xz
 if [ $? -ne 0 ]
 then
     echo "tar failed: orig source!"
     exit 1
 fi
-mv grub-2.06 $1
+mv grub-2.12 $1
 
 cd $1
-tar xvf ../grub2_2.06-1.debian.tar.xz
+tar xvf ../grub2_2.12-9.debian.tar.xz
 if [ $? -ne 0 ]
 then
     echo "tar failed: debian folder!"

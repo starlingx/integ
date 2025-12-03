@@ -1,4 +1,4 @@
-From 01120b5ec61ae7bbe550b1e2fe0f75c2d2073b1f Mon Sep 17 00:00:00 2001
+From afdd449332fe88efae50ca7cf1f90687aed1c30f Mon Sep 17 00:00:00 2001
 From: Hongxu Jia <hongxu.jia@windriver.com>
 Date: Fri, 6 May 2022 15:44:14 +0800
 Subject: [PATCH] grub verify: Add skip_check_cfg variable
@@ -20,10 +20,10 @@ Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
  4 files changed, 30 insertions(+)
 
 diff --git a/grub-core/commands/pgp.c b/grub-core/commands/pgp.c
-index 5daa1e9..e60a29a 100644
+index ed8514c..578ad18 100644
 --- a/grub-core/commands/pgp.c
 +++ b/grub-core/commands/pgp.c
-@@ -873,6 +873,18 @@ grub_pubkey_init (grub_file_t io, enum grub_file_type type __attribute__ ((unuse
+@@ -874,6 +874,18 @@ grub_pubkey_init (grub_file_t io, enum grub_file_type type __attribute__ ((unuse
    char *fsuf, *ptr;
    grub_err_t err;
    struct grub_pubkey_context *ctxt;
@@ -94,5 +94,5 @@ index 7d2b551..cce29d7 100644
  char *EXPORT_FUNC(grub_strchr) (const char *s, int c);
  char *EXPORT_FUNC(grub_strrchr) (const char *s, int c);
 -- 
-2.17.1
+2.27.0
 

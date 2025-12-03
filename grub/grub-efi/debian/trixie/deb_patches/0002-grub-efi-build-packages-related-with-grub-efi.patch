@@ -1,7 +1,7 @@
-From a26ab5dfcde0a92011bb5422e745d92d79ba4630 Mon Sep 17 00:00:00 2001
-From: Li Zhou <li.zhou@windriver.com>
-Date: Thu, 15 Sep 2022 09:55:13 +0800
-Subject: [PATCH 2/2] grub-efi: build packages related with grub-efi
+From b80a710a2c68a829b4b431a66f5468d9db5d651b Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Thu, 21 Aug 2025 10:37:51 +0000
+Subject: [PATCH] [PATCH 2/2] grub-efi: build packages related with grub-efi
 
 Grub-efi is ported from layers meta-lat\meta-secure-core of yocto,
 so that it can be compiled out of lat.
@@ -37,38 +37,25 @@ Remove linuxefi because it belongs to debian specific patches, which
 have been removed;
 Customize files under /boot/efi/EFI/BOOT for package grub-efi-amd64.
 
-Signed-off-by: Li Zhou <li.zhou@windriver.com>
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
 ---
- debian/build-efi-images |   1 -
- debian/changelog        |   2 +-
- debian/control          | 520 +---------------------------------------
- debian/rules            |  58 +++--
- 4 files changed, 51 insertions(+), 530 deletions(-)
+ debian/changelog |   2 +-
+ debian/control   | 549 +----------------------------------------------
+ debian/rules     |  57 +++--
+ 3 files changed, 52 insertions(+), 556 deletions(-)
 
-diff --git a/debian/build-efi-images b/debian/build-efi-images
-index 5ac6676..1c5df95 100755
---- a/debian/build-efi-images
-+++ b/debian/build-efi-images
-@@ -148,7 +148,6 @@ case $platform in
-     x86_64-efi|i386-efi)
- 	CD_MODULES="$CD_MODULES
- 	cpuid
--	linuxefi
- 	play
- 	tpm
- 	"
 diff --git a/debian/changelog b/debian/changelog
-index 519a692..1663a8a 100644
+index e631eb7..81a2765 100644
 --- a/debian/changelog
 +++ b/debian/changelog
 @@ -1,4 +1,4 @@
--grub2 (2.06-1) unstable; urgency=medium
-+grub-efi (2.06-1) unstable; urgency=medium
+-grub2 (2.12-9) unstable; urgency=medium
++grub-efi (2.12-9) unstable; urgency=medium
  
-   * Use "command -v" in maintainer scripts rather than "which".
-   * New upstream release.
+   * Apply patch by Ben Hutchings to not strip .exec or .image files
+     (Closes: #1072167)
 diff --git a/debian/control b/debian/control
-index 591394f..caea0c3 100644
+index 11e9e7e..0741b64 100644
 --- a/debian/control
 +++ b/debian/control
 @@ -1,4 +1,4 @@
@@ -77,7 +64,7 @@ index 591394f..caea0c3 100644
  Section: admin
  Priority: optional
  Maintainer: GRUB Maintainers <pkg-grub-devel@alioth-lists.debian.net>
-@@ -41,274 +41,18 @@ Vcs-Git: https://salsa.debian.org/grub-team/grub.git
+@@ -43,301 +43,18 @@ Vcs-Git: https://salsa.debian.org/grub-team/grub.git
  Vcs-Browser: https://salsa.debian.org/grub-team/grub
  Rules-Requires-Root: no
  
@@ -101,9 +88,9 @@ index 591394f..caea0c3 100644
 - This is a dummy transitional package that depends on grub-coreboot.
 -
  Package: grub-efi
- Architecture: any-i386 any-amd64 any-arm64 any-ia64 any-arm
+ Architecture: any-i386 any-amd64 any-arm64 any-ia64 any-arm any-riscv64 any-loong64
  Pre-Depends: ${misc:Pre-Depends}
--Depends: ${misc:Depends}, grub-efi-ia32 (= ${binary:Version}) [any-i386], grub-efi-amd64 (= ${binary:Version}) [any-amd64], grub-efi-arm64 (= ${binary:Version}) [any-arm64], grub-efi-ia64 (= ${binary:Version}) [any-ia64], grub-efi-arm (= ${binary:Version}) [any-arm]
+-Depends: ${misc:Depends}, grub-efi-ia32 (= ${binary:Version}) [any-i386], grub-efi-amd64 (= ${binary:Version}) [any-amd64], grub-efi-arm64 (= ${binary:Version}) [any-arm64], grub-efi-ia64 (= ${binary:Version}) [any-ia64], grub-efi-arm (= ${binary:Version}) [any-arm], grub-efi-riscv64 (= ${binary:Version}) [any-riscv64], grub-efi-loong64 (= ${binary:Version}) [any-loong64]
 +Depends: ${misc:Depends}, grub-efi-amd64 (= ${binary:Version}) [any-amd64], grub-efi-arm64 (= ${binary:Version}) [any-arm64], grub-efi-ia64 (= ${binary:Version}) [any-ia64], grub-efi-arm (= ${binary:Version}) [any-arm]
  Multi-Arch: foreign
  Description: GRand Unified Bootloader, version 2 (dummy package)
@@ -112,13 +99,14 @@ index 591394f..caea0c3 100644
  
 -Package: grub-common
 -Architecture: any
+-Built-Using: ${Built-Using}
 -Depends: ${shlibs:Depends}, ${misc:Depends}, gettext-base, ${lsb-base-depends}
 -Replaces: grub-pc (<< 2.00-4), grub-ieee1275 (<< 2.00-4), grub-efi (<< 1.99-1), grub-coreboot (<< 2.00-4), grub-linuxbios (<< 1.96+20080831-1), grub-efi-ia32 (<< 2.00-4), grub-efi-amd64 (<< 2.00-4), grub-efi-ia64 (<< 2.00-4), grub-yeeloong (<< 2.00-4), init-select
 -Recommends: os-prober (>= 1.33)
--Suggests: multiboot-doc, grub-emu [any-i386 any-amd64 any-powerpc], mtools [any-i386 any-amd64 any-ia64 any-arm any-arm64], xorriso (>= 0.5.6.pl00), desktop-base (>= 4.0.6), console-setup
+-Suggests: multiboot-doc, grub-emu [any-i386 any-amd64 any-powerpc], mtools [any-i386 any-amd64 any-ia64 any-arm any-arm64 riscv64 any-loong64], xorriso (>= 0.5.6.pl00), desktop-base (>= 4.0.6), console-setup
 -Conflicts: init-select
 -# mdadm: See bugs #435983 and #455746
--Breaks: mdadm (<< 2.6.7-2), lupin-support (<< 0.55), friendly-recovery (<< 0.2.13), apport (<< 2.1.1)
+-Breaks: mdadm (<< 2.6.7-2), lupin-support (<< 0.55), friendly-recovery (<< 0.2.13), apport (<< 2.1.1), grub-efi-amd64-signed (<< 1+2.12~rc1), grub-efi-arm64-signed (<< 1+2.12~rc1), grub-efi-ia32-signed (<< 1+2.12~rc1)
 -Multi-Arch: foreign
 -Description: GRand Unified Bootloader (common files)
 - This package contains common files shared by the distinct flavours of GRUB.
@@ -132,11 +120,10 @@ index 591394f..caea0c3 100644
 -# Not Architecture: any because this package contains some things which are
 -# only built when there is a real platform (e.g. grub-install), and the rest
 -# of the package is not very useful in a utilities-only build.
--Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64
--Depends: grub-common (= ${binary:Version}), dpkg (>= 1.15.4) | install-info, ${shlibs:Depends}, ${misc:Depends}
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64 any-riscv64 any-loong64
+-Depends: grub-common (= ${binary:Version}), dpkg (>= 1.15.4), ${shlibs:Depends}, ${misc:Depends}
 -Replaces: grub, grub-legacy, ${legacy-doc-br}, grub-common (<< 1.99-1), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
--Conflicts: grub-legacy
--Breaks: grub (<< 0.97-54), ${legacy-doc-br}, shim (<< 0.9+1474479173.6c180c6-0ubuntu1~), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
+-Breaks: grub (<< 0.97-54), grub-legacy (<< 0.97-83~), ${legacy-doc-br}, shim (<< 0.9+1474479173.6c180c6-0ubuntu1~), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
 -Multi-Arch: foreign
 -Description: GRand Unified Bootloader (common files for version 2)
 - This package contains common files shared by the distinct flavours of GRUB.
@@ -202,7 +189,8 @@ index 591394f..caea0c3 100644
 -Pre-Depends: ${misc:Pre-Depends}
 -Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-pc-bin (= ${binary:Version}), ucf, freebsd-utils (>= 8.0-4) [kfreebsd-any], ${gfxpayload-depends}
 -Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275
--Conflicts: grub (<< 0.97-54), grub-legacy, grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen
+-Conflicts: grub (<< 0.97-54), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen
+-Breaks: grub-legacy (<< 0.97-84~)
 -Multi-Arch: foreign
 -Description: GRand Unified Bootloader, version 2 (PC/BIOS version)
 - GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
@@ -288,7 +276,8 @@ index 591394f..caea0c3 100644
 -
 -Package: grub-efi-ia32-bin
 -Architecture: any-i386 any-amd64
--Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version}), grub-efi-ia32-unsigned
+-Breaks: grub-efi-ia32-signed (<< 1+2.12~rc1)
 -Recommends: grub-efi-ia32-signed [i386], efibootmgr [linux-any]
 -Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi, grub-efi-ia32 (<< 1.99-1)
 -Multi-Arch: foreign
@@ -304,6 +293,30 @@ index 591394f..caea0c3 100644
 -    update-grub.
 - .
 - This package contains GRUB modules that have been built for use with the
+- EFI-IA32 architecture, as used by Intel Macs (unless a BIOS interface has
+- been activated).  It can be installed in parallel with other flavours, but
+- will not automatically install GRUB as the active boot loader nor
+- automatically update grub.cfg on upgrade unless grub-efi-ia32 is also
+- installed.
+-
+-Package: grub-efi-ia32-unsigned
+-Architecture: any-i386 any-amd64
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Replaces: grub-efi-ia32-bin (<< 2.12-3~)
+-Breaks: grub-efi-ia32-bin (<< 2.12-3~)
+-Multi-Arch: foreign
+-XB-Efi-Vendor: ${efi:Vendor}
+-Description: GRand Unified Bootloader, version 2 (EFI-IA32 images)
+- GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+- cleaner design than its predecessors, and provides the following new features:
+- .
+-  - Scripting in grub.cfg using BASH-like syntax.
+-  - Support for modern partition maps such as GPT.
+-  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+-    add-ons can plug in their own script rules and trigger updates by invoking
+-    update-grub.
+- .
+- This package contains GRUB images that have been built for use with the
 - EFI-IA32 architecture, as used by Intel Macs (unless a BIOS interface has
 - been activated).  It can be installed in parallel with other flavours, but
 - will not automatically install GRUB as the active boot loader nor
@@ -343,18 +356,19 @@ index 591394f..caea0c3 100644
 -
 -Package: grub-efi-ia32-signed-template
 -Architecture: i386
+-Depends: ${misc:Depends}
 -Description: GRand Unified Bootloader, version 2 (EFI-IA32 signing template)
 - This package contains template files for grub-efi-ia32-signed.
 - This is only needed for Secure Boot signing.
 -
  Package: grub-efi-amd64-bin
  Architecture: i386 kopensolaris-i386 any-amd64
--Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+-Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version}), grub-efi-amd64-unsigned
 +Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common
  Recommends: grub-efi-amd64-signed [amd64], efibootmgr [linux-any]
  Replaces: grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64 (<< 1.99-1)
- Multi-Arch: foreign
-@@ -342,9 +86,9 @@ Description: GRand Unified Bootloader, version 2 (EFI-AMD64 debug files)
+ Breaks: grub-efi-amd64-signed (<< 1+2.12~rc1)
+@@ -396,9 +113,9 @@ Description: GRand Unified Bootloader, version 2 (EFI-AMD64 debug files)
  Package: grub-efi-amd64
  Architecture: i386 kopensolaris-i386 any-amd64
  Pre-Depends: ${misc:Pre-Depends}
@@ -367,10 +381,11 @@ index 591394f..caea0c3 100644
  Multi-Arch: foreign
  Description: GRand Unified Bootloader, version 2 (EFI-AMD64 version)
   GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
-@@ -522,255 +266,3 @@ Architecture: arm64
- Description: GRand Unified Bootloader, version 2 (ARM64 UEFI signing template)
-  This package contains template files for grub-efi-arm64-signed.
-  This is only needed for Secure Boot signing.
+@@ -787,256 +504,4 @@ Description: GRand Unified Bootloader, version 2 (loong64 UEFI version)
+  .
+  This is a dependency package for a version of GRUB that has been built for
+  use on LoongArch 64-bit systems with UEFI.  Installing this package indicates that
+- this version of GRUB should be the active boot loader.
 -
 -Package: grub-ieee1275-bin
 -Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64
@@ -611,7 +626,7 @@ index 591394f..caea0c3 100644
 -Package: grub-theme-starfield
 -# Could be Architecture: any, but in practice this package is useless in a
 -# utilities-only build.
--Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64
+-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64 any-riscv64 any-loong64
 -Depends: ${misc:Depends}, grub-common (= ${binary:Version})
 -Multi-Arch: foreign
 -Description: GRand Unified Bootloader, version 2 (starfield theme)
@@ -623,20 +638,22 @@ index 591394f..caea0c3 100644
 -Architecture: linux-any kfreebsd-any
 -Depends: ${shlibs:Depends}, ${misc:Depends}
 -Description: export GRUB filesystems using FUSE
++ this version of GRUB should be the active boot loader.
+\ No newline at end of file
 diff --git a/debian/rules b/debian/rules
-index be8f870..c22ba5a 100755
+index 00a2ec3..1355723 100755
 --- a/debian/rules
 +++ b/debian/rules
-@@ -55,7 +55,7 @@ BUILD_PACKAGES := $(strip $(shell dh_listpackages))
+@@ -65,7 +65,7 @@ BUILD_PACKAGES := $(strip $(shell dh_listpackages))
  # REAL_PACKAGES build an actual grub variant (and therefore have both configure
  # and build stages). EXTRA_PACKAGES do not build grub but may depend on a
  # REAL_PACKAGE (and therefore only have a build stage)
--REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
+-REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-efi-riscv64 grub-efi-loong64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
 +REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
  EXTRA_PACKAGES = grub-rescue-pc grub-xen-host
  
  ifneq (,$(filter i386 amd64,$(DEB_HOST_ARCH_CPU)))
-@@ -111,8 +111,6 @@ DEFAULT_HIDDEN_TIMEOUT_BOOL := false
+@@ -127,8 +127,6 @@ DEFAULT_HIDDEN_TIMEOUT_BOOL := false
  endif
  
  # Secure Boot
@@ -644,10 +661,10 @@ index be8f870..c22ba5a 100755
 -debian/stamps/build-grub-efi-ia32 install/grub-efi-ia32: export SB_EFI_NAME := ia32
  debian/stamps/build-grub-efi-amd64 install/grub-efi-amd64: export SB_PLATFORM := x86_64-efi
  debian/stamps/build-grub-efi-amd64 install/grub-efi-amd64: export SB_EFI_NAME := x64
- debian/stamps/build-grub-efi-arm64 install/grub-efi-arm64: export SB_PLATFORM := arm64-efi
-@@ -169,10 +167,10 @@ override_dh_autoreconf:
- 		PYTHON=python3 \
+ debian/stamps/build-grub-efi-arm install/grub-efi-arm: export SB_PLATFORM := arm-efi
+@@ -199,10 +197,10 @@ override_dh_autoreconf:
  		dh_autoreconf -- ./autogen.sh
+ 	cp /usr/share/lzo/minilzo/*.c /usr/share/lzo/minilzo/*.h grub-core/lib/minilzo/
  
 -debian/stamps/configure-grub-common: debian/stamps/configure-grub-$(COMMON_PLATFORM)
 +debian/stamps/configure-grub-common:
@@ -658,7 +675,7 @@ index be8f870..c22ba5a 100755
  	touch $@
  
  debian/stamps/configure-grub-none debian/stamps/configure-grub-pc debian/stamps/configure-grub-ieee1275 debian/stamps/configure-grub-coreboot debian/stamps/configure-grub-emu debian/stamps/configure-grub-uboot debian/stamps/configure-grub-yeeloong:
-@@ -181,10 +179,6 @@ debian/stamps/configure-grub-none debian/stamps/configure-grub-pc debian/stamps/
+@@ -211,10 +209,6 @@ debian/stamps/configure-grub-none debian/stamps/configure-grub-pc debian/stamps/
  	touch $@
  
  # This name scheme leaves room for things like amd32 someday
@@ -669,16 +686,16 @@ index be8f870..c22ba5a 100755
  debian/stamps/configure-grub-efi-amd64:
  	mkdir -p debian/stamps $(subst debian/stamps/configure-,obj/,$@)
  	dh_auto_configure -- $(confflags) --with-platform=efi --target=amd64-pe --program-prefix=""
-@@ -214,7 +208,7 @@ debian/stamps/build-grub-none debian/stamps/build-grub-efi-ia64 debian/stamps/bu
+@@ -244,7 +238,7 @@ debian/stamps/build-grub-none debian/stamps/build-grub-coreboot debian/stamps/bu
  	dh_auto_build
  	touch $@
  
--debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64: debian/stamps/build-%: debian/stamps/configure-% debian/stamps/build-grub-$(COMMON_PLATFORM)
-+debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64: debian/stamps/build-%: debian/stamps/configure-%
+-debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-ia64 debian/stamps/build-grub-efi-arm debian/stamps/build-grub-efi-loong64 debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64 debian/stamps/build-grub-efi-riscv64: debian/stamps/build-%: debian/stamps/configure-% debian/stamps/build-grub-$(COMMON_PLATFORM)
++ debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64: debian/stamps/build-%: debian/stamps/configure-%
  	dh_auto_build
  	grub_dir=`mktemp -d` ; \
  	sed -e "s/@DEB_VERSION@/$(deb_version)/g" \
-@@ -222,7 +216,7 @@ debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-amd64 debian/stam
+@@ -252,7 +246,7 @@ debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-ia64 debian/stamp
  		<debian/sbat.$(SB_EFI_VENDOR).csv.in \
  		>$${grub_dir}/sbat.$(SB_EFI_VENDOR).csv; \
  	debian/build-efi-images \
@@ -687,11 +704,10 @@ index be8f870..c22ba5a 100755
  		obj/$(package)/grub-core \
  		obj/monolithic/$(package) \
  		$(DEB_HOST_ARCH) $(SB_PLATFORM) $(SB_EFI_NAME) \
-@@ -350,7 +344,20 @@ install/grub-none:
- 	# files.
+@@ -382,6 +376,20 @@ install/grub-none:
  	mkdir -p debian/tmp-$(package)/usr/share/locale
  
--install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
+ install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-efi-riscv64 install/grub-efi-loong64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
 +D_PACKAGE := debian/grub-efi-amd64/
 +EFI_BOOT_PATH := /boot/efi/EFI/BOOT
 +DISTRO_NAME := StarlingX
@@ -709,7 +725,7 @@ index be8f870..c22ba5a 100755
  	set -e ; \
  	if [ "$@" = "install/grub-xen" ] ; then \
  		dh_auto_install -Bobj/grub-xen-i386 --destdir=debian/tmp-$(package); \
-@@ -470,6 +477,30 @@ install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia
+@@ -502,6 +510,30 @@ install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia
  	# files.
  	mkdir -p debian/tmp-$(package)/usr/share/locale
  
@@ -740,11 +756,11 @@ index be8f870..c22ba5a 100755
  common_subst = \
  	if [ -e debian/grub-common.$(1) ]; then \
  		sed 's/@COMMON_PLATFORM@/$(COMMON_PLATFORM)/g' \
-@@ -495,13 +526,12 @@ endif
+@@ -527,13 +559,12 @@ endif
  
  NON_PLATFORM_PACKAGES = $(filter grub2 grub-linuxbios grub-efi grub-rescue-pc grub-firmware-qemu grub-xen-host,$(BUILD_PACKAGES))
  COMMON_PLATFORM_PACKAGES = $(filter grub-common grub2-common grub-theme-starfield grub-mount-udeb,$(BUILD_PACKAGES))
--PLATFORM_PACKAGES = $(filter grub-pc grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
+-PLATFORM_PACKAGES = $(filter grub-pc grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-efi-riscv64 grub-efi-loong64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
 +PLATFORM_PACKAGES = $(filter grub-pc grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
  
  override_dh_install:
@@ -756,5 +772,5 @@ index be8f870..c22ba5a 100755
  	rm -f debian/grub-theme-starfield/usr/share/grub/themes/starfield/COPYING.CC-BY-SA-3.0
  ifneq (,$(PLATFORM_PACKAGES))
 -- 
-2.17.1
+2.47.2
 
