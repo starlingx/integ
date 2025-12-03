@@ -1,7 +1,7 @@
 ---
-debver: 2.13
+debver: 2.14
 debname: ifenslave
-archive: https://snapshot.debian.org/archive/debian/20220519T084715Z/pool/main/i/ifenslave/
+archive: https://snapshot.debian.org/archive/debian/20251130T202713Z/pool/main/i/ifenslave/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
