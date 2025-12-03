@@ -1,0 +1,10 @@
+---
+debname: python-eventlet
+debver: 0.40.3-1
+dl_path:
+  name: python-eventlet-debian-0.40.3-1.tar.gz
+  url: https://salsa.debian.org/openstack-team/third-party/python-eventlet/-/archive/debian/0.40.3-1/python-eventlet-debian-0.40.3-1.tar.gz
+  sha256sum: 8e4d4171e99b2ca8ac359ecf7f97c79c419f699f814f66be6b102ba3ce9c0de6
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
