@@ -11,7 +11,7 @@ diff --git a/heartbeat/IPaddr2 b/heartbeat/IPaddr2
 index 67a7ca3..2cd822d 100755
 --- a/heartbeat/IPaddr2
 +++ b/heartbeat/IPaddr2
-@@ -968,7 +968,12 @@ ip_start() {
+@@ -1073,7 +1073,12 @@ ip_start() {
  		then
  			exit $OCF_SUCCESS
  		else
@@ -24,7 +24,7 @@ index 67a7ca3..2cd822d 100755
 +			fi
  		fi
  	fi
- 	
+
 @@ -1032,7 +1037,12 @@ ip_start() {
  	then
  		exit $OCF_SUCCESS
@@ -52,7 +52,7 @@ index 67a7ca3..2cd822d 100755
 +			fi
  		fi
  		;;
- 	partial|no|partial2)
+ 	no)
 -- 
 1.9.1
 

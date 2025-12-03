@@ -19,7 +19,7 @@ index 27f03d2..af821b2 100755
  # License:      GNU General Public License (GPL)
 +#
 +# Copyright (c) 2014 Wind River Systems, Inc. All rights reserved.
- # 
+ #
  # Filesystem
  #      Description: Manages a Filesystem on a shared storage medium.
 diff --git a/heartbeat/LVM b/heartbeat/LVM

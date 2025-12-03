@@ -37,9 +37,9 @@ index 814f722..9a06c82 100755
 +	fi
  
  	msg="Bringing device $iface up"
- 	cmd="$IP2UTIL link set $iface up"
+ 	cmd="$IP2UTIL link set dev $iface up"
 @@ -1136,7 +1143,7 @@ ip_stop() {
- 	
+
  	if [ "$ip_del_if" = "yes" ]; then
  		delete_interface $OCF_RESKEY_ip $NIC $NETMASK
 -		if [ $? -ne 0 ]; then

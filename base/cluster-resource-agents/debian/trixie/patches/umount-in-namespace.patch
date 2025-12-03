@@ -12,15 +12,15 @@ diff --git a/heartbeat/Filesystem b/heartbeat/Filesystem
 index 0323dd9..b8c445f 100755
 --- a/heartbeat/Filesystem
 +++ b/heartbeat/Filesystem
-@@ -622,6 +622,10 @@ signal_processes() {
+@@ -715,6 +715,10 @@ signal_processes() {
  }
  try_umount() {
- 	local SUB="$1"
+ 	local force_arg="$1" SUB="$2"
 +
-+    # We need to ensure we umount in namespaces, too
-+    /usr/sbin/umount-in-namespace "$SUB"
++ 	# We need to ensure we umount in namespaces, too
++ 	/usr/sbin/umount-in-namespace "$SUB"
 +
- 	$UMOUNT $umount_force "$SUB"
+ 	$UMOUNT $force_arg "$SUB"
  	list_mounts | grep "${TAB}${SUB}${TAB}" >/dev/null 2>&1 || {
  		ocf_log info "unmounted $SUB successfully"
 -- 
