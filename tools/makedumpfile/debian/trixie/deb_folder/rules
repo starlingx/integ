@@ -1,0 +1,63 @@
+#!/usr/bin/make -f
+#
+# Copyright (c) 2023-2024 Wind River Systems, Inc.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. The ASF licenses this
+# file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+export DEB_BUILD_OPTIONS=noddebs
+
+pkg_name=makedumpfile
+
+_bindir=/usr/bin
+_sbindir=/usr/sbin
+_sharedir=/usr/share
+_scriptdir=makedumpfile/eppic_scripts
+
+destdir=debian/tmp
+
+override_dh_auto_install:
+	make
+	mkdir -p $(destdir)
+	make install DESTDIR=$(CURDIR)/$(destdir)
+
+	dh_installdirs -p$(pkg_name) $(_sbindir)
+	dh_install     -p$(pkg_name) $(DESTDIR)$(_sbindir)/makedumpfile $(_bindir)/
+	dh_install     -p$(pkg_name) $(DESTDIR)$(_sbindir)/makedumpfile-R.pl $(_bindir)/
+
+	dh_installdirs -p$(pkg_name) $(_sharedir)/man/man8
+	dh_install     -p$(pkg_name) $(DESTDIR)$(_sharedir)/man/man8/makedumpfile.8 $(_sharedir)/man/man8/
+
+	dh_installdirs -p$(pkg_name) $(_sharedir)/man/man5
+	dh_install     -p$(pkg_name) $(DESTDIR)$(_sharedir)/man/man5/makedumpfile.conf.5 $(_sharedir)/man/man5/
+
+	dh_installdirs -p$(pkg_name) $(_sharedir)/makedumpfile/eppic_scripts
+	dh_install     -p$(pkg_name) $(DESTDIR)$(_sharedir)/makedumpfile/eppic_scripts/* $(_sharedir)/makedumpfile/eppic_scripts/
+
+	dh_installdirs -p$(pkg_name) $(_sharedir)/makedumpfile
+	dh_install     -p$(pkg_name) $(DESTDIR)$(_sharedir)/makedumpfile/makedumpfile.conf.sample $(_sharedir)/makedumpfile/
+
+override_dh_auto_clean:
+	echo "Do nothing"
+
+override_dh_auto_test:
+	true

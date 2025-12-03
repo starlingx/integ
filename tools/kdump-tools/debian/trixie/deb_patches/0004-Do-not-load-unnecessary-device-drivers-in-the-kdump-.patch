@@ -1,0 +1,91 @@
+From 7ba4526c64ef752d94382e44eae6ae1a6002aa95 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 17 Sep 2023 18:13:46 -0700
+Subject: [PATCH] Do not load unnecessary device drivers in the kdump initramfs
+
+Make vmcore collection more reliable
+
+This patch makes kernel crash dump (vmcore) collection more reliable by making
+the following changes to the kdump configuration:
+
+- systemd.mask=systemd-sysctl.service kernel command line argument is utilized
+  to avoid applying sysctl settings in kdump sessions. One problematic sysctl
+  is vm.min_free_kbytes, which, on certain StarlingX deployments, is set to
+  1179648 KiB (more than 1 GiB) via "/etc/sysctl.conf". This causes the kdump
+  kernel to start the out-of-memory task killing procedure right after systemd
+  applies the sysctl settings, at least in some system configurations. (Recall
+  that StarlingX reserves 2 GiB for the kdump kernel by default.)
+
+- The udev.children_max=2 kernel command line argument is utilized to prevent
+  the udev daemon from spawning many child tasks concurrently, in an effort to
+  reduce instantaneous memory utilization in kdump sessions.
+
+- The dependency of the kdump-tools-dump.service unit on the
+  network-online.target unit is removed and the argument
+  systemd.mask=networking.service is added to the kernel command line, which
+  collectively let us prevent the networking.service from starting in kdump
+  sessions, which in turn avoids unnecessarily attempting to bring up network
+  interfaces.
+
+- The nousb kernel command line argument appears to have been deprecated, so
+  it is replaced with the usbcore.nousb kernel command line argument, which
+  prevents the initialization of the USB subsystem in kdump sessions as
+  expected.
+
+- The following modules are prevented from being loaded in kdump sessions,
+  which reduces memory consumption: "ice,i40e,iavf,bnxt_en,bnxt_re,ib_core,
+  mlx5_core,mlx5_ib,mlx_compat,vfio,oct_ep_phc,e1000e,ixgbe,ixgbevf,drbd,
+  tg3,igb". This is done via the use of the module_blacklist= kernel command
+  line argument.
+
+- cgroup_disable=memory is utilized to disable the memory cgroups, which is
+  intended for reducing memory utilization. This was also mentioned at:
+  https://bugzilla.redhat.com/show_bug.cgi?id=605717
+
+- transparent_hugepage=never is utilized to avoid enabling transparent
+  hugepages unintendedly in kdump sessions. This was done out of caution,
+  given that the kdump session in Debian-based StarlingX pivot_root's into the
+  regular root file system and starts almost like a regular system.
+
+- Finally, the systemd.mask=iscsid.service argument is utilized to avoid
+  starting the iSCSI daemon in kdump session, which we believe to be
+  unnecessary in a vmcore collection scenario.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/kdump-tools-dump.service | 2 --
+ debian/rules                    | 5 ++++-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/debian/kdump-tools-dump.service b/debian/kdump-tools-dump.service
+index 6f701c2..9c4068d 100644
+--- a/debian/kdump-tools-dump.service
++++ b/debian/kdump-tools-dump.service
+@@ -1,7 +1,5 @@
+ [Unit]
+ Description=Kernel crash dump capture service
+-Wants=network-online.target
+-After=network-online.target
+ 
+ [Service]
+ Type=oneshot
+diff --git a/debian/rules b/debian/rules
+index b428331..258419b 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -14,7 +14,10 @@ ifeq ($(DEB_HOST_ARCH),arm64)
+ else ifeq ($(DEB_HOST_ARCH),ppc64el)
+ 	KDUMP_CMDLINE_APPEND += maxcpus=1 irqpoll noirqdistrib nousb
+ else
+-	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll nousb ata_piix.prefer_ms_hyperv=0 pci=noaer
++	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll usbcore.nousb ata_piix.prefer_ms_hyperv=0 pci=noaer
++	KDUMP_CMDLINE_APPEND += module_blacklist=ice,i40e,iavf,bnxt_en,bnxt_re,ib_core,mlx5_core,mlx5_ib,mlx_compat,vfio,oct_ep_phc,e1000e,ixgbe,ixgbevf,drbd,tg3,igb
++	KDUMP_CMDLINE_APPEND += cgroup_disable=memory transparent_hugepage=never systemd.mask=systemd-sysctl.service systemd.mask=networking.service
++	KDUMP_CMDLINE_APPEND += systemd.mask=iscsid.service udev.children_max=2
+ endif
+ 
+ %:
+-- 
+2.40.0
+
