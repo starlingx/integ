@@ -1,4 +1,4 @@
-From 84b2ec2215807f522a6069fc12da519b2fe75ffd Mon Sep 17 00:00:00 2001
+From 5017d47233c41c5a13aeb4352e4a98efcdfc3fa3 Mon Sep 17 00:00:00 2001
 From: Igor Soares <Igor.PiresSoares@windriver.com>
 Date: Wed, 19 Feb 2025 09:26:17 -0300
 Subject: [PATCH 1/2] Include more template options for helm and source
@@ -23,15 +23,15 @@ to allow output redirection for both controllers.
 
 Signed-off-by: Igor Soares <Igor.PiresSoares@windriver.com>
 ---
- charts/flux2/templates/helm-controller.yaml   | 25 +++++++------------
- charts/flux2/templates/source-controller.yaml | 21 ++++++----------
- 2 files changed, 17 insertions(+), 29 deletions(-)
+ charts/flux2/templates/helm-controller.yaml   | 28 ++++++-------------
+ charts/flux2/templates/source-controller.yaml | 21 ++++++--------
+ 2 files changed, 17 insertions(+), 32 deletions(-)
 
 diff --git a/charts/flux2/templates/helm-controller.yaml b/charts/flux2/templates/helm-controller.yaml
-index 0811c15..85c4c15 100644
+index 45de808..8523e20 100644
 --- a/charts/flux2/templates/helm-controller.yaml
 +++ b/charts/flux2/templates/helm-controller.yaml
-@@ -38,21 +38,8 @@ spec:
+@@ -38,24 +38,8 @@ spec:
          {{- toYaml .Values.helmController.initContainers | nindent 8}}
      {{- end}}
        containers:
@@ -47,15 +47,18 @@ index 0811c15..85c4c15 100644
 -        - --log-level={{ .Values.logLevel | default "info" }}
 -        - --log-encoding=json
 -        - --enable-leader-election
+-        {{- if .Values.sourceWatcher.create }}
+-        - --feature-gates=ExternalArtifact=true
+-        {{- end}}
 -        {{- range .Values.helmController.container.additionalArgs }}
 -        - {{ . }}
 -        {{- end}}
 +      - command: ["/bin/sh"]
-+        args: ["-c", "helm-controller {{- if .Values.multitenancy.enabled }} --no-cross-namespace-refs=true --default-service-account={{ .Values.multitenancy.defaultServiceAccount | default "default"  }} {{- end}} {{- if .Values.notificationController.create }} --events-addr=http://notification-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{- end}} --watch-all-namespaces={{ .Values.watchAllNamespaces }} --log-level={{ .Values.logLevel | default "info" }} --log-encoding={{ .Values.logEncoding | default "json" }} --enable-leader-election {{ .Values.helmController.container.additionalArgs }}"]
++        args: ["-c", "helm-controller {{- if .Values.multitenancy.enabled }} --no-cross-namespace-refs=true --default-service-account={{ .Values.multitenancy.defaultServiceAccount | default "default"  }} {{- end}} {{- if .Values.notificationController.create }} --events-addr=http://notification-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{- end}} --watch-all-namespaces={{ .Values.watchAllNamespaces }} --log-level={{ .Values.logLevel | default "info" }} --log-encoding={{ .Values.logEncoding | default "json" }} --enable-leader-election {{- if .Values.sourceWatcher.create }} --feature-gates=ExternalArtifact=true {{- end}} {{ .Values.helmController.container.additionalArgs }}"]
          env:
          - name: RUNTIME_NAMESPACE
            valueFrom:
-@@ -71,6 +58,9 @@ spec:
+@@ -74,6 +58,9 @@ spec:
            httpGet:
              path: /healthz
              port: healthz
@@ -65,7 +68,7 @@ index 0811c15..85c4c15 100644
          name: manager
          ports:
          - containerPort: 8080
-@@ -82,6 +72,9 @@ spec:
+@@ -85,6 +72,9 @@ spec:
            httpGet:
              path: /readyz
              port: healthz
@@ -75,7 +78,7 @@ index 0811c15..85c4c15 100644
          {{- with .Values.helmController.resources }}
          resources: {{ toYaml . | nindent 10 }}
          {{- end }}
-@@ -114,7 +107,7 @@ spec:
+@@ -120,7 +110,7 @@ spec:
        {{- if .Values.imagePullSecrets }}
        imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 6 }}
        {{- end }}
@@ -85,7 +88,7 @@ index 0811c15..85c4c15 100644
        - emptyDir: {}
          name: temp
 diff --git a/charts/flux2/templates/source-controller.yaml b/charts/flux2/templates/source-controller.yaml
-index 46c7cfe..2bd2eea 100644
+index 97266de..8ecffbc 100644
 --- a/charts/flux2/templates/source-controller.yaml
 +++ b/charts/flux2/templates/source-controller.yaml
 @@ -36,19 +36,8 @@ spec:
