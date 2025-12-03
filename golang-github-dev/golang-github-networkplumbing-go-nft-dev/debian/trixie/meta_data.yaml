@@ -1,7 +1,0 @@
----
-debname: golang-github-networkplumbing-go-nft
-debver: 0.2.0-2
-archive: https://snapshot.debian.org/archive/debian/20221002T213554Z/pool/main/g/golang-github-networkplumbing-go-nft/
-revision:
-  dist: $STX_DIST
-  PKG_GITREVCOUNT: true
