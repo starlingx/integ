@@ -3,7 +3,7 @@ From: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
 Date: Fri, 29 Sep 2023 18:23:35 -0700
 Subject: [PATCH] Rename package name to etcd-server
 
-etcd-3.4.27 does not generate binary/package 'etcd'.
+etcd-<version>-server does not generate binary/package 'etcd'.
 Without this change, puppet manifest fails as it can not
 find the package etcd.
 
@@ -21,7 +21,7 @@ index ea3d7f2..6ff3d44 100644
  class etcd::params {
    $ensure = 'present'
 -  $package_name = 'etcd'
-+  $package_name = 'etcd-server'
++  $package_name = 'etcd-3.4.37-server'
    $manage_package = true
    $manage_service = true
  

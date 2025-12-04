@@ -1,3 +1,5 @@
+usr/bin/etcd
+usr/bin/etcdctl
 usr/bin/kubeadm
 usr/bin/kubelet
 usr/bin/kubectl

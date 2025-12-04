@@ -1,5 +1,5 @@
 ---
-debname: etcd
+debname: etcd-3.4.37
 debver: 3.4.37
 dl_path:
   name: etcd-3.4.37.tar.gz
@@ -9,4 +9,4 @@ revision:
   dist: $STX_DIST
   GITREVCOUNT:
     BASE_SRCREV: 4493a3146c752e2d3cd11ea8fa964a9399dd8b52
-    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/etcd
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/etcd-3.4.37

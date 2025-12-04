@@ -83,8 +83,8 @@ drbd-utils
 efitools
 
 #etcd
-etcd-client
-etcd-server
+etcd-3.4.37-client
+etcd-3.4.37-server
 #golang-etcd-server-dev  # not used
 
 #facter

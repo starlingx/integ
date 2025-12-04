@@ -1,3 +1,5 @@
+/var/lib/etcd/stage0/usr/bin/etcd /usr/bin/etcd
+/var/lib/etcd/stage0/usr/bin/etcdctl /usr/bin/etcdctl
 /var/lib/kubernetes/stage1/usr/bin/kubeadm /usr/bin/kubeadm
 /var/lib/kubernetes/stage2/usr/bin/kubelet /usr/bin/kubelet
 /var/lib/kubernetes/stage1/usr/bin/kubectl /usr/bin/kubectl

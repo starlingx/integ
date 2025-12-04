@@ -64,7 +64,7 @@ kubernetes/crictl
 kubernetes/docker/docker.io
 kubernetes/docker/docker-distribution
 kubernetes/docker/python-docker
-kubernetes/etcd
+kubernetes/etcd-3.4.37
 kubernetes/flux2
 kubernetes/flux2-charts
 kubernetes/helm

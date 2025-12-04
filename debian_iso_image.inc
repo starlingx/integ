@@ -162,9 +162,9 @@ drbd-utils
 #efitools-dbgsym  # not used
 efitools
 
-#etcd
-etcd-client
-etcd-server
+#etcd-x
+etcd-3.4.37-client
+etcd-3.4.37-server
 #golang-etcd-server-dev  # not used
 
 #facter

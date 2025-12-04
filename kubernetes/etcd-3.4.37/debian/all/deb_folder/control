@@ -1,4 +1,4 @@
-Source: etcd
+Source: etcd-3.4.37
 Maintainer: StarlingX Developers <StarlingX-discuss@lists.StarlingX.io>
 Section: net
 Priority: optional
@@ -9,13 +9,13 @@ Rules-Requires-Root: no
 XS-Go-Import-Path: go.etcd.io/etcd,
                    github.com/coreos/etcd
 
-Package: etcd-server
+Package: etcd-3.4.37-server
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends},
 Depends: adduser,
          ${misc:Depends},
          ${shlibs:Depends},
-Suggests: etcd-client,
+Suggests: etcd-3.4.37-client,
 Built-Using: ${misc:Built-Using},
 Description: highly-available key value store -- daemon
  A highly-available key value store for shared configuration and service
@@ -31,7 +31,7 @@ Description: highly-available key value store -- daemon
  .
  This package contains the server binaries.
 
-Package: etcd-client
+Package: etcd-3.4.37-client
 Architecture: any
 Depends: ${misc:Depends},
          ${shlibs:Depends},

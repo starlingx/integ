@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+export DH_VERBOSE = 1
+
+etcd_version := 3.4.37
+_bindir := /usr/local/etcd/${etcd_version}/stage0/usr/bin
+
+export ROOT = debian/tmp
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -v -m 755 -d $(ROOT)${_bindir}
+	install -p -D -m 755 etcd $(ROOT)${_bindir}
+	install -p -D -m 755 etcdctl $(ROOT)${_bindir}
+
+override_dh_usrlocal:
+	# Do Nothing

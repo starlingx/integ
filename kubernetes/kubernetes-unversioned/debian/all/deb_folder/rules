@@ -6,11 +6,12 @@
 _k8s_name := kubernetes
 _bindir := /usr/bin
 _local_sbindir := /usr/local/sbin
-_symlinkdir := /var/lib/kubernetes
+_etcd_symlinkdir := /var/lib/etcd
+_k8s_symlinkdir := /var/lib/kubernetes
 
 DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
 
-
+# GNU Make function, e.g., $(call stage_link,arg1,arg2,arg3)
 stage_link = ln -v -sf ${1}${2}/${3} ${DEBIAN_DESTDIR}${2}/${3}
 
 %:
@@ -21,17 +22,20 @@ override_dh_auto_build:
 	cp -rv init contrib
 
 override_dh_install:
-	# location for stage1 and state2 version symlinks
-	install -v -m 755 -d ${DEBIAN_DESTDIR}${_symlinkdir}
+	# location for stage0, stage1 and stage2 version symlinks
+	install -v -m 755 -d ${DEBIAN_DESTDIR}${_etcd_symlinkdir}
+	install -v -m 755 -d ${DEBIAN_DESTDIR}${_k8s_symlinkdir}
 
 	# Symlink targets
 	install -v -m 755 -d ${DEBIAN_DESTDIR}${_bindir}
 	install -v -m 755 -d ${DEBIAN_DESTDIR}/etc/systemd/system/kubelet.service.d
 	install -v -m 755 -d ${DEBIAN_DESTDIR}/usr/share/bash-completion/completions
-	$(call stage_link,${_symlinkdir}/stage1,${_bindir},kubeadm)
-	$(call stage_link,${_symlinkdir}/stage1,/usr/share/bash-completion/completions,kubectl)
-	$(call stage_link,${_symlinkdir}/stage2,${_bindir},kubelet)
-	$(call stage_link,${_symlinkdir}/stage1,${_bindir},kubectl)
+	$(call stage_link,${_etcd_symlinkdir}/stage0,${_bindir},etcd)
+	$(call stage_link,${_etcd_symlinkdir}/stage0,${_bindir},etcdctl)
+	$(call stage_link,${_k8s_symlinkdir}/stage1,${_bindir},kubeadm)
+	$(call stage_link,${_k8s_symlinkdir}/stage1,/usr/share/bash-completion/completions,kubectl)
+	$(call stage_link,${_k8s_symlinkdir}/stage2,${_bindir},kubelet)
+	$(call stage_link,${_k8s_symlinkdir}/stage1,${_bindir},kubectl)
 
 	# install environment files
 	install -v -d -m 0755 ${DEBIAN_DESTDIR}/etc/${_k8s_name}
