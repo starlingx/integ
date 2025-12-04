@@ -1,6 +1,7 @@
 ---
-debver: 257.8-1~deb13u1
-archive: http://ftp.debian.org/debian/pool/main/s/systemd/
+debname: systemd
+debver: 257.9-1~deb13u1
+archive: https://snapshot.debian.org/archive/debian/20251130T202713Z/pool/main/s/systemd/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
