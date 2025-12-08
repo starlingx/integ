@@ -3,6 +3,7 @@ base/cluster-resource-agents
 base/dhcp
 base/dnsmasq
 base/haproxy
+base/libbpf
 base/libfdt
 base/lighttpd
 base/linuxptp
@@ -18,8 +19,8 @@ base/watchdog
 bmc/redfishtool
 centos-debian-compat
 config/facter
-config/puppet-agent-8.10.0
-config/puppet-server-8.7.0
+config/puppet-agent
+config/puppet-server
 config/puppet-modules/openstack/puppet-ceph
 config/puppet-modules/openstack/puppet-keystone
 config/puppet-modules/openstack/puppet-horizon
@@ -74,8 +75,7 @@ kubernetes/kubernetes-1.34.1
 kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/plugins/kubectl-cert-manager
-kubernetes/python3-kubernetes/python3-durationpy
-kubernetes/python3-kubernetes/python3-kubernetes
+kubernetes/plugins/kubelogin
 kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
@@ -99,6 +99,7 @@ python/python-nss
 python/python3-nsenter
 python/python3-setuptools
 python/python3-zmq
+python/software-properties
 python/zerorpc-python
 security/efitools
 security/keyrings.alt
