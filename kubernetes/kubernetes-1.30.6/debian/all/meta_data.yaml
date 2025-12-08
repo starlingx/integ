@@ -1,3 +1,4 @@
+---
 debver: 1.30.6
 dl_path:
   name: kubernetes-1.30.6.tar.gz

@@ -1,3 +1,4 @@
+---
 debname: luks-fs-mgr
 debver: 1.0
 src_path: src
