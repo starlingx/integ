@@ -74,6 +74,8 @@ kubernetes/kubernetes-1.34.1
 kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/plugins/kubectl-cert-manager
+kubernetes/python3-kubernetes/python3-durationpy
+kubernetes/python3-kubernetes/python3-kubernetes
 kubernetes/runc
 ldap/ldapscripts
 ldap/openldap

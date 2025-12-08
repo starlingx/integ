@@ -80,6 +80,8 @@ kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/plugins/kubectl-cert-manager
 kubernetes/plugins/kubelogin
+kubernetes/python3-kubernetes/python3-durationpy
+kubernetes/python3-kubernetes/python3-kubernetes
 kubernetes/runc
 ldap/ldapscripts
 ldap/openldap

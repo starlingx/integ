@@ -400,6 +400,12 @@ puppet-zitrlp-strongswan
 #python-docker
 python3-docker
 
+#python3-durationpy
+python3-durationpy
+
+#python3-kubernetes
+python3-kubernetes
+
 #python-keyring
 python3-keyring
 
