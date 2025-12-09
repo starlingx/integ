@@ -8,5 +8,5 @@ dl_path:
 revision:
     dist: $STX_DIST
     GITREVCOUNT:
-        BASE_SRCREV: 01a527933545ae8b4b9534ae0731c9814a441c6a
+        BASE_SRCREV: 310ac64ec5ec83206103422ef6820282acb3f472
         SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/python3-kubernetes

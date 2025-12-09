@@ -8,5 +8,5 @@ dl_path:
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
-    BASE_SRCREV: 3bcc1951ba9fc28a3012f621bb58d5acab5ab7c3
+    BASE_SRCREV: 104e185b1072b4dc447cd446fb56b58ee0e0d3f8
     SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/docker/docker.io
