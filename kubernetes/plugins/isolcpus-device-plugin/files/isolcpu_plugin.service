@@ -1,15 +1,14 @@
 [Unit]
 Description=Kubernetes Isolated CPU Plugin Daemon
-Documentation=https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/ 
+Documentation=https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/
 After=kubelet.service
 Requires=kubelet.service
 
 [Service]
-ExecStart=/usr/local/sbin/isolcpu_plugin
+ExecStart=/usr/local/sbin/isolcpu_plugin -v=4
 ExecStartPost=/bin/bash -c 'echo $MAINPID > /var/run/isolcpu_plugin.pid'
 Restart=on-failure
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
-

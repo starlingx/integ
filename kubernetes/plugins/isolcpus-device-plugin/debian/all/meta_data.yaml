@@ -1,6 +1,6 @@
 ---
 debname: isolcpus-device-plugin
-debver: 1.0-1
+debver: 2.0-1
 src_path: files
 revision:
   dist: $STX_DIST
