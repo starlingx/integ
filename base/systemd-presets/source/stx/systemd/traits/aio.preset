@@ -10,7 +10,6 @@ enable sw-patch.service
 enable software-controller.service
 enable software-controller-daemon.service
 enable software-agent.service
-enable software.service
 
 # 00-config-gate-worker.preset
 enable config.service
