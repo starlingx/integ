@@ -1,0 +1,10 @@
+---
+debname: pyjwkest
+debver: 1.4.4
+dl_path:
+  name: pyjwkest-1.4.4.tar.gz
+  url: https://github.com/IdentityPython/pyjwkest/archive/refs/tags/v1.4.4.tar.gz
+  sha256sum: be1d5ef1acf2106c14f7e7fae9c7e75cb53470c1a520299e0d0beab2edcbe126
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

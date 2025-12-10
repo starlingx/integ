@@ -94,7 +94,8 @@ ostree/ostree-upgrade-mgr
 python/dh-python
 python/python-eventlet
 python/pynetlink
-python/pyoidc
+# python/python3-pyjwkest
+# python/python3-pyoidc
 python/python-nss
 python/python3-nsenter
 python/python3-setuptools
