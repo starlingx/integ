@@ -1,0 +1,248 @@
+From b1290c3af132eeb24b4a2184163099710e1a3bcd Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Tue, 28 Oct 2025 08:19:09 -0400
+Subject: [PATCH] kubeadm: platform pods zero cpu resources readiness probe 
+ timeout
+
+This specifies zero CPU resources when creating the manifests
+for the static platform pods, as a workaround for the lack of
+separate resource tracking for platform resources.
+
+This specifies zero CPU, Memory resources and readiness probe
+timeout to 5 sec for the coredns deployment. manifests.go is
+the main source file for this, not sure if the coredns.yaml
+are used but they are updated to be consistent.
+
+This specifies CPU limit of 4 for kube-apiserver pod so that it is
+treated as a burstable QoS. This gives a boost of cgroup CPUShares
+since the burstable cgroup parent has significantly more CPUShares
+than best-effort on typical systems. This improves kube-apiserver
+API responsiveness.
+
+This increases kube-apiserver Readiness probe periodSeconds to 10
+based on WRS/SS joint recommendation for minimum probe settings.
+This reduces likelihood of kube-apiserver probe failure and
+subsequent pod-restart under servere load. This also reduces CPU
+demand.
+
+Signed-off-by: Daniel Safta <daniel.safta@windriver.com>
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+Signed-off-by: Jim Gauld <James.Gauld@windriver.com>
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ cluster/addons/dns/coredns/coredns.yaml.base    |  5 +++--
+ cluster/addons/dns/coredns/coredns.yaml.in      |  5 +++--
+ cluster/addons/dns/coredns/coredns.yaml.sed     |  5 +++--
+ cmd/kubeadm/app/phases/addons/dns/dns_test.go   | 10 ++++++----
+ cmd/kubeadm/app/phases/addons/dns/manifests.go  |  5 +++--
+ .../app/phases/controlplane/manifests.go        | 10 ++++++----
+ cmd/kubeadm/app/util/staticpod/utils.go         | 17 ++++++++++++++++-
+ 7 files changed, 40 insertions(+), 17 deletions(-)
+
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.base b/cluster/addons/dns/coredns/coredns.yaml.base
+index df61a856d7e..b1111045f15 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.base
++++ b/cluster/addons/dns/coredns/coredns.yaml.base
+@@ -139,8 +139,8 @@ spec:
+           limits:
+             memory: __DNS__MEMORY__LIMIT__
+           requests:
+-            cpu: 100m
+-            memory: 70Mi
++            cpu: 0
++            memory: 0
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+         - name: config-volume
+@@ -170,6 +170,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.in b/cluster/addons/dns/coredns/coredns.yaml.in
+index 525737b81a3..8f91127c9f0 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.in
++++ b/cluster/addons/dns/coredns/coredns.yaml.in
+@@ -139,8 +139,8 @@ spec:
+           limits:
+             memory: 'dns_memory_limit'
+           requests:
+-            cpu: 100m
+-            memory: 70Mi
++            cpu: 0
++            memory: 0
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+         - name: config-volume
+@@ -170,6 +170,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cluster/addons/dns/coredns/coredns.yaml.sed b/cluster/addons/dns/coredns/coredns.yaml.sed
+index 6504762d8e1..a3affb8ae8c 100644
+--- a/cluster/addons/dns/coredns/coredns.yaml.sed
++++ b/cluster/addons/dns/coredns/coredns.yaml.sed
+@@ -139,8 +139,8 @@ spec:
+           limits:
+             memory: $DNS_MEMORY_LIMIT
+           requests:
+-            cpu: 100m
+-            memory: 70Mi
++            cpu: 0
++            memory: 0
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+         - name: config-volume
+@@ -170,6 +170,7 @@ spec:
+             path: /ready
+             port: 8181
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cmd/kubeadm/app/phases/addons/dns/dns_test.go b/cmd/kubeadm/app/phases/addons/dns/dns_test.go
+index 4d4186728bf..77d0657058b 100644
+--- a/cmd/kubeadm/app/phases/addons/dns/dns_test.go
++++ b/cmd/kubeadm/app/phases/addons/dns/dns_test.go
+@@ -716,8 +716,8 @@ spec:
+           limits:
+             memory: 170Mi
+           requests:
+-            cpu: 100m
+-            memory: 70Mi
++            cpu: 0
++            memory: 0
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+         - name: config-volume
+@@ -753,6 +753,7 @@ spec:
+             path: /ready
+             port: readiness-probe
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+@@ -1006,8 +1007,8 @@ spec:
+           limits:
+             memory: 170Mi
+           requests:
+-            cpu: 100m
+-            memory: 70Mi
++            cpu: 0
++            memory: 0
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+         - name: config-volume
+@@ -1043,6 +1044,7 @@ spec:
+             path: /ready
+             port: readiness-probe
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cmd/kubeadm/app/phases/addons/dns/manifests.go b/cmd/kubeadm/app/phases/addons/dns/manifests.go
+index f44e597763d..dcac66d2539 100644
+--- a/cmd/kubeadm/app/phases/addons/dns/manifests.go
++++ b/cmd/kubeadm/app/phases/addons/dns/manifests.go
+@@ -104,8 +104,8 @@ spec:
+           limits:
+             memory: 170Mi
+           requests:
+-            cpu: 100m
+-            memory: 70Mi
++            cpu: 0
++            memory: 0
+         args: [ "-conf", "/etc/coredns/Corefile" ]
+         volumeMounts:
+         - name: config-volume
+@@ -141,6 +141,7 @@ spec:
+             path: /ready
+             port: readiness-probe
+             scheme: HTTP
++          timeoutSeconds: 5
+         securityContext:
+           allowPrivilegeEscalation: false
+           capabilities:
+diff --git a/cmd/kubeadm/app/phases/controlplane/manifests.go b/cmd/kubeadm/app/phases/controlplane/manifests.go
+index bbb79d7bfe8..564437dd61e 100644
+--- a/cmd/kubeadm/app/phases/controlplane/manifests.go
++++ b/cmd/kubeadm/app/phases/controlplane/manifests.go
+@@ -67,8 +67,10 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
+ 			LivenessProbe:   staticpodutil.LivenessProbe(staticpodutil.GetAPIServerProbeAddress(endpoint), "/livez", kubeadmconstants.ProbePort, v1.URISchemeHTTPS),
+ 			ReadinessProbe:  staticpodutil.ReadinessProbe(staticpodutil.GetAPIServerProbeAddress(endpoint), "/readyz", kubeadmconstants.ProbePort, v1.URISchemeHTTPS),
+ 			StartupProbe:    staticpodutil.StartupProbe(staticpodutil.GetAPIServerProbeAddress(endpoint), "/livez", kubeadmconstants.ProbePort, v1.URISchemeHTTPS, componentHealthCheckTimeout),
+-			Resources:       staticpodutil.ComponentResources("250m"),
+-			Env:             kubeadmutil.MergeKubeadmEnvVars(proxyEnvs, cfg.APIServer.ExtraEnvs),
++			// WRS: Increase kube-apiserver cgroup CPUShares to improve API responsiveness;
++			// achieved by setting CPU Limits to make it burstable QoS.
++			Resources: staticpodutil.ComponentLimitResources("0", "4"),
++			Env:       kubeadmutil.MergeKubeadmEnvVars(proxyEnvs, cfg.APIServer.ExtraEnvs),
+ 			Ports: []v1.ContainerPort{
+ 				{
+ 					Name:          kubeadmconstants.ProbePort,
+@@ -86,7 +88,7 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
+ 			VolumeMounts:    staticpodutil.VolumeMountMapToSlice(mounts.GetVolumeMounts(kubeadmconstants.KubeControllerManager)),
+ 			LivenessProbe:   staticpodutil.LivenessProbe(staticpodutil.GetControllerManagerProbeAddress(cfg), "/healthz", kubeadmconstants.ProbePort, v1.URISchemeHTTPS),
+ 			StartupProbe:    staticpodutil.StartupProbe(staticpodutil.GetControllerManagerProbeAddress(cfg), "/healthz", kubeadmconstants.ProbePort, v1.URISchemeHTTPS, componentHealthCheckTimeout),
+-			Resources:       staticpodutil.ComponentResources("200m"),
++			Resources:       staticpodutil.ComponentResources("0"),
+ 			Env:             kubeadmutil.MergeKubeadmEnvVars(proxyEnvs, cfg.ControllerManager.ExtraEnvs),
+ 			Ports: []v1.ContainerPort{
+ 				{
+@@ -105,7 +107,7 @@ func GetStaticPodSpecs(cfg *kubeadmapi.ClusterConfiguration, endpoint *kubeadmap
+ 			LivenessProbe:   staticpodutil.LivenessProbe(staticpodutil.GetSchedulerProbeAddress(cfg), "/livez", kubeadmconstants.ProbePort, v1.URISchemeHTTPS),
+ 			ReadinessProbe:  staticpodutil.ReadinessProbe(staticpodutil.GetSchedulerProbeAddress(cfg), "/readyz", kubeadmconstants.ProbePort, v1.URISchemeHTTPS),
+ 			StartupProbe:    staticpodutil.StartupProbe(staticpodutil.GetSchedulerProbeAddress(cfg), "/livez", kubeadmconstants.ProbePort, v1.URISchemeHTTPS, componentHealthCheckTimeout),
+-			Resources:       staticpodutil.ComponentResources("100m"),
++			Resources:       staticpodutil.ComponentResources("0"),
+ 			Env:             kubeadmutil.MergeKubeadmEnvVars(proxyEnvs, cfg.Scheduler.ExtraEnvs),
+ 			Ports: []v1.ContainerPort{
+ 				{
+diff --git a/cmd/kubeadm/app/util/staticpod/utils.go b/cmd/kubeadm/app/util/staticpod/utils.go
+index 5b70cb89c35..d706e6f9596 100644
+--- a/cmd/kubeadm/app/util/staticpod/utils.go
++++ b/cmd/kubeadm/app/util/staticpod/utils.go
+@@ -100,6 +100,18 @@ func ComponentResources(cpu string) v1.ResourceRequirements {
+ 	}
+ }
+ 
++// ComponentLimitResources returns the v1.ResourceRequirements object needed for allocating a specified amount of the CPU with Limits
++func ComponentLimitResources(cpu string, lcpu string) v1.ResourceRequirements {
++	return v1.ResourceRequirements{
++		Requests: v1.ResourceList{
++			v1.ResourceCPU: resource.MustParse(cpu),
++		},
++		Limits: v1.ResourceList{
++			v1.ResourceCPU: resource.MustParse(lcpu),
++		},
++	}
++}
++
+ // NewVolume creates a v1.Volume with a hostPath mount to the specified location
+ func NewVolume(name, path string, pathType *v1.HostPathType) v1.Volume {
+ 	return v1.Volume{
+@@ -262,7 +274,10 @@ func LivenessProbe(host, path, port string, scheme v1.URIScheme) *v1.Probe {
+ func ReadinessProbe(host, path, port string, scheme v1.URIScheme) *v1.Probe {
+ 	// sets initialDelaySeconds as '0' because we don't want to delay user infrastructure checks
+ 	// looking for "ready" status on kubeadm static Pods
+-	return createHTTPProbe(host, path, port, scheme, 0, 15, 3, 1)
++	// WRS/SS joint recommendation: All pods probes should have following minimum probe
++	// settings unless required by the service (initialDelaySecond 0, periodSeconds 10,
++	// timeoutSeconds 5, successThreshold 1, failureThreshold 3)
++	return createHTTPProbe(host, path, port, scheme, 0, 15, 3, 10)
+ }
+ 
+ // StartupProbe creates a Probe object with a HTTPGet handler
+-- 
+2.34.1
+
