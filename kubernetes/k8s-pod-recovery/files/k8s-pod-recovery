@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020-2021 Wind River Systems, Inc.
+# Copyright (c) 2020-2021,2025 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -72,16 +72,6 @@ function _wait_for_systemd {
         LOG "Waiting for systemd to finish booting..."
         sleep ${SLEEP_DELAY_SEC}
     done
-}
-
-function _do_cni_cache_cleanup {
-    # Cleanup any stale CNI cache files (not associated with any running pod)
-    # that are older than 1 hour old
-    LOG "Starting CNI cache cleanup..."
-    k8s-cni-cache-cleanup -o 1 -d
-    if [[ ${?} -ne 0 ]]; then
-        ERROR "Failed to run CNI cache cleanup."
-    fi
 }
 
 function _wait_for_pod_stabilization {
@@ -240,6 +230,7 @@ function _labeled_pods {
 
                 # If device plugin is not ready, restart it and wait
                 if [ "$?" -ne 0 ]; then
+                    LOG "Recovering sriovdp pod..."
                     kubectl delete pods -n kube-system --selector=app=sriovdp --field-selector=spec.nodeName=${HOST} --wait=false
                     ret_code=$?
                     if [ "${ret_code}" -ne 0 ]; then
@@ -369,8 +360,6 @@ function start {
         LOG "kube-api-server is not available, exit for systemd to restart on failure"
         exit 1
     fi
-
-    _do_cni_cache_cleanup
 }
 
 function stop {
