@@ -1,0 +1,42 @@
+From 4fbe4f6a2c9c8289eb93fd5b577abd9dc6284117 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 25 Jul 2025 11:22:36 +0000
+Subject: [PATCH] Remove default hiera config
+
+Remove the default puppet hiera.yaml so it wont conflict
+with the hiera.yaml shipped in the puppet-manifests
+package.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ debian/puppet-agent.install | 1 -
+ debian/rules                | 2 +-
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/debian/puppet-agent.install b/debian/puppet-agent.install
+index e5bee07..03c389f 100644
+--- a/debian/puppet-agent.install
++++ b/debian/puppet-agent.install
+@@ -2,6 +2,5 @@
+ /usr/bin/puppet
+ /usr/lib/ruby/vendor_ruby/*
+ /usr/share/puppet/locale
+-conf/hiera.yaml /etc/puppet
+ conf/puppet.conf /etc/puppet
+ vendor_modules /usr/share/puppet
+diff --git a/debian/rules b/debian/rules
+index d069a7c..08c4a20 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -63,7 +63,7 @@ override_dh_install:
+ 		mv "$${m}" "../vendor_modules/$${n}"; \
+ 	done
+ 	# invoke dh_install
+-	dh_install -Xusr/share/man
++	dh_install -Xusr/share/man -Xetc/puppet/hiera.yaml
+ 
+ execute_after_dh_install:
+ 	ruby debian/gem_helper.rb
+-- 
+2.47.2
+

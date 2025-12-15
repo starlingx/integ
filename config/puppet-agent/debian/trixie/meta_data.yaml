@@ -1,0 +1,6 @@
+---
+debver: 8.10.0-5
+debname: puppet-agent
+archive: https://snapshot.debian.org/archive/debian/20250630T203427Z/pool/main/p/puppet-agent/
+dist: $STX_DIST
+PKG_GITREVCOUNT: true
