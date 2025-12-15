@@ -1,6 +1,6 @@
 [Unit]
 Description=Ceph MGR RESTful API Plugin
-After=network-online.target
+After=network-online.target sw-patch.service
 
 [Service]
 Type=forking

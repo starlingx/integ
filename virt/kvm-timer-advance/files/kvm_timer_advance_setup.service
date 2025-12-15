@@ -1,6 +1,6 @@
 [Unit]
 Description=KVM Timer Advance Setup
-After=syslog.target
+After=syslog.target sw-patch.service
 Before=kubelet.service
 
 [Service]

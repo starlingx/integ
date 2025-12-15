@@ -1,6 +1,11 @@
 # 00-mtce-storage.preset
 enable goenabled-storage.service
 
+# 00-cgcs-patch.preset
+disable sw-patch-controller.service
+disable sw-patch-controller-daemon.service
+enable sw-patch.service
+
 # 00-software.preset
 disable software-controller.service
 disable software-controller-daemon.service
