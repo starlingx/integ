@@ -1,0 +1,39 @@
+From b1cfef4c1e0fc8220c96bbaebb62a145404aa485 Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Tue, 26 Aug 2025 20:18:02 +0000
+Subject: [PATCH] override the keystone log format
+
+A pre-starlingx change.  Was squashed with misc other puppet-keystone
+changes. Splitting the changes for clarity. Original git log: Keystone
+Log context change.
+
+Rebased onto puppet-keystone 25.0.0-3
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+
+Original sign-offs of the squashed patch; rebases and refactors:
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Dean Troyer <dtroyer@gmail.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+
+Original sign-off:
+Signed-off-by: Prajeesh Murukan <prajeesh.murukan@windriver.com>
+---
+ manifests/logging.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/logging.pp b/manifests/logging.pp
+index e6c339f..1aa0893 100644
+--- a/manifests/logging.pp
++++ b/manifests/logging.pp
+@@ -122,7 +122,7 @@ class keystone::logging(
+   $log_file                      = $facts['os_service_default'],
+   $debug                         = $facts['os_service_default'],
+   $logging_context_format_string = $facts['os_service_default'],
+-  $logging_default_format_string = $facts['os_service_default'],
++  $logging_default_format_string = 'keystone:log %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s',
+   $logging_debug_format_suffix   = $facts['os_service_default'],
+   $logging_exception_prefix      = $facts['os_service_default'],
+   $logging_user_identity_format  = $facts['os_service_default'],
+-- 
+2.34.1
+

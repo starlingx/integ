@@ -1,0 +1,63 @@
+From 69f36f7554e627e2358ee12ccceeaab2983fb71a Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Tue, 26 Aug 2025 20:18:02 +0000
+Subject: [PATCH] add debug_level to keystone:ldap
+
+Allow platform developer or admin to enable debug logging.
+
+A pre-starlingx change.  Was squashed with misc other puppet-keystone
+changes. Splitting the changes for clarity. Original git log was for an
+implementation dropped in rebase for Openstack Pike.  Only the
+debug_level was persisted.
+
+Rebased onto puppet-keystone 25.0.0-3. Fact 'os_service_default' is a
+mechanism to ensure that the keystone conf omits values that are
+undefined.
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+
+Original sign-offs of the squashed patch; rebases and refactors:
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Dean Troyer <dtroyer@gmail.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+
+Original sign-off of Pike rebase:
+Signed-off-by: Kam Nasim <kam.nasim@windriver.com>
+---
+ manifests/ldap.pp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/manifests/ldap.pp b/manifests/ldap.pp
+index 7cd723f..e367a24 100644
+--- a/manifests/ldap.pp
++++ b/manifests/ldap.pp
+@@ -4,6 +4,11 @@
+ #
+ # === Parameters:
+ #
++# [*debug_level*]
++#   LDAP debugging level for LDAP calls; a value of zero("0") disables
++#   debugging. (integer value)
++#  Defaults to $facts['os_service_default']
++#
+ # [*url*]
+ #   URL for connecting to the LDAP server. (string value)
+ #   Defaults to $facts['os_service_default']
+@@ -248,6 +253,7 @@
+ # Copyright 2012 Puppetlabs Inc, unless otherwise noted.
+ #
+ class keystone::ldap(
++  $debug_level                          = $facts['os_service_default'],
+   $url                                  = $facts['os_service_default'],
+   $user                                 = $facts['os_service_default'],
+   $password                             = $facts['os_service_default'],
+@@ -320,6 +326,7 @@ class keystone::ldap(
+   }
+ 
+   keystone_config {
++    'ldap/debug_level':                          value => $debug_level;
+     'ldap/url':                                  value => $url;
+     'ldap/user':                                 value => $user;
+     'ldap/password':                             value => $password, secret => true;
+-- 
+2.34.1
+

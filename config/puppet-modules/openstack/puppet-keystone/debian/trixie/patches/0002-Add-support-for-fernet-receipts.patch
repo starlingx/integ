@@ -1,37 +1,27 @@
-From 066421ff4de665e93923f10dc211ed465a60f30a Mon Sep 17 00:00:00 2001
+From 0554cae61bb520954136232bbfca14b3cd6a1172 Mon Sep 17 00:00:00 2001
 From: Tyler Smith <tyler.smith@windriver.com>
 Date: Wed, 10 Apr 2019 15:37:25 -0400
-Subject: [PATCH 2/3] Add support for fernet receipts
+Subject: [PATCH] Add support for fernet receipts
 
 ---
- manifests/init.pp | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ manifests/init.pp | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/manifests/init.pp b/manifests/init.pp
-index ee07bd3..0dc3fb2 100644
+index 28c8fff..945704c 100644
 --- a/manifests/init.pp
 +++ b/manifests/init.pp
-@@ -758,18 +758,21 @@ running as a standalone service, or httpd for being run by a httpd server")
- 
-   if $fernet_key_repository {
-     keystone_config {
--      'fernet_tokens/key_repository': value => $fernet_key_repository;
-+      'fernet_tokens/key_repository':   value => $fernet_key_repository;
-+      'fernet_receipts/key_repository': value => $fernet_key_repository;
-     }
-   } else {
-     keystone_config {
--      'fernet_tokens/key_repository': ensure => absent;
-+      'fernet_tokens/key_repository':   ensure => absent;
-+      'fernet_receipts/key_repository': ensure => absent;
-     }
+@@ -702,10 +702,12 @@ class keystone(
    }
  
    keystone_config {
 -    'token/revoke_by_id':            value => $revoke_by_id;
+-    'fernet_tokens/key_repository':  value => $fernet_key_repository;
 -    'fernet_tokens/max_active_keys': value => $fernet_max_active_keys;
 -    'credential/key_repository':     value => $credential_key_repository;
 +    'token/revoke_by_id':              value => $revoke_by_id;
++    'fernet_tokens/key_repository':    value => $fernet_key_repository;
++    'fernet_receipts/key_repository':  value => $fernet_key_repository;
 +    'fernet_tokens/max_active_keys':   value => $fernet_max_active_keys;
 +    'fernet_receipts/max_active_keys': value => $fernet_max_active_keys;
 +    'credential/key_repository':       value => $credential_key_repository;
@@ -39,5 +29,5 @@ index ee07bd3..0dc3fb2 100644
  
    # Update this code when https://bugs.launchpad.net/keystone/+bug/1472285 is addressed.
 -- 
-2.30.0
+2.34.1
 

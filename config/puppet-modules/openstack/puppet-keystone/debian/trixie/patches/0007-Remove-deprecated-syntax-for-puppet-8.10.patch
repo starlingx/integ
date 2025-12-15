@@ -1,0 +1,244 @@
+From 3190a901f38cb69526e4aa557c9720946dc51d55 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Fri, 24 Oct 2025 03:17:25 -0400
+Subject: [PATCH] Remove deprecated $:: scope syntax for Puppet 8.10
+ compatibility
+
+Replace all instances of deprecated $:: syntax with modern Puppet
+variable references to ensure compatibility with Puppet 8.10.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/bootstrap.pp                    |  6 +++---
+ manifests/cron/fernet_rotate.pp           |  2 +-
+ manifests/cron/trust_flush.pp             |  2 +-
+ manifests/db/sync.pp                      |  4 ++--
+ manifests/federation/identity_provider.pp |  4 ++--
+ manifests/init.pp                         | 16 ++++++++--------
+ manifests/ldap_backend.pp                 |  2 +-
+ manifests/policy.pp                       |  2 +-
+ manifests/resource/authtoken.pp           |  2 +-
+ manifests/wsgi/apache.pp                  |  6 +++---
+ 10 files changed, 23 insertions(+), 23 deletions(-)
+
+diff --git a/manifests/bootstrap.pp b/manifests/bootstrap.pp
+index eabddba..e74ba57 100644
+--- a/manifests/bootstrap.pp
++++ b/manifests/bootstrap.pp
+@@ -93,10 +93,10 @@ class keystone::bootstrap (
+     default => $internal_url
+   }
+ 
+-  if defined('$::keystone::keystone_user') {
+-    $keystone_user = $::keystone::keystone_user
++  if defined('$keystone::keystone_user') {
++    $keystone_user = $keystone::keystone_user
+   } else {
+-    $keystone_user = $::keystone::params::user
++    $keystone_user = $keystone::params::user
+   }
+ 
+   if $bootstrap {
+diff --git a/manifests/cron/fernet_rotate.pp b/manifests/cron/fernet_rotate.pp
+index 50a9494..e3bd0bc 100644
+--- a/manifests/cron/fernet_rotate.pp
++++ b/manifests/cron/fernet_rotate.pp
+@@ -61,7 +61,7 @@ class keystone::cron::fernet_rotate (
+   $month                            = '*',
+   $weekday                          = '*',
+   Integer[0] $maxdelay              = 0,
+-  $user                             = $::keystone::params::user,
++  $user                             = $keystone::params::user,
+ ) inherits keystone::params {
+ 
+   include keystone::deps
+diff --git a/manifests/cron/trust_flush.pp b/manifests/cron/trust_flush.pp
+index f9de0be..de1362c 100644
+--- a/manifests/cron/trust_flush.pp
++++ b/manifests/cron/trust_flush.pp
+@@ -70,7 +70,7 @@ class keystone::cron::trust_flush (
+   Integer[0] $maxdelay              = 0,
+   Integer[0] $age                   = 0,
+   $destination                      = '/var/log/keystone/keystone-trustflush.log',
+-  $user                             = $::keystone::params::user,
++  $user                             = $keystone::params::user,
+ ) inherits keystone::params {
+ 
+   include keystone::deps
+diff --git a/manifests/db/sync.pp b/manifests/db/sync.pp
+index 0b35c65..b9dceb9 100644
+--- a/manifests/db/sync.pp
++++ b/manifests/db/sync.pp
+@@ -20,7 +20,7 @@
+ #
+ class keystone::db::sync(
+   $extra_params    = undef,
+-  $keystone_user   = $::keystone::params::user,
++  $keystone_user   = $keystone::params::user,
+   $db_sync_timeout = 300,
+ ) inherits keystone::params {
+ 
+@@ -44,6 +44,6 @@ class keystone::db::sync(
+     tag         => ['keystone-exec', 'openstack-db'],
+     # Only do the db sync if both controllers are running the same software
+     # version. Avoids impacting mate controller during an upgrade.
+-    onlyif      => "test $::controller_sw_versions_match = true",
++    onlyif      => "test $facts['controller_sw_versions_match'] = true",
+   }
+ }
+diff --git a/manifests/federation/identity_provider.pp b/manifests/federation/identity_provider.pp
+index bfa5117..3f6217f 100644
+--- a/manifests/federation/identity_provider.pp
++++ b/manifests/federation/identity_provider.pp
+@@ -84,7 +84,7 @@ class keystone::federation::identity_provider(
+   Stdlib::Absolutepath $idp_metadata_path,
+   $certfile                      = $facts['os_service_default'],
+   $keyfile                       = $facts['os_service_default'],
+-  $user                          = $::keystone::params::user,
++  $user                          = $keystone::params::user,
+   $idp_organization_name         = $facts['os_service_default'],
+   $idp_organization_display_name = $facts['os_service_default'],
+   $idp_organization_url          = $facts['os_service_default'],
+@@ -99,7 +99,7 @@ class keystone::federation::identity_provider(
+ 
+   include keystone::deps
+ 
+-  if $::keystone::service_name != 'httpd' {
++  if $keystone::service_name != 'httpd' {
+     fail ('Keystone need to be running under Apache for Federation work.')
+   }
+ 
+diff --git a/manifests/init.pp b/manifests/init.pp
+index e48182f..ae28667 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -433,7 +433,7 @@ class keystone(
+   $control_exchange                               = $facts['os_service_default'],
+   $executor_thread_pool_size                      = $facts['os_service_default'],
+   $rpc_response_timeout                           = $facts['os_service_default'],
+-  $service_name                                   = $::keystone::params::service_name,
++  $service_name                                   = $keystone::params::service_name,
+   $max_token_size                                 = $facts['os_service_default'],
+   $list_limit                                     = $facts['os_service_default'],
+   Boolean $sync_db                                = true,
+@@ -449,8 +449,8 @@ class keystone(
+   $policy_driver                                  = $facts['os_service_default'],
+   Boolean $using_domain_config                    = false,
+   Stdlib::Absolutepath $domain_config_directory   = '/etc/keystone/domains',
+-  $keystone_user                                  = $::keystone::params::user,
+-  $keystone_group                                 = $::keystone::params::group,
++  $keystone_user                                  = $keystone::params::user,
++  $keystone_group                                 = $keystone::params::group,
+   Boolean $manage_policyrcd                       = false,
+   $enable_proxy_headers_parsing                   = $facts['os_service_default'],
+   $max_request_body_size                          = $facts['os_service_default'],
+@@ -497,7 +497,7 @@ class keystone(
+   if $manage_package {
+     package { 'keystone':
+       ensure => $package_ensure,
+-      name   => $::keystone::params::package_name,
++      name   => $keystone::params::package_name,
+       tag    => ['openstack', 'keystone-package'],
+     }
+     include openstacklib::openstackclient
+@@ -596,13 +596,13 @@ class keystone(
+     }
+ 
+     case $service_name {
+-      $::keystone::params::service_name: {
++      $keystone::params::service_name: {
+         if $facts['os']['name'] != 'Debian' {
+           # TODO(tkajinam): Make this hard-fail
+           warning('Keystone under Eventlet is no longer supported by this operating system')
+         }
+ 
+-        $service_name_real = $::keystone::params::service_name
++        $service_name_real = $keystone::params::service_name
+ 
+         service { 'keystone':
+           ensure     => $service_ensure,
+@@ -618,13 +618,13 @@ class keystone(
+       }
+       'httpd': {
+         include apache::params
+-        $service_name_real = $::apache::params::service_name
++        $service_name_real = $apache::params::service_name
+         Service <| title == 'httpd' |> { tag +> 'keystone-service' }
+ 
+         if $facts['os']['name'] == 'Debian' {
+           service { 'keystone':
+             ensure => 'stopped',
+-            name   => $::keystone::params::service_name,
++            name   => $keystone::params::service_name,
+             enable => false,
+             tag    => 'keystone-service',
+           }
+diff --git a/manifests/ldap_backend.pp b/manifests/ldap_backend.pp
+index 51cc730..d628d2e 100644
+--- a/manifests/ldap_backend.pp
++++ b/manifests/ldap_backend.pp
+@@ -306,7 +306,7 @@ define keystone::ldap_backend(
+     fail('The keystone class should be included before this class')
+   }
+ 
+-  if ! $::keystone::using_domain_config {
++  if ! $keystone::using_domain_config {
+     fail('Domain specific drivers are not enabled. Set keystone::using_domain_config to true.')
+   }
+ 
+diff --git a/manifests/policy.pp b/manifests/policy.pp
+index ffd639c..5741bb8 100644
+--- a/manifests/policy.pp
++++ b/manifests/policy.pp
+@@ -62,7 +62,7 @@ class keystone::policy (
+     policies     => $policies,
+     policy_path  => $policy_path,
+     file_user    => 'root',
+-    file_group   => $::keystone::params::group,
++    file_group   => $keystone::params::group,
+     file_format  => 'yaml',
+     purge_config => $purge_config,
+   }
+diff --git a/manifests/resource/authtoken.pp b/manifests/resource/authtoken.pp
+index 7afa6c8..693297f 100644
+--- a/manifests/resource/authtoken.pp
++++ b/manifests/resource/authtoken.pp
+@@ -291,7 +291,7 @@ define keystone::resource::authtoken(
+     if $manage_memcache_package {
+       ensure_packages('python-memcache', {
+         ensure => present,
+-        name   => $::keystone::params::python_memcache_package_name,
++        name   => $keystone::params::python_memcache_package_name,
+         tag    => ['openstack'],
+       })
+     }
+diff --git a/manifests/wsgi/apache.pp b/manifests/wsgi/apache.pp
+index 40c9411..9d1fabd 100644
+--- a/manifests/wsgi/apache.pp
++++ b/manifests/wsgi/apache.pp
+@@ -184,11 +184,11 @@ class keystone::wsgi::apache (
+     servername                  => $servername,
+     bind_host                   => $bind_host,
+     bind_port                   => $port,
+-    group                       => $::keystone::params::group,
++    group                       => $keystone::params::group,
+     path                        => $path,
+     workers                     => $workers,
+     threads                     => $threads,
+-    user                        => $::keystone::params::user,
++    user                        => $keystone::params::user,
+     priority                    => $priority,
+     ssl                         => $ssl,
+     ssl_cert                    => $ssl_cert,
+@@ -201,7 +201,7 @@ class keystone::wsgi::apache (
+     wsgi_daemon_process         => 'keystone',
+     wsgi_process_display_name   => $wsgi_process_display_name,
+     wsgi_process_group          => 'keystone',
+-    wsgi_script_dir             => $::keystone::params::keystone_wsgi_script_path,
++    wsgi_script_dir             => $keystone::params::keystone_wsgi_script_path,
+     wsgi_script_file            => 'keystone',
+     wsgi_script_source          => $wsgi_script_source,
+     wsgi_application_group      => $wsgi_application_group,
+-- 
+2.43.0
+

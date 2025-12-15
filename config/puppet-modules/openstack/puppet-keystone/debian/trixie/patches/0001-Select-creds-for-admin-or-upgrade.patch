@@ -1,0 +1,220 @@
+From 3db0674084bb52c0dcbccdbf70c1cc74d4b8b0c0 Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Thu, 28 Aug 2025 15:16:00 +0000
+Subject: [PATCH] Select creds for admin or upgrade
+
+puppet-keystone 25.0.0-3/puppet-openstacklibs-25.0.0-1 select
+credentials from env, cloudsfile, or deprecated rcfile.  An original
+change for starlingx recovers authentication using either an auth token
+during upgrade, or admin creds from the platform's hiera data.
+
+Changes for rebase onto 25.0.0-3:
+- The equivalent of keystone_request(), which used creds from conf file,
+  is handled by super.request() (in Puppet::Provider::Openstack::Auth)
+  referring to the clouds yaml file instead. Since this option is
+  included in the super: omit a rescue attempt during initialization.
+- Apply the implementation to system_request(), and ignore
+  project_request() which is not referenced.
+
+The original implementation is pre-starlingx with many rebases. The
+original git logs include:
+
+- [override endpoint, upgrade::url] When upgrading (controller-1) we
+  launch keystone on the unit MGMT IP, and specify that as AUTH URL,
+  however since the Service Catalog was synced over from the 17.06
+  Keystone DB (controller-0), it still lists the floating MGMT IP as the
+  Identity service endpoint.
+
+- [use token for upgrade] generate an upgrade admin token during
+  controller-1 upgrades and use that with the controller-1 unit IP
+  specified as bypass URL
+
+- [request_by_admin_credential] The [use of early admin bootstrap token]
+  should be disabled after the initial keystone configuration.  Note at
+  25.0.0-3 rebase: whereas the use of bootstrap token was deprecated
+  several rebases ago, the request_by_admin_credential implementation
+  has persisted.
+
+[rebase onto 25.0.0-3, split the squashed patch, restore logs]
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+
+[replace Hiera lookup with puppet lookup]
+Signed-off-by: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+[unescape special characters in hiera lookup]
+Signed-off-by: Guilherme Schons <guilherme.dossantosschons@windriver.com>
+
+Original sign-offs for rebases, refactors and fixes:
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+Signed-off-by: Dean Troyer <dtroyer@gmail.com>
+Signed-off-by: Don Penney <don.penney@windriver.com>
+Signed-off-by: Kam Nasim <kam.nasim@windriver.com>
+Signed-off-by: Tao Liu <tao.liu@windriver.com>
+
+Originals:
+Signed-off-by: Kam Nasim <kam.nasim@windriver.com>
+Signed-off-by: Tao Liu <tao.liu@windriver.com>
+---
+ lib/puppet/provider/keystone.rb | 82 +++++++++++++++++++++++++++++++++
+ manifests/init.pp               | 32 +++++++++++++
+ 2 files changed, 114 insertions(+)
+
+diff --git a/lib/puppet/provider/keystone.rb b/lib/puppet/provider/keystone.rb
+index 17f7e04..8da1aa2 100644
+--- a/lib/puppet/provider/keystone.rb
++++ b/lib/puppet/provider/keystone.rb
+@@ -166,12 +166,94 @@ class Puppet::Provider::Keystone < Puppet::Provider::Openstack
+     return auth_url
+   end
+ 
++  ### STX Modifications (Start) ###
++
++  def self.hiera_lookup(key)
++    %x(sudo puppet lookup #{key} | sed 's,\",,g')[4...-1]
++  end
++
++  def self.initial_config_primary?
++    return true if ENV['INITIAL_CONFIG_PRIMARY'] == "true"
++  end
++
++  def self.upgrading?
++    return true if hiera_lookup('platform::params::controller_upgrade') == true
++  end
++
++  def self.request_by_admin_credential(service, action, error, properties=nil)
++    properties ||= []
++    @credentials.username = hiera_lookup('platform::client::params::admin_username')
++    @credentials.password = hiera_lookup('keystone::admin_password')
++    @credentials.project_name = 'admin'
++    @credentials.auth_url = get_auth_url
++    @credentials.identity_api_version = @credentials.version
++    if @credentials.version == '3'
++      @credentials.user_domain_name = hiera_lookup('platform::client::params::admin_user_domain')
++      @credentials.project_domain_name = hiera_lookup('platform::client::params::admin_project_domain')
++    end
++    raise error unless @credentials.set?
++    Puppet::Provider::Openstack.request(service, action, properties, @credentials)
++  end
++
++  def self.get_upgrade_token
++    upgrade_token_file = hiera_lookup('openstack::keystone::upgrade::upgrade_token_file')
++    # the upgrade token file may get refreshed by the same Puppet event
++    # that triggered this call, and therefore may not be available
++    # immediately. Try for timeout before quitting with error
++    timeout = 10 # 10 seconds
++    1.upto(timeout) do |iter|
++      if File.exists?(upgrade_token_file)
++        upgrade_token = File.read(upgrade_token_file).strip
++        notice("Found #{upgrade_token_file} token file and upgrade token #{upgrade_token}.")
++        return upgrade_token
++      else
++        Puppet.debug("#{upgrade_token_file} not found. Retrying for #{iter} more seconds.")
++        sleep(1)
++      end
++    end
++    raise(Puppet::ExecutionFailure, "Can't retrieve #{upgrade_token_file} in #{timeout}s retry attempts.")
++  end
++
++  def self.request_by_upgrading_token(service, action, error, properties=nil, options={})
++    properties ||= []
++    @credentials.token = get_upgrade_token
++    @credentials.endpoint   = hiera_lookup('openstack::keystone::upgrade::url')
++    raise error unless @credentials.service_token_set?
++    Puppet::Provider::Openstack.request(service, action, properties, @credentials, options)
++  end
++
++  ### STX Additions (End) ###
++
+   def self.project_request(service, action, properties=nil, options={})
+     self.request(service, action, properties, options, 'project')
+   end
+ 
+   def self.system_request(service, action, properties=nil, options={})
+     self.request(service, action, properties, options, 'system')
++  rescue Puppet::Error::OpenstackAuthInputError, Puppet::Error::OpenstackUnauthorizedError => error
++    if initial_config_primary?
++      # admin user account might not have been created
++      #
++      # Originally this would default to creds in keystone puppet.conf.
++      # Upsteam commit c140a44a says "This change also replaces
++      # /etc/keystone/puppet.conf by the yaml file for
++      # openstackclient(/etc/openstack/puppet/admin-clouds.yaml)". This
++      # cloud conf is "created by puppet-keystone" and selected by the
++      # super, (Puppet::Provider::Openstack::Auth)
++      raise error
++    else
++      if upgrading?
++        # when running the Keystone manifest during an upgrade
++        # (on controller-1), we need to use an AUTH token and
++        # a bypass URL since using the default AUTL URL will
++        # send the Request to the service catalog URL (internalURL),
++        # running on the non-upgraded controller-0 which cannot
++        # service this request
++        request_by_upgrading_token(service, action, error, properties)
++      else
++        request_by_admin_credential(service, action, error, properties)
++      end
++    end
+   end
+ 
+   def self.set_domain_for_name(name, domain_name)
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 4f8e7e6..b0c443c 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -49,6 +49,15 @@
+ #   other than KVS, which stores events in memory.
+ #   Defaults to $facts['os_service_default']
+ #
++# [*upgrade_token_cmd*]
++#   (Optional) STX - if we are in an upgrade scenario, an upgrade token
++#   will be required to bypass authentication.
++#   Defaults to undef
++#
++# [*upgrade_token_file*]
++#   (Optional) STX - the file where the upgrade token will be stowed
++#   Defaults to undef
++#
+ # [*manage_service*]
+ #   (Optional) If Puppet should manage service startup / shutdown.
+ #   Defaults to true.
+@@ -461,6 +470,8 @@ class keystone(
+   Boolean $purge_config                           = false,
+   $amqp_durable_queues                            = $facts['os_service_default'],
+   $amqp_auto_delete                               = $facts['os_service_default'],
++  Optional[String] $upgrade_token_cmd             = $facts['os_service_default'],
++  Optional[String] $upgrade_token_file            = $facts['os_service_default'],
+   # DEPRECATED PARAMETERS
+   $client_package_ensure                          = undef,
+   $catalog_template_file                          = undef,
+@@ -760,6 +771,27 @@ class keystone(
+     fail('You must activate domain configuration using "using_domain_config" parameter to keystone class.')
+   }
+ 
++  # STX: Now that the keystone service has started,
++  # check if we are in an Upgrade scenario, and generate
++  # an upgrade token which will be used to bypass Keystone
++  # authentication (specifically the service catalog) for
++  # all operations during upgrades.
++  # This operation is similar to the keystone bootstrap
++  # operation (above) which would generate an admin
++  # token, and therefore also requires the database to
++  # be up and running and configured and is only run once,
++  # so we don't need to notify the service
++  if $upgrade_token_cmd and $upgrade_token_file {
++    exec { 'upgrade token issue':
++      command     => "${upgrade_token_cmd} > ${upgrade_token_file}",
++      path        => '/usr/bin',
++      creates     => $upgrade_token_file,
++      subscribe   => Service[$service_name],
++      notify      => Anchor['keystone::service::end'],
++      tag         => 'keystone-exec',
++    }
++  }
++
+   if $using_domain_config {
+     file { $domain_config_directory:
+       ensure  => directory,
+-- 
+2.34.1
+
