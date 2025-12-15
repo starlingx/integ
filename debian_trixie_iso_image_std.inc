@@ -158,6 +158,8 @@ kata-containers
 #kubectl-cert-manager
 kubectl-cert-manager
 
+kubelogin
+
 # lvm2
 dmeventd
 dmsetup
