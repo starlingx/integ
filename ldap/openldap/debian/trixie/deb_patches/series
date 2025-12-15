@@ -1,4 +1,3 @@
 debian-disable-unit-tests.patch
 0001-Change-pid-file-and-args-file-location.patch
-0002-Support-building-ppolicy-check-password-library.patch
 0003-Chg-default-debconf-slapd-no_configuration-to-true.patch

@@ -1,18 +1,30 @@
+From 82b3596512f56974ef5c6dbf8206e1d1dfde9de3 Mon Sep 17 00:00:00 2001
+From: Yue Tao <Yue.Tao@windriver.com>
+Date: Thu, 23 Sep 2021 09:29:25 +0800
+Subject: [PATCH] debian disable unit tests
+
 Disable the unit tests, which consumes a lot of time.
 Don't need to run it each building BTY,Centos also disable it.
 
 Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
+---
+ debian/rules | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/debian/rules.old b/debian/rules
-index 5b8b75f..fbefa7b 100755
---- a/debian/rules.old
+diff --git a/debian/rules b/debian/rules
+index 9d1e9bf..61b6614 100755
+--- a/debian/rules
 +++ b/debian/rules
-@@ -131,7 +131,7 @@ ifeq ($(DEB_HOST_ARCH),ppc64el)
- 	# Disable test060-mt-host on ppc64el until #866122 is fixed.
- 	rm -f tests/scripts/test060-mt-hot
- endif
+@@ -100,7 +100,8 @@ endif
+ override_dh_auto_test-arch:
+ 	# Disable certain timing-sensitive tests which can be flaky on buildds (#1010608)
+ 	rm -f tests/scripts/test063-delta-multiprovider tests/scripts/test069-delta-multiprovider-starttls
 -	dh_auto_test
-+	#dh_auto_test
++	# Disable all tests [STX]
++	# dh_auto_test
  
- override_dh_auto_install:
- 	dh_auto_install -- $(MAKEVARS)
+ override_dh_auto_install-arch:
+ # systemdsystemunitdir: we ship our own systemd unit
+-- 
+2.34.1
+
