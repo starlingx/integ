@@ -1,41 +1,17 @@
-From 2bd09160543d0e170d0ade2f695691a03aa3d5fa Mon Sep 17 00:00:00 2001
-From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
-Date: Tue, 14 Sep 2021 16:33:23 +0000
+From 33b9bf18ee4ad0c99764181e95d259e6f92ca1c3 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Tue, 15 Jul 2025 09:17:35 +0000
 Subject: [PATCH] Add personality and subfunction
 
-Adapt 0002-personality.patch from CentOS.
-
-Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 ---
- lib/CMakeLists.txt           |  9 ++++++
  lib/facter/personality.rb    | 21 +++++++++++++
  lib/facter/subfunction.rb    | 61 ++++++++++++++++++++++++++++++++++++
  lib/facter/util/file_read.rb | 37 ++++++++++++++++++++++
- 4 files changed, 128 insertions(+)
+ 3 files changed, 119 insertions(+)
  create mode 100644 lib/facter/personality.rb
  create mode 100644 lib/facter/subfunction.rb
  create mode 100644 lib/facter/util/file_read.rb
 
-diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
-index 8dd7063..f7d336a 100644
---- a/lib/CMakeLists.txt
-+++ b/lib/CMakeLists.txt
-@@ -435,6 +435,15 @@ if(RUBY_VENDORDIR)
-     message(STATUS "\"make install\" will install facter.rb to ${RUBY_VENDORDIR}")
-     install(FILES ${CMAKE_BINARY_DIR}/lib/facter.rb DESTINATION ${RUBY_VENDORDIR})
- 
-+    message(STATUS "\"make install\" will install facter/personality.rb to ${RUBY_VENDORDIR}/facter")
-+    install(FILES facter/personality.rb DESTINATION ${RUBY_VENDORDIR}/facter)
-+
-+    message(STATUS "\"make install\" will install facter/subfunction.rb to ${RUBY_VENDORDIR}/facter")
-+    install(FILES facter/subfunction.rb DESTINATION ${RUBY_VENDORDIR}/facter)
-+
-+    message(STATUS "\"make install\" will install facter/util/file_read.rb to ${RUBY_VENDORDIR}/facter/util")
-+    install(FILES facter/util/file_read.rb DESTINATION ${RUBY_VENDORDIR}/facter/util)
-+
-     if (JRUBY_SUPPORT)
-         message(STATUS "\"make install\" will install facter.jar to ${RUBY_VENDORDIR} to support JRuby")
-         install(FILES ${CMAKE_BINARY_DIR}/lib/facter.jar DESTINATION ${RUBY_VENDORDIR})
 diff --git a/lib/facter/personality.rb b/lib/facter/personality.rb
 new file mode 100644
 index 0000000..0a4e8cf
@@ -174,5 +150,5 @@ index 0000000..c92185a
 +end
 +end
 -- 
-2.25.1
+2.47.2
 

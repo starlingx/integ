@@ -1,11 +1,11 @@
 ---
 debname: facter
-debver: 3.14.12-1
+debver: 4.10.0-1
 dl_path:
-  name: facter-3.14.12-1.tar.gz
-  url: https://salsa.debian.org/puppet-team/facter/-/archive/debian/3.14.12-1/facter-debian-3.14.12-1.tar.gz
-  md5sum: 2394099bd9d6c63eaa1fb5fda5e79fca
-  sha256sum: 7e3160b584bfaa2863643ee23aa84abdec9dcea292701623cf750d23df0e53f8
+  name: facter-4.10.0-1.tar.gz
+  url: https://salsa.debian.org/puppet-team/facter/-/archive/debian/4.10.0-1/facter-debian-4.10.0-1.tar.gz
+  md5sum: eb38e9282403289cc59f5defc5ecb1f8
+  sha256sum: b2e760cdfc2aa5113c270cd981dc9eec690ea1956576655c9ddcd4ab6d0e793b
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
