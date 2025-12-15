@@ -1,117 +1,26 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so moving the codes related to keyring
-backends of use_temporary_file.patch to package keyrings.alt
+From 9ebe3e26394a3764ef0c497cb2b067b98bd3f3de Mon Sep 17 00:00:00 2001
+From: amantri <ayyappa.mantri@windriver.com>
+Date: Wed, 18 Feb 2026 08:27:38 -0500
+Subject: [PATCH 06/08] Use tmp file as intermediate keyrings update
 
---- a/keyrings/alt/file_base.py
-+++ b/keyrings/alt/file_base.py
-@@ -5,6 +5,7 @@ import abc
- import time
- import logging
- import shutil
-+import glob
+---
+ keyrings/alt/file.py      | 33 ++++++--------------
+ keyrings/alt/file_base.py | 64 +++++++++++----------------------------
+ 2 files changed, 28 insertions(+), 69 deletions(-)
+
+diff --git a/keyrings/alt/file.py b/keyrings/alt/file.py
+index 1e8512b..2a9a28a 100644
+--- a/keyrings/alt/file.py
++++ b/keyrings/alt/file.py
+@@ -4,6 +4,7 @@ import os
+ import sys
+ import json
+ import getpass
++import logging
  import configparser
- from base64 import encodebytes, decodebytes
  
-@@ -31,14 +32,6 @@ class FileBacked:
-         """
-         return os.path.join(platform_.data_root(), self.filename)
- 
--    @properties.NonDataProperty
--    def backup_file_path(self):
--        """
--        The path to the file where passwords are stored. This property
--        may be overridden by the subclass or at the instance level.
--        """
--        return os.path.join(platform_.data_root(), self.backup_filename)
--
-     @abc.abstractproperty
-     def scheme(self):
-         """
-@@ -125,15 +118,6 @@ class Keyring(FileBacked, KeyringBackend
-         return password
- 
- 
--    def filecopy(self,src,dest):
--        """copy file src to dest with default buffer size
--        """
--        with open(src, 'r') as f1:
--            with open(dest, 'w') as f2:
--                shutil.copyfileobj(f1,f2)
--                f2.flush()
--
--
-     def set_password(self, service, username, password):
-         """Write the password in the file."""
-         if not username:
-@@ -167,23 +151,7 @@ class Keyring(FileBacked, KeyringBackend
-                 config = configparser.RawConfigParser()
-                 config.read(self.file_path)
-             except configparser.ParsingError as e:
--                logging.warning("set_password: keyring file corrupted, Reverting to Backup")
--                # Revert to the backup file (copy backup over current file)
--                try:
--                    src = self.backup_file_path
--                    dest = self.file_path
--                    self.filecopy(src,dest)
--                except shutil.Error as e:
--                    logging.warning("set_password: Revert from Backup failed. Error: %s" % e)
--                    raise
--                # Load the keyring from the disk, if this fails exception is raised
--                try:
--                    config = configparser.RawConfigParser()
--                    config.read(self.file_path)
--                except:
--                    e = sys.exc_info()[0]
--                    logging.warning("set_password: Both keyring files are non useable. Error: %s" % e)
--                    raise
-+                logging.warning("set_password: keyring file corrupted")
- 
- 
-             service = escape_for_ini(service)
-@@ -194,17 +162,15 @@ class Keyring(FileBacked, KeyringBackend
-                 config.add_section(service)
-             config.set(service, key, value)
- 
--            # Make a back up of the keyring file here
--            try:
--                src = self.file_path
--                dest = self.backup_file_path
--                self.filecopy(src,dest)
--            except shutil.Error as e:
--                logging.warning("set_password: Backup failed. Error: %s" % e)
--
-             # Save the keyring back to the file
--            with open(self.file_path, 'w') as config_file:
-+            storage_root = os.path.dirname(self.file_path)
-+            tmpfile = "tmpfile.%s" % os.getpid()
-+            with open(storage_root + "/" + tmpfile, 'w') as config_file:
-                 config.write(config_file)
-+            # copy will overwrite but move will not
-+            shutil.copy(storage_root + "/" + tmpfile,self.file_path)
-+            # wipe out tmpfile here
-+            os.remove(storage_root + "/" + tmpfile)
- 
- 
- 
-@@ -248,5 +214,12 @@ class Keyring(FileBacked, KeyringBackend
-             except configparser.NoSectionError:
-                 raise PasswordDeleteError("Password not found")
-             # update the file
--            with open(self.file_path, 'w') as config_file:
-+            storage_root = os.path.dirname(self.file_path)
-+            tmpfile = "tmpfile.%s" % os.getpid()
-+            with open(storage_root + "/" + tmpfile, 'w') as config_file:
-                 config.write(config_file)
-+            # copy will overwrite but move will not
-+            shutil.copy(storage_root + "/" + tmpfile,self.file_path)
-+            # wipe out tmpfile
-+            os.remove(storage_root + "/" + tmpfile)
-+
-Index: keyring-5.3/keyrings/alt/file.py
-===================================================================
---- keyring-5.3.orig/keyrings/alt/file.py
-+++ keyring-5.3/keyrings/alt/file.py
-@@ -19,7 +19,6 @@ class PlaintextKeyring(Keyring):
+ from keyring.util import properties
+@@ -19,7 +20,6 @@ class PlaintextKeyring(Keyring):
      "Applicable for all platforms, but not recommended"
  
      filename = 'keyring_pass.cfg'
@@ -119,7 +28,7 @@ Index: keyring-5.3/keyrings/alt/file.py
      scheme = 'no encyption'
      version = '1.0'
  
-@@ -74,7 +73,6 @@ class EncryptedKeyring(Encrypted, Keyrin
+@@ -80,7 +80,6 @@ class EncryptedKeyring(Encrypted, Keyring):
      """PyCryptodome File Keyring"""
  
      filename = 'crypted_pass.cfg'
@@ -127,11 +36,12 @@ Index: keyring-5.3/keyrings/alt/file.py
      pw_prefix = 'pw:'.encode()
  
      @properties.ClassProperty
-@@ -133,26 +131,15 @@ class EncryptedKeyring(Encrypted, Keyrin
+@@ -139,27 +138,15 @@ class EncryptedKeyring(Encrypted, Keyring):
                      escape_for_ini('keyring-setting'), escape_for_ini('password reference'),
                  )
              except (configparser.NoSectionError, configparser.NoOptionError):
 -                # The current file doesn't have the keyring-setting, check the backup
+-                logging.warning("_check_file: The current file doesn't have the keyring-setting, check the backup")
 -                if os.path.exists(self.backup_file_path):
 -                    config = configparser.RawConfigParser()
 -                    config.read(self.backup_file_path)
@@ -163,3 +73,113 @@ Index: keyring-5.3/keyrings/alt/file.py
  
          try:
              self._check_scheme(config)
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index cc0a562..44d0f76 100644
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -5,6 +5,7 @@ import abc
+ import time
+ import logging
+ import shutil
++import glob
+ import configparser
+ from base64 import encodebytes, decodebytes
+ 
+@@ -31,14 +32,6 @@ class FileBacked:
+         """
+         return os.path.join(platform_.data_root(), self.filename)
+ 
+-    @properties.NonDataProperty
+-    def backup_file_path(self):
+-        """
+-        The path to the file where passwords are stored. This property
+-        may be overridden by the subclass or at the instance level.
+-        """
+-        return os.path.join(platform_.data_root(), self.backup_filename)
+-
+     @abc.abstractproperty
+     def scheme(self):
+         """
+@@ -125,15 +118,6 @@ class Keyring(FileBacked, KeyringBackend):
+         return password
+ 
+ 
+-    def filecopy(self,src,dest):
+-        """copy file src to dest with default buffer size
+-        """
+-        with open(src, 'r') as f1:
+-            with open(dest, 'w') as f2:
+-                shutil.copyfileobj(f1,f2)
+-                f2.flush()
+-
+-
+     def set_password(self, service, username, password):
+         """Write the password in the file."""
+         if not username:
+@@ -166,23 +150,7 @@ class Keyring(FileBacked, KeyringBackend):
+                 config = configparser.RawConfigParser()
+                 config.read(self.file_path)
+             except configparser.ParsingError as e:
+-                logging.warning("set_password: keyring file corrupted, Reverting to Backup")
+-                # Revert to the backup file (copy backup over current file)
+-                try:
+-                    src = self.backup_file_path
+-                    dest = self.file_path
+-                    self.filecopy(src,dest)
+-                except shutil.Error as e:
+-                    logging.warning("set_password: Revert from Backup failed. Error: %s" % e)
+-                    raise
+-                # Load the keyring from the disk, if this fails exception is raised
+-                try:
+-                    config = configparser.RawConfigParser()
+-                    config.read(self.file_path)
+-                except:
+-                    e = sys.exc_info()[0]
+-                    logging.warning("set_password: Both keyring files are non useable. Error: %s" % e)
+-                    raise
++                logging.warning("set_password: keyring file corrupted")
+ 
+ 
+             service = escape_for_ini(service)
+@@ -193,17 +161,15 @@ class Keyring(FileBacked, KeyringBackend):
+                 config.add_section(service)
+             config.set(service, key, value)
+ 
+-            # Make a back up of the keyring file here
+-            try:
+-                src = self.file_path
+-                dest = self.backup_file_path
+-                self.filecopy(src,dest)
+-            except shutil.Error as e:
+-                logging.warning("set_password: Backup failed. Error: %s" % e)
+-
+             # Save the keyring back to the file
+-            with open(self.file_path, 'w') as config_file:
+-                config.write(config_file)
++            storage_root = os.path.dirname(self.file_path)
++            tmpfile = "tmpfile.%s" % os.getpid()
++            with open(storage_root + "/" + tmpfile, 'w') as config_file:
++                 config.write(config_file)
++            # copy will overwrite but move will not
++            shutil.copy(storage_root + "/" + tmpfile,self.file_path)
++            # wipe out tmpfile here
++            os.remove(storage_root + "/" + tmpfile)
+ 
+ 
+ 
+@@ -248,5 +214,11 @@ class Keyring(FileBacked, KeyringBackend):
+             except configparser.NoSectionError:
+                 raise PasswordDeleteError("Password not found")
+             # update the file
+-            with open(self.file_path, 'w') as config_file:
+-                config.write(config_file)
++            storage_root = os.path.dirname(self.file_path)
++            tmpfile = "tmpfile.%s" % os.getpid()
++            with open(storage_root + "/" + tmpfile, 'w') as config_file:
++                 config.write(config_file)
++            # copy will overwrite but move will not
++            shutil.copy(storage_root + "/" + tmpfile,self.file_path)
++            # wipe out tmpfile
++            os.remove(storage_root + "/" + tmpfile)
+-- 
+2.34.1
