@@ -1,2 +1,3 @@
 0001-Fix-exceptions-import-issue.patch
 0002-Remove-memcached-dependency.patch
+0003-Fix-deprecated-puppet-syntax-for-8.10.patch

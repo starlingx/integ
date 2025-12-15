@@ -19,7 +19,7 @@ diff --git a/templates/local_settings.py.erb b/templates/local_settings.py.erb
 index 5796a0f..cb24bf4 100644
 --- a/templates/local_settings.py.erb
 +++ b/templates/local_settings.py.erb
-@@ -19,6 +19,7 @@ from django.utils.translation import ugettext_lazy as _
+@@ -19,6 +19,7 @@ from django.utils.translation import gettext_lazy as _
  from horizon.utils import secret_key
  
  from openstack_dashboard.settings import HORIZON_CONFIG

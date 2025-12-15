@@ -1,0 +1,541 @@
+From 985a7e6bf2c8a4f4fb003f9396e9adf12e970362 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Thu, 16 Oct 2025 01:27:18 -0400
+Subject: [PATCH] Fix deprecated Puppet 8.10 syntax
+
+Remove deprecated $:: prefix from all variable references, fix class
+references, and update include/contain statements for Puppet 8.10
+compatibility.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/dashboards/designate.pp | 24 ++++++++--------
+ manifests/dashboards/heat.pp      | 24 ++++++++--------
+ manifests/dashboards/ironic.pp    | 16 +++++------
+ manifests/dashboards/manila.pp    | 24 ++++++++--------
+ manifests/dashboards/octavia.pp   | 24 ++++++++--------
+ manifests/init.pp                 | 46 +++++++++++++++----------------
+ manifests/policy.pp               |  2 +-
+ manifests/policy/base.pp          |  6 ++--
+ manifests/wsgi/apache.pp          | 28 +++++++++----------
+ 9 files changed, 97 insertions(+), 97 deletions(-)
+
+diff --git a/manifests/dashboards/designate.pp b/manifests/dashboards/designate.pp
+index 38edda0..ef58481 100644
+--- a/manifests/dashboards/designate.pp
++++ b/manifests/dashboards/designate.pp
+@@ -39,9 +39,9 @@ class horizon::dashboards::designate(
+     fail('The horizon class should be included before the horizon::dashboards::designate class')
+   }
+ 
+-  $log_handlers = $::horizon::log_handlers
+-  $log_level    = $::horizon::log_level
+-  $policy_files = $::horizon::policy_files
++  $log_handlers = $horizon::log_handlers
++  $log_level    = $horizon::log_level
++  $policy_files = $horizon::policy_files
+ 
+   if $policy_files and $policy_files['dns'] {
+     $policy_file_real = $policy_files['dns']
+@@ -49,19 +49,19 @@ class horizon::dashboards::designate(
+     $policy_file_real = $policy_file
+   }
+ 
+-  $config_file = "${::horizon::params::conf_d_dir}/_1799_dns_settings.py"
++  $config_file = "${horizon::params::conf_d_dir}/_1799_dns_settings.py"
+ 
+   package { 'designate-dashboard':
+-    ensure => $::horizon::package_ensure,
+-    name   => $::horizon::params::designate_dashboard_package_name,
++    ensure => $horizon::package_ensure,
++    name   => $horizon::params::designate_dashboard_package_name,
+     tag    => ['openstack', 'horizon-package'],
+   }
+ 
+   concat { $config_file:
+     mode    => '0640',
+-    owner   => $::horizon::params::wsgi_user,
+-    group   => $::horizon::params::wsgi_group,
+-    require => File[$::horizon::params::conf_d_dir],
++    owner   => $horizon::params::wsgi_user,
++    group   => $horizon::params::wsgi_group,
++    require => File[$horizon::params::conf_d_dir],
+     tag     => ['django-config'],
+   }
+ 
+@@ -80,9 +80,9 @@ class horizon::dashboards::designate(
+ 
+     horizon::policy::base { $policy_file_real:
+       policies     => $policies,
+-      file_mode    => $::horizon::policy::file_mode,
+-      file_format  => $::horizon::policy::file_format,
+-      purge_config => $::horizon::policy::purge_config,
++      file_mode    => $horizon::policy::file_mode,
++      file_format  => $horizon::policy::file_format,
++      purge_config => $horizon::policy::purge_config,
+     }
+   }
+ }
+diff --git a/manifests/dashboards/heat.pp b/manifests/dashboards/heat.pp
+index 45b7153..d4281f6 100644
+--- a/manifests/dashboards/heat.pp
++++ b/manifests/dashboards/heat.pp
+@@ -53,9 +53,9 @@ class horizon::dashboards::heat(
+   if ! defined(Class[horizon]) {
+     fail('The horizon class should be included before the horizon::dashboards::heat class')
+   }
+-  $log_handlers = $::horizon::log_handlers
+-  $log_level    = $::horizon::log_level
+-  $policy_files = $::horizon::policy_files
++  $log_handlers = $horizon::log_handlers
++  $log_level    = $horizon::log_level
++  $policy_files = $horizon::policy_files
+ 
+   if $policy_files and $policy_files['orchestration'] {
+     $policy_file_real = $policy_files['orchestration']
+@@ -63,19 +63,19 @@ class horizon::dashboards::heat(
+     $policy_file_real = $policy_file
+   }
+ 
+-  $config_file = "${::horizon::params::conf_d_dir}/_1699_orchestration_settings.py"
++  $config_file = "${horizon::params::conf_d_dir}/_1699_orchestration_settings.py"
+ 
+   package { 'heat-dashboard':
+-    ensure => $::horizon::package_ensure,
+-    name   => $::horizon::params::heat_dashboard_package_name,
++    ensure => $horizon::package_ensure,
++    name   => $horizon::params::heat_dashboard_package_name,
+     tag    => ['openstack', 'horizon-package'],
+   }
+ 
+   concat { $config_file:
+     mode    => '0640',
+-    owner   => $::horizon::params::wsgi_user,
+-    group   => $::horizon::params::wsgi_group,
+-    require => File[$::horizon::params::conf_d_dir],
++    owner   => $horizon::params::wsgi_user,
++    group   => $horizon::params::wsgi_group,
++    require => File[$horizon::params::conf_d_dir],
+     tag     => ['django-config'],
+   }
+ 
+@@ -94,9 +94,9 @@ class horizon::dashboards::heat(
+ 
+     horizon::policy::base { $policy_file_real:
+       policies     => $policies,
+-      file_mode    => $::horizon::policy::file_mode,
+-      file_format  => $::horizon::policy::file_format,
+-      purge_config => $::horizon::policy::purge_config,
++      file_mode    => $horizon::policy::file_mode,
++      file_format  => $horizon::policy::file_format,
++      purge_config => $horizon::policy::purge_config,
+     }
+   }
+ }
+diff --git a/manifests/dashboards/ironic.pp b/manifests/dashboards/ironic.pp
+index 7361a57..d1aafad 100644
+--- a/manifests/dashboards/ironic.pp
++++ b/manifests/dashboards/ironic.pp
+@@ -28,22 +28,22 @@ class horizon::dashboards::ironic() {
+     fail('The horizon class should be included before the horizon::dashboards::ironic class')
+   }
+ 
+-  $log_handlers = $::horizon::log_handlers
+-  $log_level    = $::horizon::log_level
++  $log_handlers = $horizon::log_handlers
++  $log_level    = $horizon::log_level
+ 
+-  $config_file = "${::horizon::params::conf_d_dir}/_2299_baremetal_settings.py"
++  $config_file = "${horizon::params::conf_d_dir}/_2299_baremetal_settings.py"
+ 
+   package { 'ironic-dashboard':
+-    ensure => $::horizon::package_ensure,
+-    name   => $::horizon::params::ironic_dashboard_package_name,
++    ensure => $horizon::package_ensure,
++    name   => $horizon::params::ironic_dashboard_package_name,
+     tag    => ['openstack', 'horizon-package'],
+   }
+ 
+   concat { $config_file:
+     mode    => '0640',
+-    owner   => $::horizon::params::wsgi_user,
+-    group   => $::horizon::params::wsgi_group,
+-    require => File[$::horizon::params::conf_d_dir],
++    owner   => $horizon::params::wsgi_user,
++    group   => $horizon::params::wsgi_group,
++    require => File[$horizon::params::conf_d_dir],
+     tag     => ['django-config'],
+   }
+ 
+diff --git a/manifests/dashboards/manila.pp b/manifests/dashboards/manila.pp
+index f0c2555..8a94bb2 100644
+--- a/manifests/dashboards/manila.pp
++++ b/manifests/dashboards/manila.pp
+@@ -50,9 +50,9 @@ class horizon::dashboards::manila(
+   if ! defined(Class[horizon]) {
+     fail('The horizon class should be included before the horizon::dashboards::manila class')
+   }
+-  $log_handlers = $::horizon::log_handlers
+-  $log_level    = $::horizon::log_level
+-  $policy_files = $::horizon::policy_files
++  $log_handlers = $horizon::log_handlers
++  $log_level    = $horizon::log_level
++  $policy_files = $horizon::policy_files
+ 
+   if $policy_files and $policy_files['share'] {
+     $policy_file_real = $policy_files['share']
+@@ -74,19 +74,19 @@ class horizon::dashboards::manila(
+   }
+   $manila_options_real = merge($manila_defaults, $manila_options)
+ 
+-  $config_file = "${::horizon::params::conf_d_dir}/_90_manila_shares.py"
++  $config_file = "${horizon::params::conf_d_dir}/_90_manila_shares.py"
+ 
+   package { 'manila-dashboard':
+-    ensure => $::horizon::package_ensure,
+-    name   => $::horizon::params::manila_dashboard_package_name,
++    ensure => $horizon::package_ensure,
++    name   => $horizon::params::manila_dashboard_package_name,
+     tag    => ['openstack', 'horizon-package'],
+   }
+ 
+   concat { $config_file:
+     mode    => '0640',
+-    owner   => $::horizon::params::wsgi_user,
+-    group   => $::horizon::params::wsgi_group,
+-    require => File[$::horizon::params::conf_d_dir],
++    owner   => $horizon::params::wsgi_user,
++    group   => $horizon::params::wsgi_group,
++    require => File[$horizon::params::conf_d_dir],
+     tag     => ['django-config'],
+   }
+ 
+@@ -105,9 +105,9 @@ class horizon::dashboards::manila(
+ 
+     horizon::policy::base { $policy_file_real:
+       policies     => $policies,
+-      file_mode    => $::horizon::policy::file_mode,
+-      file_format  => $::horizon::policy::file_format,
+-      purge_config => $::horizon::policy::purge_config,
++      file_mode    => $horizon::policy::file_mode,
++      file_format  => $horizon::policy::file_format,
++      purge_config => $horizon::policy::purge_config,
+     }
+   }
+ }
+diff --git a/manifests/dashboards/octavia.pp b/manifests/dashboards/octavia.pp
+index b9312f2..e4fa2b8 100644
+--- a/manifests/dashboards/octavia.pp
++++ b/manifests/dashboards/octavia.pp
+@@ -39,9 +39,9 @@ class horizon::dashboards::octavia(
+     fail('The horizon class should be included before the horizon::dashboards::octavia class')
+   }
+ 
+-  $log_handlers = $::horizon::log_handlers
+-  $log_level    = $::horizon::log_level
+-  $policy_files = $::horizon::policy_files
++  $log_handlers = $horizon::log_handlers
++  $log_level    = $horizon::log_level
++  $policy_files = $horizon::policy_files
+ 
+   if $policy_files and $policy_files['load-balancer'] {
+     $policy_file_real = $policy_files['load-balancer']
+@@ -49,19 +49,19 @@ class horizon::dashboards::octavia(
+     $policy_file_real = $policy_file
+   }
+ 
+-  $config_file = "${::horizon::params::conf_d_dir}/_1499_load_balancer_settings.py"
++  $config_file = "${horizon::params::conf_d_dir}/_1499_load_balancer_settings.py"
+ 
+   package { 'octavia-dashboard':
+-    ensure => $::horizon::package_ensure,
+-    name   => $::horizon::params::octavia_dashboard_package_name,
++    ensure => $horizon::package_ensure,
++    name   => $horizon::params::octavia_dashboard_package_name,
+     tag    => ['openstack', 'horizon-package'],
+   }
+ 
+   concat { $config_file:
+     mode    => '0640',
+-    owner   => $::horizon::params::wsgi_user,
+-    group   => $::horizon::params::wsgi_group,
+-    require => File[$::horizon::params::conf_d_dir],
++    owner   => $horizon::params::wsgi_user,
++    group   => $horizon::params::wsgi_group,
++    require => File[$horizon::params::conf_d_dir],
+     tag     => ['django-config'],
+   }
+ 
+@@ -80,9 +80,9 @@ class horizon::dashboards::octavia(
+ 
+     horizon::policy::base { $policy_file_real:
+       policies     => $policies,
+-      file_mode    => $::horizon::policy::file_mode,
+-      file_format  => $::horizon::policy::file_format,
+-      purge_config => $::horizon::policy::purge_config,
++      file_mode    => $horizon::policy::file_mode,
++      file_format  => $horizon::policy::file_format,
++      purge_config => $horizon::policy::purge_config,
+     }
+   }
+ }
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 71ae573..99ba74f 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -633,8 +633,8 @@ class horizon(
+   $keystone_domain_choices                          = undef,
+   Hash[String, Hash[String, String]] $image_backend = {},
+   $overview_days_range                              = undef,
+-  $root_url                                         = $::horizon::params::root_url,
+-  Stdlib::Absolutepath $root_path                   = "${::horizon::params::static_path}/openstack-dashboard",
++  $root_url                                         = $horizon::params::root_url,
++  Stdlib::Absolutepath $root_path                   = "${horizon::params::static_path}/openstack-dashboard",
+   $access_log_format                                = undef,
+   $session_timeout                                  = 3600,
+   $token_timeout_margin                             = 0,
+@@ -702,7 +702,7 @@ class horizon(
+   if $policy_files_path != undef {
+     $policy_files_path_real = $policy_files_path
+   } else {
+-    $policy_files_path_real = $::horizon::params::policy_dir
++    $policy_files_path_real = $horizon::params::policy_dir
+   }
+ 
+   if $manage_memcache_package {
+@@ -710,28 +710,28 @@ class horizon(
+       warning("Support for MemcachedCache backend has been deprecated. \
+ Use PyMemcacheCache backend instead")
+       ensure_packages('python-memcache', {
+-        name => $::horizon::params::memcache_package,
++        name => $horizon::params::memcache_package,
+         tag  => ['openstack'],
+       })
+       Anchor['horizon::install::begin']
+-        -> Package<| name == $::horizon::params::memcache_package |>
++        -> Package<| name == $horizon::params::memcache_package |>
+         -> Anchor['horizon::install::end']
+ 
+     } elsif $cache_backend =~ /\.PyMemcacheCache$/ {
+       ensure_packages('python-pymemcache', {
+-        name => $::horizon::params::pymemcache_package,
++        name => $horizon::params::pymemcache_package,
+         tag  => ['openstack'],
+       })
+       Anchor['horizon::install::begin']
+-        -> Package<| name == $::horizon::params::pymemcache_package |>
++        -> Package<| name == $horizon::params::pymemcache_package |>
+         -> Anchor['horizon::install::end']
+     } elsif $cache_backend =~ /\.RedisCache$/ {
+       ensure_packages('python-redis', {
+-        name => $::horizon::params::python_redis_package,
++        name => $horizon::params::python_redis_package,
+         tag  => ['openstack'],
+       })
+       Anchor['horizon::install::begin']
+-        -> Package<| name == $::horizon::params::python_redis_package |>
++        -> Package<| name == $horizon::params::python_redis_package |>
+         -> Anchor['horizon::install::end']
+     }
+   }
+@@ -740,42 +740,42 @@ Use PyMemcacheCache backend instead")
+ 
+   package { 'horizon':
+     ensure => $package_ensure,
+-    name   => $::horizon::params::package_name,
++    name   => $horizon::params::package_name,
+     tag    => ['openstack', 'horizon-package'],
+   }
+ 
+-  $secret_key_path = "${::horizon::params::config_dir}/.secret_key_store"
++  $secret_key_path = "${horizon::params::config_dir}/.secret_key_store"
+   file { $secret_key_path:
+     mode      => '0600',
+     content   => $secret_key,
+-    owner     => $::horizon::params::wsgi_user,
+-    group     => $::horizon::params::wsgi_group,
++    owner     => $horizon::params::wsgi_user,
++    group     => $horizon::params::wsgi_group,
+     show_diff => false,
+     require   => Anchor['horizon::config::begin'],
+     notify    => Anchor['horizon::config::end'],
+   }
+ 
+-  concat { $::horizon::params::config_file:
++  concat { $horizon::params::config_file:
+     mode      => '0640',
+-    owner     => $::horizon::params::wsgi_user,
+-    group     => $::horizon::params::wsgi_group,
++    owner     => $horizon::params::wsgi_user,
++    group     => $horizon::params::wsgi_group,
+     show_diff => $show_diff,
+     tag       => ['django-config'],
+   }
+ 
+   concat::fragment { 'local_settings.py':
+-    target  => $::horizon::params::config_file,
++    target  => $horizon::params::config_file,
+     content => template($local_settings_template),
+     order   => '50',
+   }
+ 
+-  file { $::horizon::params::conf_d_dir:
++  file { $horizon::params::conf_d_dir:
+     ensure  => 'directory',
+     mode    => '0755',
+     purge   => $purge_conf_d_dir,
+     recurse => $purge_conf_d_dir,
+-    owner   => $::horizon::params::wsgi_user,
+-    group   => $::horizon::params::wsgi_group,
++    owner   => $horizon::params::wsgi_user,
++    group   => $horizon::params::wsgi_group,
+     require => Anchor['horizon::config::begin'],
+   }
+ 
+@@ -800,7 +800,7 @@ Use PyMemcacheCache backend instead")
+   if $compress_offline {
+     if $facts['os']['family'] == 'Debian' {
+       exec { 'refresh_horizon_django_compress':
+-        command     => "${::horizon::params::manage_py} compress --force",
++        command     => "${horizon::params::manage_py} compress --force",
+         refreshonly => true,
+         tag         => ['horizon-compress'],
+       }
+@@ -833,8 +833,8 @@ Use PyMemcacheCache backend instead")
+   if ! ($file_upload_temp_dir in ['/tmp','/var/tmp']) {
+     file { $file_upload_temp_dir :
+       ensure => directory,
+-      owner  => $::horizon::params::wsgi_user,
+-      group  => $::horizon::params::wsgi_group,
++      owner  => $horizon::params::wsgi_user,
++      group  => $horizon::params::wsgi_group,
+       mode   => '0755',
+     }
+   }
+diff --git a/manifests/policy.pp b/manifests/policy.pp
+index e05956a..05c26ef 100644
+--- a/manifests/policy.pp
++++ b/manifests/policy.pp
+@@ -55,7 +55,7 @@ class horizon::policy(
+     fail('The horizon class should be included in advance')
+   }
+ 
+-  $policy_files = pick($::horizon::policy_files, {})
++  $policy_files = pick($horizon::policy_files, {})
+   $policy_files_default = {
+     'identity' => 'keystone_policy.yaml',
+     'compute'  => 'nova_policy.yaml',
+diff --git a/manifests/policy/base.pp b/manifests/policy/base.pp
+index 8818db0..3ed05a1 100644
+--- a/manifests/policy/base.pp
++++ b/manifests/policy/base.pp
+@@ -38,7 +38,7 @@ define horizon::policy::base(
+     fail('The horizon class should be included in advance')
+   }
+ 
+-  $policy_files_path = $::horizon::policy_files_path_real
++  $policy_files_path = $horizon::policy_files_path_real
+   if ! $policy_files_path {
+     # In Ubuntu/Debian, the default policies files are located in source
+     # directories, and the path should be updated to more appropriate path
+@@ -48,8 +48,8 @@ define horizon::policy::base(
+ 
+   openstacklib::policy { "${policy_files_path}/${policy_file}" :
+     policies     => $policies,
+-    file_user    => $::horizon::params::wsgi_user,
+-    file_group   => $::horizon::params::wsgi_group,
++    file_user    => $horizon::params::wsgi_user,
++    file_group   => $horizon::params::wsgi_group,
+     file_mode    => $file_mode,
+     file_format  => $file_format,
+     purge_config => $purge_config,
+diff --git a/manifests/wsgi/apache.pp b/manifests/wsgi/apache.pp
+index 37fa3e3..d284504 100644
+--- a/manifests/wsgi/apache.pp
++++ b/manifests/wsgi/apache.pp
+@@ -138,8 +138,8 @@ class horizon::wsgi::apache (
+   $extra_params                = {},
+   $ssl_extra_params            = undef,
+   $redirect_type               = 'permanent',
+-  $root_url                    = $::horizon::params::root_url,
+-  $root_path                   = "${::horizon::params::static_path}/openstack-dashboard",
++  $root_url                    = $horizon::params::root_url,
++  $root_path                   = "${horizon::params::static_path}/openstack-dashboard",
+   $access_log_format           = undef,
+   $access_log_file             = 'horizon_access.log',
+   $error_log_file              = 'horizon_error.log',
+@@ -153,7 +153,7 @@ class horizon::wsgi::apache (
+   # We already use apache::vhost to generate our own
+   # configuration file, let's clean the configuration
+   # embedded within the package
+-  file { $::horizon::params::httpd_config_file:
++  file { $horizon::params::httpd_config_file:
+     ensure  => present,
+     content => "#
+ # This file has been cleaned by Puppet.
+@@ -199,7 +199,7 @@ class horizon::wsgi::apache (
+     case $root_url_real {
+       '': {
+         $ensure_ssl_vhost = 'absent'
+-        $redirect_match = "^${::horizon::params::root_url}\$"
++        $redirect_match = "^${horizon::params::root_url}\$"
+         $redirect_url   = '/'
+       }
+       default: {
+@@ -216,10 +216,10 @@ class horizon::wsgi::apache (
+ 
+   Anchor['horizon::install::end'] -> Package['httpd']
+ 
+-  $unix_user  = $::horizon::params::wsgi_user
+-  $unix_group = $::horizon::params::wsgi_group
++  $unix_user  = $horizon::params::wsgi_user
++  $unix_group = $horizon::params::wsgi_group
+ 
+-  file { $::horizon::params::logdir:
++  file { $horizon::params::logdir:
+     ensure  => directory,
+     owner   => $unix_user,
+     group   => $unix_group,
+@@ -228,13 +228,13 @@ class horizon::wsgi::apache (
+     require => Anchor['horizon::config::begin'],
+   }
+ 
+-  file { "${::horizon::params::logdir}/horizon.log":
++  file { "${horizon::params::logdir}/horizon.log":
+     ensure  => file,
+     owner   => $unix_user,
+     group   => $unix_group,
+     before  => Service['httpd'],
+     mode    => '0640',
+-    require => File[$::horizon::params::logdir],
++    require => File[$horizon::params::logdir],
+   }
+ 
+   $script_url = $root_url_real ? {
+@@ -271,10 +271,10 @@ class horizon::wsgi::apache (
+     ssl_key                => $ssl_key,
+     ssl_ca                 => $ssl_ca,
+     ssl_verify_client      => $ssl_verify_client,
+-    wsgi_script_aliases    => Hash([$script_url, $::horizon::params::django_wsgi]),
+-    wsgi_import_script     => $::horizon::params::django_wsgi,
+-    wsgi_process_group     => $::horizon::params::wsgi_group,
+-    wsgi_application_group => $::horizon::params::wsgi_application_group,
++    wsgi_script_aliases    => Hash([$script_url, $horizon::params::django_wsgi]),
++    wsgi_import_script     => $horizon::params::django_wsgi,
++    wsgi_process_group     => $horizon::params::wsgi_group,
++    wsgi_application_group => $horizon::params::wsgi_application_group,
+     redirectmatch_status   => $redirect_type,
+     options                => ['-Indexes', '+FollowSymLinks','+MultiViews'],
+   }
+@@ -293,7 +293,7 @@ class horizon::wsgi::apache (
+     $default_vhost_conf,
+     $extra_params,
+     {
+-      wsgi_daemon_process => Hash([$::horizon::params::wsgi_group, $wsgi_daemon_process_options])
++      wsgi_daemon_process => Hash([$horizon::params::wsgi_group, $wsgi_daemon_process_options])
+     },
+     {
+       redirectmatch_regexp => $redirectmatch_regexp_real,
+-- 
+2.43.0
+
