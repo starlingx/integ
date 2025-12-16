@@ -43,7 +43,7 @@ docker-registry
 
 #dpdk
 librte-bus-pci25
-librte-bus-vdev215
+librte-bus-vdev25
 librte-cryptodev25
 librte-eal25
 librte-ethdev25
