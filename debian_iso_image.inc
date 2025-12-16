@@ -66,6 +66,9 @@ containerd
 #crictl
 crictl
 
+#crane
+crane
+
 #docker
 docker.io
 

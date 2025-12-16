@@ -59,6 +59,7 @@ kubernetes/chartmuseum
 kubernetes/cni/bond-cni
 kubernetes/cni/plugins
 kubernetes/containerd
+kubernetes/crane
 kubernetes/crictl
 kubernetes/docker/docker.io
 kubernetes/docker/docker-distribution
