@@ -1,0 +1,41 @@
+The upstream commit 1e422ed of keyring moves non-preferred keyring
+backends to keyrings.alt package, so porting chmod_keyringlock2.patch
+to package keyrings.alt
+
+Index: keyring-5.3/keyrings/alt/file_base.py
+===================================================================
+--- keyring-5.3.orig/keyrings/alt/file_base.py
++++ keyring-5.3/keyrings/alt/file_base.py
+@@ -97,6 +97,9 @@ class Keyring(FileBacked, KeyringBackend
+         service = escape_for_ini(service)
+         username = escape_for_ini(username)
+ 
++        # ensure the file exists
++        self._ensure_file_path()
++
+         # load the passwords from the file
+         config = configparser.RawConfigParser()
+         if os.path.exists(self.file_path):
+@@ -191,12 +194,16 @@ class Keyring(FileBacked, KeyringBackend
+             user_read_write = 0o644
+             os.chmod(self.file_path, user_read_write)
+         if not os.path.isfile(lockdir + "/" + lockfile):
+-             import stat
+-             with open(lockdir + "/" + lockfile, 'w'):
+-                 pass
+-             # must have the lock file with the correct group permissisions g+rw
+-             os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
+-             os.chown(lockdir + "/" + lockfile,-1,345)
++            with open(lockdir + "/" + lockfile, 'w'):
++                pass
++        if os.path.isfile(lockdir + "/" + lockfile):
++            import stat
++            import grp
++            if oct(stat.S_IMODE(os.stat(lockdir + "/" + lockfile).st_mode)) != '0o770':
++                # Must have the lock file with the correct group and permissisions g+rw
++                os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
++                groupinfo = grp.getgrnam('sys_protected')
++                os.chown(lockdir + "/" + lockfile,-1,groupinfo.gr_gid)
+ 
+ 
+     def delete_password(self, service, username):

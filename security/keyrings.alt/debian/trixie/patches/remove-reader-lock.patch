@@ -1,0 +1,136 @@
+The upstream commit 1e422ed of keyring moves non-preferred keyring
+backends to keyrings.alt package, so porting remove-reader-lock.patch
+to package keyrings.alt
+
+---
+ keyring/backends/file.py |   85 ++++++++++++++++++++++-------------------------
+ 1 file changed, 41 insertions(+), 44 deletions(-)
+
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -14,6 +14,7 @@ from keyring.backend import KeyringBacke
+ from keyring.util import platform_, properties
+ from .escape import escape as escape_for_ini
+ from oslo_concurrency import lockutils
++from tempfile import mkstemp
+ 
+ lockfile = "keyringlock"
+ 
+@@ -144,9 +145,9 @@ class Keyring(FileBacked, KeyringBackend
+         # ensure the file exists
+         self._ensure_file_path()
+ 
+-        lockdir = os.path.dirname(self.file_path)
++        keyringdir = os.path.dirname(self.file_path)
+ 
+-        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
++        with lockutils.lock(lockfile, external=True, lock_path=keyringdir):
+ 
+             config = None
+             try:
+@@ -165,15 +166,20 @@ class Keyring(FileBacked, KeyringBackend
+                 config.add_section(service)
+             config.set(service, key, value)
+ 
+-            # Save the keyring back to the file
+-            storage_root = os.path.dirname(self.file_path)
+-            tmpfile = "tmpfile.%s" % os.getpid()
+-            with open(storage_root + "/" + tmpfile, 'w') as config_file:
+-                config.write(config_file)
+-            # copy will overwrite but move will not
+-            shutil.copy(storage_root + "/" + tmpfile,self.file_path)
+-            # wipe out tmpfile here
+-            os.remove(storage_root + "/" + tmpfile)
++            # remove any residual temporary files here
++            try:
++                for tmpfile in glob.glob("%s/tmp*" % keyringdir):
++                    os.remove(tmpfile)
++            except:
++                logging.warning("_check_file: tmpfile removal failed")
++
++            # Write the keyring to a temp file, then move the new file
++            # to avoid overwriting the existing inode
++            (fd, fname) = mkstemp(dir=keyringdir)
++            with os.fdopen(fd, "w") as config_file:
++                 config.write(config_file)
++            os.chmod(fname, os.stat(self.file_path).st_mode)
++            shutil.move(fname, self.file_path)
+ 
+ 
+ 
+@@ -211,8 +217,8 @@ class Keyring(FileBacked, KeyringBackend
+         service = escape_for_ini(service)
+         username = escape_for_ini(username)
+ 
+-        lockdir = os.path.dirname(self.file_path)
+-        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
++        keyringdir = os.path.dirname(self.file_path)
++        with lockutils.lock(lockfile, external=True, lock_path=keyringdir):
+             config = configparser.RawConfigParser()
+             if os.path.exists(self.file_path):
+                 config.read(self.file_path)
+@@ -221,13 +227,19 @@ class Keyring(FileBacked, KeyringBackend
+                     raise PasswordDeleteError("Password not found")
+             except configparser.NoSectionError:
+                 raise PasswordDeleteError("Password not found")
+-            # update the file
+-            storage_root = os.path.dirname(self.file_path)
+-            tmpfile = "tmpfile.%s" % os.getpid()
+-            with open(storage_root + "/" + tmpfile, 'w') as config_file:
++
++            # remove any residual temporary files here
++            try:
++                for tmpfile in glob.glob("%s/tmp*" % keyringdir):
++                    os.remove(tmpfile)
++            except:
++                logging.warning("_check_file: tmpfile removal failed")
++
++            # Write the keyring to a temp file, then move the new file
++            # to avoid overwriting the existing inode
++            (fd, fname) = mkstemp(dir=keyringdir)
++            with os.fdopen(fd, "w") as config_file:
+                 config.write(config_file)
+-            # copy will overwrite but move will not
+-            shutil.copy(storage_root + "/" + tmpfile,self.file_path)
+-            # wipe out tmpfile
+-            os.remove(storage_root + "/" + tmpfile)
++            os.chmod(fname, os.stat(self.file_path).st_mode)
++            shutil.move(fname, self.file_path)
+ 
+--- a/keyrings/alt/file.py
++++ b/keyrings/alt/file.py
+@@ -120,26 +120,14 @@ class EncryptedKeyring(Encrypted, Keyrin
+             return False
+         self._migrate()
+ 
+-        lockdir = os.path.dirname(self.file_path)
+-        # lock access to the file_path here, make sure it's not being written
+-        # to while while we're checking for keyring-setting
+-        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
+-            config = configparser.RawConfigParser()
+-            config.read(self.file_path)
+-            try:
+-                config.get(
+-                    escape_for_ini('keyring-setting'), escape_for_ini('password reference'),
+-                )
+-            except (configparser.NoSectionError, configparser.NoOptionError):
+-                return False
+-
+-            # remove any residual temporary files here
+-            try:
+-                for tmpfile in glob.glob(os.path.dirname(self.file_path) + "/" + "tmpfile.*"):
+-                    os.remove(tmpfile)
+-            except:
+-                logging.warning("_check_file: tmpfile removal failed")
+-
++        config = configparser.RawConfigParser()
++        config.read(self.file_path)
++        try:
++            config.get(
++                escape_for_ini('keyring-setting'), escape_for_ini('password reference'),
++            )
++        except (configparser.NoSectionError, configparser.NoOptionError):
++            return False
+ 
+         try:
+             self._check_scheme(config)

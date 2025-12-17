@@ -1,0 +1,14 @@
+---
+debver: 15+1533136590.3beb971
+debname: shim
+dl_path:
+  name: shim-debian-15+1533136590.3beb971.tar.bz2
+  url: "https://salsa.debian.org/efi-team/shim/-/archive/debian/\
+        15+1533136590.3beb971-10/shim-debian-15+1533136590.3beb971-10.tar.bz2"
+  md5sum: eb6db0c9b8b4257d77ed07a81cd3a7b8
+  sha256sum: 06341378fc89836ee3355ff9ade263105a9ab445de8b065c0989eec8c55769c8
+src_files:
+  - ${MY_REPO}/public-keys/tis-shim.der
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

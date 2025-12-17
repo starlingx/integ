@@ -1,0 +1,15 @@
+The source patch use_new_lock.patch import python module
+oslo_concurrency, so add python3-oslo.concurrency to Depends.
+
+Yue Tao <yue.tao@windriver.com>
+
+--- a/debian/control
++++ b/debian/control
+@@ -24,6 +24,7 @@ Package: python3-keyrings.alt
+ Architecture: all
+ Depends: python3-keyring,
+          python3-pycryptodome,
++         python3-oslo.concurrency,
+          ${misc:Depends},
+          ${python3:Depends}
+ Description: alternate backend implementations for python3-keyring

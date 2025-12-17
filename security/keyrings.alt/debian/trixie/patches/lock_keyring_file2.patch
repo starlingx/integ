@@ -1,0 +1,52 @@
+The upstream commit 1e422ed of keyring moves non-preferred keyring
+backends to keyrings.alt package, so porting lock_keyring_file2.patch
+to package keyrings.alt
+
+Index: keyring-5.3/keyrings/alt/file_base.py
+===================================================================
+--- keyring-5.3.orig/keyrings/alt/file_base.py
++++ keyring-5.3/keyrings/alt/file_base.py
+@@ -135,10 +135,6 @@ class Keyring(FileBacked, KeyringBackend
+         # ensure the file exists
+         self._ensure_file_path()
+ 
+-        # load the keyring from the disk
+-        config = configparser.RawConfigParser()
+-        config.read(self.file_path)
+-
+         # obtain lock for the keyring file
+         lock = ''
+         i = 60
+@@ -150,18 +146,23 @@ class Keyring(FileBacked, KeyringBackend
+                 time.sleep(0.500)
+                 i=i-1
+ 
+-        service = escape_for_ini(service)
+-        key = escape_for_ini(key)
+-
+-        # update the keyring with the password
+-        if not config.has_section(service):
+-            config.add_section(service)
+-        config.set(service, key, value)
+-
+         if i:
+-            # save the keyring back to the file
++            # Load the keyring from the disk
++            config = configparser.RawConfigParser()
++            config.read(self.file_path)
++
++            service = escape_for_ini(service)
++            key = escape_for_ini(key)
++
++            # Update the keyring with the password
++            if not config.has_section(service):
++                config.add_section(service)
++            config.set(service, key, value)
++
++            # Save the keyring back to the file
+             with open(self.file_path, 'w') as config_file:
+                 config.write(config_file)
++
+             lock.close()
+             os.remove('/tmp/.keyringlock')
+ 

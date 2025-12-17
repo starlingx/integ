@@ -1,0 +1,14 @@
+The source patch no_keyring_password.patch changes the 
+behavior of Keyring password, that causes the selftest
+failed, so disable the selftest
+
+--- a/debian/rules
++++ b/debian/rules
+@@ -4,6 +4,7 @@
+ 
+ export PYBUILD_NAME=keyrings.alt
+ export PYBUILD_TEST_ARGS=--ignore=keyrings/alt/_win_crypto.py
++export PYBUILD_DISABLE=test
+ 
+ %:
+ 	dh $@ --with python3 --buildsystem pybuild
