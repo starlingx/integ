@@ -36,6 +36,7 @@ config/puppet-modules/puppetlabs-stdlib
 config/puppet-modules/puppet-hash2stuff
 config/puppet-modules/puppet-lvm
 config/puppet-modules/puppet-memcached
+config/puppet-modules/puppet-module-asciiduck-sssd
 config/puppet-modules/puppet-network
 config/puppet-modules/puppet-puppi
 config/puppet-modules/puppet-rabbitmq
@@ -63,6 +64,7 @@ kubernetes/docker/python-docker
 kubernetes/etcd
 kubernetes/flux2
 kubernetes/flux2-charts
+kubernetes/flux2-charts-legacy
 kubernetes/helm
 kubernetes/k8s-cni-cache-cleanup
 kubernetes/k8s-pod-recovery
@@ -76,6 +78,8 @@ kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
 kubernetes/plugins/kubectl-cert-manager
 kubernetes/plugins/kubelogin
+kubernetes/python3-kubernetes/python3-durationpy
+kubernetes/python3-kubernetes/python3-kubernetes
 kubernetes/runc
 ldap/ldapscripts
 ldap/openldap
