@@ -1,10 +1,10 @@
 ---
-debver: 22.2.0-1
+debver: 25.6.0-3
 deb_name: python-keyring
 dl_path:
-  name: python-keyring-debian-22.2.0-1.tar.gz
-  url: https://salsa.debian.org/python-team/packages/python-keyring/-/archive/debian/22.2.0-1/python-keyring-debian-22.2.0-1.tar.gz
-  md5sum: b75d88573226d73cc9dbefa0128bb042
+  name: python-keyring-debian-25.6.0-3.tar.gz
+  url: https://salsa.debian.org/python-team/packages/python-keyring/-/archive/debian/25.6.0-3/python-keyring-debian-25.6.0-3.tar.gz
+  md5sum: 5b653299cfd32aa5a718b6e834e55ca0
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
