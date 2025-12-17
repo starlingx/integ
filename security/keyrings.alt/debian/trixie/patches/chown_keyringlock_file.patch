@@ -1,12 +1,22 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so porting chown_keyringlock_file.patch
-to package keyrings.alt
+From 2f5a066d57fb94b65cae341f5b05fa3f27d5f89a Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Fri, 12 Sep 2025 20:42:45 +0000
+Subject: [PATCH 07/10] Change the ownership of the keyring lock
 
-Index: keyring-5.3/keyrings/alt/file_base.py
-===================================================================
---- keyring-5.3.orig/keyrings/alt/file_base.py
-+++ keyring-5.3/keyrings/alt/file_base.py
-@@ -196,6 +196,7 @@ class Keyring(FileBacked, KeyringBackend
+A pre-starlingx change to set group ownership of the keyring lock file
+to 345 (sys_protected), making it readable for users with that group
+permission.
+
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+---
+ keyrings/alt/file_base.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index 7217d73..f03b940 100644
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -192,6 +192,7 @@ class Keyring(FileBacked, KeyringBackend):
                   pass
               # must have the lock file with the correct group permissisions g+rw
               os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
@@ -14,3 +24,6 @@ Index: keyring-5.3/keyrings/alt/file_base.py
  
  
      def delete_password(self, service, username):
+-- 
+2.34.1
+

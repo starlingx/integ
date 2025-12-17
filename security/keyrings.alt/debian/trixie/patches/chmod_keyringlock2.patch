@@ -1,12 +1,21 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so porting chmod_keyringlock2.patch
-to package keyrings.alt
+From d18b3c60a594882a020ed5e81295fde6d2aa02c8 Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Fri, 12 Sep 2025 21:18:42 +0000
+Subject: [PATCH 08/10] Apply ownership of keyring file on a patched system
 
-Index: keyring-5.3/keyrings/alt/file_base.py
-===================================================================
---- keyring-5.3.orig/keyrings/alt/file_base.py
-+++ keyring-5.3/keyrings/alt/file_base.py
-@@ -97,6 +97,9 @@ class Keyring(FileBacked, KeyringBackend
+A pre-starlingx change to the previous patch to ensure the code takes
+effect when applied via patch on an installed system.
+
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+---
+ keyrings/alt/file_base.py | 19 +++++++++++++------
+ 1 file changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index f03b940..df61193 100644
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -97,6 +97,9 @@ class Keyring(FileBacked, KeyringBackend):
          service = escape_for_ini(service)
          username = escape_for_ini(username)
  
@@ -16,7 +25,7 @@ Index: keyring-5.3/keyrings/alt/file_base.py
          # load the passwords from the file
          config = configparser.RawConfigParser()
          if os.path.exists(self.file_path):
-@@ -191,12 +194,16 @@ class Keyring(FileBacked, KeyringBackend
+@@ -187,12 +190,16 @@ class Keyring(FileBacked, KeyringBackend):
              user_read_write = 0o644
              os.chmod(self.file_path, user_read_write)
          if not os.path.isfile(lockdir + "/" + lockfile):
@@ -35,7 +44,10 @@ Index: keyring-5.3/keyrings/alt/file_base.py
 +                # Must have the lock file with the correct group and permissisions g+rw
 +                os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
 +                groupinfo = grp.getgrnam('sys_protected')
-+                os.chown(lockdir + "/" + lockfile,-1,groupinfo.gr_gid)
++                os.chown(lockdir + "/" + lockfile, -1, groupinfo.gr_gid)
  
  
      def delete_password(self, service, username):
+-- 
+2.34.1
+

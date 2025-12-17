@@ -1,22 +1,28 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so porting lock_keyring_file.patch
-to package keyrings.alt
+From fb12e7697fa8b2c96e47739b3c9b7efd8e79f0da Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Tue, 2 Sep 2025 15:24:51 -0400
+Subject: [PATCH 02/10] Introduce lock when writting to keyring
 
-Index: keyring-5.3/keyrings/alt/file_base.py
-===================================================================
---- keyring-5.3.orig/keyrings/alt/file_base.py
-+++ keyring-5.3/keyrings/alt/file_base.py
-@@ -2,6 +2,7 @@ from __future__ import with_statement
- 
- import os
+Introduce a locking file when writing to keyring storage file.
+---
+ keyrings/alt/file_base.py | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index 6fcd005..5c647bb 100644
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -1,6 +1,7 @@
  import abc
-+import time
  import configparser
- from base64 import encodebytes, decodebytes
+ import os
++import time
+ from base64 import decodebytes, encodebytes
  
-@@ -138,6 +139,17 @@ class Keyring(FileBacked, KeyringBackend
+ from jaraco.classes import properties
+@@ -138,6 +139,17 @@ class Keyring(FileBacked, KeyringBackend):
          config = configparser.RawConfigParser()
-         config.read(self.file_path)
+         config.read(self.file_path, encoding='utf-8')
  
 +        # obtain lock for the keyring file
 +        lock = ''
@@ -32,20 +38,22 @@ Index: keyring-5.3/keyrings/alt/file_base.py
          service = escape_for_ini(service)
          key = escape_for_ini(key)
  
-@@ -146,9 +158,13 @@ class Keyring(FileBacked, KeyringBackend
+@@ -146,9 +158,12 @@ class Keyring(FileBacked, KeyringBackend):
              config.add_section(service)
          config.set(service, key, value)
  
 -        # save the keyring back to the file
--        with open(self.file_path, 'w') as config_file:
+-        with open(self.file_path, 'w', encoding='utf-8') as config_file:
 -            config.write(config_file)
 +        if i:
 +            # save the keyring back to the file
-+            with open(self.file_path, 'w') as config_file:
++            with open(self.file_path, 'w', encoding='utf-8') as config_file:
 +                config.write(config_file)
 +            lock.close()
 +            os.remove('/tmp/.keyringlock')
-+
  
      def _ensure_file_path(self):
          """
+-- 
+2.34.1
+
