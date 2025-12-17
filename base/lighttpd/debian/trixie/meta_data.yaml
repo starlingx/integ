@@ -1,11 +1,11 @@
 ---
-debver: 1.4.55-1~bpo10+1
+debver: 1.4.79-2
 debname: lighttpd
 dl_path:
-  name: lighttpd-debian-1.4.55-1_bpo10+1.tar.gz
-  url: https://salsa.debian.org/debian/lighttpd/-/archive/debian/1.4.55-1_bpo10+1/lighttpd-debian-1.4.55-1_bpo10+1.tar.gz
-  md5sum: 453d7710982ee44fb5ce41673c6bd0df
-  sha256sum: 34326941ba0f7c6ff6f2c72890e2a568d0924c11c2c3f3d4174c82a484be81d3
+  name: lighttpd-debian-1.4.79-2.tar.gz
+  url: https://salsa.debian.org/debian/lighttpd/-/archive/debian/1.4.79-2/lighttpd-debian-1.4.79-2.tar.gz
+  md5sum: 67d9a908a324980f04418b4d2500102a
+  sha256sum: c286fc539fdd89e21e9394d21d4d942a301f4df8b185c2710ef5ca8148eb76aa
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT:

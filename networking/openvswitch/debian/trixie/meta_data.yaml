@@ -1,7 +1,7 @@
 ---
 debname: openvswitch
-debver: 2.15.0+ds1-2+deb11u5
-archive: https://snapshot.debian.org/archive/debian-security/20240320T004512Z/pool/updates/main/o/openvswitch/
+debver: 3.5.0-1
+archive: https://snapshot.debian.org/archive/debian/20250630T203427Z/pool/main/o/openvswitch/
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
