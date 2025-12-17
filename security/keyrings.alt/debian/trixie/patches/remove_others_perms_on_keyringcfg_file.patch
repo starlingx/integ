@@ -1,0 +1,19 @@
+The upstream commit 1e422ed of keyring moves non-preferred keyring
+backends to keyrings.alt package, so porting remove_others_perms_on_keyringcfg_file.patch
+to package keyrings.alt
+
+---
+ keyring/backends/file.py |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -197,7 +197,7 @@ class Keyring(FileBacked, KeyringBackend
+             # create the file without group/world permissions
+             with open(self.file_path, 'w'):
+                 pass
+-            user_read_write = 0o644
++            user_read_write = 0o640
+             os.chmod(self.file_path, user_read_write)
+         if not os.path.isfile(lockdir + "/" + lockfile):
+             with open(lockdir + "/" + lockfile, 'w'):

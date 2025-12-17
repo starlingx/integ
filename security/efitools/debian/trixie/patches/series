@@ -1,0 +1,5 @@
+0001-LockDown-add-system-warm-reset.patch
+0002-LockDown-show-the-error-message-with-3-sec-timeout.patch
+0003-Makefile-do-not-build-signed-efi-image.patch
+0004-LockDown-disable-the-entrance-into-BIOS-setup.patch
+0005-do-not-remove-ms-uefi.esl-ms-kek.esl.patch
