@@ -1,0 +1,182 @@
+From 6cb1f2dfc51e0b52de81eaabfd49c168beca87b6 Mon Sep 17 00:00:00 2001
+From: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+Date: Wed, 17 Dec 2025 15:11:23 -0400
+Subject: [PATCH] ts2phc: port holdover support to v3.1.1-4
+
+This change ports the holdover support for ts2phc from upstream(4.4)
+commit 5ce45bd1a936 ("ts2phc: Add holdover support") to the 3.1.1.4
+codebase.
+
+The holdover mechanism allows ts2phc to continue synchronizing the
+target clock for a configurable interval after loss. This is useful in
+scenarios such as temporary GNSS signal loss.
+
+The implementation adds a ts2phc.holdover configuration option and
+enforces the same behavior and semantics from the original
+upstream implementation.
+
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+---
+ config.c                |  1 +
+ ts2phc.8                |  9 ++++++++
+ ts2phc_master.c         |  3 +++
+ ts2phc_master_private.h |  3 +++
+ ts2phc_slave.c          | 46 ++++++++++++++++++++++++++++++++++++-----
+ 5 files changed, 57 insertions(+), 5 deletions(-)
+
+diff --git a/config.c b/config.c
+index f3e5704..b082bae 100644
+--- a/config.c
++++ b/config.c
+@@ -325,6 +325,7 @@ struct config_item config_tab[] = {
+ 	PORT_ITEM_INT("ts2phc.channel", 0, 0, INT_MAX),
+ 	PORT_ITEM_INT("ts2phc.extts_correction", 0, INT_MIN, INT_MAX),
+ 	PORT_ITEM_ENU("ts2phc.extts_polarity", PTP_RISING_EDGE, extts_polarity_enu),
++	PORT_ITEM_INT("ts2phc.holdover", 0, 0, INT_MAX),
+ 	PORT_ITEM_INT("ts2phc.master", 0, 0, 1),
+ 	PORT_ITEM_INT("ts2phc.nmea_baudrate", 9600, 300, INT_MAX),
+ 	GLOB_ITEM_STR("ts2phc.nmea_remote_host", ""),
+diff --git a/ts2phc.8 b/ts2phc.8
+index af25b42..2ac6c1b 100644
+--- a/ts2phc.8
++++ b/ts2phc.8
+@@ -139,6 +139,15 @@ The tag which is added to all messages printed to the standard output
+ or system log.  The default is an empty string (which cannot be set in
+ the configuration file as the option requires an argument).
+ .TP
++.B ts2phc.holdover
++The holdover interval, specified in seconds. When the ToD information stops
++working (e.g. GNSS receiver lost its fix), ts2phc is allowed for the specified
++interval to continue synchronizing the target clock as long as the servo is in
++the SERVO_LOCKED_STABLE state. The servo state needs be enabled by the
++servo_num_offset_values option. The holdover is not supported with the
++-a option and when ts2phc.extts_polarity is set to both.
++The default is 0 (disabled).
++.TP
+ .B step_threshold
+ The maximum offset, specified in seconds, that the servo will correct
+ by changing the clock frequency instead of stepping the clock. When
+diff --git a/ts2phc_master.c b/ts2phc_master.c
+index 9283580..28e90ef 100644
+--- a/ts2phc_master.c
++++ b/ts2phc_master.c
+@@ -24,6 +24,9 @@ struct ts2phc_master *ts2phc_master_create(struct config *cfg, const char *dev,
+ 		master = ts2phc_phc_master_create(cfg, dev);
+ 		break;
+ 	}
++	master->holdover_length = config_get_int(cfg, NULL, "ts2phc.holdover");
++	master->holdover_start = 0;
++	master->holdover = 0;
+ 	return master;
+ }
+ 
+diff --git a/ts2phc_master_private.h b/ts2phc_master_private.h
+index 463a1f0..599f5ad 100644
+--- a/ts2phc_master_private.h
++++ b/ts2phc_master_private.h
+@@ -13,6 +13,9 @@
+ #include "ts2phc_master.h"
+ 
+ struct ts2phc_master {
++	int holdover;
++	int holdover_length;
++	time_t holdover_start;
+ 	void (*destroy)(struct ts2phc_master *ts2phc_master);
+ 	int (*getppstime)(struct ts2phc_master *master, struct timespec *ts);
+ };
+diff --git a/ts2phc_slave.c b/ts2phc_slave.c
+index ab3f13b..1f90fb9 100644
+--- a/ts2phc_slave.c
++++ b/ts2phc_slave.c
+@@ -21,7 +21,7 @@
+ #include "phc.h"
+ #include "print.h"
+ #include "servo.h"
+-#include "ts2phc_master.h"
++#include "ts2phc_master_private.h"
+ #include "ts2phc_slave.h"
+ #include "util.h"
+ 
+@@ -254,13 +254,27 @@ static void ts2phc_slave_destroy(struct ts2phc_slave *slave)
+ 	free(slave);
+ }
+ 
+-static int ts2phc_slave_event(struct ts2phc_slave *slave,
++static int ts2phc_slave_event(struct ts2phc_master *master,
++			      struct ts2phc_slave *slave,
+ 			      struct ts2phc_source_timestamp source_ts)
+ {
+ 	enum extts_result result;
+ 	uint64_t extts_ts;
+ 	int64_t offset;
+ 	double adj;
++	struct timespec ts;
++
++	if (master->holdover) {
++		if ((slave->state == SERVO_LOCKED_STABLE)) {
++			if (!clock_gettime(slave->clk, &ts)) {
++				if (ts.tv_nsec > NS_PER_SEC / 2)
++					ts.tv_sec++;
++				ts.tv_nsec = 0;
++				source_ts.ts = ts;
++				source_ts.valid = 1;
++			}
++		}
++	}
+ 
+ 	result = ts2phc_slave_offset(slave, source_ts, &offset, &extts_ts);
+ 	switch (result) {
+@@ -297,8 +311,15 @@ static int ts2phc_slave_event(struct ts2phc_slave *slave,
+ 	adj = servo_sample(slave->servo, offset, extts_ts,
+ 			   SAMPLE_WEIGHT, &slave->state);
+ 
+-	pr_debug("%s master offset %10" PRId64 " s%d freq %+7.0f",
+-		 slave->name, offset, slave->state, adj);
++	if (master->holdover && slave->state != SERVO_LOCKED_STABLE) {
++		pr_debug("%s lost holdover lock (offset %10" PRId64 ")",
++			 slave->name, offset);
++		return 0;
++	}
++
++	pr_debug("%s master offset %10" PRId64 " s%d freq %+7.0f%s",
++		 slave->name, offset, slave->state, adj,
++		 master->holdover ? " holdover" : "");
+ 
+ 	switch (slave->state) {
+ 	case SERVO_UNLOCKED:
+@@ -425,6 +446,7 @@ void ts2phc_slave_cleanup(void)
+ int ts2phc_slave_poll(struct ts2phc_master *master)
+ {
+ 	struct ts2phc_source_timestamp source_ts;
++	struct timespec now;
+ 	unsigned int i;
+ 	int cnt, err;
+ 
+@@ -447,9 +469,23 @@ int ts2phc_slave_poll(struct ts2phc_master *master)
+ 	err = ts2phc_master_getppstime(master, &source_ts.ts);
+ 	source_ts.valid = err ? false : true;
+ 
++	if (source_ts.valid) {
++		master->holdover_start = 0;
++		master->holdover = 0;
++	} else {
++		clock_gettime(CLOCK_MONOTONIC, &now);
++		if (!master->holdover_start) {
++			master->holdover = 1;
++			master->holdover_start = now.tv_sec;
++		}
++		if (now.tv_sec >= master->holdover_start + master->holdover_length) {
++			master->holdover = 0;
++		}
++        }
++
+ 	for (i = 0; i < ts2phc_n_slaves; i++) {
+ 		if (polling_array.pfd[i].revents & (POLLIN|POLLPRI)) {
+-			ts2phc_slave_event(polling_array.slave[i], source_ts);
++			ts2phc_slave_event(master, polling_array.slave[i], source_ts);
+ 		}
+ 	}
+ 	return 0;
+-- 
+2.34.1
+
