@@ -351,11 +351,6 @@ python3-keyring
 #python3-nsenter
 python3-nsenter
 
-#python3-setuptools
-#python-setuptools-doc
-python3-pkg-resources
-python3-setuptools
-
 #pynetlink
 pynetlink
 
