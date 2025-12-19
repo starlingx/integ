@@ -98,7 +98,8 @@ ostree/mttyexec
 ostree/ostree
 ostree/ostree-upgrade-mgr
 python/pynetlink
-python/pyoidc
+python/python3-pyjwkest
+python/python3-pyoidc
 python/python-nss
 python/python3-nsenter
 python/python3-zmq

@@ -1,0 +1,10 @@
+---
+debname: pyoidc
+debver: 1.6.1
+dl_path:
+  name: pyoidc-1.6.1.tar.gz
+  url: https://github.com/CZ-NIC/pyoidc/archive/refs/tags/1.6.1.tar.gz
+  sha256sum: f62e44dce989df45eb429d1e7d50c6435b19cceff857c038a36ee68712e697ec
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

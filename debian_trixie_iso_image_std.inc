@@ -354,8 +354,11 @@ python3-nsenter
 #pynetlink
 pynetlink
 
-#pyoidc
-pyoidc
+#python3-pyjwkest
+#python3-pyjwkest
+
+#python3-pyoidc
+#python3-pyoidc
 
 #pyzmq
 python3-zmq
