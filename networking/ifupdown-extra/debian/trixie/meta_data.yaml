@@ -1,7 +1,7 @@
 ---
-debver: 0.32
+debver: 0.34
 debname: ifupdown-extra
-archive: https://snapshot.debian.org/archive/debian/20220519T084715Z/pool/main/i/ifupdown-extra/
+archive: https://snapshot.debian.org/archive/debian/20250630T203427Z/pool/main/i/ifupdown-extra/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
