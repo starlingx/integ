@@ -4,3 +4,4 @@
 0004-Fix-DAD-and-gateway-detection-improve-logs.patch
 0005-Correct-support-for-gateway-checking-in-dual-stack.patch
 0006-Only-generate-lack-of-address-warning-if-method-isn-.patch
+0007-Remove-check-duplicate-ip6-from-if-up.d-installation.patch

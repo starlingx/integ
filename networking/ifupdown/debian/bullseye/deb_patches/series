@@ -2,3 +2,4 @@
 0002-Fix-long-labels-cause-command-to-fail.patch
 0003-filter-out-interface-label-when-setting-MTU.patch
 0004-Check-for-existing-IP-before-adding.patch
+0005-Fix-IPv6-DAD-failure-detection-during-address-assign.patch
