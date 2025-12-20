@@ -27,6 +27,7 @@ import (
     k8siopluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
     "isolcpu_plugin/kubernetes/pkg/kubelet/cm/cpuset"
     "github.com/pkg/errors"
+    "k8s.io/klog/v2"
     "os"
     "strconv"
     "strings"
@@ -68,7 +69,7 @@ func (dp *devicePlugin) Scan(notifier dpapi.Notifier) error {
 }
 
 // GetCPUNode returns the NUMA node of a CPU.
-func (dp *devicePlugin) getCPUNode(cpu int) (int, error) {
+func (dp *devicePlugin) getCPUNode(cpu int) (int64, error) {
     cpustr := strconv.Itoa(cpu)
     cpuPath := "/sys/devices/system/cpu/cpu" + cpustr
     files, err := os.ReadDir(cpuPath)
@@ -84,7 +85,7 @@ func (dp *devicePlugin) getCPUNode(cpu int) (int, error) {
             if err != nil {
                 return -1, errors.Wrap(err, "Can't convert node to int")
             }
-            return node, nil
+            return int64(node), nil
         }
     }
 
@@ -118,7 +119,30 @@ func (dp *devicePlugin) scan() (dpapi.DeviceTree, error) {
                 ContainerPath: devPath,
                 Permissions:   "r",
             })
-            deviceinfo := dpapi.NewDeviceInfo(pluginapi.Healthy, nodes, nil, nil, nil, nil)
+
+            // Map each CPU node with its respective NUMA node.
+            // Upstream code for GetTopologyInfo() does not seem to be sufficient to identify
+            // this NUMA mapping. So use existing logic to get that info and map nodes, their NUMA
+            // node associativity and Health using NewDeviceInfoWithTologyHints() method.
+            topologyInfo := &k8siopluginapi.TopologyInfo{}
+            numaNodeID, err := dp.getCPUNode(cpu)
+            if err != nil {
+                klog.Warningf("Failed to get NUMA node for cpu%d. Proceeding anyways...", cpu)
+            } else {
+                debug.Printf("Numa node identified for cpu%d: node%d", cpu, numaNodeID)
+                numaNode := &k8siopluginapi.NUMANode{ID: numaNodeID}
+                topologyInfo.Nodes = append(topologyInfo.Nodes, numaNode)
+            }
+
+            deviceinfo := dpapi.NewDeviceInfoWithTopologyHints(
+                pluginapi.Healthy,
+                nodes,
+                nil,
+                nil,
+                nil,
+                topologyInfo,
+                nil)
+
             devTree.AddDevice(
                 deviceType,
                 cpustr,
