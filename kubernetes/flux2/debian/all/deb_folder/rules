@@ -4,7 +4,7 @@
 export ROOT = debian/tmp
 export SBINDIR = $(ROOT)/usr/local/bin
 
-export FLUX_VERSION = 2.3.0
+export FLUX_VERSION = 2.7.5
 export FLUX_PKG = flux_$(FLUX_VERSION)_linux_amd64.tar.gz
 
 %:
