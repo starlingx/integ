@@ -1,0 +1,179 @@
+From a75f7804df792c6c1912ca41b77a439740d7310e Mon Sep 17 00:00:00 2001
+From: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+Date: Fri, 19 Dec 2025 16:13:26 -0300
+Subject: [PATCH] Fix IPv6 DAD failure detection during address assignment
+
+The previous DAD check relied on a fixed string match ("dadfailed
+tentative"), which may not be consistently reported by the ip tool.
+
+Update the logic to explicitly check for both "dadfailed" and
+"tentative" flags, making IPv6 duplicate address detection more robust
+and accurate.
+
+Also improve the error message to clearly indicate an IPv6 DAD failure
+and the affected interface and address.
+
+Signed-off-by: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+---
+ settle-dad.sh     |  4 ++--
+ tests/linux/up.16 |  4 ++--
+ tests/linux/up.3  | 16 ++++++++--------
+ tests/linux/up.7  |  8 ++++----
+ 4 files changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/settle-dad.sh b/settle-dad.sh
+index 4cdbc8e..cebd3ea 100644
+--- a/settle-dad.sh
++++ b/settle-dad.sh
+@@ -21,8 +21,8 @@ for attempt in $(seq 1 $attempts); do
+ 			attempt=0 # This might have been our last attempt, but successful
+ 			break
+ 		fi
+-		if [[ "$tentative" =~ "dadfailed tentative" ]] ; then
+-			echo "Failed"
++		if [[ "$tentative" =~ dadfailed && "$tentative" =~ tentative ]]; then
++			echo "IPv6 DAD error: detected duplicate address ${IF_ADDRESS} on interface ${real_iface}"
+ 			exit 1
+ 		fi
+ 	fi
+diff --git a/tests/linux/up.16 b/tests/linux/up.16
+index 5b76a9b..e4c473a 100644
+--- a/tests/linux/up.16
++++ b/tests/linux/up.16
+@@ -27,7 +27,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth1.autoconf=0
+-if [ "$(cat /sys/class/net/eth1/mtu)" -lt 1492 ]; then ip link set dev eth1 mtu 1492; else sysctl -q -e -w net.ipv6.conf.eth1.mtu=1492; fi
++intf=$(echo "eth1"|/usr/bin/awk -F ':' '{print $1}');if [ "$(cat /sys/class/net/${intf}/mtu)" -lt 1492 ]; then ip link set dev eth1 mtu 1492; else sysctl -q -e -w net.ipv6.conf.eth1.mtu=1492; fi
+ ip link set dev eth1 address 12:34:ff:fe:0a:bc up
+ ip -6 addr add 3ffe:ffff:120::fffe:1/64  dev eth1 
+ 
+@@ -45,7 +45,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth2.autoconf=0
+-if [ "$(cat /sys/class/net/eth2/mtu)" -lt 1492 ]; then ip link set dev eth2 mtu 1492; else sysctl -q -e -w net.ipv6.conf.eth2.mtu=1492; fi
++intf=$(echo "eth2"|/usr/bin/awk -F ':' '{print $1}');if [ "$(cat /sys/class/net/${intf}/mtu)" -lt 1492 ]; then ip link set dev eth2 mtu 1492; else sysctl -q -e -w net.ipv6.conf.eth2.mtu=1492; fi
+ ip link set dev eth2 address 12:34:ff:fe:0a:bc up
+ ip -6 addr add 3ffe:ffff:120::fffe:1/64  dev eth2 
+ 
+diff --git a/tests/linux/up.3 b/tests/linux/up.3
+index 7dca6a1..b42aaf8 100644
+--- a/tests/linux/up.3
++++ b/tests/linux/up.3
+@@ -15,7 +15,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+ 
+@@ -26,7 +26,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::2/64  dev eth0  nodad
+ 
+@@ -37,7 +37,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::3/64  dev eth0  nodad
+ 
+@@ -48,7 +48,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::4  dev eth0  nodad
+ 
+@@ -59,7 +59,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::5/128  dev eth0  nodad
+ 
+@@ -70,7 +70,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth0  up
+ ip -6 addr add 64  dev eth0  nodad
+ 
+@@ -86,7 +86,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ sysctl -q -e -w net.ipv6.conf.eth1.accept_ra=0
+ sysctl -q -e -w net.ipv6.conf.eth1.autoconf=0
+-
++intf=$(echo "eth1"|/usr/bin/awk -F ':' '{print $1}');
+ ip addr flush dev eth1 mngtmpaddr
+ ip link set dev eth1  up
+ ip -6 addr add 3ffe:ffff:100:f102::1/64  dev eth1  nodad
+@@ -98,7 +98,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ sysctl -q -e -w net.ipv6.conf.eth1.accept_ra=1
+ sysctl -q -e -w net.ipv6.conf.eth1.autoconf=0
+-
++intf=$(echo "eth1"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth1  up
+ ip -6 addr add 3ffe:ffff:100:f102::6/64  dev eth1  nodad
+  ip -6 route replace default via 3ffe:ffff:100:f102::fff  dev eth1 onlink 
+diff --git a/tests/linux/up.7 b/tests/linux/up.7
+index 0075498..4d48a9b 100644
+--- a/tests/linux/up.7
++++ b/tests/linux/up.7
+@@ -15,7 +15,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ sysctl -q -e -w net.ipv6.conf.eth0.use_tempaddr=2
+ sysctl -q -e -w net.ipv6.conf.eth0.accept_ra=0
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip addr flush dev eth0 mngtmpaddr
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+@@ -34,7 +34,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ sysctl -q -e -w net.ipv6.conf.eth0.use_tempaddr=2
+ sysctl -q -e -w net.ipv6.conf.eth0.accept_ra=0
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip addr flush dev eth0 mngtmpaddr
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+@@ -48,7 +48,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ 
+ 
+ sysctl -q -e -w net.ipv6.conf.eth0/1.autoconf=0
+-
++intf=$(echo "eth0.1"|/usr/bin/awk -F ':' '{print $1}');
+ ip link set dev eth0.1  up
+ ip -6 addr add 3ffe:ffff:120:f101::1/64  dev eth0.1  nodad
+ 
+@@ -66,7 +66,7 @@ modprobe -q net-pf-10 > /dev/null 2>&1 || true # ignore failure.
+ sysctl -q -e -w net.ipv6.conf.eth0.use_tempaddr=2
+ sysctl -q -e -w net.ipv6.conf.eth0.accept_ra=0
+ sysctl -q -e -w net.ipv6.conf.eth0.autoconf=0
+-
++intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ ip addr flush dev eth0 mngtmpaddr
+ ip link set dev eth0  up
+ ip -6 addr add 3ffe:ffff:100:f101::1/64  dev eth0  nodad
+-- 
+2.34.1
+

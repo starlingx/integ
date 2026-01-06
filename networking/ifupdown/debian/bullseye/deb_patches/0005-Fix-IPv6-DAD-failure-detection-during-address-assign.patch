@@ -1,0 +1,379 @@
+From 0713bb1437265d3d60046f5d8a3ac4795ae5577d Mon Sep 17 00:00:00 2001
+From: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+Date: Thu, 18 Dec 2025 14:34:17 -0300
+Subject: [PATCH] Fix IPv6 DAD failure detection during address assignment
+
+The previous DAD check relied on a fixed string match ("dadfailed
+tentative"), which may not be consistently reported by the ip tool.
+
+Update the logic to explicitly check for both "dadfailed" and
+"tentative" flags, making IPv6 duplicate address detection more robust
+and accurate.
+
+Also improve the error message to clearly indicate an IPv6 DAD failure
+and the affected interface and address.
+
+Signed-off-by: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+---
+ settle-dad.sh     |  4 ++--
+ tests/linux/up.1  | 28 +++++++++++++++++++++-------
+ tests/linux/up.11 |  4 +++-
+ tests/linux/up.16 | 16 ++++++++++++----
+ tests/linux/up.2  | 24 ++++++++++++++++++------
+ tests/linux/up.3  |  4 +++-
+ tests/linux/up.4  |  4 +++-
+ tests/linux/up.5  |  4 +++-
+ tests/linux/up.6  |  4 +++-
+ tests/linux/up.7  | 16 ++++++++++++----
+ tests/linux/up.8  | 16 ++++++++++++----
+ 11 files changed, 92 insertions(+), 32 deletions(-)
+
+diff --git a/settle-dad.sh b/settle-dad.sh
+index 4cdbc8e..cebd3ea 100644
+--- a/settle-dad.sh
++++ b/settle-dad.sh
+@@ -21,8 +21,8 @@ for attempt in $(seq 1 $attempts); do
+ 			attempt=0 # This might have been our last attempt, but successful
+ 			break
+ 		fi
+-		if [[ "$tentative" =~ "dadfailed tentative" ]] ; then
+-			echo "Failed"
++		if [[ "$tentative" =~ dadfailed && "$tentative" =~ tentative ]]; then
++			echo "IPv6 DAD error: detected duplicate address ${IF_ADDRESS} on interface ${real_iface}"
+ 			exit 1
+ 		fi
+ 	fi
+diff --git a/tests/linux/up.1 b/tests/linux/up.1
+index fccdbcb..0196af5 100644
+--- a/tests/linux/up.1
++++ b/tests/linux/up.1
+@@ -5,43 +5,57 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.252.0.0 broadcast 1.3.255.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1   up ;
++/sbin/ip addr add 1.2.3.4/255.252.0.0 broadcast 1.3.255.255 	  dev eth1 label eth1 ;
++/sbin/ip link set dev eth1   up ;
++
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth2=eth2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.128 broadcast 1.2.3.127 	  dev eth2 label eth2 ;     /sbin/ip link set dev eth2   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.128 broadcast 1.2.3.127 	  dev eth2 label eth2 ;
++/sbin/ip link set dev eth2   up ;
++
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.0 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.0 	  dev eth3 label eth3 ;
++/sbin/ip link set dev eth3   up ;
++
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.252 broadcast 1.2.3.4 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.252 broadcast 1.2.3.4 	  dev eth3 label eth3 ;
++/sbin/ip link set dev eth3   up ;
++
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 255.255.255.255 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 255.255.255.255 	  dev eth3 label eth3 ;
++/sbin/ip link set dev eth3   up ;
++
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 0.0.0.0 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.254 broadcast 0.0.0.0 	  dev eth3 label eth3 ;
++/sbin/ip link set dev eth3   up ;
++
+ true
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.11 b/tests/linux/up.11
+index 46e14b8..6efc423 100644
+--- a/tests/linux/up.11
++++ b/tests/linux/up.11
+@@ -11,6 +11,8 @@ configure lo
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.16 b/tests/linux/up.16
+index f2e4935..1ba685d 100644
+--- a/tests/linux/up.16
++++ b/tests/linux/up.16
+@@ -10,12 +10,16 @@ ifup: configuring interface lo=lo (inet)
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1 mtu 1500 address 12:34:56:89:0a:bc up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1 ;
++/sbin/ip link set dev eth1 mtu 1500 address 12:34:56:89:0a:bc up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth1=eth1 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -31,7 +35,9 @@ intf=$(echo "eth1"|/usr/bin/awk -F ':' '{print $1}');if [ "$(/bin/cat /sys/class
+ 
+ ifup: configuring interface eth2=eth2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth2 label eth2 ;     /sbin/ip link set dev eth2 mtu 1500 address 12:34:56:89:0a:bc up ;
++/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth2 label eth2 ;
++/sbin/ip link set dev eth2 mtu 1500 address 12:34:56:89:0a:bc up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth2=eth2 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -47,6 +53,8 @@ intf=$(echo "eth2"|/usr/bin/awk -F ':' '{print $1}');if [ "$(/bin/cat /sys/class
+ 
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3 mtu 1500 address 12:34:56:89:0a:bc up ; 
++/sbin/ip addr add 1.2.3.5/255.255.255.0 broadcast 1.2.3.255 	  dev eth3 label eth3 ;
++/sbin/ip link set dev eth3 mtu 1500 address 12:34:56:89:0a:bc up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.2 b/tests/linux/up.2
+index 282e57b..09cf31e 100644
+--- a/tests/linux/up.2
++++ b/tests/linux/up.2
+@@ -5,31 +5,43 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.3.4.5/255.255.255.0 broadcast 1.3.4.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1   up ;
++/sbin/ip addr add 1.3.4.5/255.255.255.0 broadcast 1.3.4.255 	  dev eth1 label eth1 ;
++/sbin/ip link set dev eth1   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth2=eth2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.4.5.6/255.255.255.0 broadcast 1.4.5.255 	  dev eth2 label eth2 ;     /sbin/ip link set dev eth2   up ;
++/sbin/ip addr add 1.4.5.6/255.255.255.0 broadcast 1.4.5.255 	  dev eth2 label eth2 ;
++/sbin/ip link set dev eth2   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth3=eth3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.5.6.7/255.255.255.0 broadcast 1.5.6.255 	  dev eth3 label eth3 ;     /sbin/ip link set dev eth3   up ;
++/sbin/ip addr add 1.5.6.7/255.255.255.0 broadcast 1.5.6.255 	  dev eth3 label eth3 ;
++/sbin/ip link set dev eth3   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth4=eth4 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.7.8.9/255.255.255.0 broadcast 1.7.8.255 	  dev eth4 label eth4 ;     /sbin/ip link set dev eth4   up ;
++/sbin/ip addr add 1.7.8.9/255.255.255.0 broadcast 1.7.8.255 	  dev eth4 label eth4 ;
++/sbin/ip link set dev eth4   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth5=eth5 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.8.9.10/255.255.255.0 broadcast 1.8.9.255 	  dev eth5 label eth5 ;     /sbin/ip link set dev eth5   up ;
++/sbin/ip addr add 1.8.9.10/255.255.255.0 broadcast 1.8.9.255 	  dev eth5 label eth5 ;
++/sbin/ip link set dev eth5   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.3 b/tests/linux/up.3
+index 251d8f4..13bb998 100644
+--- a/tests/linux/up.3
++++ b/tests/linux/up.3
+@@ -5,7 +5,9 @@ exit code: 1
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+diff --git a/tests/linux/up.4 b/tests/linux/up.4
+index 7682c73..868b0c3 100644
+--- a/tests/linux/up.4
++++ b/tests/linux/up.4
+@@ -4,7 +4,9 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=work (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.5 b/tests/linux/up.5
+index bcd3de7..5fa4b30 100644
+--- a/tests/linux/up.5
++++ b/tests/linux/up.5
+@@ -5,6 +5,8 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.6 b/tests/linux/up.6
+index bcd3de7..5fa4b30 100644
+--- a/tests/linux/up.6
++++ b/tests/linux/up.6
+@@ -5,6 +5,8 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0  address 00:DE:AD:00:BE:AF up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+diff --git a/tests/linux/up.7 b/tests/linux/up.7
+index f18f144..a35cc79 100644
+--- a/tests/linux/up.7
++++ b/tests/linux/up.7
+@@ -5,7 +5,9 @@ exit code: 0
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -22,7 +24,9 @@ intf=$(echo "eth0"|/usr/bin/awk -F ':' '{print $1}');
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -52,7 +56,9 @@ intf=$(echo "eth0.1"|/usr/bin/awk -F ':' '{print $1}');
+ 
+ ifup: configuring interface eth0=eth0 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;     /sbin/ip link set dev eth0   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth0 label eth0 ;
++/sbin/ip link set dev eth0   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ ifup: configuring interface eth0=eth0 (inet6)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+@@ -70,7 +76,9 @@ if test -d /sys/class/net/eth0 &&     	! ip link show eth0.0201 >/dev/null 2>&1;
+ 
+ ifup: configuring interface eth0.0201=eth0.0201 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 192.168.0.1/255.255.255.128 broadcast 192.168.0.127 	  dev eth0.0201 label eth0.0201 ;     /sbin/ip link set dev eth0.0201   up ;
++/sbin/ip addr add 192.168.0.1/255.255.255.128 broadcast 192.168.0.127 	  dev eth0.0201 label eth0.0201 ;
++/sbin/ip link set dev eth0.0201   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ if test -d /sys/class/net/br0 &&     	! ip link show br0.0201 >/dev/null 2>&1;     then         if test `cat /sys/class/net/br0/type` -eq 32; then             echo 0x0201 > /sys/class/net/br0/create_child;         else             /sbin/ip link set up dev br0;             /sbin/ip link add link br0 name br0.0201 type vlan id 201; 	fi;     fi
+ 
+diff --git a/tests/linux/up.8 b/tests/linux/up.8
+index d9cc9e1..8de6a93 100644
+--- a/tests/linux/up.8
++++ b/tests/linux/up.8
+@@ -5,14 +5,18 @@ exit code: 0
+ 
+ ifup: configuring interface eth1=eth1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1 ;     /sbin/ip link set dev eth1   up ;
++/sbin/ip addr add 1.2.3.4/255.255.255.0 broadcast 1.2.3.255 	  dev eth1 label eth1 ;
++/sbin/ip link set dev eth1   up ;
++
+ echo hi
+ echo hello
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ 
+ ifup: configuring interface eth1:1=eth1:1 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 1.5.3.4/255.255.255.0 broadcast 1.5.3.255 	  dev eth1:1 label eth1:1 ;     /sbin/ip link set dev eth1:1   up ;
++/sbin/ip addr add 1.5.3.4/255.255.255.0 broadcast 1.5.3.255 	  dev eth1:1 label eth1:1 ;
++/sbin/ip link set dev eth1:1   up ;
++
+ echo hihi
+ echo hellolo
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+@@ -20,12 +24,16 @@ if test -d /sys/class/net/eth2 &&     	! ip link show eth2.2 >/dev/null 2>&1;
+ 
+ ifup: configuring interface eth2.2=eth2.2 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 2.3.4.5/255.255.255.0 broadcast 2.3.4.255 	  dev eth2.2 label eth2.2 ;     /sbin/ip link set dev eth2.2   up ;
++/sbin/ip addr add 2.3.4.5/255.255.255.0 broadcast 2.3.4.255 	  dev eth2.2 label eth2.2 ;
++/sbin/ip link set dev eth2.2   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ if test -d /sys/class/net/eth2 &&     	! ip link show eth2.2 >/dev/null 2>&1;     then         if test `cat /sys/class/net/eth2/type` -eq 32; then             echo 0x2 > /sys/class/net/eth2/create_child;         else             /sbin/ip link set up dev eth2;             /sbin/ip link add link eth2 name eth2.2 type vlan id 2; 	fi;     fi
+ 
+ ifup: configuring interface eth2.2:3=eth2.2:3 (inet)
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-pre-up.d
+-/sbin/ip addr add 3.4.5.6/255.255.254.0 broadcast 3.4.5.255 	  dev eth2.2:3 label eth2.2:3 ;     /sbin/ip link set dev eth2.2:3   up ;
++/sbin/ip addr add 3.4.5.6/255.255.254.0 broadcast 3.4.5.255 	  dev eth2.2:3 label eth2.2:3 ;
++/sbin/ip link set dev eth2.2:3   up ;
++
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+ /bin/run-parts --exit-on-error --verbose /etc/network/if-up.d
+-- 
+2.34.1
+
