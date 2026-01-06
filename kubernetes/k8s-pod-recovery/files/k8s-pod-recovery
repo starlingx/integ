@@ -83,9 +83,10 @@ function _wait_for_pod_stabilization {
     last_count=0
     stability_count=0
     while [[ $stability_count -lt $stable_cycles ]] ; do
-        pods_in_flux=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pods --no-headers --all-namespaces $extra_args | grep -v -e Running -e Completed | wc -l)
+        pods_in_flux_detail=$(KUBECONFIG=/etc/kubernetes/admin.conf kubectl get pods --no-headers --all-namespaces $extra_args | grep -v -e Running -e Completed)
+        pods_in_flux=$(wc -l <<< "$pods_in_flux_detail")
         if [[ $pods_in_flux -ne $last_count ]]; then
-            LOG "Waiting on pod transitions to stabilize... $pods_in_flux pods are not Running/Completed, extra_args:'${extra_args}'"
+            LOG "Waiting on pod transitions to stabilize... ${pods_in_flux_detail}, extra_args:'${extra_args}'"
             last_count=$pods_in_flux
             stability_count=0
         else
@@ -113,6 +114,8 @@ function _wait_for_kubeapi_server {
         fi
         sleep "${time_between_polls}"
     done
+
+    ERROR "Timed out waiting for kube-api server"
     return 1
 }
 
@@ -199,7 +202,6 @@ function _node_affinity_pods {
     else
         ERROR "Unknown action: $1"
     fi
-
 }
 
 function _labeled_pods {
@@ -210,16 +212,13 @@ function _labeled_pods {
 
     if [ "$1" == 'recover' ]; then
         POLLING_INTERVAL=5
-        STABILITY_COUNT=6
-        _wait_for_pod_stabilization "--selector=restart-on-reboot=true --field-selector=spec.nodeName=${HOST}" $POLLING_INTERVAL $STABILITY_COUNT
-
 
         PODS=$(${RESTARTPODS_STATUS} 2>/dev/null | awk '{print $1"/"$2}')
 
         # Don't have to restart device-plugin if no labeled pods are present. System may not be configured for SRIOV.
         if [ ! -z "${PODS}" ]; then
             LOG "Waiting for SRIOV device plugin pod to become available"
-            _wait_for_pod_stabilization "--selector=app=sriovdp --field-selector=spec.nodeName=${HOST}" $POLLING_INTERVAL $STABILITY_COUNT
+            _wait_for_pod_stabilization "--selector=app=sriovdp --field-selector=spec.nodeName=${HOST}" $POLLING_INTERVAL 2
             LOG "action $1: SRIOV device plugin pod status:'$(${SRIOVDP_STATUS})'."
             # the wait for stabilization might finish with the pod not ready (but stable on a failed state)
             # execute at least 2 attempts to restart it
@@ -252,7 +251,12 @@ function _labeled_pods {
             if [ "${ret_code}" -ne 0 ]; then
                 ERROR "Continuing anyway with ret_code=${ret_code}. SRIOV pods may not recover. SRIOV device plugin pod status:'$(${SRIOVDP_STATUS})'."
             fi
+            LOG "SRIOV device plugin ready"
         fi
+
+        # Gather the list of restart-on-reboot again after SRIOV device plugin is ready in case more show
+        # up after the last check
+        PODS=$(${RESTARTPODS_STATUS} 2>/dev/null | awk '{print $1"/"$2}')
 
         # Delete pods with the restart-on-reboot=true label
         for pod in $PODS; do
@@ -329,8 +333,14 @@ function _examine_pods {
     # Manage labeled pods first
     _labeled_pods $1
 
+    if [ "$1" == 'recover' ]; then
+        STABILITY_COUNT=3
+    else
+        STABILITY_COUNT=2
+    fi
+
     # Wait for pods transitions to stop
-    _wait_for_pod_stabilization "" $SLEEP_DELAY_SEC 6
+    _wait_for_pod_stabilization "" $SLEEP_DELAY_SEC $STABILITY_COUNT
 
     # Check for recovery actions
     _unknown_pods $1
@@ -360,6 +370,7 @@ function start {
         LOG "kube-api-server is not available, exit for systemd to restart on failure"
         exit 1
     fi
+
 }
 
 function stop {
