@@ -1,4 +1,0 @@
-dn: cn=<user>,ou=SUDOers,<suffix>
-changeType: modify
-<action>: <field>
-<field>: <value>

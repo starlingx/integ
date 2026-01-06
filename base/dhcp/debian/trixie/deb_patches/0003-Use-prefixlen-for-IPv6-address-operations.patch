@@ -1,0 +1,38 @@
+From d2bbdbc985a64397eb3c6cf36c99e6674518bbea Mon Sep 17 00:00:00 2001
+From: Caio Bruchert <caio.bruchert@windriver.com>
+Date: Wed, 8 Oct 2025 14:33:04 -0300
+Subject: [PATCH] Use prefixlen for IPv6 address operations
+
+Use the prefix length variable available to the script to correctly
+add and delete the address passed by the dhclient program.
+
+Signed-off-by: Caio Bruchert <caio.bruchert@windriver.com>
+---
+ debian/dhclient-script.linux | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/debian/dhclient-script.linux b/debian/dhclient-script.linux
+index 3f93fae..f3c0461 100644
+--- a/debian/dhclient-script.linux
++++ b/debian/dhclient-script.linux
+@@ -406,7 +406,7 @@ case "$reason" in
+ 
+         if [ "${new_ip6_address}" ]; then
+             # set leased IP
+-            ip -6 addr replace ${new_ip6_address} \
++            ip -6 addr replace ${new_ip6_address}/${new_ip6_prefixlen} \
+                 dev ${interface} scope global valid_lft ${new_max_life} \
+                 preferred_lft ${new_preferred_life}
+         fi
+@@ -433,7 +433,7 @@ case "$reason" in
+         fi
+ 
+         # delete leased IP
+-        ip -6 addr del ${old_ip6_address} \
++        ip -6 addr del ${old_ip6_address}/${old_ip6_prefixlen} \
+             dev ${interface}
+ 
+         ;;
+-- 
+2.34.1
+

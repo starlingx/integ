@@ -43,7 +43,8 @@ class NetlinkFactory:
 
         return YnlFamily(
             files('pynetlink').joinpath('specs', yaml_spec_file),
-            files('pynetlink').joinpath('schemas', yaml_schema_file))
+            files('pynetlink').joinpath('schemas', yaml_schema_file),
+            process_unknown=True)
 
     @staticmethod
     def get_dpll_instance() -> YnlFamily:

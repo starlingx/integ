@@ -1,0 +1,3 @@
+metadata.json usr/share/puppet/modules.available/puppet-zitrlp-strongswan
+lib usr/share/puppet/modules.available/puppet-zitrlp-strongswan
+manifests usr/share/puppet/modules.available/puppet-zitrlp-strongswan

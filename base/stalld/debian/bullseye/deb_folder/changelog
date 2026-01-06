@@ -1,0 +1,6 @@
+stalld (1.19.8) unstable; urgency=low
+
+  * Patch updated version of stalld to v1.19.8
+  * Initial patching of debian package v1.19.6
+
+ -- Eliud Kyale <Eliud.Kyale@windriver.com>  Tue, 27 May 2025 00:00:00 +0000

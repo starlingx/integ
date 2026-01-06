@@ -1,0 +1,5 @@
+isolcpus-device-plugin (1.0-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Daniel Safta <daniel.safta@windriver.com>  Tue, 20 Oct 2021 11:44:30 -0400

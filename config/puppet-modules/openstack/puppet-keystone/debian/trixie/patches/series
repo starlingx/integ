@@ -1,0 +1,10 @@
+0002-Add-support-for-fernet-receipts.patch
+0003-Update-Barbican-admin-secret-s-user-project-IDs-duri.patch
+0006-fix-paths-for-openstack-libs.patch
+0001-set-password-policy-regex-unique-count.patch
+0001-add-name-type-region-to-keystone-resource.patch
+0001-override-the-keystone-log-format.patch
+0001-add-debug_level-to-keystone-ldap.patch
+0001-omit-dbsync-when-controllers-are-mismatched.patch
+0001-Select-creds-for-admin-or-upgrade.patch
+0007-Remove-deprecated-syntax-for-puppet-8.10.patch

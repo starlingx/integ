@@ -1,0 +1,2 @@
+var/lib/ceph/osd
+lib/udev/rules.d

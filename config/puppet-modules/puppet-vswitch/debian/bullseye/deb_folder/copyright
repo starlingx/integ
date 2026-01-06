@@ -1,0 +1,46 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: puppet-vswitch
+Upstream-Contact:
+Source: https://github.com/openstack/puppet-vswitch
+
+Files: *
+Copyright: (c) 2013-2016, Red Hat Inc.
+           (c) 2012-2016, Cisco
+           (c) 2012-2016, Endre Karlson <endre.karlson@gmail.com>
+           (c) 2012-2016, Puppetlabs
+           (c) 2014-2016, Mirantis Inc.
+           (c) 2012-2014, Bull.net
+           (c) 2012-2016, Oracle
+           (c) 2012-2016, Cirrax
+           (c) 2012-2016, Dan Bode <bodepd@gmail.com>
+           (c) 2012-2016, Colleen Murphy <colleen@gazlene.net>
+           (c) 2012-2016, Greg Dallavalle <greg.dallavalle@wolfnet.com>
+           (c) 2012-2016, Cody Herriges <cody@herriges.org>
+           (c) 2012-2016, Rob Sweet <rsweet@hooker.local>
+           (c) 2012-2016, Terry Wilson <terry@logivox.net>
+           (c) 2012-2016, Stephane Wartel <stephane.wartel@deveryware.com>
+           (c) 2012-2016, Jeremy Stanley <fungi@yuggoth.org>
+           (c) 2012-2016, Dan <bodepd@gmail.com>
+           (c) 2012-2016, Clayton O'Neill <clayton@oneill.net>
+           (c) 2012-2016, Athanasios Douitsis <aduitsis@gmail.com>
+License: Apache-2.0
+
+Files: debian/*
+Copyright: (c) 2016, Thomas Goirand <zigo@debian.org>
+License: Apache-2.0
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+    http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian-based systems the full text of the Apache version 2.0 license
+ can be found in /usr/share/common-licenses/Apache-2.0.

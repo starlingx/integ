@@ -1,0 +1,29 @@
+From ae7f0a06c90b18f7bbe1ea649193f5eb6decb1cf Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Mon, 8 Sep 2025 04:08:22 -0400
+Subject: [PATCH] grub-pc: remove conflict with grub-efi-amd64
+
+Solve this error when build-image with package grub-efi-amd64:
+ grub-pc : Conflicts: grub-efi-amd64 but 2.06-1.stx.3 is to be installed
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com> 
+---
+ debian/control | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/control b/debian/control
+index 884f6fc..853751a 100644
+--- a/debian/control
++++ b/debian/control
+@@ -154,7 +154,7 @@ Architecture: any-i386 any-amd64
+ Pre-Depends: ${misc:Pre-Depends}
+ Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-pc-bin (= ${binary:Version}), ucf, freebsd-utils (>= 8.0-4) [kfreebsd-any], ${gfxpayload-depends}
+ Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275
+-Conflicts: grub (<< 0.97-54), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen
++Conflicts: grub (<< 0.97-54), grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen
+ Breaks: grub-legacy (<< 0.97-84~)
+ Multi-Arch: foreign
+ Description: GRand Unified Bootloader, version 2 (PC/BIOS version)
+-- 
+2.43.0
+

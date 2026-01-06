@@ -1,0 +1,24 @@
+Source: bond-cni
+Section: golang
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Standards-Version: 4.6.0
+Homepage: https://www.starlingx.io
+Build-Depends: debhelper-compat (= 13),
+               dh-golang,
+               golang-1.24,
+               golang-github-appc-cni-dev,
+               golang-github-containernetworking-plugins-dev,
+               golang-github-vishvananda-netlink-dev,
+               golang-github-coreos-go-iptables-dev (>= 0.4.5~),
+               golang-github-safchain-ethtool-dev,
+               golang-golang-x-sys-dev,
+XS-Go-Import-Path: github.com/intel/bond-cni
+
+Package: bond-cni
+Architecture: any
+Depends:  ${misc:Depends}, ${shlibs:Depends}
+Built-Using: ${misc:Built-Using}
+Description: Provides a binary for the bond-cni plugin.
+  Bonding provides a method for aggregating multiple network interfaces
+  into a single logical "bonded" interface.

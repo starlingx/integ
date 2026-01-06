@@ -1,0 +1,11 @@
+---
+debname: puppet-puppi
+debver: 2.2.11-0
+dl_path:
+  name: puppet-puppi-2.2.11-0.tar.gz
+  url: https://codeload.github.com/example42/puppi/tar.gz/829b1cd86e4c1e03fc5ae2a7673b6f2fa4a00b19
+  md5sum: deb2e374258dca43045b603431bc4196
+  sha256sum: 78d076fe39dd7a03e0bd7f6e963aec548bfb34664e14c459cac7c24be15e4f4c
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

@@ -1,0 +1,399 @@
+From e6455f2c562709ae362a6afb0e64e91cce45d671 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Thu, 14 Aug 2025 03:14:37 -0400
+Subject: [PATCH] Remove unnecessary __future__ imports for Python 3
+
+Since the codebase now runs on Python 3 only, __future__ imports such as
+print_function and absolute_import are no longer needed. This commit
+removes them to simplify the code and reduce clutter.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ setup.py                                   |  1 -
+ tests/test_buffered_channel.py             |  4 ----
+ tests/test_channel.py                      |  4 ----
+ tests/test_client.py                       |  1 -
+ tests/test_client_async.py                 |  2 --
+ tests/test_client_heartbeat.py             |  5 -----
+ tests/test_events.py                       |  4 ----
+ tests/test_heartbeat.py                    |  4 ----
+ tests/test_kwargs.py                       |  1 -
+ tests/test_middleware.py                   |  7 +------
+ tests/test_middleware_before_after_exec.py |  2 --
+ tests/test_middleware_client.py            |  2 --
+ tests/test_pubpush.py                      |  4 ----
+ tests/test_reqstream.py                    |  4 ----
+ tests/test_server.py                       |  4 ----
+ tests/test_zmq.py                          |  2 --
+ tests/testutils.py                         |  2 --
+ tests/zmqbug.py                            |  2 --
+ zerorpc/cli.py                             |  2 --
+ zerorpc/context.py                         |  8 +++-----
+ zerorpc/core.py                            | 17 ++++++-----------
+ zerorpc/events.py                          |  4 ----
+ 22 files changed, 10 insertions(+), 76 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index d57ddcb..b80eadd 100644
+--- a/setup.py
++++ b/setup.py
+@@ -38,7 +38,6 @@ except ImportError:
+ requirements = [
+     'msgpack>=0.5.2',
+     'pyzmq>=13.1.0',
+-    'future',
+ ]
+ 
+ if sys.version_info < (2, 7):
+diff --git a/tests/test_buffered_channel.py b/tests/test_buffered_channel.py
+index f94152c..43c0b11 100644
+--- a/tests/test_buffered_channel.py
++++ b/tests/test_buffered_channel.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import range
+-
+ import pytest
+ import eventlet
+ import sys
+diff --git a/tests/test_channel.py b/tests/test_channel.py
+index 1d59b1e..5b05ac6 100644
+--- a/tests/test_channel.py
++++ b/tests/test_channel.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import range
+-
+ from zerorpc import zmq
+ import zerorpc
+ from .testutils import teardown, random_ipc_endpoint
+diff --git a/tests/test_client.py b/tests/test_client.py
+index b9e3be3..8fda4f2 100644
+--- a/tests/test_client.py
++++ b/tests/test_client.py
+@@ -23,7 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import absolute_import
+ import eventlet
+ 
+ import zerorpc
+diff --git a/tests/test_client_async.py b/tests/test_client_async.py
+index a2272ff..a9cc786 100644
+--- a/tests/test_client_async.py
++++ b/tests/test_client_async.py
+@@ -23,8 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+ import pytest
+ import eventlet
+ import sys
+diff --git a/tests/test_client_heartbeat.py b/tests/test_client_heartbeat.py
+index 83712c4..ca55578 100644
+--- a/tests/test_client_heartbeat.py
++++ b/tests/test_client_heartbeat.py
+@@ -23,11 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import next
+-from builtins import range
+-
+ import eventlet
+ 
+ import zerorpc
+diff --git a/tests/test_events.py b/tests/test_events.py
+index c9e1c30..a239eda 100644
+--- a/tests/test_events.py
++++ b/tests/test_events.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function, absolute_import
+-from builtins import str, bytes
+-from builtins import range, object
+-
+ from zerorpc import zmq
+ import zerorpc
+ from .testutils import teardown, random_ipc_endpoint
+diff --git a/tests/test_heartbeat.py b/tests/test_heartbeat.py
+index c34d204..67aa2a6 100644
+--- a/tests/test_heartbeat.py
++++ b/tests/test_heartbeat.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import range
+-
+ import pytest
+ import eventlet
+ import sys
+diff --git a/tests/test_kwargs.py b/tests/test_kwargs.py
+index 4aa56b3..3f6caa2 100644
+--- a/tests/test_kwargs.py
++++ b/tests/test_kwargs.py
+@@ -1,4 +1,3 @@
+-from __future__ import absolute_import
+ import eventlet
+ 
+ import zerorpc
+diff --git a/tests/test_middleware.py b/tests/test_middleware.py
+index 6ab1efd..23e2093 100644
+--- a/tests/test_middleware.py
++++ b/tests/test_middleware.py
+@@ -23,12 +23,7 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import str
+-
+ import greenlet
+-from future.utils import tobytes
+ 
+ import pytest
+ import eventlet
+@@ -142,7 +137,7 @@ class Tracer(object):
+         if self.trace_id is None:
+             # just an ugly code to generate a beautiful little hash.
+             self._locals.trace_id = '<{0}>'.format(hashlib.md5(
+-                    tobytes(str(random.random())[3:])
++                    str(random.random())[3:].encode('utf-8')
+                     ).hexdigest()[0:6].upper())
+             print(self._identity, 'get_task_context! [make a new one]', self.trace_id)
+             self._log.append(('new', self.trace_id))
+diff --git a/tests/test_middleware_before_after_exec.py b/tests/test_middleware_before_after_exec.py
+index 266414f..0ffc8d7 100644
+--- a/tests/test_middleware_before_after_exec.py
++++ b/tests/test_middleware_before_after_exec.py
+@@ -22,8 +22,6 @@
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ 
+-from __future__ import absolute_import
+-from builtins import range
+ 
+ import eventlet
+ import greenlet
+diff --git a/tests/test_middleware_client.py b/tests/test_middleware_client.py
+index be10e61..b7fbc49 100644
+--- a/tests/test_middleware_client.py
++++ b/tests/test_middleware_client.py
+@@ -22,8 +22,6 @@
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ 
+-from __future__ import absolute_import
+-from builtins import range
+ 
+ import eventlet
+ import greenlet
+diff --git a/tests/test_pubpush.py b/tests/test_pubpush.py
+index 898818d..8235026 100644
+--- a/tests/test_pubpush.py
++++ b/tests/test_pubpush.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import range
+-
+ import eventlet
+ import zerorpc
+ 
+diff --git a/tests/test_reqstream.py b/tests/test_reqstream.py
+index 2cb9266..543bc88 100644
+--- a/tests/test_reqstream.py
++++ b/tests/test_reqstream.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import range
+-
+ import eventlet
+ 
+ import zerorpc
+diff --git a/tests/test_server.py b/tests/test_server.py
+index a58f5eb..f212d3d 100644
+--- a/tests/test_server.py
++++ b/tests/test_server.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+-from builtins import range
+-
+ import pytest
+ import eventlet
+ import sys
+diff --git a/tests/test_zmq.py b/tests/test_zmq.py
+index 7a791f6..3c3fe45 100644
+--- a/tests/test_zmq.py
++++ b/tests/test_zmq.py
+@@ -23,8 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from __future__ import absolute_import
+ import eventlet
+ 
+ from zerorpc import zmq
+diff --git a/tests/testutils.py b/tests/testutils.py
+index 85b6a96..94c6edc 100644
+--- a/tests/testutils.py
++++ b/tests/testutils.py
+@@ -22,8 +22,6 @@
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ 
+-from __future__ import print_function
+-from builtins import str
+ 
+ import functools
+ import pytest
+diff --git a/tests/zmqbug.py b/tests/zmqbug.py
+index da83fd2..cdbd89d 100644
+--- a/tests/zmqbug.py
++++ b/tests/zmqbug.py
+@@ -25,8 +25,6 @@
+ # Based on https://github.com/traviscline/gevent-zeromq/blob/master/gevent_zeromq/core.py
+ 
+ 
+-from __future__ import print_function
+-
+ import zmq
+ from zmq.constants import *
+ 
+diff --git a/zerorpc/cli.py b/zerorpc/cli.py
+index 3fd6350..578c9ad 100644
+--- a/zerorpc/cli.py
++++ b/zerorpc/cli.py
+@@ -24,8 +24,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import print_function
+-from builtins import map
+ 
+ import argparse
+ import json
+diff --git a/zerorpc/context.py b/zerorpc/context.py
+index 6e20720..b043afd 100644
+--- a/zerorpc/context.py
++++ b/zerorpc/context.py
+@@ -23,9 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import absolute_import
+-from future.utils import tobytes
+-
+ import uuid
+ import random
+ 
+@@ -103,7 +100,7 @@ class Context(zmq.Context):
+         return Context._instance
+ 
+     def _reset_msgid(self):
+-        self._msg_id_base = tobytes(uuid.uuid4().hex)[8:]
++        self._msg_id_base = uuid.uuid4().hex[8:].encode('ascii')
+         self._msg_id_counter = random.randrange(0, 2 ** 32)
+         self._msg_id_counter_stop = random.randrange(self._msg_id_counter, 2 ** 32)
+ 
+@@ -112,7 +109,8 @@ class Context(zmq.Context):
+             self._reset_msgid()
+         else:
+             self._msg_id_counter = (self._msg_id_counter + 1)
+-        return tobytes('{0:08x}'.format(self._msg_id_counter)) + self._msg_id_base
++        counter_bytes = ('{0:08x}'.format(self._msg_id_counter)).encode('ascii')
++        return counter_bytes + self._msg_id_base
+ 
+     def register_middleware(self, middleware_instance):
+         registered_count = 0
+diff --git a/zerorpc/core.py b/zerorpc/core.py
+index f9f0b38..ef6dc76 100644
+--- a/zerorpc/core.py
++++ b/zerorpc/core.py
+@@ -23,11 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import absolute_import
+-from builtins import str
+-from builtins import zip
+-from future.utils import iteritems
+-
+ import sys
+ import traceback
+ import eventlet
+@@ -81,7 +76,7 @@ class ServerBase(object):
+         self._inject_builtins()
+         self._heartbeat_freq = heartbeat
+ 
+-        for (k, functor) in iteritems(self._methods):
++        for k, functor in self._methods.items():
+             if not isinstance(functor, DecoratorBase):
+                 self._methods[k] = rep(functor)
+ 
+@@ -116,11 +111,11 @@ class ServerBase(object):
+         return r
+ 
+     def _zerorpc_inspect(self):
+-        methods = dict((m, f) for m, f in iteritems(self._methods)
+-                    if not m.startswith('_'))
+-        detailled_methods = dict((m,
+-            dict(args=self._format_args_spec(f._zerorpc_args()),
+-                doc=f._zerorpc_doc())) for (m, f) in iteritems(methods))
++        methods = {m: f for m, f in self._methods.items()
++                    if not m.startswith('_')}
++        detailled_methods = {m:
++            {'args':self._format_args_spec(f._zerorpc_args()),
++                'doc':f._zerorpc_doc()} for (m, f) in methods.items()}
+         return {'name': self._name,
+                 'methods': detailled_methods}
+ 
+diff --git a/zerorpc/events.py b/zerorpc/events.py
+index 3ba8354..359eb7f 100644
+--- a/zerorpc/events.py
++++ b/zerorpc/events.py
+@@ -23,10 +23,6 @@
+ # SOFTWARE.
+ 
+ 
+-from __future__ import absolute_import
+-from builtins import str
+-from builtins import range
+-
+ import msgpack
+ import eventlet
+ import greenlet
+-- 
+2.43.0
+

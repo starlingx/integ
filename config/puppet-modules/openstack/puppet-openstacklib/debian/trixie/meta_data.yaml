@@ -1,0 +1,12 @@
+---
+debname: puppet-module-openstacklib
+debver: 25.0.0-1
+dl_path:
+  name: puppet-module-openstacklib-25.0.0-1.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-openstacklib/-/archive/debian/25.0.0-1/puppet-module-openstacklib-debian-25.0.0-1.tar.gz
+  md5sum: cc2836d423469c331ab1e6c231118bbc
+  sha256sum: e72e0ccf413507dae0464fa5edbc9a63d844f7db7e4532f83e7b3facf92910c9
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: cd1d5037e03638068e703c36b2536f8adf89915b

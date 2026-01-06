@@ -1,0 +1,31 @@
+#!/bin/sh
+# autopkgtest check: Build and run a program against librados2 to 
+# validate that headers are installed and libraries exists
+
+set -e
+
+WORKDIR=$(mktemp -d)
+trap "rm -rf $WORKDIR" 0 INT QUIT ABRT PIPE TERM
+cd $WORKDIR
+cat <<EOF > radostest.c
+#include <rados/librados.h>
+
+int
+main(void)
+{
+    int err;
+    rados_t cluster;
+
+    err = rados_create(&cluster, NULL);
+    if (err < 0) {
+       return (1);
+    }
+    return(0);
+}
+EOF
+
+gcc -o radostest radostest.c -lrados
+echo "build: OK"
+[ -x radostest ]
+./radostest
+echo "run: OK"

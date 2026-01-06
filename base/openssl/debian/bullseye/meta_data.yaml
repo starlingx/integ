@@ -1,0 +1,10 @@
+---
+debver: 1.1.1w-0+deb11u4
+debname: openssl
+dl_path:
+  name: openssl-debian-openssl-1.1.1w-0+deb11u4.tar.gz
+  url: https://salsa.debian.org/debian/openssl/-/archive/debian/openssl-1.1.1w-0+deb11u4/openssl-debian-openssl-1.1.1w-0+deb11u4.tar.gz
+  sha256sum: 2a512d68a52b20e4aeec8993ca5324c25b64dc1e8ce80d612f9add90f22943c3
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

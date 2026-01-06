@@ -1,7 +1,0 @@
----
-debname: golang-github-golang-jwt-jwt
-debver: 4.4.3-1
-archive: https://snapshot.debian.org/archive/debian/20230904T084702Z/pool/main/g/golang-github-golang-jwt-jwt/
-revision:
-  dist: $STX_DIST
-  PKG_GITREVCOUNT: true

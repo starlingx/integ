@@ -1,0 +1,14 @@
+---
+debname: kubelogin
+debver: 1.34.2
+src_path: null
+dl_files:
+  kubelogin_linux_amd64.zip:
+    topdir: null
+    url: https://github.com/int128/kubelogin/releases/download/v1.34.2/kubelogin_linux_amd64.zip
+    sha256sum: 5745dafe9f8dea3541c75b4a3da5e2d4778befa4c19f7c7b266e29d59b3deeb0
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 15d3f6913ecbd774422253e1692b0157a4740f38
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/plugins/kubelogin

@@ -1,0 +1,154 @@
+From 33b9bf18ee4ad0c99764181e95d259e6f92ca1c3 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Tue, 15 Jul 2025 09:17:35 +0000
+Subject: [PATCH] Add personality and subfunction
+
+---
+ lib/facter/personality.rb    | 21 +++++++++++++
+ lib/facter/subfunction.rb    | 61 ++++++++++++++++++++++++++++++++++++
+ lib/facter/util/file_read.rb | 37 ++++++++++++++++++++++
+ 3 files changed, 119 insertions(+)
+ create mode 100644 lib/facter/personality.rb
+ create mode 100644 lib/facter/subfunction.rb
+ create mode 100644 lib/facter/util/file_read.rb
+
+diff --git a/lib/facter/personality.rb b/lib/facter/personality.rb
+new file mode 100644
+index 0000000..0a4e8cf
+--- /dev/null
++++ b/lib/facter/personality.rb
+@@ -0,0 +1,21 @@
++#
++# personality.rb
++#
++# This fact gives the personality of this node.
++#
++require 'facter/util/file_read'
++
++Facter.add('personality') do
++  confine :kernel => :linux
++
++  setcode do
++    if release = Facter::Util::FileRead.read('/etc/platform/platform.conf')
++      if match = release.match(/^nodetype\=(.*)/)
++        match[1]
++      end
++    end
++  end
++end
++
++# vim: set ts=2 sw=2 et :
++# encoding: utf-8
+diff --git a/lib/facter/subfunction.rb b/lib/facter/subfunction.rb
+new file mode 100644
+index 0000000..589bcb3
+--- /dev/null
++++ b/lib/facter/subfunction.rb
+@@ -0,0 +1,61 @@
++#
++# subfunction.rb
++#
++# This fact gives the subfunction of this node.
++#
++require 'facter/util/file_read'
++
++Facter.add('subfunction') do
++  confine :kernel => :linux
++
++  setcode do
++    if release = Facter::Util::FileRead.read('/etc/platform/platform.conf')
++      if match = release.match(/^subfunction\=(.*)/)
++        match[1]
++      end
++    end
++  end
++end
++
++Facter.add('is_worker_subfunction') do
++  confine :kernel => :linux
++
++  setcode do
++    if release = Facter::Util::FileRead.read('/etc/platform/platform.conf')
++      match = release.match(/^subfunction\=.*worker/) ? true : false
++    end
++  end
++end
++
++Facter.add('is_controller_subfunction') do
++  confine :kernel => :linux
++
++  setcode do
++    if release = Facter::Util::FileRead.read('/etc/platform/platform.conf')
++      match = release.match(/^subfunction\=.*controller/) ? true : false
++    end
++  end
++end
++
++Facter.add('is_storage_subfunction') do
++  confine :kernel => :linux
++
++  setcode do
++    if release = Facter::Util::FileRead.read('/etc/platform/platform.conf')
++      match = release.match(/^subfunction\=.*storage/) ? true : false
++    end
++  end
++end
++
++Facter.add('is_lowlatency_subfunction') do
++  confine :kernel => :linux
++
++  setcode do
++    if release = Facter::Util::FileRead.read('/etc/platform/platform.conf')
++      match = release.match(/^subfunction\=.*lowlatency/) ? true : false
++    end
++  end
++end
++
++# vim: set ts=2 sw=2 et :
++# encoding: utf-8
+diff --git a/lib/facter/util/file_read.rb b/lib/facter/util/file_read.rb
+new file mode 100644
+index 0000000..c92185a
+--- /dev/null
++++ b/lib/facter/util/file_read.rb
+@@ -0,0 +1,37 @@
++module Facter
++module Util
++
++# {Facter::Util::FileRead} is a utility module intended to provide easily
++# mockable methods that delegate to simple file read methods.  The intent is to
++# avoid the need to execute the `cat` system command or `File.read` directly in
++# Ruby, as mocking these behaviors can have wide-ranging effects.
++#
++# All Facter facts are encouraged to use this method instead of File.read or
++# Facter::Core::Execution.exec('cat ...')
++#
++# @api public
++module FileRead
++  # read returns the raw content of a file as a string.  If the file does not
++  # exist, or the process does not have permission to read the file then nil is
++  # returned.
++  #
++  # @api public
++  #
++  # @param path [String] the path to be read
++  #
++  # @return [String, nil] the raw contents of the file or `nil` if the
++  #   file cannot be read because it does not exist or the process does not have
++  #   permission to read the file.
++  def self.read(path)
++    File.read(path)
++  rescue Errno::ENOENT, Errno::EACCES => detail
++    Facter.debug "Could not read #{path}: #{detail.message}"
++    nil
++  end
++
++  def self.read_binary(path)
++    File.open(path, "rb") { |contents| contents.read }
++  end
++end
++end
++end
+-- 
+2.47.2
+

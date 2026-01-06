@@ -1,0 +1,12 @@
+---
+debname: python3-durationpy
+debver: 0.10
+dl_path:
+    name: python3-durationpy.0.10.tar.gz
+    url: https://github.com/icholy/durationpy/archive/refs/tags/0.10.tar.gz
+    sha256sum: ce67a884a8304f2227c6b27e8bab0831167bc346831ff6d069028969eb05d05b
+revision:
+    dist: $STX_DIST
+    GITREVCOUNT:
+        BASE_SRCREV: 310ac64ec5ec83206103422ef6820282acb3f472
+        SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/python3-kubernetes/python3-durationpy

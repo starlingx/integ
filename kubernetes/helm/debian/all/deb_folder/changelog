@@ -1,0 +1,35 @@
+helm (3.19.2-1) unstable; urgency=medium
+
+  * Bump version (3.19.2)
+
+ -- Igor Soares <igor.piressoares@windriver.com>  Thu, 20 Nov 2025 15:14:00 +0000
+
+helm (3.17.1-1) unstable; urgency=medium
+
+  * Bump version (3.17.1)
+
+ -- Igor Soares <igor.piressoares@windriver.com>  Wed, 02 Apr 2025 11:20:00 +0000
+
+helm (3.14.4-1) unstable; urgency=medium
+
+  * Bump version (3.14.4)
+
+ -- David Bastos <david.barbosabastos@windriver.com>  Mon, 20 May 2024 10:00:00 +0000
+
+helm (3.12.2-1) unstable; urgency=medium
+
+  * Bump version (3.12.2)
+
+ -- Igor Soares <igor.piressoares@windriver.com>  Fri, 04 Aug 2023 13:45:00 +0000
+
+helm (3.9.4-1) unstable; urgency=medium
+
+  * Bump version (3.9.4)
+
+ -- Igor Soares <igor.piressoares@windriver.com>  Mon, 27 Mar 2023 17:22:00 +0000
+
+helm (3.2.1-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Tracey Bogue <tracey.bogue@windriver.com>  Tue, 19 Oct 2021 07:46:42 +0000

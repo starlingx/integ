@@ -1,0 +1,11 @@
+---
+debname: puppet-memcached
+debver: 8.2.0-0
+dl_path:
+  name: puppet-memcached-8.2.0-0.tar.gz
+  url: https://github.com/saz/puppet-memcached/archive/refs/tags/v8.2.0.tar.gz
+  md5sum: 2aaac58bf4b621588884d4fbdffcfff9
+  sha256sum: 9d2e5910e9353fe887a13abe59b0b11464464c6317ef068b652996d39c75e692
+revision:
+  dist: ${STX_DIST}
+  PKG_GITREVCOUNT: true

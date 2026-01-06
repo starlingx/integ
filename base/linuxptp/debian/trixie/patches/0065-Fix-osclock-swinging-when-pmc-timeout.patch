@@ -1,0 +1,83 @@
+From: Tara Subedi <Tara.Subedi@windriver.com>
+Date: Tue Jun 17 11:15:26 2025 -0400
+Subject: [PATCH 65/65] Fix osclock swinging when pmc timeout
+
+Phc2sys error 'timeout reading pmc tpd' causes rms spike
+
+It has been identified when there is pmc timeouts, it result in an
+rms value spike while the clock sync stabilizes.
+
+Observed logs:
+phc2sys: info phcinst0 CLOCK_REALTIME phc offset        -8 s2 freq   -6086 delay    540
+phc2sys: err phcinst0 pmc agent index 0, timeout reading pmc tpd
+phc2sys: info phcinst0 CLOCK_REALTIME phc offset -37000000057 s2 freq -100000000 delay    477
+
+There could be pmc timeout depending upon system load, but single
+pmc timeout should not cause swing on clock update.
+This commit fixes the issue by not reseting sync_offset,
+leap and utc_offset_traceable when there is pmc timeout.
+As these values values are not used for HA switchover, for which
+this change has been introduced.
+
+TEST PLAN:
+PASS: Deploy T-BC with single PTP4l instance
+  - Load system (stress -c 64 -m 5 -t 60)
+    check user.log, phc2sys not showing big swing (37s) as above
+    stop/start ptp4l instance
+    os-clock is not swinging.
+
+PASS: Deploy PTP Redundant T-BC with two PTP4l instances
+  - stop primary ptp instance: systemctl stop ptp4l@ptp1
+    check HA switchover with:
+    echo -n "status" | socat -t 1 - UNIX-CONNECT:/var/run/phc-ha
+    check os_clock locked to secondary ptp instance
+    stop secondary ptp instance: systemctl stop ptp4l@ptp2
+    HA switchover back to primary, offset correction is small.
+    start primary/secondary instance one by one, no issue on offset
+
+Story: 2011370
+Task: 52383
+
+Signed-off-by: Tara Nath Subedi <tara.subedi@windriver.com>
+---
+pmc_agent.c | 16 ++++++----------
+1 file changed, 6 insertions(+), 10 deletions(-)
+
+diff --git a/pmc_agent.c b/pmc_agent.c
+index d725947..979b52d 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -358,27 +358,23 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 	res = run_pmc(node, timeout, MID_TIME_PROPERTIES_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
+ 		// When there is timeout error, reset tpd values
++		// reset only time_traceable and freq_traceable, these are needed
++		// for HA switchover.
++		// don't reset: sync_offset, leap and utc_offset_traceable, as these
++		// cause swing while updating clock. Single timeout should not punish
++		// clock with swinging by TAI-UTC 37s offset.
+ 		if (res == RUN_PMC_TMO) {
+ 			pr_err("pmc agent index %d, timeout reading pmc tpd", node->index);
+ 			/* save current state */
+-			sync_offset = node->sync_offset;
+-			leap = node->leap;
+-			utc_offset_traceable = node->utc_offset_traceable;
+ 			time_traceable = node->time_traceable;
+ 			freq_traceable = node->freq_traceable;
+ 
+ 			// reset values
+-			node->sync_offset = 0;
+-			node->leap = 0;
+-			node->utc_offset_traceable = 0;
+ 			node->time_traceable = 0;
+ 			node->freq_traceable = 0;
+ 
+ 			/* compare to new tpds */
+-			if ((sync_offset != node->sync_offset) ||
+-				(leap != node->leap) ||
+-				(utc_offset_traceable != node->utc_offset_traceable) ||
+-				(time_traceable != node->time_traceable) ||
++			if ((time_traceable != node->time_traceable) ||
+ 				(freq_traceable != node->freq_traceable)) {
+ 				node->new_tpds = true;
+ 			}

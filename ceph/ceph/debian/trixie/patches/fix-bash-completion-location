@@ -1,0 +1,9 @@
+--- a/src/bash_completion/CMakeLists.txt
++++ b/src/bash_completion/CMakeLists.txt
+@@ -11,5 +11,5 @@ if(WITH_RADOSGW)
+ endif()
+ 
+ install(FILES ${completions}
+-  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/bash_completion.d)
++  DESTINATION /usr/share/bash-completion/completions)
+ 

@@ -1,0 +1,51 @@
+From: Tara Subedi <Tara.Subedi@windriver.com>
+Date: Thu May 8 16:28:05 2025 -0400
+Subject: [PATCH 64/67] Fix HA PTP4l instance down osclock swinging
+
+PTP Redundant T-BC, when one ptp4l instance is down, os clock is swinging
+
+In PTP Redundant T-BC setup, when primary ptp4l instance is down,
+os clock is expected to sync to secondary ptp instance. In contrary,
+os clock is not converging and it is observed swinging offset.
+
+This is caused by recent change where we increased PMC poll timeout
+from 0 to 1000 ms, as 0 ms was too low and it was causing timeout
+frequently on pmc polling while querying utc_offset, DDS and PDS.
+
+Here we are changing the timeout back to closer to 0 ms. That value
+has been determined 20 ms, by experimentation.
+
+TEST PLAN:
+  - Deploy PTP Redundant T-BC with two PTP4l instances
+  - with both PTP4l instances started, there are no
+    "timeout reading pmc" in user.log
+  - stop primary ptp instance: systemctl stop ptp4l@ptp1
+    check HA switchover with:
+    echo -n "status" | socat -t 1 - UNIX-CONNECT:/var/run/phc-ha
+    check os_clock locked to secondary ptp instance
+
+Story: 2011370
+Task: 52157
+
+Signed-off-by: Tara Nath Subedi <tara.subedi@windriver.com>
+---
+pmc_agent.c | 6 +++---
+1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 64012f8..d725947 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -496,9 +496,9 @@ int pmc_agent_update(struct pmc_agent *node)
+ 		if (node->stay_subscribed) {
+ 			renew_subscription(node, 0);
+ 		}
+-		r = pmc_agent_query_utc_offset(node, 1000);
+-		r += pmc_agent_query_dds(node, 1000);
+-		r += pmc_agent_query_pds(node, 1000);
++		r = pmc_agent_query_utc_offset(node, 20);
++		r += pmc_agent_query_dds(node, 20);
++		r += pmc_agent_query_pds(node, 20);
+ 		if (!r) {
+ 			node->pmc_last_update = ts;
+ 		}

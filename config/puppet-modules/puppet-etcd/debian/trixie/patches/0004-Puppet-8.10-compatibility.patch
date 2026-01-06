@@ -1,0 +1,117 @@
+From 1234567890abcdef1234567890abcdef12345678 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Thu, 1 Jan 2025 00:00:00 +0000
+Subject: [PATCH] Puppet 8.10 compatibility - Replace all deprecated $:: syntax
+
+Replace all deprecated $:: top-scope variable syntax with modern $facts[] hash
+syntax and direct class variable references for Puppet 8.10 compatibility.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/config.pp  | 8 ++++----
+ manifests/init.pp    | 2 +-
+ manifests/install.pp | 4 ++--
+ manifests/params.pp  | 4 ++--
+ manifests/service.pp | 6 +++---
+ 5 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/manifests/config.pp b/manifests/config.pp
+index dbf66eb..a8209d0 100644
+--- a/manifests/config.pp
++++ b/manifests/config.pp
+@@ -1,7 +1,7 @@
+ # == Class: etcd::config
+ #
+ class etcd::config {
+-  if $::osfamily == 'Ubuntu' {
++  if $facts['os']['family'] == 'Ubuntu' {
+     file { '/etc/etcd':
+       ensure => 'directory',
+       owner  => 'root',
+@@ -10,12 +10,12 @@ class etcd::config {
+     }
+   }
+ 
+-  file { $::etcd::config_file_path:
++  file { $etcd::config_file_path:
+     ensure  => 'file',
+     content => template("${module_name}/etc/etcd/etcd.conf.erb"),
+   }
+ 
+-  if $::etcd::manage_package and $::etcd::journald_forward_enable and $::operatingsystemmajrelease == '7' {
++  if $etcd::manage_package and $etcd::journald_forward_enable and $facts['os']['release']['major'] == '7' {
+     file { '/etc/systemd/system/etcd.service.d':
+       ensure => 'directory',
+       owner  => 'root',
+@@ -35,7 +35,7 @@ class etcd::config {
+     }
+   }
+ 
+-  if $::operatingsystemmajrelease == '6' {
++  if $facts['os']['release']['major'] == '6' {
+     file { '/etc/init.d/etcd':
+       ensure  => file,
+       owner   => 'root',
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 994865d..3e9392c 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -316,7 +316,7 @@ class etcd (
+     $real_proxy = $proxy
+   } else {
+     $str = join(any2array($initial_cluster), '|')
+-    if $::fqdn in $str or $::ipaddress in $str {
++    if $facts['networking']['fqdn'] in $str or $facts['networking']['ip'] in $str {
+       $real_proxy = 'off'
+     } else {
+       $real_proxy = 'on'
+diff --git a/manifests/install.pp b/manifests/install.pp
+index b1dae93..0b0c11b 100644
+--- a/manifests/install.pp
++++ b/manifests/install.pp
+@@ -1,7 +1,7 @@
+ # == Class: etcd
+ #
+ class etcd::install {
+-  if $::etcd::manage_package {
+-    package { $::etcd::package_name: ensure => $::etcd::ensure, }
++  if $etcd::manage_package {
++    package { $etcd::package_name: ensure => $etcd::ensure, }
+   }
+ }
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 6ff3d44..af60129 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -8,9 +8,9 @@ class etcd::params {
+   $manage_package = true
+   $manage_service = true
+ 
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     'RedHat' : {
+-      case $::operatingsystemmajrelease {
++      case $facts['os']['release']['major'] {
+         '6'     : { $config_file_path = '/etc/sysconfig/etcd' }
+         default : { $config_file_path = '/etc/etcd/etcd.conf' }
+       }
+diff --git a/manifests/service.pp b/manifests/service.pp
+index 4ef544c..ed0801e 100644
+--- a/manifests/service.pp
++++ b/manifests/service.pp
+@@ -3,10 +3,10 @@
+ # Class to manage the etcd service daemon
+ #
+ class etcd::service {
+-  if $::etcd::manage_service {
++  if $etcd::manage_service {
+     service { 'etcd':
+-      ensure => $::etcd::service_ensure,
+-      enable => $::etcd::service_enable,
++      ensure => $etcd::service_ensure,
++      enable => $etcd::service_enable,
+     }
+   }
+ }
+-- 
+2.25.1

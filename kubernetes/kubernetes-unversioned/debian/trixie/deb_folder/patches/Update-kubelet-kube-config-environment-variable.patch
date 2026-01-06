@@ -1,0 +1,33 @@
+From 44e59ca86c4d5f69a6f0505bfbe7f607c8dd1193 Mon Sep 17 00:00:00 2001
+From: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Date: Fri, 7 Jul 2023 13:22:27 +0530
+Subject: [PATCH] Update kubelet.kubeconfig environment variable
+
+The incorrect specification of the KUBELET_KUBECONFIG environment
+variable made it so that default parameters were not present.
+
+Update the KUBELET_KUBECONFIG environment variable as
+KUBELET_KUBECONFIG="--kubeconfig=/etc/kubernetes/kubelet.kubeconfig".
+So that kubelet have the correct default parameters.
+
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+---
+ init/systemd/environ/kubelet | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/init/systemd/environ/kubelet b/init/systemd/environ/kubelet
+index a623673..405aabf 100644
+--- a/init/systemd/environ/kubelet
++++ b/init/systemd/environ/kubelet
+@@ -11,7 +11,7 @@ KUBELET_ADDRESS="--address=127.0.0.1"
+ KUBELET_HOSTNAME="--hostname-override=127.0.0.1"
+ 
+ # Edit the kubelet.kubeconfig to have correct cluster server address
+-KUBELET_KUBECONFIG=/etc/kubernetes/kubelet.kubeconfig
++KUBELET_KUBECONFIG="--kubeconfig=/etc/kubernetes/kubelet.kubeconfig"
+ 
+ # Add your own!
+ KUBELET_ARGS="--cgroup-driver=systemd --fail-swap-on=false"
+-- 
+2.17.1
+

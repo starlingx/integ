@@ -1,0 +1,56 @@
+From 50d62b14859e92f5ea32e7dfa46aff99b85ecc26 Mon Sep 17 00:00:00 2001
+From: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Tue, 6 Jun 2023 15:33:16 -0300
+Subject: [PATCH] Adjust puppet-ceph dependency requirements
+
+Puppet throws a few warnings during bootstrap because some
+dependencies are not within the accepted version range. This
+happens because those dependencies are at their latest
+versions but we are running an older version of ceph in
+order to have the ceph-disk functionality.
+The proper fix would be upgrading ceph to a higher version,
+but since there are plans in place to implement rook-ceph in
+the future, this change increases the range of accepted
+versions for the affected dependencies.
+
+Signed-off-by: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ metadata.json | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/metadata.json b/metadata.json
+index a760f1c..f8b1c7c 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -49,23 +49,23 @@
+     "dependencies": [
+         {
+             "name": "puppetlabs/apt",
+-            "version_requirement": ">=2.0.0 <3.0.0"
++            "version_requirement": ">=2.0.0 <7.0.0"
+         },
+         {
+             "name": "puppetlabs/apache",
+-            "version_requirement": ">=1.4.1 <2.0.0"
++            "version_requirement": ">=1.4.1 <6.0.0"
+         },
+         {
+             "name": "puppetlabs/concat",
+-            "version_requirement": ">=1.2.1 <3.0.0"
++            "version_requirement": ">=1.2.1 <6.0.0"
+         },
+         {
+             "name": "puppetlabs/inifile",
+-            "version_requirement": ">=1.0.0 <2.0.0"
++            "version_requirement": ">=1.0.0 <3.0.0"
+         },
+         {
+             "name": "puppetlabs/stdlib",
+-            "version_requirement": ">=4.10.0 <5.0.0"
++            "version_requirement": ">=4.10.0 <6.0.0"
+         },
+         {
+             "name": "duritong/sysctl",
+-- 
+2.37.1
+

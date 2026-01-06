@@ -1,0 +1,13 @@
+---
+debver: 1:4.16.0-3
+debname: resource-agents
+dl_path:
+  name: resource-agents-debian-1%254.16.0-3.tar.gz
+  url: https://salsa.debian.org/ha-team/resource-agents/-/archive/debian/1%254.16.0-3/resource-agents-debian-1%254.16.0-3.tar.gz
+  md5sum: 32ed3940127d402d8dd680fe9a625ffb
+  sha256sum: 128df71eaf4e821d725240b92b4e48824ec5b58b308d3bf3fc9609f9de216b8d
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: fcfb04d6214669cc89d55181527c24edcb38c149
+    SRC_DIR: ${MY_REPO}/stx/integ/base/cluster-resource-agents

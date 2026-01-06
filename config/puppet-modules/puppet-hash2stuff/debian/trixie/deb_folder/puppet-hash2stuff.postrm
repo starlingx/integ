@@ -1,0 +1,13 @@
+#!/bin/sh
+# see: dh_installdeb(1)
+
+set -e
+
+if [ "${1}" = "remove" ] || [ "${1}" = "disappear" ]; then
+    update-alternatives --remove puppet-module-hash2stuff \
+        /usr/share/puppet/modules.available/puppet-hash2stuff
+fi
+
+#DEBHELPER#
+
+exit 0

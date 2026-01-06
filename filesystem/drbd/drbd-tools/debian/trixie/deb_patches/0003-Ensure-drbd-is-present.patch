@@ -1,0 +1,42 @@
+From 93f3735fd991886409fad1200507c6423a1fd0b1 Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Thu, 2 Jun 2022 18:01:41 +0300
+Subject: [PATCH 3/3] Ensure /drbd is present
+
+Puppet cannot create /drbd on because ostree doesn't allow changes
+in root mountpoint.
+Create /drbd during package install time. Keep perms 750 as on CentOS.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ debian/drbd-utils.dirs     | 1 +
+ debian/drbd-utils.postinst | 4 ++++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/debian/drbd-utils.dirs b/debian/drbd-utils.dirs
+index 10a4e40..340da51 100644
+--- a/debian/drbd-utils.dirs
++++ b/debian/drbd-utils.dirs
+@@ -1,3 +1,4 @@
++drbd
+ etc
+ etc/init.d
+ etc/ha.d/resource.d
+diff --git a/debian/drbd-utils.postinst b/debian/drbd-utils.postinst
+index bfb81eb..7066703 100644
+--- a/debian/drbd-utils.postinst
++++ b/debian/drbd-utils.postinst
+@@ -2,6 +2,10 @@
+ 
+ set -e
+ 
++if [ "$1" = "configure" ] ; then
++	chmod 750 /drbd
++fi
++
+ # Cleanup the old systemd unit state, if applicable
+ if dpkg --compare-versions "$2" lt-nl "8.9.5-1~"; then
+ 	if deb-systemd-helper debian-installed drbd.service; then
+-- 
+2.34.1
+

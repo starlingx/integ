@@ -1,0 +1,299 @@
+From 5eee5c57fbc1531d8e2aa769589a772913d44e73 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Mon, 13 Oct 2025 01:14:48 -0400
+Subject: [PATCH] Update top-scope variables for Puppet 8.10 compatibility
+
+Remove deprecated $:: prefix from all variable references and fix class
+references for Puppet 8.10 compatibility.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/mds.pp                   |  2 +-
+ manifests/mirror.pp                |  4 ++--
+ manifests/mon.pp                   |  4 ++--
+ manifests/osd.pp                   |  2 +-
+ manifests/params.pp                |  6 +++---
+ manifests/profile/mgr.pp           |  2 +-
+ manifests/profile/mon.pp           |  2 +-
+ manifests/repo.pp                  | 26 +++++++++++++-------------
+ manifests/rgw.pp                   |  8 ++++----
+ manifests/rgw/apache_proxy_fcgi.pp |  2 +-
+ manifests/rgw/keystone.pp          |  4 ++--
+ 11 files changed, 31 insertions(+), 31 deletions(-)
+
+diff --git a/manifests/mds.pp b/manifests/mds.pp
+index a42d9dc..a22b117 100644
+--- a/manifests/mds.pp
++++ b/manifests/mds.pp
+@@ -58,7 +58,7 @@ class ceph::mds (
+   $mds_data       = undef,
+   $mds_enable     = true,
+   $mds_ensure     = 'running',
+-  $mds_id         = $::hostname,
++  $mds_id         = $facts['networking']['hostname'],
+   $keyring        = undef,
+   $cluster        = 'ceph',
+ ) inherits ceph::params {
+diff --git a/manifests/mirror.pp b/manifests/mirror.pp
+index 249a040..5c958ee 100644
+--- a/manifests/mirror.pp
++++ b/manifests/mirror.pp
+@@ -50,8 +50,8 @@ define ceph::mirror (
+ 
+   #Xenial reports 'debian' as the service provider
+   #'systemd' should cover supported RHEL type systems
+-  if( ( $::service_provider == 'systemd' ) or
+-  ( $::operatingsystemrelease == '16.04' ) )
++  if( ( $facts['service_provider'] == 'systemd' ) or
++  ( $facts['os']['release']['full'] == '16.04' ) )
+   {
+     Service{
+       name   => $service_name,
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index f8dad43..da6b689 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -85,11 +85,11 @@ define ceph::mon (
+     $mon_service = "ceph-mon-${id}"
+ 
+     # For Ubuntu Trusty system
+-    if $::service_provider == 'upstart' {
++    if $facts['service_provider'] == 'upstart' {
+       $init = 'upstart'
+       Service {
+         name     => 'ceph-mon',
+-        provider => $::service_provider,
++        provider => $facts['service_provider'],
+         start    => "start ceph-mon id=${id}",
+         stop     => "stop ceph-mon id=${id}",
+         status   => "status ceph-mon id=${id}",
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index ac44a2c..c5a68e0 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -186,7 +186,7 @@ ceph-volume lvm list ${data}
+         timeout   => $exec_timeout,
+         tag       => 'prepare',
+       }
+-      if (str2bool($::selinux) == true) {
++      if (str2bool($facts['os']['selinux']['enabled']) == true) {
+         ensure_packages($ceph::params::pkg_policycoreutils, {'ensure' => 'present'})
+         exec { "fcontext_${name}":
+           command => "/bin/true # comment to satisfy puppet syntax requirements
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 2114abb..a1d4ac6 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -49,7 +49,7 @@ class ceph::params (
+ ) {
+   $pkg_mds = 'ceph-mds'
+ 
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     'Debian': {
+       $pkg_radosgw         = 'radosgw'
+       $user_radosgw        = 'www-data'
+@@ -61,7 +61,7 @@ class ceph::params (
+       $pkg_radosgw         = 'ceph-radosgw'
+       $user_radosgw        = 'apache'
+       $pkg_fastcgi         = 'mod_fastcgi'
+-      if (Integer.new($::os['release']['major']) > 7) {
++      if (Integer.new($facts['os']['release']['major']) > 7) {
+         $pkg_policycoreutils = 'policycoreutils-python-utils'
+       } else {
+         $pkg_policycoreutils = 'policycoreutils-python'
+@@ -69,7 +69,7 @@ class ceph::params (
+     }
+ 
+     default: {
+-      fail("Unsupported osfamily: ${::osfamily} operatingsystem: ${::operatingsystem}, \
++      fail("Unsupported osfamily: ${facts['os']['family']} operatingsystem: ${facts['os']['name']}, \
+ module ${module_name} only supports osfamily Debian or RedHat")
+     }
+   }
+diff --git a/manifests/profile/mgr.pp b/manifests/profile/mgr.pp
+index d2437cd..014da1c 100644
+--- a/manifests/profile/mgr.pp
++++ b/manifests/profile/mgr.pp
+@@ -22,7 +22,7 @@
+ class ceph::profile::mgr {
+   require ceph::profile::base
+ 
+-  ceph::mgr { $::hostname:
++  ceph::mgr { $facts['networking']['hostname']:
+     authentication_type => $ceph::profile::params::authentication_type,
+     key                 => $ceph::profile::params::mgr_key,
+     inject_key          => true,
+diff --git a/manifests/profile/mon.pp b/manifests/profile/mon.pp
+index 8567610..1c8ad49 100644
+--- a/manifests/profile/mon.pp
++++ b/manifests/profile/mon.pp
+@@ -23,7 +23,7 @@
+ class ceph::profile::mon {
+   require ceph::profile::base
+ 
+-  ceph::mon { $::hostname:
++  ceph::mon { $facts['networking']['hostname']:
+     authentication_type => $ceph::profile::params::authentication_type,
+     key                 => $ceph::profile::params::mon_key,
+     keyring             => $ceph::profile::params::mon_keyring,
+diff --git a/manifests/repo.pp b/manifests/repo.pp
+index ec1d1b7..d4925d8 100644
+--- a/manifests/repo.pp
++++ b/manifests/repo.pp
+@@ -70,7 +70,7 @@ class ceph::repo (
+   $enable_sig     = $ceph::params::enable_sig,
+   $ceph_mirror    = undef,
+ ) inherits ceph::params {
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     'Debian': {
+       include apt
+ 
+@@ -89,7 +89,7 @@ class ceph::repo (
+       apt::source { 'ceph':
+         ensure   => $ensure,
+         location => $ceph_mirror_real,
+-        release  => $::lsbdistcodename,
++        release  => $facts['os']['distro']['codename'],
+         tag      => 'ceph',
+       }
+ 
+@@ -103,8 +103,8 @@ class ceph::repo (
+ 
+         apt::source { 'ceph-fastcgi':
+           ensure   => $ensure,
+-          location => "http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-${::lsbdistcodename}-${::hardwaremodel}-basic/ref/master",
+-          release  => $::lsbdistcodename,
++          location => "http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-${facts['os']['distro']['codename']}-${facts['os']['hardware']}-basic/ref/master",
++          release  => $facts['os']['distro']['codename'],
+           require  => Apt::Key['ceph-gitbuilder'],
+         }
+ 
+@@ -120,15 +120,15 @@ class ceph::repo (
+       # If you want to deploy Ceph using packages provided by CentOS SIG
+       # https://wiki.centos.org/SpecialInterestGroup/Storage/
+       if $enable_sig {
+-        if $::operatingsystem != 'CentOS' {
++        if $facts['os']['name'] != 'CentOS' {
+           warning("CentOS SIG repository is only supported on CentOS operating system, \
+-not on ${::operatingsystem}, which can lead to packaging issues.")
++not on ${facts['os']['name']}, which can lead to packaging issues.")
+         }
+         if $ceph_mirror {
+           $ceph_mirror_real = $ceph_mirror
+         } else {
+           # NOTE(tobias-urdin): mirror.centos.org doesnt have https support
+-          $ceph_mirror_real = "http://mirror.centos.org/centos/${::operatingsystemmajrelease}/storage/x86_64/ceph-${release}/"
++          $ceph_mirror_real = "http://mirror.centos.org/centos/${facts['os']['release']['major']}/storage/x86_64/ceph-${release}/"
+         }
+         yumrepo { 'ceph-luminous-sig':
+           ensure => 'absent',
+@@ -144,8 +144,8 @@ not on ${::operatingsystem}, which can lead to packaging issues.")
+         Yumrepo['ceph-luminous-sig'] -> Yumrepo['ceph-storage-sig'] -> Package<| tag == 'ceph' |>
+       } else {
+         # If you want to deploy Ceph using packages provided by ceph.com repositories.
+-        if ((($::operatingsystem == 'RedHat' or $::operatingsystem == 'CentOS') and (versioncmp($::operatingsystemmajrelease, '7') < 0))
+-              or ($::operatingsystem == 'Fedora' and (versioncmp($::operatingsystemmajrelease, '19') < 0))) {
++        if ((($facts['os']['name'] == 'RedHat' or $facts['os']['name'] == 'CentOS') and (versioncmp($facts['os']['release']['major'], '7') < 0))
++              or ($facts['os']['name'] == 'Fedora' and (versioncmp($facts['os']['release']['major'], '19') < 0))) {
+           $el = '6'
+         } else {
+           $el = '7'
+@@ -158,7 +158,7 @@ not on ${::operatingsystem}, which can lead to packaging issues.")
+         }
+ 
+ 
+-        if ($::operatingsystem != 'Fedora') {
++        if ($facts['os']['name'] != 'Fedora') {
+           yumrepo { 'ext-ceph':
+             # puppet versions prior to 3.5 do not support ensure, use enabled instead
+             enabled    => $enabled,
+@@ -201,7 +201,7 @@ not on ${::operatingsystem}, which can lead to packaging issues.")
+         }
+       }
+ 
+-      if $enable_epel and ($::operatingsystem != 'Fedora') {
++      if $enable_epel and ($facts['os']['name'] != 'Fedora') {
+         yumrepo { "ext-epel-${el}":
+           # puppet versions prior to 3.5 do not support ensure, use enabled instead
+           enabled    => $enabled,
+@@ -220,7 +220,7 @@ not on ${::operatingsystem}, which can lead to packaging issues.")
+     }
+ 
+     default: {
+-      fail("Unsupported osfamily: ${::osfamily} operatingsystem: ${::operatingsystem}, \
++      fail("Unsupported osfamily: ${facts['os']['family']} operatingsystem: ${facts['os']['name']}, \
+ module ${module_name} only supports osfamily Debian and RedHat")
+     }
+   }
+diff --git a/manifests/rgw.pp b/manifests/rgw.pp
+index b13cd0d..30ea349 100644
+--- a/manifests/rgw.pp
++++ b/manifests/rgw.pp
+@@ -80,7 +80,7 @@ define ceph::rgw (
+   $user               = $ceph::params::user_radosgw,
+   $keyring_path       = "/etc/ceph/ceph.client.${name}.keyring",
+   $log_file           = '/var/log/ceph/radosgw.log',
+-  $rgw_dns_name       = $::fqdn,
++  $rgw_dns_name       = $facts['networking']['fqdn'],
+   $rgw_socket_path    = $ceph::params::rgw_socket_path,
+   $rgw_print_continue = false,
+   $rgw_port           = undef,
+@@ -102,7 +102,7 @@ define ceph::rgw (
+   }
+ 
+   ceph_config {
+-    "client.${name}/host":               value => $::hostname;
++    "client.${name}/host":               value => $facts['networking']['hostname'];
+     "client.${name}/keyring":            value => $keyring_path;
+     "client.${name}/log_file":           value => $log_file;
+     "client.${name}/user":               value => $user;
+@@ -170,7 +170,7 @@ define ceph::rgw (
+ 
+   # service definition
+   # if Ubuntu does not use systemd
+-  if $::service_provider == 'upstart' {
++  if $facts['service_provider'] == 'upstart' {
+     if $rgw_enable {
+       file { "${rgw_data}/done":
+         ensure => present,
+@@ -183,7 +183,7 @@ define ceph::rgw (
+       start    => "start radosgw id=${name}",
+       stop     => "stop radosgw id=${name}",
+       status   => "status radosgw id=${name}",
+-      provider => $::service_provider,
++      provider => $facts['service_provider'],
+     }
+   # Everything else that is supported by puppet-ceph should run systemd.
+   } else {
+diff --git a/manifests/rgw/apache_proxy_fcgi.pp b/manifests/rgw/apache_proxy_fcgi.pp
+index 9f7245e..7d7b012 100644
+--- a/manifests/rgw/apache_proxy_fcgi.pp
++++ b/manifests/rgw/apache_proxy_fcgi.pp
+@@ -67,7 +67,7 @@
+ define ceph::rgw::apache_proxy_fcgi (
+   $admin_email          = 'root@localhost',
+   $docroot              = '/var/www',
+-  $rgw_dns_name         = $::fqdn,
++  $rgw_dns_name         = $facts['networking']['fqdn'],
+   $rgw_port             = '80',
+   $rewrite_rule         = '.* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]',
+   $setenv               = 'proxy-nokeepalive 1',
+diff --git a/manifests/rgw/keystone.pp b/manifests/rgw/keystone.pp
+index 8a5d0c6..4a40af0 100644
+--- a/manifests/rgw/keystone.pp
++++ b/manifests/rgw/keystone.pp
+@@ -84,8 +84,8 @@ define ceph::rgw::keystone (
+   }
+ 
+   # FIXME(ykarel) Cleanup once https://tracker.ceph.com/issues/24228 is fixed for luminous
+-  if ($::os['name'] == 'Fedora') or
+-    ($::os['family'] == 'RedHat' and Integer.new($::os['release']['major']) > 7) {
++  if ($facts['os']['name'] == 'Fedora') or
++    ($facts['os']['family'] == 'RedHat' and Integer.new($facts['os']['release']['major']) > 7) {
+     ceph_config {
+       "client.${name}/rgw_ldap_secret": value => '';
+     }
+-- 
+2.43.0

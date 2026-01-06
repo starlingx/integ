@@ -1,0 +1,55 @@
+From 3dd573bc54234ef1ed7998b93a6b03f13deb56ee Mon Sep 17 00:00:00 2001
+From: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+Date: Wed, 10 Jan 2024 14:20:02 -0300
+Subject: [PATCH] Add hmac parameter
+
+DRBD has its own authentication mechanism between drbd nodes.
+To enable DRBD peer authentication, we need to specify the
+following two parameters.
+- cram-hmac    : The HMAC algorithm to enable peer authentication
+- shared-secret: The shared secret used in peer authentication
+in drdb resource configuration to enable DRBD peer authentication.
+
+The parameter "secret" already exists in the current implementation.
+This change adds a new parameter "hmac" to specify cram-hmac.
+If this parameter is undefined, it will set "sha1" as
+the current value for compatibility.
+
+Signed-off-by: Takamasa Takenaka <takamasa.takenaka@windriver.com>
+---
+ manifests/resource.pp    | 1 +
+ templates/header.res.erb | 6 +++++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/manifests/resource.pp b/manifests/resource.pp
+index ede961f..68159c8 100644
+--- a/manifests/resource.pp
++++ b/manifests/resource.pp
+@@ -61,6 +61,7 @@ define drbd::resource (
+   $mkfs_opts      = '',
+   $disk           = undef,
+   $handlers       = false,
++  $hmac           = undef,
+ ) {
+   include ::drbd
+ 
+diff --git a/templates/header.res.erb b/templates/header.res.erb
+index 2cf8e37..320f10b 100644
+--- a/templates/header.res.erb
++++ b/templates/header.res.erb
+@@ -44,7 +44,11 @@ module bitmap_parse() routine from truncating input at 64 bits. -%>
+     after-sb-1pri discard-secondary;
+     after-sb-2pri disconnect;
+ 
+-    cram-hmac-alg sha1;
++<% if @hmac -%>
++    cram-hmac-alg "<%= @hmac %>";
++<% else -%>
++    cram-hmac-alg "sha1";
++<% end -%>
+ <% if @secret -%>
+     shared-secret "<%= @secret %>";
+ <% end -%>
+-- 
+2.25.1
+

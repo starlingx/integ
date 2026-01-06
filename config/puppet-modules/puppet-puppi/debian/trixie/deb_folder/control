@@ -1,0 +1,13 @@
+Source: puppet-puppi
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://www.starlingx.io
+
+Package: puppet-puppi
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, puppet
+Description: Puppet module named puppet-puppi
+ A Puppet module to provide puppet knowledge to CLI

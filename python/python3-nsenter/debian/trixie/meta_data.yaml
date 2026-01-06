@@ -1,0 +1,11 @@
+---
+debname: nsenter
+debver: 0.2
+dl_path:
+    name: nsenter-0.2.tar.gz
+    url: https://files.pythonhosted.org/packages/a5/46/1bfe9cca7f2e12cb2d7d9082b14feb785bc63628fb795a34d53ef57a8b93/nsenter-0.2.tar.gz
+    md5sum: a9e19cde39c93d91716f0be7dd0e14c5
+    sha256sum: 876a18cb03de85948e4cd72fd4cfda4879561b7264f5722603f6437d452a25cb
+revision:
+    dist: $STX_DIST
+    PKG_GITREVCOUNT: true

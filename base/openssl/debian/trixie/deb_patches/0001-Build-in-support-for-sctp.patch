@@ -1,0 +1,37 @@
+From 515dfa41c381ad5df449561335b63e353524367e Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Thu, 3 Jul 2025 10:14:32 +0000
+Subject: [PATCH] Build-in-support-for-sctp
+
+---
+ debian/control | 2 +-
+ debian/rules   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index b9cb164..f38b8f5 100644
+--- a/debian/control
++++ b/debian/control
+@@ -1,5 +1,5 @@
+ Source: openssl
+-Build-Depends: debhelper-compat (= 13), dpkg-dev (>= 1.22.5), libzstd-dev, zlib1g-dev
++Build-Depends: debhelper-compat (= 13), dpkg-dev (>= 1.22.5), libzstd-dev, zlib1g-dev, libsctp-dev
+ Section: utils
+ Priority: optional
+ Maintainer: Debian OpenSSL Team <pkg-openssl-devel@alioth-lists.debian.net>
+diff --git a/debian/rules b/debian/rules
+index 5a80970..ffad111 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -30,7 +30,7 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+ endif
+ 
+ CONFARGS  = --prefix=/usr --openssldir=/usr/lib/ssl --libdir=lib/$(DEB_HOST_MULTIARCH) no-idea no-mdc2 no-rc5 no-ssl3 enable-unit-test no-ssl3-method enable-rfc3779 enable-cms no-capieng no-rdrand \
+-	    enable-tfo enable-zstd enable-zlib enable-fips
++	    enable-tfo enable-zstd enable-zlib enable-fips enable-sctp
+ #OPT_alpha = ev4 ev5
+ ARCHOPTS  = OPT_$(DEB_HOST_ARCH)
+ OPTS      = $($(ARCHOPTS))
+-- 
+2.47.2
+

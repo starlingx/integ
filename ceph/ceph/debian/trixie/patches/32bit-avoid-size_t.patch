@@ -1,0 +1,112 @@
+Description: Avoid use of size_t when necessary
+ On 32 bit architectures size_t is not a 64 bit type, which
+ causes comparison mismatch failures during compilation.
+Author: James Page <james.page@ubuntu.com>, Bernd Zeimetz <bzed@debian.org>
+Forwarded: no
+
+Index: ceph/src/osd/PrimaryLogPG.cc
+===================================================================
+--- ceph.orig/src/osd/PrimaryLogPG.cc
++++ ceph/src/osd/PrimaryLogPG.cc
+@@ -1611,7 +1611,7 @@ int PrimaryLogPG::do_scrub_ls(MOSDOp *m,
+ 
+ void PrimaryLogPG::calc_trim_to()
+ {
+-  size_t target = cct->_conf->osd_min_pg_log_entries;
++  uint64_t target = cct->_conf->osd_min_pg_log_entries;
+   if (is_degraded() ||
+       state_test(PG_STATE_RECOVERING |
+                  PG_STATE_RECOVERY_WAIT |
+@@ -1627,15 +1627,15 @@ void PrimaryLogPG::calc_trim_to()
+   if (limit != eversion_t() &&
+       limit != pg_trim_to &&
+       pg_log.get_log().approx_size() > target) {
+-    size_t num_to_trim = std::min(pg_log.get_log().approx_size() - target,
+-                             cct->_conf->osd_pg_log_trim_max);
++    uint64_t num_to_trim = std::min(pg_log.get_log().approx_size() - target,
++                                    cct->_conf->osd_pg_log_trim_max);
+     if (num_to_trim < cct->_conf->osd_pg_log_trim_min &&
+         cct->_conf->osd_pg_log_trim_max >= cct->_conf->osd_pg_log_trim_min) {
+       return;
+     }
+     list<pg_log_entry_t>::const_iterator it = pg_log.get_log().log.begin();
+     eversion_t new_trim_to;
+-    for (size_t i = 0; i < num_to_trim; ++i) {
++    for (uint64_t i = 0; i < num_to_trim; ++i) {
+       new_trim_to = it->version;
+       ++it;
+       if (new_trim_to > limit) {
+Index: ceph/src/os/bluestore/BlueFS.h
+===================================================================
+--- ceph.orig/src/os/bluestore/BlueFS.h
++++ ceph/src/os/bluestore/BlueFS.h
+@@ -72,7 +72,7 @@ public:
+    * @params
+    * alloc_size - allocation unit size to check
+    */
+-  virtual size_t available_freespace(uint64_t alloc_size) = 0;
++  virtual uint64_t available_freespace(uint64_t alloc_size) = 0;
+ };
+ 
+ class BlueFSVolumeSelector {
+Index: ceph/src/os/bluestore/BlueStore.cc
+===================================================================
+--- ceph.orig/src/os/bluestore/BlueStore.cc
++++ ceph/src/os/bluestore/BlueStore.cc
+@@ -5930,12 +5930,12 @@ int BlueStore::allocate_bluefs_freespace
+   return 0;
+ }
+ 
+-size_t BlueStore::available_freespace(uint64_t alloc_size) {
+-  size_t total = 0;
+-  auto iterated_allocation = [&](size_t off, size_t len) {
++uint64_t BlueStore::available_freespace(uint64_t alloc_size) {
++  uint64_t total = 0;
++  auto iterated_allocation = [&](uint64_t off, uint64_t len) {
+     //only count in size that is alloc_size aligned
+-    size_t dist_to_alignment;
+-    size_t offset_in_block = off & (alloc_size - 1);
++    uint64_t dist_to_alignment;
++    uint64_t offset_in_block = off & (alloc_size - 1);
+     if (offset_in_block == 0)
+       dist_to_alignment = 0;
+     else
+Index: ceph/src/os/bluestore/BlueStore.h
+===================================================================
+--- ceph.orig/src/os/bluestore/BlueStore.h
++++ ceph/src/os/bluestore/BlueStore.h
+@@ -3107,7 +3107,7 @@ private:
+     PExtentVector& extents) override {
+     return allocate_bluefs_freespace(min_size, size, &extents);
+   };
+-  size_t available_freespace(uint64_t alloc_size) override;
++  uint64_t available_freespace(uint64_t alloc_size) override;
+ 
+ public:
+   struct sb_info_t {
+Index: ceph/src/common/config_values.h
+===================================================================
+--- ceph.orig/src/common/config_values.h
++++ ceph/src/common/config_values.h
+@@ -50,7 +50,7 @@ public:
+ #define OPTION_OPT_U32(name) uint64_t name;
+ #define OPTION_OPT_U64(name) uint64_t name;
+ #define OPTION_OPT_UUID(name) uuid_d name;
+-#define OPTION_OPT_SIZE(name) size_t name;
++#define OPTION_OPT_SIZE(name) uint64_t name;
+ #define OPTION(name, ty)       \
+   public:                      \
+     OPTION_##ty(name)          
+Index: ceph/src/common/options.cc
+===================================================================
+--- ceph.orig/src/common/options.cc
++++ ceph/src/common/options.cc
+@@ -189,7 +189,7 @@ int Option::parse_value(
+     }
+     *out = uuid;
+   } else if (type == Option::TYPE_SIZE) {
+-    Option::size_t sz{strict_iecstrtoll(val.c_str(), error_message)};
++    Option::size_t sz{static_cast<std::size_t>(strict_iecstrtoll(val.c_str(), error_message))};
+     if (!error_message->empty()) {
+       return -EINVAL;
+     }

@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+export DH_VERBOSE = 1
+export PYTHONDONTWRITEBYTECODE=1
+
+export PYBUILD_NAME=pyjwkest
+export ROOT=debian/tmp
+
+DEBIAN_DIR := $(CURDIR)/debian/tmp
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_install:
+	python3 setup.py install -f --install-layout=deb --root=$(CURDIR)/debian/tmp
+	python3 setup.py bdist_wheel \
+		--universal \
+		-d ${CURDIR}/debian/python3-pyjwkest-wheel/usr/share/python-wheels
+	dh_install
+
+override_dh_auto_test:
+	echo "do nothing..."
+
+override_dh_python3:
+	dh_python3 --shebang=/usr/bin/python3

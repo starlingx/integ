@@ -1,0 +1,122 @@
+From 5d969361175801e3eb092e6c0f5e5925c212d720 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 1 Aug 2025 07:08:38 +0000
+Subject: [PATCH] Disable configuration validation during manifest apply
+
+Adapt 0002-disable-config-validation-prechecks.patch from centOS
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/config.pp   | 3 ---
+ manifests/init.pp     | 7 -------
+ manifests/instance.pp | 7 -------
+ manifests/params.pp   | 2 --
+ 4 files changed, 19 deletions(-)
+
+diff --git a/manifests/config.pp b/manifests/config.pp
+index 47a2e04..faecd82 100644
+--- a/manifests/config.pp
++++ b/manifests/config.pp
+@@ -12,7 +12,6 @@ define haproxy::config (
+   Stdlib::Absolutepath                  $config_dir          = undef,
+   Optional[String]                      $custom_fragment     = undef,
+   Boolean                               $merge_options       = $haproxy::merge_options,
+-  Variant[Stdlib::Absolutepath, String] $config_validate_cmd = $haproxy::config_validate_cmd,
+   # lint:endignore
+ ) {
+   if $caller_module_name != $module_name {
+@@ -58,8 +57,6 @@ define haproxy::config (
+       mode  => '0640',
+     }
+ 
+-    Concat[$_config_file] {
+-      validate_cmd => $config_validate_cmd,
+     }
+ 
+     # Simple Header
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 01f3462..4b16795 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -79,11 +79,6 @@
+ #   Optional. Path to the haproxy config file.
+ #   Default depends on platform.
+ #
+-# @param config_validate_cmd
+-#   Optional. Command used by concat validate_cmd to validate new
+-#   config file concat is a valid haproxy config.
+-#   Default /usr/sbin/haproxy -f % -c
+-#
+ # @param manage_config_dir
+ #   Optional. 
+ # @param manage_service
+@@ -136,7 +131,6 @@ class haproxy (
+   Stdlib::Absolutepath                          $config_dir           = $haproxy::params::config_dir,
+   Optional[Stdlib::Absolutepath]                $config_file          = $haproxy::params::config_file,
+   Boolean                                       $manage_config_dir    = $haproxy::params::manage_config_dir,
+-  Variant[Stdlib::Absolutepath, String]         $config_validate_cmd  = $haproxy::params::config_validate_cmd,
+ 
+   # Deprecated
+   Optional[Boolean]                             $manage_service       = undef,
+@@ -186,6 +180,5 @@ class haproxy (
+     merge_options       => $merge_options,
+     service_options     => $service_options,
+     sysconfig_options   => $sysconfig_options,
+-    config_validate_cmd => $config_validate_cmd,
+   }
+ }
+diff --git a/manifests/instance.pp b/manifests/instance.pp
+index 9e42e01..d983b49 100644
+--- a/manifests/instance.pp
++++ b/manifests/instance.pp
+@@ -71,11 +71,6 @@
+ #     The parent directory will be created automatically.
+ #   Defaults to undef.
+ #
+-# @param config_validate_cmd
+-#   Command used by concat validate_cmd to validate new
+-#   config file concat is a valid haproxy config.
+-#   Default /usr/sbin/haproxy -f % -c
+-#
+ # @param config_dir
+ #   Optional. Default undef.
+ #
+@@ -171,7 +166,6 @@ define haproxy::instance (
+   Optional[String]                             $custom_fragment      = undef,
+   Optional[Stdlib::Absolutepath]               $config_dir           = undef,
+   Optional[Stdlib::Absolutepath]               $config_file          = undef,
+-  Variant[Stdlib::Absolutepath, String]        $config_validate_cmd  = $haproxy::params::config_validate_cmd,
+   Boolean                                      $merge_options        = $haproxy::params::merge_options,
+   String                                       $service_options      = $haproxy::params::service_options,
+   String                                       $sysconfig_options    = $haproxy::params::sysconfig_options,
+@@ -220,7 +214,6 @@ define haproxy::instance (
+     merge_options       => $merge_options,
+     package_ensure      => $package_ensure,
+     chroot_dir_manage   => $chroot_dir_manage,
+-    config_validate_cmd => $config_validate_cmd,
+   }
+   haproxy::install { $title:
+     package_name   => $package_name,
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 70b5239..bc892d9 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -39,7 +39,6 @@ class haproxy::params {
+         ],
+         'maxconn' => '8000',
+       }
+-      $config_validate_cmd = '/usr/sbin/haproxy -f % -c'
+       # Single instance:
+       $config_dir        = '/etc/haproxy'
+       $config_file       = '/etc/haproxy/haproxy.cfg'
+@@ -75,7 +74,6 @@ class haproxy::params {
+         'clitimeout' => '50000',
+         'srvtimeout' => '50000',
+       }
+-      $config_validate_cmd = '/usr/local/sbin/haproxy -f % -c'
+       # Single instance:
+       $config_dir        = '/usr/local/etc'
+       $config_file       = '/usr/local/etc/haproxy.conf'
+-- 
+2.47.2
+

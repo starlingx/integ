@@ -1,0 +1,5 @@
+kubernetes-unversioned (1.0-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Mihnea Saracin <mihnea.saracin@opendev.org>  Mon, 15 Nov 2021 16:09:12 +0000

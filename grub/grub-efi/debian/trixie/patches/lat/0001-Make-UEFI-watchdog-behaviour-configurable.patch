@@ -1,0 +1,164 @@
+From 0ffd19e286dfdbc74dcce231b9c11340b64fb916 Mon Sep 17 00:00:00 2001
+From: Jiang Lu <lu.jiang@windriver.com>
+Date: Thu, 31 Jan 2019 15:27:03 +0800
+Subject: [PATCH] Make UEFI watchdog behaviour configurable
+
+Starting with d9a0c9413e81d3c0affc6383693bdd28dc863a5c, GRUB unconditionally
+disables watchdog on EFI platforms. This opens up a window (starting at GRUB's
+grub_efi_init(), until OS re-enables it) when EFI system operates w/o watchdog.
+If an EFI system gets stuck in that window, the chipset will never reset the
+system.
+
+Create a command line interface to enable/disable watchdog:
+efi-watchdog (enable|disable) <code> <timeout>
+
+Upstream-Status: Inappropriate [WRLinux Specific]
+
+Signed-off-by: Jiang Lu <lu.jiang@windriver.com>
+
+Rebase for grub 2.06
+
+Rebase for grub 2.12
+Drop uses of efi_call_X()
+
+Signed-off-by: Yi Zhao <yi.zhao@windriver.com>
+[lz: adapt the patch for solving build error:
+../../../grub-core/kern/efi/init.c:161:57: note:
+expected â€˜grub_efi_char16_t *â€™ {aka â€˜short unsigned int *â€™}
+but argument is of type â€˜const short unsigned int *â€™]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ docs/grub.texi            | 11 +++++++
+ grub-core/kern/efi/init.c | 68 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 79 insertions(+)
+
+diff --git a/docs/grub.texi b/docs/grub.texi
+index a225f9a..9363232 100644
+--- a/docs/grub.texi
++++ b/docs/grub.texi
+@@ -4359,6 +4359,7 @@ you forget a command, you can run the command @command{help}
+ * distrust::                    Remove a pubkey from trusted keys
+ * drivemap::                    Map a drive to another
+ * echo::                        Display a line of text
++* efi-watchdog::                Manipulate EFI watchdog
+ * efitextmode::                 Set/Get text output mode resolution
+ * eval::                        Evaluate agruments as GRUB commands
+ * export::                      Export an environment variable
+@@ -4825,6 +4826,16 @@ When interpreting backslash escapes, backslash followed by any other
+ character will print that character.
+ @end deffn
+ 
++@node efi-watchdog
++@subsection efi-watchdog
++
++@deffn Command efi-watchdog enable|disable <code> <timeout>
++Enable or disable the system's watchdog timer. Only available in EFI targeted
++GRUB.
++The <code> is logged upon watchdog timeout event. The UEFI BIOS reserves codes
++0x0000 to 0xFFFF.
++The <timeout> represents number of seconds to set the watchdog timeout to.
++@end deffn
+ 
+ @node efitextmode
+ @subsection efitextmode
+diff --git a/grub-core/kern/efi/init.c b/grub-core/kern/efi/init.c
+index 6c54af6..1039860 100644
+--- a/grub-core/kern/efi/init.c
++++ b/grub-core/kern/efi/init.c
+@@ -29,6 +29,8 @@
+ #include <grub/mm.h>
+ #include <grub/kernel.h>
+ #include <grub/stack_protector.h>
++#include <grub/extcmd.h>
++#include <grub/command.h>
+ 
+ #ifdef GRUB_STACK_PROTECTOR
+ 
+@@ -103,6 +105,68 @@ stack_protector_init (void)
+ 
+ grub_addr_t grub_modbase;
+ 
++static grub_command_t cmd_list;
++
++static grub_err_t
++grub_cmd_efi_watchdog (grub_command_t cmd  __attribute__ ((unused)),
++                      int argc, char **args)
++{
++    long input;
++    grub_efi_status_t status;
++    grub_efi_uintn_t timeout;
++    grub_efi_uint64_t code;
++
++    if (argc < 1)
++       return grub_error (GRUB_ERR_BAD_ARGUMENT,
++           N_("usage: efi-watchdog (enable|disable) <code> <timeout>"));
++
++    if (grub_strcasecmp (args[0], "enable") == 0) {
++
++       if (argc != 3)
++           return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                              N_("usage: efi-watchdog enable <code> <timeout>"));
++
++       input = grub_strtol (args[1], 0, 0);
++
++       if (input >= 0) {
++           code = input;
++       } else {
++           return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                              N_("<code> must be non-negative"));
++       }
++
++       input = grub_strtol (args[2], 0, 0);
++
++       if (input >= 0) {
++           timeout = (grub_efi_uintn_t) input;
++       } else {
++           return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                              N_("<timeout> must be non-negative"));
++       }
++
++    } else if (grub_strcasecmp (args[0], "disable") == 0) {
++
++       if (argc != 1)
++           return grub_error (GRUB_ERR_BAD_ARGUMENT,
++                              N_("usage: efi-watchdog disable"));
++       timeout = 0;
++       code = 0;
++
++    } else {
++       return grub_error (GRUB_ERR_BAD_ARGUMENT,
++           N_("usage: efi-watchdog (enable|disable) <code> <timeout>"));
++    }
++
++    status = grub_efi_system_table->boot_services->set_watchdog_timer(
++                        timeout, code, sizeof(L"GRUB"), (grub_efi_char16_t *)L"GRUB");
++
++    if (status != GRUB_EFI_SUCCESS)
++       return grub_error (GRUB_ERR_BUG,
++                          N_("Unexpected UEFI SetWatchdogTimer() error"));
++    else
++       return GRUB_ERR_NONE;
++}
++
+ __attribute__ ((__optimize__ ("-fno-stack-protector"))) void
+ grub_efi_init (void)
+ {
+@@ -130,6 +194,9 @@ grub_efi_init (void)
+ 
+   grub_efidisk_init ();
+ 
++  cmd_list = grub_register_command ("efi-watchdog", grub_cmd_efi_watchdog, 0,
++                                   N_("Enable/Disable system's watchdog timer."));
++
+   grub_efi_register_debug_commands ();
+ }
+ 
+@@ -168,4 +235,5 @@ grub_efi_fini (void)
+ {
+   grub_efidisk_fini ();
+   grub_console_fini ();
++  grub_unregister_command (cmd_list);
+ }
+-- 
+2.25.1
+

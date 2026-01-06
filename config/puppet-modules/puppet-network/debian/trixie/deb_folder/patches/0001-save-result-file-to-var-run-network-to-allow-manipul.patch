@@ -1,0 +1,50 @@
+From cb0e726128a9565aa2f5ea97c8c9fafe944dd173 Mon Sep 17 00:00:00 2001
+From: Andre Fernando Zanella Kantek
+ <AndreFernandoZanella.Kantek@windriver.com>
+Date: Tue, 22 Feb 2022 09:09:08 -0300
+Subject: [PATCH] save result file to /var/run/network-scripts.puppet/ to allow
+ manipulation before is saved in /etc/network/
+
+Signed-off-by: Andre Fernando Zanella Kantek <AndreFernandoZanella.Kantek@windriver.com>
+---
+ lib/puppet/provider/network_config/interfaces.rb | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/lib/puppet/provider/network_config/interfaces.rb b/lib/puppet/provider/network_config/interfaces.rb
+index 73b3286..d72ab45 100644
+--- a/lib/puppet/provider/network_config/interfaces.rb
++++ b/lib/puppet/provider/network_config/interfaces.rb
+@@ -19,12 +19,19 @@ Puppet::Type.type(:network_config).provide(:interfaces) do
+   has_feature :provider_options
+   has_feature :hotpluggable
+
++  # WRS: Generate temporary copy.  It will get compared to file
++  # /etc/network/interfaces afterward.  Only config that have changed
++  # will get replaced.  Don't let puppet directly manage it, else it will
++  # trigger un-wanted networking actions (like up/down).
++  SCRIPT_DIRECTORY = '/var/run/network-scripts.puppet/'
++  SCRIPT_FILE = SCRIPT_DIRECTORY + 'interfaces'
++
+   def select_file
+-    '/etc/network/interfaces'
++    SCRIPT_FILE
+   end
+
+   def self.target_files
+-    ['/etc/network/interfaces']
++    [SCRIPT_FILE]
+   end
+
+   class MalformedInterfacesError < Puppet::Error
+@@ -242,6 +249,8 @@ Puppet::Type.type(:network_config).provide(:interfaces) do
+
+   # Generate an array of sections
+   def self.format_file(_filename, providers)
++    Dir.mkdir(SCRIPT_DIRECTORY) unless File.exists?(SCRIPT_DIRECTORY)
++
+     contents = []
+     contents << header
+
+--
+2.17.1
+

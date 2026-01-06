@@ -1,0 +1,12 @@
+---
+debver: 7.1.0-2
+dl_path:
+  name: python-docker-debian-7.1.0-2.tar.gz
+  url: https://salsa.debian.org/docker-compose-team/python-docker/-/archive/debian/7.1.0-1/python-docker-debian-7.1.0-2.tar.gz
+  md5sum: 28efcfe74068649d7556ec7e07ab6d9f
+  sha256sum: 8bb04d749dbe351692661272e42acb7528341704c2d3c58296746c67ff347d1b
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 999fcb6e5979b5d749b8cba7fb840616389ffa69
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/docker/python-docker

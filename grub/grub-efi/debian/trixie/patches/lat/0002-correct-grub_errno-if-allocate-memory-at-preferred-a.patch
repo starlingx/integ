@@ -1,0 +1,42 @@
+From 8810a5dbe71420d0b478c8522311187e43a19f69 Mon Sep 17 00:00:00 2001
+From: Hongxu Jia <hongxu.jia@windriver.com>
+Date: Sat, 19 Mar 2022 20:01:58 +0800
+Subject: [PATCH] correct grub_errno if allocate memory at preferred address
+ success
+
+Usually allocate memory at preferred address will fail and then
+allocate to another address. During second time allocate, it reset
+grub_errno = GRUB_ERR_NONE.
+
+While grub efi working on a server with huge memory, allocate memory at
+preferred address will succeed, no need to allocate again, and no change
+to correct grub_errno. It caused load kernel image fail in this
+situation.
+
+Set grub_errno = GRUB_ERR_NONE if first allocate success
+
+Upstream-Status: Inappropriate [oe specific]
+
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+---
+ grub-core/loader/i386/linux.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
+index 14d6a80..87469e7 100644
+--- a/grub-core/loader/i386/linux.c
++++ b/grub-core/loader/i386/linux.c
+@@ -183,6 +183,10 @@ allocate_pages (grub_size_t prot_size, grub_size_t *align,
+ 						prot_size, 1,
+ 						GRUB_RELOCATOR_PREFERENCE_LOW,
+ 						1);
++
++	if (!err)
++		grub_errno = GRUB_ERR_NONE;
++
+ 	for (; err && *align + 1 > min_align; (*align)--)
+ 	  {
+ 	    grub_errno = GRUB_ERR_NONE;
+-- 
+2.27.0
+

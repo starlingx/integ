@@ -1,0 +1,10 @@
+no_keyring_password.patch
+lock_keyring_file.patch
+lock_keyring_file2.patch
+use_new_lock.patch
+fix_keyring_lockfile_location.patch
+use_temporary_file.patch
+chown_keyringlock_file.patch
+chmod_keyringlock2.patch
+remove-reader-lock.patch
+remove_others_perms_on_keyringcfg_file.patch

@@ -1,0 +1,69 @@
+Source: etcd
+Maintainer: StarlingX Developers <StarlingX-discuss@lists.StarlingX.io>
+Section: net
+Priority: optional
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://etcd.io
+Rules-Requires-Root: no
+XS-Go-Import-Path: go.etcd.io/etcd,
+                   github.com/coreos/etcd
+
+Package: etcd-server
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends},
+Depends: adduser,
+         ${misc:Depends},
+         ${shlibs:Depends},
+Suggests: etcd-client,
+Built-Using: ${misc:Built-Using},
+Description: highly-available key value store -- daemon
+ A highly-available key value store for shared configuration and service
+ discovery. etcd is inspired by zookeeper and doozer, with a focus on:
+ .
+  * Simple: curl'able user facing API (HTTP+JSON)
+  * Secure: optional SSL client cert authentication
+  * Fast: benchmarked 1000s of writes/s per instance
+  * Reliable: Properly distributed using Raft
+ .
+ Etcd uses the Raft consensus algorithm to manage a highly-available replicated
+ log.
+ .
+ This package contains the server binaries.
+
+Package: etcd-client
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Built-Using: ${misc:Built-Using},
+Description: highly-available key value store -- client
+ A highly-available key value store for shared configuration and service
+ discovery. etcd is inspired by zookeeper and doozer, with a focus on:
+ .
+  * Simple: curl'able user facing API (HTTP+JSON)
+  * Secure: optional SSL client cert authentication
+  * Fast: benchmarked 1000s of writes/s per instance
+  * Reliable: Properly distributed using Raft
+ .
+ Etcd uses the Raft consensus algorithm to manage a highly-available replicated
+ log.
+ .
+ This package contains the client binaries.
+
+Package: golang-etcd-server-dev
+Architecture: all
+Depends: ${misc:Depends},
+Provides: golang-github-coreos-etcd-dev,
+Description: highly-available key value store -- source
+ A highly-available key value store for shared configuration and service
+ discovery. etcd is inspired by zookeeper and doozer, with a focus on:
+ .
+  * Simple: curl'able user facing API (HTTP+JSON)
+  * Secure: optional SSL client cert authentication
+  * Fast: benchmarked 1000s of writes/s per instance
+  * Reliable: Properly distributed using Raft
+ .
+ Etcd uses the Raft consensus algorithm to manage a highly-available replicated
+ log.
+ .
+ This package contains the source.

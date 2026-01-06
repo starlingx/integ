@@ -1,0 +1,23 @@
+Description: Avoid overloading on 32 bit architectures
+ unsigned and size_t are equivalent on 32 bit architectures,
+ so only define the size_t based overload of advance on 64
+ bit architectures.
+ https://wiki.debian.org/ArchitectureSpecificsMemo
+Author: James Page <james.page@ubuntu.com>, Bernd Zeimetz <bzed@debian.org>
+Forwarded: no
+
+--- a/src/include/buffer.h
++++ b/src/include/buffer.h
+@@ -737,7 +737,12 @@ inline namespace v14_2_0 {
+ 
+       void advance(int o) = delete;
+       void advance(unsigned o);
++
++// unsigned and size_t are equivalent on 32bit architectures.
++// so casting is only needed when not on 32bit.
++#if defined(UINTPTR_MAX) && UINTPTR_MAX > 0xffffffff
+       void advance(size_t o) { advance(static_cast<unsigned>(o)); }
++#endif
+       void seek(unsigned o);
+       char operator*() const;
+       iterator_impl& operator++();

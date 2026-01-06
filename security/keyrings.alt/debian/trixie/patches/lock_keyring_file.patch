@@ -1,0 +1,59 @@
+From fb12e7697fa8b2c96e47739b3c9b7efd8e79f0da Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Tue, 2 Sep 2025 15:24:51 -0400
+Subject: [PATCH 02/10] Introduce lock when writting to keyring
+
+Introduce a locking file when writing to keyring storage file.
+---
+ keyrings/alt/file_base.py | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index 6fcd005..5c647bb 100644
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -1,6 +1,7 @@
+ import abc
+ import configparser
+ import os
++import time
+ from base64 import decodebytes, encodebytes
+ 
+ from jaraco.classes import properties
+@@ -138,6 +139,17 @@ class Keyring(FileBacked, KeyringBackend):
+         config = configparser.RawConfigParser()
+         config.read(self.file_path, encoding='utf-8')
+ 
++        # obtain lock for the keyring file
++        lock = ''
++        i = 60
++        while i:
++            if not os.path.isfile('/tmp/.keyringlock'):
++                lock = open('/tmp/.keyringlock', 'w')
++                break
++            else:
++                time.sleep(0.500)
++                i=i-1
++
+         service = escape_for_ini(service)
+         key = escape_for_ini(key)
+ 
+@@ -146,9 +158,12 @@ class Keyring(FileBacked, KeyringBackend):
+             config.add_section(service)
+         config.set(service, key, value)
+ 
+-        # save the keyring back to the file
+-        with open(self.file_path, 'w', encoding='utf-8') as config_file:
+-            config.write(config_file)
++        if i:
++            # save the keyring back to the file
++            with open(self.file_path, 'w', encoding='utf-8') as config_file:
++                config.write(config_file)
++            lock.close()
++            os.remove('/tmp/.keyringlock')
+ 
+     def _ensure_file_path(self):
+         """
+-- 
+2.34.1
+

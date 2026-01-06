@@ -1,0 +1,3 @@
+#0001-Don-t-delete-module-metadata-in-deb-package.patch
+#0002-Build-the-python2-variant.patch
+0001-Fix-build-issues.patch

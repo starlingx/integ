@@ -1,0 +1,28 @@
+From 40fde1bcdb9b9b1073c1c0ca15311be07b7c2dee Mon Sep 17 00:00:00 2001
+From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Date: Thu, 30 Sep 2021 14:24:27 +0300
+Subject: [PATCH 4/5] Increase short cmd timeout to 15 secs
+
+Clean copy of 0004_915-Increase-short-cmd-timeout-to-15-secs.patch form
+CentOS.
+
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+---
+ scripts/global_common.conf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/scripts/global_common.conf b/scripts/global_common.conf
+index 12d83d5..13ad567 100644
+--- a/scripts/global_common.conf
++++ b/scripts/global_common.conf
+@@ -13,6 +13,7 @@ global {
+ 
+ 	# minor-count dialog-refresh disable-ip-verification
+ 	# cmd-timeout-short 5; cmd-timeout-medium 121; cmd-timeout-long 600;
++	cmd-timeout-short 15;
+ }
+ 
+ common {
+-- 
+2.30.0
+

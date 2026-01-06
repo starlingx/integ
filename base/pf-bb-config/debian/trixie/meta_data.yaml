@@ -1,0 +1,10 @@
+---
+debver: 23.03
+dl_path:
+  name: pf-bb-config-23.03.tar.gz
+  url: https://github.com/intel/pf-bb-config/archive/refs/tags/v23.03.tar.gz
+  md5sum: b8953c4760678687bcb6c31125445560
+  sha256sum: 76ad941eca2bc9932bb279c4d6fa591442ee5769b7a503d04a8bbf9244820212
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

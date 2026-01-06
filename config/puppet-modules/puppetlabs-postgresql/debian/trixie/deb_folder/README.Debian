@@ -1,0 +1,8 @@
+This package contains a module for use by puppet. It is
+automatically added to the module load path of puppet's default
+environment, and should be ready for use.
+
+You can use "update-alternatives --config puppet-module-postgresql"
+to configure which module should appear in the module path of the
+default puppet environment, in case multiple modules which provide
+the same name are installed.

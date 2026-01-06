@@ -1,0 +1,3 @@
+isolcpu_plugin.service /lib/systemd/system/
+isolcpu_plugin /usr/local/sbin/
+isolcpu_plugin.conf /usr/share/starlingx/pmon.d/

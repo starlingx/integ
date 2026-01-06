@@ -1,0 +1,13 @@
+---
+debname: flux2-charts
+debver: 2.17.2-1
+src_path: files
+dl_path:
+  name: flux2-2.17.2.tar.gz
+  url: https://github.com/fluxcd-community/helm-charts/archive/refs/tags/flux2-2.17.2.tar.gz
+  sha256sum: 00deb09f55e375a70058920b9dc9995eee91a46f09523920be9a4bc4751bd122
+src_files:
+  - files/Makefile
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

@@ -1,0 +1,33 @@
+From: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Mon, 13 Feb 2023 16:09:32 -0300
+Subject: Handle multipath persistent device support
+
+For HDD/SSD and NVMe disks we provide 'by-path' values which correspond
+to physical locations residing within a specific host (i.e. controller
+pci slot location). For multipath devices we will use by-id/wwn values
+to uniquely identify a persistent disk which will have multiple devices
+that coalesce into a single multipath device.
+
+This change will match physical volumes provided to the module in both
+/dev/disk/by-path and /dev/disk/by-id/wwn-* patterns. This aligns with
+the hiera data generated from the system inventory
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+Signed-off-by: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ lib/puppet/provider/volume_group/lvm.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/puppet/provider/volume_group/lvm.rb b/lib/puppet/provider/volume_group/lvm.rb
+index 9fa687f..f1b00f8 100644
+--- a/lib/puppet/provider/volume_group/lvm.rb
++++ b/lib/puppet/provider/volume_group/lvm.rb
+@@ -115,7 +115,7 @@ Puppet::Type.type(:volume_group).provide :lvm do
+ 
+   def physical_volumes
+     if @resource[:createonly].to_s == 'false' || !vgs(@resource[:name])
+-      lines = `pvs -o pv_name,vg_name --separator ',' | awk -F ',' 'NR>1{cmd="find -L /dev/disk/by-path/ -samefile" $1; cmd | getline $1;print $1 "," $2; next};{print}'`
++      lines = `pvs -o pv_name,vg_name --separator ',' | awk -F ',' 'NR>1{cmd="find -L /dev/disk/by-{path,id/wwn-*} -samefile" $1; cmd | getline $1;print $1 "," $2; next};{print}' 2>/dev/null`
+       lines.split(%r{\n}).grep(%r{,#{@resource[:name]}$}).map do |s|
+         s.split(%r{,})[0].strip
+       end

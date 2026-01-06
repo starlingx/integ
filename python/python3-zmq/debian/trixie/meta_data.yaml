@@ -1,0 +1,7 @@
+---
+debname: pyzmq
+debver: 26.4.0-1
+archive: https://snapshot.debian.org/archive/debian/20250721T022532Z/pool/main/p/pyzmq/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

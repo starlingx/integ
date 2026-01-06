@@ -1,0 +1,67 @@
+From 746894fb8cb7f0117519191b04e838b10c57ef79 Mon Sep 17 00:00:00 2001
+From: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+Date: Mon, 30 Sep 2024 15:57:56 -0300
+Subject: [PATCH] Skip script if it is a labeled interface
+
+Labeled interface config files (format 'intf:label') only handle
+interface addresses not the bonding itself. Skip scripts if this is
+the case
+
+Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+---
+ debian/ifenslave.if-post-down | 5 +++++
+ debian/ifenslave.if-pre-up    | 5 +++++
+ debian/ifenslave.if-up        | 5 +++++
+ 3 files changed, 15 insertions(+)
+
+diff --git a/debian/ifenslave.if-post-down b/debian/ifenslave.if-post-down
+index 177a06c..a3595a4 100755
+--- a/debian/ifenslave.if-post-down
++++ b/debian/ifenslave.if-post-down
+@@ -26,6 +26,11 @@ sysfs_remove_all()
+ 	done
+ }
+ 
++# If it is a labeled interface, skip
++if [[ "$IFACE" =~ ":" ]] ; then
++	exit 0
++fi
++
+ BOND_PARAMS="/sys/class/net/$IFACE/bonding"
+ 
+ # free $IFACE if it is currently enslaved to a bonding device.
+diff --git a/debian/ifenslave.if-pre-up b/debian/ifenslave.if-pre-up
+index 52336ab..2b87fcf 100755
+--- a/debian/ifenslave.if-pre-up
++++ b/debian/ifenslave.if-pre-up
+@@ -216,6 +216,11 @@ setup_slave_device() {
+ 	setup_primary
+ }
+ 
++# If it is a labeled interface, skip
++if [[ "$IFACE" =~ ":" ]] ; then
++	exit 0
++fi
++
+ # Option slaves deprecated, replaced by bond-slaves, but still supported for backward compatibility.
+ IF_BOND_SLAVES=${IF_BOND_SLAVES:-$IF_SLAVES}
+ 
+diff --git a/debian/ifenslave.if-up b/debian/ifenslave.if-up
+index 923b38f..bd9baa9 100755
+--- a/debian/ifenslave.if-up
++++ b/debian/ifenslave.if-up
+@@ -16,6 +16,11 @@ sysfs()
+ 	return 0
+ }
+ 
++# If it is a labeled interface, skip
++if [[ "$IFACE" =~ ":" ]] ; then
++	exit 0
++fi
++
+ # If the stanza bond-give-a-chance is set for a slave interface,
+ # then force $IFACE to be the primary for some time, then restore the primary to its previous value.
+ 
+-- 
+2.34.1
+

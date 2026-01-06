@@ -1,9 +1,0 @@
----
-debname: docker-registry
-debver: 2.8.2+ds1-1
-archive: https://snapshot.debian.org/archive/debian/20230529T205957Z/pool/main/d/docker-registry
-revision:
-  dist: $STX_DIST
-  GITREVCOUNT:
-    BASE_SRCREV: b9d28e3c568a843f4707dd8ca58e388f7b7dea04
-    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/docker-distribution

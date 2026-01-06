@@ -1,0 +1,30 @@
+#!/usr/bin/make -f
+# vim: set expandtab!
+# export DH_VERBOSE = 1
+
+export ROOT = debian/tmp
+export SBINDIR = $(ROOT)/usr/sbin
+export SUDOERDIR = $(ROOT)/etc/sudoers.d
+
+export HELM_VERSION = 3.19.2
+export HELM_EXECUTABLE = linux-amd64/helm
+export HELM_PKG = helm-v$(HELM_VERSION)-linux-amd64.tar.gz
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Extract the third party helm package downloaded in dl_hook.
+	tar xfz $(HELM_PKG)
+
+override_dh_auto_install:
+	install -d -m 755 $(SBINDIR)
+	install -d -m 755 $(ROOT)/usr/local/sbin
+	install -p -D -m 755 $(HELM_EXECUTABLE) $(SBINDIR)
+	install -p -D -m 755 helm-upload $(ROOT)/usr/local/sbin
+	install -d -m 755 $(SUDOERDIR)
+	install -p -D -m 440 helm.sudo $(SUDOERDIR)/helm
+	install -d -m 755 $(ROOT)/usr/local/share/helm
+
+override_dh_usrlocal:
+	# Do Nothing

@@ -1,0 +1,12 @@
+---
+debname: etcd
+debver: 3.4.37
+dl_path:
+  name: etcd-3.4.37.tar.gz
+  url: https://github.com/etcd-io/etcd/releases/download/v3.4.37/etcd-v3.4.37-linux-amd64.tar.gz
+  sha256sum: e155b80ee292e19fa39000a218a7ea9166f45b161c610074db73e4e8f9011927
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 4493a3146c752e2d3cd11ea8fa964a9399dd8b52
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/etcd

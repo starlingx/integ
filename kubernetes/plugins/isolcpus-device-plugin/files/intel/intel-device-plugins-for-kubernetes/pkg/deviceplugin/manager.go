@@ -15,14 +15,17 @@
 package deviceplugin
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 
-	pluginapi "isolcpu_plugin/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
-
-	"isolcpu_plugin/intel/intel-device-plugins-for-kubernetes/pkg/debug"
+	"k8s.io/klog/v2"
+	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
+
+type allocateFunc func(*pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error)
+type postAllocateFunc func(*pluginapi.AllocateResponse) error
+type preStartContainerFunc func(*pluginapi.PreStartContainerRequest) error
+type getPreferredAllocationFunc func(*pluginapi.PreferredAllocationRequest) (*pluginapi.PreferredAllocationResponse, error)
 
 // updateInfo contains info for added, updated and deleted devices.
 type updateInfo struct {
@@ -52,6 +55,7 @@ func (n *notifier) Notify(newDeviceTree DeviceTree) {
 			if !reflect.DeepEqual(old, new) {
 				updated[devType] = new
 			}
+
 			delete(n.deviceTree, devType)
 		} else {
 			added[devType] = new
@@ -73,12 +77,12 @@ func (n *notifier) Notify(newDeviceTree DeviceTree) {
 // received from them.
 type Manager struct {
 	devicePlugin Scanner
-	namespace    string
 	servers      map[string]devicePluginServer
-	createServer func(string, func(*pluginapi.AllocateResponse) error) devicePluginServer
+	createServer func(string, postAllocateFunc, preStartContainerFunc, getPreferredAllocationFunc, allocateFunc) devicePluginServer
+	namespace    string
 }
 
-// NewManager creates a new instance of Manager
+// NewManager creates a new instance of Manager.
 func NewManager(namespace string, devicePlugin Scanner) *Manager {
 	return &Manager{
 		devicePlugin: devicePlugin,
@@ -88,16 +92,17 @@ func NewManager(namespace string, devicePlugin Scanner) *Manager {
 	}
 }
 
-// Run prepares and launches event loop for updates from Scanner
+// Run prepares and launches event loop for updates from Scanner.
 func (m *Manager) Run() {
 	updatesCh := make(chan updateInfo)
 
 	go func() {
 		err := m.devicePlugin.Scan(newNotifier(updatesCh))
 		if err != nil {
-			fmt.Printf("Device scan failed: %+v\n", err)
+			klog.Errorf("Device scan failed: %+v", err)
 			os.Exit(1)
 		}
+
 		close(updatesCh)
 	}()
 
@@ -107,29 +112,53 @@ func (m *Manager) Run() {
 }
 
 func (m *Manager) handleUpdate(update updateInfo) {
-	debug.Print("Received dev updates:", update)
+	klog.V(4).Info("Received dev updates:", update)
+
 	for devType, devices := range update.Added {
-		var postAllocate func(*pluginapi.AllocateResponse) error
+		var (
+			allocate               allocateFunc
+			postAllocate           postAllocateFunc
+			preStartContainer      preStartContainerFunc
+			getPreferredAllocation getPreferredAllocationFunc
+		)
 
 		if postAllocator, ok := m.devicePlugin.(PostAllocator); ok {
 			postAllocate = postAllocator.PostAllocate
 		}
 
-		m.servers[devType] = m.createServer(devType, postAllocate)
+		if containerPreStarter, ok := m.devicePlugin.(ContainerPreStarter); ok {
+			preStartContainer = containerPreStarter.PreStartContainer
+		}
+
+		if preferredAllocator, ok := m.devicePlugin.(PreferredAllocator); ok {
+			getPreferredAllocation = preferredAllocator.GetPreferredAllocation
+		}
+
+		if allocator, ok := m.devicePlugin.(Allocator); ok {
+			allocate = allocator.Allocate
+		}
+
+		m.servers[devType] = m.createServer(devType, postAllocate, preStartContainer, getPreferredAllocation, allocate)
+
 		go func(dt string) {
 			err := m.servers[dt].Serve(m.namespace)
 			if err != nil {
-				fmt.Printf("Failed to serve %s/%s: %+v\n", m.namespace, dt, err)
+				klog.Errorf("Failed to serve %s/%s: %+v", m.namespace, dt, err)
 				os.Exit(1)
 			}
 		}(devType)
 		m.servers[devType].Update(devices)
 	}
+
 	for devType, devices := range update.Updated {
 		m.servers[devType].Update(devices)
 	}
+
 	for devType := range update.Removed {
-		m.servers[devType].Stop()
+		if err := m.servers[devType].Stop(); err != nil {
+			klog.Errorf("Unable to stop gRPC server for %q: %+v", devType, err)
+		}
+
 		delete(m.servers, devType)
 	}
 }

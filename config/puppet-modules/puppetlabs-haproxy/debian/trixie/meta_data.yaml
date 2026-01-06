@@ -1,0 +1,11 @@
+---
+debname: puppet-module-puppetlabs-haproxy
+debver: 8.2.0-1
+dl_path:
+  name: puppet-module-puppetlabs-haproxy-8.2.0-1.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-puppetlabs-haproxy/-/archive/debian/8.2.0-1/puppet-module-puppetlabs-haproxy-debian-8.2.0-1.tar.gz  # yamllint disable-line rule:line-length
+  md5sum: 93aa3878f24c40cb16e853219080ecb6
+  sha256sum: ee18d7c1e7ab15ebbd78e2c1b8f6b33680b627fa096b0be60e7e4bad1be203dd
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

@@ -1,0 +1,53 @@
+From 04abb5229496fc5339768653b628c58900455c16 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Tue, 15 Jul 2025 11:02:37 +0000
+Subject: [PATCH] Use green zmq.Context from eventlet
+
+Make GarbageCollector aware of eventlet and verify it the Thread module
+has been monkey-patched by eventlet. If that is the case, use zmq
+.Context() from eventlet.green module.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ docs/requirements.txt | 1 +
+ zmq/utils/garbage.py  | 6 +++++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/docs/requirements.txt b/docs/requirements.txt
+index c0ca6cf..b1250bc 100644
+--- a/docs/requirements.txt
++++ b/docs/requirements.txt
+@@ -1,5 +1,6 @@
+ cython>=0.29
+ enum-tools[sphinx]>=0.9
++eventlet
+ gevent
+ myst-parser[linkify]
+ pydata_sphinx_theme
+diff --git a/zmq/utils/garbage.py b/zmq/utils/garbage.py
+index 2c70031..36c057a 100644
+--- a/zmq/utils/garbage.py
++++ b/zmq/utils/garbage.py
+@@ -10,7 +10,7 @@ import struct
+ import warnings
+ from collections import namedtuple
+ from os import getpid
+-from threading import Event, Lock, Thread
++from threading import Event, Lock, Thread, current_thread
+ 
+ import zmq
+ 
+@@ -95,6 +95,10 @@ class GarbageCollector:
+                 from zmq import green
+ 
+                 self._context = green.Context()
++            elif current_thread.__module__.startswith('eventlet'):
++                # eventlet has monkey-patched Thread, use green Context
++                from eventlet.green import zmq
++                self._context = zmq.Context()
+             else:
+                 self._context = zmq.Context()
+         return self._context
+-- 
+2.47.2
+

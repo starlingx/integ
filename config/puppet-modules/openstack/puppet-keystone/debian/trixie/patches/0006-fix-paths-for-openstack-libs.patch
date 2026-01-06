@@ -1,0 +1,30 @@
+From c60e544d3ee4c3c4e13fcb28d8a80dd2f1e92a42 Mon Sep 17 00:00:00 2001
+From: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Thu, 21 Apr 2022 19:50:20 +0000
+Subject: [PATCH] fix paths for openstack libs
+
+openstacklib is not installed to the default directory.
+This patch replaces the default path with the custom path.
+
+Signed-off-by: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ lib/puppet/provider/keystone.rb | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/lib/puppet/provider/keystone.rb b/lib/puppet/provider/keystone.rb
+index 16cf066..17f7e04 100644
+--- a/lib/puppet/provider/keystone.rb
++++ b/lib/puppet/provider/keystone.rb
+@@ -1,6 +1,6 @@
+-require 'puppet/provider/openstack'
+-require 'puppet/provider/openstack/auth'
+-require 'puppet/provider/openstack/credentials'
++require File.join(File.dirname(__FILE__), '..','..','..','..', 'openstacklib/lib/puppet/provider/openstack')
++require File.join(File.dirname(__FILE__), '..','..','..','..', 'openstacklib/lib/puppet/provider/openstack/auth')
++require File.join(File.dirname(__FILE__), '..','..','..','..', 'openstacklib/lib/puppet/provider/openstack/credentials')
+ require File.join(File.dirname(__FILE__), '..','..', 'puppet/provider/keystone/util')
+ 
+ class Puppet::Provider::Keystone < Puppet::Provider::Openstack
+-- 
+2.34.1
+

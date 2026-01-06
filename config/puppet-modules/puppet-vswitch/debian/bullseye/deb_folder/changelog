@@ -1,0 +1,5 @@
+puppet-module-vswitch (20.0.0-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Murillo Arantes <murillo.arantes@windriver.com>  Fri, 13 Jun 2025 10:53:18 +0000

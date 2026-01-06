@@ -1,0 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: puppetlabs-lvm
+Source: https://github.com/puppetlabs/puppetlabs-lvm
+
+Files: *
+Copyright: 2011-2013, 2018 Puppet Labs, Inc.,
+License: GPL-2.0
+
+Files: debian/*
+Copyright:  2021 Wind River Ltd.
+License: GPL-2.0

@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+# export DH_VERBOSE = 1
+
+export ROOT = debian/tmp
+
+export FLUX_CHARTS_VERSION = 2.17.2
+export FLUX_CHARTS_PKG = flux2-$(FLUX_CHARTS_VERSION).tar.gz
+export TARGET_DIR = $(ROOT)/usr/local/share/flux2-charts
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	mkdir -p build
+
+	# Copy flux2 charts
+	cp -r charts/flux2 build/
+
+	cp Makefile build
+
+	cd build && make
+
+override_dh_auto_install:
+	install -d -m 755 $(TARGET_DIR)
+	install -p -D -m 755 build/flux2-$(FLUX_CHARTS_VERSION).tgz $(TARGET_DIR)
+
+override_dh_usrlocal:
+	# Do Nothing

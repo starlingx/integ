@@ -1,0 +1,9 @@
+---
+debname: luks-fs-mgr
+debver: 1.0
+src_path: src
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: f1a536ad8ff52dc5eb6d74407dde1a6d70e6d6e9
+    SRC_DIR: ${MY_REPO}/stx/integ/filesystem/luks

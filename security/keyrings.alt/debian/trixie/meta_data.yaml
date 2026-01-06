@@ -1,0 +1,7 @@
+---
+debver: 5.0.2-1
+debname: keyrings.alt
+archive: https://snapshot.debian.org/archive/debian/20251130T202713Z/pool/main/k/keyrings.alt/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

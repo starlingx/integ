@@ -1,0 +1,44 @@
+From 5ca68761520d99adf056a01031588cc4dbc87201 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 1 Aug 2025 06:58:40 +0000
+Subject: [PATCH] Adapt first set of legacy patches
+
+Adapt 0001-Roll-up-TIS-patches.patch from CentOS.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/config.pp | 4 ++--
+ manifests/init.pp   | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/manifests/config.pp b/manifests/config.pp
+index bc1ed09..47a2e04 100644
+--- a/manifests/config.pp
++++ b/manifests/config.pp
+@@ -87,8 +87,8 @@ define haproxy::config (
+     if $_global_options['chroot'] {
+       file { $_global_options['chroot']:
+         ensure => directory,
+-        owner  => $_global_options['user'],
+-        group  => $_global_options['group'],
++        owner  => 'root',
++        group  => 'root',
+       }
+     }
+   }
+diff --git a/manifests/init.pp b/manifests/init.pp
+index be81a56..01f3462 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -122,7 +122,7 @@
+ class haproxy (
+   Variant[Enum['present', 'absent', 'purged', 'disabled', 'installed', 'latest'], String[1]] $package_ensure = 'present',
+   String                                        $package_name         = $haproxy::params::package_name,
+-  Variant[Enum['running', 'stopped'], Boolean]  $service_ensure       = 'running',
++  Variant[Enum['running', 'stopped'], Boolean]  $service_ensure       = false,
+   Boolean                                       $service_manage       = false,
+   Boolean                                       $chroot_dir_manage    = true,
+   String                                        $service_name         = $haproxy::params::service_name,
+-- 
+2.47.2
+

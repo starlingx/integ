@@ -1,0 +1,5 @@
+puppet-module-ceph (3.1.1-2) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Dan Voiculeasa <dan.voiculeasa@windriver.com>  Thu, 10 Mar 202 15:50:00 +0200

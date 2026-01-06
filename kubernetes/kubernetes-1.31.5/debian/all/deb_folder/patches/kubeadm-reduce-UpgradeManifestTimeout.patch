@@ -1,0 +1,33 @@
+From b3bd9de47e26f7387337db7b5066a56819dfe1e0 Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Fri, 17 Jan 2025 05:09:55 -0500
+Subject: [PATCH] kubeadm: reduce UpgradeManifestTimeout
+
+This modifies kubeadm UpgradeManifestTimeout from 5 minutes default
+to 3 minutes to reduce the unnecessary delay in retries during
+kubeadm-upgrade-apply failures.
+
+The typical control-plane upgrade of static pods is 75 to 85 seconds,
+so 3 minutes gives adequate buffer to complete the operation.
+
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ cmd/kubeadm/app/constants/constants.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmd/kubeadm/app/constants/constants.go b/cmd/kubeadm/app/constants/constants.go
+index b2f0e12c284..9b993a0e784 100644
+--- a/cmd/kubeadm/app/constants/constants.go
++++ b/cmd/kubeadm/app/constants/constants.go
+@@ -237,7 +237,7 @@ const (
+ 	KubeletHealthCheckTimeout = 4 * time.Minute
+ 
+ 	// UpgradeManifestsTimeout specifies the default timeout for upgradring static Pod manifests
+-	UpgradeManifestsTimeout = 5 * time.Minute
++	UpgradeManifestsTimeout = 3 * time.Minute
+ 
+ 	// PullImageRetry specifies how many times ContainerRuntime retries when pulling image failed
+ 	PullImageRetry = 5
+-- 
+2.34.1
+

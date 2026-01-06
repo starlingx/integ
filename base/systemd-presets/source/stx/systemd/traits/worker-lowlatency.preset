@@ -10,7 +10,6 @@ enable sw-patch.service
 disable software-controller.service
 disable software-controller-daemon.service
 enable software-agent.service
-enable software.service
 
 # 00-controllerconfig.preset
 enable config.service
@@ -161,3 +160,6 @@ enable workerconfig.service
 
 # usm initialize service
 disable usm-initialize.service
+
+# boot counter reset service
+enable reset-boot-counter.service

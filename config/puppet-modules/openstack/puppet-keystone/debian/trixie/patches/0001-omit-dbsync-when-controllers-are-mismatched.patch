@@ -1,0 +1,47 @@
+From e62fecbb01900660528ce8c1afa6a6dc6651cbf9 Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Tue, 26 Aug 2025 20:18:02 +0000
+Subject: [PATCH] omit dbsync when controllers are mismatched
+
+Avoid trying to sync controllers during upgrade, when the sw versions
+are not matching.
+
+A pre-starlingx change.  Was squashed with misc other puppet-keystone
+changes. Splitting the changes for clarity.  Original git log:
+
+There is a new controller_sw_versions_match fact that the manifests use
+to avoid impacting the mate controller if the controller software
+versions do not match (e.g. do not do db_sync operations...
+
+Rebased onto puppet-keystone 25.0.0-3.
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+
+Original sign-offs of the squashed patch; rebases and refactors:
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Dean Troyer <dtroyer@gmail.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+
+Original sign-off:
+Signed-off-by: Bart Wensley <barton.wensley@windriver.com>
+---
+ manifests/db/sync.pp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/manifests/db/sync.pp b/manifests/db/sync.pp
+index 265da8f..0b35c65 100644
+--- a/manifests/db/sync.pp
++++ b/manifests/db/sync.pp
+@@ -41,6 +41,9 @@ class keystone::db::sync(
+       Anchor['keystone::dbsync::begin']
+     ],
+     notify      => Anchor['keystone::dbsync::end'],
+-    tag         => ['keystone-exec', 'openstack-db']
++    tag         => ['keystone-exec', 'openstack-db'],
++    # Only do the db sync if both controllers are running the same software
++    # version. Avoids impacting mate controller during an upgrade.
++    onlyif      => "test $::controller_sw_versions_match = true",
+   }
+ }
+-- 
+2.34.1
+

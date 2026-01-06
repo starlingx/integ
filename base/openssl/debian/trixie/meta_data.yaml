@@ -1,0 +1,10 @@
+---
+debver: 3.5.1-1
+debname: openssl
+dl_path:
+  name: openssl-debian-openssl-3.5.1-1.tar.gz
+  url: https://salsa.debian.org/debian/openssl/-/archive/debian/openssl-3.5.1-1/openssl-debian-openssl-3.5.1-1.tar.gz
+  sha256sum: 955102ce13e6c14fcc42148736f59da25af8ad673a77d59251cece6f44bbb810
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

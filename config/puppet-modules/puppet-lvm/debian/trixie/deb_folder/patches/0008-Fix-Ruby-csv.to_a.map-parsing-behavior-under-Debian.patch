@@ -1,0 +1,39 @@
+From: Robert Church <robert.church@windriver.com>
+Date: Tue, 19 Apr 2022 01:54:24 -0400
+Subject: Fix Ruby csv.to_a.map parsing behavior under Debian
+
+The output of "pvs -o pv_name,vg_name,lv_name --separator ','" is the
+same under CentOS and Debian. This output is fed to the csv.to_a.map
+function which produces a slightly different hash.
+
+Under Centos ruby (2.0.0):
+  {:_pv=>"  /dev/sda5", :vg=>"cgts-vg", :lv=>"log-lv"}
+
+Under Debian ruby (2.7.4):
+  {:pv=>"  /dev/sda7", :vg=>"cgts-vg", :lv=>"log-lv"}
+
+The '_pv' hash key is invalid under Debian and results in:
+  undefined method `strip' for nil:NilClass (NoMethodError)
+
+This patch corrects the variable reference
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+---
+ lib/puppet/provider/volume_group/lvm.rb | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/puppet/provider/volume_group/lvm.rb b/lib/puppet/provider/volume_group/lvm.rb
+index a6d4a70..9fa687f 100644
+--- a/lib/puppet/provider/volume_group/lvm.rb
++++ b/lib/puppet/provider/volume_group/lvm.rb
+@@ -81,8 +81,8 @@ Puppet::Type.type(:volume_group).provide :lvm do
+                    :headers => true, :header_converters => :symbol)
+       csv.to_a.map {|row| row.to_hash}.each do |m|
+         unless m[:lv].nil?
+-          pv_to_lv[m[:_pv].strip] = "#{m[:vg]}/#{m[:lv]}"
+-          pv_to_dev[m[:_pv].strip] = "#{m[:vg].gsub('-','--')}-#{m[:lv].gsub('-','--')}"
++          pv_to_lv[m[:pv].strip] = "#{m[:vg]}/#{m[:lv]}"
++          pv_to_dev[m[:pv].strip] = "#{m[:vg].gsub('-','--')}-#{m[:lv].gsub('-','--')}"
+         end
+       end
+ 

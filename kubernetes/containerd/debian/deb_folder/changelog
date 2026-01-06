@@ -1,3 +1,0 @@
-containerd (1.6.21) stable; urgency=medium
-  * Initial release using binaries from upstream containerd package
- -- Chris Friesen <chris.friesen@windriver.com>  Mon, 15 May 2023 14:13:58 -0600 

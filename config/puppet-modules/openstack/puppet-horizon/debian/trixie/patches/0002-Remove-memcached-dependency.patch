@@ -1,0 +1,27 @@
+From 5cda549b534cd4ffe09da7c69a547618d56141cf Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 18 Jul 2025 06:42:05 +0000
+Subject: [PATCH] Remove memcached dependency
+
+---
+ metadata.json | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/metadata.json b/metadata.json
+index fc7b0de..2d54a8c 100644
+--- a/metadata.json
++++ b/metadata.json
+@@ -13,10 +13,6 @@
+             "name": "puppetlabs/stdlib",
+             "version_requirement": ">=5.0.0 <10.0.0"
+         },
+-        {
+-            "name": "saz/memcached",
+-            "version_requirement": ">=2.0.2 <10.0.0"
+-        },
+         {
+             "name": "openstack/openstacklib",
+             "version_requirement": ">=25.0.0 <26.0.0"
+-- 
+2.47.2
+

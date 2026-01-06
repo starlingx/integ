@@ -1,0 +1,136 @@
+From 04afb2f16d4ca5c9c3898d2c72cd2aa1b3252c12 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Tue, 14 Oct 2025 00:20:26 -0400
+Subject: [PATCH] Fix deprecated syntax  for Puppet 8.10 compatibility
+
+Remove deprecated $:: prefix from all variable references for 
+Puppet 8.10 compatibility.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/cache.pp        | 12 ++++++------
+ manifests/coordination.pp |  8 ++++----
+ manifests/db.pp           |  2 +-
+ manifests/reports.pp      |  2 +-
+ metadata.json             |  2 +-
+ 5 files changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/manifests/cache.pp b/manifests/cache.pp
+index e4b9fe0..deef42e 100644
+--- a/manifests/cache.pp
++++ b/manifests/cache.pp
+@@ -312,13 +312,13 @@ define oslo::cache(
+       'dogpile.cache.pylibmc': {
+         ensure_packages('python-pylibmc', {
+           ensure => $package_ensure,
+-          name   => $::oslo::params::pylibmc_package_name,
++          name   => $oslo::params::pylibmc_package_name,
+           tag    => 'openstack',
+         })
+       }
+       'dogpile.cache.bmemcached': {
+         ensure_packages('python-binary-memcached', {
+-          name   => $::oslo::params::python_bmemcached_package_name,
++          name   => $oslo::params::python_bmemcached_package_name,
+           ensure => $package_ensure,
+           tag    => ['openstack'],
+         })
+@@ -326,27 +326,27 @@ define oslo::cache(
+       'dogpile.cache.memcached', 'oslo_cache.memcache_pool': {
+         ensure_packages('python-memcache', {
+           ensure => $package_ensure,
+-          name   => $::oslo::params::python_memcache_package_name,
++          name   => $oslo::params::python_memcache_package_name,
+           tag    => ['openstack'],
+         })
+       }
+       'dogpile.cache.pymemcache': {
+         ensure_packages('python-pymemcache', {
+           ensure => $package_ensure,
+-          name   => $::oslo::params::python_pymemcache_package_name,
++          name   => $oslo::params::python_pymemcache_package_name,
+           tag    => ['openstack'],
+         })
+       }
+       'dogpile.cache.redis', 'dogpile.cache.redis_sentinel': {
+         ensure_packages('python-redis', {
+-          name   => $::oslo::params::python_redis_package_name,
++          name   => $oslo::params::python_redis_package_name,
+           ensure => $package_ensure,
+           tag    => ['openstack'],
+         })
+       }
+       'oslo_cache.etcd3gw': {
+         ensure_packages('python-etcd3gw', {
+-          name   => $::oslo::params::python_etcd3gw_package_name,
++          name   => $oslo::params::python_etcd3gw_package_name,
+           ensure => $package_ensure,
+           tag    => 'openstack',
+         })
+diff --git a/manifests/coordination.pp b/manifests/coordination.pp
+index f2770b3..af81649 100644
+--- a/manifests/coordination.pp
++++ b/manifests/coordination.pp
+@@ -33,28 +33,28 @@ define oslo::coordination (
+     case $backend_url {
+       /^redis:\/\//: {
+         ensure_packages('python-redis', {
+-          name   => $::oslo::params::python_redis_package_name,
++          name   => $oslo::params::python_redis_package_name,
+           ensure => $package_ensure,
+           tag    => ['openstack'],
+         })
+       }
+       /^etcd3\+http[s]?:\/\//: {
+         ensure_packages('python-etcd3gw', {
+-          name   => $::oslo::params::python_etcd3gw_package_name,
++          name   => $oslo::params::python_etcd3gw_package_name,
+           ensure => $package_ensure,
+           tag    => ['openstack'],
+         })
+       }
+       /^memcached:\/\//: {
+         ensure_packages('python-pymemcache', {
+-          name   => $::oslo::params::python_pymemcache_package_name,
++          name   => $oslo::params::python_pymemcache_package_name,
+           ensure => $package_ensure,
+           tag    => ['openstack'],
+         })
+       }
+       /^(kazoo|zookeeper):\/\//: {
+         ensure_packages('python-kazoo', {
+-          name   => $::oslo::params::python_kazoo_package_name,
++          name   => $oslo::params::python_kazoo_package_name,
+           ensure => $package_ensure,
+           tag    => ['openstack'],
+         })
+diff --git a/manifests/db.pp b/manifests/db.pp
+index 17124c8..c186023 100644
+--- a/manifests/db.pp
++++ b/manifests/db.pp
+@@ -146,7 +146,7 @@ define oslo::db(
+         require 'mysql::bindings'
+         require 'mysql::bindings::python'
+         if $connection =~ /^mysql\+pymysql/ {
+-          $backend_package = $::oslo::params::pymysql_package_name
++          $backend_package = $oslo::params::pymysql_package_name
+         } else {
+           $backend_package = undef
+         }
+diff --git a/manifests/reports.pp b/manifests/reports.pp
+index 58844f1..463315a 100644
+--- a/manifests/reports.pp
++++ b/manifests/reports.pp
+@@ -48,7 +48,7 @@ define oslo::reports(
+ 
+   if $manage_package {
+     ensure_packages( 'oslo.reports', {
+-      name   => $::oslo::params::oslo_reports_package_name,
++      name   => $oslo::params::oslo_reports_package_name,
+       ensure => $package_ensure,
+       tag    => ['openstack'],
+     })
+
+-- 
+2.43.0
+

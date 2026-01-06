@@ -1,0 +1,2 @@
+#0001-libbpf-Fix-use-after-free-in-btf_dump_name_dups.patch
+#0002-libbpf-Fix-null-pointer-dereference-in-find_prog_by_.patch

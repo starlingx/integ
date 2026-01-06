@@ -1,0 +1,11 @@
+puppet-module-vswitch (21.0.0-1) trixie; urgency=medium
+
+  * Bump to match Trixie version
+
+ -- Preetham M P <preetham.mp@windriver.com>  Fri, 25 Jul 2025 15:08:40 +0000
+
+puppet-module-vswitch (20.0.0-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Murillo Arantes <murillo.arantes@windriver.com>  Fri, 13 Jun 2025 10:53:18 +0000

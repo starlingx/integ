@@ -1,0 +1,57 @@
+From 6873421fb36bf643168a7612dc9973c34da6c322 Mon Sep 17 00:00:00 2001
+From: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Tue, 16 May 2023 10:00:27 -0300
+Subject: [PATCH] Convert strings to Numeric type to avoid warnings
+
+Some values on resource.pp were defined as strings and operated on
+as numbers, this causes puppet to automatically convert the strings
+to the Numeric type, generating the following warning:
+
+The string '<num_value>' was automatically coerced to the numerical
+value <num_value>
+
+to fix this, all affected values were cast to Numeric.
+
+Signed-off-by: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ manifests/resource.pp | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/manifests/resource.pp b/manifests/resource.pp
+index ede961f..05b8678 100644
+--- a/manifests/resource.pp
++++ b/manifests/resource.pp
+@@ -93,13 +93,13 @@ define drbd::resource (
+     # to 1 and let DRBD auto-regulate its throughput.  The end result is that
+     # multiple competing filesystems (i.e., on same disk device) already have
+     # their sync throughput reduced.
+-    $mbps = $link_speed / $num_parallel
++    $mbps = $link_speed / Numeric($num_parallel)
+ 
+     # bandwidth delay product
+-    $bdp_k = $mbps * $rtt_ms
++    $bdp_k = $mbps * Numeric($rtt_ms)
+ 
+     # engineer initial sync rate as percent of link bandwidth
+-    $rate_M = floor($link_util * $mbps / 8 / 100)
++    $rate_M = floor(Numeric($link_util) * $mbps / 8 / 100)
+     $rate = "${rate_M}M"
+ 
+     # engineer c_plan_ahead to default value (tenths)
+@@ -114,11 +114,11 @@ define drbd::resource (
+     # engineer c_min_rate -- experimentally determined so DRBD is not
+     # throttled to a crawl even when there is minimal application IO.
+     # DRBD default is way too small.
+-    $min_rate_M = 15 + floor($link_util * $mbps / 8 / 100 / 25)
++    $min_rate_M = 15 + floor(Numeric($link_util) * $mbps / 8 / 100 / 25)
+     $c_min_rate = "${min_rate_M}M"
+ 
+     # engineer c_max_rate as percent of link bandwidth
+-    $max_rate_M = floor($link_util * $mbps / 8 / 100)
++    $max_rate_M = floor(Numeric($link_util) * $mbps / 8 / 100)
+     $c_max_rate = "${max_rate_M}M"
+ 
+     # various tuning settings to enable larger link bandwidth (eg, 10G)
+-- 
+2.37.1
+

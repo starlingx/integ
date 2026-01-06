@@ -1,0 +1,11 @@
+---
+debname: zerorpc-python
+debver: 0.6.3-99ee6e47c8baf909b97eec94f184a19405f392a2
+dl_path:
+  name: 99ee6e47c8baf909b97eec94f184a19405f392a2.tar.gz
+  url: https://github.com/0rpc/zerorpc-python/archive/99ee6e47c8baf909b97eec94f184a19405f392a2.tar.gz
+  md5sum: a3fcbd69190ca5e3346f637f23dab4f1
+  sha256sum: 5f5cf52c551b38fa3e313b0fb408773b0c8e8448ef64099636945a41fdd4cd2e
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

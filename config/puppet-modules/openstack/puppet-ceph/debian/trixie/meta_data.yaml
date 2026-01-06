@@ -1,0 +1,12 @@
+---
+debver: 3.1.1-3
+debname: puppet-module-ceph
+dl_path:
+    name: puppet-module-ceph-debian-3.1.1.tar.gz
+    url: https://salsa.debian.org/openstack-team/puppet/puppet-module-ceph/-/archive/3.1.1/puppet-module-ceph-3.1.1.tar.gz
+    md5sum: 1af1afc35599905b1cf2bd7e90e2dfd1
+    sha256sum: a1705ab075025999dc94a4c3e8d8907a67b4ec3ee84bdd4c7c746fcb5a4bdbd7
+revision:
+    dist: $STX_DIST
+    GITREVCOUNT:
+        BASE_SRCREV: bac46cc0e0dcd74ef8316df1615411491cc0d879

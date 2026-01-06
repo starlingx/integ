@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //
-//  Copyright (c) 2019 Wind River Systems, Inc.
+//  Copyright (c) 2019-2025 Wind River Systems, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,121 +21,124 @@
 package main
 
 import (
-	"isolcpu_plugin/intel/intel-device-plugins-for-kubernetes/pkg/debug"
-	dpapi "isolcpu_plugin/intel/intel-device-plugins-for-kubernetes/pkg/deviceplugin"
-	pluginapi "isolcpu_plugin/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
-	"isolcpu_plugin/kubernetes/pkg/kubelet/cm/cpuset"
-	"github.com/pkg/errors"
-        "io/ioutil"
-	"strconv"
-	"strings"
-        "time"
-        "flag"
-        "fmt"
-        "path"
-	"regexp"
+    "isolcpu_plugin/intel/intel-device-plugins-for-kubernetes/pkg/debug"
+    dpapi "isolcpu_plugin/intel/intel-device-plugins-for-kubernetes/pkg/deviceplugin"
+    pluginapi "isolcpu_plugin/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
+    k8siopluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
+    "isolcpu_plugin/kubernetes/pkg/kubelet/cm/cpuset"
+    "github.com/pkg/errors"
+    "os"
+    "strconv"
+    "strings"
+    "time"
+    "flag"
+    "fmt"
+    "path"
+    "regexp"
 )
 
 const (
-	namespace  = "windriver.com"
-	deviceType = "isolcpus"
-	nodeRE	= `^node[0-9]+$`
+    namespace  = "windriver.com"
+    deviceType = "isolcpus"
+    nodeRE	= `^node[0-9]+$`
 )
 
 type devicePlugin struct {
-	nodeReg     *regexp.Regexp
+    nodeReg     *regexp.Regexp
 }
 
 func newDevicePlugin() *devicePlugin {
-	return &devicePlugin{
-		nodeReg: regexp.MustCompile(nodeRE),
-	}
+    return &devicePlugin{
+        nodeReg: regexp.MustCompile(nodeRE),
+    }
 }
 
 func (dp *devicePlugin) Scan(notifier dpapi.Notifier) error {
-	for {
-		devTree, err := dp.scan()
-		if err != nil {
-			return err
-		}
+    for {
+        devTree, err := dp.scan()
+        if err != nil {
+            return err
+        }
 
-		notifier.Notify(devTree)
+        notifier.Notify(devTree)
 
-		// This is only a precaution, we don't live-offline CPUs.
-		time.Sleep(300 * time.Second)
-	}
+        // This is only a precaution, we don't live-offline CPUs.
+        time.Sleep(300 * time.Second)
+    }
 }
 
 // GetCPUNode returns the NUMA node of a CPU.
 func (dp *devicePlugin) getCPUNode(cpu int) (int, error) {
-	cpustr := strconv.Itoa(cpu)
-	cpuPath := "/sys/devices/system/cpu/cpu" + cpustr
-	files, err := ioutil.ReadDir(cpuPath)
-	if err != nil {
-		return -1, errors.Wrap(err, "Can't read sysfs CPU subdir")
-	}
+    cpustr := strconv.Itoa(cpu)
+    cpuPath := "/sys/devices/system/cpu/cpu" + cpustr
+    files, err := os.ReadDir(cpuPath)
+    if err != nil {
+        return -1, errors.Wrap(err, "Can't read sysfs CPU subdir")
+    }
 
-	// there should be only one file of the form "node<num>"
-	for _, f := range files {
-		if dp.nodeReg.MatchString(f.Name()) {
-			nodeStr := strings.TrimPrefix(f.Name(), "node")
-			node, err := strconv.Atoi(nodeStr)
-			if err != nil {
-				return -1, errors.Wrap(err, "Can't convert node to int")
-			}
-			return node, nil
-		}
-	}
+    // there should be only one file of the form "node<num>"
+    for _, f := range files {
+        if dp.nodeReg.MatchString(f.Name()) {
+            nodeStr := strings.TrimPrefix(f.Name(), "node")
+            node, err := strconv.Atoi(nodeStr)
+            if err != nil {
+                return -1, errors.Wrap(err, "Can't convert node to int")
+            }
+            return node, nil
+        }
+    }
 
-	return -1, errors.Wrap(err, "No node file found")
+    return -1, errors.Wrap(err, "No node file found")
 }
 
 func (dp *devicePlugin) scan() (dpapi.DeviceTree, error) {
-	dat, err := ioutil.ReadFile("/sys/devices/system/cpu/isolated")
-	if err != nil {
-		return nil, errors.Wrap(err, "Can't read sysfs isolcpus subdir")
-	}
+    dat, err := os.ReadFile("/sys/devices/system/cpu/isolated")
+    if err != nil {
+        return nil, errors.Wrap(err, "Can't read sysfs isolcpus subdir")
+    }
 
-	// The isolated cpus string ends in a newline
-	cpustring := strings.TrimSuffix(string(dat), "\n")
-	cset, err := cpuset.Parse(cpustring)
-	if err != nil {
-		return nil, errors.Wrap(err, "Can't convert isolcpus string to cpuset")
-	}
-	isolcpus := cset.ToSlice()
+    // The isolated cpus string ends in a newline
+    cpustring := strings.TrimSuffix(string(dat), "\n")
+    cset, err := cpuset.Parse(cpustring)
+    if err != nil {
+        return nil, errors.Wrap(err, "Can't convert isolcpus string to cpuset")
+    }
+    isolcpus := cset.ToSlice()
 
-	devTree := dpapi.NewDeviceTree()
+    devTree := dpapi.NewDeviceTree()
 
-	if len(isolcpus) > 0 {
-		for _, cpu := range isolcpus {
-                        cpustr := strconv.Itoa(cpu)
-			numaNode, _ := dp.getCPUNode(cpu)
-			devPath := path.Join("/dev/cpu", cpustr, "cpuid")
-			debug.Printf("Adding %s to isolcpus", devPath)
-		        var nodes []pluginapi.DeviceSpec
-			nodes = append(nodes, pluginapi.DeviceSpec{
-				HostPath:      devPath,
-				ContainerPath: devPath,
-				Permissions:   "r",
-			})
-		        devTree.AddDevice(deviceType, cpustr, dpapi.DeviceInfo{
-			    State: pluginapi.Healthy, Nodes: nodes, NumaNode: numaNode,
-		        })
-                }
-	}
-        return devTree, nil
+    if len(isolcpus) > 0 {
+        for _, cpu := range isolcpus {
+            cpustr := strconv.Itoa(cpu)
+            devPath := path.Join("/dev/cpu", cpustr, "cpuid")
+            debug.Printf("Adding %s to isolcpus", devPath)
+            var nodes []k8siopluginapi.DeviceSpec
+            nodes = append(nodes, k8siopluginapi.DeviceSpec{
+                HostPath:      devPath,
+                ContainerPath: devPath,
+                Permissions:   "r",
+            })
+            deviceinfo := dpapi.NewDeviceInfo(pluginapi.Healthy, nodes, nil, nil, nil, nil)
+            devTree.AddDevice(
+                deviceType,
+                cpustr,
+                deviceinfo,
+            )
+        }
+    }
+    return devTree, nil
 }
 
 func main() {
-	var debugEnabled bool
-	flag.BoolVar(&debugEnabled, "debug", false, "enable debug output")
-	flag.Parse()
-	if debugEnabled {
-		debug.Activate()
-	}
+    var debugEnabled bool
+    flag.BoolVar(&debugEnabled, "debug", false, "enable debug output")
+    flag.Parse()
+    if debugEnabled {
+        debug.Activate()
+    }
 
-	fmt.Println("isolcpus device plugin started")
-	plugin := newDevicePlugin()
-	manager := dpapi.NewManager(namespace, plugin)
-	manager.Run()
+    fmt.Println("isolcpus device plugin started")
+    plugin := newDevicePlugin()
+    manager := dpapi.NewManager(namespace, plugin)
+    manager.Run()
 }

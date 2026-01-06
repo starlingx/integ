@@ -1,0 +1,4 @@
+usr/share/makedumpfile/eppic_scripts/*
+# installed via makedumpfile.manpages
+usr/share/man/man8/makedumpfile.8
+usr/share/man/man5/makedumpfile.conf.5

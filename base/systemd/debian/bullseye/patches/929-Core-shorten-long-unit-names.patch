@@ -1,0 +1,265 @@
+From ed3a2287926c37de95e3dc43bb61f2b9f4b48a06 Mon Sep 17 00:00:00 2001
+From: Felipe Sanches Zanoni <Felipe.SanchesZanoni@windriver.com>
+Date: Mon, 17 Mar 2025 15:26:00 -0300
+Subject: [PATCH] Core: shorten long unit names
+
+Shorten long unit names that are based on paths and append path hash
+at the end.
+
+This patch is based on upstream patch:
+https://salsa.debian.org/systemd-team/systemd/-/commit/ \
+1d0727e76fd5e9a07cc9991ec9a10ea1d78a99c7
+
+Signed-off-by: Felipe Sanches Zanoni <Felipe.SanchesZanoni@windriver.com>
+---
+ src/basic/string-util.h   |  1 +
+ src/basic/unit-name.c     | 86 ++++++++++++++++++++++++++++++++++++++-
+ src/basic/unit-name.h     |  3 ++
+ src/core/mount.c          |  3 ++
+ src/test/test-unit-name.c | 28 +++++++++++--
+ 5 files changed, 116 insertions(+), 5 deletions(-)
+
+diff --git a/src/basic/string-util.h b/src/basic/string-util.h
+index 6c99335..523dd99 100644
+--- a/src/basic/string-util.h
++++ b/src/basic/string-util.h
+@@ -20,6 +20,7 @@
+ #define LETTERS           LOWERCASE_LETTERS UPPERCASE_LETTERS
+ #define ALPHANUMERICAL    LETTERS DIGITS
+ #define HEXDIGITS         DIGITS "abcdefABCDEF"
++#define LOWERCASE_HEXDIGITS DIGITS "abcdef"
+ 
+ #define streq(a,b) (strcmp((a),(b)) == 0)
+ #define strneq(a, b, n) (strncmp((a), (b), (n)) == 0)
+diff --git a/src/basic/unit-name.c b/src/basic/unit-name.c
+index e286831..d5099b6 100644
+--- a/src/basic/unit-name.c
++++ b/src/basic/unit-name.c
+@@ -5,11 +5,16 @@
+ #include <stdint.h>
+ #include <stdlib.h>
+ 
++#include "sd-id128.h"
++
+ #include "alloc-util.h"
+ #include "glob-util.h"
+ #include "hexdecoct.h"
+ #include "path-util.h"
++#include "random-util.h"
++#include "sparse-endian.h"
+ #include "special.h"
++#include "stdio-util.h"
+ #include "string-util.h"
+ #include "strv.h"
+ #include "unit-name.h"
+@@ -30,6 +35,9 @@
+         VALID_CHARS_WITH_AT                     \
+         "[]!-*?"
+ 
++#define LONG_UNIT_NAME_HASH_KEY SD_ID128_MAKE(ec,f2,37,fb,58,32,4a,32,84,9f,06,9b,0d,21,eb,9a)
++#define UNIT_NAME_HASH_LENGTH_CHARS 16
++
+ bool unit_name_is_valid(const char *n, UnitNameFlags flags) {
+         const char *e, *i, *at;
+ 
+@@ -506,6 +514,68 @@ int unit_name_template(const char *f, char **ret) {
+         return 0;
+ }
+ 
++bool unit_name_is_hashed(const char *name) {
++        char *s;
++
++        if (!unit_name_is_valid(name, UNIT_NAME_PLAIN))
++                return false;
++
++        assert_se(s = strrchr(name, '.'));
++
++        if (s - name < UNIT_NAME_HASH_LENGTH_CHARS + 1)
++                return false;
++
++        s -= UNIT_NAME_HASH_LENGTH_CHARS;
++        if (s[-1] != '_')
++                return false;
++
++        for (size_t i = 0; i < UNIT_NAME_HASH_LENGTH_CHARS; i++)
++                if (!strchr(LOWERCASE_HEXDIGITS, s[i]))
++                        return false;
++
++        return true;
++}
++
++int unit_name_hash_long(const char *name, char **ret) {
++        _cleanup_free_ char *n = NULL, *hash = NULL;
++        char *suffix;
++        le64_t h;
++        size_t len;
++
++        if (strlen(name) < UNIT_NAME_MAX)
++                return -EMSGSIZE;
++
++        suffix = strrchr(name, '.');
++        if (!suffix)
++                return -EINVAL;
++
++        if (unit_type_from_string(suffix+1) < 0)
++                return -EINVAL;
++
++        h = htole64(siphash24_string(name, LONG_UNIT_NAME_HASH_KEY.bytes));
++
++        hash = hexmem(&h, sizeof(h));
++        if (!hash)
++                return -ENOMEM;
++
++        assert_se(strlen(hash) == UNIT_NAME_HASH_LENGTH_CHARS);
++
++        len = UNIT_NAME_MAX - 1 - strlen(suffix+1) - UNIT_NAME_HASH_LENGTH_CHARS - 2;
++        assert(len > 0 && len < UNIT_NAME_MAX);
++
++        n = strndup(name, len);
++        if (!n)
++                return -ENOMEM;
++
++        if (!strextend(&n, "_", hash, suffix, NULL))
++                return -ENOMEM;
++        assert_se(unit_name_is_valid(n, UNIT_NAME_PLAIN));
++
++        *ret = TAKE_PTR(n);
++
++        return 0;
++}
++
+ int unit_name_from_path(const char *path, const char *suffix, char **ret) {
+         _cleanup_free_ char *p = NULL, *s = NULL;
+         int r;
+@@ -525,8 +595,17 @@ int unit_name_from_path(const char *path, const char *suffix, char **ret) {
+         if (!s)
+                 return -ENOMEM;
+ 
+-        if (strlen(s) >= UNIT_NAME_MAX) /* Return a slightly more descriptive error for this specific condition */
+-                return -ENAMETOOLONG;
++        if (strlen(s) >= UNIT_NAME_MAX) {
++                _cleanup_free_ char *n = NULL;
++
++                log_debug("Unit name \"%s\" too long, falling back to hashed unit name.", s);
++
++                r = unit_name_hash_long(s, &n);
++                if (r < 0)
++                        return r;
++
++                free_and_replace(s, n);
++        }
+ 
+         /* Refuse if this for some other reason didn't result in a valid name */
+         if (!unit_name_is_valid(s, UNIT_NAME_PLAIN))
+@@ -580,6 +659,9 @@ int unit_name_to_path(const char *name, char **ret) {
+         if (r < 0)
+                 return r;
+ 
++        if (unit_name_is_hashed(name))
++                return -ENAMETOOLONG;
++
+         return unit_name_path_unescape(prefix, ret);
+ }
+ 
+diff --git a/src/basic/unit-name.h b/src/basic/unit-name.h
+index c25672f..fc4f5e7 100644
+--- a/src/basic/unit-name.h
++++ b/src/basic/unit-name.h
+@@ -44,6 +44,9 @@ int unit_name_replace_instance(const char *f, const char *i, char **ret);
+ 
+ int unit_name_template(const char *f, char **ret);
+ 
++int unit_name_hash_long(const char *name, char **ret);
++bool unit_name_is_hashed(const char *name);
++
+ int unit_name_from_path(const char *path, const char *suffix, char **ret);
+ int unit_name_from_path_instance(const char *prefix, const char *path, const char *suffix, char **ret);
+ int unit_name_to_path(const char *name, char **ret);
+diff --git a/src/core/mount.c b/src/core/mount.c
+index b50b1d1..73324f5 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -613,6 +613,9 @@ static int mount_add_extras(Mount *m) {
+ 
+         if (!m->where) {
+                 r = unit_name_to_path(u->id, &m->where);
++                if (r == -ENAMETOOLONG)
++                        log_unit_error_errno(u, r, "Failed to derive mount point path from unit name, because unit name is hashed. "
++                                                   "Set \"Where=\" in the unit file explicitly.");
+                 if (r < 0)
+                         return r;
+         }
+diff --git a/src/test/test-unit-name.c b/src/test/test-unit-name.c
+index c0b7971..71d67ae 100644
+--- a/src/test/test-unit-name.c
++++ b/src/test/test-unit-name.c
+@@ -106,6 +106,7 @@ static void test_unit_name_replace_instance(void) {
+ 
+ static void test_unit_name_from_path_one(const char *path, const char *suffix, const char *expected, int ret) {
+         _cleanup_free_ char *t = NULL;
++        int r;
+ 
+         assert_se(unit_name_from_path(path, suffix, &t) == ret);
+         puts(strna(t));
+@@ -113,12 +114,32 @@ static void test_unit_name_from_path_one(const char *path, const char *suffix, c
+ 
+         if (t) {
+                 _cleanup_free_ char *k = NULL;
+-                assert_se(unit_name_to_path(t, &k) == 0);
++
++                /* We don't support converting hashed unit names back to paths */
++                r = unit_name_to_path(t, &k);
++                if (r == -ENAMETOOLONG)
++                        return;
++                assert(r == 0);
++
+                 puts(strna(k));
+                 assert_se(path_equal(k, empty_to_root(path)));
+         }
+ }
+ 
++static void test_unit_name_is_hashed(void) {
++        assert_se(!unit_name_is_hashed(""));
++        assert_se(!unit_name_is_hashed("foo@bar.service"));
++        assert_se(!unit_name_is_hashed("foo@.service"));
++        assert_se(unit_name_is_hashed("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_7736d9ed33c2ec55.mount"));
++        assert_se(!unit_name_is_hashed("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_7736D9ED33C2EC55.mount"));
++        assert_se(!unit_name_is_hashed("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!7736d9ed33c2ec55.mount"));
++        assert_se(!unit_name_is_hashed("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_7736d9gd33c2ec55.mount"));
++        assert_se(!unit_name_is_hashed("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_.mount"));
++        assert_se(!unit_name_is_hashed("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_2103e1466b87f7f7@waldo.mount"));
++        assert_se(!unit_name_is_hashed("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_2103e1466b87f7f7@.mount"));
++}
++
++
+ static void test_unit_name_from_path(void) {
+         log_info("/* %s */", __func__);
+ 
+@@ -130,7 +151,8 @@ static void test_unit_name_from_path(void) {
+         test_unit_name_from_path_one("///", ".mount", "-.mount", 0);
+         test_unit_name_from_path_one("/foo/../bar", ".mount", NULL, -EINVAL);
+         test_unit_name_from_path_one("/foo/./bar", ".mount", NULL, -EINVAL);
+-        test_unit_name_from_path_one("/waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", ".mount", NULL, -ENAMETOOLONG);
++        test_unit_name_from_path_one("/waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", ".mount",
++                                     "waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_7736d9ed33c2ec55.mount", 0);
+ }
+ 
+ static void test_unit_name_from_path_instance_one(const char *pattern, const char *path, const char *suffix, const char *expected, int ret) {
+@@ -160,7 +182,6 @@ static void test_unit_name_from_path_instance(void) {
+         test_unit_name_from_path_instance_one("waldo", "..", ".mount", NULL, -EINVAL);
+         test_unit_name_from_path_instance_one("waldo", "/foo", ".waldi", NULL, -EINVAL);
+         test_unit_name_from_path_instance_one("wa--ldo", "/--", ".mount", "wa--ldo@\\x2d\\x2d.mount", 0);
+-        test_unit_name_from_path_instance_one("waldoaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "/waldo", ".mount", NULL, -ENAMETOOLONG);
+ }
+ 
+ static void test_unit_name_to_path_one(const char *unit, const char *path, int ret) {
+@@ -884,6 +905,7 @@ int main(int argc, char* argv[]) {
+ 
+         test_unit_name_is_valid();
+         test_unit_name_replace_instance();
++        test_unit_name_is_hashed();
+         test_unit_name_from_path();
+         test_unit_name_from_path_instance();
+         test_unit_name_mangle();
+-- 
+2.34.1

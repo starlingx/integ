@@ -1,0 +1,11 @@
+---
+debname: grubby
+debver: 8.4
+dl_path:
+  name: grubby-8.4.tar.gz
+  url: https://github.com/rhboot/grubby/archive/66fd06e2346a9f334a4e5d426332e74319f927c2.tar.gz
+  md5sum: cbe22140baf6569f19c2e6149ea7748b
+  sha256sum: 1369940637b27f47fb6225168c76e3798f1d9c1ba7f8859b8754324e17415c77
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

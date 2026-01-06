@@ -1,0 +1,16 @@
+---
+debname: containerd
+debver: 2.0.7
+dl_path:
+  name: containerd-2.0.7-linux-amd64.tar.gz
+  url: https://github.com/containerd/containerd/releases/download/v2.0.7/containerd-2.0.7-linux-amd64.tar.gz
+  sha256sum: 6dc663cd245d19c3e68260ca86247469563a31decac925087b62a2a819dfcbee
+src_files:
+  - debian/all/files/config.toml
+  - debian/all/files/containerd.service
+  - debian/all/files/k8s-container-cleanup.sh
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 5e9b56a96d58ab5069cb1e6afb856d50450b8875
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/containerd

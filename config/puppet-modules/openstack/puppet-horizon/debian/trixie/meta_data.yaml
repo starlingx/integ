@@ -1,0 +1,12 @@
+---
+debname: puppet-module-horizon
+debver: 25.0.0-4
+dl_path:
+  name: puppet-module-horizon-debian-25.0.0-4.tar.gz
+  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-horizon/-/archive/debian/25.0.0-4/puppet-module-horizon-debian-25.0.0-4.tar.gz
+  sha256sum: aceb1687773139abccf829603734a25d7cea316be9921a07c3c0c273ad3e9b6d
+  md5sum: 5a0ab017c34312870dac501cfd108d33
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: a62bcd81b93d1f6a93f2c50830fda831c9c24aff

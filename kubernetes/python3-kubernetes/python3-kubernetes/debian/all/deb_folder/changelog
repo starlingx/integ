@@ -1,0 +1,5 @@
+python3-kubernetes (34.1.0) stable; urgency=medium
+
+  * Updated for stx 12
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Mon, 10 Nov 2025 11:43:20 -0300

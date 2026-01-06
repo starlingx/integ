@@ -1,0 +1,83 @@
+From 58a2ed10e5f53a2ce568e351458309b7b5cadae5 Mon Sep 17 00:00:00 2001
+From: sshathee <shunmugam.shatheesh@windriver.com>
+Date: Thu, 6 Nov 2025 15:41:56 +0000
+Subject: [PATCH] Pre and post hook support for kdump
+
+This commit creates pre and post hook directories in
+debian package. It adds pre and post hook script support
+to be executed before and after crash dump collection
+respectively. It executes scripts in alphabetical order
+from hook directories.
+
+The implementation ensures that any script failure during execution
+does not affect the kdump crash dump collection process.
+
+Pre-hook (/etc/kdump/pre-hooks.d/) scripts execute before vmcore
+collection.
+Post-hook (/etc/kdump/post-hooks.d/) scripts execute after
+successful vmcore collection.
+Signed-off-by: sshathee <shunmugam.shatheesh@windriver.com>
+---
+ debian/kdump-tools.dirs |  2 ++
+ debian/kdump-tools.init | 26 ++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/debian/kdump-tools.dirs b/debian/kdump-tools.dirs
+index fd402eb..8b03768 100644
+--- a/debian/kdump-tools.dirs
++++ b/debian/kdump-tools.dirs
+@@ -1,2 +1,4 @@
+ etc/kdump
+ var/lib/kdump
++etc/kdump/pre-hooks.d
++etc/kdump/post-hooks.d
+diff --git a/debian/kdump-tools.init b/debian/kdump-tools.init
+index 9381e54..d9c28cc 100755
+--- a/debian/kdump-tools.init
++++ b/debian/kdump-tools.init
+@@ -21,6 +21,8 @@ export NAME
+ VMCORE_FILE=/proc/vmcore
+ KDUMP_SCRIPT=/usr/sbin/kdump-config
+ KDUMP_DEFAULTS=/etc/default/kdump-tools
++PRE_HOOKS=/etc/kdump/pre-hooks.d
++POST_HOOKS=/etc/kdump/post-hooks.d
+ [ -r $KDUMP_DEFAULTS ] && . $KDUMP_DEFAULTS
+ 
+ [ "$USE_KDUMP" -ne 0 ] || exit 0;
+@@ -32,9 +34,33 @@ case "$1" in
+ 	#
+ 	if [ -e $VMCORE_FILE ] && [ -s $VMCORE_FILE ]; then
+ 		printf "Starting %s: " "$DESC"
++
++		# Run pre-dump scripts if they exist, in alphabetical order
++		# Recommended naming: 001-script-name, 002-script-name, etc.
++		if [ -d "${PRE_HOOKS}" ] && [ -n "$(ls -A "${PRE_HOOKS}" 2>/dev/null)" ]; then
++			for script in $(ls "${PRE_HOOKS}"/* 2>/dev/null | sort -V); do
++				if [ -x "${script}" ] && [ -f "${script}" ]; then
++					echo "Running pre-dump script: ${script}"
++					"${script}" || true
++				fi
++			done
++		fi
++
+ 		if ! $KDUMP_SCRIPT savecore && [ -n "$KDUMP_FAIL_CMD" ] ; then
+ 			$KDUMP_FAIL_CMD ;
+ 		else
++			# Run post-dump scripts if they exist, in alphabetical order
++			# Recommended naming: 001-script-name, 002-script-name, etc.
++			if [ -d "${POST_HOOKS}" ] && \
++			   [ -n "$(ls -A "${POST_HOOKS}" 2>/dev/null)" ]; then
++				for script in $(ls "${POST_HOOKS}"/* 2>/dev/null | sort -V); do
++					if [ -x "${script}" ] && [ -f "${script}" ]; then
++						echo "Running post-dump script: ${script}"
++						"${script}" || true
++					fi
++				done
++			fi
++
+ 			date -R ;
+ 			reboot -f ;
+ 		fi
+-- 
+2.34.1
+

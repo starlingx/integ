@@ -1,0 +1,37 @@
+From 5ced51f0cf5e0cf444ca1e97ac4b36e84ef7d1a9 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 25 Jul 2025 11:31:52 +0000
+Subject: [PATCH] Update getpid function
+
+Enhance the getpid function to avoid matching with the "puppet apply" command
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ lib/puppet/provider/service/base.rb | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/puppet/provider/service/base.rb b/lib/puppet/provider/service/base.rb
+index 943ba28..f2d971f 100644
+--- a/lib/puppet/provider/service/base.rb
++++ b/lib/puppet/provider/service/base.rb
+@@ -32,7 +32,7 @@ Puppet::Type.type(:service).provide :base, :parent => :service do
+   # parameter.
+   def getpid
+     @resource.fail "Either stop/status commands or a pattern must be specified" unless @resource[:pattern]
+-    regex = Regexp.new(@resource[:pattern])
++    regex_pa = Regexp.new('puppet apply')
+     ps = getps
+ 
+     debug "Executing '#{ps}'"
+@@ -51,7 +51,7 @@ Puppet::Type.type(:service).provide :base, :parent => :service do
+     table = table.scrub unless table.valid_encoding?
+ 
+     table.each_line { |line|
+-      next unless regex.match(line)
++      next unless regex.match(line) && !regex_pa.match(line)
+ 
+       debug "Process matched: #{line}"
+       ary = line.sub(/^[[:space:]]+/u, '').split(/[[:space:]]+/u)
+-- 
+2.47.2
+

@@ -1,0 +1,5 @@
+0001-Provide-softlinks-to-grub-menus.patch
+0002-grub2-remove-unnecessary-patches.patch
+0003-grub2-remove-packages-build-about-grub-efi.patch
+0004-grub-pc-remove-conflict-with-grub-efi-amd64.patch
+0005-drop-grub-efi-doc-installation.patch

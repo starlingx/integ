@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "${1}" = "remove" ] ; then
+	update-alternatives --remove puppet-module-vswitch /usr/share/puppet/modules.available/vswitch
+fi
+
+#DEBHELPER#
+
+exit 0

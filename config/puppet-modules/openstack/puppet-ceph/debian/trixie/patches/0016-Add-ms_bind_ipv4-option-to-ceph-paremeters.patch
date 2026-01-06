@@ -1,0 +1,52 @@
+From 676307deb96d85b78b72c0e98264806411999ed2 Mon Sep 17 00:00:00 2001
+From: Felipe Sanches Zanoni <Felipe.SanchesZanoni@windriver.com>
+Date: Fri, 26 Jul 2024 09:36:36 -0300
+Subject: [PATCH] Add ms_bind_ipv4 option to ceph paremeters
+
+Add the ms_bind_ipv4 option to be set into the ceph.conf file.
+
+By default, the system is disabling ms_bind_ipv6 for IPv4-only clusters.
+The same behavior is expected disabling ms_bind_ipv4 for IPv6-only.
+Otherwise, each Ceph service tries to bind Ipv4 first, leading to daemon
+miscommunication and unabling to mount RBD and CephFS volumes.
+
+Read more: https://www.spinics.net/lists/ceph-users/msg73459.html
+
+Signed-off-by: Felipe Sanches Zanoni <Felipe.SanchesZanoni@windriver.com>
+---
+ manifests/init.pp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index f4b8e62..69fa143 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -84,6 +84,9 @@
+ # [*ms_bind_ipv6*] Enables Ceph daemons to bind to IPv6 addresses.
+ #   Optional. Boolean. Default provided by Ceph.
+ #
++# [*ms_bind_ipv4*] Enables Ceph daemons to bind to IPv4 addresses.
++#   Optional. Boolean. Default provided by Ceph.
++#
+ # [*require_signatures*] If Ceph requires signatures on all
+ #   message traffic (client<->cluster and between cluster daemons).
+ #   Optional. Boolean. Default provided by Ceph.
+@@ -157,6 +160,7 @@ class ceph (
+   $mon_initial_members           = undef,
+   $mon_host                      = undef,
+   $ms_bind_ipv6                  = undef,
++  $ms_bind_ipv4                  = undef,
+   $require_signatures            = undef,
+   $cluster_require_signatures    = undef,
+   $service_require_signatures    = undef,
+@@ -204,6 +208,7 @@ this module to assign values and will be removed in a future release.')
+       'global/mon_initial_members':          value => $mon_initial_members;
+       'global/mon_host':                     value => $mon_host;
+       'global/ms_bind_ipv6':                 value => $ms_bind_ipv6;
++      'global/ms_bind_ipv4':                 value => $ms_bind_ipv4;
+       'global/require_signatures':           value => $require_signatures;
+       'global/cluster_require_signatures':   value => $cluster_require_signatures;
+       'global/service_require_signatures':   value => $service_require_signatures;
+-- 
+2.25.1
+

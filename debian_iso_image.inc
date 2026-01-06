@@ -66,6 +66,9 @@ containerd
 #crictl
 crictl
 
+#docker
+docker.io
+
 #dhcp
 #isc-dhcp-client-ddns  # not used
 isc-dhcp-client
@@ -83,6 +86,71 @@ dnsmasq
 
 #docker-distribution
 docker-registry
+
+#dpdk
+librte-bus-pci21
+librte-bus-vdev21
+librte-cryptodev21
+librte-eal21
+librte-ethdev21
+librte-eventdev21
+librte-hash21
+librte-kvargs21
+librte-mbuf21
+librte-mempool-ring21
+librte-mempool21
+librte-meter21
+librte-net-af-packet21
+librte-net-af-xdp21
+librte-net-ark21
+librte-net-atlantic21
+librte-net-axgbe21
+librte-net-bnx2x21
+librte-net-bnxt21
+librte-net-bond21
+librte-net-cxgbe21
+librte-net-dpaa2-21
+librte-net-dpaa21
+librte-net-e1000-21
+librte-net-ena21
+librte-net-enetc21
+librte-net-enic21
+librte-net-failsafe21
+librte-net-fm10k21
+librte-net-hinic21
+librte-net-hns3-21
+librte-net-i40e21
+librte-net-iavf21
+librte-net-ice21
+librte-net-igc21
+librte-net-ipn3ke21
+librte-net-ixgbe21
+librte-net-kni21
+librte-net-liquidio21
+librte-net-memif21
+librte-net-mlx4-21
+librte-net-mlx5-21
+librte-net-nfp21
+librte-net-octeontx2-21
+librte-net-octeontx21
+librte-net-pcap21
+librte-net-pfe21
+librte-net-qede21
+librte-net-ring21
+librte-net-sfc21
+librte-net-softnic21
+librte-net-tap21
+librte-net-thunderx21
+librte-net-txgbe21
+librte-net-vhost21
+librte-net-virtio21
+librte-net21
+librte-pci21
+librte-rcu21
+librte-ring21
+librte-telemetry21
+librte-timer21
+librte-vhost21
 
 #drbd-tools
 drbd-utils
@@ -176,6 +244,8 @@ kata-containers
 #kubectl-cert-manager
 kubectl-cert-manager
 
+kubelogin
+
 # lvm2
 dmeventd
 dmsetup
@@ -195,26 +265,6 @@ lvm2
 python3-keyrings.alt
 
 #kubernetes-x (-master, -misc, -unit-test used only for build)
-#kubernetes-1.24.4
-kubernetes-1.24.4-client
-kubernetes-1.24.4-kubeadm
-kubernetes-1.24.4-node
-#kubernetes-1.25.3
-kubernetes-1.25.3-client
-kubernetes-1.25.3-kubeadm
-kubernetes-1.25.3-node
-#kubernetes-1.26.1
-kubernetes-1.26.1-client
-kubernetes-1.26.1-kubeadm
-kubernetes-1.26.1-node
-#kubernetes-1.27.5
-kubernetes-1.27.5-client
-kubernetes-1.27.5-kubeadm
-kubernetes-1.27.5-node
-#kubernetes-1.28.4
-kubernetes-1.28.4-client
-kubernetes-1.28.4-kubeadm
-kubernetes-1.28.4-node
 #kubernetes-1.29.2
 kubernetes-1.29.2-client
 kubernetes-1.29.2-kubeadm
@@ -227,6 +277,18 @@ kubernetes-1.30.6-node
 kubernetes-1.31.5-client
 kubernetes-1.31.5-kubeadm
 kubernetes-1.31.5-node
+#kubernetes-1.32.2
+kubernetes-1.32.2-client
+kubernetes-1.32.2-kubeadm
+kubernetes-1.32.2-node
+#kubernetes-1.33.0
+kubernetes-1.33.0-client
+kubernetes-1.33.0-kubeadm
+kubernetes-1.33.0-node
+#kubernetes-1.34.1
+kubernetes-1.34.1-client
+kubernetes-1.34.1-kubeadm
+kubernetes-1.34.1-node
 
 #kubernetes-unversioned
 kubernetes-unversioned
@@ -326,9 +388,6 @@ puppet-module-keystone
 #puppet-module-horizon-17.4.0
 puppet-module-horizon
 
-#puppet-ldap
-puppet-ldap
-
 #puppet-lvm-1.4.0
 puppet-lvm
 
@@ -365,11 +424,20 @@ puppet-module-puppetlabs-postgresql
 #puppetlabs-stdlib-5.0.0
 puppet-module-puppetlabs-stdlib
 
+#puppet-vswitch
+puppet-module-vswitch
+
 #puppet-zitrlp-strongswan
 puppet-zitrlp-strongswan
 
 #python-docker
 python3-docker
+
+#python3-durationpy
+python3-durationpy
+
+#python3-kubernetes
+python3-kubernetes
 
 #python-keyring
 python3-keyring
@@ -377,16 +445,20 @@ python3-keyring
 #python3-nsenter
 python3-nsenter
 
-#python3-setuptools
-#python-setuptools-doc
-python3-pkg-resources
-python3-setuptools
+#wheel
+python3-wheel
 
 #python3.9
 python3.9
 
 #pynetlink
 pynetlink
+
+#python3-pyjwkest
+python3-pyjwkest
+
+#python3-pyoidc
+python3-pyoidc
 
 #pyzmq
 python3-zmq
@@ -417,6 +489,9 @@ runc
 #shim-unsigned
 shim-helpers-amd64-signed-template
 shim-unsigned
+
+#stalld
+stalld
 
 #synce4l
 synce4l

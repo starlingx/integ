@@ -1,0 +1,14 @@
+---
+debname: runc
+debver: 1.4.0
+src_path: null
+dl_files:
+  runc.amd64:
+    topdir: null
+    url: https://github.com/opencontainers/runc/releases/download/v1.4.0/runc.amd64
+    sha256sum: c5d4995c5aec204d7e1827d9d9a6b45042602736f7f415f484252e576dcdac28
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 1bbcf7596b4e73481ebbad6ef0ae46aa9ceb9bbc
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/runc

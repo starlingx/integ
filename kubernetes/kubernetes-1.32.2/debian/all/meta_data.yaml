@@ -1,0 +1,11 @@
+---
+debver: 1.32.2
+dl_path:
+  name: kubernetes-1.32.2.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.32.2.tar.gz
+  sha256sum: d2a917570d7c9d7247e60b58bffa13c4a4dfcc63c195f2deedbf6224b9fb4993
+revision:
+  dist: ${STX_DIST}
+  GITREVCOUNT:
+    BASE_SRCREV: b500a507a7241415f0b38951af594317bb526671
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.32.2

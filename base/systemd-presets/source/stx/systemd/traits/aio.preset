@@ -10,7 +10,6 @@ enable sw-patch.service
 enable software-controller.service
 enable software-controller-daemon.service
 enable software-agent.service
-enable software.service
 
 # 00-config-gate-worker.preset
 enable config.service
@@ -60,6 +59,9 @@ enable sysinv-agent.service
 
 # 00-tuned-config.preset
 enable tuned.service
+
+# 00-dc-auto-restore.preset
+enable dc-auto-restore.service
 
 # 85-debpkg-issues.preset
 enable mountnfs.service
@@ -142,3 +144,9 @@ enable affine-tasks.service
 
 # usm initialize service
 disable usm-initialize.service
+
+# lvm snapshot restore service
+enable lvm-snapshot-restore.service
+
+# boot counter reset service
+enable reset-boot-counter.service

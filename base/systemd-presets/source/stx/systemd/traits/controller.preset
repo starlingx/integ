@@ -10,7 +10,6 @@ enable sw-patch.service
 enable software-controller.service
 enable software-controller-daemon.service
 enable software-agent.service
-enable software.service
 
 # 00-config-gate-worker.preset
 enable config.service
@@ -151,3 +150,6 @@ disable kvm_timer_advance_setup.service
 
 # usm initialize service
 disable usm-initialize.service
+
+# boot counter reset service
+enable reset-boot-counter.service

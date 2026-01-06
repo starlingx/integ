@@ -1,0 +1,2 @@
+version=4
+https://qa.debian.org/cgi-bin/fakeupstream.cgi?upstream=forge.puppetlabs/puppetlabs/postgresql .*/puppetlabs-postgresql-(.+)\.tar\.gz

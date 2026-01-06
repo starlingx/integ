@@ -1,0 +1,17 @@
+0001-grub2-add-tboot.patch
+0002-grub2-checking-if-loop-devices-are-available.patch
+
+lat/0001-Make-UEFI-watchdog-behaviour-configurable.patch
+lat/0002-correct-grub_errno-if-allocate-memory-at-preferred-a.patch
+lat/0003-grub-verify-Add-skip_check_cfg-variable.patch
+
+secure-core/0001-Add-efivar-module-to-read-EFI-variables.patch
+secure-core/0002-grub-verify-Add-strict_security-variable.patch
+secure-core/0003-mok2verify-support-to-verify-non-PE-file-with-PKCS-7.patch
+secure-core/0004-support-mok2-verify-in-multiboot2-protocol.patch
+secure-core/0005-Verify-all-buffiles.patch
+secure-core/0006-grub-efi-support-passing-a-buffer-to-be-verified.patch
+secure-core/0007-kern-efi-init.c-disable-inside-lockdown-and-shim_loc.patch
+secure-core/0008-efi-fallback-to-legacy-mode-if-mok2verify-is-loaded.patch
+secure-core/0009-mok2verify-remove-unused-parameter-from-grub_efi_mok.patch
+

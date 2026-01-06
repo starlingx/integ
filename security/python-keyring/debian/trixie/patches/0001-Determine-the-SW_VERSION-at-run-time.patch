@@ -1,0 +1,44 @@
+From 8717dd78688a39a9d2a5e11517df59bf9c40b298 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Thu, 17 Jul 2025 06:09:06 +0000
+Subject: [PATCH] Determine the SW_VERSION at run time
+
+Get the SW_VERSION via parsing the /etc/build.info file instead of
+tsconfig.tsconfig module at run time to break python-keyring run depends
+on tsconfig.
+---
+ keyring/util/platform_.py | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/keyring/util/platform_.py b/keyring/util/platform_.py
+index cb5f77c..fba067f 100644
+--- a/keyring/util/platform_.py
++++ b/keyring/util/platform_.py
+@@ -16,7 +16,23 @@ def _data_root_Linux():
+     Use freedesktop.org Base Dir Specification to determine storage
+     location.
+     """
+-    fallback = pathlib.Path.home() / '.local/share'
++    build_info = "/etc/build.info"
++    try:
++        with open(build_info, 'r') as binfo:
++            lines = list(line for line in (p.strip() for p in binfo) if line)
++    except Exception as e:
++        print(e, file=sys.stderr)
++        raise IOError
++
++    sw_version = None
++    for entry in lines:
++        if entry.startswith('SW_VERSION='):
++            sw_version = entry.split("=")[1].strip('"')
++            break
++    if sw_version == None:
++        raise ValueError(f"No SW_VERSION found in {build_info}")
++    keyring_dir = os.path.join('/opt/platform/.keyring', sw_version)
++    fallback = os.path.expanduser(keyring_dir)
+     root = os.environ.get('XDG_DATA_HOME', None) or fallback
+     return pathlib.Path(root, 'python_keyring')
+ 
+-- 
+2.47.2
+

@@ -1,0 +1,26 @@
+From 3e1cab8f80105f32d7bc69ccfaf485bdacdba53d Mon Sep 17 00:00:00 2001
+From: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Thu, 10 Mar 2022 17:12:42 +0000
+Subject: [PATCH] Deactivate deprecated 'idle_timeout' parameter
+
+Signed-off-by: Matheus Machado Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ manifests/db.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/db.pp b/manifests/db.pp
+index 697c1d1..77f9249 100644
+--- a/manifests/db.pp
++++ b/manifests/db.pp
+@@ -147,7 +147,7 @@ define oslo::db(
+   $use_tpool               = $::os_service_default,
+   $mysql_enable_ndb        = $::os_service_default,
+   # DEPRCATED PARAMETERS
+-  $idle_timeout            = $::os_service_default,
++  $idle_timeout            = undef,
+   $min_pool_size           = undef,
+ ) {
+ 
+-- 
+2.30.2
+

@@ -1,0 +1,38 @@
+From: Cole Walker <cole.walker@windriver.com>
+Date: Wed, 1 May 2024 17:56:14 +0000
+Subject: [PATCH 59/67] clock: Downgrade log message about failed uds forward.
+
+If multiple management clients are used in the network and ptp4l
+responded at least once over UDS, it will try to forward all management
+responses received from network to the last UDS client. ptp4l doesn't
+track the messages and doesn't know if they are responses to the UDS
+client or other clients in the network. If the UDS client is no longer
+running (receiving messages on its address), ptp4l logs "uds port:
+management forward failed" error message. With frequent management
+requests in the network this can lead to flooding of the system log.
+
+Downgrade the error message to debug to disable it in the default log
+level.
+
+Upstream linuxptp commit is:
+772ec62f8e54dc3a4a10b7a5d92fa45f5994b807
+
+Signed-off-by: Miroslav Lichvar <mlichvar@redhat.com>
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ clock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/clock.c b/clock.c
+index 534b7e1..480901c 100644
+--- a/clock.c
++++ b/clock.c
+@@ -1401,7 +1401,7 @@ static void clock_forward_mgmt_msg(struct clock *c, struct port *p, struct ptp_m
+ 				       port_number(piter));
+ 		}
+ 		if (clock_do_forward_mgmt(c, p, c->uds_rw_port, msg, &msg_ready))
+-			pr_err("uds port: management forward failed");
++			pr_debug("uds port: management forward failed");
+ 		if (msg_ready) {
+ 			msg_post_recv(msg, pdulen);
+ 			msg->management.boundaryHops++;

@@ -1,0 +1,42 @@
+From 49dcc3ed15596f8121c7dc590acc818fea6ddd1d Mon Sep 17 00:00:00 2001
+From: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+Date: Fri, 5 Sep 2025 09:25:28 -0300
+Subject: [PATCH] filter out interface label when setting MTU
+
+When ifupdown receives a labeled interface name (format intf:label)
+it tries to cat the MTU value in /sys and that prints an error message
+that pollutes the log and prevents the MTU setting.
+
+This change filters out the label part from "%iface%" to correctly
+query /sys
+
+Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+---
+ inet6.defn | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/inet6.defn b/inet6.defn
+index 0dc741a..ce10275 100644
+--- a/inet6.defn
++++ b/inet6.defn
+@@ -90,7 +90,7 @@ method static
+     -[[sysctl -q -e -w net.ipv6.conf.%iface/.//%.use_tempaddr=%privext%]]
+     -[[sysctl -q -e -w net.ipv6.conf.%iface/.//%.accept_ra=%accept_ra%]]
+     -[[sysctl -q -e -w net.ipv6.conf.%iface/.//%.autoconf=%autoconf%]]
+-    -[[if [ "$(cat /sys/class/net/%iface%/mtu)" -lt %mtu% ]; then ip link set dev %iface% mtu %mtu%; else sysctl -q -e -w net.ipv6.conf.%iface/.//%.mtu=%mtu%; fi]]
++    -intf=$(echo "%iface%"|/usr/bin/awk -F ':' '{print $1}');[[if [ "$(cat /sys/class/net/${intf}/mtu)" -lt %mtu% ]; then ip link set dev %iface% mtu %mtu%; else sysctl -q -e -w net.ipv6.conf.%iface/.//%.mtu=%mtu%; fi]]
+     ip addr flush dev %iface% mngtmpaddr \
+         if (var_set("accept_ra", ifd) && !var_true("accept_ra", ifd))
+     ip link set dev %iface% [[address %hwaddress%]] up
+@@ -123,7 +123,7 @@ method manual
+     hwaddress cleanup_hwaddress
+ 
+   up
+-    -[[if [ "$(cat /sys/class/net/%iface%/mtu)" -lt %mtu% ]; then ip link set dev %iface% mtu %mtu%; else sysctl -q -e -w net.ipv6.conf.%iface/.//%.mtu=%mtu%; fi]]
++    -intf=$(echo "%iface%"|/usr/bin/awk -F ':' '{print $1}');[[if [ "$(cat /sys/class/net/${intf}/mtu)" -lt %mtu% ]; then ip link set dev %iface% mtu %mtu%; else sysctl -q -e -w net.ipv6.conf.%iface/.//%.mtu=%mtu%; fi]]
+     [[ip link set dev %iface% address %hwaddress%]]
+     ip link set dev %iface% up 2>/dev/null || true
+ 
+-- 
+2.34.1
+

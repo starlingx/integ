@@ -1,0 +1,13 @@
+---
+debname: dpdk
+debver: 24.11.2-2
+dl_path:
+  name: dpdk-debian-24.11.2-2.tar.gz
+  url: https://salsa.debian.org/debian/dpdk/-/archive/debian/24.11.2-2/dpdk-debian-24.11.2-2.tar.gz
+  md5sum: 2e1fccac5e60e5388c3f0de03b0a94ed
+  sha256sum: 9671fda5880e9371ecf3aa294e106ee0f4988313989c81da1c62d67b36af6b96
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: a806d997496740f2cec02db121c609e3c743c003
+    SRC_DIR: ${MY_REPO}/stx/integ/networking/dpdk

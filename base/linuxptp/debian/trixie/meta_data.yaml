@@ -1,0 +1,10 @@
+---
+debver: 4.2-1+b1
+dl_path:
+  name: linuxptp-debian-4.2-1+b1.tar.gz
+  url: https://salsa.debian.org/multimedia-team/linuxptp/-/archive/debian/4.2-1/linuxptp-debian-4.2-1+b1.tar.gz
+  md5sum: 90860110f544fa7aeba95512a785b8b1
+  sha256sum: 0b8b18315783c90cf1273a87a308c0a5b9b5f30db4882b91b3af72b76fb7debc
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

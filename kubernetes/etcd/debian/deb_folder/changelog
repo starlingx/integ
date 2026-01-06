@@ -1,5 +1,0 @@
-etcd (3.4.27-1) unstable; urgency=medium
-
-  * Updated for stx debian packaging
-
- -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Thu, 21 Sep 2023 23:41:53 +0000

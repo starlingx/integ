@@ -1,0 +1,96 @@
+From 1234567890abcdef1234567890abcdef12345678 Mon Sep 17 00:00:00 2001
+From: pmp1 <preetham.mp@windriver.com>
+Date: Mon, 13 Oct 2025 12:30:00 -0400
+Subject: [PATCH] Fix deprecated syntax for puppet 8.10
+
+Replace deprecated $:: global variable syntax with modern $facts[] hash
+syntax to ensure compatibility with Puppet 8.10.
+
+Signed-off-by: pmp1 <preetham.mp@windriver.com>
+---
+ manifests/extract.pp | 6 +++---
+ manifests/file.pp    | 4 ++--
+ manifests/params.pp  | 6 +++---
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/manifests/extract.pp b/manifests/extract.pp
+index 1234567..abcdefg 100644
+--- a/manifests/extract.pp
++++ b/manifests/extract.pp
+@@ -50,7 +50,7 @@
+     }
+   } else {
+     Exec{
+-      path        => $::path,
++      path        => $facts['path'],
+       cwd         => $target,
+       user        => $user,
+       group       => $group,
+@@ -64,7 +64,7 @@
+   }
+ 
+   if $strip {
+-    if $::osfamily == 'Solaris' or $name !~ /(.tar|.tgz|.tar.gz|.tar.bz2)$/ {
++    if $facts['os']['family'] == 'Solaris' or $name !~ /(.tar|.tgz|.tar.gz|.tar.bz2)$/ {
+       warning('strip is only supported with GNU tar, ignoring the parameter')
+       $strip_opt = ''
+     } else {
+@@ -80,7 +80,7 @@
+     }
+ 
+     /(.tgz|.tar.gz)$/: {
+-      if $::osfamily == 'Solaris' {
++      if $facts['os']['family'] == 'Solaris' {
+         $command = "gunzip -dc < ${source_path} | tar xf - "
+       } else {
+         $command = "tar xzf ${source_path}${strip_opt}"
+diff --git a/manifests/file.pp b/manifests/file.pp
+index 2345678..bcdefgh 100644
+--- a/manifests/file.pp
++++ b/manifests/file.pp
+@@ -54,7 +54,7 @@
+     logoutput   => on_failure,
+   }
+ 
+-  case $::staging_http_get {
++  case $facts['staging_http_get'] {
+     'curl', default: {
+       $http_get        = "curl ${curl_option} -f -L -o ${target_file} ${quoted_source}"
+       $http_get_passwd = "curl ${curl_option} -f -L -o ${target_file} -u ${username}:${password} ${quoted_source}"
+@@ -84,7 +84,7 @@
+       }
+     }
+     /^[A-Za-z]:/: {
+-      if versioncmp($::puppetversion, '3.4.0') >= 0 {
++      if versioncmp($facts['puppetversion'], '3.4.0') >= 0 {
+         file { $target_file:
+           source             => $source,
+           replace            => false,
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 3456789..cdefghi 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -1,6 +1,6 @@
+ # OS specific parameters
+ class staging::params {
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     default: {
+       $path      = '/opt/staging'
+       $owner     = '0'
+@@ -15,11 +15,11 @@
+       $exec_path = '/usr/local/bin:/usr/bin:/bin:/usr/sfw/bin'
+     }
+     'windows': {
+-      $path      = $::staging_windir
++      $path      = $facts['staging_windir']
+       $owner     = 'S-1-5-32-544' # Adminstrators
+       $group     = 'S-1-5-18'     # SYSTEM
+       $mode      = '0660'
+-      $exec_path = $::path
++      $exec_path = $facts['path']
+     }
+     'FreeBSD': {
+       $path      = '/var/tmp/staging'
+-- 
+2.43.0

@@ -1,0 +1,40 @@
+From 480e875b501ad9539d2b6bb8797163120da807f6 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 26 Sep 2025 09:58:51 +0000
+Subject: [PATCH] Add drbd.service file
+
+Copy file from bullseye debian.
+Use service from /usr/lib/drbd/scripts/ instead of /lib/drbd.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ debian/drbd.service | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+ create mode 100644 debian/drbd.service
+
+diff --git a/debian/drbd.service b/debian/drbd.service
+new file mode 100644
+index 0000000..f5f8a5a
+--- /dev/null
++++ b/debian/drbd.service
+@@ -0,0 +1,17 @@
++[Unit]
++Description=Control DRBD resources.
++After=network.target sshd.service
++
++[Service]
++Type=forking
++Restart=no
++KillMode=process
++RemainAfterExit=yes
++ExecStart=/usr/lib/drbd/scripts/drbd start
++ExecStop=/usr/lib/drbd/scripts/drbd stop
++ExecReload=/usr/lib/drbd/scripts/drbd reload
++TimeoutSec=5min
++
++[Install]
++WantedBy=multi-user.target
++
+-- 
+2.47.3
+

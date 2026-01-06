@@ -1,0 +1,41 @@
+From f97a150fbf94be75381d90396ac7be5b2edf95d2 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Tue, 23 Aug 2022 14:51:09 +0800
+Subject: [PATCH 2/2] efitools: append Microsoft KEK/DB to built-in certs
+
+While BIOS of Dell PowerEdge host enables EFI secure feature,
+it uses Microsoft KEK and DB to verify NICs and disks. If one removes
+the existing Microsoft certs and uses LockDown.efi to insert self
+defined certs, the NICs and disks are missing. So append one Microsoft
+KEK and one Microsoft DB to built-in certs for LockDown.efi.
+Reference:
+https://www.rodsbooks.com/efi-bootloaders/controlling-sb.html#multiple
+
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+[lz: Porting the patch from yocto to debian rules]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/rules | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/debian/rules b/debian/rules
+index c20cd9a..78bca19 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -8,6 +8,13 @@ override_dh_auto_build:
+ 	cp uefi_sb_keys/* ./
+ 	mv tis-boot.crt DB.crt
+ 	dh_auto_build
++	cp -f DB.esl DB-orig.esl
++	cat DB-orig.esl ms-uefi.esl > DB.esl
++	cp -f KEK.esl KEK-orig.esl
++	cat KEK-orig.esl ms-kek.esl > KEK.esl
++	rm DB-orig.esl KEK-orig.esl
++	rm LockDown*efi LockDown.so LockDown.o
++	dh_auto_build
+ 
+ override_dh_auto_install:
+ 	dh_auto_install -- EFIDIR="debian/efitools/usr/lib/efitools/${DEB_TARGET_MULTIARCH}"
+-- 
+2.17.1
+

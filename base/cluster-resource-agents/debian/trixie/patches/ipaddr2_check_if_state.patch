@@ -1,0 +1,59 @@
+From fb5a76d9050c60b601a5dbbad65ed3dbff041af1 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Mon, 2 Oct 2017 15:12:36 -0400
+Subject: [PATCH 03/13] WRS: Patch1107: ipaddr2_check_if_state.patch
+
+---
+ heartbeat/IPaddr2 | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/heartbeat/IPaddr2 b/heartbeat/IPaddr2
+index 27cae2d..4a39157 100755
+--- a/heartbeat/IPaddr2
++++ b/heartbeat/IPaddr2
+@@ -1069,7 +1069,12 @@ ip_start() {
+ 	local ip_status=`ip_served`
+ 
+ 	if [ "$ip_status" = "ok" ]; then
+-		exit $OCF_SUCCESS
++		if [ -n "`ip link show $NIC | grep \"state UP\"`" ]
++		then
++			exit $OCF_SUCCESS
++		else
++			exit $OCF_ERR_GENERIC
++		fi
+ 	fi
+ 
+ 	if [ "$ip_status" = "partial3" ]; then
+@@ -1139,7 +1144,13 @@ ip_start() {
+ 		fi
+ 		;;
+ 	esac
+-	exit $OCF_SUCCESS
++
++	if [ -n "`ip link show $NIC | grep \"state UP\"`" ]
++	then
++		exit $OCF_SUCCESS
++	else
++		exit $OCF_ERR_GENERIC
++	fi
+ }
+ 
+ ip_stop() {
+@@ -1215,7 +1226,12 @@ ip_monitor() {
+ 	case $ip_status in
+ 	ok)
+ 		run_arp_sender refresh
+-		return $OCF_SUCCESS
++		if [ -n "`ip link show $NIC | grep \"state UP\"`" ]
++		then
++			return $OCF_SUCCESS
++		else
++			return $OCF_NOT_RUNNING
++		fi
+ 		;;
+ 	no)
+ 		exit $OCF_NOT_RUNNING
+-- 
+2.47.2
+

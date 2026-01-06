@@ -1,0 +1,11 @@
+---
+debver: 1.7.2-2
+debname: libfdt
+dl_path:
+  name: dtc-1.7.2.tar.gz
+  url: https://www.kernel.org/pub/software/utils/dtc/dtc-1.7.2.tar.gz
+  md5sum: 81a06ba696bd91d55b4531cdc0b09dc6
+  sha256sum: f200e5ebd7afd20d4b3804a3085af0870fcf3c194f8d7f0f6985cf8bbb4ac0f4
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

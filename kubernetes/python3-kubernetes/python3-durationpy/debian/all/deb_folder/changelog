@@ -1,0 +1,5 @@
+python3-durationpy (0.10) stable; urgency=medium
+
+  * Updated for stx 12, required-by python3-kubernetes
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Tue, 10 Nov 2025 11:14:22 -0300

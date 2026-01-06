@@ -1,0 +1,16 @@
+license-problem-json-evil src/rapidjson/license.txt
+wayward-symbolic-link-target-in-source .git -> ../../../../.repo/projects/cgcs-root/stx/git/ceph.git
+source-is-missing qa/workunits/erasure-code/jquery.flot.js line length is 3134 characters (>512)
+source-is-missing src/civetweb/examples/_obsolete/docroot/jquery.js line length is 517 characters (>512)
+source-is-missing src/civetweb/src/third_party/duktape-1.5.2/src-separate/duk_initjs_min.js
+source-is-missing src/civetweb/src/third_party/duktape-1.8.0/src-separate/duk_initjs_min.js
+source-is-missing src/civetweb/test/ajax/jquery.js line length is 32404 characters (>512)
+source-contains-prebuilt-windows-binary ceph-erasure-code-corpus/v0.86-310/plugin=isa stripe-width=10000 technique=reed_sol_van k=7 m=3/8
+source-contains-prebuilt-windows-binary ceph-erasure-code-corpus/v0.86-310/plugin=isa stripe-width=10000 technique=reed_sol_van k=7 m=4/8
+source-contains-prebuilt-windows-binary ceph-erasure-code-corpus/v0.86-310/plugin=isa stripe-width=10000 technique=reed_sol_van k=7 m=5/8
+source-contains-prebuilt-windows-binary ceph-erasure-code-corpus/v0.92-988/plugin=isa stripe-width=10000 technique=reed_sol_van k=7 m=3/8
+source-contains-prebuilt-windows-binary ceph-erasure-code-corpus/v0.92-988/plugin=isa stripe-width=10000 technique=reed_sol_van k=7 m=4/8
+source-contains-prebuilt-windows-binary ceph-object-corpus/archive/0.80-rc1-35-g4812150/objects/MOSDPGCreate/a47ae3cd3ba843424dedce0c05308bb5
+source-contains-prebuilt-windows-binary ceph-object-corpus/archive/11.2.0-280-g34e04de/objects/bluestore_extent_ref_map_t::record_t/e800965f13053b760af9612e91333fe4
+source-contains-prebuilt-windows-binary ceph-object-corpus/archive/11.2.0-280-g34e04de/objects/inodeno_t/d849f83485b1a2c4343515901334f02e
+source-contains-prebuilt-windows-binary ceph-object-corpus/archive/11.2.0-280-g34e04de/objects/utime_t/00a9a0a9e1f88f5bb148fd729330db51

@@ -1,0 +1,43 @@
+From 65b4c4ca7da29d4d91f3d61c4dd1f59fb06aeada Mon Sep 17 00:00:00 2001
+From: Jim Gauld <james.gauld@windriver.com>
+Date: Wed, 28 Oct 2020 17:09:20 -0400
+Subject: [PATCH] Format DRBD resource cpu-mask to support 64 or larger cpus
+
+This changes the input format of DRBD resource config option
+cpu-mask so it is correctly parsed in the kernel. The underlying
+bitmap_parse routine expects large hex values delimited every 8
+characters with a comma.
+
+e.g., On large cpu systems, we would see the following kern.log :
+2020-10-13T20:55:34.079 controller-0 kernel: warning [  269.423462] drbd
+drbd-dockerdistribution: Overflow in bitmap_parse(300000003), truncating
+to 64 bits
+
+This resulted in drbd_w_* tasks affined to individual cores instead of
+platform cores.
+
+Signed-off-by: Jim Gauld <james.gauld@windriver.com>
+---
+ templates/header.res.erb | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/templates/header.res.erb b/templates/header.res.erb
+index df52544..6ac837b 100644
+--- a/templates/header.res.erb
++++ b/templates/header.res.erb
+@@ -31,7 +31,11 @@ resource <%= @name %> {
+ 
+ <% if @cpumask -%>
+   options {
+-    cpu-mask <%= @cpumask %>;
++<%# To support 64 cpu systems or larger, need to format cpu-mask string
++with surrounding double quotes. Also must delimit the hex string in
++8 character groups starting from the right. This prevents DRBD kernel
++module bitmap_parse() routine from truncating input at 64 bits. -%>
++    cpu-mask "<%= @cpumask.reverse.scan(/.{1,8}/).join(',').reverse %>";
+   }
+ <% end -%>
+ 
+-- 
+1.8.3.1
+

@@ -1,0 +1,134 @@
+From 1a869e19893de4a561c3c9420637feccb59cfa1c Mon Sep 17 00:00:00 2001
+From: Petr Vorel <pvorel@suse.cz>
+Date: Mon, 18 Oct 2021 15:13:44 +0200
+Subject: [PATCH] ping: Print reply from Subnet-Router anycast address
+
+by detecting Subnet-Router address for 64 bit prefix and suppress
+address comparison check.
+
+5e052ad ("ping: discard packets with wrong source address") correctly
+hid replies with wrong source address to comply RFC 1122 (Section
+3.2.1.3: "The IP source address in an ICMP Echo Reply MUST be the same
+as the specific-destination address").
+
+While change in 5e052ad works for broadcast and multicast addresses and
+some of anycast addresses, it does not work for (at least) Subnet-Router
+anycast address):
+
+    # VETH1_IPV6=fd00:dead:beef:1234::1
+    # VPEER1_IPV6=fd00:dead:beef:1234::2
+    # ip netns add ns-ipv6
+    # ip li add name veth1 type veth peer name vpeer1
+    # ip -6 addr add $VETH1_IPV6/64 dev veth1
+    # ip li set dev veth1 up
+    # ip li set dev vpeer1 netns ns-ipv6
+    # ip netns exec ns-ipv6 ip li set dev lo up
+    # ip netns exec ns-ipv6 ip -6 addr add $VPEER1_IPV6/64 dev vpeer1
+    # ip netns exec ns-ipv6 ip li set vpeer1 up
+    # ip netns exec ns-ipv6 ip -6 route add default dev vpeer1 via $VETH1_IPV6
+    # sysctl -w net.ipv6.conf.all.forwarding=1
+
+    $ ping -c1 ff02::1 # anycast - all nodes
+    PING ff02::1(ff02::1) 56 data bytes
+    64 bytes from fe80::9c9c:ffff:fe14:e9d2%vpeer1: icmp_seq=1 ttl=64 time=0.064 ms
+
+    $ ping -c1 ff02::2 # anycast - all routers
+    PING ff02::2(ff02::2) 56 data bytes
+    64 bytes from fe80::5496:9ff:fef5:8f01%vpeer1: icmp_seq=1 ttl=64 time=0.088 ms
+
+    $ ping -c1 -W5 fd00:dead:beef:1234:: # Subnet-Router anycast
+    PING fd00:dead:beef:1234::(fd00:dead:beef:1234::) 56 data bytes
+
+Subnet-Router anycast address works for both busybox ping (without
+printing the real source address) and fping:
+
+    $ busybox ping -c1 fd00:dead:beef:1234::
+    PING fd00:dead:beef:1234:: (fd00:dead:beef:1234::): 56 data bytes
+    64 bytes from fd00:dead:beef:1234::1: seq=0 ttl=64 time=0.122 ms
+
+    $ fping -c1 fd00:dead:beef:1234::
+     [<- fd00:dead:beef:1234::1]fd00:dead:beef:1234:: : [0], 64 bytes, 0.096 ms (0.096 avg, 0% loss)
+
+RFC 4291 specifies Subnet-Router anycast address as [1]:
+
+    The Subnet-Router anycast address is predefined.  Its format is as
+    follows:
+    |                         n bits                 |   128-n bits   |
+    +------------------------------------------------+----------------+
+    |                   subnet prefix                | 00000000000000 |
+    +------------------------------------------------+----------------+
+
+    The "subnet prefix" in an anycast address is the prefix that
+    identifies a specific link.  This anycast address is syntactically
+    the same as a unicast address for an interface on the link with the
+    interface identifier set to zero.
+
+=> to detect Subnet-Router anycast address we need to know prefix, which
+we don't know, thus detect it for prefix 64 (the default IPv6 prefix).
+
+[1] https://datatracker.ietf.org/doc/html/rfc4291#section-2.6.1
+
+Fixes: 5e052ad ("ping: discard packets with wrong source address")
+Closes: https://github.com/iputils/iputils/issues/371
+
+Reported-by: Tim Sandquist
+Signed-off-by: Petr Vorel <pvorel@suse.cz>
+(cherry picked from commit 15a5e5c7aace5a7a782ff802988e04ed4c1148a5)
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ ping/ping.h         |  1 +
+ ping/ping6_common.c | 12 +++++++++++-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/ping/ping.h b/ping/ping.h
+index 8fb36670b1f1..e357d73a9a10 100644
+--- a/ping/ping.h
++++ b/ping/ping.h
+@@ -212,6 +212,7 @@ struct ping_rts {
+ #endif
+ 
+ 	/* Used only in ping6_common.c */
++	int subnet_router_anycast; /* Subnet-Router anycast (RFC 4291) */
+ 	struct sockaddr_in6 firsthop;
+ 	unsigned char cmsgbuf[4096];
+ 	size_t cmsglen;
+diff --git a/ping/ping6_common.c b/ping/ping6_common.c
+index fcb48beb065a..d0d2d8489a26 100644
+--- a/ping/ping6_common.c
++++ b/ping/ping6_common.c
+@@ -101,6 +101,7 @@ int ping6_run(struct ping_rts *rts, int argc, char **argv, struct addrinfo *ai,
+ 	      struct socket_st *sock)
+ {
+ 	int hold, packlen;
++	size_t i;
+ 	unsigned char *packet;
+ 	char *target;
+ 	struct icmp6_filter filter;
+@@ -247,6 +248,15 @@ int ping6_run(struct ping_rts *rts, int argc, char **argv, struct addrinfo *ai,
+ 			rts->pmtudisc = IPV6_PMTUDISC_DO;
+ 	}
+ 
++	/* detect Subnet-Router anycast at least for the default prefix 64 */
++	rts->subnet_router_anycast = 1;
++	for (i = 8; i < sizeof(struct in6_addr); i++) {
++		if (rts->whereto6.sin6_addr.s6_addr[i]) {
++			rts->subnet_router_anycast = 0;
++			break;
++		}
++	}
++
+ 	if (rts->pmtudisc >= 0) {
+ 		if (setsockopt(sock->fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &rts->pmtudisc,
+ 			       sizeof rts->pmtudisc) == -1)
+@@ -818,7 +828,7 @@ int ping6_parse_reply(struct ping_rts *rts, socket_st *sock,
+ 	}
+ 
+ 	if (icmph->icmp6_type == ICMP6_ECHO_REPLY) {
+-		if (!rts->multicast &&
++		if (!rts->multicast && !rts->subnet_router_anycast &&
+ 		    memcmp(&from->sin6_addr.s6_addr, &rts->whereto6.sin6_addr.s6_addr, 16))
+ 			return 1;
+ 		if (!is_ours(rts, sock, icmph->icmp6_id))
+-- 
+2.29.2
+

@@ -1,0 +1,31 @@
+From 8332d228aaba97c5928e9ffd662bbf7d7fade5ea Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 1 Aug 2025 07:15:24 +0000
+Subject: [PATCH] Stop invalid warning message
+
+It can fix config_controller failure at step 6.
+
+The upstream fix is at below link
+https://github.com/puppetlabs/puppetlabs-haproxy/commit/20db4474c5938c21ac441f0092254c78b5978cc4
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/frontend.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/frontend.pp b/manifests/frontend.pp
+index 89a4375..63537ff 100644
+--- a/manifests/frontend.pp
++++ b/manifests/frontend.pp
+@@ -109,7 +109,7 @@ define haproxy::frontend (
+   Boolean                                 $defaults_use_backend     = true,
+   Optional[Stdlib::Absolutepath]          $config_file              = undef,
+   # Deprecated
+-  Optional[Array]                         $bind_options             = undef,
++  Optional[Array]                         $bind_options             = '',
+ ) {
+   if $ports and $bind {
+     fail('The use of $ports and $bind is mutually exclusive, please choose either one')
+-- 
+2.47.2
+

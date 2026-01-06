@@ -1,0 +1,29 @@
+From e5e7ea54dbb3f13465fb38ea462f460053427e8e Mon Sep 17 00:00:00 2001
+From: Andy Ning <andy.ning@windriver.com>
+Date: Wed, 2 Mar 2022 19:19:42 +0000
+Subject: [PATCH] Change pid file and args file location
+
+Signed-off-by: Andy Ning <andy.ning@windriver.com>
+---
+ debian/slapd.init.ldif | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/debian/slapd.init.ldif b/debian/slapd.init.ldif
+index eacb116..7b5392e 100644
+--- a/debian/slapd.init.ldif
++++ b/debian/slapd.init.ldif
+@@ -4,9 +4,9 @@ objectClass: olcGlobal
+ cn: config
+ # Where the pid file is put. The init.d script
+ # will not stop the server if you change this.
+-olcPidFile: /var/run/slapd/slapd.pid
++olcPidFile: /run/slapd.pid
+ # List of arguments that were passed to the server
+-olcArgsFile: /var/run/slapd/slapd.args
++olcArgsFile: /run/slapd.args
+ # Read slapd-config(5) for possible values
+ olcLogLevel: none
+ # The tool-threads parameter sets the actual amount of cpu's that is used
+-- 
+2.30.2
+

@@ -1,0 +1,81 @@
+From eec5204aeed0eb839d2328732b5515061cc00e79 Mon Sep 17 00:00:00 2001
+From: Andre Fernando Zanella Kantek
+ <AndreFernandoZanella.Kantek@windriver.com>
+Date: Thu, 31 Mar 2022 08:08:22 -0300
+Subject: [PATCH] Save dir path variable with distinct names
+
+Signed-off-by: Andre Fernando Zanella Kantek <AndreFernandoZanella.Kantek@windriver.com>
+---
+ lib/puppet/provider/network_config/interfaces.rb | 10 +++++-----
+ lib/puppet/provider/network_route/routes.rb      | 10 +++++-----
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/lib/puppet/provider/network_config/interfaces.rb b/lib/puppet/provider/network_config/interfaces.rb
+index f16d082..487b243 100644
+--- a/lib/puppet/provider/network_config/interfaces.rb
++++ b/lib/puppet/provider/network_config/interfaces.rb
+@@ -23,15 +23,15 @@ Puppet::Type.type(:network_config).provide(:interfaces) do
+   # /etc/network/interfaces afterward.  Only config that have changed
+   # will get replaced.  Don't let puppet directly manage it, else it will
+   # trigger un-wanted networking actions (like up/down).
+-  SCRIPT_DIRECTORY = '/var/run/network-scripts.puppet/'
+-  SCRIPT_FILE = SCRIPT_DIRECTORY + 'interfaces'
++  SCRIPT_INTERFACES_DEB_DIRECTORY = '/var/run/network-scripts.puppet/'.freeze
++  SCRIPT_INTERFACES_DEB_FILE = SCRIPT_INTERFACES_DEB_DIRECTORY + 'interfaces'
+
+   def select_file
+-    SCRIPT_FILE
++    SCRIPT_INTERFACES_DEB_FILE
+   end
+
+   def self.target_files
+-    [SCRIPT_FILE]
++    [SCRIPT_INTERFACES_DEB_FILE]
+   end
+
+   class MalformedInterfacesError < Puppet::Error
+@@ -255,7 +255,7 @@ Puppet::Type.type(:network_config).provide(:interfaces) do
+
+   # Generate an array of sections
+   def self.format_file(_filename, providers)
+-    Dir.mkdir(SCRIPT_DIRECTORY) unless File.exists?(SCRIPT_DIRECTORY)
++    Dir.mkdir(SCRIPT_INTERFACES_DEB_DIRECTORY) unless File.exists?(SCRIPT_INTERFACES_DEB_DIRECTORY)
+
+     contents = []
+     contents << header
+diff --git a/lib/puppet/provider/network_route/routes.rb b/lib/puppet/provider/network_route/routes.rb
+index 9f7b40c..0575a2a 100644
+--- a/lib/puppet/provider/network_route/routes.rb
++++ b/lib/puppet/provider/network_route/routes.rb
+@@ -28,15 +28,15 @@ Puppet::Type.type(:network_route).provide(:routes) do
+   # /etc/network/interfaces afterward.  Only config that have changed
+   # will get replaced.  Don't let puppet directly manage it, else it will
+   # trigger un-wanted networking actions (like up/down).
+-  SCRIPT_ROUTES_DIRECTORY = '/var/run/network-scripts.puppet/'
+-  SCRIPT_ROUTES_FILE = SCRIPT_ROUTES_DIRECTORY + 'routes'
++  SCRIPT_ROUTES_DEB_DIRECTORY = '/var/run/network-scripts.puppet/'.freeze
++  SCRIPT_ROUTES_DEB_FILE = SCRIPT_ROUTES_DEB_DIRECTORY + 'routes'
+
+   def select_file
+-    SCRIPT_ROUTES_FILE
++    SCRIPT_ROUTES_DEB_FILE
+   end
+
+   def self.target_files
+-    [SCRIPT_ROUTES_FILE]
++    [SCRIPT_ROUTES_DEB_FILE]
+   end
+
+   class MalformedRoutesError < Puppet::Error
+@@ -93,7 +93,7 @@ Puppet::Type.type(:network_route).provide(:routes) do
+
+   # Generate an array of sections
+   def self.format_file(_filename, providers)
+-    Dir.mkdir(SCRIPT_ROUTES_DIRECTORY) unless File.exists?(SCRIPT_ROUTES_DIRECTORY)
++    Dir.mkdir(SCRIPT_ROUTES_DEB_DIRECTORY) unless File.exists?(SCRIPT_ROUTES_DEB_DIRECTORY)
+
+     contents = []
+     contents << header
+--
+2.17.1
+

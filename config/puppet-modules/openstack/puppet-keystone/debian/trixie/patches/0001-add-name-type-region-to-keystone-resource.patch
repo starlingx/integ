@@ -1,0 +1,63 @@
+From 10c17e0272d5ec1ab50b97077073380974a0395f Mon Sep 17 00:00:00 2001
+From: Michel Thebeau <Michel.Thebeau@windriver.com>
+Date: Tue, 26 Aug 2025 20:18:02 +0000
+Subject: [PATCH] add name, type, region to keystone resource
+
+Add name/type to keystone_service
+Add name/type/region to keystone_endpoint
+
+A pre-starlingx change.  Was squashed with misc other puppet-keystone
+changes. Splitting the changes for clarity.
+
+Original git log for [name, service_name_real]: Allow DC to setup
+endpoints in keystone. An earlier hack to get puppet-keystone working,
+did not work with distributed cloud endpoints. This hack will allow DC
+to [work].
+
+Original git log for [type, service_type], and [region, region]: Remove
+trailing service_type. Fix stalled puppet catalog for puppet-keystone.
+puppet-keystone was adding extra service type strings to endpoints and
+then failing to apply the puppet catalog.
+
+Rebased onto puppet-keystone 25.0.0-3
+Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+
+Original sign-offs of the squashed patch; rebases and refactors:
+Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+Signed-off-by: Dean Troyer <dtroyer@gmail.com>
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+
+Original sign-offs:
+[name, service_name_real]
+[region, region]
+Signed-off-by: Al Bailey <Al.Bailey@windriver.com>
+---
+ manifests/resource/service_identity.pp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/manifests/resource/service_identity.pp b/manifests/resource/service_identity.pp
+index eb37b7e..ecb55a8 100644
+--- a/manifests/resource/service_identity.pp
++++ b/manifests/resource/service_identity.pp
+@@ -207,6 +207,8 @@ define keystone::resource::service_identity(
+ 
+     ensure_resource('keystone_service', "${service_name}::${service_type}", {
+       'ensure'      => $ensure,
++      'name'        => $service_name_real,
++      'type'        => $service_type,
+       'description' => $service_description,
+     })
+   }
+@@ -220,6 +222,9 @@ define keystone::resource::service_identity(
+     }
+     ensure_resource('keystone_endpoint', "${region}/${service_name}::${service_type}", {
+       'ensure'       => $ensure,
++      'name'         => $service_name_real,
++      'type'         => $service_type,
++      'region'       => $region,
+       'public_url'   => $public_url,
+       'admin_url'    => $admin_url,
+       'internal_url' => $internal_url,
+-- 
+2.34.1
+

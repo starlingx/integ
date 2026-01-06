@@ -1,0 +1,17 @@
+Description: Fix systemd ceph-osd.target
+ This helps when rebooting.
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2021-01-28
+
+--- ceph-14.2.16.orig/systemd/ceph-osd.target
++++ ceph-14.2.16/systemd/ceph-osd.target
+@@ -1,7 +1,7 @@
+ [Unit]
+ Description=ceph target allowing to start/stop all ceph-osd@.service instances at once
+ PartOf=ceph.target
+-After=ceph-mon.target
++After=ceph-mon.target systemd-udev-settle.service
+ Before=ceph.target
+ Wants=ceph.target ceph-mon.target
+ 

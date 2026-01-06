@@ -1,0 +1,11 @@
+---
+debver: 1.34.1
+dl_path:
+  name: kubernetes-1.34.1.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.34.1.tar.gz
+  sha256sum: b6054e61e26ca400e5afaa63defafb7dfcbbfad66356dd6d2598adec865a7685
+revision:
+  dist: ${STX_DIST}
+  GITREVCOUNT:
+    BASE_SRCREV: fe71102cf8c3e94dd9c95a0b33098d83ccda8c93
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.34.1

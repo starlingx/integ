@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+CLIENTS=('ceph')
+
+for client in "${CLIENTS[@]}"; do
+    echo -n "Testing client $client: "
+    $client -v 2>&1 > /dev/null
+    echo "OK"
+done

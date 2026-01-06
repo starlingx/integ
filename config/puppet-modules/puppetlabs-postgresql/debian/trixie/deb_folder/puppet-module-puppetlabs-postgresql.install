@@ -1,0 +1,8 @@
+files 		usr/share/puppet/modules.available/puppetlabs-postgresql
+functions	usr/share/puppet/modules.available/puppetlabs-postgresql
+lib 		usr/share/puppet/modules.available/puppetlabs-postgresql
+manifests 	usr/share/puppet/modules.available/puppetlabs-postgresql
+metadata.json 	usr/share/puppet/modules.available/puppetlabs-postgresql
+tasks		usr/share/puppet/modules.available/puppetlabs-postgresql
+templates 	usr/share/puppet/modules.available/puppetlabs-postgresql
+types       usr/share/puppet/modules.available/puppetlabs-postgresql

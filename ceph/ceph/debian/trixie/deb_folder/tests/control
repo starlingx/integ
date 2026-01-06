@@ -1,0 +1,9 @@
+Tests: ceph-client build-rados build-rbd python-ceph
+Depends:
+ build-essential,
+ ceph-common,
+ librados-dev,
+ librbd-dev,
+ python3-rados,
+ python3-rbd,
+Restrictions: needs-root

@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+UPSTREAM_GIT := https://github.com/openstack/puppet-vswitch.git
+include /usr/share/openstack-pkg-tools/pkgos.make
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	echo "Do nothing..."
+
+override_dh_auto_build:
+	echo "Do nothing..."
+
+override_dh_auto_install:
+	echo "Do nothing..."

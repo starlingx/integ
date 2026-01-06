@@ -1,0 +1,15 @@
+containerd (2.0.7) stable; urgency=medium
+
+  * Updated for stx 12
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Fri, 07 Nov 2025 09:36:59 +0000
+
+containerd (1.7.27) stable; urgency=medium
+
+  * Updated for stx debian packaging
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Thu, 10 Apr 2025 16:41:53 +0000
+
+containerd (1.6.21) stable; urgency=medium
+  * Initial release using binaries from upstream containerd package
+ -- Chris Friesen <chris.friesen@windriver.com>  Mon, 15 May 2023 14:13:58 -0600 

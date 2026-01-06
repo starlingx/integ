@@ -1,0 +1,25 @@
+From c42c15c2a1b83893beee73a9ef610b6c0a4a37d0 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Thu, 30 Oct 2025 22:29:33 -0400
+Subject: [PATCH] Add Debian 13 (Trixie) to PostgreSQL version mapping
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/globals.pp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/manifests/globals.pp b/manifests/globals.pp
+index 64a4815..f0eb07a 100644
+--- a/manifests/globals.pp
++++ b/manifests/globals.pp
+@@ -210,6 +210,7 @@ class postgresql::globals (
+         '10'    => '11',
+         '11'    => '13',
+         '12'    => '15',
++        '13'    => '17',
+         default => undef,
+       },
+       'Ubuntu' => $facts['os']['release']['major'] ? {
+-- 
+2.43.0
+

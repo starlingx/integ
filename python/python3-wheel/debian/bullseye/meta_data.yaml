@@ -1,0 +1,7 @@
+---
+debver: 0.34.2-1
+debname: wheel
+archive: https://snapshot.debian.org/archive/debian/20200320T222820Z/pool/main/w/wheel/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

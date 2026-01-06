@@ -1,0 +1,6 @@
+debver: 3.6-5
+debname: parted
+archive: https://snapshot.debian.org/archive/debian/20251130T202713Z/pool/main/p/parted/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

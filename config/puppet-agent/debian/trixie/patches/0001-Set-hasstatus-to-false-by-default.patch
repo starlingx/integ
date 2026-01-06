@@ -1,0 +1,50 @@
+From 0a725d10147e1481bdfe0522b9c5f93ab1a6c40b Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 25 Jul 2025 07:32:11 +0000
+Subject: [PATCH] Set hasstatus to false by default
+
+Many of the WR init scripts do not have proper status functions,
+so set "hasstatus" to false by default.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ lib/puppet/provider/service/init.rb | 8 +++++++-
+ lib/puppet/type/service.rb          | 3 ++-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/lib/puppet/provider/service/init.rb b/lib/puppet/provider/service/init.rb
+index d7097f1..d94137f 100644
+--- a/lib/puppet/provider/service/init.rb
++++ b/lib/puppet/provider/service/init.rb
+@@ -100,7 +100,13 @@ Puppet::Type.type(:service).provide :init, :parent => :base do
+         next unless Puppet::FileSystem.executable?(fullpath)
+         next unless is_init?(fullpath)
+ 
+-        instances << new(:name => name, :path => path, :hasstatus => true)
++        # Try to determine whether the init script has "status" support via grep
++        grepcmd = "grep -q '\\<status)' #{fullpath} 2>/dev/null && echo true || echo false"
++        if Puppet::Util::Execution.execute(grepcmd) =~ /true/
++          instances << new(:name => name, :path => path, :hasstatus => true)
++        else
++          instances << new(:name => name, :path => path, :hasstatus => false)
++        end
+       end
+     end
+     instances
+diff --git a/lib/puppet/type/service.rb b/lib/puppet/type/service.rb
+index ceb4ef8..4406f66 100644
+--- a/lib/puppet/type/service.rb
++++ b/lib/puppet/type/service.rb
+@@ -188,7 +188,8 @@ module Puppet
+ 
+       newvalues(:true, :false)
+ 
+-      defaultto :true
++      # StarlingX: Change hasstatus default to false
++      defaultto :false
+     end
+     newparam(:name) do
+       desc <<-EOT
+-- 
+2.47.2
+
