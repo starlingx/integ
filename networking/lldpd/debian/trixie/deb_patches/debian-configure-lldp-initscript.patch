@@ -1,19 +1,19 @@
-From yue.tao@windriver.com
+From 5539111323c9812b3c808ffafc9b9af075ba764d Mon Sep 17 00:00:00 2001
+From: Caio Bruchert <caio.bruchert@windriver.com>
+Date: Fri, 17 Oct 2025 14:39:23 -0300
+Subject: [PATCH] Debian configure lldp initscript
 
-Subject: install the i40e-lldp-configure.sh to /etc/init.d. The script allows 
+Install the i40e-lldp-configure.sh to /etc/init.d. The script allows
 a user to enable and disable the internal LLDP agent.
 
---- a/debian/rules
-+++ b/debian/rules
-@@ -9,3 +9,8 @@ override_dh_auto_configure:
- 		--with-snmp \
- 		--with-xml \
- 		--with-systemdsystemunitdir=/lib/systemd/system
-+
-+override_dh_install:
-+	install -d -m 755 debian/tmp/etc/init.d
-+	install -m 755 i40e-lldp-configure.sh debian/tmp/etc/init.d
-+	dh_install
+Signed-off-by: Caio Bruchert <caio.bruchert@windriver.com>
+---
+ debian/lldpd.install | 1 +
+ debian/rules         | 5 +++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/debian/lldpd.install b/debian/lldpd.install
+index 6f5bfb3..9425f40 100644
 --- a/debian/lldpd.install
 +++ b/debian/lldpd.install
 @@ -5,3 +5,4 @@ debian/tmp/usr/sbin/lldp*
@@ -21,3 +21,19 @@ a user to enable and disable the internal LLDP agent.
  debian/tmp/usr/share/zsh/vendor-completions/*
  debian/tmp/etc/lldpd.d/*
 +debian/tmp/etc/init.d/*
+diff --git a/debian/rules b/debian/rules
+index d818e34..53a8e16 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -11,3 +11,8 @@ override_dh_auto_configure:
+ 		--with-snmp \
+ 		--with-xml \
+ 		--with-systemdsystemunitdir=$(deb_systemdsystemunitdir)
++
++override_dh_install:
++	install -d -m 755 debian/tmp/etc/init.d
++	install -m 755 i40e-lldp-configure.sh debian/tmp/etc/init.d
++	dh_install
+-- 
+2.34.1
+
