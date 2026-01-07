@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@
+	dh $@ --buildsystem=golang
 
 override_dh_auto_build:
 	GO111MODULE=on go build -mod=vendor -ldflags=-linkmode=external
