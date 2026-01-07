@@ -1,32 +1,15 @@
-From fa4c461a16fc5305dd52558f919b3c7a63257972 Mon Sep 17 00:00:00 2001
-From: Fabiano Mercer <fabiano.correamercer@windriver.com>
-Date: Fri, 29 Jul 2022 11:07:02 -0300
+From df2031ecbc5bfa9f4995af72036afc0f7832b71f Mon Sep 17 00:00:00 2001
+From: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+Date: Fri, 5 Sep 2025 15:07:50 -0300
 Subject: [PATCH] ignore IFACE "--all" for ifupdown scripts
 
+Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
 ---
- if-up-scripts/check-duplicate-ip  | 3 ++-
  if-up-scripts/check-duplicate-ip6 | 3 ++-
- if-up-scripts/check-gateway       | 3 +++
- if-up-scripts/check-network-cable | 3 +++
- 4 files changed, 10 insertions(+), 2 deletions(-)
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/if-up-scripts/check-duplicate-ip b/if-up-scripts/check-duplicate-ip
-index a07668d..347639d 100755
---- a/if-up-scripts/check-duplicate-ip
-+++ b/if-up-scripts/check-duplicate-ip
-@@ -105,8 +105,9 @@ fi
- 
- # If the interface is a serial (sl), WAN interfaces (ww) or localhost (lo) then skip the test
- # as it does not make sense in these
-+# this script only handles one interface per run so ignore "--all" as well
- case $IFACE in
--        sl* | ww* | lo*) exit 0 ;;
-+        sl* | ww* | lo* | "--all") exit 0 ;;
-         *) ;;
- esac
- 
 diff --git a/if-up-scripts/check-duplicate-ip6 b/if-up-scripts/check-duplicate-ip6
-index f48cdd3..b9ff87a 100755
+index bb96ea0..0e39175 100755
 --- a/if-up-scripts/check-duplicate-ip6
 +++ b/if-up-scripts/check-duplicate-ip6
 @@ -107,8 +107,9 @@ fi
@@ -40,34 +23,6 @@ index f48cdd3..b9ff87a 100755
          *) ;;
  esac
  
-diff --git a/if-up-scripts/check-gateway b/if-up-scripts/check-gateway
-index b3fdeb6..97c93b1 100755
---- a/if-up-scripts/check-gateway
-+++ b/if-up-scripts/check-gateway
-@@ -55,6 +55,9 @@ VERBOSITY=${VERBOSITY:-0}
- # Break out if we don't have an interface to work with
- [ -z "$IFACE" ] && exit 0
- 
-+# Ignore "--all"
-+[ "$IFACE" = "--all" ] && exit 0
-+
- if [ "$DO_SYSLOG" = "yes" ] ; then
- 	OUTPUT="logger -i -p daemon.err -s"
- else
-diff --git a/if-up-scripts/check-network-cable b/if-up-scripts/check-network-cable
-index 94279eb..f8e9044 100755
---- a/if-up-scripts/check-network-cable
-+++ b/if-up-scripts/check-network-cable
-@@ -180,6 +180,9 @@ case $IFACE in
- 	bond*)
- 		check_bond_status || [ "$ABORT_NO_LINK" != "yes" ] || exit 1
- 		;;
-+	"--all")
-+		# this script only handles one interface per run
-+		;;
-         lo*)    ;;
- 	*)
- 		check_status || [ "$ABORT_NO_LINK" != "yes" ] || exit 1
 -- 
-2.17.1
+2.34.1
 
