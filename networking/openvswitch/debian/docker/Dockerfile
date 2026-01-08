@@ -20,6 +20,10 @@ RUN apt-get -y update \
 # Ensure that tini is located at the root /tini
 RUN ln -s /usr/bin/tini /tini
 
+# Create openvswitch user/group for non-root operation
+RUN groupadd -o -g 42424 openvswitch && \
+    useradd -o -u 42424 -g openvswitch -M -d /var/run/openvswitch -s /sbin/nologin openvswitch
+
 RUN rm -rf \
     /var/cache/debconf/* \
     /var/lib/apt/lists/* \
