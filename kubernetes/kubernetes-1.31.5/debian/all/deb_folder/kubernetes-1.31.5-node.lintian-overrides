@@ -1,4 +1,0 @@
-## Override annoying/useless messages
-kubernetes-node: spelling-error-in-binary
-kubernetes-node: manpage-has-errors-from-man usr/share/man/man1/*
-kubernetes-node: manpage-has-bad-whatis-entry usr/share/man/man1/*
