@@ -87,7 +87,8 @@ etcd-server
 #facter
 facter
 
-#flux
+#flux2
+flux2
 flux2-charts
 flux2-charts-legacy
 
