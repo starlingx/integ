@@ -1,6 +1,5 @@
 [Unit]
 Description=Kubernetes Pods Recovery Service
-After=sw-patch.service
 After=kubelet.service
 Requires=kubelet.service
 
