@@ -1,0 +1,12 @@
+usr/bin/benchmark
+usr/bin/bridge
+usr/bin/etcd-agent
+usr/bin/etcd-dump-db
+usr/bin/etcd-dump-logs
+usr/bin/etcd-dump-metrics
+usr/bin/etcd-proxy
+usr/bin/etcd-runner
+usr/bin/etcd-tester
+usr/bin/etcd2-backup-coreos
+usr/bin/raftexample
+

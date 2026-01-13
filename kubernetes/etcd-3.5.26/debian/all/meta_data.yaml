@@ -1,0 +1,12 @@
+---
+debname: etcd-3.5.26
+debver: 3.5.26
+dl_path:
+  name: etcd-3.5.26.tar.gz
+  url: https://github.com/etcd-io/etcd/releases/download/v3.5.26/etcd-v3.5.26-linux-amd64.tar.gz
+  sha256sum: 0a682a91201dc8351d507210bc30b021a11e254eab806f03224b51e8fad29abb
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 4493a3146c752e2d3cd11ea8fa964a9399dd8b52
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/etcd-3.5.26
