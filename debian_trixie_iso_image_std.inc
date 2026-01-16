@@ -95,7 +95,6 @@ facter
 #flux2
 flux2
 flux2-charts
-flux2-charts-legacy
 
 #gpu-operator
 #gpu-operator
@@ -361,10 +360,10 @@ python3-nsenter
 pynetlink
 
 #python3-pyjwkest
-#python3-pyjwkest
+python3-pyjwkest
 
 #python3-pyoidc
-#python3-pyoidc
+python3-pyoidc
 
 #pyzmq
 python3-zmq
