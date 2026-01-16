@@ -1,0 +1,62 @@
+From 860ce7b10458b950a4f8caa11a059e6f20a7dbb0 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Mon, 29 Dec 2025 12:27:26 +0000
+Subject: [PATCH 2/2] Remove validate functions
+
+puppet-module-sssd is being downloaded from debian bookworm.
+It contains validate_functions which are removed and not compatible
+with puppet-stdlib of debian trixie.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/init.pp | 34 ----------------------------------
+ 1 file changed, 34 deletions(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 10d95ca..70a1f4c 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -50,40 +50,6 @@ class sssd (
+     fail("Unsupported OS ${facts['os']['name']} ${facts['os']['release']['full']}")
+   }
+ 
+-  validate_bool($manage_package)
+-  if !is_array($package_name) {
+-    validate_string($package_name)
+-  }
+-  validate_re($package_ensure,['^(present|absent|latest)$','^(\d+\.)*\d+$'])
+-  validate_bool($manage_config)
+-  validate_absolute_path($config_path)
+-  validate_string($config_owner)
+-  validate_string($config_group)
+-  validate_re($config_mode,['^[0-7]{3,4}$'])
+-  validate_string($config_source)
+-  validate_string($config_content)
+-  validate_string($config_template)
+-  validate_bool($manage_service)
+-  validate_string($service_name)
+-  validate_re($service_ensure,['^(running|stopped)$'])
+-  validate_bool($service_enable)
+-
+-  validate_bool($rotate_uris)
+-
+-  validate_array($services)
+-  validate_hash($domains)
+-  validate_hash($nss_options)
+-  validate_hash($pam_options)
+-  validate_hash($sudo_options)
+-  validate_hash($autofs_options)
+-  validate_hash($ssh_options)
+-
+-  validate_array($sss_cache_path)
+-  validate_bool($flush_cache_on_change)
+-
+-  validate_bool($unsupported)
+-  validate_bool($override_unsupported)
+-
+   anchor { 'sssd::begin': } ->
+   class { 'sssd::install': } ->
+   class { 'sssd::config': } ~>
+-- 
+2.47.2
+
