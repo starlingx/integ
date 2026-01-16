@@ -23,6 +23,9 @@ containerd
 #crictl
 crictl
 
+#crane
+crane
+
 #dhcp
 #isc-dhcp-client-ddns  # not used
 isc-dhcp-client

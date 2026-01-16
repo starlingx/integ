@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+export DH_VERBOSE = 1
+
+pkg_name := $(shell dh_listpackages)
+DEBIAN_DIR := debian/${pkg_name}/usr/local/bin
+
+%:
+	dh $@
+
+override_dh_install:
+	install -d -m 755 $(DEBIAN_DIR)
+	dh_install
+	mv $(DEBIAN_DIR)/crane_linux_amd64 $(DEBIAN_DIR)/crane
+	chmod 755 $(DEBIAN_DIR)/crane
+
+override_dh_usrlocal:
+	# Do Nothing

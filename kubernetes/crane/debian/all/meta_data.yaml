@@ -1,0 +1,14 @@
+---
+debname: crane
+debver: 3.6.1
+src_path: null
+dl_files:
+  crane_linux_amd64:
+    topdir: null
+    url: https://github.com/michaelsauter/crane/releases/download/v3.6.1/crane_linux_amd64
+    sha256sum: 3be0ef0615d3fbbeaefdc4a43b6baff787c329c4efcf19914371d0a22670f65d
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 5f1d2d055db669949812fc7a39e47de85d24634d
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/crane

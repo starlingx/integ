@@ -1,0 +1,11 @@
+Source: crane
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.4.1
+Homepage: https://michaelsauter.github.io/crane/index.html
+
+Package: crane
+Architecture: amd64
+Description: Crane is a Docker orchestration tool similar to Docker Compose with extra features.
