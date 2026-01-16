@@ -1,4 +1,4 @@
-From 5d969361175801e3eb092e6c0f5e5925c212d720 Mon Sep 17 00:00:00 2001
+From 1d0340b93a6e77eb8b1f5f6180737172fab2d81d Mon Sep 17 00:00:00 2001
 From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
 Date: Fri, 1 Aug 2025 07:08:38 +0000
 Subject: [PATCH] Disable configuration validation during manifest apply
@@ -7,14 +7,14 @@ Adapt 0002-disable-config-validation-prechecks.patch from centOS
 
 Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
 ---
- manifests/config.pp   | 3 ---
+ manifests/config.pp   | 5 -----
  manifests/init.pp     | 7 -------
  manifests/instance.pp | 7 -------
  manifests/params.pp   | 2 --
- 4 files changed, 19 deletions(-)
+ 4 files changed, 21 deletions(-)
 
 diff --git a/manifests/config.pp b/manifests/config.pp
-index 47a2e04..faecd82 100644
+index 47a2e04..3dfc401 100644
 --- a/manifests/config.pp
 +++ b/manifests/config.pp
 @@ -12,7 +12,6 @@ define haproxy::config (
@@ -25,15 +25,17 @@ index 47a2e04..faecd82 100644
    # lint:endignore
  ) {
    if $caller_module_name != $module_name {
-@@ -58,8 +57,6 @@ define haproxy::config (
+@@ -58,10 +57,6 @@ define haproxy::config (
        mode  => '0640',
      }
  
 -    Concat[$_config_file] {
 -      validate_cmd => $config_validate_cmd,
-     }
- 
+-    }
+-
      # Simple Header
+     concat::fragment { "${instance_name}-00-header":
+       target  => $_config_file,
 diff --git a/manifests/init.pp b/manifests/init.pp
 index 01f3462..4b16795 100644
 --- a/manifests/init.pp
@@ -118,5 +120,5 @@ index 70b5239..bc892d9 100644
        $config_dir        = '/usr/local/etc'
        $config_file       = '/usr/local/etc/haproxy.conf'
 -- 
-2.47.2
+2.43.0
 
