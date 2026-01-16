@@ -1,0 +1,33 @@
+From 6ca3fc15e9530dec91903fc467687ce76d92ca44 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Tue, 30 Dec 2025 07:02:56 -0500
+Subject: [PATCH] "Avoid serialization issues"
+
+subscribe in ensure_resource() is throwing error as it
+not compatible with stdlib version.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/init.pp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 28c8fff..29b1bf5 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -674,9 +674,11 @@ class keystone(
+       owner     => $keystone_user,
+       group     => $keystone_group,
+       mode      => '0600',
+-      subscribe => Anchor['keystone::install::end'],
+     })
+ 
++    Anchor['keystone::install::end']
++      -> File[$credential_key_repository]
++
+     if $credential_keys {
+       create_resources('file', $credential_keys, {
+           'owner'     => $keystone_user,
+-- 
+2.43.0
+

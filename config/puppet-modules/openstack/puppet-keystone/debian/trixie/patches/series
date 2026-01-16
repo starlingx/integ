@@ -8,3 +8,4 @@
 0001-omit-dbsync-when-controllers-are-mismatched.patch
 0001-Select-creds-for-admin-or-upgrade.patch
 0007-Remove-deprecated-syntax-for-puppet-8.10.patch
+0008-Avoid-serialization-issues.patch

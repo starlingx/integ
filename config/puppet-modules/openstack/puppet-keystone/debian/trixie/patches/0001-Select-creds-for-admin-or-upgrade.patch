@@ -182,8 +182,8 @@ index 4f8e7e6..b0c443c 100644
    Boolean $purge_config                           = false,
    $amqp_durable_queues                            = $facts['os_service_default'],
    $amqp_auto_delete                               = $facts['os_service_default'],
-+  Optional[String] $upgrade_token_cmd             = $facts['os_service_default'],
-+  Optional[String] $upgrade_token_file            = $facts['os_service_default'],
++  Optional[Stdlib::Absolutepath] $upgrade_token_cmd             = undef,
++  Optional[Stdlib::Absolutepath] $upgrade_token_file            = undef,
    # DEPRECATED PARAMETERS
    $client_package_ensure                          = undef,
    $catalog_template_file                          = undef,
