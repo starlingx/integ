@@ -1,0 +1,48 @@
+From 3bf87ae27decc202a4a1a1c00d824cdf01f98bde Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Sat, 17 Jan 2026 16:12:42 -0500
+Subject: [PATCH] Remove barbican-keystone-listener service start
+
+barbican-keystone-listener is managed by sm.
+This is ensures service is not started by systemd.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/keystone/notification.pp | 23 -----------------------
+ 1 file changed, 23 deletions(-)
+
+diff --git a/manifests/keystone/notification.pp b/manifests/keystone/notification.pp
+index bbb4879..013c8db 100644
+--- a/manifests/keystone/notification.pp
++++ b/manifests/keystone/notification.pp
+@@ -58,27 +58,4 @@ class barbican::keystone::notification (
+     name   => $::barbican::params::keystone_listener_package_name,
+     tag    => ['openstack', 'barbican-package'],
+   }
+-
+-  if is_service_default($enable_keystone_notification) {
+-    $service_enabled = false
+-  } else {
+-    $service_enabled = Boolean($enable_keystone_notification)
+-  }
+-
+-  if $manage_service {
+-    if $service_enabled {
+-      $service_ensure = 'running'
+-    } else {
+-      $service_ensure = 'stopped'
+-    }
+-
+-    service { 'barbican-keystone-listener':
+-      ensure     => $service_ensure,
+-      name       => $::barbican::params::keystone_listener_service_name,
+-      enable     => $service_enabled,
+-      hasstatus  => true,
+-      hasrestart => true,
+-      tag        => 'barbican-service',
+-    }
+-  }
+ }
+-- 
+2.43.0
+

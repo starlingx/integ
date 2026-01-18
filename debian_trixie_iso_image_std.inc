@@ -282,6 +282,8 @@ puppetserver
 #puppet-boolean-2.0.2
 puppet-boolean
 
+puppet-module-barbican
+
 #puppet-ceph-3.1.1
 puppet-module-ceph
 
