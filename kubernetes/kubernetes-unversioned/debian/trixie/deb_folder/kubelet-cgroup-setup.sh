@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2024 Wind River Systems, Inc.
+# Copyright (c) 2024-2025 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -12,6 +12,9 @@
 # does not persist reboots. The cpuset.mems and cpuset.cpus is later updated
 # by puppet kubernetes.pp manifest.
 #
+# Furthermore, it defines an upper memory limit for the kubepods cgroup to 
+# restrain the effects of misbehaving pods runnning on the platform cores.
+#
 
 # Define minimal path
 PATH=/bin:/usr/bin:/usr/local/bin
@@ -19,6 +22,11 @@ PATH=/bin:/usr/bin:/usr/local/bin
 # Log info message to /var/log/daemon.log
 function LOG {
     logger -p daemon.info "$0($$): $@"
+}
+
+# Log warning message to /var/log/daemon.log
+function WARN {
+    logger -s -p daemon.warning "$0($$): WARN: $@"
 }
 
 # Log error message to /var/log/daemon.log
@@ -116,6 +124,35 @@ function create_cgroup {
     return ${RC}
 }
 
+# Define an upper limit for the memory consumed by the kubepod cgroups
+function set_kubepods_memory_limit {
+    local cg_name=$1
+    local cg_limit_in_bytes=$2
+
+    local CGATTR="memory.limit_in_bytes"
+    local CGDIR="/sys/fs/cgroup/memory/${cg_name}/kubepods"
+
+    if [ ! -d "${CGDIR}" ]; then
+        LOG "Creating: ${CGDIR}"
+        mkdir -p "${CGDIR}"
+        RC=$?
+        if [ ${RC} -ne 0 ]; then
+            ERROR "Creating: ${CGDIR}, rc=${RC}"
+            exit ${RC}
+        fi
+    fi
+
+    echo ${cg_limit_in_bytes} > ${CGDIR}/${CGATTR}
+    RC=$?
+    if [ ${RC} -ne 0 ]; then
+        ERROR "Setting memory limit for cgroup: ${CGDIR}, Attr: ${CGATTR}, Value: ${cg_limit_in_bytes}, rc=${RC}"
+        exit ${RC}
+    fi
+
+    LOG "Memory limit set for kubepods cgroup in ${CGDIR}: ${cg_limit_in_bytes}"
+    return ${RC}
+}
+
 if [ ${UID} -ne 0 ]; then
     ERROR "Require sudo/root."
     exit 1
@@ -129,5 +166,19 @@ ONLINE_CPUSET=$(/bin/cat /sys/devices/system/cpu/online)
 create_cgroup 'k8s-infra' ${ONLINE_NODESET} ${ONLINE_CPUSET}
 create_cgroup 'k8s-infra-stx' ${ONLINE_NODESET} ${ONLINE_CPUSET}
 
-exit $?
+# Use the same amount of memory reserved for the system as reference
+SYSTEM_RESERVED_MEMORY_MiB=$(sed -nr 's/.*--system-reserved=memory=([0-9]+)Mi.*/\1/p' /etc/default/kubelet 2>&1)
+RC=$?
 
+if [[ ${SYSTEM_RESERVED_MEMORY_MiB} =~ ^[0-9]+$ ]]; then
+    # Convert to bytes
+    SYSTEM_RESERVED_MEMORY_BYTES=$(( SYSTEM_RESERVED_MEMORY_MiB * 1048576 ))
+
+    # Limit memory consumption on kubepods
+    set_kubepods_memory_limit 'k8s-infra-stx' ${SYSTEM_RESERVED_MEMORY_BYTES}
+
+else
+    WARN "Unable to extract the value of reserved system memory from kubelet parameters. rc=${RC}:${SYSTEM_RESERVED_MEMORY_BYTES}"
+fi
+
+exit $?
