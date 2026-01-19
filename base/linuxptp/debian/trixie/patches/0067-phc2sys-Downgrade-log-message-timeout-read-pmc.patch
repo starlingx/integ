@@ -1,0 +1,68 @@
+From dddf10a2ef385881b07ee6126c7c8d6166179583 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Thu, 20 Nov 2025 22:49:58 -0300
+Subject: [PATCH 67/67] phc2sys: Downgrade log message about timeout reading pmc dds,
+ tpd and pds
+
+Depending upon system load, the read pmc call can timeout. When
+it happens the corresponding data set is reset, allowing the HA
+algorithm to switch over the current source.
+
+Although the read timeout is undesirable, the error message is
+misleading because the failure is mitigated. Downgrade the error
+message to notice to disable it in the default log level.
+
+Test Plan:
+PASS: Deploy T-BC with single PTP4L instance
+ - Load system (stress -c 64 -m 5 -t 60)
+   check user.log, phc2sys not showing the error message
+   phc2sys: notice [1200995.017] phc-inst2 pmc agent index 0, timeout reading pmc tpd
+
+PASS: Deploy T-BC with single PTP4L instance
+ - Adjust the log to debug level
+ system ptp-instance-parameter-add phc-inst2 logging_level=7
+ - Load system (stress -c 64 -m 5 -t 60)
+   check user.log, phc2sys eventually shows the error message
+   phc2sys: notice [1215208.628] phc-inst2 pmc agent index 0, timeout reading pmc tpd
+
+Closes-Bug: 2132273
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ pmc_agent.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 979b52d..1dc9aef 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -281,7 +281,7 @@ int pmc_agent_query_dds(struct pmc_agent *node, int timeout)
+ 	if (is_run_pmc_error(res)) {
+ 		// When there is timeout, treat dds data as invalid and reset too
+ 		if (res == RUN_PMC_TMO) {
+-			pr_err("pmc agent index %d, timeout reading pmc dds", node->index);
++			pr_notice("pmc agent index %d, timeout reading pmc dds", node->index);
+ 			if (node->dds_valid == true) {
+ 				node->dds_valid = false;
+ 				// reset values, when read don't present last time read values
+@@ -364,7 +364,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 		// cause swing while updating clock. Single timeout should not punish
+ 		// clock with swinging by TAI-UTC 37s offset.
+ 		if (res == RUN_PMC_TMO) {
+-			pr_err("pmc agent index %d, timeout reading pmc tpd", node->index);
++			pr_notice("pmc agent index %d, timeout reading pmc tpd", node->index);
+ 			/* save current state */
+ 			time_traceable = node->time_traceable;
+ 			freq_traceable = node->freq_traceable;
+@@ -434,7 +434,7 @@ int pmc_agent_query_pds(struct pmc_agent *node, int timeout)
+ 	if (is_run_pmc_error(res)) {
+ 		// When there is timeout error, treat pds data as invalid and reset too
+ 		if (res == RUN_PMC_TMO) {
+-			pr_err("pmc agent index %d, timeout reading pmc pds", node->index);
++			pr_notice("pmc agent index %d, timeout reading pmc pds", node->index);
+ 			if (node->pds_valid == true) {
+ 				node->pds_valid = false;
+ 				// reset values, when read don't present last time read values
+-- 
+2.34.1
+

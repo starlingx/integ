@@ -1,0 +1,64 @@
+From 70fe7c3675e67a107a2566c8e777af8c18d666e1 Mon Sep 17 00:00:00 2001
+From: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+Date: Tue, 4 Nov 2025 09:44:21 -0800
+Subject: [PATCH] isolcpu_plugin: wait for kubelet.sock to be ready
+
+This patch is created from this change.
+https://opendev.org/starlingx/integ/commit/4f9a8b85c2b87a837e6fb36103a8630df7b4ea9c
+
+This patch fixes two issues with the Isolated CPUs plugin.
+1. Isolated CPU plugin systemd service does not start in the first
+   attempt following kubelet start.
+2. Kubelet has intermittent communcation failure with
+   isolcpus_plugin, hence reports 0 allocatable isolated CPU devices.
+
+This patch fixes above issues by adding a wait to the isolcpu_plugin
+for the kubelet.sock to be ready. This ensures that plugin directory
+wipe has completed and is serving kubelet.sock hence fixing above
+mentioned issues.
+
+This patch also does minor formatting enhancements in log statements.
+
+Signed-off-by: Kaustubh Dhokte <kaustubh.dhokte@windriver.com>
+---
+ intel/intel-device-plugins-for-kubernetes/pkg/deviceplugin/server.go | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/intel/intel-device-plugins-for-kubernetes/pkg/deviceplugin/server.go b/intel/intel-device-plugins-for-kubernetes/pkg/deviceplugin/server.go
+index 1330b208..bf367450 100644
+--- a/intel/intel-device-plugins-for-kubernetes/pkg/deviceplugin/server.go
++++ b/intel/intel-device-plugins-for-kubernetes/pkg/deviceplugin/server.go
+@@ -115,7 +115,7 @@ func (srv *server) sendDevices(stream pluginapi.DevicePlugin_ListAndWatchServer)
+ 		})
+ 	}
+ 
+-	klog.V(4).Info("Sending to kubelet", resp.Devices)
++	klog.V(4).Info("Sending to kubelet ", resp.Devices)
+ 
+ 	if err := stream.Send(resp); err != nil {
+ 		_ = srv.Stop()
+@@ -126,7 +126,7 @@ func (srv *server) sendDevices(stream pluginapi.DevicePlugin_ListAndWatchServer)
+ }
+ 
+ func (srv *server) ListAndWatch(empty *pluginapi.Empty, stream pluginapi.DevicePlugin_ListAndWatchServer) error {
+-	klog.V(4).Info("Started ListAndWatch for", srv.devType)
++	klog.V(4).Info("Started ListAndWatch for ", srv.devType)
+ 
+ 	if err := srv.sendDevices(stream); err != nil {
+ 		return err
+@@ -267,6 +267,12 @@ func (srv *server) setupAndServe(namespace string, devicePluginPath string, kube
+ 		pluginEndpoint := pluginPrefix + ".sock"
+ 		pluginSocket := path.Join(devicePluginPath, pluginEndpoint)
+ 
++		// Wait for the kubelet RPC server to start
++		if err := waitForServer(kubeletSocket, 60*time.Second); err != nil {
++			return errors.Wrap(err, "Kubelet socket connection test failed")
++		}
++		klog.V(1).Info("Connection test successful with the kubelet socket at ", kubeletSocket)
++
+ 		if err := waitForServer(pluginSocket, time.Second); err == nil {
+ 			return errors.Errorf("Socket %s is already in use", pluginSocket)
+ 		}
+-- 
+2.34.1
+

@@ -1,0 +1,69 @@
+From 32ebf913fc50fb93a005df3195bf6156320df08c Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Fri, 9 Jan 2026 15:34:25 -0500
+Subject: [PATCH] Only log BMC selection and UTC offset updates when values
+ actually change.
+
+Prevents log spam during GM switchover scenarios while maintaining correct
+PTP synchronization behaviour.
+
+When a unicast client is connected to two grandmasters and the the
+active GM's clockClass degrades, the client correctly switches to the
+secondary GM. Following the switchover, the client prints excessive log
+messages repeatedly printing "selected best master clock" and "updating
+UTC offset" every announce interval. This happens because every announce
+message triggers a run of the BMCA and runs the relevant
+logging code.
+
+The fix implemented here prints these logs only if there has been a change
+to the selected master or UTC offset. There is no change to operational
+logic.
+
+- clock.c: Add conditional checks before logging BMC selection
+- clock.c: Add conditional checks before logging UTC offset updates
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ clock.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/clock.c b/clock.c
+index 480901c..2f5c9bf 100644
+--- a/clock.c
++++ b/clock.c
+@@ -702,7 +702,10 @@ static void clock_update_slave(struct clock *c)
+ 	}
+ 	if ((c->tds.flags & UTC_OFF_VALID && c->tds.flags & TIME_TRACEABLE) ||
+ 	    (c->tds.currentUtcOffset > c->utc_offset)) {
+-		pr_info("updating UTC offset to %d", c->tds.currentUtcOffset);
++		/* Only log if UTC offset value actually changed */
++		if (c->tds.currentUtcOffset != c->utc_offset) {
++			pr_info("updating UTC offset to %d", c->tds.currentUtcOffset);
++		}
+ 		c->utc_offset = c->tds.currentUtcOffset;
+ 	}
+ }
+@@ -1906,11 +1909,17 @@ static void handle_state_decision_event(struct clock *c)
+ 	}
+
+ 	if (cid_eq(&best_id, &c->dds.clockIdentity)) {
+-		pr_notice("selected local clock %s as best master",
+-			  cid2str(&best_id));
++		/* Only log if best master changed */
++		if (!cid_eq(&best_id, &c->best_id)) {
++			pr_notice("selected local clock %s as best master",
++				  cid2str(&best_id));
++		}
+ 	} else {
+-		pr_notice("selected best master clock %s",
+-			  cid2str(&best_id));
++		/* Only log if best master changed */
++		if (!cid_eq(&best_id, &c->best_id)) {
++			pr_notice("selected best master clock %s",
++				  cid2str(&best_id));
++		}
+ 	}
+
+ 	if (!cid_eq(&best_id, &c->best_id) || best != c->best) {
+--
+2.43.0

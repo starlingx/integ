@@ -63,3 +63,7 @@
 # 0063-smooth-transparent-ha-switchover-configurable-pmc-update-interval.patch
 # 0064-Fix-HA-PTP4l-instance-down-osclock-swinging.patch
 # 0065-Fix-osclock-swinging-when-pmc-timeout.patch
+# 0066-ts2phc-Add-serial-baudrate-option.patch
+# 0067-phc2sys-Downgrade-log-message-timeout-read-pmc.patch
+# 0068-ts2phc-port-holdover-support-to-v3.1.1-4.patch
+# 0069-fix-reduce-excessive-logging-in-unicast-BMC-operations.patch
