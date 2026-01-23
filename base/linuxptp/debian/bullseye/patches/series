@@ -67,3 +67,5 @@
 0067-phc2sys-Downgrade-log-message-timeout-read-pmc.patch
 0068-ts2phc-port-holdover-support-to-v3.1.1-4.patch
 0069-fix-reduce-excessive-logging-in-unicast-BMC-operations.patch
+0070-Fix-unicast-client-stuck-in-uncalibrated.patch
+0071-Add-debug-logging-to-unicast-client.patch

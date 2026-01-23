@@ -1,0 +1,59 @@
+From e259d6753f0c4ba46915093cb0fb21cb100e3a31 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Thu, 22 Jan 2026 18:40:29 -0500
+Subject: [PATCH] Add debug logging to unicast client FSM for troubleshooting
+
+Add debug logging to track unicast client FSM state transitions and
+timer events. This helps diagnose issues where the client fails to
+request SYNC/DELAY_RESP service from unicast masters.
+
+The logging includes:
+- unicast_client_state_changed() calls with master state and grants
+- unicast_client_timer() events showing FSM state for each master
+- Port identity matching results for selected master
+
+These debug messages use pr_debug() so they only appear when
+logging_level is set to 7 (LOG_DEBUG) and do not impact normal
+operation.
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ unicast_client.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/unicast_client.c b/unicast_client.c
+index 4635a31..feaafb1 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -511,6 +511,8 @@ void unicast_client_state_changed(struct port *p)
+ 	if (!unicast_client_enabled(p)) {
+ 		return;
+ 	}
++	
++	pr_debug("port %d: unicast_client_state_changed called", portnum(p));
+ 	pid = clock_parent_identity(p->clock);
+ 
+ 	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
+@@ -519,6 +521,10 @@ void unicast_client_state_changed(struct port *p)
+ 		} else {
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_UNSELECTED);
+ 		}
++		pr_debug("port %d: master %s state=%d granted=0x%x selected=%d",
++			portnum(p), pid2str(&ucma->portIdentity),
++			ucma->state, ucma->granted,
++			pid_eq(&ucma->portIdentity, &pid));
+ 	}
+ }
+ 
+@@ -531,6 +537,9 @@ int unicast_client_timer(struct port *p)
+ 		if (master->type != transport_type(p->trp)) {
+ 			continue;
+ 		}
++		pr_debug("port %d: timer fired for master %s state=%d granted=0x%x",
++			portnum(p), pid2str(&master->portIdentity),
++			master->state, master->granted);
+ 		switch (master->state) {
+ 		case UC_WAIT:
+ 			err = unicast_client_announce(p, master);
+-- 
+2.43.0

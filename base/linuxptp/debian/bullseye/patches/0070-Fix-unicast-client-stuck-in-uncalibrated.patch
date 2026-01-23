@@ -1,0 +1,140 @@
+From 653eab62d7844f86968e8a83c3f27f79b2254885 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Thu, 22 Jan 2026 18:14:51 -0500
+Subject: [PATCH] Fix unicast client FSM race condition causing UNCALIBRATED
+ state
+
+Problem:
+
+Boundary Clock (BC) upstream ports remained stuck in UNCALIBRATED state when
+connecting to unicast grandmasters. The port would successfully receive ANNOUNCE
+messages and complete BMCA master selection, but never request SYNC/DELAY_RESP
+services, preventing transition to SLAVE state.
+
+Root Cause:
+
+The unicast client finite state machine (FSM) has a race condition in its
+initialization sequence:
+
+1. At startup, unicast master table entries are created with IP addresses but
+   unknown port identities (initialized to 0xFF...FF)
+
+2. Client sends REQUEST_UNICAST_TRANSMISSION for ANNOUNCE messages
+
+3. When GRANT_UNICAST_TRANSMISSION arrives, unicast_client_grant() transitions
+   FSM from UC_WAIT -> UC_HAVE_ANN and learns the master's port identity from
+   the ANNOUNCE message header
+
+4. BMCA runs and selects the best master, calling handle_state_decision_event()
+   in clock.c
+
+5. handle_state_decision_event() should notify unicast clients via
+   unicast_client_state_changed() when a new parent is selected
+
+6. unicast_client_state_changed() sends UC_EV_SELECTED event to matching master,
+   transitioning FSM from UC_HAVE_ANN -> UC_NEED_SYDY
+
+7. UC_NEED_SYDY state triggers REQUEST_UNICAST_TRANSMISSION for SYNC/DELAY_RESP
+
+The race occurs because step 5 was missing; handle_state_decision_event() never
+called unicast_client_state_changed() when selecting a new parent. Additionally,
+even if it had been called, it would have been called BEFORE the port identity
+was learned in step 3, causing the port identity comparison to fail.
+
+Solution:
+
+This commit implements a two-part fix:
+
+Part 1: Notify on parent selection (clock.c)
+
+Add unicast_client_state_changed() call in handle_state_decision_event() when
+a new best master is selected (fresh_best == true). This ensures all ports are
+notified when BMCA selects a new parent.
+
+Part 2: Trigger on identity learning (unicast_client.c)
+
+In unicast_client_grant(), when receiving the first ANNOUNCE grant and learning
+the master's port identity, immediately call unicast_client_state_changed() if
+the identity was previously unknown. This handles the case where BMCA has already
+selected this master as parent, but the identity match couldn't occur because
+the identity wasn't known yet.
+
+The combination ensures the FSM progresses regardless of timing:
+- If BMCA runs before identity is learned: Part 2 triggers state change
+- If BMCA runs after identity is learned: Part 1 triggers state change
+- If BMCA runs during identity learning: Both parts are idempotent
+
+Technical Details
+
+The unicast client FSM states:
+- UC_WAIT: Initial state, requesting ANNOUNCE
+- UC_HAVE_ANN: ANNOUNCE granted, waiting for parent selection
+- UC_NEED_SYDY: Parent selected, requesting SYNC/DELAY_RESP
+- UC_HAVE_SYDY: All services granted, operational
+
+The fix ensures the UC_HAVE_ANN -> UC_NEED_SYDY transition occurs by sending
+UC_EV_SELECTED event at the correct time, regardless of the race between:
+1. Learning port identity from ANNOUNCE grant
+2. BMCA selecting that master as parent
+
+Test plan:
+Verified with BC connecting to two unicast GMs:
+- Port successfully transitions UC_WAIT -> UC_HAVE_ANN -> UC_NEED_SYDY -> UC_HAVE_SYDY
+- SYNC and DELAY_RESP messages received
+- Port transitions LISTENING -> UNCALIBRATED -> SLAVE
+- Time synchronization operational
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ clock.c          | 8 ++++++++
+ unicast_client.c | 6 ++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/clock.c b/clock.c
+index 2f5c9bf..bea3ef1 100644
+--- a/clock.c
++++ b/clock.c
+@@ -43,6 +43,7 @@
+ #include "tlv.h"
+ #include "tsproc.h"
+ #include "uds.h"
++#include "unicast_client.h"
+ #include "util.h"
+ 
+ #define N_CLOCK_PFD (N_POLLFD + 1) /* one extra per port, for the fault timer */
+@@ -1939,6 +1940,13 @@ static void handle_state_decision_event(struct clock *c)
+ 	c->best = best;
+ 	c->best_id = best_id;
+ 
++	/* Notify unicast clients if parent changed */
++	if (fresh_best) {
++		LIST_FOREACH(piter, &c->ports, list) {
++			unicast_client_state_changed(piter);
++		}
++	}
++
+ 	LIST_FOREACH(piter, &c->ports, list) {
+ 		enum port_state ps;
+ 		enum fsm_event event;
+diff --git a/unicast_client.c b/unicast_client.c
+index e71307f..2f8640f 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -452,9 +452,15 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 	switch (ucma->state) {
+ 	case UC_WAIT:
+ 		if (mtype == ANNOUNCE) {
++			int was_unknown;
++			was_unknown = ucma->portIdentity.portNumber == 0xFFFF;
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_GRANT_ANN);
+ 			ucma->portIdentity = m->header.sourcePortIdentity;
+ 			unicast_client_set_renewal(p, ucma, g->durationField);
++			/* Trigger state change now that we have port identity */
++			if (was_unknown) {
++				unicast_client_state_changed(p);
++			}
+ 		}
+ 		break;
+ 	case UC_HAVE_ANN:
+-- 
+2.43.0
