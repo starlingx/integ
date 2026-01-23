@@ -1,0 +1,148 @@
+From 183cfc438f0ee9d1a6ba7a1b77c4985dff338234 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E8=83=A1=E7=8E=AE=E6=96=87?= <huweiwen.hww@alibaba-inc.com>
+Date: Wed, 4 Feb 2026 07:05:45 -0500
+Subject: [PATCH] PR133890 kubelet fix duplicate metrics registration
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+PVC dashboards rely on kubelet_volume_stats_* metrics. Kubernetes
+v1.34.1 introduced a regression that broke these metrics due to
+duplicate metric registration during kubelet startup.
+
+This change backports the upstream fix included in Kubernetes
+v1.34.2, which corrects the metrics registration logic and restores
+proper reporting of kubelet_volume_stats_* metrics.
+
+Dynamic Resource Allocation (DRA) also calls Register() in
+pkg/kubelet/cm/container_manager_linux.go via NewContainerManager(),
+which caused the volume stats collector registration to be skipped.
+This is fixed by moving the registration out of sync.Once(),
+allowing multiple Register() calls.
+
+The upstream fix consists of two commits, which were cherry-picked
+and applied as a single backport commit for this branch.
+
+Fixed in Kubernetes v1.34.2:
+https://github.com/kubernetes/kubernetes/pull/133890/
+
+Co-authored-by: 胡玮文 <huweiwen.hww@alibaba-inc.com>
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ pkg/kubelet/cm/container_manager_linux.go          |  2 +-
+ pkg/kubelet/kubelet.go                             |  3 ++-
+ pkg/kubelet/metrics/collectors/volume_stats.go     |  7 +++----
+ pkg/kubelet/metrics/metrics.go                     | 10 +++++-----
+ pkg/kubelet/server/stats/volume_stat_calculator.go |  2 +-
+ 5 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/pkg/kubelet/cm/container_manager_linux.go b/pkg/kubelet/cm/container_manager_linux.go
+index f47647181ee..823cb3aedf1 100644
+--- a/pkg/kubelet/cm/container_manager_linux.go
++++ b/pkg/kubelet/cm/container_manager_linux.go
+@@ -317,7 +317,7 @@ func NewContainerManager(mountUtil mount.Interface, cadvisorInterface cadvisor.I
+ 		if err != nil {
+ 			return nil, err
+ 		}
+-		metrics.Register(cm.draManager.NewMetricsCollector())
++		metrics.RegisterCollectors(cm.draManager.NewMetricsCollector())
+ 	}
+ 	cm.kubeClient = kubeClient
+ 
+diff --git a/pkg/kubelet/kubelet.go b/pkg/kubelet/kubelet.go
+index 600a006f054..d1596bf761e 100644
+--- a/pkg/kubelet/kubelet.go
++++ b/pkg/kubelet/kubelet.go
+@@ -1631,7 +1631,8 @@ func (kl *Kubelet) StartGarbageCollection() {
+ // Note that the modules here must not depend on modules that are not initialized here.
+ func (kl *Kubelet) initializeModules(ctx context.Context) error {
+ 	// Prometheus metrics.
+-	metrics.Register(
++	metrics.Register()
++	metrics.RegisterCollectors(
+ 		collectors.NewVolumeStatsCollector(kl),
+ 		collectors.NewLogMetricsCollector(kl.StatsProvider.ListPodStats),
+ 	)
+diff --git a/pkg/kubelet/metrics/collectors/volume_stats.go b/pkg/kubelet/metrics/collectors/volume_stats.go
+index b565bf1d376..b139cf5eaec 100644
+--- a/pkg/kubelet/metrics/collectors/volume_stats.go
++++ b/pkg/kubelet/metrics/collectors/volume_stats.go
+@@ -107,7 +107,7 @@ func (collector *volumeStatsCollector) CollectWithStability(ch chan<- metrics.Me
+ 		lv = append([]string{pvcRef.Namespace, pvcRef.Name}, lv...)
+ 		ch <- metrics.NewLazyConstMetric(desc, metrics.GaugeValue, v, lv...)
+ 	}
+-	allPVCs := sets.Set[string]{}
++	allPVCs := sets.Set[stats.PVCReference]{}
+ 	for _, podStat := range podStats {
+ 		if podStat.VolumeStats == nil {
+ 			continue
+@@ -118,8 +118,7 @@ func (collector *volumeStatsCollector) CollectWithStability(ch chan<- metrics.Me
+ 				// ignore if no PVC reference
+ 				continue
+ 			}
+-			pvcUniqStr := pvcRef.Namespace + "/" + pvcRef.Name
+-			if allPVCs.Has(pvcUniqStr) {
++			if allPVCs.Has(*pvcRef) {
+ 				// ignore if already collected
+ 				continue
+ 			}
+@@ -132,7 +131,7 @@ func (collector *volumeStatsCollector) CollectWithStability(ch chan<- metrics.Me
+ 			if volumeStat.VolumeHealthStats != nil {
+ 				addGauge(volumeStatsHealthAbnormalDesc, pvcRef, convertBoolToFloat64(volumeStat.VolumeHealthStats.Abnormal))
+ 			}
+-			allPVCs.Insert(pvcUniqStr)
++			allPVCs.Insert(*pvcRef)
+ 		}
+ 	}
+ }
+diff --git a/pkg/kubelet/metrics/metrics.go b/pkg/kubelet/metrics/metrics.go
+index 03731586dc3..d960989d2bd 100644
+--- a/pkg/kubelet/metrics/metrics.go
++++ b/pkg/kubelet/metrics/metrics.go
+@@ -1194,7 +1194,7 @@ var (
+ var registerMetrics sync.Once
+ 
+ // Register registers all metrics.
+-func Register(collectors ...metrics.StableCollector) {
++func Register() {
+ 	// Register the metrics.
+ 	registerMetrics.Do(func() {
+ 		legacyregistry.MustRegister(FirstNetworkPodStartSLIDuration)
+@@ -1274,10 +1274,6 @@ func Register(collectors ...metrics.StableCollector) {
+ 		legacyregistry.MustRegister(OrphanPodCleanedVolumes)
+ 		legacyregistry.MustRegister(OrphanPodCleanedVolumesErrors)
+ 
+-		for _, collector := range collectors {
+-			legacyregistry.CustomMustRegister(collector)
+-		}
+-
+ 		if utilfeature.DefaultFeatureGate.Enabled(features.GracefulNodeShutdown) &&
+ 			utilfeature.DefaultFeatureGate.Enabled(features.GracefulNodeShutdownBasedOnPodPriority) {
+ 			legacyregistry.MustRegister(GracefulShutdownStartTime)
+@@ -1314,6 +1310,10 @@ func Register(collectors ...metrics.StableCollector) {
+ 	})
+ }
+ 
++func RegisterCollectors(collectors ...metrics.StableCollector) {
++	legacyregistry.CustomMustRegister(collectors...)
++}
++
+ // GetGather returns the gatherer. It used by test case outside current package.
+ func GetGather() metrics.Gatherer {
+ 	return legacyregistry.DefaultGatherer
+diff --git a/pkg/kubelet/server/stats/volume_stat_calculator.go b/pkg/kubelet/server/stats/volume_stat_calculator.go
+index 671c72ca4b5..fc6bea1adc7 100644
+--- a/pkg/kubelet/server/stats/volume_stat_calculator.go
++++ b/pkg/kubelet/server/stats/volume_stat_calculator.go
+@@ -125,7 +125,7 @@ func (s *volumeStatCalculator) calcAndStoreStats() {
+ 	}
+ 
+ 	// Get volume specs for the pod - key'd by volume name
+-	volumesSpec := make(map[string]v1.Volume)
++	volumesSpec := make(map[string]v1.Volume, len(s.pod.Spec.Volumes))
+ 	for _, v := range s.pod.Spec.Volumes {
+ 		volumesSpec[v.Name] = v
+ 	}
+-- 
+2.34.1
+
