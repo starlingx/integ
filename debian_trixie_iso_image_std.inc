@@ -224,6 +224,7 @@ libfdt
 #lighttpd-mod-authn-pam  # not used
 #lighttpd-mod-authn-sasl  # not used
 #lighttpd-mod-maxminddb  # not used
+lighttpd-mod-openssl
 #lighttpd-mod-trigger-b4-dl  # not used
 #lighttpd-mod-vhostdb-dbi  # not used
 #lighttpd-mod-vhostdb-pgsql  # not used
