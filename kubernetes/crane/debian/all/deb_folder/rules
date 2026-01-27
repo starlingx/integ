@@ -1,17 +1,20 @@
 #!/usr/bin/make -f
 export DH_VERBOSE = 1
 
-pkg_name := $(shell dh_listpackages)
-DEBIAN_DIR := debian/${pkg_name}/usr/local/bin
+BINDIR = $(ROOT)/usr/local/bin
+TARBALL = go-containerregistry_Linux_x86_64.tar.gz
+CRANE_EXECUTABLE = crane
 
 %:
 	dh $@
 
-override_dh_install:
-	install -d -m 755 $(DEBIAN_DIR)
-	dh_install
-	mv $(DEBIAN_DIR)/crane_linux_amd64 $(DEBIAN_DIR)/crane
-	chmod 755 $(DEBIAN_DIR)/crane
+override_dh_auto_build:
+	# Extract the third party go-containerregistry package downloaded in dl_hook.
+	tar xfz $(TARBALL)
+
+override_dh_auto_install:
+	install -d -m 755 $(BINDIR)
+	install -p -D -m 755 $(CRANE_EXECUTABLE) $(BINDIR)
 
 override_dh_usrlocal:
 	# Do Nothing
