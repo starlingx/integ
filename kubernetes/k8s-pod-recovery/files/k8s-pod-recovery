@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020-2021,2025 Wind River Systems, Inc.
+# Copyright (c) 2020-2021,2025-2026 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,6 +23,7 @@ export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/usr/local/sbin
 export KUBECONFIG=/etc/kubernetes/admin.conf
 CONF_DIR=/etc/k8s-post-recovery.d
 SLEEP_DELAY_SEC=15
+REBOOT_CORDONED=/etc/platform/.reboot_cordoned
 
 NAME=$(basename $0)
 PIDFILE=/var/run/${NAME}.pid
@@ -349,6 +350,17 @@ function _examine_pods {
     _outofhugepages_pods $1
 }
 
+function _uncordon_node {
+    if kubectl uncordon ${HOST} > /dev/null 2>&1; then
+        if [ -f ${REBOOT_CORDONED} ]; then
+            LOG "Removing cordoned file: ${REBOOT_CORDONED}"
+            rm -f ${REBOOT_CORDONED}
+        fi
+        LOG "${HOST} uncordoned."
+    else
+        LOG "${HOST} uncordon failed."
+    fi
+}
 
 function start {
     _check_for_k8s_config
@@ -363,7 +375,8 @@ function start {
     # controller
     _wait_for_kubeapi_server $SLEEP_DELAY_SEC 20
     if [ $? -eq 0 ]; then
-        LOG "kube-api-server is available, start pod examination"
+        LOG "kube-api-server is available, uncordon and start pod examination"
+        _uncordon_node
         _examine_pods 'recover'
         _examine_pods 'verify'
     else
