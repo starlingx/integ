@@ -1,6 +1,6 @@
-crane (3.6.1) unstable; urgency=medium
+crane (0.20.7) unstable; urgency=medium
 
-  * Updated for stx debian packaging
+  * Initial commit
 
- -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Tue, 16 Dec 2025 12:44:00 +0000
+ -- Igor Pires Soares <igor.piressoares@windriver.com>  Tue, 27 Jan 2026 13:50:00 +0000
 
