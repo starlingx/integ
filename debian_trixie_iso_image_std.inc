@@ -85,6 +85,8 @@ efitools
 #etcd
 etcd-3.4.37-client
 etcd-3.4.37-server
+etcd-3.5.26-client
+etcd-3.5.26-server
 #golang-etcd-server-dev  # not used
 
 #facter

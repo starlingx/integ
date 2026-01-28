@@ -63,6 +63,7 @@ kubernetes/docker/docker.io
 kubernetes/docker/docker-distribution
 kubernetes/docker/python-docker
 kubernetes/etcd-3.4.37
+kubernetes/etcd-3.5.26
 kubernetes/flux2
 kubernetes/flux2-charts
 kubernetes/flux2-charts-legacy

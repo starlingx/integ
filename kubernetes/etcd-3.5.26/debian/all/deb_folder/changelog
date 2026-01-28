@@ -1,0 +1,29 @@
+etcd-3.5.26 (3.5.26-1) unstable; urgency=medium
+
+  * Upversion to 3.5.26
+
+ -- Jim Gauld <james.gauld@windriver.com>  Mon, 05 Dec 2026 14:38:15 +0000
+
+etcd-3.4.37 (3.4.37-1) unstable; urgency=medium
+
+  * Modified packaging to support multiple etcd-x packages
+
+ -- Jim Gauld <james.gauld@windriver.com>  Mon, 01 Dec 2025 14:36:30 +0000
+
+etcd (3.4.37-1) unstable; urgency=medium
+
+  * Updated to include a CVE fix
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Thu, 01 May 2025 17:28:19 +0000
+
+etcd (3.4.36-1) unstable; urgency=medium
+
+  * Updated for stx debian packaging
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Tue, 08 Apr 2025 16:41:53 +0000
+
+etcd (3.4.27-1) unstable; urgency=medium
+
+  * Updated for stx debian packaging
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Thu, 21 Sep 2023 23:41:53 +0000
