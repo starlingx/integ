@@ -1,0 +1,3 @@
+# CentOS compatibility wrapper for init scripts
+# Maps CentOS-style status() calls to Debian's status_of_proc()
+status() { status_of_proc "$@"; }

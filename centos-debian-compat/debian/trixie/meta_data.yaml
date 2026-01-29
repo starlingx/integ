@@ -1,7 +1,7 @@
 ---
 debname: centos-debian-compat
 debver: 1.0
-src_path: source
+src_path: debian/trixie/source
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
