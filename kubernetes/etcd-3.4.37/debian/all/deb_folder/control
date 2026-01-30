@@ -50,7 +50,7 @@ Description: highly-available key value store -- client
  .
  This package contains the client binaries.
 
-Package: golang-etcd-server-dev
+Package: golang-etcd-3.4.37-server-dev
 Architecture: all
 Depends: ${misc:Depends},
 Provides: golang-github-coreos-etcd-dev,
