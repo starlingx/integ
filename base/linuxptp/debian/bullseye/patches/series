@@ -69,3 +69,4 @@
 0069-fix-reduce-excessive-logging-in-unicast-BMC-operations.patch
 0070-Fix-unicast-client-stuck-in-uncalibrated.patch
 0071-Add-debug-logging-to-unicast-client.patch
+0072-Arm-service-timer-when-extending-unicast-contracts.patch
