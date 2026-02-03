@@ -1,31 +1,17 @@
-From fcda0b2df242d08fad74af85951e36afd5b0fced Mon Sep 17 00:00:00 2001
-From: "Kyale, Eliud" <Eliud.Kyale@windriver.com>
-Date: Mon, 26 May 2025 12:51:34 -0400
+From 8b9e45d37b1af2b777ab2f0fbd7421e80e1384c3 Mon Sep 17 00:00:00 2001
+From: Ionut Nechita <ionut.nechita@windriver.com>
+Date: Fri, 21 Nov 2025 16:20:33 +0200
 Subject: [PATCH] Build and compatibility for StarlingX.
 
-Disable redhat specific headers in Makefile
 Change Environment config to /etc/default/stalld
 Add $CUSTOM enviroment variable to stalld startup arguments
 
-Signed-off-by: Kyale, Eliud <Eliud.Kyale@windriver.com>
+Change-Id: I6c8039c02a5131d11686f0c3fdc289b69374d745
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
 ---
- Makefile               | 2 +-
  systemd/Makefile       | 8 ++++----
  systemd/stalld.service | 4 ++--
- 3 files changed, 7 insertions(+), 7 deletions(-)
-
-diff --git a/Makefile b/Makefile
-index 4585b6c..e735c7f 100644
---- a/Makefile
-+++ b/Makefile
-@@ -48,7 +48,7 @@ MOPTS   :=  	$(strip $(MTUNE)) $(strip $(M64)) -mno-omit-leaf-frame-pointer
-
- WOPTS	:= 	-Wall -Werror=format-security
-
--SOPTS	:= 	-specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1
-+#SOPTS	:= 	-specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1
-
- DEFS	:=	-DUSE_BPF=$(USE_BPF) -D_FORTIFY_SOURCE=3 -D_GLIBCXX_ASSERTIONS
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/systemd/Makefile b/systemd/Makefile
 index 99db1ad..c1da68e 100644
@@ -35,10 +21,10 @@ index 99db1ad..c1da68e 100644
  # SPDX-License-Identifier: GPL-2.0-or-later
 -# Red Hat specific Makefile
 +# Debian specific Makefile
-
+ 
  INSTALL	:=	install
  UNITDIR	:=	/usr/lib/systemd/system
-
+ 
  install:
 -	$(INSTALL) -m 755 -d $(DESTDIR)/etc/sysconfig
 -	$(INSTALL) stalld.conf -m 644 $(DESTDIR)/etc/sysconfig/stalld
@@ -46,7 +32,7 @@ index 99db1ad..c1da68e 100644
 +	$(INSTALL) stalld.conf -m 644 $(DESTDIR)/etc/default/stalld
  	$(INSTALL) -m 755 -d $(DESTDIR)$(UNITDIR)
  	$(INSTALL) stalld.service -m 644 $(DESTDIR)$(UNITDIR)
-
+ 
  uninstall:
 -	rm -f $(DESTDIR)/etc/sysconfig/stalld
 +	rm -f $(DESTDIR)/etc/default/stalld
@@ -54,7 +40,7 @@ index 99db1ad..c1da68e 100644
  clean:
  	@rm -rf *~
 diff --git a/systemd/stalld.service b/systemd/stalld.service
-index 96fca1f..fef512a 100644
+index 9a65383..bb32ab2 100644
 --- a/systemd/stalld.service
 +++ b/systemd/stalld.service
 @@ -5,13 +5,13 @@ Description=Stall Monitor
@@ -64,14 +50,15 @@ index 96fca1f..fef512a 100644
 -EnvironmentFile=/etc/sysconfig/stalld
 +EnvironmentFile=/etc/default/stalld
  ExecStartPre=/usr/bin/throttlectl off
- ExecStartPre=/usr/bin/mkdir -p /run/stalld
-
+ RuntimeDirectory=stalld
+ RuntimeDirectoryMode=0700
  # In case the regex passed to IT or IP includes C escape sequences,
  # use ${IT} or ${IP} instead of $IT or $IP
 -ExecStart=/usr/bin/stalld --systemd $CLIST $AGGR $BP $BR $BD $THRESH $LOGGING $FG $PF $IT $IP $BE
 +ExecStart=/usr/bin/stalld --systemd $CLIST $AGGR $BP $BR $BD $THRESH $LOGGING $FG $PF $IT $IP $BE $CUSTOM
+ ExecStartPost=/usr/bin/chrt -f -p 10 $MAINPID
+ 
  ExecStopPost=/usr/bin/throttlectl on
- Restart=always
+-- 
+2.43.0
 
---
-2.34.1
