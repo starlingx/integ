@@ -13,8 +13,8 @@ SendSIGKILL=no
 
 # syscall filtering
 SystemCallFilter=@system-service
-SystemCallFilter=mount
 SystemCallFilter=umount
+SystemCallFilter=fsopen fsconfig fsmount move_mount
 SystemCallErrorNumber=EPERM
 
 [Install]
