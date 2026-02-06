@@ -1,10 +1,10 @@
 ---
 debname: stalld
-debver: 1.19.8
+debver: 1.25.1
 dl_path:
-  name: stalld-v1.19.8.tar.gz
-  url: https://gitlab.com/rt-linux-tools/stalld/-/archive/v1.19.8/stalld-v1.19.8.tar.gz
-  sha256sum: be84f4c9560e77807c8b45e5ddbb9d02d80c591c6224d3c2b16525ce834c79a7
+  name: stalld-1.25.1.tar.gz
+  url: https://git.kernel.org/pub/scm/utils/stalld/stalld.git/snapshot/stalld-1.25.1.tar.gz
+  sha256sum: a0d750240c4ffb86ba89e441a3b5f5e59b2b9935baf3595543c6773d38abe72c
 
 revision:
   dist: $STX_DIST
