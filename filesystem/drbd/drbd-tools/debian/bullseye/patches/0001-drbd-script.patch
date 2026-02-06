@@ -1,7 +1,7 @@
 From b1cd41d5b8b29c6137ae7cf7ce911725c41f7ef3 Mon Sep 17 00:00:00 2001
 From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 Date: Thu, 30 Sep 2021 14:23:11 +0300
-Subject: [PATCH 1/5] drbd script
+Subject: [PATCH 1/6] drbd script
 
 Clean copy of 0001_915-drbd-script.patch from CentOS.
 

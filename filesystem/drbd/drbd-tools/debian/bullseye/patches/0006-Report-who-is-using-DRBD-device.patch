@@ -1,0 +1,167 @@
+From 8abadc785b59bd088f67161746f75551a1f11061 Mon Sep 17 00:00:00 2001
+From: Gustavo Ornaghi Antunes <gustavo.ornaghiantunes@windriver.com>
+Date: Fri, 6 Feb 2026 15:57:51 -0300
+Subject: [PATCH 6/6] Report who is using DRBD device
+
+This patch includes code to report who is using the DRBD device when the
+"drbdadm secondary..." command is executed.
+
+The goal of this fix is to make debugging DRBD issues easier.
+
+Signed-off-by: Gustavo Ornaghi Antunes <gustavo.ornaghiantunes@windriver.com>
+Signed-off-by: Ítalo Vieira <italo.gomesvieira@windriver.com>
+---
+ scripts/Makefile.in   |  1 +
+ scripts/drbd.inuse.sh | 64 +++++++++++++++++++++++++++++++++++++++++++
+ scripts/drbd.ocf      | 25 ++++++++++++++++-
+ 3 files changed, 89 insertions(+), 1 deletion(-)
+ create mode 100644 scripts/drbd.inuse.sh
+
+diff --git a/scripts/Makefile.in b/scripts/Makefile.in
+index 911ae7b..eb53a84 100644
+--- a/scripts/Makefile.in
++++ b/scripts/Makefile.in
+@@ -133,6 +133,7 @@ ifeq ($(WITH_PACEMAKER),yes)
+ 	install -m 755 drbd.ocf $(DESTDIR)/usr/lib/ocf/resource.d/linbit/drbd
+ 	install -m 755 drbd-attr $(DESTDIR)/usr/lib/ocf/resource.d/linbit/drbd-attr
+ 	install -m 644 drbd.shellfuncs.sh $(DESTDIR)/usr/lib/ocf/resource.d/linbit/
++	install -m 644 drbd.inuse.sh $(DESTDIR)/usr/lib/ocf/resource.d/linbit/
+ endif
+
+ install-rgmanager:
+diff --git a/scripts/drbd.inuse.sh b/scripts/drbd.inuse.sh
+new file mode 100644
+index 0000000..78a4708
+--- /dev/null
++++ b/scripts/drbd.inuse.sh
+@@ -0,0 +1,64 @@
++#!/bin/bash
++
++who_is_using_drbd() {
++	local drbd_name=$1
++
++	if [ -z "$drbd_name" ]; then
++		echo "Usage: who_is_using_drbd <device_name> (e.g., drbd1)"
++		return 1
++	fi
++
++	local target_device=$(drbdadm sh-dev "$drbd_name")
++
++	# Validate if the device exists
++	if ! lsblk "$target_device" >/dev/null 2>&1; then
++		echo "Error: Device $target_device not found."
++		return 1
++	fi
++
++	# Get the MAJOR:MINOR of the specific device
++	local dev_maj_min=$(lsblk -dn "$target_device" --output MAJ:MIN --raw)
++
++	# Table Header
++	echo ""
++	printf "%-12s | %-12s | %-20s | %-40s | %-40s | %-30s\n" "PID" "MAJ:MIN" "DEVICE" "MOUNTPOINT" "POD_UID" "POD_NAME"
++	echo "------------------------------------------------------------------------------------------------------------------------------------------------------"
++
++	# Search only for the MAJOR:MINOR of the requested device
++	grep "$dev_maj_min" /proc/[0-9]*/mountinfo 2>/dev/null | while read -r line; do
++		pid=$(echo "$line" | cut -d'/' -f3)
++		mount_point=$(echo "$line" | awk '{print $5}')
++		device_source=$(echo "$line" | awk '{print $10,$9}')
++
++		# Check if it belongs to Kubernetes via cgroup
++		cgroup_path=$(grep "kubepods" "/proc/$pid/cgroup" 2>/dev/null | head -n 1)
++
++		if [ -n "$cgroup_path" ]; then
++			# Extract Pod UID (supports different cgroup formats)
++			pod_uid=$(echo "$cgroup_path" | grep -oP 'pod\K[a-f0-9-]{36}' || echo "$cgroup_path" | grep -oP '[a-f0-9-]{36}')
++
++			if [ -n "$pod_uid" ]; then
++				# Fetch details via crictl
++				pod_list=$(crictl pods --label io.kubernetes.pod.uid="$pod_uid" | awk -F ' {2,}' 'NR > 1 { OFS="/"; print $5, $4 }' | sort -u)
++
++				if [ -z "$pod_list" ]; then
++					printf "%-12s | %-12s | %-20s | %-40s | %-40s | %-30s\n" "$pid" "$dev_maj_min" "$device_source" "$mount_point" "$pod_uid" "Not Found"
++				else
++					first_entry=true
++					echo "$pod_list" | while read -r pod_name; do
++						if [ "$first_entry" = true ]; then
++							printf "%-12s | %-12s | %-20s | %-40s | %-40s | %-30s\n" "$pid" "$dev_maj_min" "$device_source" "$mount_point" "$pod_uid" "$pod_name"
++							first_entry=false
++						else
++							printf "%-12s | %-12s | %-20s | %-40s | %-40s | %-30s\n" "" "" "" "" "" "$pod_name"
++						fi
++					done
++				fi
++			else
++				printf "%-12s | %-12s | %-20s | %-40s | %-40s | %-30s\n" "$pid" "$dev_maj_min" "$device_source" "$mount_point" "N/A" "N/A"
++			fi
++		else
++			printf "%-12s | %-12s | %-20s | %-40s | %-40s | %-30s\n" "$pid" "$dev_maj_min" "$device_source" "$mount_point" "Non-K8s" "Non-K8s"
++		fi
++	done
++}
+diff --git a/scripts/drbd.ocf b/scripts/drbd.ocf
+index ff77c91..3b6cc34 100755
+--- a/scripts/drbd.ocf
++++ b/scripts/drbd.ocf
+@@ -521,6 +521,9 @@ do_cmd() {
+ 				printf "cmd_out=%q\nret=%q\n" "$out" "$ex" )"
+ 		)"
+
++	DRBD_LAST_CMD_OUT="$cmd_out"
++	DRBD_LAST_CMD_ERR="$cmd_err"
++
+ 	if [ $ret != 0 ]; then
+ 		ocf_log $failure_log_level "$DRBD_RESOURCE: Called $cmd"
+ 		ocf_log $failure_log_level "$DRBD_RESOURCE: Exit code $ret"
+@@ -563,6 +566,14 @@ source_drbd_shellfuncs()
+ }
+ source_drbd_shellfuncs
+
++source_who_is_using_drbd()
++{
++	local dir=.
++	[[ $0 = */* ]] && dir=${0%/*}
++	source "$dir/drbd.inuse.sh"
++}
++source_who_is_using_drbd
++
+ call_unfence()
+ {
+ 	# It is easier to just call the crm-unfence-peer script, without
+@@ -1041,6 +1052,10 @@ drbd_start()
+ 		$OCF_RUNNING_MASTER)
+ 			ocf_log warn "$DRBD_RESOURCE already Primary, demoting."
+ 			do_drbdadm secondary $DRBD_RESOURCE
++			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
++				result=$(who_is_using_drbd "$DRBD_RESOURCE")
++				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
++			fi
+ 		esac
+ 		$first_try || sleep 1
+ 		first_try=false
+@@ -1159,6 +1174,10 @@ drbd_demote() {
+ 			;;
+ 		$OCF_RUNNING_MASTER)
+ 			do_drbdadm secondary $DRBD_RESOURCE
++			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
++				result=$(who_is_using_drbd "$DRBD_RESOURCE")
++				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
++			fi
+ 		esac
+ 		$first_try || sleep 1
+ 		first_try=false
+@@ -1205,7 +1224,11 @@ drbd_stop() {
+ 				ocf_log warn "Waiting to drop $DRBD_RESOURCE"
+ 			else
+ 				ocf_log warn "Dropping $DRBD_RESOURCE to Secondary"
+-				do_drbdadm secondary  $DRBD_RESOURCE
++				do_drbdadm secondary $DRBD_RESOURCE
++				if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
++					result=$(who_is_using_drbd "$DRBD_RESOURCE")
++					ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
++				fi
+ 			fi
+ 		esac
+ 		$first_try || sleep 1
+--
+2.34.1
