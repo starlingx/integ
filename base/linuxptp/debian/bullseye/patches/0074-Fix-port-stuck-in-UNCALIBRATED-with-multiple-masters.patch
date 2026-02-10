@@ -1,0 +1,152 @@
+From 11ce3fb971d3baeb5fabc19c96bf48d31034e257 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Tue, 10 Feb 2026 11:33:20 -0500
+Subject: [PATCH] unicast_client: Fix port stuck in UNCALIBRATED with
+ multiple masters
+
+When using unicast negotiation with multiple potential masters, slave
+ports could get stuck in UNCALIBRATED state indefinitely, preventing
+clock synchronization. This occurred because the unicast client FSM
+was not properly triggering port state transitions when the selected
+master completed the SYDY (Sync and Delay) phase.
+
+Background:
+
+The unicast client FSM has four states:
+- UC_WAIT: Waiting for ANNOUNCE grant
+- UC_HAVE_ANN: Have ANNOUNCE grant, master discovered
+- UC_NEED_SYDY: Master selected by BMC, need SYNC and DELAY_RESP grants
+- UC_HAVE_SYDY: Have all required grants (ANNOUNCE + SYNC + DELAY_RESP)
+
+Only when a master reaches UC_HAVE_SYDY state can the port transition
+from UNCALIBRATED to SLAVE and begin synchronizing time.
+
+Root Cause Analysis:
+
+1. Missing Event Dispatch
+   The unicast_client_state_changed() function was not dispatching
+   EV_MASTER_CLOCK_SELECTED when a selected master transitioned from
+   UC_NEED_SYDY to UC_HAVE_SYDY state. This left the port stuck in
+   UNCALIBRATED even though all required unicast grants (ANNOUNCE,
+   SYNC, DELAY_RESP) had been received.
+
+2. Race Condition with Parent Identity
+   The function used clock_parent_identity() to determine which master
+   should be marked as SELECTED. However, this reads from the parent
+   dataset (c->dad.pds.parentPortIdentity) which is not updated until
+   after unicast_client_state_changed() is called during BMC master
+   selection. This created a race where:
+   - BMC selects new best master (e.g., master B)
+   - unicast_client_state_changed() is called
+   - clock_parent_identity() still returns old master (e.g., master A)
+   - Wrong master gets marked as SELECTED
+   - Port stuck waiting for wrong master to complete SYDY
+
+3. Potential for Spurious State Transitions
+   Without proper guards, the event could be dispatched when the port
+   was already in SLAVE state or when the master was already in
+   UC_HAVE_SYDY, causing unnecessary re-evaluation and potential
+   oscillation between UNCALIBRATED and SLAVE states.
+
+The Fix:
+
+This patch modifies unicast_client_state_changed() with two changes:
+
+1. Use port_compute_best() Instead of clock_parent_identity()
+   Query the best foreign clock directly to get the currently selected
+   master's port identity. The foreign clock dataset is always current
+   and reflects the BMC's actual selection, avoiding the race condition
+   with the parent dataset update.
+
+   fc = port_compute_best(p);
+   if (fc) {
+       pid = fc->dataset.sender;
+       have_pid = 1;
+   }
+
+2. Dispatch EV_MASTER_CLOCK_SELECTED with Proper Guards
+   When a master is marked as SELECTED and its unicast FSM transitions
+   to UC_HAVE_SYDY, dispatch the event to trigger port state transition.
+   Multiple guards ensure this happens exactly once at the right time:
+
+   if (old_state == UC_NEED_SYDY && ucma->state == UC_HAVE_SYDY &&
+       (ucma->granted & ucma->sydymsk) == ucma->sydymsk &&
+       port_state(p) == PS_UNCALIBRATED) {
+       port_dispatch(p, EV_MASTER_CLOCK_SELECTED, 0);
+   }
+
+   Guards ensure:
+   - Actual FSM state transition occurred (old_state != new_state)
+   - All required grants are present (ANNOUNCE + SYNC + DELAY_RESP)
+   - Port is in UNCALIBRATED (not already in SLAVE)
+   - Master is the currently selected parent
+
+Design Rationale:
+
+The event is dispatched from unicast_client_state_changed() which is
+called by the BMC during master selection, NOT from unicast_client_grant()
+when grants are received. This ties the event to BMC decisions rather
+than protocol message timing, preventing race conditions and ensuring
+the event is dispatched exactly once at the correct moment.
+
+Testing:
+
+Verified with multi-master unicast configuration:
+- Port cleanly transitions UNCALIBRATED → SLAVE when selected master
+  completes SYDY
+- No SYNCHRONIZATION_FAULT events during normal operation
+- Port remains stable in SLAVE state without oscillation
+- Clock successfully synchronizes (RMS converges to 2-3 nanoseconds)
+- Proper behavior during master switches (only selected master triggers
+  state changes)
+- Statistics intervals remain consistent at 64 seconds
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ unicast_client.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/unicast_client.c b/unicast_client.c
+index c1f0953..ecb3519 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -528,21 +528,35 @@ int unicast_client_set_tmo(struct port *p)
+ void unicast_client_state_changed(struct port *p)
+ {
+ 	struct unicast_master_address *ucma;
++	struct foreign_clock *fc;
+ 	struct PortIdentity pid;
++	int have_pid = 0;
+ 
+ 	if (!unicast_client_enabled(p)) {
+ 		return;
+ 	}
+ 	
+-	pid = clock_parent_identity(p->clock);
++	/* Get the selected master's port identity from the best foreign clock */
++	fc = port_compute_best(p);
++	if (fc) {
++		pid = fc->dataset.sender;
++		have_pid = 1;
++	}
+ 
+ 	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
+ 		enum unicast_state old_state = ucma->state;
+-		if (pid_eq(&ucma->portIdentity, &pid)) {
++		if (have_pid && pid_eq(&ucma->portIdentity, &pid)) {
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_SELECTED);
+ 			pr_info("port %d: [UC_FSM] Master %s SELECTED: %d->%d, granted=0x%x",
+ 				 portnum(p), pid2str(&ucma->portIdentity),
+ 				 old_state, ucma->state, ucma->granted);
++			if (old_state == UC_NEED_SYDY && ucma->state == UC_HAVE_SYDY &&
++			    (ucma->granted & ucma->sydymsk) == ucma->sydymsk &&
++			    port_state(p) == PS_UNCALIBRATED) {
++				pr_info("port %d: [UC_FSM] Selected master transitioned to HAVE_SYDY, triggering port state change",
++					 portnum(p));
++				port_dispatch(p, EV_MASTER_CLOCK_SELECTED, 0);
++			}
+ 		} else {
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_UNSELECTED);
+ 			if (old_state != ucma->state) {
+-- 
+2.43.0
