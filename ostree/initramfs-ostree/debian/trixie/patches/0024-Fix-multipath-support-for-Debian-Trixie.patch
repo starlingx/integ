@@ -1,0 +1,59 @@
+From 3f3d669f7ad61349a6be17aa3fc12fc66d0f09ba Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Wed, 11 Feb 2026 10:59:12 +0000
+Subject: [PATCH] Fix multipath support for Debian Trixie
+
+Debian Trixie (multipath-tools 0.9.4-7+) removed SysV init scripts
+/etc/init.d/multipath-tools and /etc/init.d/multipath-tools-boot
+in favor of systemd-only operation.
+
+The initramfs scripts were calling 'service multipath-tools-boot start'
+which fails on Trixie, preventing multipath device coalescing during
+installation and boot. This caused installation failures when using
+multipath storage.
+
+Replace the service call with direct equivalent commands:
+- Load multipath kernel modules
+- Run /sbin/multipath to coalesce devices
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ init-ostree-install.sh | 4 +++-
+ init-ostree.sh         | 6 ++++--
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 8776262..315c466 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -1075,7 +1075,9 @@ fi
+ # up any device links
+ if [ "${INSTMPATH}" = 1 ] ; then
+ 	sleep ${INST_HW_SETTLE}
+-	service multipath-tools-boot start
++	# Load multipath modules and coalesce devices
++    modprobe -a scsi_dh_alua scsi_dh_emc scsi_dh_rdac dm-multipath 2>/dev/null || true
++    /sbin/multipath -v 3
+ 	retval=$?
+ 	if [ ${retval} -ne 0 ]; then
+ 		echo "'service multipath-tools-boot start' failed with return code: ${retval}. Continuing anyway"
+diff --git a/init-ostree.sh b/init-ostree.sh
+index 0bd2928..14a5476 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -77,8 +77,10 @@ enable_lvm() {
+ }
+ 
+ activate_multipath() {
+-	service multipath-tools-boot start
+-	retval=$?
++	# Load multipath modules and coalesce devices
++    modprobe -a scsi_dh_alua scsi_dh_emc scsi_dh_rdac dm-multipath 2>/dev/null || true
++    /sbin/multipath -v 3
++    retval=$?
+ 	if [ ${retval} -ne 0 ]; then
+ 		echo "'service multipath-tools-boot start' failed with return code: ${retval}. Continuing anyway"
+ 	else
+-- 
+2.47.2
+

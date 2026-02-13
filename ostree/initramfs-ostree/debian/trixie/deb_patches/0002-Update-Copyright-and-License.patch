@@ -1,0 +1,167 @@
+From 052e435c58380c545096682113d3b92d1a2f49e0 Mon Sep 17 00:00:00 2001
+From: Yue Tao <yue.tao@windriver.com>
+Date: Fri, 19 Nov 2021 05:48:29 +0000
+Subject: [PATCH 2/2] Update Copyright and License
+
+Signed-off-by: Yue Tao <yue.tao@windriver.com>
+---
+ debian/changelog |  4 ++--
+ debian/control   | 26 ++++++++++++++++------
+ debian/copyright | 56 ++++++++++++++++++------------------------------
+ debian/rules     | 19 +++++++++++++++-
+ 4 files changed, 61 insertions(+), 44 deletions(-)
+
+diff --git a/debian/changelog b/debian/changelog
+index d5ff10f..f3582d1 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,5 +1,5 @@
+ initramfs-ostree (1.0-1) unstable; urgency=medium
+ 
+-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
++  * Initial release
+ 
+- -- root <root@3b917021b2df>  Wed, 07 Apr 2021 07:12:55 +0000
++ -- <>  Wed, 07 Apr 2021 07:12:55 +0000
+diff --git a/debian/control b/debian/control
+index b003f99..002f25a 100644
+--- a/debian/control
++++ b/debian/control
+@@ -1,17 +1,31 @@
++# Copyright (c) 2021 Wind River Systems, Inc.
++#
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements. The ASF licenses this
++# file to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
+ Source: initramfs-ostree
+ Section: utils
+ Priority: optional
+-Maintainer: root <root@3b917021b2df>
++Maintainer: Hongxu Jia <hongxu.jia@windriver.com>
+ Build-Depends: debhelper-compat (= 13)
+ Standards-Version: 4.5.1
+-Homepage: https://github.com/WindRiver-Labs/wr-ostree
+-#Vcs-Browser: https://salsa.debian.org/debian/initramfs-ostree
+-#Vcs-Git: https://salsa.debian.org/debian/initramfs-ostree.git
+-Rules-Requires-Root: no
++Homepage: https://github.com/WindRiver-Labs/meta-lat
+ 
+ Package: initramfs-ostree
+ Architecture: all
+ Depends: gdisk, e2fsprogs, ${misc:Depends}, ${shlibs:Depends}
+ Multi-Arch: foreign
+-Description: Basic init for initramfs to mount ostree and pivot root
++Description: Init for initramfs to mount ostree
+  Basic init for initramfs to mount ostree and pivot root
+diff --git a/debian/copyright b/debian/copyright
+index b5d3c86..65e5cf7 100644
+--- a/debian/copyright
++++ b/debian/copyright
+@@ -1,43 +1,29 @@
+ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+ Upstream-Name: initramfs-ostree
+-Upstream-Contact: <preferred name and address to reach the upstream project>
+-Source: <url://example.com>
++Upstream-Contact: Hongxu Jia <hongxu.jia@windriver.com>
++Source: https://github.com/Wind-River/meta-lat
+ 
+ Files: *
+-Copyright: <years> <put author's name and email here>
+-           <years> <likewise for another author>
+-License: <special license>
+- <Put the license of the package here indented by 1 space>
+- <This follows the format of Description: lines in control file>
+- .
+- <Including paragraphs>
++Copyright: Copyright (c) 2021 Wind River
++License: MIT-License
+ 
+-# If you want to use GPL v2 or later for the /debian/* files use
+-# the following clauses, or change it to suit. Delete these two lines
+-Files: debian/*
+-Copyright: 2021 root <root@3b917021b2df>
+-License: GPL-2+
+- This package is free software; you can redistribute it and/or modify
+- it under the terms of the GNU General Public License as published by
+- the Free Software Foundation; either version 2 of the License, or
+- (at your option) any later version.
++License: MIT-License
++ Copyright (c) 2021 Wind River
+  .
+- This package is distributed in the hope that it will be useful,
+- but WITHOUT ANY WARRANTY; without even the implied warranty of
+- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- GNU General Public License for more details.
++ Permission is hereby granted, free of charge, to any person obtaining a copy
++ of this software and associated documentation files (the "Software"), to deal
++ in the Software without restriction, including without limitation the rights
++ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ copies of the Software, and to permit persons to whom the Software is
++ furnished to do so, subject to the following conditions:
+  .
+- You should have received a copy of the GNU General Public License
+- along with this program. If not, see <https://www.gnu.org/licenses/>
++ The above copyright notice and this permission notice shall be included in all
++ copies or substantial portions of the Software.
+  .
+- On Debian systems, the complete text of the GNU General
+- Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+-
+-# Please also look if there are files or directories which have a
+-# different copyright/license attached and list them here.
+-# Please avoid picking licenses with terms that are more restrictive than the
+-# packaged work, as it may make Debian's contributions unacceptable upstream.
+-#
+-# If you need, there are some extra license texts available in two places:
+-#   /usr/share/debhelper/dh_make/licenses/
+-#   /usr/share/common-licenses/
++ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ SOFTWARE.
+diff --git a/debian/rules b/debian/rules
+index 4b64bd3..305e70d 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -1,5 +1,22 @@
+ #!/usr/bin/make -f
+-
++#
++# Copyright (c) 2021 Wind River Systems, Inc.
++#
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements. The ASF licenses this
++# file to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#  http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++#
+ %:
+ 	dh $@
+ 
+-- 
+2.30.2
+

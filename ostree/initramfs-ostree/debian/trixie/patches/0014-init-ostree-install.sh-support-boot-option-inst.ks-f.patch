@@ -1,0 +1,32 @@
+From 6a10ae5559d4cb5b9ee80e55d873cd83c41cd0a9 Mon Sep 17 00:00:00 2001
+From: Zhang Xiao <xiao.zhang@windriver.com>
+Date: Mon, 3 Apr 2023 22:32:34 -0700
+Subject: [PATCH] init-ostree-install.sh: support boot option inst.ks for
+ kickstart
+
+https://github.com/Wind-River/meta-lat/commit/1655ad90
+https://github.com/Wind-River/meta-lat/commit/e0175017
+
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+Signed-off-by: Zhang Xiao <xiao.zhang@windriver.com>
+---
+ init-ostree-install.sh | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 4046fbb..e4393fb 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -621,6 +621,9 @@ read_args() {
+ 			ks=*)
+ 				KS="$optarg"
+ 				;;
++			inst.ks=*)
++				KS="$optarg"
++				;;
+ 			bl=*)
+ 				BL=$optarg ;;
+ 			instnet=*)
+-- 
+2.34.1
+

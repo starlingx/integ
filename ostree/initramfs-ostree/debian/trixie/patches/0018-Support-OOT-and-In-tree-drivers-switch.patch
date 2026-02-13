@@ -1,0 +1,101 @@
+From c357f75f321d4f1407db951e7482716acba7412f Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 3 Mar 2024 22:05:18 -0800
+Subject: [PATCH 18/18] Support OOT and In-tree drivers switch
+
+In order to select between the in-tree and OOT drivers, a cmdline
+parameter multi-drivers-switch need be used. If cmdline parameter
+multi-drivers-switch is set to cvl-4.0.1, the OOT drivers will be
+loaded by "insmod" command before udevd is started, and that ensures
+that the OOT drivers will be loaded rather than the in-tree drivers.
+
+The default drivers will be the in-tree drivers if there is not
+multi-drivers-switch in the cmdline parameters or it is not set
+correct, because the out-of-tree drivers have been moved to the
+"weak-updates" subdirectory, we would like them to have a lower
+precedence/lower priority than the in-tree versions.
+
+Note: The in-tree drivers will use the OOT drivers' ice.pkg file,
+The version is 1.3.30.0. We will wait Intel's test result and give
+feedback which DDP package should be used for the in-tree drivers,
+and do the related update.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ init-ostree-install.sh | 23 ++++++++++++-----------
+ init-ostree.sh         | 23 ++++++++++++-----------
+ 2 files changed, 24 insertions(+), 22 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 092db4b..c9172de 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -478,18 +478,19 @@ do_mount_fs() {
+ }
+ network_modules() {
+ 	if grep -s -q '\smulti-drivers-switch=' /proc/cmdline ; then
+-		if [ -d /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}" ]; then
+-			insmod /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}"/ice.ko
+-			insmod /lib/modules/"$(uname -r)"/extra/i40e-"${DRIVER_VERSION}"/i40e.ko
+-			insmod /lib/modules/"$(uname -r)"/extra/iavf-"${DRIVER_VERSION}"/iavf.ko
+-			echo "Legacy NIC ${DRIVER_VERSION} drivers have been activated"
+-		elif [ -d /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}" ]; then
+-			insmod /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}"/ice.ko
+-			insmod /lib/modules/"$(uname -r)"/updates/i40e-"${DRIVER_VERSION}"/i40e.ko
+-			insmod /lib/modules/"$(uname -r)"/updates/iavf-"${DRIVER_VERSION}"/iavf.ko
+-			echo "NIC ${DRIVER_VERSION} drivers have been activated"
++		if [ -d /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}" ]; then
++			insmod /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}"/ice.ko
++			insmod /lib/modules/"$(uname -r)"/weak-updates/i40e-"${DRIVER_VERSION}"/i40e.ko
++			insmod /lib/modules/"$(uname -r)"/weak-updates/iavf-"${DRIVER_VERSION}"/iavf.ko
++			echo "OOT NIC ${DRIVER_VERSION} drivers have been activated"
++		else
++			ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
++			echo "In-tree NIC drivers have been activated"
+ 		fi
+-        fi
++	else
++		ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
++		echo "In-tree NIC drivers have been activated"
++	fi
+ }
+ 
+ disable_lvm() {
+diff --git a/init-ostree.sh b/init-ostree.sh
+index 32de301..c74f350 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -69,18 +69,19 @@ do_mount_fs() {
+ 
+ network_modules() {
+ 	if grep -s -q '\smulti-drivers-switch=' /proc/cmdline ; then
+-		if [ -d /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}" ]; then
+-			insmod /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}"/ice.ko
+-			insmod /lib/modules/"$(uname -r)"/extra/i40e-"${DRIVER_VERSION}"/i40e.ko
+-			insmod /lib/modules/"$(uname -r)"/extra/iavf-"${DRIVER_VERSION}"/iavf.ko
+-			echo "Legacy NIC ${DRIVER_VERSION} drivers have been activated"
+-		elif [ -d /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}" ]; then
+-			insmod /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}"/ice.ko
+-			insmod /lib/modules/"$(uname -r)"/updates/i40e-"${DRIVER_VERSION}"/i40e.ko
+-			insmod /lib/modules/"$(uname -r)"/updates/iavf-"${DRIVER_VERSION}"/iavf.ko
+-			echo "NIC ${DRIVER_VERSION} drivers have been activated"
++		if [ -d /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}" ]; then
++			insmod /lib/modules/"$(uname -r)"/weak-updates/ice-"${DRIVER_VERSION}"/ice.ko
++			insmod /lib/modules/"$(uname -r)"/weak-updates/i40e-"${DRIVER_VERSION}"/i40e.ko
++			insmod /lib/modules/"$(uname -r)"/weak-updates/iavf-"${DRIVER_VERSION}"/iavf.ko
++			echo "OOT NIC ${DRIVER_VERSION} drivers have been activated"
++		else
++			ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
++			echo "In-tree NIC drivers have been activated"
+ 		fi
+-        fi
++	else
++		ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
++		echo "In-tree NIC drivers have been activated"
++	fi
+ }
+ 
+ disable_lvm() {
+-- 
+2.42.0
+

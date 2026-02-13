@@ -1,0 +1,63 @@
+From ccdf22e5c74fb8f0e59704e6f15399276a06b594 Mon Sep 17 00:00:00 2001
+From: Zhang Xiao <xiao.zhang@windriver.com>
+Date: Mon, 25 Sep 2023 01:06:31 -0700
+Subject: [PATCH] Allow adjusting boot order
+
+By default, "starlingx" is set as the first boot target.
+
+Add parameter "instbootorder", set it to "last" to move boot target
+"starlingx" to the last of boot order.
+
+Signed-off-by: Zhang Xiao <xiao.zhang@windriver.com>
+---
+ init-ostree-install.sh | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 0f523bc..092db4b 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -64,6 +64,7 @@ OPTIONAL:
+  instsf=1			- Skip fat partition format
+  instfmt=1			- Set to 0 to skip partition formatting
+  instpt=1			- Set to 0 to skip disk partitioning
++ instbootorder=last	- Move starlingx to the last of boot order
+  instgpg=0			- Turn off OSTree GnuPG signing checks
+  instdate=datespec	        - Argument to "date -u -s" like @1577836800
+  dhcpargs=DHCP_ARGS		- Args to "udhcpc -i" or "dhcpcd" like wlan0
+@@ -618,6 +619,7 @@ OSTREE_ROOT_B_DEVICE=${OSTREE_ROOT_B_DEVICE="LABEL=otaroot_b"}
+ OSTREE_VAR_DEVICE=${OSTREE_VAR_DEVICE="LABEL=fluxdata"}
+ KS=""
+ INST_HW_SETTLE=0
++INSTBOOTORDER="first"
+ 
+ if [ "$OSTREE_KERNEL_ARGS" = "%OSTREE_KERNEL_ARGS%" ] ; then
+ 	OSTREE_KERNEL_ARGS="ro rootwait"
+@@ -675,6 +677,8 @@ read_args() {
+ 				INSTSBD=$optarg ;;
+ 			instpt=*)
+ 				INSTPT=$optarg ;;
++			instbootorder=*)
++				INSTBOOTORDER=$optarg ;;
+ 			instfmt=*)
+ 				INSTFMT=$optarg ;;
+ 			insturl=*)
+@@ -1691,6 +1695,15 @@ if [ -d /sys/firmware/efi/efivars ] ;then
+             efibootmgr -c -w -L "${INSTBR}" -d "${INSTDEV}" -p "${p1}" -l '\EFI\BOOT\bootx64.efi'
+         fi
+     fi
++    # Check and adjust boot order
++    if [ "$INSTBOOTORDER" == "last" ] ; then
++        echo "Move boot target ${INSTBR} to the last one"
++        ebl=$(efibootmgr | grep -i BootOrder | cut -d' ' -f 2)
++        wre=$(efibootmgr | grep -i "${INSTBR}" | cut -c5-8)
++        ebl=`echo ${ebl} | sed "s/${wre},//"`","${wre}
++        efibootmgr -o ${ebl}
++        efibootmgr
++    fi
+ fi
+ 
+ ############################################
+-- 
+2.40.0
+
