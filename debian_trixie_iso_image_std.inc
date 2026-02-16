@@ -13,6 +13,49 @@ bash
 #centos-debian-compat
 centos-debian-compat
 
+#ceph
+ceph-base
+ceph-common
+ceph-fuse
+#ceph-grafana-dashboards  # not used
+ceph-mds
+#ceph-mgr-dashboard  # not used
+#ceph-mgr-diskprediction-cloud  # not used
+#ceph-mgr-diskprediction-local  # not used
+#ceph-mgr-k8sevents  # not used
+#ceph-mgr-rook  # not used
+#ceph-mgr-ssh  # not used
+ceph-mgr
+ceph-mon
+ceph-osd
+#ceph-resource-agents  # not used
+ceph
+#cephfs-shell  # not used
+#libcephfs-dev  # not used
+#libcephfs-java  # not used
+#libcephfs-jni  # not used
+libcephfs2
+#librados-dev  # not used
+librados2
+#libradospp-dev  # not used
+#libradosstriper-dev  # not used
+libradosstriper1
+#librbd-dev  # not used
+librbd1
+#librgw-dev  # not used
+librgw2
+python3-ceph-argparse
+python3-ceph
+python3-cephfs
+python3-rados
+python3-rbd
+python3-rgw
+#rados-objclass-dev  # not used
+radosgw
+#rbd-fuse  # not used
+#rbd-mirror  # not used
+#rbd-nbd  # not used
+
 #cluster-resource-agents
 #ldirectord  # not used
 resource-agents

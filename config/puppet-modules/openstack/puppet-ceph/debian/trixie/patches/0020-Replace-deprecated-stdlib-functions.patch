@@ -1,0 +1,39 @@
+From 60f1078a552e0d7644a60d781384fd97bef34eef Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Tue, 10 Feb 2026 07:38:56 -0500
+Subject: [PATCH 2/2] Replace deprecated stdlib functions for Puppet 8
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Replace deprecated validate_hash() function with native Puppet data
+type validation for Puppet 8.x and stdlib 9.x compatibility.
+
+The validate_hash() function was removed in puppetlabs-stdlib 9.x.
+This change uses assert_type(Hash, $var) which provides identical
+validation with modern Puppet syntax.
+
+Changes:
+- validate_hash($client_keys) → assert_type(Hash, $client_keys)
+
+Signed-off-by: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+---
+ manifests/profile/params.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/profile/params.pp b/manifests/profile/params.pp
+index 8f6f739..971d641 100644
+--- a/manifests/profile/params.pp
++++ b/manifests/profile/params.pp
+@@ -240,7 +240,7 @@ class ceph::profile::params (
+   $fs_name = undef,
+   $rbd_default_features = undef,
+ ) {
+-  validate_hash($client_keys)
++  assert_type(Hash, $client_keys)
+ 
+   if $authentication_type == 'cephx' and empty($client_keys) {
+     fail("client_keys must be provided when using authentication_type = 'cephx'")
+-- 
+2.43.0
+
