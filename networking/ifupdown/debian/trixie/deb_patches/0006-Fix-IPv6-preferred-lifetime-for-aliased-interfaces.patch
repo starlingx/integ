@@ -1,0 +1,38 @@
+From 223d242d944901ed2676f1998888d281877c0e5d Mon Sep 17 00:00:00 2001
+From: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+Date: Wed, 18 Feb 2026 14:48:33 -0300
+Subject: [PATCH] Fix IPv6 preferred lifetime for aliased interfaces
+
+Change set_preferred_lft() to set 'forever' instead of '0' for
+interfaces with colon in their names (e.g., vlan10:8-20).
+
+Previously, IPv6 addresses on aliased interfaces were automatically
+marked as deprecated (preferred_lft 0sec), making them unusable for
+outgoing connections. This forced users to add workarounds in post-up
+scripts to manually set preferred_lft to forever.
+
+With this change, all IPv6 addresses on aliased interfaces will now
+remain undeprecated by default, matching the expected behavior for
+static IPv6 address configuration.
+
+Signed-off-by: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+---
+ archcommon.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/archcommon.c b/archcommon.c
+index 32606db..b23514e 100644
+--- a/archcommon.c
++++ b/archcommon.c
+@@ -211,7 +211,7 @@ void set_preferred_lft(interface_defn *ifd, char **pparam, int argc, char **argv
+ 		return;
+ 
+ 	if (iface_has(":")) {
+-		char s[] = "0";
++		char s[] = "forever";
+ 
+ 		*pparam = realloc(*pparam, sizeof(s));
+ 		if (*pparam == NULL)
+-- 
+2.34.1
+
