@@ -1,2 +1,2 @@
-0001-Remove-log_dir-from-conf-files.patch
+0001-Add-psycopg2-drivername-to-postgresql-settings.patch
 0002-Fix-deprecated-syntax-for-Puppet-8.10-compatibility.patch
