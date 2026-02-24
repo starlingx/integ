@@ -21,7 +21,7 @@ index 89115b3..c20cd9a 100755
  export DH_VERBOSE=1
  
 +override_dh_auto_build:
-+	cp uefi_sb_keys/* ./
++	cp debian/uefi_sb_keys/* ./
 +	mv tis-boot.crt DB.crt
 +	dh_auto_build
 +
@@ -30,4 +30,3 @@ index 89115b3..c20cd9a 100755
  
 -- 
 2.17.1
-

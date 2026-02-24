@@ -2,6 +2,7 @@
 debver: 1.9.2-3.5
 debname: efitools
 archive: https://snapshot.debian.org/archive/debian/20251130T202713Z/pool/main/e/efitools/
+dl_hook: dl_hook
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
