@@ -22,33 +22,33 @@ if [ `dirname $0` = "." ] && [ $PWD != "/etc/init.d" ]; then
     ASSUME_DEV=1
 else
     if [ -e CMakeCache.txt ] && [ -e bin/init-ceph ]; then
-	# looks like a cmake build directory
-	CEPH_ROOT=`grep ceph_SOURCE_DIR CMakeCache.txt | cut -d "=" -f 2`
-	BINDIR=bin
-	SBINDIR=bin
-	LIBEXECDIR=$CEPH_ROOT/src
-	ETCDIR=.
-	ASSUME_DEV=1
-	CEPH_LIB=$CEPH_ROOT/build/lib
-	echo "$PYTHONPATH" | grep -q $CEPH_LIB || export PYTHONPATH=$CEPH_LIB/cython_modules/lib.@MGR_PYTHON_VERSION_MAJOR@:$PYTHONPATH
-	echo "$LD_LIBRARY_PATH" | grep -q $CEPH_LIB || export LD_LIBRARY_PATH=$CEPH_LIB:$LD_LIBRARY_PATH
-	echo "$DYLD_LIBRARY_PATH" | grep -q $CEPH_LIB || export DYLD_LIBRARY_PATH=$CEPH_LIB:$DYLD_LIBRARY_PATH
+        # looks like a cmake build directory
+        CEPH_ROOT=`grep ceph_SOURCE_DIR CMakeCache.txt | cut -d "=" -f 2`
+        BINDIR=bin
+        SBINDIR=bin
+        LIBEXECDIR=$CEPH_ROOT/src
+        ETCDIR=.
+        ASSUME_DEV=1
+        CEPH_LIB=$CEPH_ROOT/build/lib
+        echo "$PYTHONPATH" | grep -q $CEPH_LIB || export PYTHONPATH=$CEPH_LIB/cython_modules/lib.@MGR_PYTHON_VERSION_MAJOR@:$PYTHONPATH
+        echo "$LD_LIBRARY_PATH" | grep -q $CEPH_LIB || export LD_LIBRARY_PATH=$CEPH_LIB:$LD_LIBRARY_PATH
+        echo "$DYLD_LIBRARY_PATH" | grep -q $CEPH_LIB || export DYLD_LIBRARY_PATH=$CEPH_LIB:$DYLD_LIBRARY_PATH
     else
-	BINDIR=/usr/bin
-	SBINDIR=/usr/sbin
-	LIBDIR=/usr/lib/ceph
-	LIBEXECDIR=$LIBDIR
-	ETCDIR=/etc/ceph
-	ASSUME_DEV=0
+        BINDIR=/usr/bin
+        SBINDIR=/usr/sbin
+        LIBDIR=/usr/lib/ceph
+        LIBEXECDIR=$LIBDIR
+        ETCDIR=/etc/ceph
+        ASSUME_DEV=0
     fi
 fi
 
 if [ -n "$CEPH_BIN" ] && [ -n "$CEPH_ROOT" ] && [ -n "$CEPH_BUILD_DIR" ]; then
-  BINDIR=$CEPH_BIN
-  SBINDIR=$CEPH_ROOT/src
-  ETCDIR=$CEPH_BIN
-  LIBEXECDIR=$CEPH_ROOT/src
-  ASSUME_DEV=1
+    BINDIR=$CEPH_BIN
+    SBINDIR=$CEPH_ROOT/src
+    ETCDIR=$CEPH_BIN
+    LIBEXECDIR=$CEPH_ROOT/src
+    ASSUME_DEV=1
 fi
 
 ####################################################
@@ -78,14 +78,14 @@ ST_STOPPED="STOPPED"
 UP="up"
 DOWN="down"
 
-#paths
+# Paths
 source /usr/bin/tsconfig
-DATA_PATH=$VOLATILE_PATH/ceph_hang    # folder where we keep sate information
+DATA_PATH=$VOLATILE_PATH/ceph_hang          # folder where we keep sate information
 LOG_PATH=/var/log/ceph
 LOG_FILE=$LOG_PATH/ceph-process-states.log
-mkdir -p $DATA_PATH         # make sure folder exists
+mkdir -p $DATA_PATH                         # make sure folder exists
 
-#timeouts
+# Timeouts
 WAIT_FOR_CMD=10                 # max wait for a response from Ceph
 WAIT_FOR_OSD_OPERATIONAL=300    # max wait for OSD to go 'up' when in startup state
 WAIT_FOR_OSD_DOWN_CONFIRM=300   # even if OSD is down it may be flapping, wait for a while
@@ -134,7 +134,7 @@ save_proc_state() {
     local name=$1
     local state=$2
     if [ "$state" != "$ST_STARTUP" ] && [ "$state" != "$ST_OPER" ] && \
-       [ "$state" != "$ST_HANGED" ] && [ "$state" != "$ST_STOPPED" ]; then
+        [ "$state" != "$ST_HANGED" ] && [ "$state" != "$ST_STOPPED" ]; then
         log $name "ERROR" "State $state is invalid, resetting to $ST_STARTUP" print_trace
         state=$ST_STARTUP
     fi
@@ -149,7 +149,7 @@ load_proc_state() {
         state=$(cat ${DATA_PATH}/.${name}_state)
     fi
     if [ "$state" != "$ST_STARTUP" ] && [ "$state" != "$ST_OPER" ] && \
-       [ "$state" != "$ST_HANGED" ] && [ "$state" != "$ST_STOPPED" ]; then
+        [ "$state" != "$ST_HANGED" ] && [ "$state" != "$ST_STOPPED" ]; then
         log $name "ERROR" "State $state is invalid, resetting to $ST_STARTUP" print_trace
         state=$ST_STARTUP
         save_proc_state $name $state
@@ -167,7 +167,7 @@ save_proc_startup_ok() {
     save_proc_state $name $ST_STARTUP
 
     # Save the time when a process was started
-    log $name INFO "Process $ST_STARTUP successfully, waiting for it to become $ST_OPER"
+    log $name "INFO" "Process $ST_STARTUP successfully, waiting for it to become $ST_OPER"
     echo $(date +%s) > ${DATA_PATH}/.${name}_start_time
 }
 
@@ -202,7 +202,7 @@ get_duration(){
 
     # Check that we have a filename
     if [ ! -f $record ]; then
-        log $name ERROR "Failed to compute duration, time was never stored in $record!" print_trace
+        log $name "ERROR" "Failed to compute duration, time was never stored in $record!" print_trace
         echo "-1"; return
     fi
 
@@ -210,15 +210,15 @@ get_duration(){
     local start_time=$(cat $record)
     re="^[0-9]+$"
     if ! [[ "$start_time" =~ $re ]] ; then
-       log $name ERROR "Recorded time '$start_time' is not a number!" print_trace
-       echo "-1"; return
+        log $name "ERROR" "Recorded time '$start_time' is not a number!" print_trace
+        echo "-1"; return
     fi
 
     # Compute duration
     local now=$(date +%s)
     local duration=$((now-start_time))
     if [ "$duration" -lt 0 ]; then
-        log $name ERROR "Duration less than 0!" print_trace
+        log $name "ERROR" "Duration less than 0!" print_trace
         echo "-1"; return
     fi
     echo $duration
@@ -227,14 +227,14 @@ get_duration(){
 get_proc_run_time() {
     local name=$1
     local time=$(get_duration $name ${DATA_PATH}/.${name}_start_time)
-    log $name DEBUG ">>> process running for: ${time}s"
+    log $name "DEBUG" ">>> process running for: ${time}s"
     echo $time
 }
 
 get_proc_down_time() {
     local name=$1
     local time=$(get_duration $name ${DATA_PATH}/.${name}_down_time)
-    log $name DEBUG ">>> process down for: ${time}s"
+    log $name "DEBUG" ">>> process down for: ${time}s"
     echo $time
 }
 
@@ -268,7 +268,7 @@ run_state_machine() {
         fi
     elif [ "$state" = "$ST_OPER" ]; then
         if [ "$status" = "$DOWN" ]; then
-            if [ $(load_proc_status $name) = $UP ];then
+            if [ $(load_proc_status $name) = $UP ]; then
                 log $name "WARN" "Process went down!"
                 save_proc_status $name $DOWN
             fi
@@ -341,8 +341,8 @@ renew_ceph_mgr_restful_service() {
 
 get_ceph_health_detail() {
     if [ -z "${CEPH_HEALTH_DETAIL}" ]; then
-      process_curl_output CEPH_HEALTH_DETAIL '{"format": "text", "prefix": "health", "detail": "detail"}' "ceph health detail"
-      if [ $? -ne 0 ]; then return 1; fi
+        process_curl_output CEPH_HEALTH_DETAIL '{"format": "text", "prefix": "health", "detail": "detail"}' "ceph health detail"
+        if [ $? -ne 0 ]; then return 1; fi
     fi
     return 0
 }
@@ -364,42 +364,42 @@ get_ceph_status() {
 }
 
 process_curl_output() {
-  local curl_cmd="$2"
-  local ceph_cmd="$3"
-  local output=""
-  local curl_max_time_sec=5
-  local curl_output=""
+    local curl_cmd="$2"
+    local ceph_cmd="$3"
+    local output=""
+    local curl_max_time_sec=5
+    local curl_output=""
 
-  load_ceph_mgr_restful_service
-  load_ceph_mgr_restful_key
+    load_ceph_mgr_restful_service
+    load_ceph_mgr_restful_key
 
-  curl_output=$(curl --max-time ${curl_max_time_sec} -k https://admin:${MGR_RESTFUL_KEY}@${MGR_RESTFUL_SERVICE}/request?wait=1 -X POST -H 'Content-Type: application/json' -d "${curl_cmd}" 2>/dev/null)
-  local error_code=$?
+    curl_output=$(curl --max-time ${curl_max_time_sec} -k https://admin:${MGR_RESTFUL_KEY}@${MGR_RESTFUL_SERVICE}/request?wait=1 -X POST -H 'Content-Type: application/json' -d "${curl_cmd}" 2>/dev/null)
+    local error_code=$?
 
-  if [ ${error_code} -eq 0 ]; then
-    output=$(echo "${curl_output}" | awk '/"outb"|"message"/ {if (match($0, "Incorrect password")) {print "Wrong password"}; if (match($0, "outb")) {split($0, msg, "\""); gsub(/\\n/, "\n", msg[4]); print msg[4]} }')
-  else
-    output="No connection"
-  fi
+    if [ ${error_code} -eq 0 ]; then
+        output=$(echo "${curl_output}" | awk '/"outb"|"message"/ {if (match($0, "Incorrect password")) {print "Wrong password"}; if (match($0, "outb")) {split($0, msg, "\""); gsub(/\\n/, "\n", msg[4]); print msg[4]} }')
+    else
+        output="No connection"
+    fi
 
-  if [ "${output}" == "Wrong password" ]; then
-    log "restful" "WARN" "Ceph restful api command failed: Wrong password"
-    renew_ceph_mgr_restful_key
+    if [ "${output}" == "Wrong password" ]; then
+        log "restful" "WARN" "Ceph restful api command failed: Wrong password"
+        renew_ceph_mgr_restful_key
 
-    log "restful" "WARN" "Ceph restful api command failed: Fallback to Ceph CLI"
-    execute_ceph_cmd output "" "${ceph_cmd}"
-    [ $? -ne 0 ] && return 1
-  elif [ "${output}" == "No connection" ]; then
-    log "restful" "WARN" "Ceph restful api command failed: No connection"
-    renew_ceph_mgr_restful_service
+        log "restful" "WARN" "Ceph restful api command failed: Fallback to Ceph CLI"
+        execute_ceph_cmd output "" "${ceph_cmd}"
+        [ $? -ne 0 ] && return 1
+    elif [ "${output}" == "No connection" ]; then
+        log "restful" "WARN" "Ceph restful api command failed: No connection"
+        renew_ceph_mgr_restful_service
 
-    log "restful" "WARN" "Ceph restful api command failed: Fallback to Ceph CLI"
-    execute_ceph_cmd output "" "${ceph_cmd}"
-    [ $? -ne 0 ] && return 1
-  fi
+        log "restful" "WARN" "Ceph restful api command failed: Fallback to Ceph CLI"
+        execute_ceph_cmd output "" "${ceph_cmd}"
+        [ $? -ne 0 ] && return 1
+    fi
 
-  eval $1=\""${output}"\"
-  return 0
+    eval $1=\""${output}"\"
+    return 0
 }
 
 CEPH_OSD_TREE=""
@@ -407,12 +407,6 @@ CEPH_HEALTH_DETAIL=""
 is_process_hung() {
     local name=$1
     local type=$2  # 'osd' or 'mon'
-
-    # Verify if the daemon is hung
-    if [ "$DAEMON_OSD_NOT_RESPONDING" = "true" ]; then
-        DAEMON_OSD_NOT_RESPONDING="false"
-        return 0
-    fi
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
@@ -427,14 +421,20 @@ is_process_hung() {
         return 1
     fi
 
+    # Verify if the daemon is hung
+    if [ "$DAEMON_OSD_NOT_RESPONDING" = "true" ]; then
+        DAEMON_OSD_NOT_RESPONDING="false"
+        return 0
+    fi
+
     # Check if an OSD is hung
     if [ "$type" = "osd" ]; then
         # Ignore health check if OSDs are administratively down
         # Note this can be done with: 'ceph osd set noup; ceph osd down <osd.id>'
         $(echo "$CEPH_HEALTH_DETAIL" | grep -q "noup.*set")
         if [ $? -eq 0 ]; then
-           log $name "WARN" "Ceph 'noup' flag is set, aborting hang check"
-           return 1
+            log $name "WARN" "Ceph 'noup' flag is set, aborting hang check"
+            return 1
         fi
 
         # Multiple OSD processes may be running, so we only run
@@ -565,7 +565,6 @@ osd_has_stuck_peering() {
         return 1
     fi
 
-
     file="${DATA_PATH}/.${name}_stuck_peering_start"
     max_blocked_time=0
 
@@ -581,7 +580,6 @@ osd_has_stuck_peering() {
             fi
         done <<< "$(echo "$CEPH_HEALTH_DETAIL" | grep "stuck peering")"
     fi
-
 
     if [ $max_blocked_time -gt 0 ]; then
         if [ -f ${file} ]; then
@@ -639,7 +637,6 @@ mds_has_blocked_clients() {
 
     # Look for and parse:'    mds.controller-0(mds.0): Client controller-0: failing to respond to capability release client_id: 1737491'
     local client_id_list=($(echo "$CEPH_HEALTH_DETAIL" | grep "failing to respond to capability release" | sed -rn 's/.*client_id: ([[:digit:]]*).*/\1/p'))
-    log $name "INFO" "${client_id_list[@]}"
     if [[ "$client_id_list" != "" ]]; then
         log $name "WARN" "Detected blocked MDS clients: ${client_id_list[@]}"
 
@@ -657,7 +654,7 @@ mds_has_blocked_clients() {
         done
 
         if [ ${#MDS_EVICTION_CMD_LIST[@]} -gt 0 ]; then
-	    log $name "INFO" "${MDS_EVICTION_CMD_LIST[@]}"
+            log $name "INFO" "${MDS_EVICTION_CMD_LIST[@]}"
             return 0
         fi
     fi
@@ -668,15 +665,14 @@ mds_has_blocked_clients() {
 #### StarlingX END ###
 ######################
 
-
 if [ `uname` = FreeBSD ]; then
-  GETOPT=/usr/local/bin/getopt
+    GETOPT=/usr/local/bin/getopt
 else
-  GETOPT=getopt
+    GETOPT=getopt
 fi
 
 if id ceph > /dev/null 2>&1; then
-  SET_CEPHUSER_ARGS=" --setuser ceph --setgroup ceph"
+    SET_CEPHUSER_ARGS=" --setuser ceph --setgroup ceph"
 fi
 
 usage_exit() {
@@ -723,12 +719,12 @@ signal_daemon() {
     do_cmd "if [ -e $pidfile ]; then
         pid=\`cat $pidfile\`
         if ps -p \$pid -o args= | grep -q $daemon; then
-	    cmd=\"kill $signal \$pid\"
-	    printf \"\$cmd...\"
-	    \$cmd
+            cmd=\"kill $signal \$pid\"
+            printf \"\$cmd...\"
+            \$cmd
         fi
     fi"
-    echo done
+    echo "done"
 }
 
 daemon_is_running() {
@@ -740,10 +736,12 @@ daemon_is_running() {
         pid_found=\$(ps ax | awk '/$daemon -i $daemon_id / {  if (\$5 != \"awk\" && \$5 != \"bash\") print \$1 }')
         [ -z \"\$pid_found\" ] && exit 1   # no pid, presumably not running
         echo \$pid_found > $pidfile
-        fi
-        pid=\`cat $pidfile\`
+    fi
+    pid=\`cat $pidfile\`
+    if [ -f "/proc/\$pid/cmdline" ]; then
         cat /proc/\$pid/cmdline | tr '\\0' ' ' | grep -q '$daemon -i $daemon_id ' && exit 0 # running
-        exit 1  # pid is something else" "" "okfail"
+    fi
+    exit 1  # pid is something else" "" "okfail"
 }
 
 is_configuring_osd() {
@@ -761,33 +759,32 @@ stop_daemon() {
     [ -z "$action" ] && action="Stopping"
     printf "$action Ceph $name on $host..."
     do_cmd "if [ -e $pidfile ] ; then
-    pid=\`cat $pidfile\`
-    timeout=$timeout
-    while ps -p \$pid -o args= | grep -q $daemon; do
-	    if [ ! -z "$timeout" ]; then
-	        if [ \$timeout -lt 0 ]; then
-	            break
-	        fi
-	        timeout=\$((timeout-1))
-	    fi
-	    cmd=\"kill $signal \$pid\"
-	    printf \"\$cmd...\"
-	    \$cmd
-	    sleep 1
-	    continue
-	done
+        pid=\`cat $pidfile\`
+        timeout=$timeout
+        while ps -p \$pid -o args= | grep -q $daemon; do
+            if [ ! -z "$timeout" ]; then
+                if [ \$timeout -lt 0 ]; then
+                    break
+                fi
+                timeout=\$((timeout-1))
+            fi
+            cmd=\"kill $signal \$pid\"
+            printf \"\$cmd...\"
+            \$cmd
+            sleep 1
+            continue
+        done
     fi"
-    echo done
+    echo "done"
 }
 
 ## command line options
 options=
 IFS=" " read -r -a args <<< "$@"
-log INFO "$@"
+log "INFO" "$@"
 
 OPTS=$(${GETOPT} -n 'init-ceph' -o 'hvam:c:' -l 'help,verbose,valgrind,novalgrind,allhosts,restart,norestart,btrfs,nobtrfs,fsmount,nofsmount,btrfsumount,fsumount,conf:,cluster:,hostname:' -- "${args[@]}")
-if [ $? != 0 ]
-then
+if [ $? != 0 ]; then
     exit 1
 fi
 
@@ -806,75 +803,74 @@ use_default_conf=1
 [ -e /etc/sysconfig/ceph ] && . /etc/sysconfig/ceph
 [ -e /etc/default/ceph ] && . /etc/default/ceph
 
-
 while echo $1 | grep -q '^-'; do     # FIXME: why not '^-'?
-case $1 in
-    -v | --verbose)
-	    verbose=1
-	    ;;
-    --valgrind)
-	    dovalgrind=1
-	    ;;
-    --novalgrind)
-	    dovalgrind=0
-	    ;;
-    --allhosts | -a)
-	    allhosts=1;
-	    ;;
-    --restart)
-	    docrun=1
-	    ;;
-    --norestart)
-	    docrun=0
-	    ;;
-    -h | --help)
+    case $1 in
+        -v | --verbose)
+            verbose=1
+            ;;
+        --valgrind)
+            dovalgrind=1
+            ;;
+        --novalgrind)
+            dovalgrind=0
+            ;;
+        --allhosts | -a)
+            allhosts=1;
+            ;;
+        --restart)
+            docrun=1
+            ;;
+        --norestart)
+            docrun=0
+            ;;
+        -h | --help)
             usage_exit
             ;;
-    -m )
-	    [ -z "$2" ] && usage_exit
-	    options="$options $1"
-	    shift
-	    MON_ADDR=$1
-	    ;;
-    --btrfs | --fsmount)
-	    dofsmount=1
-	    ;;
-    --nobtrfs | --nofsmount)
-	    dofsmount=0
-	    ;;
-    --btrfsumount | --fsumount)
-	    dofsumount=1
-	    ;;
-    --conf | -c)
-	    [ -z "$2" ] && usage_exit
-	    options="$options $1"
-	    shift
-        use_default_conf=0
-	    conf=$1
-	    ;;
-    --cluster )
-	    [ -z "$2" ] && usage_exit
-	    options="$options $1"
-	    shift
-	    cluster=$1
-	    ;;
-    --hostname )
-	    [ -z "$2" ] && usage_exit
-	    options="$options $1"
-	    shift
-	    hostname=$1
+        -m )
+            [ -z "$2" ] && usage_exit
+            options="$options $1"
+            shift
+            MON_ADDR=$1
             ;;
-    -- )
+        --btrfs | --fsmount)
+            dofsmount=1
+            ;;
+        --nobtrfs | --nofsmount)
+            dofsmount=0
+            ;;
+        --btrfsumount | --fsumount)
+            dofsumount=1
+            ;;
+        --conf | -c)
+            [ -z "$2" ] && usage_exit
+            options="$options $1"
+            shift
+            use_default_conf=0
+            conf=$1
+            ;;
+        --cluster )
+            [ -z "$2" ] && usage_exit
+            options="$options $1"
+            shift
+            cluster=$1
+            ;;
+        --hostname )
+            [ -z "$2" ] && usage_exit
+            options="$options $1"
+            shift
+            hostname=$1
+            ;;
+        -- )
             shift
             break
             ;;
-    *)
-	    echo unrecognized option \'$1\'
-	    usage_exit
-	    ;;
-esac
-options="$options $1"
-shift
+        *)
+            echo "unrecognized option" \'$1\'
+            usage_exit
+            ;;
+    esac
+    options="$options $1"
+    shift
 done
 
 # if `--cluster` was not passed in, fallback to looking at the config name
@@ -888,7 +884,6 @@ else
         conf="/etc/ceph/$cluster.conf"
     fi
 fi
-
 
 verify_conf
 
@@ -907,9 +902,7 @@ if [ "$command" = "stop" -o "$command" = "onestop" ]; then
     what="$new_order"
 fi
 
-
 . /etc/platform/platform.conf
-
 
 # When this is a AIO-DX pmon is monitoring ceph-mds process.
 # If ceph-mon is not running, ceph-mds will hang when starting.
@@ -966,6 +959,11 @@ if [ "$system_type" == "Standard" ]; then
     fi
 fi
 
+scaling_governor="/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+if [ ! -e $scaling_governor ] || [ "$(cat $scaling_governor)" != "performance" ]; then
+    WAIT_FOR_CMD=$(( $WAIT_FOR_CMD*6 ))
+fi
+
 for name in $what; do
     type=`echo $name | cut -c 1-3`   # e.g. 'mon', if $item is 'mon1'
     id=`echo $name | cut -c 4- | sed 's/^\\.//'`
@@ -977,7 +975,7 @@ for name in $what; do
     binary="$BINDIR/ceph-$type"
     cmd="$binary -i $id"
     if [ $ASSUME_DEV -eq 1 ]; then
-      cmd="PATH=$PWD:$PATH $cmd"
+        cmd="PATH=$PWD:$PATH $cmd"
     fi
 
     get_conf run_dir "/var/run/ceph" "run dir"
@@ -991,13 +989,13 @@ for name in $what; do
     fi
 
     if [ "$command" = "start" -o "$command" = "onestart" ]; then
-	if [ -n "$pid_file" ]; then
-	    do_cmd "mkdir -p "`dirname $pid_file`
-	    cmd="$cmd --pid-file $pid_file"
-	fi
+        if [ -n "$pid_file" ]; then
+            do_cmd "mkdir -p "`dirname $pid_file`
+            cmd="$cmd --pid-file $pid_file"
+        fi
 
-	get_conf log_dir "" "log dir"
-	[ -n "$log_dir" ] && do_cmd "mkdir -p $log_dir"
+        get_conf log_dir "" "log dir"
+        [ -n "$log_dir" ] && do_cmd "mkdir -p $log_dir"
 
         get_conf auto_start "" "auto start"
         if [ "$auto_start" = "no" ] || [ "$auto_start" = "false" ] || [ "$auto_start" = "0" ]; then
@@ -1007,16 +1005,16 @@ for name in $what; do
             fi
         fi
 
-	if daemon_is_running $name ceph-$type $id $pid_file; then
-	    echo "Starting Ceph $name on $host...already running"
-	    continue
-	fi
+        if daemon_is_running $name ceph-$type $id $pid_file; then
+            echo "Starting Ceph $name on $host...already running"
+            continue
+        fi
 
-	get_conf copy_executable_to "" "copy executable to"
-	if [ -n "$copy_executable_to" ]; then
-	    scp $binary "$host:$copy_executable_to"
-	    binary="$copy_executable_to"
-	fi
+        get_conf copy_executable_to "" "copy executable to"
+        if [ -n "$copy_executable_to" ]; then
+            scp $binary "$host:$copy_executable_to"
+            binary="$copy_executable_to"
+        fi
     fi
 
     # conf file
@@ -1029,16 +1027,16 @@ for name in $what; do
     fi
 
     if echo $name | grep -q ^osd; then
-	get_conf osd_data "/var/lib/ceph/osd/$cluster-$id" "osd data"
-	get_conf fs_path "$osd_data" "fs path"  # mount point defaults so osd data
+        get_conf osd_data "/var/lib/ceph/osd/$cluster-$id" "osd data"
+        get_conf fs_path "$osd_data" "fs path"  # mount point defaults so osd data
         get_conf fs_devs "" "devs"
-	if [ -z "$fs_devs" ]; then
-	    # try to fallback to old keys
-	    get_conf tmp_btrfs_devs "" "btrfs devs"
-	    if [ -n "$tmp_btrfs_devs" ]; then
-		fs_devs="$tmp_btrfs_devs"
-	    fi
-	fi
+        if [ -z "$fs_devs" ]; then
+            # try to fallback to old keys
+            get_conf tmp_btrfs_devs "" "btrfs devs"
+            if [ -n "$tmp_btrfs_devs" ]; then
+                fs_devs="$tmp_btrfs_devs"
+            fi
+        fi
         first_dev=`echo $fs_devs | cut '-d ' -f 1`
     fi
 
@@ -1046,391 +1044,420 @@ for name in $what; do
     get_conf lockfile "/var/lock/subsys/ceph" "lock file"
     lockdir=`dirname $lockfile`
     if [ ! -d "$lockdir" ]; then
-	lockfile=""
+        lockfile=""
     fi
 
     get_conf asok "$run_dir/$cluster-$type.$id.asok" "admin socket"
 
     case "$command" in
-	start|onestart)
-	    # Increase max_open_files, if the configuration calls for it.
-	    get_conf max_open_files "32768" "max open files"
-	    # Remove stale admin socket
-	    [ -n "$asok" ] && rm -f $asok
+        start|onestart)
+            # Increase max_open_files, if the configuration calls for it.
+            get_conf max_open_files "32768" "max open files"
+            # Remove stale admin socket
+            [ -n "$asok" ] && rm -f $asok
 
-	    # Wait for pending systemd core dumps
-	    deadline=$(( $(date '+%s') + 300 ))
-	    while [[ $(date '+%s') -lt "${deadline}" ]]; do
-	        systemd_coredump_pid=$(pgrep -f "systemd-coredump.*ceph-${type}")
-	        [[ -z "${systemd_coredump_pid}" ]] && break
-	        log $name "INFO" "systemd-coredump ceph-${type} in progress: pid ${systemd_coredump_pid}"
-	        sleep 1
-	    done
+            # Wait for pending systemd core dumps
+            deadline=$(( $(date '+%s') + 300 ))
+            while [[ $(date '+%s') -lt "${deadline}" ]]; do
+                systemd_coredump_pid=$(pgrep -f "systemd-coredump.*ceph-${type}")
+                [[ -z "${systemd_coredump_pid}" ]] && break
+                log $name "INFO" "systemd-coredump ceph-${type} in progress: pid ${systemd_coredump_pid}"
+                sleep 1
+            done
 
-	    # build final command
-	    wrap=""
-	    runmode=""
-	    runarg=""
+            # build final command
+            wrap=""
+            runmode=""
+            runarg=""
 
-	    [ -z "$docrun" ] && get_conf_bool docrun "0" "restart on core dump"
-	    [ "$docrun" -eq 1 ] && wrap="$BINDIR/ceph-run"
+            [ -z "$docrun" ] && get_conf_bool docrun "0" "restart on core dump"
+            [ "$docrun" -eq 1 ] && wrap="$BINDIR/ceph-run"
 
-	    [ -z "$dovalgrind" ] && get_conf_bool valgrind "" "valgrind"
-	    [ -n "$valgrind" ] && wrap="$wrap valgrind $valgrind"
+            [ -z "$dovalgrind" ] && get_conf_bool valgrind "" "valgrind"
+            [ -n "$valgrind" ] && wrap="$wrap valgrind $valgrind"
 
-	    [ -n "$wrap" ] && runmode="-f &" && runarg="-f"
-	    [ -n "$max_open_files" ] && files="ulimit -n $max_open_files;"
+            [ -n "$wrap" ] && runmode="-f &" && runarg="-f"
+            [ -n "$max_open_files" ] && files="ulimit -n $max_open_files;"
 
-	    [ -n "$TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES" ] && tcmalloc="TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=$TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES"
+            [ -n "$TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES" ] && tcmalloc="TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES=$TCMALLOC_MAX_TOTAL_THREAD_CACHE_BYTES"
 
-	    # StarlingX: start processes in scope under slice system-ceph.slice
-	    # so that ceph processes do not start under this script's callers cgroup
-	    if [ "$type" = "osd" ]; then
-	        cmd="systemd-run --scope --unit=ceph-${type}-${id} --slice=system-ceph $cmd"
-	    elif [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ] && [ "$type" == "mon" ] && [ "$id" == ${HOSTNAME} ]; then
-	        cmd="systemd-run --scope --unit=ceph-${type}-${id} --slice=system-ceph $cmd"
-	    else
-	        cmd="systemd-run --scope --unit=ceph-${type} --slice=system-ceph $cmd"
-	    fi
+            # StarlingX: start processes in scope under slice system-ceph.slice
+            # so that ceph processes do not start under this script's callers cgroup
+            unit_name="ceph-${type}"
+            if [ "$type" == "osd" ] || ([ "$type" == "mon" ] && [ "$id" == ${HOSTNAME} ] && \
+                [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]) ; then
+                unit_name="ceph-${type}-${id}"
+            fi
+            cmd="systemd-run --scope --unit=${unit_name} --slice=system-ceph $cmd"
 
-	    # StarlingX: not running as ceph user/group
-	    cmd="$files $tcmalloc $wrap $cmd --cluster $cluster $runmode"
+            # ensures that the scope does not exist
+            systemctl stop ${unit_name}.scope &>/dev/null
+            systemctl kill ${unit_name}.scope &>/dev/null
+            systemctl reset-failed ${unit_name}.scope &>/dev/null
 
-	    if [ $dofsmount -eq 1 ] && [ -n "$fs_devs" ]; then
-		get_conf pre_mount "true" "pre mount command"
-		get_conf fs_type "" "osd mkfs type"
+            # StarlingX: not running as ceph user/group
+            cmd="$files $tcmalloc $wrap $cmd --cluster $cluster $runmode"
 
-		if [ -z "$fs_type" ]; then
-		    # try to fallback to old keys
-		    get_conf tmp_devs "" "btrfs devs"
-		    if [ -n "$tmp_devs" ]; then
-			fs_type="btrfs"
-		    else
-		        echo No filesystem type defined!
-		        exit 0
+            if [ $dofsmount -eq 1 ] && [ -n "$fs_devs" ]; then
+                get_conf pre_mount "true" "pre mount command"
+                get_conf fs_type "" "osd mkfs type"
+
+                if [ -z "$fs_type" ]; then
+                    # try to fallback to old keys
+                    get_conf tmp_devs "" "btrfs devs"
+                    if [ -n "$tmp_devs" ]; then
+                        fs_type="btrfs"
+                    else
+                        echo "No filesystem type defined!"
+                        exit 0
                     fi
-		fi
+                fi
 
-		get_conf fs_opt "" "osd mount options $fs_type"
-		if [ -z "$fs_opt" ]; then
-		    if [ "$fs_type" = "btrfs" ]; then
-		        #try to fallback to old keys
-			get_conf fs_opt "" "btrfs options"
-		    fi
+                get_conf fs_opt "" "osd mount options $fs_type"
+                if [ -z "$fs_opt" ]; then
+                    if [ "$fs_type" = "btrfs" ]; then
+                        #try to fallback to old keys
+                        get_conf fs_opt "" "btrfs options"
+                    fi
 
-		    if [ -z "$fs_opt" ]; then
-			if [ "$fs_type" = "xfs" ]; then
-			    fs_opt="rw,noatime,inode64"
-			else
-		            #fallback to use at least noatime
-		            fs_opt="rw,noatime"
-			fi
-		    fi
-		fi
+                    if [ -z "$fs_opt" ]; then
+                        if [ "$fs_type" = "xfs" ]; then
+                            fs_opt="rw,noatime,inode64"
+                        else
+                            #fallback to use at least noatime
+                            fs_opt="rw,noatime"
+                        fi
+                    fi
+                fi
 
-		[ -n "$fs_opt" ] && fs_opt="-o $fs_opt"
-		[ -n "$pre_mount" ] && do_cmd "$pre_mount"
+                [ -n "$fs_opt" ] && fs_opt="-o $fs_opt"
+                [ -n "$pre_mount" ] && do_cmd "$pre_mount"
 
-		do_root_cmd_okfail "mkdir -p $fs_path"
-		if [ "$fs_type" = "btrfs" ]; then
-		    echo Mounting Btrfs on $host:$fs_path
-		    do_root_cmd_okfail "modprobe btrfs ; btrfs device scan || btrfsctl -a ; egrep -q '^[^ ]+ $fs_path ' /proc/mounts && umount $fs_path ; mount -t btrfs $fs_opt $first_dev $fs_path"
-		else
-		    echo Mounting $fs_type on $host:$fs_path
-		    do_root_cmd_okfail "modprobe $fs_type ; egrep -q '^[^ ]+ $fs_path ' /proc/mounts && umount $fs_path ; MOUNT_RESULT=\$(mount -t $fs_type $fs_opt $first_dev $fs_path 2>&1); [ \$? == 0 ] || (echo \$MOUNT_RESULT | grep 'already mounted on ${fs_path}')"
-		fi
-		if [ "$ERR" != "0" ]; then
-		    EXIT_STATUS=$ERR
-		    continue
-		fi
-	    fi
+                do_root_cmd_okfail "mkdir -p $fs_path"
+                if [ "$fs_type" = "btrfs" ]; then
+                    echo "Mounting Btrfs on $host:$fs_path"
+                    do_root_cmd_okfail "modprobe btrfs ; btrfs device scan || btrfsctl -a ; egrep -q '^[^ ]+ $fs_path ' /proc/mounts && umount $fs_path ; mount -t btrfs $fs_opt $first_dev $fs_path"
+                else
+                    echo "Mounting $fs_type on $host:$fs_path"
+                    do_root_cmd_okfail "modprobe $fs_type ; egrep -q '^[^ ]+ $fs_path ' /proc/mounts && umount $fs_path ; MOUNT_RESULT=\$(mount -t $fs_type $fs_opt $first_dev $fs_path 2>&1); [ \$? == 0 ] || (echo \$MOUNT_RESULT | grep 'already mounted on ${fs_path}')"
+                fi
+                if [ "$ERR" != "0" ]; then
+                    EXIT_STATUS=$ERR
+                    continue
+                fi
+            fi
 
-	    echo Starting Ceph $name on $host...
+            echo "Starting Ceph $name on $host..."
 
-	    if [ $type = "mds" ]; then
-	        echo "Waiting for ceph-mon to respond before starting ceph-mds..."
-		execute_ceph_cmd CMD_OUTPUT $name "ceph fsid"
-	        if [ $? -ne 0 ]; then
-	            log $name "INFO" "Cannot start $name process. Ceph-mon is not working..."
-	            echo "Cannot start ceph-mds. Ceph-mon is not working..."
-	            EXIT_STATUS=$errcode
-		    continue
-	        fi
-	    fi
+            if [ $type = "mds" ]; then
+                echo "Waiting for ceph-mon to respond before starting ceph-mds..."
+                execute_ceph_cmd CMD_OUTPUT $name "ceph fsid"
+                if [ $? -ne 0 ]; then
+                    log $name "INFO" "Cannot start $name process. Ceph-mon is not working..."
+                    echo "Cannot start ceph-mds. Ceph-mon is not working..."
+                    EXIT_STATUS=$errcode
+                    continue
+                fi
+            fi
 
-	    save_proc_startup_ok $name
+            save_proc_startup_ok $name
 
-	    if [ ! -d $run_dir ]; then
-		# assume /var/run exists
-		install -d -m0770 -o ceph -g ceph /var/run/ceph
-	    fi
-	    get_conf pre_start_eval "" "pre start eval"
-	    [ -n "$pre_start_eval" ] && $pre_start_eval
-	    get_conf pre_start "" "pre start command"
-	    get_conf post_start "" "post start command"
-	    [ -n "$pre_start" ] && do_cmd "$pre_start"
-	    do_cmd_okfail "$cmd" $runarg
-	    if [ "$ERR" != "0" ]; then
-		EXIT_STATUS=$ERR
-		continue
-	    fi
+            if [ ! -d $run_dir ]; then
+                # assume /var/run exists
+                install -d -m0770 -o ceph -g ceph /var/run/ceph
+            fi
+            get_conf pre_start_eval "" "pre start eval"
+            [ -n "$pre_start_eval" ] && $pre_start_eval
+            get_conf pre_start "" "pre start command"
+            get_conf post_start "" "post start command"
+            [ -n "$pre_start" ] && do_cmd "$pre_start"
+            do_cmd_okfail "$cmd" $runarg
+            if [ "$ERR" != "0" ]; then
+                EXIT_STATUS=$ERR
+                continue
+            fi
 
-	    . /etc/platform/platform.conf
-	    if [ "${nodetype}" = "controller" ]; then
-		# StarlingX: Hook the transient services launched by systemd-run
-		# to allow for proper cleanup and orderly shutdown
+            . /etc/platform/platform.conf
+            if [ "${nodetype}" = "controller" ]; then
+                # StarlingX: Hook the transient services launched by systemd-run
+                # to allow for proper cleanup and orderly shutdown
 
-		# Set nullglob so wildcards will return empty string if no match
-		shopt -s nullglob
+                # Set nullglob so wildcards will return empty string if no match
+                shopt -s nullglob
 
-		OSD_SERVICES=$(for svc in /run/systemd/system/ceph-osd*.service; do basename $svc; done | xargs echo)
-	    for d in /run/systemd/transient/ceph-osd*.scope; do
-	        do_cmd "mkdir -p $d.d"
-	        cat <<EOF > $d.d/starlingx-overrides.conf
+                OSD_SERVICES=$(for svc in /run/systemd/system/ceph-osd*.service; do basename $svc; done | xargs echo)
+                for d in /run/systemd/transient/ceph-osd*.scope; do
+                    do_cmd "mkdir -p $d.d"
+                    cat <<EOF > $d.d/starlingx-overrides.conf
 [Unit]
 Before=containerd.service
 After=sm-shutdown.service
 
 EOF
-	    done
+                done
 
-	    for d in /run/systemd/transient/ceph-mds*.scope; do
-	        do_cmd "mkdir -p $d.d"
-	        cat <<EOF > $d.d/starlingx-overrides.conf
+                for d in /run/systemd/transient/ceph-mds*.scope; do
+                    do_cmd "mkdir -p $d.d"
+                    cat <<EOF > $d.d/starlingx-overrides.conf
 [Unit]
 Before=containerd.service
 After=sm-shutdown.service
 
 EOF
-	    done
+                done
 
-	    for d in /run/systemd/transient/ceph-mon*.scope; do
-	        do_cmd "mkdir -p $d.d"
-	        cat <<EOF > $d.d/starlingx-overrides.conf
+                for d in /run/systemd/transient/ceph-mon*.scope; do
+                    do_cmd "mkdir -p $d.d"
+                    cat <<EOF > $d.d/starlingx-overrides.conf
 [Unit]
 Before=containerd.service
 After=sm-shutdown.service ${OSD_SERVICES}
 
 EOF
-	    done
+                done
 
-		shopt -u nullglob
-		systemctl daemon-reload
+                shopt -u nullglob
+                systemctl daemon-reload
 
-	    fi
-
-	    [ -n "$post_start" ] && do_cmd "$post_start"
-	    [ -n "$lockfile" ] && [ "$?" -eq 0 ] && touch $lockfile
-	    ;;
-
-	stop|onestop)
-	    get_conf pre_stop "" "pre stop command"
-	    get_conf post_stop "" "post stop command"
-	    [ -n "$pre_stop" ] && do_cmd "$pre_stop"
-
-	    log $name "INFO" "Stopping process"
-
-	    if [ $(load_proc_state $name) != "$ST_HANGED" ]; then
-		stop_daemon $name ceph-$type $pid_file
-	    else
-		# first try to gracefully close process, this should be fast if
-		# its threads still respond to the TERM signal
-		log $name "DEBUG" ">>> Sending term signal"
-		stop_daemon $name ceph-$type $pid_file -SIGTERM "" 5
-		log $name "DEBUG" ">>> Sending kill signal"
-		# then just kill it
-		stop_daemon $name ceph-$type $pid_file -SIGKILL
-	    fi
-
-	    [ -n "$pidfile" ] && rm -f $pidfile
-	    [ -n "$asok" ] && rm -f $asok
-	    [ -n "$post_stop" ] && do_cmd "$post_stop"
-	    [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
-	    # flush journal to data disk in background
-	    if [ "${type}" = "osd" ];then
-                get_ceph_status
-                if [ $? == 0 ]; then
-                    log "${name}" "INFO" "Flushing journal"
-                    $(/usr/bin/ceph-osd -i $id --flush-journal) &
-                else
-                    log "${name}" "INFO" "Skipping journal flush"
-                fi
-	    fi
-	    log $name "INFO" "Process stopped, setting state to $ST_STOPPED"
-	    save_proc_state $name $ST_STOPPED
-	    if [ $dofsumount -eq 1 ] && [ -n "$fs_devs" ]; then
-		echo Unmounting OSD volume on $host:$fs_path
-		do_root_cmd "umount $fs_path || true"
-	    fi
-	    ;;
-
-    status)
-        if daemon_is_running $name ceph-$type $id $pid_file; then
-
-            # log ceph osd state
-            if [ "$type" = "osd" ];then
-                CEPH_DAEMON_STATUS=""
-                CEPH_FAILURE_OLD=$CEPH_FAILURE
-                execute_ceph_cmd CEPH_DAEMON_STATUS $name "ceph daemon $name status"
-                if [ $? -eq 0 ]; then
-                    state=$(echo "$CEPH_DAEMON_STATUS" | awk -F ':' '/state/{gsub(/[,[:space:]]/, "", $2);print $2}')
-                    if [ "$state" != "active" ]; then
-                        log $name "INFO" "$name has the following state: $state"
-                    fi
-                else
-                    # The ceph command did not respond
-                    DAEMON_OSD_NOT_RESPONDING="true"
-                    CEPH_FAILURE=$CEPH_FAILURE_OLD
-                    log $name "INFO" "$name: daemon is not responding"
-                fi
             fi
 
-            # check if daemon is hung
-            is_process_hung $name $type
-            if [ $? -eq 0 ]; then
-                echo "$name: hung."
-                # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
-                # exit codes from 150 to 199 are application specific, therefore we define one here
-                EXIT_STATUS=150
-            else
-                # Wait a period of time prior to OSD start before restarting based on slow/blocked requests
-                if [ "$type" = "osd" ] && [ $BLOCKED_OPS_DETECTION_ENABLED = "true" ]; then
-                    up_time=$(get_proc_run_time $name)
-                    if [ $up_time -gt $BLOCKED_OPS_START_DETECTION ]; then
-                        osd_has_blocked_ops $name
-                        if [ $? -eq 0 ]; then
-                            echo "$name: blocked ops."
-                            # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
-                            # exit codes from 150 to 199 are application specific, therefore we define one here
-                            EXIT_STATUS=151
-                        else
-                            echo "$name: running."
-                        fi
-                    else
-                        echo "$name: running."
-                    fi
-                else
-                    echo "$name: running."
-                fi
+            [ -n "$post_start" ] && do_cmd "$post_start"
+            [ -n "$lockfile" ] && [ "$?" -eq 0 ] && touch $lockfile
+            ;;
 
-                # Wait a period of time prior to OSD start before restarting based on stuck peering
-                if [ "$type" = "osd" ] && [ $STUCK_PEERING_DETECTION_ENABLED = "true" ]; then
-                    up_time=$(get_proc_run_time $name)
-                    if [ $up_time -gt $STUCK_PEERING_START_DETECTION ]; then
-                        has_stuck_peering=$(osd_has_stuck_peering $name $id)
-                        if [ "$has_stuck_peering" = "true" ]; then
-                            echo "$name: stuck peering."
-                            # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
-                            # exit codes from 150 to 199 are application specific, therefore we define one here
-                            EXIT_STATUS=152
-                        else
-                            echo "$name: running."
-                        fi
-                    else
-                        echo "$name: running."
-                    fi
-                else
-                    echo "$name: running."
-                fi
-            fi
-
-            # Check mds daemon
-            if [ "$type" = "mds" ]; then
-                log $name "DEBUG" "checking $name for blocked clients"
-                mds_has_blocked_clients $name
-                if [ $? -eq 0 ]; then
-                    list_end=$(( ${#MDS_EVICTION_CMD_LIST[@]} - 1 ))
-                    for i in $(seq 0 $list_end); do
-                        log $name "INFO" "Evicting client $(echo ${MDS_EVICTION_CMD_LIST[$i]} | awk '{ print $NF }')"
-                        CEPH_EVICT_CLIENT=""
-                        execute_ceph_cmd CEPH_EVICT_CLIENT $name "ceph daemon ${MDS_EVICTION_CMD_LIST[$i]} && echo success"
-                        rc=$?
-                        if [ ${rc} -ne 0 ]; then
-                            log $name "ERROR" "MDS Client eviction failed: ceph daemon ${MDS_EVICTION_CMD_LIST[$i]}: ${rc} - '${CEPH_EVICT_CLIENT}'"
-                        fi
-                    done
-
-                    # Clear the Ceph blacklist
-	            log $name "INFO" "Clear ceph blacklist"
-                    CEPH_BLKLIST_CLEAR=""
-                    execute_ceph_cmd CEPH_BLKLIST_CLEAR $name "ceph osd blacklist clear"
-                    rc=$?
-                    if [ ${rc} -ne 0 ]; then
-                        log $name "ERROR" "OSD blacklist clear failed: ${rc} - '${CEPH_BLKLIST_CLEAR}'"
-                    fi
-                fi
-            fi
-        elif [ -e "$pid_file" ]; then
-            # daemon is dead, but pid file still exists
-            echo "$name: dead."
-            EXIT_STATUS=1
-        else
-            # daemon is dead, and pid file is gone
-            echo "$name: not running."
-            EXIT_STATUS=3
-        fi
-        ;;
-
-	ssh)
-	    $ssh
-	    ;;
-
-	forcestop)
-	    get_conf pre_forcestop "" "pre forcestop command"
-	    get_conf post_forcestop "" "post forcestop command"
-	    [ -n "$pre_forcestop" ] && do_cmd "$pre_forcestop"
-
-	    # first try to gracefully close process, this should be fast if
-	    # its threads still respond to the TERM signal
-	    log $name "DEBUG" ">>> Sending term signal"
-	    stop_daemon $name ceph-$type $pid_file -SIGTERM "" 5
-	    # then just kill it
-	    log $name "DEBUG" ">>> Sending kill signal"
-	    stop_daemon $name ceph-$type $pid_file -SIGKILL
-
-	    [ -n "$pidfile" ] && rm -f $pidfile
-	    [ -n "$asok" ] && rm -f $asok
-	    [ -n "$post_forcestop" ] && do_cmd "$post_forcestop"
-	    [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
-	    ;;
-
-	killall)
-	    echo "killall ceph-$type on $host"
-	    do_cmd "pkill ^ceph-$type || true"
-	    [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
-	    ;;
-
-	force-reload | reload)
-	    signal_daemon $name ceph-$type $pid_file -1 "Reloading"
-	    ;;
-
-	restart|onerestart)
-	    $0 $options stop $name
-	    $0 $options start $name
-	    ;;
-
-        condrestart)
+        stop|onestop)
             if daemon_is_running $name ceph-$type $id $pid_file; then
-                $0 $options stop $name
-                $0 $options start $name
+                get_conf pre_stop "" "pre stop command"
+                get_conf post_stop "" "post stop command"
+                [ -n "$pre_stop" ] && do_cmd "$pre_stop"
+
+                log $name "INFO" "Stopping process"
+
+                if [ $(load_proc_state $name) != "$ST_HANGED" ]; then
+                    stop_daemon $name ceph-$type $pid_file
+                else
+                    # first try to gracefully close process, this should be fast if
+                    # its threads still respond to the TERM signal
+                    log $name "DEBUG" ">>> Sending term signal"
+                    stop_daemon $name ceph-$type $pid_file -SIGTERM "" 5
+                    log $name "DEBUG" ">>> Sending kill signal"
+                    # then just kill it
+                    stop_daemon $name ceph-$type $pid_file -SIGKILL
+                fi
+
+                [ -n "$pidfile" ] && rm -f $pidfile
+                [ -n "$asok" ] && rm -f $asok
+                [ -n "$post_stop" ] && do_cmd "$post_stop"
+                [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
+                # flush journal to data disk in background
+                if [ "${type}" = "osd" ]; then
+                    get_ceph_status
+                    if [ $? == 0 ]; then
+                        log "${name}" "INFO" "Flushing journal"
+                        $(/usr/bin/ceph-osd -i $id --flush-journal) &
+                    else
+                        log "${name}" "INFO" "Skipping journal flush"
+                    fi
+                fi
+                log $name "INFO" "Process stopped, setting state to $ST_STOPPED"
+                save_proc_state $name $ST_STOPPED
+                if [ $dofsumount -eq 1 ] && [ -n "$fs_devs" ]; then
+                    echo "Unmounting OSD volume on $host:$fs_path"
+                    do_root_cmd "umount $fs_path || true"
+                fi
             else
                 echo "$name: not running."
             fi
             ;;
 
-	cleanlogs)
-	    echo removing logs
-	    [ -n "$log_dir" ] && do_cmd "rm -f $log_dir/$type.$id.*"
-	    ;;
+        status)
+            if daemon_is_running $name ceph-$type $id $pid_file; then
+                # log ceph osd state
+                if [ "$type" = "osd" ]; then
+                    CEPH_DAEMON_STATUS=""
+                    CEPH_FAILURE_OLD=$CEPH_FAILURE
+                    execute_ceph_cmd CEPH_DAEMON_STATUS $name "ceph daemon $name status"
+                    rc=$?
+                    if [ ${rc} -eq 0 ]; then
+                        state=$(echo "$CEPH_DAEMON_STATUS" | awk -F ':' '/state/{gsub(/[,[:space:]]/, "", $2);print $2}')
+                        if [ "$state" != "active" ]; then
+                            log $name "INFO" "$name has the following state: $state"
+                        fi
+                    elif [ ${rc} -eq 124 ]; then
+                        # The ceph command did not respond
+                        CEPH_FAILURE=$CEPH_FAILURE_OLD
+                        DAEMON_OSD_NOT_RESPONDING="true"
+                        log $name "INFO" "$name: daemon is not responding"
+                    else
+                        # The ceph command failed
+                        log $name "INFO" "$name: daemon failed"
+                    fi
+                fi
 
-	cleanalllogs)
-	    echo removing all logs
-	    [ -n "$log_dir" ] && do_cmd "rm -f $log_dir/* || true"
-	    ;;
+                # check if daemon is hung
+                is_process_hung $name $type
+                if [ $? -eq 0 ]; then
+                    echo "$name: hung."
+                    # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
+                    # exit codes from 150 to 199 are application specific, therefore we define one here
+                    EXIT_STATUS=150
+                else
+                    # Wait a period of time prior to OSD start before restarting based on slow/blocked requests
+                    if [ "$type" = "osd" ] && [ $BLOCKED_OPS_DETECTION_ENABLED = "true" ]; then
+                        up_time=$(get_proc_run_time $name)
+                        if [ $up_time -gt $BLOCKED_OPS_START_DETECTION ]; then
+                            osd_has_blocked_ops $name
+                            if [ $? -eq 0 ]; then
+                                echo "$name: blocked ops."
+                                # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
+                                # exit codes from 150 to 199 are application specific, therefore we define one here
+                                EXIT_STATUS=151
+                            else
+                                echo "$name: running."
+                            fi
+                        else
+                            echo "$name: running."
+                        fi
+                    else
+                        echo "$name: running."
+                    fi
 
-	*)
-	    usage_exit
-	    ;;
+                    # Wait a period of time prior to OSD start before restarting based on stuck peering
+                    if [ "$type" = "osd" ] && [ $STUCK_PEERING_DETECTION_ENABLED = "true" ]; then
+                        up_time=$(get_proc_run_time $name)
+                        if [ $up_time -gt $STUCK_PEERING_START_DETECTION ]; then
+                            has_stuck_peering=$(osd_has_stuck_peering $name $id)
+                            if [ "$has_stuck_peering" = "true" ]; then
+                                echo "$name: stuck peering."
+                                # based on http://refspecs.linuxbase.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
+                                # exit codes from 150 to 199 are application specific, therefore we define one here
+                                EXIT_STATUS=152
+                            else
+                                echo "$name: running."
+                            fi
+                        else
+                            echo "$name: running."
+                        fi
+                    else
+                        echo "$name: running."
+                    fi
+                fi
+
+                # Check mds daemon
+                if [ "$type" = "mds" ]; then
+                    log $name "DEBUG" "checking $name for blocked clients"
+                    mds_has_blocked_clients $name
+                    if [ $? -eq 0 ]; then
+                        list_end=$(( ${#MDS_EVICTION_CMD_LIST[@]} - 1 ))
+                        for i in $(seq 0 $list_end); do
+                            log $name "INFO" "Evicting client $(echo ${MDS_EVICTION_CMD_LIST[$i]} | awk '{ print $NF }')"
+                            CEPH_EVICT_CLIENT=""
+                            execute_ceph_cmd CEPH_EVICT_CLIENT $name "ceph daemon ${MDS_EVICTION_CMD_LIST[$i]} && echo success"
+                            rc=$?
+                            if [ ${rc} -ne 0 ]; then
+                                log $name "ERROR" "MDS Client eviction failed: ceph daemon ${MDS_EVICTION_CMD_LIST[$i]}: ${rc} - '${CEPH_EVICT_CLIENT}'"
+                            fi
+                        done
+
+                        # Clear the Ceph blacklist
+                        log $name "INFO" "Clear ceph blacklist"
+                        CEPH_BLKLIST_CLEAR=""
+                        execute_ceph_cmd CEPH_BLKLIST_CLEAR $name "ceph osd blacklist clear"
+                        rc=$?
+                        if [ ${rc} -ne 0 ]; then
+                            log $name "ERROR" "OSD blacklist clear failed: ${rc} - '${CEPH_BLKLIST_CLEAR}'"
+                        fi
+                    fi
+                fi
+            elif [ -e "$pid_file" ]; then
+                # daemon is dead, but pid file still exists
+                echo "$name: dead."
+                EXIT_STATUS=1
+            else
+                # daemon is dead, and pid file is gone
+                echo "$name: not running."
+                EXIT_STATUS=3
+            fi
+            ;;
+
+        ssh)
+            $ssh
+            ;;
+
+        forcestop)
+            if daemon_is_running $name ceph-$type $id $pid_file; then
+                get_conf pre_forcestop "" "pre forcestop command"
+                get_conf post_forcestop "" "post forcestop command"
+                [ -n "$pre_forcestop" ] && do_cmd "$pre_forcestop"
+
+                # first try to gracefully close process, this should be fast if
+                # its threads still respond to the TERM signal
+                log $name "DEBUG" ">>> Sending term signal"
+                stop_daemon $name ceph-$type $pid_file -SIGTERM "" 5
+                # then just kill it
+                log $name "DEBUG" ">>> Sending kill signal"
+                stop_daemon $name ceph-$type $pid_file -SIGKILL
+
+                [ -n "$pidfile" ] && rm -f $pidfile
+                [ -n "$asok" ] && rm -f $asok
+                [ -n "$post_forcestop" ] && do_cmd "$post_forcestop"
+                [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
+            else
+                echo "$name: not running."
+            fi
+            ;;
+
+        killall)
+            echo "killall ceph-$type on $host"
+            do_cmd "pkill ^ceph-$type || true"
+            [ -n "$lockfile" ] && [ "$?" -eq 0 ] && rm -f $lockfile
+            ;;
+
+        force-reload | reload)
+            if daemon_is_running $name ceph-$type $id $pid_file; then
+                signal_daemon $name ceph-$type $pid_file -1 "Reloading"
+            else
+                echo "$name: not running."
+            fi
+            ;;
+
+        restart|onerestart)
+            if daemon_is_running $name ceph-$type $id $pid_file; then
+                $0 $options stop $name
+            fi
+            $0 $options start $name
+            ;;
+
+        condrestart)
+            if daemon_is_running $name ceph-$type $id $pid_file; then
+                $0 $options stop $name
+            fi
+            $0 $options start $name
+            ;;
+
+        cleanlogs)
+            echo "removing logs"
+            [ -n "$log_dir" ] && do_cmd "rm -f $log_dir/$type.$id.*"
+            ;;
+
+        cleanalllogs)
+            echo "removing all logs"
+            [ -n "$log_dir" ] && do_cmd "rm -f $log_dir/* || true"
+            ;;
+
+        debug-verbose)
+            echo "Enabling verbose debug level on $name (debug_$type=20/20)"
+            execute_ceph_cmd output $name "ceph daemon $name config set debug_$type 20/20"
+            EXIT_STATUS=$?
+            ;;
+        debug-normal)
+            echo "Enabling normal debug level on $name (debug_$type=1/5)"
+            execute_ceph_cmd output $name "ceph daemon $name config set debug_$type 1/5"
+            EXIT_STATUS=$?
+            ;;
+        *)
+            usage_exit
+            ;;
     esac
 done
 

@@ -23,4 +23,4 @@ timeout    = 120          ; for active mode, messaging timeout period in seconds
 ; Status Monitoring Options
 start_arg   = start mds   ; start argument for the script
 status_arg  = status mds  ; status argument for the script
-status_failure_text = /tmp/ceph_status_failure.txt   ; text to be added to alarms or logs, this is optional
+status_failure_text = /tmp/ceph_mds_status_failure.txt   ; text to be added to alarms or logs, this is optional

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019-2025 Wind River Systems, Inc.
+# Copyright (c) 2019-2026 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -42,6 +42,8 @@ CEPH_FILE="$VOLATILE_PATH/.ceph_started"
 CEPH_GET_MON_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_mon_status"
 CEPH_GET_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_osd_status"
 CEPH_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_status_failure.txt"
+CEPH_MDS_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_mds_status_failure.txt"
+CEPH_FIXED_MON_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_fixed_mon_status_failure.txt"
 CEPH_MON_LIB_PATH=/var/lib/ceph/mon
 
 BINDIR=/usr/bin
@@ -349,25 +351,6 @@ with_service_lock ()
     RC=$?
 }
 
-has_daemon_running ()
-{
-    local service="$1"
-    if [ ${#service} -eq 3 ]; then
-        # Check based on service type
-        local count_pid_files=$(ls -1 /var/run/ceph/${service}.*.pid 2>/dev/null | wc -l)
-        if [ ${count_pid_files} -gt 0 ]; then
-            return 0
-        fi
-    else
-        # Check based on service name
-        if [ -f /var/run/ceph/${service}.pid ]; then
-            return 0
-        fi
-    fi
-
-    return 1
-}
-
 start ()
 {
     local service="$1"
@@ -431,14 +414,6 @@ stop ()
 
     log INFO "Ceph ${cmd^^} ${service} command received."
 
-    if [ ! -z "${service}" ]; then
-        has_daemon_running ${service}
-        if [ $? -ne 0 ]; then
-            log INFO "Ceph ${service} daemon is already stopped. No action is required."
-            exit 0
-        fi
-    fi
-
     with_service_lock "${service}" ${CEPH_SCRIPT} ${cmd} ${service}
 
     if [ "$RC" -eq 0 ] && [[ "${service}" == *"mon"* ]]; then
@@ -486,9 +461,12 @@ log_and_kill_hung_procs ()
         pid=$(cat $pid_file)
         log $name "INFO" "Dealing with hung process (pid:$pid)"
 
-        # monitoring interval
         log $name "INFO" "Increasing log level"
-        WAIT_FOR_CMD=10 execute_ceph_cmd ret $name "ceph daemon $name config set debug_$type 20/20"
+        if ! ${CEPH_SCRIPT} debug-verbose $name; then
+            log $name "WARN" "Unable to increase log level"
+        fi
+
+        # monitoring interval
         monitoring=$MONITORING_INTERVAL
         while [ $monitoring -gt 0 ]; do
             if [ $(($monitoring % $TRACE_LOOP_INTERVAL)) -eq 0 ]; then
@@ -517,6 +495,11 @@ log_and_kill_hung_procs ()
             sleep 2
         done
         kill -KILL $pid &>/dev/null
+
+        log $name "INFO" "Restoring log level"
+        if ! ${CEPH_SCRIPT} debug-normal $name; then
+            log $name "WARN" "Unable to restore log level"
+        fi
     done
 }
 
@@ -609,18 +592,25 @@ status ()
         hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
         blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
         stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
-        invalid=0
+
+        if [ -z $erred_procs ] && [ -z $hung_procs ] && [ -z $blocked_ops_procs ] && [ -z $stuck_peering_procs ]; then
+            log $target "WARN" "Unknown error (return code: $RC): $result"
+            exit $RC
+        fi
+
         host=`hostname`
         if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
             # On 2 node configuration we have a floating monitor
             host_fixed="$host"
             host="controller"
         fi
+
+        invalid_processes=""
         for i in $(echo $erred_procs $hung_procs); do
             if [[ "$i" =~ osd.?[0-9]?[0-9]|mon.$host|mon.$host_fixed|mds.${HOSTNAME} ]]; then
                 continue
             else
-                invalid=1
+                invalid_processes+="$i "
             fi
         done
 
@@ -630,19 +620,27 @@ status ()
             "Restarting OSD stuck peering"
         log_and_kill_hung_procs $hung_procs
 
+        if [[ "${target}" == "mon.$host_fixed" ]]; then
+            CEPH_STATUS_FAILURE_TEXT_FILE=$CEPH_FIXED_MON_STATUS_FAILURE_TEXT_FILE
+        elif [[ "${target}" == *"mds"* ]]; then
+            CEPH_STATUS_FAILURE_TEXT_FILE=$CEPH_MDS_STATUS_FAILURE_TEXT_FILE
+        fi
+
         rm -f $CEPH_STATUS_FAILURE_TEXT_FILE
-        if [ $invalid -eq 0 ]; then
+
+        if [ -z "$invalid_processes" ]; then
             text=""
             for i in $erred_procs; do
                 text+="$i, "
             done
+
             for i in $hung_procs; do
                 text+="$i (process hang), "
             done
             echo "$text" | tr -d '\n' > $CEPH_STATUS_FAILURE_TEXT_FILE
         else
-            echo "$host: '${CEPH_SCRIPT} status $target' result contains invalid process names: $erred_procs"
-            echo "Undetermined osd or monitor id" > $CEPH_STATUS_FAILURE_TEXT_FILE
+            echo "$host: '${CEPH_SCRIPT} status $target' result contains invalid process names: $invalid_processes"
+            echo "Undetermined osd|mds|mon id: $invalid_processes" > $CEPH_STATUS_FAILURE_TEXT_FILE
         fi
     fi
 
@@ -681,9 +679,8 @@ status ()
     fi
 }
 
-
 start=$(date +%s%N)
-log INFO "action:${args[0]}:start-at:${start: 0:-6} ms"
+log INFO "action:${args[0]}${args[1]:+:${args[1]}}:start-at:${start:0:-6} ms"
 case "${args[0]}" in
     start)
         if [ ! -f ${CEPH_FILE} ]; then
@@ -714,8 +711,7 @@ case "${args[0]}" in
         ;;
 esac
 end=$(date +%s%N)
-log INFO "action:${args[0]}:end-at:${end: 0:-6} ms"
+log INFO "action:${args[0]}${args[1]:+:${args[1]}}:end-at:${end:0:-6} ms"
 diff=$((end-start))
-log INFO "action:${args[0]}:took:${diff: 0:-6} ms"
-
+log INFO "action:${args[0]}${args[1]:+:${args[1]}}:took:${diff:0:-6} ms"
 exit $RC
