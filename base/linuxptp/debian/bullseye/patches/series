@@ -72,3 +72,4 @@
 0072-Arm-service-timer-when-extending-unicast-contracts.patch
 0073-Fix-segfault-when-best-master-becomes-unavailable.patch
 0074-Fix-port-stuck-in-UNCALIBRATED-with-multiple-masters.patch
+0075-unicast_client-Fix-recovery-after-master-loss-due-to.patch
