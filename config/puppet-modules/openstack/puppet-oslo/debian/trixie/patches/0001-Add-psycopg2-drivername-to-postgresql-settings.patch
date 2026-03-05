@@ -1,0 +1,43 @@
+From 2aeb0c58d048223e7246a538f159c800e9d790d0 Mon Sep 17 00:00:00 2001
+From: Marcelo de Castro Loebens <Marcelo.DeCastroLoebens@windriver.com>
+Date: Mon, 3 Nov 2025 11:47:45 -0400
+Subject: [PATCH] Add psycopg2 drivername to postgresql
+
+Adapt patch that adds psycopg2 drivername to postgresql,
+introduced in CentOS.
+
+Introduced in I446f24e5c53c9f91a57b6c04a4e96f8726928aa1
+
+Signed-off-by: Marcelo de Castro Loebens <Marcelo.DeCastroLoebens@windriver.com>
+---
+ manifests/db.pp | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/manifests/db.pp b/manifests/db.pp
+index 17124c8..9d4bfd7 100644
+--- a/manifests/db.pp
++++ b/manifests/db.pp
+@@ -140,8 +140,11 @@ define oslo::db(
+ 
+   include oslo::params
+ 
++  # add psycopg2 drivername to postgresql if using driverless postgres setting
++  $real_connection = regsubst($connection,'^postgresql:','postgresql+psycopg2:')
++
+   if $manage_backend_package {
+-    case $connection {
++    case $real_connection {
+       Oslo::Dbconn::Mysql: {
+         require 'mysql::bindings'
+         require 'mysql::bindings::python'
+@@ -176,7 +179,7 @@ define oslo::db(
+     $database_options = {
+       "${config_group}/sqlite_synchronous"      => { value => $sqlite_synchronous },
+       "${config_group}/backend"                 => { value => $backend },
+-      "${config_group}/connection"              => { value => $connection, secret => true },
++      "${config_group}/connection"              => { value => $real_connection, secret => true },
+       "${config_group}/slave_connection"        => { value => $slave_connection, secret => true },
+       "${config_group}/mysql_sql_mode"          => { value => $mysql_sql_mode },
+       "${config_group}/connection_recycle_time" => { value => $connection_recycle_time },
+-- 
+2.34.1
