@@ -1,0 +1,46 @@
+From bce2175b1b3d9b9aad561a624317603218212344 Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Tue, 10 Mar 2026 07:39:14 -0400
+Subject: [PATCH 1/2] mgr/rbd_support: Use monotonic clock for Throttle timing
+
+Replace datetime-based timing with time.monotonic() for more reliable
+throttling that is not affected by system clock changes.
+
+The Throttle decorator protects against rapid consecutive calls to
+trash image removal progress monitoring. Using datetime.now() can
+cause issues when system clock changes, and the comparison with
+datetime.min can lead to segmentation faults in certain scenarios.
+
+time.monotonic() provides a monotonic clock that only moves forward
+and is not affected by system time adjustments, making it more
+suitable for measuring elapsed time intervals.
+
+Signed-off-by: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+---
+ src/pybind/mgr/rbd_support/module.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/pybind/mgr/rbd_support/module.py b/src/pybind/mgr/rbd_support/module.py
+index f878933..398788d 100644
+--- a/src/pybind/mgr/rbd_support/module.py
++++ b/src/pybind/mgr/rbd_support/module.py
+@@ -537,13 +537,13 @@ class PerfHandler:
+ 
+ class Throttle:
+     def __init__(self, throttle_period):
+-        self.throttle_period = throttle_period
+-        self.time_of_last_call = datetime.min
++        self.throttle_period = throttle_period.total_seconds()
++        self.time_of_last_call = 0
+ 
+     def __call__(self, fn):
+         @wraps(fn)
+         def wrapper(*args, **kwargs):
+-            now = datetime.now()
++            now = time.monotonic()
+             if self.time_of_last_call + self.throttle_period <= now:
+                 self.time_of_last_call = now
+                 return fn(*args, **kwargs)
+-- 
+2.43.0
+

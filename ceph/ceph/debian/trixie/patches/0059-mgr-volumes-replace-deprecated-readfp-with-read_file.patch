@@ -1,0 +1,34 @@
+From af6ae8e9bda34852e3b710508fe897c071c2eb52 Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Tue, 10 Mar 2026 07:39:39 -0400
+Subject: [PATCH 2/2] mgr/volumes: Replace deprecated ConfigParser.readfp with
+ read_file
+
+Replace deprecated readfp() method with read_file() for Python 3.12
+compatibility.
+
+ConfigParser.readfp() was deprecated in Python 3.2 and removed in
+Python 3.12. The read_file() method is the recommended replacement
+and has been available since Python 3.2.
+
+Signed-off-by: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+---
+ .../mgr/volumes/fs/operations/versions/metadata_manager.py      | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/pybind/mgr/volumes/fs/operations/versions/metadata_manager.py b/src/pybind/mgr/volumes/fs/operations/versions/metadata_manager.py
+index 1b6c432..a539745 100644
+--- a/src/pybind/mgr/volumes/fs/operations/versions/metadata_manager.py
++++ b/src/pybind/mgr/volumes/fs/operations/versions/metadata_manager.py
+@@ -49,7 +49,7 @@ class MetadataManager(object):
+                     break
+                 conf_data.write(data.decode('utf-8'))
+             conf_data.seek(0)
+-            self.config.readfp(conf_data)
++            self.config.read_file(conf_data)
+         except cephfs.ObjectNotFound:
+             raise MetadataMgrException(-errno.ENOENT, "metadata config '{0}' not found".format(self.config_path))
+         except cephfs.Error as e:
+-- 
+2.43.0
+

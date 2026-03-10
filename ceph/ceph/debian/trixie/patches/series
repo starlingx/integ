@@ -55,3 +55,5 @@
 py313-compat/0055-mgr-stop-using-deprecated-API-to-initialize-Python.patch
 py313-compat/0056-mgr-set-argv-for-python-in-PyModuleRegistry.patch
 py313-compat/0057-mgr-add-site-package-paths-in-PyModuleRegistry.patch
+0058-mgr-rbd_support-use-monotonic-clock-for-Throttle.patch
+0059-mgr-volumes-replace-deprecated-readfp-with-read_file.patch
