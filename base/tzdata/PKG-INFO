@@ -1,0 +1,17 @@
+Metadata-Version: 1.1
+Name: tzdata
+Version: 2025b
+Summary: tzdata
+Home-page: https://www.iana.org/time-zones
+Author:
+Author-email:
+License: Public Domain
+
+Description:
+The Time Zone Database (called tz, tzdb or zoneinfo) contains code and
+data that represent the history of local time for many representative
+locations around the globe.  It is updated periodically to reflect
+changes made by political bodies to time zone boundaries, UTC offsets,
+and daylight-saving rules.
+
+Platform: UNKNOWN
