@@ -1,0 +1,55 @@
+From 3d237418fd82959d061901523a4f7ba22f6dc1bf Mon Sep 17 00:00:00 2001
+From: Vadim Fedorenko via Linuxptp-devel
+ <linuxptp-devel@lists.sourceforge.net>
+Date: Fri, 4 Nov 2022 10:28:37 -0700
+Subject: [PATCH] unciast_client: trigger BMCA upon CANCEL receive
+
+Cancel messages don't trigger BMCA leaving best GM select for the port.
+In case when new Announces mesages are the same as they were before
+Cancel, BMCA algorithm will select the same GM and the stae machine will
+not change best GM into UC_NEED_SYDY. And all unicast GMs will be
+UC_HAVE_ANN state with best GM selected for port without Sync messages
+subscription. This patch forces state machine to recalculate new GM upon
+receiving Cancel message and prevent such state.
+
+Signed-off-by: Alexander Bulimov <abulimov@meta.com>
+Signed-off-by: Vadim Fedorenko <vadfed@meta.com>
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+(cherry picked from commit ac972fba82b39fab83075806cb63f793513c71cd)
+---
+ unicast_client.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/unicast_client.c b/unicast_client.c
+index 7ff73af..1edeabf 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -325,11 +325,14 @@ int unicast_client_cancel(struct port *p, struct ptp_message *m,
+ 	if (cancel->message_type_flags & CANCEL_UNICAST_MAINTAIN_GRANT) {
+ 		return 0;
+ 	}
+-	pr_warning("port %d: server unilaterally canceled unicast %s grant",
+-		   portnum(p), msg_type_string(mtype));
++
++	pr_warning("%s: server unilaterally canceled unicast %s grant",
++		   p->log_name, msg_type_string(mtype));
+ 
+ 	ucma->state = unicast_fsm(ucma->state, UC_EV_CANCEL);
+ 	ucma->granted &= ~(1 << mtype);
++	// trigger clock state change event
++	clock_set_sde(p->clock, 1);
+ 
+ 	/* Respond with ACK. */
+ 	msg = port_signaling_uc_construct(p, &ucma->address, &ucma->portIdentity);
+@@ -435,6 +438,8 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 			   portnum(p), msg_type_string(mtype));
+ 		if (mtype != PDELAY_RESP) {
+ 			ucma->state = UC_WAIT;
++			// trigger clock state change event
++			clock_set_sde(p->clock, 1);
+ 		}
+ 		return;
+ 	}
+-- 
+2.43.0
+

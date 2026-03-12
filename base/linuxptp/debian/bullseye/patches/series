@@ -67,3 +67,15 @@
 0067-phc2sys-Downgrade-log-message-timeout-read-pmc.patch
 0068-ts2phc-port-holdover-support-to-v3.1.1-4.patch
 0069-fix-reduce-excessive-logging-in-unicast-BMC-operations.patch
+0070-Arm-service-timer-when-extending-unicast-contracts.patch
+0071-port-Fix-segfault-when-best-master-becomes-unavailab.patch
+0072-unicast_client-cancel-sync-delay_response-on-UC_EV_U.patch
+0073-unicast_client-trigger-BMCA-upon-CANCEL-receive.patch
+0074-unicast-Update-announce-timer-when-renew.patch
+0075-port-start-sync-rx-timer-on-grant.patch
+0076-clock-Fix-stale-clock-parent-pid-usage-after-best-ma.patch
+0077-unicast-Add-support-to-send-CANCEL_UNICAST_TRANSMISS.patch
+0078-unicast_client-STX-specific-FSM-fixes-on-top-of-upst.patch
+0079-unicast_client-Fix-multi-master-failover-and-UC_WAIT.patch
+0080-port-Add-BMCA-debug-logging-for-foreign-master-tracking.patch
+

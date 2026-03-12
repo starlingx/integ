@@ -1,0 +1,66 @@
+From de322eb7b791a6893c07a7d0dccb063d113b3276 Mon Sep 17 00:00:00 2001
+From: Vadim Fedorenko via Linuxptp-devel
+ <linuxptp-devel@lists.sourceforge.net>
+Date: Fri, 27 Jan 2023 05:58:24 -0800
+Subject: [PATCH] port: start sync rx timer on grant
+
+In case of broken network there is a possibility of having management
+packets with proper data but absolute absence of sync packets. In such
+case the selected best master will stuck in HAVE_SYDY state without
+actually synchronising and will never fail because sync rx timeout timer
+is armed just after first receive of both SYNC and FOLLOW-UP packets.
+
+The patch arms sync rx timeout timer once sync grant is received.
+
+[RC: Preserve alphabetical order in port_private header file]
+
+Signed-off-by: Vadim Fedorenko <vadfed@meta.com>
+Signed-off-by: Richard Cochran <richardcochran@gmail.com>
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+(cherry picked from commit 9dd3993d40a48f81cabecfe19e9988554a65aa31)
+---
+ port.c           | 2 +-
+ port_private.h   | 1 +
+ unicast_client.c | 1 +
+ 3 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/port.c b/port.c
+index 3eb3114..2d5d5f1 100644
+--- a/port.c
++++ b/port.c
+@@ -1105,7 +1105,7 @@ int port_set_qualification_tmo(struct port *p)
+ 		       1+clock_steps_removed(p->clock), p->logAnnounceInterval);
+ }
+ 
+-static int port_set_sync_rx_tmo(struct port *p)
++int port_set_sync_rx_tmo(struct port *p)
+ {
+ 	return set_tmo_log(p->fda.fd[FD_SYNC_RX_TIMER],
+ 			   p->syncReceiptTimeout, p->logSyncInterval);
+diff --git a/port_private.h b/port_private.h
+index fcabaa6..a916175 100644
+--- a/port_private.h
++++ b/port_private.h
+@@ -177,6 +177,7 @@ int port_is_enabled(struct port *p);
+ void port_link_status(void *ctx, int index, int linkup);
+ int port_set_announce_tmo(struct port *p);
+ int port_set_delay_tmo(struct port *p);
++int port_set_sync_rx_tmo(struct port *p);
+ int port_set_qualification_tmo(struct port *p);
+ void port_show_transition(struct port *p, enum port_state next,
+ 			  enum fsm_event event);
+diff --git a/unicast_client.c b/unicast_client.c
+index 9de077e..f1a9d89 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -500,6 +500,7 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 			}
+ 			unicast_client_set_renewal(p, ucma, g->durationField);
+ 			clock_sync_interval(p->clock, g->logInterMessagePeriod);
++			port_set_sync_rx_tmo(p);
+ 			break;
+ 		}
+ 		break;
+-- 
+2.43.0
+

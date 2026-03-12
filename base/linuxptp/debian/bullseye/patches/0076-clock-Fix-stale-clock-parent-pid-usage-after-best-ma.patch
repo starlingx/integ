@@ -1,0 +1,132 @@
+From 6b79dd14e451bcaf4130caf8bee712420163b84a Mon Sep 17 00:00:00 2001
+From: Vincent Cheng <vincent.cheng.xh@renesas.com>
+Date: Tue, 13 Dec 2022 11:11:41 -0500
+Subject: [PATCH] clock: Fix stale clock parent pid usage after best master
+ change
+
+Problem
+=======
+Unselected master port may unintentionally continue to request
+announce/sync/delay_resp packets. Expecting port with unselected master
+to only maintain announce messages.
+
+Cause
+=====
+In handle_state_decision_event() loop, the update of the clock's parent pid
+to reflect best master change is non-deterministic. It depends on the port
+processing order and bmc_state_decision() results.
+
+However, port_dispatch() called at the end of each loop iteration will use
+the clock's parent pid in subsequent unicast_client_state_changed() to
+drive the unicast FSM.
+
+If the clock parent pid is not updated properly prior to
+unicast_client_state_changed(), the unicast FSM may not
+transition properly.
+
+Solution v2
+===========
+Refactor port_state_update() to mark unicast_state_dirty instead
+of calling unicast_client_state_changed().
+Add new port loop after handle_state_decision_event() port loop
+to call unicast_client_state_changed() after all necessary
+parent pid has been updated.
+
+Signed-off-by: Vincent Cheng <vincent.cheng.xh@renesas.com>
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+(cherry picked from commit 6e02bb2c756c2ca9d3313f5200412da674fdced4)
+---
+ clock.c        |  6 ++++++
+ port.c         | 13 ++++++++++++-
+ port.h         |  7 +++++++
+ port_private.h |  1 +
+ 4 files changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/clock.c b/clock.c
+index 2f5c9bf..9aec631 100644
+--- a/clock.c
++++ b/clock.c
+@@ -664,7 +664,9 @@ static void clock_update_grandmaster(struct clock *c)
+ 	struct parentDS *pds = &c->dad.pds;
+ 	memset(&c->cur, 0, sizeof(c->cur));
+ 	memset(c->ptl, 0, sizeof(c->ptl));
++
+ 	pds->parentPortIdentity.clockIdentity   = c->dds.clockIdentity;
++	/* Follow IEEE 1588 Table 30: Updates for state decision code M1 and M2 */
+ 	pds->parentPortIdentity.portNumber      = 0;
+ 	pds->grandmasterIdentity                = c->dds.clockIdentity;
+ 	pds->grandmasterClockQuality            = c->dds.clockQuality;
+@@ -1969,6 +1971,10 @@ static void handle_state_decision_event(struct clock *c)
+ 		}
+ 		port_dispatch(piter, event, fresh_best);
+ 	}
++
++	LIST_FOREACH(piter, &c->ports, list) {
++		port_update_unicast_state(piter);
++	}
+ }
+ 
+ struct clock_description *clock_description(struct clock *c)
+diff --git a/port.c b/port.c
+index 2d5d5f1..8dc8f84 100644
+--- a/port.c
++++ b/port.c
+@@ -3238,11 +3238,14 @@ int port_state_update(struct port *p, enum fsm_event event, int mdiff)
+ 		next = p->state_machine(next, event, 0);
+ 	}
+ 
++	if (mdiff) {
++		p->unicast_state_dirty = true;
++	}
+ 	if (next != p->state) {
+ 		port_show_transition(p, next, event);
+ 		p->state = next;
+ 		port_notify_event(p, NOTIFY_PORT_STATE);
+-		unicast_client_state_changed(p);
++		p->unicast_state_dirty = true;
+ 		return 1;
+ 	}
+ 
+@@ -3253,3 +3256,11 @@ enum bmca_select port_bmca(struct port *p)
+ {
+ 	return p->bmca;
+ }
++
++void port_update_unicast_state(struct port *p)
++{
++	if (p->unicast_state_dirty) {
++		unicast_client_state_changed(p);
++		p->unicast_state_dirty = false;
++	}
++}
+diff --git a/port.h b/port.h
+index 0b07d55..0a3bcf8 100644
+--- a/port.h
++++ b/port.h
+@@ -343,4 +343,11 @@ enum bmca_select port_bmca(struct port *p);
+  */
+ void tc_cleanup(void);
+ 
++/**
++ * Update port's unicast state if port's unicast_state_dirty is true.
++ *
++ * @param port  A port instance.
++ */
++void port_update_unicast_state(struct port *p);
++
+ #endif
+diff --git a/port_private.h b/port_private.h
+index a916175..45154aa 100644
+--- a/port_private.h
++++ b/port_private.h
+@@ -153,6 +153,7 @@ struct port {
+ 	int inhibit_multicast_service;
+ 	/* slave event monitoring */
+ 	struct monitor *slave_event_monitor;
++	bool unicast_state_dirty;
+ };
+ 
+ #define portnum(p) (p->portIdentity.portNumber)
+-- 
+2.43.0
+

@@ -1,0 +1,328 @@
+From f7351102476a270fefba559518280665e8f7fe14 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Wed, 11 Mar 2026 11:18:40 -0400
+Subject: [PATCH] unicast_client: Fix multi-master failover and UC_WAIT
+ selection race
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Extends the STX FSM fixes (built on upstream 868c5ee..6e02bb2) to address
+failure modes discovered during multi-master failover testing.
+
+Problems fixed:
+
+1. BMC selects master still in UC_WAIT (announce grant not yet received).
+   pid_eq() fails because ucma->portIdentity is all-zeros, so UC_EV_SELECTED
+   has no effect and SYNC/DELAY_RESP are never requested.
+
+   Fix: Before the main FSM loop in unicast_client_state_changed(), populate
+   portIdentity for any UC_WAIT entry whose transport address matches the best
+   foreign master's announce message. Then force UC_WAIT→UC_NEED_SYDY after
+   UC_EV_SELECTED so the timer immediately requests SYNC/DELAY_RESP.
+
+2. unicast_client_tx_cancel() sends CANCEL TLVs for all three message types
+   regardless of what is actually granted, and does not clear granted bits.
+   This leaves granted inconsistent with what the server has been told.
+
+   Fix: Add a bitmask parameter controlling which types are cancelled. Only
+   attach a TLV for types present in both bitmask and dst->granted, and clear
+   those bits from granted as each TLV is attached. Define UNICAST_CANCEL_ALL
+   and UNICAST_CANCEL_SYDY constants for the two call sites.
+
+3. Unselected master's ANNOUNCE messages stop arriving (e.g. after GM restart).
+   Foreign clock record ages out but FSM stays in UC_HAVE_ANN with a long
+   renewal_tmo, delaying re-request of the ANNOUNCE grant when the master
+   returns.
+
+   Fix: In unicast_client_timer(), zero renewal_tmo for UC_HAVE_ANN and
+   UC_HAVE_SYDY entries when port_foreign_clock_active() reports the master's
+   foreign clock record is below FOREIGN_MASTER_THRESHOLD.
+
+4. inhibit_announce port: announce receipt timeout fires but port is prevented
+   from transitioning to MASTER, so no state decision event is triggered.
+   Stale parentPortIdentity from the previous master is never cleared, causing
+   unicast_client_state_changed() to incorrectly mark the lost master as
+   SELECTED.
+
+   Fix: Call clock_set_sde() before returning EV_NONE in bc_event() when
+   inhibit_announce suppresses the timeout event.
+
+5. inhibit_announce early-return guard in bmc_state_decision() blocked the
+   PASSIVE path, preventing the port from correctly tracking a better upstream
+   master without advertising itself.
+
+   Fix: Replace the early-return with per-site checks at M1, M2, and M3 only.
+   PASSIVE (P1, P2) remains reachable.
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ bmc.c            |  9 ++----
+ port.c           | 13 +++++++++
+ port.h           |  8 +++++
+ unicast_client.c | 76 +++++++++++++++++++++++++++++++++++++-----------
+ unicast_client.h |  6 +++-
+ 5 files changed, 88 insertions(+), 24 deletions(-)
+
+diff --git a/bmc.c b/bmc.c
+index 94bd5e2..a5f6f31 100644
+--- a/bmc.c
++++ b/bmc.c
+@@ -141,19 +141,16 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	if (!port_best && PS_LISTENING == ps)
+ 		return ps;
+ 
+-	if (port_inhibit_announce(r))
+-		return PS_LISTENING;
+-
+ 	if (clock_class(c) <= 127) {
+ 		if (compare(clock_ds, port_best) > 0) {
+-			return PS_GRAND_MASTER; /*M1*/
++			return port_inhibit_announce(r) ? PS_LISTENING : PS_GRAND_MASTER; /*M1*/
+ 		} else {
+ 			return PS_PASSIVE; /*P1*/
+ 		}
+ 	}
+ 
+ 	if (compare(clock_ds, clock_best) > 0) {
+-		return PS_GRAND_MASTER; /*M2*/
++		return port_inhibit_announce(r) ? PS_LISTENING : PS_GRAND_MASTER; /*M2*/
+ 	}
+ 
+ 	if (clock_best_port(c) == r) {
+@@ -163,6 +160,6 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	if (compare(clock_best, port_best) == A_BETTER_TOPO) {
+ 		return PS_PASSIVE; /*P2*/
+ 	} else {
+-		return PS_MASTER; /*M3*/
++		return port_inhibit_announce(r) ? PS_LISTENING : PS_MASTER; /*M3*/
+ 	}
+ }
+diff --git a/port.c b/port.c
+index 4c89d67..b11dfed 100644
+--- a/port.c
++++ b/port.c
+@@ -2657,6 +2657,8 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 		}
+ 
+ 		if (p->inhibit_announce) {
++			/* set sde to ensure parentID is reset*/
++			clock_set_sde(p->clock, 1);
+ 			return EV_NONE;
+ 		}
+ 		return EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES;
+@@ -3266,6 +3268,17 @@ void port_update_unicast_state(struct port *p)
+ 	}
+ }
+ 
++int port_foreign_clock_active(struct port *p, struct PortIdentity *pid)
++{
++	struct foreign_clock *fc;
++
++	LIST_FOREACH(fc, &p->foreign_masters, list) {
++		if (pid_eq(&fc->dataset.sender, pid))
++			return fc->n_messages >= FOREIGN_MASTER_THRESHOLD;
++	}
++	return 0;
++}
++
+ int port_inhibit_announce(struct port *p)
+ {
+ 	return p->inhibit_announce;
+diff --git a/port.h b/port.h
+index 168c5e6..460f75f 100644
+--- a/port.h
++++ b/port.h
+@@ -350,6 +350,14 @@ void tc_cleanup(void);
+  */
+ void port_update_unicast_state(struct port *p);
+ 
++/**
++ * Returns non-zero if the given portIdentity has an active foreign master
++ * record (at or above FOREIGN_MASTER_THRESHOLD).
++ * @param p    The port in question.
++ * @param pid  The portIdentity to look up.
++ */
++int port_foreign_clock_active(struct port *p, struct PortIdentity *pid);
++
+ /**
+  * Returns whether the port has inhibit_announce set.
+  * @param port  A port instance.
+diff --git a/unicast_client.c b/unicast_client.c
+index 40f522e..b1b9072 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -350,7 +350,7 @@ int unicast_client_cancel(struct port *p, struct ptp_message *m,
+ 	ucma->granted &= ~(1 << mtype);
+ 	if (ucma->state == UC_WAIT)
+ 		ucma->granted = 0;
+-	// trigger clock state change event
++	/* trigger clock state change event */
+ 	clock_set_sde(p->clock, 1);
+ 
+ 	/* Respond with ACK. */
+@@ -458,7 +458,7 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 		if (mtype != PDELAY_RESP) {
+ 			ucma->granted = 0;
+ 			ucma->state = UC_WAIT;
+-			// trigger clock state change event
++			/* trigger clock state change event */
+ 			clock_set_sde(p->clock, 1);
+ 		}
+ 		return;
+@@ -547,19 +547,51 @@ int unicast_client_set_tmo(struct port *p)
+ void unicast_client_state_changed(struct port *p)
+ {
+ 	struct unicast_master_address *ucma;
++	struct ptp_message *best_msg;
+ 	struct PortIdentity pid;
+ 	enum unicast_state prev_state;
+ 
+ 	if (!unicast_client_enabled(p)) {
+ 		return;
+ 	}
+-	
++
+ 	pid = clock_parent_identity(p->clock);
+ 
++	/*
++	 * When a ucma entry is in UC_WAIT its portIdentity is zero (no
++	 * announce grant received yet). If the BMCA selects a master whose
++	 * address matches a UC_WAIT entry, populate portIdentity from the
++	 * best foreign master's announce message so the pid_eq match below
++	 * can find it.
++	 */
++	if (p->best) {
++		best_msg = TAILQ_FIRST(&p->best->messages);
++		if (best_msg) {
++			STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
++				if (ucma->state == UC_WAIT &&
++				    addreq(transport_type(p->trp),
++					   &ucma->address, &best_msg->address)) {
++					ucma->portIdentity =
++						best_msg->header.sourcePortIdentity;
++					break;
++				}
++			}
++		}
++	}
++
+ 	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
+ 		enum unicast_state old_state = ucma->state;
+ 		if (pid_eq(&ucma->portIdentity, &pid)) {
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_SELECTED);
++			/*
++			 * UC_EV_SELECTED is a no-op in UC_WAIT (announce grant
++			 * not yet received). Force to UC_NEED_SYDY so the timer
++			 * immediately requests SYNC/DELAY_RESP. The announce
++			 * grant will arrive asynchronously and be absorbed
++			 * harmlessly in UC_HAVE_SYDY.
++			 */
++			if (ucma->state == UC_WAIT)
++				ucma->state = UC_NEED_SYDY;
+ 			pr_info("port %d: [UC_FSM] Master %s SELECTED: %d->%d, granted=0x%x",
+ 				 portnum(p), pid2str(&ucma->portIdentity),
+ 				 old_state, ucma->state, ucma->granted);
+@@ -569,9 +601,8 @@ void unicast_client_state_changed(struct port *p)
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_UNSELECTED);
+ 
+ 			if ((prev_state != ucma->state) && (prev_state == UC_HAVE_SYDY)) {
+-				unicast_client_tx_cancel(p, ucma);
+-				ucma->granted &= ~((1 << SYNC) | (1 << DELAY_RESP));
+-				ucma->renewal_tmo = 0;
++				unicast_client_tx_cancel(p, ucma, UNICAST_CANCEL_SYDY);
++				ucma->renewal_tmo = 0; /* STX: tx_cancel clears granted bits; zero renewal timer */
+ 			}
+ 			if (old_state != ucma->state) {
+ 				pr_info("port %d: [UC_FSM] Master %s UNSELECTED: %d->%d",
+@@ -602,12 +633,16 @@ int unicast_client_timer(struct port *p)
+ 			err = unicast_client_announce(p, master);
+ 			break;
+ 		case UC_HAVE_ANN:
++			if (!port_foreign_clock_active(p, &master->portIdentity))
++				master->renewal_tmo = 0;
+ 			err = unicast_client_renew(p, master);
+ 			break;
+ 		case UC_NEED_SYDY:
+ 			err = unicast_client_sydy(p, master);
+ 			break;
+ 		case UC_HAVE_SYDY:
++			if (!port_foreign_clock_active(p, &master->portIdentity))
++				master->renewal_tmo = 0;
+ 			err = unicast_client_renew(p, master);
+ 			break;
+ 		}
+@@ -651,30 +686,37 @@ void unicast_client_reset(struct port *p)
+ }
+ 
+ int unicast_client_tx_cancel(struct port *p,
+-			     struct unicast_master_address *dst)
++			     struct unicast_master_address *dst,
++			     unsigned int bitmask)
+ {
+ 	struct ptp_message *msg;
+ 	int err;
+ 
++	if (!(dst->granted & bitmask))
++		return 0;
++
+ 	msg = port_signaling_uc_construct(p, &dst->address, &dst->portIdentity);
+ 	if (!msg) {
+ 		return -1;
+ 	}
+-	err = attach_cancel(msg, ANNOUNCE);
+-	if (err) {
+-		goto out;
++	if (dst->granted & (bitmask & (1 << ANNOUNCE))) {
++		err = attach_cancel(msg, ANNOUNCE);
++		if (err)
++			goto out;
++		dst->granted &= ~(1 << ANNOUNCE);
+ 	}
+-	err = attach_cancel(msg, SYNC);
+-	if (err) {
+-		goto out;
++	if (dst->granted & (bitmask & (1 << SYNC))) {
++		err = attach_cancel(msg, SYNC);
++		if (err)
++			goto out;
++		dst->granted &= ~(1 << SYNC);
+ 	}
+-	if (p->delayMechanism != DM_P2P) {
++	if (dst->granted & (bitmask & (1 << DELAY_RESP))) {
+ 		err = attach_cancel(msg, DELAY_RESP);
+-		if (err) {
++		if (err)
+ 			goto out;
+-		}
++		dst->granted &= ~(1 << DELAY_RESP);
+ 	}
+-
+ 	err = port_prepare_and_send(p, msg, TRANS_GENERAL);
+ 	if (err) {
+ 		pr_err("%s: signaling message failed", p->name);
+diff --git a/unicast_client.h b/unicast_client.h
+index 19dc862..a0a3f44 100644
+--- a/unicast_client.h
++++ b/unicast_client.h
+@@ -20,6 +20,9 @@
+ #ifndef HAVE_UNICAST_CLIENT_H
+ #define HAVE_UNICAST_CLIENT_H
+ 
++#define UNICAST_CANCEL_ALL  (1 << ANNOUNCE | 1 << SYNC | 1 << DELAY_RESP)
++#define UNICAST_CANCEL_SYDY (1 << SYNC | 1 << DELAY_RESP)
++
+ /**
+  * Handles a CANCEL_UNICAST_TRANSMISSION TLV from the grantor.
+  * @param p      The port on which the signaling message was received.
+@@ -108,5 +111,6 @@ int unicast_client_msg_is_from_master_table_entry(struct port *p,
+  * @return       Zero on success, non-zero otherwise.
+  */
+ int unicast_client_tx_cancel(struct port *p,
+-			     struct unicast_master_address *dst);
++			     struct unicast_master_address *dst,
++			     unsigned int bitmask);
+ #endif
+-- 
+2.43.0
+

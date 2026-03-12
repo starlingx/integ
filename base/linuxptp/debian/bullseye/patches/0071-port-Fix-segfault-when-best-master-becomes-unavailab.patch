@@ -1,0 +1,143 @@
+From 97c24b3e1e057a5e5292037137521d71182101ef Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Tue, 10 Feb 2026 09:58:46 -0500
+Subject: [PATCH] port: Fix segfault when best master becomes unavailable
+
+When using hybrid E2E mode or unicast client with multiple masters,
+ptp4l could segfault if the best master stopped sending messages or
+if the port transitioned states while unicast timers were active.
+This occurred due to NULL pointer dereferences when accessing the
+best foreign master's message queue.
+
+Problem Description:
+
+Two related NULL pointer dereference issues were identified:
+
+1. In port_delay_request() with hybrid_e2e Mode
+   When hybrid_e2e is enabled, the code accesses p->best->messages
+   to get the destination address for the delay request:
+
+   struct ptp_message *dst = TAILQ_FIRST(&p->best->messages);
+   msg->address = dst->address;
+
+   However, if the best master stops sending messages or the port
+   loses its best master selection, p->best can be NULL or the
+   message queue can be empty, causing a segfault when dereferencing
+   TAILQ_FIRST().
+
+2. In unicast_client_timer()
+   The timer callback was missing a check for unicast_client_enabled(),
+   allowing it to execute even when the unicast client was not properly
+   initialized or had been cleaned up. This could occur during port
+   state transitions or when the port was being reconfigured.
+
+Root Cause:
+
+The code assumed that p->best and its message queue would always be
+valid when these functions were called. However, several scenarios
+can invalidate these assumptions:
+
+- Master stops sending ANNOUNCE messages
+- ANNOUNCE_RECEIPT_TIMEOUT expires
+- Port transitions from SLAVE to LISTENING/FAULTY
+- BMC selects local clock as best master (p->best becomes NULL)
+- Port reconfiguration or cleanup in progress
+
+In these cases, the port may still have active timers (delay request
+timer, unicast client timer) that fire before the port state machine
+has fully transitioned, leading to NULL pointer access.
+
+The Fix:
+
+1. Add NULL/Empty Check in port_delay_request()
+   Before accessing p->best->messages in hybrid_e2e mode, verify that:
+   - p->best is not NULL
+   - The message queue is not empty
+
+   if (!p->best || TAILQ_EMPTY(&p->best->messages)) {
+       pr_debug("port %hu: no best master for delay request", portnum(p));
+       goto out;
+   }
+
+   This prevents the segfault and allows the port to gracefully skip
+   the delay request when no valid master is available. The delay
+   request will be retried on the next timer expiration once a master
+   is available again.
+
+2. Add Early Return in unicast_client_timer()
+   Check if unicast client is enabled before processing timer events:
+
+   if (!unicast_client_enabled(p)) {
+       return 0;
+   }
+
+   This prevents the timer from executing when the unicast client is
+   not initialized or has been cleaned up, avoiding potential NULL
+   pointer dereferences in the unicast master table iteration.
+
+Why These Checks Are Safe:
+
+- Skipping a delay request when no master is available is acceptable;
+  the port cannot measure path delay without a master anyway
+- The delay request timer will fire again, and if a master is available
+  at that time, the request will be sent normally
+- Returning early from unicast_client_timer() when disabled is safe;
+  the timer should not be active in this state anyway
+- These are defensive checks that handle edge cases during state
+  transitions
+
+Testing:
+
+Verified the fix by:
+- Running with hybrid_e2e mode and stopping/starting master
+- Forcing ANNOUNCE_RECEIPT_TIMEOUT by blocking master traffic
+- Rapidly switching between multiple masters
+- Port state transitions (SLAVE -> FAULTY -> LISTENING)
+- No segfaults observed in any scenario
+- Port recovers gracefully when master becomes available again
+
+Impact:
+
+This fix prevents crashes in production environments where master
+availability cannot be guaranteed. The port now handles master loss
+gracefully and continues operating when the master returns.
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ port.c           | 4 ++++
+ unicast_client.c | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/port.c b/port.c
+index 94c946a..3eb3114 100644
+--- a/port.c
++++ b/port.c
+@@ -1423,6 +1423,10 @@ int port_delay_request(struct port *p)
+ 	msg->header.logMessageInterval = 0x7f;
+ 
+ 	if (p->hybrid_e2e) {
++		if (!p->best || TAILQ_EMPTY(&p->best->messages)) {
++			pr_debug("port %hu: no best master for delay request", portnum(p));
++			goto out;
++		}
+ 		struct ptp_message *dst = TAILQ_FIRST(&p->best->messages);
+ 		msg->address = dst->address;
+ 		msg->header.flagField[0] |= UNICAST;
+diff --git a/unicast_client.c b/unicast_client.c
+index e11e5fd..8a015ca 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -551,6 +551,10 @@ int unicast_client_timer(struct port *p)
+ 	struct unicast_master_address *master;
+ 	int err = 0;
+ 
++	if (!unicast_client_enabled(p)) {
++		return 0;
++	}
++
+ 	pr_debug("port %d: [UC_TIMER] Unicast client timer fired", portnum(p));
+ 
+ 	STAILQ_FOREACH(master, &p->unicast_master_table->addrs, list) {
+-- 
+2.43.0
+

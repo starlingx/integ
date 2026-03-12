@@ -1,0 +1,138 @@
+From 66290dd73a6b4167fbf9b39841a91b902b8eb8dc Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Wed, 11 Mar 2026 11:19:13 -0400
+Subject: [PATCH] port: Add BMCA debug logging for foreign master tracking
+
+Add pr_debug() instrumentation to port_compute_best(),
+add_foreign_master(), fc_prune(), and update_current_master() to trace
+foreign master candidate evaluation, threshold crossings, message
+expiry, and winner selection.
+
+These messages are gated by the runtime log level and are silent in
+normal operation. They were added to diagnose multi-master failover
+races and are retained as a diagnostic aid.
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ port.c | 47 +++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 43 insertions(+), 4 deletions(-)
+
+diff --git a/port.c b/port.c
+index b11dfed..51b7faf 100644
+--- a/port.c
++++ b/port.c
+@@ -280,6 +280,7 @@ static void fc_prune(struct foreign_clock *fc)
+ {
+ 	struct timespec now;
+ 	struct ptp_message *m;
++	unsigned int before = fc->n_messages;
+ 
+ 	clock_gettime(CLOCK_MONOTONIC, &now);
+ 
+@@ -298,6 +299,12 @@ static void fc_prune(struct foreign_clock *fc)
+ 		fc->n_messages--;
+ 		msg_put(m);
+ 	}
++
++	if (fc->n_messages < before)
++		pr_debug("port %hu: [BMCA] fc_prune %s: expired %u messages, n_messages=%u->%u",
++			 fc->port ? portnum(fc->port) : 0,
++			 pid2str(&fc->dataset.sender),
++			 before - fc->n_messages, before, fc->n_messages);
+ }
+ 
+ static int delay_req_current(struct ptp_message *m, struct timespec now)
+@@ -363,6 +370,8 @@ static int add_foreign_master(struct port *p, struct ptp_message *m)
+ 		fc->port = p;
+ 		fc->dataset.sender = m->header.sourcePortIdentity;
+ 		/* We do not count this first message, see 9.5.3(b) */
++		pr_debug("port %hu: [BMCA] add_foreign_master %s: first message (not counted), n_messages=0",
++			 portnum(p), pid2str(&m->header.sourcePortIdentity));
+ 		return 0;
+ 	}
+ 
+@@ -389,6 +398,10 @@ static int add_foreign_master(struct port *p, struct ptp_message *m)
+ 		diff = announce_compare(m, tmp);
+ 	}
+ 
++	pr_debug("port %hu: [BMCA] add_foreign_master %s: n_messages=%u broke_threshold=%d diff=%d sde=%d",
++		 portnum(p), pid2str(&m->header.sourcePortIdentity),
++		 fc->n_messages, broke_threshold, diff, broke_threshold || diff);
++
+ 	return broke_threshold || diff;
+ }
+ 
+@@ -1835,8 +1848,11 @@ static int update_current_master(struct port *p, struct ptp_message *m)
+ 	struct path_trace_tlv *ptt;
+ 	struct timePropertiesDS tds;
+ 
+-	if (!msg_source_equal(m, fc))
++	if (!msg_source_equal(m, fc)) {
++		pr_debug("port %hu: [BMCA] update_current_master: announce from non-current master %s, redirecting to add_foreign_master",
++			 portnum(p), pid2str(&m->header.sourcePortIdentity));
+ 		return add_foreign_master(p, m);
++	}
+ 
+ 	if (p->state != PS_PASSIVE) {
+ 		tds.currentUtcOffset = m->announce.currentUtcOffset;
+@@ -2406,6 +2422,7 @@ struct foreign_clock *port_compute_best(struct port *p)
+ 	int (*dscmp)(struct dataset *a, struct dataset *b);
+ 	struct foreign_clock *fc;
+ 	struct ptp_message *tmp;
++	int n_candidates = 0;
+ 
+ 	dscmp = clock_dscmp(p->clock);
+ 	p->best = NULL;
+@@ -2415,24 +2432,46 @@ struct foreign_clock *port_compute_best(struct port *p)
+ 
+ 	LIST_FOREACH(fc, &p->foreign_masters, list) {
+ 		tmp = TAILQ_FIRST(&fc->messages);
+-		if (!tmp)
++		if (!tmp) {
++			pr_debug("port %hu: [BMCA] port_compute_best: %s has no messages, skipping",
++				 portnum(p), pid2str(&fc->dataset.sender));
+ 			continue;
++		}
+ 
+ 		announce_to_dataset(tmp, p, &fc->dataset);
+ 
+ 		fc_prune(fc);
+ 
+-		if (fc->n_messages < FOREIGN_MASTER_THRESHOLD)
++		if (fc->n_messages < FOREIGN_MASTER_THRESHOLD) {
++			pr_debug("port %hu: [BMCA] port_compute_best: %s below threshold n_messages=%u/%d, skipping",
++				 portnum(p), pid2str(&fc->dataset.sender),
++				 fc->n_messages, FOREIGN_MASTER_THRESHOLD);
+ 			continue;
++		}
++
++		n_candidates++;
++		pr_debug("port %hu: [BMCA] port_compute_best: candidate %s n_messages=%u clockClass=%u priority1=%u priority2=%u",
++			 portnum(p), pid2str(&fc->dataset.sender),
++			 fc->n_messages,
++			 fc->dataset.quality.clockClass,
++			 fc->dataset.priority1,
++			 fc->dataset.priority2);
+ 
+ 		if (!p->best)
+ 			p->best = fc;
+ 		else if (dscmp(&fc->dataset, &p->best->dataset) > 0)
+ 			p->best = fc;
+-		else
++		else {
++			pr_debug("port %hu: [BMCA] port_compute_best: fc_clear on loser %s n_messages=%u",
++				 portnum(p), pid2str(&fc->dataset.sender), fc->n_messages);
+ 			fc_clear(fc);
++		}
+ 	}
+ 
++	pr_debug("port %hu: [BMCA] port_compute_best: %d candidates, winner=%s",
++		 portnum(p), n_candidates,
++		 p->best ? pid2str(&p->best->dataset.sender) : "none");
++
+ 	return p->best;
+ }
+ 
+-- 
+2.43.0
+

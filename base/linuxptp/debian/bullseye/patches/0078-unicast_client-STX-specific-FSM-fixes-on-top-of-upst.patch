@@ -1,0 +1,186 @@
+From 8b3392bab110c200043fc1a8ca70ca1a2f03fe7d Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Mon, 9 Mar 2026 17:34:13 -0400
+Subject: [PATCH] Unicast client FSM: STX-specific fixes on top of upstream
+
+Built on top of upstream commits:
+  868c5ee unicast: Add support to send CANCEL_UNICAST_TRANSMISSION TLVs
+  78d57e8 unicast_client: cancel sync/delay_response on UC_EV_UNSELECTED event
+  ac972fb unciast_client: trigger BMCA upon CANCEL receive
+  58eb8c8 unicast: Update announce timer when renew
+  9dd3993 port: start sync rx timer on grant
+  6e02bb2 clock: Fix stale clock parent pid usage after best master change
+
+STX additions not present upstream (candidates for upstream submission):
+  - unicast_client_reset() on port_initialize() [fault recovery stale grant bug]
+  - granted zeroed when FSM drops to UC_WAIT [premature sydymsk completion bug]
+  - granted zeroed on grant rejection [same bug, different path]
+  - clock_set_sde() on UC_WAIT->UC_HAVE_ANN [process-restart race bug]
+  - clock_update_grandmaster() unconditional on master loss [stale parentPortIdentity bug]
+  - inhibit_announce awareness in bmc_state_decision() [STX deployment requirement]
+
+Supersedes: 3e00f48, fdcfb13, 9a0ccb9
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ bmc.c            |  4 ++++
+ clock.c          |  3 +++
+ port.c           |  6 ++++++
+ port.h           |  7 +++++++
+ unicast_client.c | 20 ++++++++++++++++++++
+ unicast_client.h |  8 ++++++++
+ 6 files changed, 48 insertions(+)
+
+diff --git a/bmc.c b/bmc.c
+index 6ac7aa0..94bd5e2 100644
+--- a/bmc.c
++++ b/bmc.c
+@@ -20,6 +20,7 @@
+ 
+ #include "bmc.h"
+ #include "ds.h"
++#include "port.h"
+ 
+ int dscmp2(struct dataset *a, struct dataset *b)
+ {
+@@ -140,6 +141,9 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	if (!port_best && PS_LISTENING == ps)
+ 		return ps;
+ 
++	if (port_inhibit_announce(r))
++		return PS_LISTENING;
++
+ 	if (clock_class(c) <= 127) {
+ 		if (compare(clock_ds, port_best) > 0) {
+ 			return PS_GRAND_MASTER; /*M1*/
+diff --git a/clock.c b/clock.c
+index 9aec631..3c15bfe 100644
+--- a/clock.c
++++ b/clock.c
+@@ -1941,6 +1941,9 @@ static void handle_state_decision_event(struct clock *c)
+ 	c->best = best;
+ 	c->best_id = best_id;
+ 
++	if (!best)
++		clock_update_grandmaster(c);
++
+ 	LIST_FOREACH(piter, &c->ports, list) {
+ 		enum port_state ps;
+ 		enum fsm_event event;
+diff --git a/port.c b/port.c
+index 8dc8f84..4c89d67 100644
+--- a/port.c
++++ b/port.c
+@@ -1765,6 +1765,7 @@ int port_initialize(struct port *p)
+ 	if (unicast_client_enabled(p) && unicast_client_set_tmo(p)) {
+ 		goto no_tmo;
+ 	}
++	unicast_client_reset(p);
+ 
+ 	/* No need to open rtnl socket on UDS port. */
+ 	if (transport_type(p->trp) != TRANS_UDS) {
+@@ -3264,3 +3265,8 @@ void port_update_unicast_state(struct port *p)
+ 		p->unicast_state_dirty = false;
+ 	}
+ }
++
++int port_inhibit_announce(struct port *p)
++{
++	return p->inhibit_announce;
++}
+diff --git a/port.h b/port.h
+index 0a3bcf8..168c5e6 100644
+--- a/port.h
++++ b/port.h
+@@ -350,4 +350,11 @@ void tc_cleanup(void);
+  */
+ void port_update_unicast_state(struct port *p);
+ 
++/**
++ * Returns whether the port has inhibit_announce set.
++ * @param port  A port instance.
++ * @return      Non-zero if inhibit_announce is set, zero otherwise.
++ */
++int port_inhibit_announce(struct port *p);
++
+ #endif
+diff --git a/unicast_client.c b/unicast_client.c
+index 2a91744..40f522e 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -348,6 +348,8 @@ int unicast_client_cancel(struct port *p, struct ptp_message *m,
+ 
+ 	ucma->state = unicast_fsm(ucma->state, UC_EV_CANCEL);
+ 	ucma->granted &= ~(1 << mtype);
++	if (ucma->state == UC_WAIT)
++		ucma->granted = 0;
+ 	// trigger clock state change event
+ 	clock_set_sde(p->clock, 1);
+ 
+@@ -454,6 +456,7 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 		pr_warning("port %d: unicast grant of %s rejected",
+ 			   portnum(p), msg_type_string(mtype));
+ 		if (mtype != PDELAY_RESP) {
++			ucma->granted = 0;
+ 			ucma->state = UC_WAIT;
+ 			// trigger clock state change event
+ 			clock_set_sde(p->clock, 1);
+@@ -492,6 +495,8 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 				 portnum(p), old_state, ucma->state);
+ 			ucma->portIdentity = m->header.sourcePortIdentity;
+ 			unicast_client_set_renewal(p, ucma, g->durationField);
++			if (old_state == UC_WAIT)
++				clock_set_sde(p->clock, 1);
+ 		}
+ 		break;
+ 	case UC_NEED_SYDY:
+@@ -565,6 +570,8 @@ void unicast_client_state_changed(struct port *p)
+ 
+ 			if ((prev_state != ucma->state) && (prev_state == UC_HAVE_SYDY)) {
+ 				unicast_client_tx_cancel(p, ucma);
++				ucma->granted &= ~((1 << SYNC) | (1 << DELAY_RESP));
++				ucma->renewal_tmo = 0;
+ 			}
+ 			if (old_state != ucma->state) {
+ 				pr_info("port %d: [UC_FSM] Master %s UNSELECTED: %d->%d",
+@@ -630,6 +637,19 @@ int unicast_client_msg_is_from_master_table_entry(struct port *p, struct ptp_mes
+ 	return found;
+ }
+ 
++void unicast_client_reset(struct port *p)
++{
++	struct unicast_master_address *ucma;
++
++	if (!unicast_client_enabled(p))
++		return;
++	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
++		ucma->state = UC_WAIT;
++		ucma->granted = 0;
++		ucma->renewal_tmo = 0;
++	}
++}
++
+ int unicast_client_tx_cancel(struct port *p,
+ 			     struct unicast_master_address *dst)
+ {
+diff --git a/unicast_client.h b/unicast_client.h
+index 18a12c8..19dc862 100644
+--- a/unicast_client.h
++++ b/unicast_client.h
+@@ -69,6 +69,14 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+  */
+ int unicast_client_set_tmo(struct port *p);
+ 
++/**
++ * Resets all unicast master FSM state for a port (state, granted bits,
++ * renewal timers). Called on port re-initialization to clear stale grant
++ * state that survives a fault/recovery cycle.
++ * @param p      The port in question.
++ */
++void unicast_client_reset(struct port *p);
++
+ /**
+  * Notifies the unicast client code that the port state has changed.
+  * @param p      The port in question.
+-- 
+2.43.0
+

@@ -1,0 +1,42 @@
+From aa1d7ef3c812d8835e9fad1b11851af32dee51b9 Mon Sep 17 00:00:00 2001
+From: Vadim Fedorenko via Linuxptp-devel
+ <linuxptp-devel@lists.sourceforge.net>
+Date: Tue, 14 Jun 2022 06:17:51 -0700
+Subject: [PATCH] unicast: Update announce timer when renew
+
+After first timeout of Announce message ptp4l will send Announce
+requests messages to all of configured non-master clock peers
+without updating timeout on approval packet making huge unneeded
+workload on servers. Fix it by updating announce timeout correctly.
+
+Signed-off-by: Vadim Fedorenko <vadfed@fb.com>
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+(cherry picked from commit 58eb8c894656d069f9ce702b4c76e6dab302f0b8)
+---
+ unicast_client.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/unicast_client.c b/unicast_client.c
+index 1edeabf..9de077e 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -466,6 +466,7 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 	ucma->granted |= 1 << mtype;
+ 
+ 	switch (ucma->state) {
++	case UC_HAVE_ANN:
+ 	case UC_WAIT:
+ 		if (mtype == ANNOUNCE) {
+ 			enum unicast_state old_state = ucma->state;
+@@ -476,8 +477,6 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 			unicast_client_set_renewal(p, ucma, g->durationField);
+ 		}
+ 		break;
+-	case UC_HAVE_ANN:
+-		break;
+ 	case UC_NEED_SYDY:
+ 		switch (mtype) {
+ 		case DELAY_RESP:
+-- 
+2.43.0
+
