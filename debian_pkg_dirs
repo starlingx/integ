@@ -16,6 +16,7 @@ base/stalld
 base/synce4l
 base/systemd
 base/systemd-presets
+base/tzdata
 base/watchdog
 bmc/redfishtool
 centos-debian-compat
