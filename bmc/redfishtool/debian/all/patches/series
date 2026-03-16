@@ -2,3 +2,4 @@
 0002-Add-config-file-based-BootSourceOverrideMode-handlin.patch
 0003-Add-config-file-based-setBootOverride-Url-handling-n.patch
 0004-Move-settings-object-get-to-patch_SetBootOverrideUrl.patch
+0005-Use-safe-dict-access-for-Manufacturer-and-Model-in-r.patch
