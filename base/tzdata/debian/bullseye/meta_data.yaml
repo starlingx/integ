@@ -1,10 +1,10 @@
 ---
-debver: 2025b-0+deb11u2
+debver: 2025b-0+deb12u2
 dl_path:
-  name: tzdata-debian-2025b-0+deb11u2.tar.gz
-  url: https://salsa.debian.org/glibc-team/tzdata/-/archive/debian/2025b-0+deb11u2/tzdata-debian-2025b-0+deb11u2.tar.gz
-  md5sum: 5e642335629b4a3537a3e008c55cc115
-  sha256sum: 9d61ddb5b9e0aeac0a8b549465fdaf55275509aa8ccbf18efc35c0bf7cd19daa
+  name: tzdata-debian-2025b-0+deb12u2.tar.gz
+  url: https://salsa.debian.org/glibc-team/tzdata/-/archive/debian/2025b-0+deb12u2/tzdata-debian-2025b-0+deb12u2.tar.gz
+  md5sum: 98df59477fd3482d1f7c7d791b591107
+  sha256sum: a762c0a2a7e9ec7e6cc3dfd5eca32df3aebe785ffe33938dc468f726223aac7e
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

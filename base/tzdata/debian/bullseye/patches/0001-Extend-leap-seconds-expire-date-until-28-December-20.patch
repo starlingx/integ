@@ -1,6 +1,6 @@
-From 4ec879e71493de9084768798309076dd5a355891 Mon Sep 17 00:00:00 2001
+From 8038fe10d9cd19f255de45353a5a36ae514537fa Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
-Date: Thu, 12 Mar 2026 18:59:43 -0300
+Date: Mon, 16 Mar 2026 17:50:41 -0300
 Subject: [PATCH] Extend leap seconds expire date until 28 December 2036
 
 Custom leap-seconds.list file to extend expire date until
