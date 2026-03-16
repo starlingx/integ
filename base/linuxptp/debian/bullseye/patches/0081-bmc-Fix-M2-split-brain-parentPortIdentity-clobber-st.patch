@@ -1,0 +1,307 @@
+From 61a5764af83dca274d5dd9ab655775c2557e7703 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Mon, 16 Mar 2026 16:36:58 -0400
+Subject: [PATCH] bmc: Fix M2 split-brain, parentPortIdentity clobber, stale
+
+Four problems fixed in the two-port inhibit_announce boundary clock topology
+(upstream slave port + downstream GM port):
+
+1. M2 split-brain: when the BC enters holdover after losing its upstream GM
+   (clockClass=135, indicating a BC in holdover that has lost connection to
+   its GM), bmc_state_decision() reaches the M2 branch for the downstream
+   port. The holdover clockClass=135 beats the free-running clockClass=248
+   numerically, so compare(clock_ds, clock_best) > 0 and the downstream port
+   incorrectly becomes GRAND_MASTER a second time, creating a split-brain
+   condition where both ports believe they are GM.
+
+   Fix: Restructure bmc_state_decision() so the M1/M2/M3 GRAND_MASTER and
+   MASTER return paths are only reachable for non-inhibit_announce ports.
+   inhibit_announce ports fall through directly to S1/P2/M3. At M2, add a
+   split-brain guard: if clock_best_port is a non-inhibit port (i.e. a
+   downstream peer won BMC), return PS_PASSIVE rather than PS_GRAND_MASTER.
+   If clock_best_port is an inhibit_announce port (normal BC operation),
+   proceed to PS_GRAND_MASTER as expected.
+   At P2, suppress the PASSIVE return when clock_best came from an
+   inhibit_announce port, since that port's topological superiority must not
+   drive a downstream port to PASSIVE.
+   At M3, inhibit_announce ports return PS_LISTENING. PS_PASSIVE is
+   intentionally not used here: an inhibit_announce port can never become
+   master, so PS_PASSIVE's semantics (standing by to take over) are
+   meaningless and its FSM transition EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES
+   -> PS_MASTER is hazardous. PS_LISTENING is the correct neutral state —
+   the port continues accumulating foreign master records and transitions
+   cleanly when the next BMC run fires.
+
+2. parentPortIdentity clobbered by clock_update_grandmaster(): in
+   handle_state_decision_event(), ports are processed in config file order.
+   When the inhibit_announce port (port 1) is listed before the downstream
+   port (port 2), clock_update_slave() correctly sets parentPortIdentity to
+   the upstream GM. The downstream port then reaches PS_GRAND_MASTER and the
+   unconditional clock_update_grandmaster() call overwrites parentPortIdentity
+   with the local clock identity at port number 0. By the time the second
+   LIST_FOREACH calls unicast_client_state_changed() on port 1,
+   clock_parent_identity() returns the local clock identity instead of the
+   upstream GM. The pid_eq() check fails silently, UC_EV_SELECTED is never
+   fired, and the unicast master entry stays in UC_HAVE_ANN with renewal_tmo
+   set to now+2700s, leaving the port stuck in UNCALIBRATED indefinitely.
+
+   Fix: Only call clock_update_grandmaster() when c->best is NULL (no active
+   foreign master). When c->best is set, clock_update_slave() has already run
+   and owns the parent DS regardless of port order.
+
+   Note: this bug is only triggered when the inhibit_announce port appears
+   before the downstream port in the config file. Configs with the opposite
+   ordering were silently unaffected, which is why it was not caught during
+   earlier multi-master testing.
+
+3. Downstream port stuck-in-PASSIVE on GM loss: patch 0079 added an
+   unconditional fc_clear() skip for inhibit_announce ports to prevent a
+   45-minute recovery delay on GM return. When the upstream GM disappears and
+   the announce receipt timeout fires on the inhibit_announce port, the
+   foreign master record survives the timeout. If the announce messages have
+   not yet expired per msg_current(), port_compute_best() still returns a
+   winner and c->best remains set. The M2 split-brain guard (fix 1 above)
+   then sees clock_best_port() pointing at a non-inhibit port and returns
+   PS_PASSIVE for the downstream port. Port 2 stays PASSIVE instead of
+   becoming GRAND_MASTER, leaving downstream clients without a time source
+   until the msg_current() window expires naturally.
+
+   The fc_clear() skip is only needed when the inhibit_announce port is in
+   PS_LISTENING: at that point the GM has not yet been selected and the
+   record must survive so it can cross FOREIGN_MASTER_THRESHOLD when the GM
+   returns. In PS_SLAVE or PS_UNCALIBRATED the GM was actively serving the
+   port and is now gone; clearing the record immediately lets BMC see no best
+   master and promote the downstream port to GRAND_MASTER without waiting for
+   the msg_current() window to expire.
+
+   Fix: Replace the unconditional inhibit_announce fc_clear() skip with a
+   state-conditional check. Clear the foreign master record on announce
+   receipt timeout for all ports except inhibit_announce ports in
+   PS_LISTENING.
+
+4. Add pr_debug() instrumentation to bmc_state_decision() logging the input
+   state, port_best/clock_best presence, best_port number, inhibit_announce
+   flag, and clockClass at entry, plus the M2, M3, and S1 decision points.
+   Add pr_debug() instrumentation to unicast_client_state_changed() logging
+   the resolved parent_pid at entry and the per-entry ucma pid/state
+   comparison on each iteration. A local buffer is used for the ucma pid to
+   avoid pid2str()'s static buffer being aliased when both identities are
+   formatted in the same pr_debug() call. Add pr_debug() instrumentation to
+   unicast_client_timer() logging per-entry pid, state, type, transport type,
+   and granted bitmask at each timer fire.
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ bmc.c            | 58 ++++++++++++++++++++++++++++++++++++++++--------
+ clock.c          | 12 +++++++++-
+ port.c           | 23 ++++++++++++++-----
+ unicast_client.c | 15 ++++++++++++-
+ 4 files changed, 92 insertions(+), 16 deletions(-)
+
+diff --git a/bmc.c b/bmc.c
+index a5f6f31..09fbe5b 100644
+--- a/bmc.c
++++ b/bmc.c
+@@ -21,6 +21,7 @@
+ #include "bmc.h"
+ #include "ds.h"
+ #include "port.h"
++#include "print.h"
+ 
+ int dscmp2(struct dataset *a, struct dataset *b)
+ {
+@@ -134,6 +135,14 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	 * resulting in printing out some unnecessary warnings (see
+ 	 * port_slave_priority_warning()).
+ 	 */
++	pr_debug("port %d: [BMC] bmc_state_decision: ps=%d port_best=%s clock_best=%s best_port=%d inhibit=%d clockClass=%u",
++		 port_number(r), ps,
++		 port_best ? "set" : "null",
++		 clock_best ? "set" : "null",
++		 clock_best_port(c) ? port_number(clock_best_port(c)) : -1,
++		 port_inhibit_announce(r),
++		 clock_class(c));
++
+ 	if (!port_best && port_bmca(r) == BMCA_NOOP) {
+ 		return ps;
+ 	}
+@@ -141,25 +150,56 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	if (!port_best && PS_LISTENING == ps)
+ 		return ps;
+ 
+-	if (clock_class(c) <= 127) {
+-		if (compare(clock_ds, port_best) > 0) {
+-			return port_inhibit_announce(r) ? PS_LISTENING : PS_GRAND_MASTER; /*M1*/
+-		} else {
+-			return PS_PASSIVE; /*P1*/
++	if (!port_inhibit_announce(r)) {
++		if (clock_class(c) <= 127) {
++			if (compare(clock_ds, port_best) > 0) {
++				return PS_GRAND_MASTER; /*M1*/
++			} else {
++				return PS_PASSIVE; /*P1*/
++			}
+ 		}
+-	}
+ 
+-	if (compare(clock_ds, clock_best) > 0) {
+-		return port_inhibit_announce(r) ? PS_LISTENING : PS_GRAND_MASTER; /*M2*/
++		if (compare(clock_ds, clock_best) > 0) {
++			pr_debug("port %d: [BMC] M2: compare(clock_ds,clock_best)=%d",
++				 port_number(r), compare(clock_ds, clock_best));
++			/*
++			 * Split-brain guard: if a non-inhibit port has won
++			 * BMC (i.e. a downstream port is the best port),
++			 * this port should be PASSIVE rather than GM.
++			 * This arises when clockClass=135 (locked) beats
++			 * clockClass=248 (free-running) numerically in M2.
++			 *
++			 * If clock_best_port is an inhibit_announce port
++			 * (the upstream slave port), that is normal BC
++			 * operation -- this downstream port should still
++			 * become GRAND_MASTER to serve downstream clients.
++			 */
++			if (clock_best_port(c) &&
++			    !port_inhibit_announce(clock_best_port(c)))
++				return PS_PASSIVE;
++			return PS_GRAND_MASTER; /*M2*/
++		}
+ 	}
+ 
+ 	if (clock_best_port(c) == r) {
++		pr_debug("port %d: [BMC] S1", port_number(r));
+ 		return PS_SLAVE; /*S1*/
+ 	}
+ 
+-	if (compare(clock_best, port_best) == A_BETTER_TOPO) {
++	/*
++	 * P2: suppress if the clock_best came from an inhibit_announce
++	 * (upstream slave) port. That port is categorically different
++	 * from a downstream peer; its topological superiority must not
++	 * drive a downstream port to PASSIVE.
++	 */
++	if (compare(clock_best, port_best) == A_BETTER_TOPO &&
++	    clock_best_port(c) &&
++	    !port_inhibit_announce(clock_best_port(c))) {
+ 		return PS_PASSIVE; /*P2*/
+ 	} else {
++		pr_debug("port %d: [BMC] M3: compare(clock_best,port_best)=%d inhibit=%d",
++			 port_number(r), compare(clock_best, port_best),
++			 port_inhibit_announce(r));
+ 		return port_inhibit_announce(r) ? PS_LISTENING : PS_MASTER; /*M3*/
+ 	}
+ }
+diff --git a/clock.c b/clock.c
+index 3c15bfe..e7748dc 100644
+--- a/clock.c
++++ b/clock.c
+@@ -1955,7 +1955,17 @@ static void handle_state_decision_event(struct clock *c)
+ 		case PS_GRAND_MASTER:
+ 			pr_notice("port %d: assuming the grand master role",
+ 				  port_number(piter));
+-			clock_update_grandmaster(c);
++			/*
++			 * Only update the grandmaster DS if there is no active
++			 * foreign master. When the best port is an
++			 * inhibit_announce port (upstream slave), the downstream
++			 * port correctly becomes GM while the upstream port
++			 * tracks an external master; clock_update_slave() has
++			 * already set parentPortIdentity from the upstream
++			 * master's announce and must not be overwritten here.
++			 */
++			if (!c->best)
++				clock_update_grandmaster(c);
+ 			event = EV_RS_GRAND_MASTER;
+ 			break;
+ 		case PS_MASTER:
+diff --git a/port.c b/port.c
+index 8e124cd..859b2e4 100644
+--- a/port.c
++++ b/port.c
+@@ -2670,10 +2670,23 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 	case FD_SYNC_RX_TIMER:
+ 		pr_debug("port %hu: %s timeout", portnum(p),
+ 			 fd_index == FD_SYNC_RX_TIMER ? "rx sync" : "announce");
+-		/* Do not clear the foreign master record on inhibit_announce ports;
+-		 * BMC needs it intact to select the upstream GM as best master. */
+-		if (p->best && !p->inhibit_announce) {
+-			fc_clear(p->best);
++		/*
++		 * Clear the foreign master record so BMC sees no best master
++		 * and can promote the downstream port to GRAND_MASTER.
++		 *
++		 * Exception: inhibit_announce ports in LISTENING state keep
++		 * their record intact. Without it, the record never reaches
++		 * FOREIGN_MASTER_THRESHOLD after a GM restart, causing a
++		 * 45-minute recovery delay until the unicast renewal cycle
++		 * re-populates it. In SLAVE/UNCALIBRATED the GM is actively
++		 * gone, so we must clear to let BMC react immediately.
++		 */
++		if (p->best) {
++			if (!p->inhibit_announce ||
++			    p->state == PS_SLAVE ||
++			    p->state == PS_UNCALIBRATED) {
++				fc_clear(p->best);
++			}
+ 		}
+ 
+ 		/*
+@@ -2685,7 +2698,7 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 			port_clr_tmo(p->fda.fd[FD_SYNC_RX_TIMER]);
+ 		}
+ 
+-		if (p->inhibit_announce) {
++		if (p->inhibit_announce && p->state != PS_PASSIVE) {
+ 			port_clr_tmo(p->fda.fd[FD_ANNOUNCE_TIMER]);
+ 		} else {
+ 			port_set_announce_tmo(p);
+diff --git a/unicast_client.c b/unicast_client.c
+index b1b9072..8d5f54a 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -557,6 +557,9 @@ void unicast_client_state_changed(struct port *p)
+ 
+ 	pid = clock_parent_identity(p->clock);
+ 
++	pr_debug("port %d: [UC_STATE] state_changed: parent_pid=%s",
++		 portnum(p), pid2str(&pid));
++
+ 	/*
+ 	 * When a ucma entry is in UC_WAIT its portIdentity is zero (no
+ 	 * announce grant received yet). If the BMCA selects a master whose
+@@ -581,6 +584,12 @@ void unicast_client_state_changed(struct port *p)
+ 
+ 	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
+ 		enum unicast_state old_state = ucma->state;
++		char ucma_pid_str[64];
++		snprintf(ucma_pid_str, sizeof(ucma_pid_str), "%s",
++			 pid2str(&ucma->portIdentity));
++		pr_debug("port %d: [UC_STATE] checking ucma pid=%s state=%d vs parent=%s",
++			 portnum(p), ucma_pid_str,
++			 ucma->state, pid2str(&pid));
+ 		if (pid_eq(&ucma->portIdentity, &pid)) {
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_SELECTED);
+ 			/*
+@@ -602,7 +611,7 @@ void unicast_client_state_changed(struct port *p)
+ 
+ 			if ((prev_state != ucma->state) && (prev_state == UC_HAVE_SYDY)) {
+ 				unicast_client_tx_cancel(p, ucma, UNICAST_CANCEL_SYDY);
+-				ucma->renewal_tmo = 0; /* WRS: tx_cancel clears granted bits; zero renewal timer */
++				ucma->renewal_tmo = 0; /* STX: tx_cancel clears granted bits; zero renewal timer */
+ 			}
+ 			if (old_state != ucma->state) {
+ 				pr_info("port %d: [UC_FSM] Master %s UNSELECTED: %d->%d",
+@@ -625,6 +634,10 @@ int unicast_client_timer(struct port *p)
+ 	pr_debug("port %d: [UC_TIMER] Unicast client timer fired", portnum(p));
+ 
+ 	STAILQ_FOREACH(master, &p->unicast_master_table->addrs, list) {
++		pr_debug("port %d: [UC_TIMER] entry pid=%s state=%d type=%d trp_type=%d granted=0x%x",
++			 portnum(p), pid2str(&master->portIdentity),
++			 master->state, master->type,
++			 transport_type(p->trp), master->granted);
+ 		if (master->type != transport_type(p->trp)) {
+ 			continue;
+ 		}
+-- 
+2.43.0
+
