@@ -1,0 +1,58 @@
+From: Eric Macdonald <eric.macdonald@windriver.com>
+Date: Mon, 16 Mar 2026 16:13:35 +0000
+Subject: Use safe dict access for Manufacturer and Model in redfishtool
+ response
+
+Use the .get() method to retrieve Manufacturer and Model key values
+from the Redfish GET response. This avoids a command failure with
+traceback on servers that don't publish these fields or values for
+these fields.
+
+Signed-off-by: Eric Macdonald <eric.macdonald@windriver.com>
+---
+ redfishtoollib/Systems.py | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/redfishtoollib/Systems.py b/redfishtoollib/Systems.py
+index 0662e94..bb770eb 100644
+--- a/redfishtoollib/Systems.py
++++ b/redfishtoollib/Systems.py
+@@ -532,8 +532,8 @@ class RfSystemsOperations():
+         patch_setBootOverrideUrl_Models="patch_setBootOverrideUrl_Models"
+         if section in config:
+             patch_url_override_models_list = config[section][patch_setBootOverrideUrl_Models]
+-            model=d["Model"]
+-            if model in patch_url_override_models_list:
++            model=d.get("Model")
++            if model and model in patch_url_override_models_list:
+                 rft.printVerbose(0, "Using System Settings URL for setBootOverride "
+                     "for server: '{}'".format(model))
+                 return True
+@@ -549,10 +549,10 @@ class RfSystemsOperations():
+         # include the config file parser
+         import configparser
+ 
+-        manufacturer=d["Manufacturer"]
+-        model=d["Model"]
+-        rft.printVerbose(4, "Manufacturer: {}".format(d["Manufacturer"]))
+-        rft.printVerbose(4, "Model       : {}".format(d["Model"]))
++        manufacturer=d.get("Manufacturer")
++        model=d.get("Model")
++        rft.printVerbose(4, "Manufacturer: {}".format(manufacturer))
++        rft.printVerbose(4, "Model       : {}".format(model))
+ 
+         # the config file path
+         config_file="/etc/redfishtool/redfishtool.ini"
+@@ -589,10 +589,10 @@ class RfSystemsOperations():
+                 rft.printVerbose(4, "Manufacturer Exclude List: {}".format(exclude_manufacturers_list))
+ 
+             exclude_BootSourceOverrideMode=False
+-            if model in exclude_models_list:
++            if model and model in exclude_models_list:
+                 rft.printVerbose(0, "Excluding BootSourceOverrideMode for server model: '{}'".format(model))
+                 exclude_BootSourceOverrideMode = True
+-            elif manufacturer in exclude_manufacturers_list:
++            elif manufacturer and manufacturer in exclude_manufacturers_list:
+                 rft.printVerbose(0, "Excluding BootSourceOverrideMode for server manufacturer: '{}'".format(manufacturer))
+                 exclude_BootSourceOverrideMode = True
+         return (exclude_BootSourceOverrideMode)
