@@ -1,11 +1,8 @@
-From f7351102476a270fefba559518280665e8f7fe14 Mon Sep 17 00:00:00 2001
+From d78778a96b48efdad7c234df892dbdf3ee16fc8b Mon Sep 17 00:00:00 2001
 From: Cole Walker <cole.walker@windriver.com>
 Date: Wed, 11 Mar 2026 11:18:40 -0400
 Subject: [PATCH] unicast_client: Fix multi-master failover and UC_WAIT
  selection race
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
 
 Extends the STX FSM fixes (built on upstream 868c5ee..6e02bb2) to address
 failure modes discovered during multi-master failover testing.
@@ -18,7 +15,7 @@ Problems fixed:
 
    Fix: Before the main FSM loop in unicast_client_state_changed(), populate
    portIdentity for any UC_WAIT entry whose transport address matches the best
-   foreign master's announce message. Then force UC_WAIT→UC_NEED_SYDY after
+   foreign master's announce message. Then force UC_WAIT->UC_NEED_SYDY after
    UC_EV_SELECTED so the timer immediately requests SYNC/DELAY_RESP.
 
 2. unicast_client_tx_cancel() sends CANCEL TLVs for all three message types
@@ -55,14 +52,27 @@ Problems fixed:
    Fix: Replace the early-return with per-site checks at M1, M2, and M3 only.
    PASSIVE (P1, P2) remains reachable.
 
+6. PS_MASTER had no explicit FSM case and fell through to PS_GRAND_MASTER's
+   switch block, sharing its transitions. This meant PS_MASTER could not
+   transition to PS_PASSIVE on EV_RS_PASSIVE, which is required when the
+   inhibit_announce-aware bmc_state_decision() changes return PS_PASSIVE for
+   a port currently in PS_MASTER. Similarly, PS_GRAND_MASTER lacked an
+   EV_RS_MASTER -> PS_PRE_MASTER transition needed when BMC demotes a
+   grandmaster port to regular master after a better upstream GM appears.
+
+   Fix: Add an explicit PS_MASTER case with EV_RS_SLAVE, EV_RS_PASSIVE, and
+   fault/disable transitions. Add EV_RS_MASTER -> PS_PRE_MASTER to the
+   PS_GRAND_MASTER case.
+
 Signed-off-by: Cole Walker <cole.walker@windriver.com>
 ---
  bmc.c            |  9 ++----
- port.c           | 13 +++++++++
+ fsm.c            | 21 +++++++++++++
+ port.c           | 17 ++++++++++-
  port.h           |  8 +++++
  unicast_client.c | 76 +++++++++++++++++++++++++++++++++++++-----------
  unicast_client.h |  6 +++-
- 5 files changed, 88 insertions(+), 24 deletions(-)
+ 6 files changed, 112 insertions(+), 25 deletions(-)
 
 diff --git a/bmc.c b/bmc.c
 index 94bd5e2..a5f6f31 100644
@@ -98,11 +108,61 @@ index 94bd5e2..a5f6f31 100644
 +		return port_inhibit_announce(r) ? PS_LISTENING : PS_MASTER; /*M3*/
  	}
  }
+diff --git a/fsm.c b/fsm.c
+index ce6efad..f307232 100644
+--- a/fsm.c
++++ b/fsm.c
+@@ -108,6 +108,24 @@ enum port_state ptp_fsm(enum port_state state, enum fsm_event event, int mdiff)
+ 		break;
+ 
+ 	case PS_MASTER:
++		switch (event) {
++		case EV_DESIGNATED_DISABLED:
++			next = PS_DISABLED;
++			break;
++		case EV_FAULT_DETECTED:
++			next = PS_FAULTY;
++			break;
++		case EV_RS_SLAVE:
++			next = PS_UNCALIBRATED;
++			break;
++		case EV_RS_PASSIVE:
++			next = PS_PASSIVE;
++			break;
++		default:
++			break;
++		}
++		break;
++
+ 	case PS_GRAND_MASTER:
+ 		switch (event) {
+ 		case EV_DESIGNATED_DISABLED:
+@@ -116,6 +134,9 @@ enum port_state ptp_fsm(enum port_state state, enum fsm_event event, int mdiff)
+ 		case EV_FAULT_DETECTED:
+ 			next = PS_FAULTY;
+ 			break;
++		case EV_RS_MASTER:
++			next = PS_PRE_MASTER;
++			break;
+ 		case EV_RS_SLAVE:
+ 			next = PS_UNCALIBRATED;
+ 			break;
 diff --git a/port.c b/port.c
-index 4c89d67..b11dfed 100644
+index 4c89d67..c6306b9 100644
 --- a/port.c
 +++ b/port.c
-@@ -2657,6 +2657,8 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+@@ -2631,7 +2631,9 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 	case FD_SYNC_RX_TIMER:
+ 		pr_debug("port %hu: %s timeout", portnum(p),
+ 			 fd_index == FD_SYNC_RX_TIMER ? "rx sync" : "announce");
+-		if (p->best) {
++		/* Do not clear the foreign master record on inhibit_announce ports;
++		 * BMC needs it intact to select the upstream GM as best master. */
++		if (p->best && !p->inhibit_announce) {
+ 			fc_clear(p->best);
+ 		}
+ 
+@@ -2657,6 +2659,8 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
  		}
  
  		if (p->inhibit_announce) {
@@ -111,7 +171,7 @@ index 4c89d67..b11dfed 100644
  			return EV_NONE;
  		}
  		return EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES;
-@@ -3266,6 +3268,17 @@ void port_update_unicast_state(struct port *p)
+@@ -3266,6 +3270,17 @@ void port_update_unicast_state(struct port *p)
  	}
  }
  
@@ -231,7 +291,7 @@ index 40f522e..b1b9072 100644
 -				ucma->granted &= ~((1 << SYNC) | (1 << DELAY_RESP));
 -				ucma->renewal_tmo = 0;
 +				unicast_client_tx_cancel(p, ucma, UNICAST_CANCEL_SYDY);
-+				ucma->renewal_tmo = 0; /* STX: tx_cancel clears granted bits; zero renewal timer */
++				ucma->renewal_tmo = 0; /* WRS: tx_cancel clears granted bits; zero renewal timer */
  			}
  			if (old_state != ucma->state) {
  				pr_info("port %d: [UC_FSM] Master %s UNSELECTED: %d->%d",
