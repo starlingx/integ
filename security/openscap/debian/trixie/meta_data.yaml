@@ -1,0 +1,7 @@
+---
+debver: 1.4.2+dfsg-1
+debname: openscap
+archive: https://snapshot.debian.org/archive/debian/20250408T205804Z/pool/main/o/openscap/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

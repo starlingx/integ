@@ -442,3 +442,12 @@ trident-installer
 
 #watchdog
 watchdog
+
+#openscap (built from source to include CPE dictionary)
+libopenscap33
+libopenscap-perl
+openscap-common
+openscap-doc
+openscap-scanner
+openscap-utils
+python3-openscap

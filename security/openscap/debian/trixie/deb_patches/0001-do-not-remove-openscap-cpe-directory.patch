@@ -1,0 +1,34 @@
+From 0a63627514b28e64caa9d8229ee6be498dda79b0 Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Tue, 31 Mar 2026 10:15:37 -0400
+Subject: [PATCH] Do not remove openscap cpe directory
+
+Debian's packaging rules explicitly delete the cpe/ directory during
+build. Without this file, OpenSCAP fails at runtime with:
+
+  OpenSCAP Error: Unable to open file:
+  '/usr/share/openscap/cpe/openscap-cpe-dict.xml'
+
+Remove the cpe directory deletion from debian/rules to retain the
+CPE dictionary files needed for SCAP scanning functionality.
+
+Signed-off-by: Ayyapasetti Abhinav <ayyapasetti.abhinav@windriver.com>
+---
+ debian/rules | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index a401e4a..ce2f5f0 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -49,7 +49,6 @@ override_dh_auto_install:
+ 	done
+ 
+ 	find debian/tmp -name "*.la" -delete
+-	rm -rf $(CURDIR)/debian/tmp/usr/share/openscap/cpe
+ 	$(RM) $(CURDIR)/debian/tmp/usr/share/doc/openscap/html/*.md5 \
+ 	      $(CURDIR)/debian/tmp/usr/share/doc/openscap/html/*.map
+ 
+-- 
+2.43.0
+
