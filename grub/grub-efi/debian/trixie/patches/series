@@ -14,4 +14,6 @@ secure-core/0006-grub-efi-support-passing-a-buffer-to-be-verified.patch
 secure-core/0007-kern-efi-init.c-disable-inside-lockdown-and-shim_loc.patch
 secure-core/0008-efi-fallback-to-legacy-mode-if-mok2verify-is-loaded.patch
 secure-core/0009-mok2verify-remove-unused-parameter-from-grub_efi_mok.patch
+secure-core/0010-efi-add-linux_efi_legacy-env-var-to-force-legacy-x86.patch
+secure-core/0011-efi-skip-mok2verify-file-verification-when-SecureBoo.patch
 

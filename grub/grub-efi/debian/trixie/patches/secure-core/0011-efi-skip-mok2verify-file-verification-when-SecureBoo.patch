@@ -1,0 +1,102 @@
+From da286e09b7620ab3dda2796c34974977ace22c89 Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Wed, 18 Mar 2026 07:59:04 -0400
+Subject: [PATCH] efi: skip mok2verify file verification when SecureBoot is
+ disabled
+
+Patches 0003 and 0006 added mok2verify-based kernel and initrd
+verification to the legacy x86 loader path (i386/linux.c and
+loader/linux.c). This verification calls _grub_verify_file_buffer()
+which requires .p7b signature files alongside the kernel and initrd.
+
+When the legacy loader is used (via the linux_efi_legacy environment
+variable from patch 0010), this verification fails because the ISO
+does not include .p7b signature files. The verification was never
+triggered before because the EFI stub loader path was always used
+instead.
+
+Guard the verification with grub_is_secured() so it only runs when
+UEFI Secure Boot is enabled. When Secure Boot is disabled, skip
+verification and load the kernel/initrd directly.
+
+Signed-off-by: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+---
+ grub-core/loader/i386/linux.c | 23 +++++++++++++----------
+ grub-core/loader/linux.c      | 25 ++++++++++++++-----------
+ 2 files changed, 27 insertions(+), 21 deletions(-)
+
+diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
+index 1e4bdb7..3c627ce 100644
+--- a/grub-core/loader/i386/linux.c
++++ b/grub-core/loader/i386/linux.c
+@@ -681,17 +681,20 @@ grub_cmd_linux (grub_command_t cmd __attribute__ ((unused)),
+     }
+ 
+ #ifdef GRUB_MACHINE_EFI
+-    grub_dprintf ("linux", "Verifying kernel file %s\n", argv[0]);
+-
+-    grub_errno = _grub_verify_file_buffer (argv[0]);
+-    if (grub_errno == GRUB_ERR_NONE)
++  if (grub_is_secured () == 1)
+     {
+-      grub_dprintf ("linux", "kernel %s verified\n", argv[0]);
+-    }
+-    else
+-    {
+-      grub_error (grub_errno, N_("failed to verify kernel %s"), argv[0]);
+-      goto fail;
++      grub_dprintf ("linux", "Verifying kernel file %s\n", argv[0]);
++
++      grub_errno = _grub_verify_file_buffer (argv[0]);
++      if (grub_errno == GRUB_ERR_NONE)
++        {
++          grub_dprintf ("linux", "kernel %s verified\n", argv[0]);
++        }
++      else
++        {
++          grub_error (grub_errno, N_("failed to verify kernel %s"), argv[0]);
++          goto fail;
++        }
+     }
+ #endif
+ 
+diff --git a/grub-core/loader/linux.c b/grub-core/loader/linux.c
+index 1e2fb51..59bebc6 100644
+--- a/grub-core/loader/linux.c
++++ b/grub-core/loader/linux.c
+@@ -340,18 +340,21 @@ grub_initrd_load (struct grub_linux_initrd_context *initrd_ctx,
+ 	}
+ 
+ #ifdef GRUB_MACHINE_EFI
+-      grub_dprintf ("linux", "Verifying initrd %s, addr=0x%lx, size=0x%lx\n",
+-		    initrd_ctx->components[i].file->name, (unsigned long) ptr, (unsigned long) cursize);
+-
+-      err = _grub_verify_file_buffer (initrd_ctx->components[i].file->name);
+-      if (err == GRUB_ERR_NONE)
+-	{
+-	  grub_dprintf ("linux", "initrd %s verified\n", initrd_ctx->components[i].file->name);
+-	}
+-      else
++      if (grub_is_secured () == 1)
+ 	{
+-	  grub_error (err, N_("failed to verify initrd %s"), initrd_ctx->components[i].file->name);
+-	  goto fail;
++	  grub_dprintf ("linux", "Verifying initrd %s, addr=0x%lx, size=0x%lx\n",
++			initrd_ctx->components[i].file->name, (unsigned long) ptr, (unsigned long) cursize);
++
++	  err = _grub_verify_file_buffer (initrd_ctx->components[i].file->name);
++	  if (err == GRUB_ERR_NONE)
++	    {
++	      grub_dprintf ("linux", "initrd %s verified\n", initrd_ctx->components[i].file->name);
++	    }
++	  else
++	    {
++	      grub_error (err, N_("failed to verify initrd %s"), initrd_ctx->components[i].file->name);
++	      goto fail;
++	    }
+ 	}
+ #endif
+       ptr += cursize;
+-- 
+2.43.0
+

@@ -1,0 +1,70 @@
+From 04bc4a817d50ce9562ebfe4aca3e44bf73670a78 Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Tue, 17 Mar 2026 05:49:00 -0400
+Subject: [PATCH] efi: add linux_efi_legacy env var to force legacy x86 loader
+
+GRUB 2.12 switched x86 EFI platforms to use EFI_LOAD_FILE2_PROTOCOL for
+initrd loading by default. This protocol relies on UEFI firmware to load
+the initrd, which fails hardware when booting via BMC virtual media.
+
+Add a grub environment variable 'linux_efi_legacy' that, when set in
+grub.cfg, forces both the kernel and initrd loading to use the legacy
+x86 direct-read path regardless of SecureBoot state or kernel PE version.
+
+Usage in grub.cfg:
+  set linux_efi_legacy=1
+
+Signed-off-by: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+---
+ grub-core/loader/efi/linux.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+diff --git a/grub-core/loader/efi/linux.c b/grub-core/loader/efi/linux.c
+index b7dc2b4..3242514 100644
+--- a/grub-core/loader/efi/linux.c
++++ b/grub-core/loader/efi/linux.c
+@@ -33,6 +33,7 @@
+ #include <grub/i18n.h>
+ #include <grub/lib/cmdline.h>
+ #include <grub/verify.h>
++#include <grub/env.h>
+ #include <grub/efi/mok2verify.h>
+ 
+ GRUB_MOD_LICENSE ("GPLv3+");
+@@ -390,6 +391,14 @@ grub_cmd_initrd (grub_command_t cmd __attribute__ ((unused)),
+     }
+ #endif
+ 
++#if defined(__i386__) || defined(__x86_64__)
++  if (grub_env_get ("linux_efi_legacy"))
++    {
++      grub_dprintf ("linux", "linux_efi_legacy is set, falling back to legacy initrd loading process\n");
++      return grub_cmd_initrd_x86_legacy (cmd, argc, argv);
++    }
++#endif
++
+ #if defined(__i386__) || defined(__x86_64__)
+   if (!initrd_use_loadfile2)
+     return grub_cmd_initrd_x86_legacy (cmd, argc, argv);
+@@ -483,6 +492,18 @@ grub_cmd_linux (grub_command_t cmd __attribute__ ((unused)),
+     }
+ #endif
+ 
++#if defined(__i386__) || defined(__x86_64__)
++  if (grub_env_get ("linux_efi_legacy"))
++    {
++      grub_dprintf ("linux", "linux_efi_legacy is set, falling back to legacy Linux kernel loader\n");
++      err = grub_cmd_linux_x86_legacy (cmd, argc, argv);
++      if (err == GRUB_ERR_NONE)
++        return GRUB_ERR_NONE;
++      else
++        goto fail;
++    }
++#endif
++
+   if (grub_is_shim_lock_enabled () == true)
+     {
+ #if defined(__i386__) || defined(__x86_64__)
+-- 
+2.43.0
+
