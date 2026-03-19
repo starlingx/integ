@@ -1,12 +1,12 @@
 ---
 debname: helm
-debver: 3.19.2-1
+debver: 4.1.3-0
 src_path: files
 dl_files:
-  helm-v3.19.2-linux-amd64.tar.gz:
+  helm-v4.1.3-linux-amd64.tar.gz:
     topdir: linux-amd64
-    url: https://get.helm.sh/helm-v3.19.2-linux-amd64.tar.gz
-    sha256sum: 2114c9dea2844dce6d0ee2d792a9aae846be8cf53d5b19dc2988b5a0e8fec26e
+    url: https://get.helm.sh/helm-v4.1.3-linux-amd64.tar.gz
+    sha256sum: 02ce9722d541238f81459938b84cf47df2fdf1187493b4bfb2346754d82a4700
 
 revision:
   dist: $STX_DIST
