@@ -78,5 +78,6 @@
 0078-unicast_client-STX-specific-FSM-fixes-on-top-of-upst.patch
 0079-unicast_client-Fix-multi-master-failover-and-UC_WAIT.patch
 0080-port-Add-BMCA-debug-logging-for-foreign-master-tracking.patch
-0081-bmc-Fix-M2-split-brain-parentPortIdentity-clobber-st.patch
+0081-bmc-clock-two-port-unicast-BC-fixes.patch
+0082-port-unicast_client-Fix-stuck-state-in-unicast-BC.patch
 

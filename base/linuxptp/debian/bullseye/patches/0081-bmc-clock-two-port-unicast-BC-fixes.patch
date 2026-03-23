@@ -1,0 +1,246 @@
+From a7a6349de2626a84fc0a32970780fa229924c713 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Sun, 22 Mar 2026 16:20:39 -0400
+Subject: [PATCH] bmc, clock: two-port unicast BC fixes
+
+Fix inhibit_announce BC split-brain, parentPortIdentity
+clobber, and add BMC/clock debug instrumentation
+
+Five changes for the two-port inhibit_announce boundary clock topology
+(upstream slave port + downstream GM port):
+
+1. bmc_state_decision(): restructure M1/M2/M3 paths so GRAND_MASTER and
+   MASTER returns are only reachable for non-inhibit_announce ports.
+   Add inhibit_gm_guard to prevent non-inhibit ports from claiming
+   PS_GRAND_MASTER when the clock has an inhibit_announce port that has
+   not yet acquired an upstream master or when a non-inhibit port won
+   BMC. Guard applies to both M1 (clockClass<=127) and M2 paths.
+   At P2, suppress PASSIVE when clock_best came from an inhibit_announce
+   port. At M3, inhibit_announce ports return PS_LISTENING.
+
+2. handle_state_decision_event(): guard clock_update_grandmaster() call
+   in PS_GRAND_MASTER case with if (!c->best). When c->best is set
+   (inhibit_announce BC: upstream slave port holds a foreign master
+   record), clock_update_slave() has already set parentPortIdentity
+   from the upstream master's announce and must not be overwritten.
+   clock_update_grandmaster() itself remains in upstream form —
+   unconditional writes to all parentDS fields — the guard belongs
+   at the call site, not inside the function.
+
+3. handle_state_decision_event(): add unconditional
+   clock_update_grandmaster() call when best is NULL, before the
+   per-port loop. This ensures parentDS stays in sync with dds after
+   GRANDMASTER_SETTINGS_NP changes, fixing stale gm.ClockClass in
+   PARENT_DATA_SET for single-port GM and standard BC topologies.
+
+4. clock: add has_inhibit_port cached flag and clock_has_inhibit_port()
+   accessor, replacing O(n) LIST_FOREACH walk on every state decision
+   event. Flag is set once in clock_add_port() when an inhibit_announce
+   port is added.
+
+5. Debug instrumentation:
+   - [BMC] entry logging in bmc_state_decision() with ps, port_best,
+     clock_best, best_port, inhibit, clockClass
+   - [BMC] M2, S1, M3 decision point logging
+   - [GM_UPDATE] trace in clock_update_grandmaster() with clockClass
+     and gmIdentity
+   - [UC_ORDER] trace in handle_state_decision_event() pass-2 loop
+     with c->best and parentPortIdentity
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ bmc.c   | 67 +++++++++++++++++++++++++++++++++++++++++++++++++--------
+ clock.c | 27 ++++++++++++++++++++++-
+ clock.h |  1 +
+ 3 files changed, 85 insertions(+), 10 deletions(-)
+
+diff --git a/bmc.c b/bmc.c
+index a5f6f31..c68d610 100644
+--- a/bmc.c
++++ b/bmc.c
+@@ -21,6 +21,7 @@
+ #include "bmc.h"
+ #include "ds.h"
+ #include "port.h"
++#include "print.h"
+ 
+ int dscmp2(struct dataset *a, struct dataset *b)
+ {
+@@ -134,6 +135,14 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	 * resulting in printing out some unnecessary warnings (see
+ 	 * port_slave_priority_warning()).
+ 	 */
++	pr_debug("port %d: [BMC] bmc_state_decision: ps=%d port_best=%s clock_best=%s best_port=%d inhibit=%d clockClass=%u",
++		 port_number(r), ps,
++		 port_best ? "set" : "null",
++		 clock_best ? "set" : "null",
++		 clock_best_port(c) ? port_number(clock_best_port(c)) : -1,
++		 port_inhibit_announce(r),
++		 clock_class(c));
++
+ 	if (!port_best && port_bmca(r) == BMCA_NOOP) {
+ 		return ps;
+ 	}
+@@ -141,25 +150,65 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	if (!port_best && PS_LISTENING == ps)
+ 		return ps;
+ 
+-	if (clock_class(c) <= 127) {
+-		if (compare(clock_ds, port_best) > 0) {
+-			return port_inhibit_announce(r) ? PS_LISTENING : PS_GRAND_MASTER; /*M1*/
+-		} else {
+-			return PS_PASSIVE; /*P1*/
++	if (!port_inhibit_announce(r)) {
++		/*
++		 * Split-brain guard for the inhibit_announce BC topology.
++		 * A non-inhibit port must never claim PS_GRAND_MASTER when
++		 * the clock has an inhibit_announce port and either no best
++		 * foreign master has been selected yet (inhibit port still
++		 * negotiating) or the best foreign master arrived on a
++		 * non-inhibit port (downstream peer won BMC). In both cases
++		 * the correct result is PS_PASSIVE / PS_LISTENING, not GM.
++		 *
++		 * Applies to both M1 (clockClass <= 127, e.g. misconfigured
++		 * BC given a locked clockClass) and M2 (holdover clockClass
++		 * numerically beating a degraded foreign master).
++		 *
++		 * On a standard BC with no inhibit ports this guard is never
++		 * true, so M1/M2 behaviour is unchanged.
++		 */
++		int inhibit_gm_guard = clock_has_inhibit_port(c) &&
++			(!clock_best_port(c) ||
++			 !port_inhibit_announce(clock_best_port(c)));
++
++		if (clock_class(c) <= 127) {
++			if (compare(clock_ds, port_best) > 0) {
++				if (inhibit_gm_guard)
++					return PS_PASSIVE;
++				return PS_GRAND_MASTER; /*M1*/
++			} else {
++				return PS_PASSIVE; /*P1*/
++			}
+ 		}
+-	}
+ 
+-	if (compare(clock_ds, clock_best) > 0) {
+-		return port_inhibit_announce(r) ? PS_LISTENING : PS_GRAND_MASTER; /*M2*/
++		if (compare(clock_ds, clock_best) > 0) {
++			pr_debug("port %d: [BMC] M2: compare(clock_ds,clock_best)=%d",
++				 port_number(r), compare(clock_ds, clock_best));
++			if (inhibit_gm_guard)
++				return PS_PASSIVE;
++			return PS_GRAND_MASTER; /*M2*/
++		}
+ 	}
+ 
+ 	if (clock_best_port(c) == r) {
++		pr_debug("port %d: [BMC] S1", port_number(r));
+ 		return PS_SLAVE; /*S1*/
+ 	}
+ 
+-	if (compare(clock_best, port_best) == A_BETTER_TOPO) {
++	/*
++	 * P2: suppress if the clock_best came from an inhibit_announce
++	 * (upstream slave) port. That port is categorically different
++	 * from a downstream peer; its topological superiority must not
++	 * drive a downstream port to PASSIVE.
++	 */
++	if (compare(clock_best, port_best) == A_BETTER_TOPO &&
++	    clock_best_port(c) &&
++	    !port_inhibit_announce(clock_best_port(c))) {
+ 		return PS_PASSIVE; /*P2*/
+ 	} else {
++		pr_debug("port %d: [BMC] M3: compare(clock_best,port_best)=%d inhibit=%d",
++			 port_number(r), compare(clock_best, port_best),
++			 port_inhibit_announce(r));
+ 		return port_inhibit_announce(r) ? PS_LISTENING : PS_MASTER; /*M3*/
+ 	}
+ }
+diff --git a/clock.c b/clock.c
+index 3c15bfe..589fd58 100644
+--- a/clock.c
++++ b/clock.c
+@@ -102,6 +102,7 @@ struct clock {
+ 	int nports; /* does not include the two UDS ports */
+ 	int last_port_number;
+ 	int sde;
++	int has_inhibit_port;
+ 	int free_running;
+ 	int freq_est_interval;
+ 	int local_sync_uncertain;
+@@ -676,6 +677,8 @@ static void clock_update_grandmaster(struct clock *c)
+ 	c->tds.currentUtcOffset                 = c->utc_offset;
+ 	c->tds.flags                            = c->time_flags;
+ 	c->tds.timeSource                       = c->time_source;
++	pr_debug("[GM_UPDATE] clock_update_grandmaster: clockClass=%u gmIdentity=%s",
++		 c->dds.clockQuality.clockClass, cid2str(&c->dds.clockIdentity));
+ }
+ 
+ static void clock_update_slave(struct clock *c)
+@@ -847,6 +850,8 @@ static int clock_add_port(struct clock *c, const char *phc_device,
+ 		LIST_INSERT_HEAD(&c->ports, p, list);
+ 	}
+ 	c->nports++;
++	if (port_inhibit_announce(p))
++		c->has_inhibit_port = 1;
+ 	clock_fda_changed(c);
+ 
+ 	return 0;
+@@ -1261,6 +1266,11 @@ struct port *clock_best_port(struct clock *c)
+ 	return c->best ? c->best->port : NULL;
+ }
+ 
++int clock_has_inhibit_port(struct clock *c)
++{
++	return c->has_inhibit_port;
++}
++
+ struct dataset *clock_default_ds(struct clock *c)
+ {
+ 	struct dataset *out = &c->default_dataset;
+@@ -1955,7 +1965,17 @@ static void handle_state_decision_event(struct clock *c)
+ 		case PS_GRAND_MASTER:
+ 			pr_notice("port %d: assuming the grand master role",
+ 				  port_number(piter));
+-			clock_update_grandmaster(c);
++			/*
++			 * Only update the grandmaster DS if there is no active
++			 * foreign master. When the best port is an
++			 * inhibit_announce port (upstream slave), the downstream
++			 * port correctly becomes GM while the upstream port
++			 * tracks an external master; clock_update_slave() has
++			 * already set parentPortIdentity from the upstream
++			 * master's announce and must not be overwritten here.
++			 */
++			if (!c->best)
++				clock_update_grandmaster(c);
+ 			event = EV_RS_GRAND_MASTER;
+ 			break;
+ 		case PS_MASTER:
+@@ -1976,6 +1996,11 @@ static void handle_state_decision_event(struct clock *c)
+ 	}
+ 
+ 	LIST_FOREACH(piter, &c->ports, list) {
++		pr_debug("port %d: [UC_ORDER] port_update_unicast_state: "
++			 "c->best=%s parent_pid=%s",
++			 port_number(piter),
++			 c->best ? pid2str(&c->best->dataset.sender) : "null",
++			 pid2str(&c->dad.pds.parentPortIdentity));
+ 		port_update_unicast_state(piter);
+ 	}
+ }
+diff --git a/clock.h b/clock.h
+index e7daf97..0175bb8 100644
+--- a/clock.h
++++ b/clock.h
+@@ -58,6 +58,7 @@ struct dataset *clock_best_foreign(struct clock *c);
+  *           or NULL if none has been yet discovered.
+  */
+ struct port *clock_best_port(struct clock *c);
++int clock_has_inhibit_port(struct clock *c);
+ 
+ /**
+  * Obtain the clockClass attribute from a clock.
+-- 
+2.43.0
+

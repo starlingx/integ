@@ -1,0 +1,215 @@
+From b17fdc536f08260f605f868d8c625cc46770c378 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Sun, 22 Mar 2026 16:24:32 -0400
+Subject: [PATCH] port, unicast_client: Fix stuck state in unicast BC
+
+Three bugs fixed in the inhibit_announce boundary clock topology:
+
+1. fc_prune() drains foreign master record on inhibit_announce ports.
+   These ports cannot re-announce, so they cannot rebuild a pruned
+   record. After a fault/restart, fc_prune expires messages below
+   FOREIGN_MASTER_THRESHOLD before BMCA can act, causing BMCA to
+   select the local clock, trigger UNSELECT, and fault the port in
+   a ~750ms loop.
+
+   Fix: run the cap loop (n_messages > FOREIGN_MASTER_THRESHOLD)
+   unconditionally so the queue stays bounded. Skip only the
+   age-expiry loop for inhibit_announce ports via goto, preserving
+   the record between announce intervals without leaking memory.
+   The original early-return skipped the cap loop entirely, causing
+   n_messages to grow without bound (~2 refs/sec per active GM,
+   confirmed in lab logs reaching n_messages=3121 in 6 minutes).
+
+2. fc_clear() called on live foreign master record in UNCALIBRATED.
+   The announce receipt timeout handler cleared the record even when
+   announces were still arriving and the foreign master record was
+   populated, causing BMCA to fault the port mid-grant-negotiation.
+
+   Fix: in the UNCALIBRATED case, only call fc_clear() when
+   p->best->n_messages == 0 (record is genuinely empty).
+
+3. UC_NEED_SYDY permanently stuck — ANNOUNCE bit never set. When BMCA
+   selects a master before the announce grant cycle completes,
+   unicast_client_state_changed() forces UC_WAIT -> UC_NEED_SYDY.
+   However, the ANNOUNCE bit was never set in ucma->granted, so
+   sydymsk (0xa01) was never satisfiable and the FSM was permanently
+   stuck even after SYNC and DELAY_RESP grants arrived.
+
+   Fix: set ucma->granted |= (1 << ANNOUNCE) on the forced
+   UC_WAIT -> UC_NEED_SYDY transition. The ANNOUNCE bit is safe to
+   credit implicitly because the foreign master record has already
+   reached FOREIGN_MASTER_THRESHOLD (announces are demonstrably
+   flowing).
+
+Debug instrumentation:
+- [BMCA] fc_clear / fc_clear SKIPPED logging on announce/sync timeout
+  with state, inhibit flag, and n_messages
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ port.c           | 53 +++++++++++++++++++++++++++++++++++++++++-------
+ unicast_client.c | 28 ++++++++++++++++++++-----
+ 2 files changed, 69 insertions(+), 12 deletions(-)
+
+diff --git a/port.c b/port.c
+index 8e124cd..f439cab 100644
+--- a/port.c
++++ b/port.c
+@@ -282,8 +282,6 @@ static void fc_prune(struct foreign_clock *fc)
+ 	struct ptp_message *m;
+ 	unsigned int before = fc->n_messages;
+ 
+-	clock_gettime(CLOCK_MONOTONIC, &now);
+-
+ 	while (fc->n_messages > FOREIGN_MASTER_THRESHOLD) {
+ 		m = TAILQ_LAST(&fc->messages, messages);
+ 		TAILQ_REMOVE(&fc->messages, m, list);
+@@ -291,6 +289,17 @@ static void fc_prune(struct foreign_clock *fc)
+ 		msg_put(m);
+ 	}
+ 
++	/*
++	 * inhibit_announce ports cannot re-announce, so they cannot
++	 * rebuild a pruned foreign master record. Skip age-expiry so
++	 * a valid record is not discarded between announce intervals.
++	 */
++	if (fc->port && fc->port->inhibit_announce) {
++		goto done;
++	}
++
++	clock_gettime(CLOCK_MONOTONIC, &now);
++
+ 	while (!TAILQ_EMPTY(&fc->messages)) {
+ 		m = TAILQ_LAST(&fc->messages, messages);
+ 		if (msg_current(m, now))
+@@ -300,6 +309,7 @@ static void fc_prune(struct foreign_clock *fc)
+ 		msg_put(m);
+ 	}
+ 
++done:
+ 	if (fc->n_messages < before)
+ 		pr_debug("port %hu: [BMCA] fc_prune %s: expired %u messages, n_messages=%u->%u",
+ 			 fc->port ? portnum(fc->port) : 0,
+@@ -2670,10 +2680,39 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 	case FD_SYNC_RX_TIMER:
+ 		pr_debug("port %hu: %s timeout", portnum(p),
+ 			 fd_index == FD_SYNC_RX_TIMER ? "rx sync" : "announce");
+-		/* Do not clear the foreign master record on inhibit_announce ports;
+-		 * BMC needs it intact to select the upstream GM as best master. */
+-		if (p->best && !p->inhibit_announce) {
+-			fc_clear(p->best);
++		/*
++		 * Clear the foreign master record so BMC sees no best master
++		 * and can promote the downstream port to GRAND_MASTER.
++		 *
++		 * Exception: inhibit_announce ports in LISTENING state keep
++		 * their record intact. Without it, the record never reaches
++		 * FOREIGN_MASTER_THRESHOLD after a GM restart, causing a
++		 * 45-minute recovery delay until the unicast renewal cycle
++		 * re-populates it. In SLAVE/UNCALIBRATED the GM is actively
++		 * gone, so we must clear to let BMC react immediately.
++		 */
++		if (p->best) {
++			if (!p->inhibit_announce ||
++			    p->state == PS_SLAVE ||
++			    (p->state == PS_UNCALIBRATED &&
++			     p->best->n_messages == 0)) {
++				pr_debug("port %hu: [BMCA] fc_clear on %s timeout: "
++					 "state=%d inhibit=%d n_messages=%u",
++					 portnum(p),
++					 fd_index == FD_SYNC_RX_TIMER ?
++					 "rx_sync" : "announce",
++					 p->state, p->inhibit_announce,
++					 p->best->n_messages);
++				fc_clear(p->best);
++			} else {
++				pr_debug("port %hu: [BMCA] fc_clear SKIPPED on %s timeout: "
++					 "state=%d inhibit=%d n_messages=%u",
++					 portnum(p),
++					 fd_index == FD_SYNC_RX_TIMER ?
++					 "rx_sync" : "announce",
++					 p->state, p->inhibit_announce,
++					 p->best->n_messages);
++			}
+ 		}
+ 
+ 		/*
+@@ -2685,7 +2724,7 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 			port_clr_tmo(p->fda.fd[FD_SYNC_RX_TIMER]);
+ 		}
+ 
+-		if (p->inhibit_announce) {
++		if (p->inhibit_announce && p->state != PS_PASSIVE) {
+ 			port_clr_tmo(p->fda.fd[FD_ANNOUNCE_TIMER]);
+ 		} else {
+ 			port_set_announce_tmo(p);
+diff --git a/unicast_client.c b/unicast_client.c
+index b1b9072..0fe95e1 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -557,6 +557,9 @@ void unicast_client_state_changed(struct port *p)
+ 
+ 	pid = clock_parent_identity(p->clock);
+ 
++	pr_debug("port %d: [UC_STATE] state_changed: parent_pid=%s",
++		 portnum(p), pid2str(&pid));
++
+ 	/*
+ 	 * When a ucma entry is in UC_WAIT its portIdentity is zero (no
+ 	 * announce grant received yet). If the BMCA selects a master whose
+@@ -581,17 +584,28 @@ void unicast_client_state_changed(struct port *p)
+ 
+ 	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
+ 		enum unicast_state old_state = ucma->state;
++		char ucma_pid_str[64];
++		snprintf(ucma_pid_str, sizeof(ucma_pid_str), "%s",
++			 pid2str(&ucma->portIdentity));
++		pr_debug("port %d: [UC_STATE] checking ucma pid=%s state=%d vs parent=%s",
++			 portnum(p), ucma_pid_str,
++			 ucma->state, pid2str(&pid));
+ 		if (pid_eq(&ucma->portIdentity, &pid)) {
+ 			ucma->state = unicast_fsm(ucma->state, UC_EV_SELECTED);
+ 			/*
+ 			 * UC_EV_SELECTED is a no-op in UC_WAIT (announce grant
+ 			 * not yet received). Force to UC_NEED_SYDY so the timer
+-			 * immediately requests SYNC/DELAY_RESP. The announce
+-			 * grant will arrive asynchronously and be absorbed
+-			 * harmlessly in UC_HAVE_SYDY.
++			 * immediately requests SYNC/DELAY_RESP without waiting
++			 * for the announce grant cycle to complete. Credit the
++			 * ANNOUNCE bit in granted so that sydymsk is satisfiable
++			 * once SYNC and DELAY_RESP grants arrive — announce
++			 * messages are already flowing (foreign master record
++			 * reached threshold), so the grant is implicit.
+ 			 */
+-			if (ucma->state == UC_WAIT)
++			if (ucma->state == UC_WAIT) {
+ 				ucma->state = UC_NEED_SYDY;
++				ucma->granted |= (1 << ANNOUNCE);
++			}
+ 			pr_info("port %d: [UC_FSM] Master %s SELECTED: %d->%d, granted=0x%x",
+ 				 portnum(p), pid2str(&ucma->portIdentity),
+ 				 old_state, ucma->state, ucma->granted);
+@@ -602,7 +616,7 @@ void unicast_client_state_changed(struct port *p)
+ 
+ 			if ((prev_state != ucma->state) && (prev_state == UC_HAVE_SYDY)) {
+ 				unicast_client_tx_cancel(p, ucma, UNICAST_CANCEL_SYDY);
+-				ucma->renewal_tmo = 0; /* WRS: tx_cancel clears granted bits; zero renewal timer */
++				ucma->renewal_tmo = 0; /* STX: tx_cancel clears granted bits; zero renewal timer */
+ 			}
+ 			if (old_state != ucma->state) {
+ 				pr_info("port %d: [UC_FSM] Master %s UNSELECTED: %d->%d",
+@@ -625,6 +639,10 @@ int unicast_client_timer(struct port *p)
+ 	pr_debug("port %d: [UC_TIMER] Unicast client timer fired", portnum(p));
+ 
+ 	STAILQ_FOREACH(master, &p->unicast_master_table->addrs, list) {
++		pr_debug("port %d: [UC_TIMER] entry pid=%s state=%d type=%d trp_type=%d granted=0x%x",
++			 portnum(p), pid2str(&master->portIdentity),
++			 master->state, master->type,
++			 transport_type(p->trp), master->granted);
+ 		if (master->type != transport_type(p->trp)) {
+ 			continue;
+ 		}
+-- 
+2.43.0
+
