@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2019-2024 Wind River Systems, Inc.
+# Copyright (c) 2019-2024,2026 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -342,6 +342,8 @@ class ServiceMonitor(object):
                 elif cmd == b'restful-url':
                     try:
                         self.restful_plugin_url = args[0]
+                        if not isinstance(self.restful_plugin_url, str):
+                            self.restful_plugin_url = self.restful_plugin_url.decode("utf-8")
                         self.send_response(client, request, 'OK')
                     except IndexError:
                         LOG.warning('Failed to update restful plugin url: '
@@ -818,7 +820,7 @@ class ServiceMonitor(object):
                 CONFIG.ceph_cli_timeout_sec)
             self.run_with_timeout(
                 [self.ceph_executable, 'config-key', 'get',
-                 '/mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity)],
+                 'mgr/restful/{}/key'.format(CONFIG.ceph_mgr_identity)],
                 CONFIG.ceph_cli_timeout_sec)
             return True
         except CommandFailed:
@@ -840,7 +842,7 @@ class ServiceMonitor(object):
                         '[v3_ca]\n'
                         'subjectAltName=DNS:{}\n'
                         'basicConstraints = CA:true\n'
-                        '[ req_distinguished_name ]\n'
+                        '[req_distinguished_name]\n'
                         '0.organizationName = IT\n'
                         'commonName = ceph-restful\n').format(
                             CONFIG.ceph_mgr_identity).encode('utf-8'))
@@ -912,17 +914,23 @@ class ServiceMonitor(object):
     def restful_plugin_get_url(self):
         command = [self.ceph_executable, 'mgr', 'services',
                    '--format', 'json']
-        with open(os.devnull, 'wb') as null:
-            out = self.run_with_timeout(
-                command, CONFIG.ceph_cli_timeout_sec, stderr=null)
-        try:
-            self.restful_plugin_url = json.loads(out)['restful']
-        except ValueError as err:
-            raise CephRestfulPluginFailed(
-                reason='unable to decode json: {} output={}'.format(err, out))
-        except KeyError as err:
-            raise CephRestfulPluginFailed(
-                reason='missing expected key: {} in ouput={}'.format(err, out))
+        retry_interval = 5
+        max_retries = 5
+        for attempt in range(max_retries):
+            with open(os.devnull, 'wb') as null:
+                out = self.run_with_timeout(
+                    command, CONFIG.ceph_cli_timeout_sec, stderr=null)
+            try:
+                self.restful_plugin_url = json.loads(out)['restful']
+                break
+            except ValueError as err:
+                reason = 'unable to decode json: {} output={}'.format(err, out)
+            except KeyError as err:
+                reason = 'missing expected key: {} in ouput={}'.format(err, out)
+            if attempt == max_retries - 1:
+                raise CephRestfulPluginFailed(reason=reason)
+            LOG.info('Waiting for restful plugin to register service url...')
+            time.sleep(retry_interval)
         self.request_update_plugin_url(self.restful_plugin_url)
 
     def restful_plugin_get_certificate(self):
@@ -942,7 +950,11 @@ class ServiceMonitor(object):
             raise RestApiPingFailed(reason='missing service url')
         if not self.certificate:
             raise RestApiPingFailed(reason='missing certificate')
-        LOG.debug('Ping restful plugin: url=%d', self.restful_plugin_url)
+        if CONFIG.ceph_mgr_identity not in self.restful_plugin_url:
+            LOG.info('Active Restful API is in a remote host, skipping ping: url=%s',
+                     self.restful_plugin_url)
+            return
+        LOG.debug('Ping restful plugin: url=%s', self.restful_plugin_url)
         try:
             response = requests.request(
                 'GET', self.restful_plugin_url, verify=False,
