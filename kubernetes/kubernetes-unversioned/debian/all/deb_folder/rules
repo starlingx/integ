@@ -66,6 +66,7 @@ override_dh_install:
 	install -p -m 0700 -t ${DEBIAN_DESTDIR}${_bindir} debian/kubelet-cgroup-setup.sh
 	install -v -m 0700 -d ${DEBIAN_DESTDIR}${_local_sbindir}
 	install -v -m 0700 -t ${DEBIAN_DESTDIR}${_local_sbindir} debian/sanitize_kubelet_reserved_cpus.sh
+	install -v -m 0700 -t ${DEBIAN_DESTDIR}${_local_sbindir} debian/update_kubelet_version.py
 
 	dh_install
 
