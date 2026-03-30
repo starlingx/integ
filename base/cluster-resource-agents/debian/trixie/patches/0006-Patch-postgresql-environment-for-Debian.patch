@@ -21,11 +21,11 @@ index cce4e1c..87bc486 100755
  
  # Defaults
 -OCF_RESKEY_pgctl_default=/usr/bin/pg_ctl
-+OCF_RESKEY_pgctl_default=/usr/lib/postgresql/13/bin/pg_ctl
++OCF_RESKEY_pgctl_default=/usr/lib/postgresql/17/bin/pg_ctl
  OCF_RESKEY_psql_default=/usr/bin/psql
 -OCF_RESKEY_pgdata_default=/var/lib/pgsql/data
-+OCF_RESKEY_pgdata_default=/var/lib/postgresql/13/main/
-+OCF_RESKEY_pgconf_default=/etc/postgresql
++OCF_RESKEY_pgdata_default=/var/lib/postgresql/17/main/
++OCF_RESKEY_pgconf_default=/etc/postgresql/17/main
  OCF_RESKEY_pgdba_default=postgres
  OCF_RESKEY_pghost_default=""
  OCF_RESKEY_pgport_default=5432
