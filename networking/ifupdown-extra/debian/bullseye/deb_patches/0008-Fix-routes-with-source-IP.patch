@@ -1,0 +1,407 @@
+From 22995b69800f601ce4fdc0ce6b82f509aca2a0fb Mon Sep 17 00:00:00 2001
+From: Fabiano Correa Mercer <fabiano.correamercer@windriver.com>
+Date: Wed, 1 Apr 2026 14:55:52 -0300
+Subject: [PATCH] Fix routes with source IP
+
+This script handles two cases:
+1. Default routes when interface has a gateway configured
+2. Static routes from /etc/network/routes with 'src' parameter
+
+Signed-off-by: Fabiano Correa Mercer <fabiano.correamercer@windriver.com>
+---
+ debian/ifupdown-extra.install          |   1 +
+ debian/rules                           |   1 +
+ if-up-scripts/check-route-src          | 246 +++++++++++++++++++++++++
+ if-up-scripts/ifupdown-extra-functions |  54 ++++++
+ if-up-scripts/static-routes            |  35 +---
+ 5 files changed, 311 insertions(+), 26 deletions(-)
+ create mode 100755 if-up-scripts/check-route-src
+ create mode 100755 if-up-scripts/ifupdown-extra-functions
+
+diff --git a/debian/ifupdown-extra.install b/debian/ifupdown-extra.install
+index b306c38..bd0db85 100644
+--- a/debian/ifupdown-extra.install
++++ b/debian/ifupdown-extra.install
+@@ -1 +1,2 @@
+ scripts/network-test  /usr/bin/
++if-up-scripts/ifupdown-extra-functions  /etc/network/if-up.d/
+diff --git a/debian/rules b/debian/rules
+index 93c492c..266722d 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -21,6 +21,7 @@ override_dh_install:
+ 	install -m755 if-up-scripts/check-network-cable  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/00check-network-cable
+ 	install -m755 if-up-scripts/check-duplicate-ip  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/10check-duplicate-ip
+ 	install -m755 if-up-scripts/static-routes  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/20static-routes
++	install -m755 if-up-scripts/check-route-src  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/25check-route-src
+ 	install -m755 if-up-scripts/check-gateway  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/30check-gateway
+ 	# Serviced Unit file
+ 	install -m644 debian/networking-routes.service $(CURDIR)/debian/ifupdown-extra/lib/systemd/system/
+diff --git a/if-up-scripts/check-route-src b/if-up-scripts/check-route-src
+new file mode 100755
+index 0000000..ac1d4aa
+--- /dev/null
++++ b/if-up-scripts/check-route-src
+@@ -0,0 +1,246 @@
++#!/bin/sh
++#
++# Check and fix routes with correct source IP
++#
++# This script handles two cases:
++# 1. Default routes when interface has a gateway configured
++# 2. Static routes from /etc/network/routes with 'src' parameter
++#
++
++DEFAULT=/etc/default/network-test
++[ -r "$DEFAULT" ] && . $DEFAULT
++
++ROUTEFILE="/etc/network/routes"
++FUNCTIONS_FILE="/etc/network/if-up.d/ifupdown-extra-functions"
++DO_SYSLOG=${DO_SYSLOG:-yes}
++VERBOSITY=${VERBOSITY:-0}
++
++LC_ALL=C
++export LC_ALL
++
++# Source common functions
++if [ -r "$FUNCTIONS_FILE" ]; then
++    . "$FUNCTIONS_FILE"
++else
++    echo "ERROR: Cannot find ifupdown-extra-functions file at $FUNCTIONS_FILE"
++    exit 1
++fi
++
++do_output() {
++    local REDIR_ECHO=""
++    local ALSO_ECHO="no"
++    local priority="$1"
++    shift
++
++    if [ "$1" = "--also-echo" ] ; then
++        ALSO_ECHO="yes"
++        shift
++    fi
++
++    if [[ " err warning " =~ " $priority " ]] ; then
++        REDIR_ECHO="1>&2"
++    fi
++
++    if [ "$DO_SYSLOG" = "yes" ] ; then
++        logger -i -p daemon.$priority ifupdown: "$@"
++
++        if [ "$ALSO_ECHO" = "yes" ] ; then
++            eval echo 'ifupdown: "$@"' $REDIR_ECHO
++        fi
++    else
++        eval echo 'ifupdown: "$@"' $REDIR_ECHO
++    fi
++}
++
++OUT_ERR="do_output err"
++OUT_WARN="do_output warning"
++OUT_INFO="do_output info"
++OUT_DEBUG="do_output debug"
++
++[ -z "$IFACE" ] && exit 0
++[ "$IFACE" = "--all" ] && exit 0
++
++case $IFACE in
++    sl* | ww* | lo*) exit 0 ;;
++    *) ;;
++esac
++
++real_iface=$(echo "$IFACE" | awk -F ':' '{print $1}')
++
++# Check if IP address is valid (not in dadfailed or tentative state)
++check_ip_valid() {
++    local ip=$1
++    local iface=$2
++
++    if [[ "$ip" =~ ":" ]] ; then
++        # IPv6 - check for dadfailed or tentative
++        local dad_state=$(ip -6 addr show dev "$iface" 2>/dev/null | grep "$ip" | grep -oE '(dadfailed|tentative)' | head -n1)
++
++        if [ "$dad_state" = "dadfailed" ] ; then
++            $OUT_WARN "IP $ip is in dadfailed state"
++            return 1
++        fi
++
++        if [ "$dad_state" = "tentative" ] ; then
++            [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "IP $ip is in tentative state, retrying up to 5 times..."
++            local retry=0
++            while [ $retry -lt 5 ] ; do
++                sleep 0.3
++                dad_state=$(ip -6 addr show dev "$iface" 2>/dev/null | grep "$ip" | grep -oE '(dadfailed|tentative)' | head -n1)
++
++                # dadfailed has priority
++                if [ "$dad_state" = "dadfailed" ] ; then
++                    $OUT_WARN "IP $ip changed to dadfailed state during retry"
++                    return 1
++                fi
++
++                # If no longer tentative, it's valid
++                if [ -z "$dad_state" ] ; then
++                    [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "IP $ip is now valid after $((retry + 1)) retries"
++                    return 0
++                fi
++
++                retry=$((retry + 1))
++            done
++
++            # Still tentative after retries
++            $OUT_WARN "IP $ip still in tentative state after retries"
++            return 1
++        fi
++    fi
++    return 0
++}
++
++# Fix default route when gateway is configured
++fix_default_route() {
++    [ -z "$IF_GATEWAY" ] && return 0
++
++    # Use IF_ADDRESS from the interface configuration file
++    # Do NOT query the kernel as there may be multiple IPs on the same physical interface
++    local if_addr="$IF_ADDRESS"
++    [ -z "$if_addr" ] && return 0
++
++    local is_ipv6="no"
++    [[ "$IF_GATEWAY" =~ ":" ]] && is_ipv6="yes"
++
++    # Check if IP is valid
++    local ip_is_valid=0
++    if check_ip_valid "$if_addr" "$real_iface" ; then
++        ip_is_valid=1
++    fi
++
++    [ "$VERBOSITY" -eq 1 ] && $OUT_DEBUG "Checking default route for $IFACE (gateway: $IF_GATEWAY, address: $if_addr, valid: $ip_is_valid)"
++
++    # Check if default route exists with correct SRC
++    local ip_param="-4"
++    local ip_version="IPv4"
++    if [ "$is_ipv6" = "yes" ] ; then
++        # IPv6
++        ip_param="-6"
++        ip_version="IPv6"
++    fi
++
++    if [ $ip_is_valid -eq 1 ] ; then
++        local route_info=$(ip "$ip_param" route show default via "$IF_GATEWAY" dev "$real_iface" 2>/dev/null | grep "src $if_addr")
++        if [ -z "$route_info" ] ; then
++            $OUT_INFO --also-echo "Replacing default route WITH SRC for $ip_version via $IF_GATEWAY dev $real_iface with SRC $if_addr"
++            ip "$ip_param" route replace default via "$IF_GATEWAY" dev "$real_iface" src "$if_addr" onlink 2>/dev/null
++        fi
++    else
++        # IP not valid (dadfailed/tentative), ensure route exists without SRC
++        local route_info=$(ip "$ip_param" route show default via "$IF_GATEWAY" dev "$real_iface" 2>/dev/null)
++        if [ -z "$route_info" ] ; then
++            $OUT_WARN --also-echo "Replacing default route WITHOUT SRC for $ip_version via $IF_GATEWAY dev $real_iface (IP $if_addr is not valid, check DAD failed/tentative state)"
++            ip "$ip_param" route replace default via "$IF_GATEWAY" dev "$real_iface" onlink 2>/dev/null
++        fi
++    fi
++}
++
++# Fix static routes from /etc/network/routes
++fix_static_routes() {
++    [ ! -r "$ROUTEFILE" ] && return 0
++
++    # Parse routes file: network netmask gateway interface [src srcip] [metric N]
++    # Match both exact interface name (enp0s8:1-2) and physical interface (enp0s8)
++    cat "$ROUTEFILE" | egrep "^[^#].*[[:space:]](${IFACE}|${real_iface})([[:space:]]|$)" | \
++    while read -r line ; do
++        # Parse line with extended format supporting 'src' and 'metric'
++        local parts=($line)
++        local network="${parts[0]}"
++        local netmask="${parts[1]}"
++        local gateway="${parts[2]}"
++        local interface="${parts[3]}"
++        local src_ip=""
++        local metric=""
++
++        # Look for 'src' and 'metric' keywords
++        for ((i=4; i<${#parts[@]}; i++)); do
++            if [ "${parts[$i]}" = "src" ] && [ -n "${parts[$i+1]}" ]; then
++                src_ip="${parts[$i+1]}"
++            fi
++            if [ "${parts[$i]}" = "metric" ] && [ -n "${parts[$i+1]}" ]; then
++                metric="${parts[$i+1]}"
++            fi
++        done
++
++        # Only process if src is specified
++        [ -z "$src_ip" ] && continue
++        [ -z "$network" ] || [ -z "$netmask" ] || [ -z "$gateway" ] || [ -z "$interface" ] && continue
++        [ "$gateway" = "reject" ] || [ "$gateway" = "blackhole" ] && continue
++
++        # Skip if this route is not for the current interface being brought up
++        # This prevents processing routes for other alias interfaces on the same physical interface
++        [ "$interface" != "$IFACE" ] && [ "$interface" != "$real_iface" ] && continue
++
++        # Check if source IP is valid
++        local src_is_valid=0
++        if check_ip_valid "$src_ip" "$real_iface" ; then
++            src_is_valid=1
++        fi
++
++        # Build network with prefix
++        local prefix_len=$(get_prefix_length "$netmask")
++        local linux_network="${network}${prefix_len}"
++        [ "$network" = "default" ] && linux_network="default"
++
++        # Check if route exists with correct SRC
++        local is_ipv6="no"
++        [[ "$network" =~ ":" ]] && is_ipv6="yes"
++
++        local ip_param="-4"
++        if [ "$is_ipv6" = "yes" ] ; then
++            ip_param="-6"
++        fi
++
++        if [ $src_is_valid -eq 1 ] ; then
++            # IP is valid, add route with SRC
++            local route_check
++            route_check=$(ip "$ip_param" route show "$linux_network" via "$gateway" dev "$real_iface" 2>/dev/null | grep "src $src_ip")
++
++            if [ -z "$route_check" ] ; then
++                $OUT_INFO --also-echo "Replacing route WITH SRC for network: $linux_network via $gateway dev $real_iface with SRC $src_ip"
++
++                local metric_param=""
++                [ -n "$metric" ] && metric_param="metric $metric"
++                ip "$ip_param" route replace "$linux_network" via "$gateway" dev "$real_iface" src "$src_ip" $metric_param 2>/dev/null
++            fi
++        else
++            # IP not valid (dadfailed/tentative), ensure route exists without SRC
++            local route_check
++            route_check=$(ip "$ip_param" route show "$linux_network" via "$gateway" dev "$real_iface" 2>/dev/null)
++
++            if [ -z "$route_check" ] ; then
++                $OUT_WARN --also-echo "Replacing route WITHOUT SRC for network: $linux_network via $gateway dev $real_iface (IP $src_ip is not valid, check DAD failed/tentative state)"
++                local metric_param=""
++                [ -n "$metric" ] && metric_param="metric $metric"
++                ip "$ip_param" route replace "$linux_network" via "$gateway" dev "$real_iface" $metric_param 2>/dev/null
++            fi
++        fi
++    done
++}
++
++# Execute both checks
++fix_default_route
++fix_static_routes
++
++exit 0
+diff --git a/if-up-scripts/ifupdown-extra-functions b/if-up-scripts/ifupdown-extra-functions
+new file mode 100755
+index 0000000..304376f
+--- /dev/null
++++ b/if-up-scripts/ifupdown-extra-functions
+@@ -0,0 +1,54 @@
++#!/bin/sh
++#
++# Common functions for ifupdown-extra scripts
++#
++# This file contains shared utility functions used by multiple
++# ifupdown-extra scripts to avoid code duplication.
++#
++# Usage: Source this file in your script:
++#   . /etc/network/if-up.d/ifupdown-extra-functions
++#
++
++# get_prefix_length - Convert netmask to prefix length
++#
++# Converts a netmask to CIDR prefix length notation.
++# Supports:
++#   - IPv4 dotted notation (e.g., 255.255.255.0 -> /24)
++#   - IPv6 colon notation (e.g., ffff:ffff:ffff:ffff:: -> /64)
++#   - Direct prefix length (e.g., 24 -> /24)
++#
++# Arguments:
++#   $1 - netmask (IPv4, IPv6, or numeric prefix)
++#
++# Returns:
++#   Prefix length in format "/N" (e.g., /24, /64)
++#
++# Example:
++#   prefix=$(get_prefix_length "255.255.255.0")
++#   # Returns: /24
++#
++get_prefix_length() {
++    local netmask=$1
++    if [[ ${netmask} =~ .*:.* ]]; then
++        # IPv6
++        awk -F: '{
++            split($0, octets)
++            for (i in octets) {
++                decval = strtonum("0x"octets[i])
++                mask += 16 - log(2**16 - decval)/log(2);
++            }
++            print "/" mask
++        }' <<< ${netmask}
++    elif [[ ${netmask} =~ .*\..* ]]; then
++        # IPv4
++        awk -F. '{
++            split($0, octets)
++            for (i in octets) {
++                mask += 8 - log(2**8 - octets[i])/log(2);
++            }
++            print "/" mask
++        }' <<< ${netmask}
++    elif [[ ${netmask} =~ ^[0-9]+$ ]]; then
++        echo "/${netmask}"
++    fi
++}
+diff --git a/if-up-scripts/static-routes b/if-up-scripts/static-routes
+index 1341f43..e338c70 100755
+--- a/if-up-scripts/static-routes
++++ b/if-up-scripts/static-routes
+@@ -45,6 +45,15 @@
+ #          setting up a route breaks the interface configuration
+ 
+ ROUTEFILE="/etc/network/routes"
++FUNCTIONS_FILE="/etc/network/if-up.d/ifupdown-extra-functions"
++
++# Source common functions
++if [ -r "$FUNCTIONS_FILE" ]; then
++    . "$FUNCTIONS_FILE"
++else
++    echo "ERROR: Cannot find ifupdown-extra-functions file at $FUNCTIONS_FILE"
++    exit 1
++fi
+ 
+ # Abort (without error) if the configuration file does not exist
+ [ ! -r "$ROUTEFILE" ] && exit 0
+@@ -59,32 +68,6 @@ VERBOSITY=${VERBOSITY:-0}
+ # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=901612
+ if [ ${IFACE} = "--all" ]; then IFACE="[[:alnum:]]+"; fi
+ 
+-function get_prefix_length {
+-    netmask=$1
+-    if [[ ${netmask} =~ .*:.* ]]; then
+-        # IPv6
+-        awk -F: '{
+-            split($0, octets)
+-                for (i in octets) {
+-                    decval = strtonum("0x"octets[i])
+-                    mask += 16 - log(2**16 - decval)/log(2);
+-                }
+-            print "/" mask
+-        }' <<< ${netmask}
+-    elif [[ ${netmask} =~ .*\..* ]]; then
+-        # IPv4
+-        awk -F. '{
+-            split($0, octets)
+-            for (i in octets) {
+-                mask += 8 - log(2**8 - octets[i])/log(2);
+-            }
+-            print "/" mask
+-        }' <<< ${netmask}
+-    elif [[ ${netmask} =~ ^[0-9]+$ ]]; then
+-        echo "/${netmask}"
+-    fi
+-}
+-
+ # if route is default, remove prefix_len
+ function get_linux_network {
+     network=$1
+-- 
+2.34.1
+

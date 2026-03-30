@@ -4,3 +4,4 @@
 0004-Check-for-existing-IP-before-adding.patch
 0005-Fix-IPv6-DAD-failure-detection-during-address-assign.patch
 0006-Fix-IPv6-preferred-lifetime-for-aliased-interfaces.patch
+0007-Add-SRC-IP-for-default-routes.patch
