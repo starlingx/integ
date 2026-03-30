@@ -66,7 +66,6 @@ kubernetes/etcd-3.4.37
 kubernetes/etcd-3.5.26
 kubernetes/flux2
 kubernetes/flux2-charts
-kubernetes/flux2-charts-legacy
 kubernetes/helm
 kubernetes/k8s-cni-cache-cleanup
 kubernetes/k8s-pod-recovery
@@ -99,8 +98,8 @@ ostree/ostree
 ostree/ostree-upgrade-mgr
 python/python-eventlet
 python/pynetlink
-# python/python3-pyjwkest
-# python/python3-pyoidc
+python/python3-pyjwkest
+python/python3-pyoidc
 python/python-nss
 python/python3-nsenter
 python/python3-zmq
