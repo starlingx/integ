@@ -21,6 +21,7 @@ centos-debian-compat
 config/facter
 config/puppet-agent
 config/puppet-server
+config/puppet-modules/openstack/puppet-barbican
 config/puppet-modules/openstack/puppet-ceph
 config/puppet-modules/openstack/puppet-keystone
 config/puppet-modules/openstack/puppet-horizon
