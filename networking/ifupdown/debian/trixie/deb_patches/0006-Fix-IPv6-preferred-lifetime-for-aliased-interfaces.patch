@@ -16,15 +16,16 @@ remain undeprecated by default, matching the expected behavior for
 static IPv6 address configuration.
 
 Signed-off-by: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+Signed-off-by: Abhinav Ayyapasetti <abhinav.ayyapasetti@windriver.com>
 ---
  archcommon.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/archcommon.c b/archcommon.c
-index 32606db..b23514e 100644
+index c7cf486..c0f397f 100644
 --- a/archcommon.c
 +++ b/archcommon.c
-@@ -211,7 +211,7 @@ void set_preferred_lft(interface_defn *ifd, char **pparam, int argc, char **argv
+@@ -257,7 +257,7 @@ void set_preferred_lft(interface_defn *ifd, char **pparam, int argc, char **argv
  		return;
  
  	if (iface_has(":")) {
@@ -34,5 +35,5 @@ index 32606db..b23514e 100644
  		*pparam = realloc(*pparam, sizeof(s));
  		if (*pparam == NULL)
 -- 
-2.34.1
+2.43.0
 

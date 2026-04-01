@@ -9,10 +9,11 @@ assigned before adding it, for both IPv4 and IPv6.
 
 
 Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+Signed-off-by: Abhinav Ayyapasetti <abhinav.ayyapasetti@windriver.com>
 ---
  archcommon.c      | 81 +++++++++++++++++++++++++++++++++++++++++++++++
  archcommon.h      |  2 ++
- inet.defn         |  8 ++---
+ inet.defn         |  9 +++---
  inet6.defn        |  4 +--
  tests/linux/up.1  | 28 ++++------------
  tests/linux/up.11 |  4 +--
@@ -24,7 +25,7 @@ Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
  tests/linux/up.6  |  4 +--
  tests/linux/up.7  | 32 +++++++------------
  tests/linux/up.8  | 20 ++++--------
- 14 files changed, 139 insertions(+), 116 deletions(-)
+ 14 files changed, 140 insertions(+), 116 deletions(-)
 
 diff --git a/archcommon.c b/archcommon.c
 index 32c541f..c7cf486 100644
@@ -135,24 +136,30 @@ index 818b0b6..60e8a33 100644
  void cleanup_hwaddress(interface_defn *ifd, char **pparam, int argc, char **argv);
  void make_hex_address(interface_defn *ifd, char **pparam, int argc, char **argv);
 diff --git a/inet.defn b/inet.defn
-index c29f8b7..336a0b4 100644
+index c29f8b7..860217a 100644
 --- a/inet.defn
 +++ b/inet.defn
-@@ -37,10 +37,10 @@ method static
+@@ -37,15 +37,16 @@ method static
  
    up
      ip addr add %address%[[/%netmask%]] [[broadcast %broadcast%]] \
--       [[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface%
+-	[[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface%
 -    ip link set dev %iface% [[mtu %mtu%]] [[address %hwaddress%]] up
 -
--    [[ ip route add default via %gateway% [[metric %metric%]] dev %iface% onlink ]]
-+      [[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface% ; \
-+      if (!address_exists())
++	[[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface% ; \
++	if (!address_exists())
 +    ip link set dev %iface% [[mtu %mtu%]] [[address %hwaddress%]] up ;
-+    [[ ip route add default via %gateway% [[metric %metric%]] dev %iface% onlink ]] ; 
-
+     [[ ip route add default via %gateway% [[metric %metric%]] dev %iface% onlink ]]
+ 
    down
      [[ ip route del default via %gateway% [[metric %metric%]] dev %iface% 2>&1 1>/dev/null || true ]]
+     ip addr del %address%[[/%netmask%]] [[broadcast %broadcast%]] \
+-	[[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface%
++	[[peer %pointopoint%]] [[scope %scope%]] dev %iface% label %iface% ; \
++	if (!address_exists())
+     ip -4 addr flush dev %iface% \
+     		if (iface_is_link())
+     ip link set dev %iface% down \
 diff --git a/inet6.defn b/inet6.defn
 index ce10275..fc49cc3 100644
 --- a/inet6.defn
@@ -651,5 +658,5 @@ index 6280ac6..772166d 100644
  run-parts --exit-on-error --verbose /etc/network/if-up.d
  run-parts --exit-on-error --verbose /etc/network/if-up.d
 -- 
-2.34.1
+2.43.0
 
