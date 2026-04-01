@@ -23,7 +23,7 @@
     parent: devstack
     description: |
       Base job for StarlingX Flock components DevStack tests
-    nodeset: openstack-single-node-bionic
+    nodeset: debian-bullseye
     roles:
       - zuul: openstack/devstack
     timeout: 9000
@@ -96,7 +96,7 @@
     parent: devstack-tox-functional
     description: |
       Base job for StarlingX Flock components DevStack tests that use tox
-    nodeset: openstack-single-node-bionic
+    nodeset: debian-bullseye
     roles:
       - zuul: openstack/devstack
     timeout: 9000
