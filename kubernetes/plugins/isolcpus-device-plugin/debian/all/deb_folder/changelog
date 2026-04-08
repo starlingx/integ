@@ -1,0 +1,17 @@
+isolcpus-device-plugin (3.0-1) unstable; urgency=medium
+
+  * Upversion for Kubernetes 1.34-1.35 support
+
+ -- Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>  Wed, 08 Apr 2026 09:19:00 -0400
+
+isolcpus-device-plugin (2.0-1) unstable; urgency=medium
+
+  * Upversion for StarlingX 12
+
+ -- Kaustubh Dhokte <kaustubh.dhokte@windriver.com>  Wed, 29 Oct 2025 15:23:19 -0400
+
+isolcpus-device-plugin (1.0-1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Daniel Safta <daniel.safta@windriver.com>  Tue, 20 Oct 2021 11:44:30 -0400
