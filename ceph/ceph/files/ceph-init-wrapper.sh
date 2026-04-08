@@ -354,10 +354,8 @@ with_service_lock ()
 start ()
 {
     local service="$1"
-    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
-    eval service="${service}"
 
-    log INFO "Ceph START ${service} command received"
+    log INFO "Ceph START${service:+ ${service}} command received"
 
     # For AIO-DX, ceph services have special treatment
     if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; then
@@ -401,18 +399,16 @@ start ()
         save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_RUNNING}
     fi
 
-    log INFO "Ceph START ${service} command finished."
+    log INFO "Ceph START${service:+ ${service}} command finished."
 }
 
 stop ()
 {
     local cmd="stop"
     local service="$1"
-    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
-    eval service="${service}"
     [ "$2" == "force" ] && cmd="forcestop"
 
-    log INFO "Ceph ${cmd^^} ${service} command received."
+    log INFO "Ceph ${cmd^^}${service:+ ${service}} command received."
 
     with_service_lock "${service}" ${CEPH_SCRIPT} ${cmd} ${service}
 
@@ -422,7 +418,7 @@ stop ()
         save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_STOPPED}
     fi
 
-    log INFO "Ceph ${cmd^^} ${service} command finished."
+    log INFO "Ceph ${cmd^^}${service:+ ${service}} command finished."
 }
 
 restart ()
@@ -431,10 +427,10 @@ restart ()
         # Ceph is not running on this node, return success
         exit 0
     fi
-    log INFO "Ceph RESTART $1 command received."
+    log INFO "Ceph RESTART${1:+ $1} command received."
     stop "$1"
     start "$1"
-    log INFO "Ceph RESTART $1 command finished."
+    log INFO "Ceph RESTART${1:+ $1} command finished."
 }
 
 log_and_restart_blocked_osds ()
@@ -506,8 +502,6 @@ log_and_kill_hung_procs ()
 status ()
 {
     local target="$1"  # no shift here
-    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
-    eval target="$target"
     [ -z "${target}" ] && target="mon osd"
 
     log INFO "status ${target}"
@@ -678,6 +672,11 @@ status ()
         fi
     fi
 }
+
+# Evaluate the parameter because of local monitor (controller.${HOSTNAME})
+if [ -n "${args[1]}" ]; then
+    eval args[1]="${args[1]}"
+fi
 
 start=$(date +%s%N)
 log INFO "action:${args[0]}${args[1]:+:${args[1]}}:start-at:${start:0:-6} ms"

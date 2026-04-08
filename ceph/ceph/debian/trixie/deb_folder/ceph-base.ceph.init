@@ -378,7 +378,9 @@ process_curl_output() {
 
     if [ ${error_code} -eq 0 ]; then
         output=$(echo "${curl_output}" | awk '/"outb"|"message"/ {if (match($0, "Incorrect password")) {print "Wrong password"}; if (match($0, "outb")) {split($0, msg, "\""); gsub(/\\n/, "\n", msg[4]); print msg[4]} }')
+        RESTFUL_FAILURE=""
     else
+        RESTFUL_FAILURE="true"
         output="No connection"
     fi
 
@@ -407,6 +409,12 @@ CEPH_HEALTH_DETAIL=""
 is_process_hung() {
     local name=$1
     local type=$2  # 'osd' or 'mon'
+
+    # Abort if we had previous errors with restful
+    if [ "$RESTFUL_FAILURE" = "true" ]; then
+        log $name "WARN" "Restful API is marked as failed, aborting hang check"
+        return 1
+    fi
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
@@ -491,6 +499,12 @@ is_process_hung() {
 osd_has_blocked_ops() {
     local name=$1
 
+    # Abort if we had previous errors with restful
+    if [ "$RESTFUL_FAILURE" = "true" ]; then
+        log $name "WARN" "Restful API is marked as failed, aborting blocked ops check"
+        return 1
+    fi
+
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
         log $name "WARN" "Ceph cluster is marked as failed, aborting blocked ops check"
@@ -541,6 +555,12 @@ osd_has_blocked_ops() {
 osd_has_stuck_peering() {
     local name=$1
     local id=$2
+
+    # Abort if we had previous errors with restful
+    if [ "$RESTFUL_FAILURE" = "true" ]; then
+        log $name "WARN" "Restful API is marked as failed, aborting stuck peering check"
+        return 1
+    fi
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
@@ -611,6 +631,12 @@ osd_has_stuck_peering() {
 
 mds_has_blocked_clients() {
     local name=$1
+
+    # Abort if we had previous errors with restful
+    if [ "$RESTFUL_FAILURE" = "true" ]; then
+        log $name "WARN" "Restful API is marked as failed, aborting blocked MDS clients check"
+        return 1
+    fi
 
     # Abort if we had previous errors with Ceph
     if [ "$CEPH_FAILURE" = "true" ]; then
