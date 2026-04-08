@@ -54,7 +54,6 @@ golang-github-dev/golang-github-vishvananda-netlink
 golang-github-dev/golang-github-networkplumbing-go-nft-dev
 grub/grub-efi
 grub/grub2
-grub/grubby
 kata-containers
 kubernetes/chartmuseum
 kubernetes/cni/bond-cni
