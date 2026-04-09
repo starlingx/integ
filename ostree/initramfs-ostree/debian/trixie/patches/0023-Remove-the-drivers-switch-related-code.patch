@@ -1,0 +1,108 @@
+From 916d9d0dd6394fc82da76a7f5138c1616a9d189f Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 7 May 2025 03:05:00 +0000
+Subject: [PATCH] Remove the drivers switch related code
+
+Now that we no longer plan to support switching between different Intel
+eth driver versions or between in-tree and out-of-tree drivers.
+
+This would allow us to skip rebuilding the initramfs if we update these
+drivers, and would put all of the logic to load the drivers and their
+corresponding DDP packages in the rootfs where it's visible at runtime
+rather than being somewhat hidden in the initramfs code.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ init-ostree-install.sh | 18 ------------------
+ init-ostree.sh         | 18 ------------------
+ 2 files changed, 36 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 712e65a..3962f7b 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -477,21 +477,6 @@ do_mount_fs() {
+ 	mount -t "$1" "$1" "$2" || fatal "Error mounting $2"
+ }
+ 
+-network_modules() {
+-	ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
+-	depmod -a
+-	if grep -s -q '\sout-of-tree-drivers=' /proc/cmdline ; then
+-		drivers=(`echo ${OOT_DRIVERS} | tr ',' ' '` )
+-		for driver in ${drivers[@]}
+-		do
+-			if [ -e /lib/modules/"$(uname -r)"/weak-updates/"${driver}"*/"${driver}".ko ]; then
+-				insmod /lib/modules/"$(uname -r)"//weak-updates/"${driver}"*/"${driver}".ko
+-				echo "OOT driver ${driver} have been activated"
+-			fi
+-		done
+-	fi
+-}
+-
+ disable_lvm() {
+ 	sed -i "s#^\(\t*\)\# global_filter = \[.*#\1global_filter = [ \"r|.*|\" ]#" /etc/lvm/lvm.conf
+ }
+@@ -510,7 +495,6 @@ early_setup() {
+ 	do_mount_fs tmpfs /tmp
+ 	do_mount_fs tmpfs /run
+ 
+-	network_modules
+ 	# disable lvm to ensure multipath devices, if used in the system, can
+ 	# coalesce later when enabled
+ 	disable_lvm
+@@ -745,8 +729,6 @@ read_args() {
+ 				OSTREE_ROOT_B_DEVICE=$optarg ;;
+ 			inst_ostree_var=*)
+ 				OSTREE_VAR_DEVICE=$optarg ;;
+-			out-of-tree-drivers=*)
+-				OOT_DRIVERS=$optarg ;;
+ 		esac
+ 	done
+ 	# defaults if not set
+diff --git a/init-ostree.sh b/init-ostree.sh
+index 20f2a4c..0bd2928 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -67,21 +67,6 @@ do_mount_fs() {
+ 	mount -t "$1" "$1" "$2"
+ }
+ 
+-network_modules() {
+-	ln -s /lib/firmware/updates/intel/ice/ddp/ice-*.pkg /lib/firmware/intel/ice/ddp/ice.pkg
+-	depmod -a
+-	if grep -s -q '\sout-of-tree-drivers=' /proc/cmdline ; then
+-		drivers=(`echo ${OOT_DRIVERS} | tr ',' ' '` )
+-		for driver in ${drivers[@]}
+-		do
+-			if [ -e /lib/modules/"$(uname -r)"/weak-updates/"${driver}"*/"${driver}".ko ]; then
+-				insmod /lib/modules/"$(uname -r)"//weak-updates/"${driver}"*/"${driver}".ko
+-				echo "OOT driver ${driver} have been activated"
+-			fi
+-		done
+-	fi
+-}
+-
+ disable_lvm() {
+ 	sed -i "s#^\(\t*\)\# global_filter = \[.*#\1global_filter = [ \"r|.*|\" ]#" /etc/lvm/lvm.conf
+ 	sed -i "s#^\(\t*\)external_device_info_source = \"none\"#\1external_device_info_source = \"udev\"#" /etc/lvm/lvm.conf
+@@ -110,7 +95,6 @@ early_setup() {
+ 	do_mount_fs tmpfs /run
+ 
+ 	read_args
+-	network_modules
+ 
+ 	# disable lvm to ensure multipath devices, if used in the system, can
+ 	# coalesce later when enabled
+@@ -207,8 +191,6 @@ read_args() {
+ 				HW_SETTLE=$optarg ;;
+ 			multipath=*)
+ 				MULTIPATH=$optarg ;;
+-			out-of-tree-drivers=*)
+-				OOT_DRIVERS=$optarg ;;
+ 			ostree_var=*)
+ 				OSTREE_VAR_DEVICE=${optarg} ;;
+ 		esac
+-- 
+2.47.1
+

@@ -1,0 +1,153 @@
+From d9be826a583bc193dbc075e41d582920c2e09ea7 Mon Sep 17 00:00:00 2001
+From: Kyle MacLeod <kyle.macleod@windriver.com>
+Date: Fri, 23 May 2025 17:10:25 -0400
+Subject: [PATCH] Add partition:// support for finding embedded partition
+ kickstart
+
+This commit adds support for a file-based kickstart which resides on a
+labeled partition. The kickstart is specified as a boot parameter with a
+new URI of format:
+
+    partition://<partition_name>:<path>
+
+where <partition_name> is the partition label name
+and <path> is the path to the kickstart file on that partition.
+
+When specified, the partition is searched for, mounted, and the
+kickstart file is copied into the expected /local-ks.cfg location.
+Finally, the partition is unmnounted, and the boot proceeds as for
+the file:// URI handling case.
+
+Test Cases
+PASS:
+- Boot using partition://platform_backup:backups/25.09/miniboot.cfg
+  and verify that the boot proceeds by copying the given kickstart
+  from the platform_backup partition.
+- Boot using invalid parition name. Ensure boot fails.
+- Boot using invalid kickstart path name. Ensure boot fails.
+- Regression: Boot using normal file:// based kickstart. Ensure proper
+  boot proceeds as before.
+
+Signed-off-by: Kyle MacLeod <kyle.macleod@windriver.com>
+---
+ init-ostree-install.sh              | 96 ++++++++++++++-----
+ 1 file changed, 74 insertions(+), 22 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 0d047fb..712e65a 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -1035,6 +1035,60 @@ ufdisk_partition() {
+ 	fi
+ }
+ 
++get_label_block_device() {
++	# Finds block device given an array of partition labels.
++	local labels=("$@")
++	local cnt=10
++	local bdev=""
++	local label
++	while [ "${cnt}" -gt 0 ]; do
++		for label in "${labels[@]}"; do
++			bdev=$(blkid --label "${label}" 2>/dev/null)
++			if [ $? = 0 ]; then
++				echo "${bdev}"
++				return 0
++			fi
++		done
++		sleep 1
++		cnt=$((cnt - 1))
++	done
++	return 1
++}
++
++copy_kickstart_from_label_device() {
++	# Searchs for given kickstart path from array of partition labels
++	# On sucess:
++	# - mounts the labeled partition
++	# - copies given kickstart path to /local-ks.cfg
++	# - updates global KS to point to newly copied kickstart
++	#
++	# parameters:
++	# ks_path : path to kickstart file on partition
++	# ks_partition_labels: an array of partition labels to check. Uses first one found.
++	#
++	local ks_path=$1
++	shift
++	local ks_partition_labels=("$@")
++	local bdev
++	echo "Searching for kickstart ${ks_path} in ${ks_partition_labels[*]}"
++	bdev=$(get_label_block_device "${ks_partition_labels[@]}")
++	if [ -n "$bdev" ]; then
++		echo "Copying kickstart from block device: $bdev"
++		LOCAL_KS="/local-ks.cfg"
++		mkdir /t
++		mount -r "$bdev" /t
++		if [ -e "/t/${ks_path}" ]; then
++			cp "/t/${ks_path}" ${LOCAL_KS}
++			KS="file://${LOCAL_KS}"
++		fi
++		umount /t
++		rm -rf /t
++		return 0
++	fi
++	echo "Did not find device for labels: ${ks_partition_labels[*]}"
++	return 1
++}
++
+ ##################
+ 
+ if [ "$1" = "-h" -o "$1" = "-?" ] ; then
+@@ -1110,29 +1164,27 @@ if [ "$INSTNET" = dhcp -o "$INSTNET" = dhcp6 ] ; then
+ fi
+ 
+ # If local kickstart is not available
++echo "Parsing ${KS}"
+ if [ "${KS::7}" = "file://" -a ! -e "${KS:7}" ]; then
+-  # Try to find local kickstart from instboot partition
+-  cnt=10
+-  while [ "$cnt" -gt 0 ] ; do
+-    bdev=$(blkid --label instboot || blkid --label ${ISO_INSTLABEL})
+-    if [ $? = 0 ]; then
+-      break
+-    fi
+-    sleep 1
+-    cnt=$(($cnt - 1))
+-  done
+-
+-  if [ -n "$bdev" ]; then
+-    LOCAL_KS="/local-ks.cfg"
+-    mkdir /t
+-    mount -r $bdev /t
+-    if [ -e "/t/${KS:7}" ]; then
+-      cp "/t/${KS:7}" ${LOCAL_KS}
+-      KS="file://${LOCAL_KS}"
+-    fi
+-    umount /t
+-    rm -rf /t
+-  fi
++	partition_labels=("instboot" "${ISO_INSTLABEL}")
++	copy_kickstart_from_label_device "${KS:7}" "${partition_labels[@]}"
++elif [ "${KS::12}" = "partition://" ]; then
++	# format: partition://<partition_name>:<path>
++	echo "Parsing ${KS} for embedded kickstart"
++	remaining_string="${KS#partition://}"           # remove the prefix
++	ks_partition_label="${remaining_string%%:*}"    # everything before the ':'
++	ks_path="${remaining_string#*:}"                # everything after the ':'
++	if [ -z "$ks_partition_label" ]; then
++		fatal "Invalid kickstart format: partition_name not found in ${KS}"
++	fi
++	echo "Parsed ${KS}: ks_partition_label: '${ks_partition_label}', ks_path: '${ks_path}'"
++	partition_labels=("${ks_partition_label}")
++	if ! copy_kickstart_from_label_device "${ks_path}" "${partition_labels[@]}"; then
++		echo "Failure parsing local kickstart from ${KS} ..."
++		lsblk --output NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT,LABEL,PARTLABEL,PARTTYPE,UUID
++		echo ""
++		fatal "Could not find partition with label: ${ks_partition_label}"
++	fi
+ fi
+ 
+ if [ -n "${KS}" ]; then
+-- 
+2.49.0
+

@@ -1,0 +1,79 @@
+From 748540c7e594c883f8f80f8a24ef98bf0a5294c4 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 18 Jun 2023 19:24:30 -0700
+Subject: [PATCH] Support driver switch in installer
+
+This commit supports switch drivers in installer.  It will
+load drivers based on multi-drivers-switch=versioni[cvl-2.54,
+cvl-4.10, cvl-4.0.1], the drivers will be loaded by "insmod"
+command before udevd is started, and that ensures the correct
+drivers will be loaded.
+
+Legacy drivers:
+ls /lib/modules/$(uname -r)/extra/
+i40e-cvl-2.54  iavf-cvl-2.54  ice-cvl-2.54
+i40e-cvl-4.10  iavf-cvl-4.10  ice-cvl-4.10
+
+Latest drivers:
+/lib/modules/$(uname -r)/updates/
+i40e-cvl-4.0.1  iavf-cvl-4.0.1  ice-cvl-4.0.1
+
+Testing:
+- An ISO image can be built successfully.
+- Create prestage ISO and install this ISO image with qemu.
+  Create prestage ISO including the multi-drivers-switch=cvl-2.54
+  parameter.
+- kernel dmesg show that the cvl-2.54 NIC drivers loaded during
+  the install stage.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ init-ostree-install.sh | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index dfc5ee3..6494253 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -474,6 +474,21 @@ do_mount_fs() {
+ 	[[ -e /proc/mounts ]] && { grep -q -e "^$1 $2 $1" /proc/mounts && { log_info "$2 ($1) already mounted"; return 0; } }
+ 	mount -t "$1" "$1" "$2" || fatal "Error mounting $2"
+ }
++network_modules() {
++	if grep -s -q '\smulti-drivers-switch=' /proc/cmdline ; then
++		if [ -d /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}" ]; then
++			insmod /lib/modules/"$(uname -r)"/extra/ice-"${DRIVER_VERSION}"/ice.ko
++			insmod /lib/modules/"$(uname -r)"/extra/i40e-"${DRIVER_VERSION}"/i40e.ko
++			insmod /lib/modules/"$(uname -r)"/extra/iavf-"${DRIVER_VERSION}"/iavf.ko
++			echo "Legacy NIC ${DRIVER_VERSION} drivers have been activated"
++		elif [ -d /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}" ]; then
++			insmod /lib/modules/"$(uname -r)"/updates/ice-"${DRIVER_VERSION}"/ice.ko
++			insmod /lib/modules/"$(uname -r)"/updates/i40e-"${DRIVER_VERSION}"/i40e.ko
++			insmod /lib/modules/"$(uname -r)"/updates/iavf-"${DRIVER_VERSION}"/iavf.ko
++			echo "NIC ${DRIVER_VERSION} drivers have been activated"
++		fi
++        fi
++}
+ 
+ disable_lvm() {
+ 	sed -i "s#^\(\t*\)\# global_filter = \[.*#\1global_filter = [ \"r|.*|\" ]#" /etc/lvm/lvm.conf
+@@ -493,6 +508,7 @@ early_setup() {
+ 	do_mount_fs tmpfs /tmp
+ 	do_mount_fs tmpfs /run
+ 
++	network_modules
+ 	# disable lvm to ensure multipath devices, if used in the system, can
+ 	# coalesce later when enabled
+ 	disable_lvm
+@@ -724,6 +740,8 @@ read_args() {
+ 				OSTREE_ROOT_B_DEVICE=$optarg ;;
+ 			inst_ostree_var=*)
+ 				OSTREE_VAR_DEVICE=$optarg ;;
++			multi-drivers-switch=*)
++				DRIVER_VERSION=$optarg ;;
+ 		esac
+ 	done
+ 	# defaults if not set
+-- 
+2.40.0
+

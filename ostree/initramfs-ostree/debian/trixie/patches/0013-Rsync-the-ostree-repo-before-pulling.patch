@@ -1,0 +1,52 @@
+From 47ff63a93c9911524a2d66a951e85cb2f1afb663 Mon Sep 17 00:00:00 2001
+From: Haiqing Bai <haiqing.bai@windriver.com>
+Date: Mon, 3 Apr 2023 11:07:40 +0800
+Subject: [PATCH] Rsync the ostree repo before pulling
+
+It's extremely slow when ostree pulls
+from servers virtual media,
+e.g.
+- Intel servers: remote ISO via samba
+- HP servers: virtual CD/DVD via http
+
+It takes more than 3 hours while a direct copy takes
+13 minutes, so here we add a step to rsync the ostree
+repository to local disk first, then pull the repo from
+local disk, which takes about 15 minutes.
+
+Signed-off-by: Jackie Huang <Jackie.Huang@windriver.com>
+[ Replaced the 'cp' command with 'rsync -azr' ]
+Signed-off-by: Haiqing Bai <haiqing.bai@windriver.com>
+---
+ init-ostree-install.sh | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 0e5b8f3..ffc68a5 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -1329,7 +1329,12 @@ mkdir -p /var/volatile/tmp /var/volatile/run
+ lpull=""
+ if [ "$INSTL" != "" ] ; then
+ 	if [ -e /instboot${INSTL#/sysroot/boot/efi} ] ; then
+-		lpull="--url file:///instboot${INSTL#/sysroot/boot/efi}"
++		instl_name=$(basename ${INSTL#/sysroot/boot/efi})
++		cmd="rsync -ar /instboot/${instl_name} /"
++		lpull="--url file:///${instl_name}"
++		echo "The following rsync command can take a while, please be patient"
++		echo running: $cmd
++		$cmd || fatal "Error: failed to rsync ${instl_name}"
+ 	elif [ -e $INSTL ] ; then
+ 		lpull="--url file://$INSTL"
+ 	else
+@@ -1343,6 +1348,7 @@ fi
+ cmd="ostree pull $lpull --repo=${PHYS_SYSROOT}/ostree/repo ${INSTNAME} ${INSTBR}"
+ echo running: $cmd
+ $cmd || fatal "Error: ostree pull failed"
++[ -d /${instl_name} ] && rm -rf /${instl_name}
+ export OSTREE_BOOT_PARTITION="/boot"
+ ostree admin deploy ${kargs_list} --sysroot=${PHYS_SYSROOT} --os=${INSTOS} ${INSTNAME}:${INSTBR} || fatal "Error: ostree deploy failed"
+ 
+-- 
+2.25.1
+

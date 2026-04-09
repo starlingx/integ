@@ -1,0 +1,91 @@
+From 5bcfcdf1ae784b87e8d4a849ab5a0b91617ca4ed Mon Sep 17 00:00:00 2001
+From: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+Date: Mon, 13 Feb 2023 12:32:44 -0300
+Subject: Add H/W Settle time to installer/init
+
+For systems requiring multipath support the constituent devices may take
+some time to become available before they can be coalesced into a
+multipath device.
+
+The time required may change based on the total number devices to be
+presented to the system.
+
+Ideally we need to find a more deterministic and predictable method to
+start coalescing the devices
+
+Signed-off-by: Robert Church <robert.church@windriver.com>
+Signed-off-by: Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>
+---
+ init-ostree-install.sh | 5 +++++
+ init-ostree.sh         | 4 ++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index a630a00..4046fbb 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -94,6 +94,7 @@ OPTIONAL:
+  VSZ=#				- MB size of var partition (0 for auto expand)
+ 
+  instmpath=0			- enable multipath device support
++ insthwsettle=0		- init delay to allow H/W to become available
+  inststx=1			- Skip LAT partitioning scheme (StarlingX).
+ 				  Only call %part ks hook to partition
+  inst_ostree_boot=DEVICE	- Specify the ostree boot device
+@@ -599,6 +600,7 @@ OSTREE_BOOT_B_DEVICE=${OSTREE_BOOT_B_DEVICE="LABEL=otaboot_b"}
+ OSTREE_ROOT_B_DEVICE=${OSTREE_ROOT_B_DEVICE="LABEL=otaroot_b"}
+ OSTREE_VAR_DEVICE=${OSTREE_VAR_DEVICE="LABEL=fluxdata"}
+ KS=""
++INST_HW_SETTLE=0
+ 
+ if [ "$OSTREE_KERNEL_ARGS" = "%OSTREE_KERNEL_ARGS%" ] ; then
+ 	OSTREE_KERNEL_ARGS="ro rootwait"
+@@ -703,6 +705,8 @@ read_args() {
+ 				VSZ=$optarg ;;
+ 			instmpath=*)
+ 				INSTMPATH=$optarg ;;
++			insthwsettle=*)
++				INST_HW_SETTLE=$optarg ;;
+ 			inststx=*)
+ 				INSTSTX=$optarg ;;
+ 			instiso=*)
+@@ -1008,6 +1012,7 @@ fi
+ # Coalesce multipath devices after udev/network is done, and trigger udev to set
+ # up any device links
+ if [ "${INSTMPATH}" = 1 ] ; then
++	sleep ${INST_HW_SETTLE}
+ 	service multipath-tools-boot start
+ 	retval=$?
+ 	if [ ${retval} -ne 0 ]; then
+diff --git a/init-ostree.sh b/init-ostree.sh
+index d72afe7..947fdc3 100644
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -34,6 +34,7 @@ OSTREE_BOOT_DEVICE="LABEL=otaboot"
+ OSTREE_VAR_DEVICE=""
+ OSTREE_LABEL_FLUXDATA="fluxdata"
+ MULTIPATH=1
++HW_SETTLE=0
+ VSZ=20480
+ SKIP_BOOT_DIFF=""
+ ALLOW_RM_VAR=1
+@@ -130,6 +131,7 @@ early_setup() {
+ 	# Coalesce multipath devices after udev/network is done, and trigger
+ 	# udev to set up any device links
+ 	if [ "${MULTIPATH}" = 1  ] ; then
++		sleep ${HW_SETTLE}
+ 		activate_multipath
+ 		udevadm trigger --action=change
+ 		retval=$?
+@@ -202,6 +204,8 @@ read_args() {
+ 				DEBUGFATAL=1 ;;
+ 			flux=*)
+ 				OSTREE_LABEL_FLUXDATA=$optarg ;;
++			hwsettle=*)
++				HW_SETTLE=$optarg ;;
+ 			multipath=*)
+ 				MULTIPATH=$optarg ;;
+ 			multi-drivers-switch=*)
+-- 
+2.37.1
+
