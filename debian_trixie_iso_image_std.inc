@@ -165,21 +165,6 @@ kubectl-cert-manager
 
 kubelogin
 
-# lvm2
-dmeventd
-dmsetup
-#dmsetup-udeb
-libdevmapper1.02.1
-#libdevmapper1.02.1-udeb
-#libdevmapper-dev
-libdevmapper-event1.02.1
-liblvm2cmd2.03
-#liblvm2-dev
-lvm2
-#lvm2-dbusd
-#lvm2-lockd
-#lvm2-udeb
-
 #keyrings.alt
 python3-keyrings.alt
 
