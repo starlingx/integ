@@ -1,0 +1,34 @@
+From 8e0866fa45bb457169afc4d83e35c62e1cb63f0c Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <aabhinav@windriver.com>
+Date: Wed, 25 Feb 2026 12:30:39 -0500
+Subject: [PATCH] Remove auto-include of keystone::policy class
+
+Rebased to puppet-module-keystone 25.0.0-4
+
+The puppet-keystone module auto-includes keystone::policy class
+without allowing custom policies to be passed. This prevents
+StarlingX from injecting custom policy rules.
+
+Remove the auto-include so StarlingX can declare the class
+explicitly with custom policies parameter.
+
+Signed-off-by: Abhinav Ayyapasetti <aabhinav@windriver.com>
+---
+ manifests/init.pp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 30fcaaf..febdefc 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -463,7 +463,6 @@ class keystone(
+ 
+   include keystone::deps
+   include keystone::logging
+-  include keystone::policy
+ 
+   if $client_package_ensure != undef {
+     warning('The client_package_ensure parameter is deprecated and has no effect.')
+-- 
+2.43.0
+
