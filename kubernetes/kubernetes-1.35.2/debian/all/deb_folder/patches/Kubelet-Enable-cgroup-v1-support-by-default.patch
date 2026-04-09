@@ -1,0 +1,137 @@
+From 380650273d0b7c5c251dce794b799b303a92f3eb Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Mon, 6 Apr 2026 10:18:31 -0400
+Subject: [PATCH] Kubelet Enable cgroup v1 support by default
+
+Kubernetes v1.35 defaults FailCgroupV1 to true, causing kubeadm init
+to fail at preflight with a fatal SystemVerification error on cgroup
+v1 hosts.
+
+Set FailCgroupV1 default to false and downgrade the preflight check
+from error to warning, allowing the kubelet to start on cgroup v1
+systems while still notifying users of the deprecation.
+
+This is a short-term workaround until full migration to cgroup v2 is
+completed, after which these changes should be removed.
+
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ pkg/kubelet/apis/config/v1beta1/defaults.go    |  2 +-
+ .../apis/config/v1beta1/defaults_test.go       | 18 +++++++++---------
+ .../validators/cgroup_validator_linux.go       |  2 +-
+ 3 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/pkg/kubelet/apis/config/v1beta1/defaults.go b/pkg/kubelet/apis/config/v1beta1/defaults.go
+index ba5e7aeb600..04d71d00bd7 100644
+--- a/pkg/kubelet/apis/config/v1beta1/defaults.go
++++ b/pkg/kubelet/apis/config/v1beta1/defaults.go
+@@ -290,7 +290,7 @@ func SetDefaults_KubeletConfiguration(obj *kubeletconfigv1beta1.KubeletConfigura
+ 		obj.SeccompDefault = ptr.To(false)
+ 	}
+ 	if obj.FailCgroupV1 == nil {
+-		obj.FailCgroupV1 = ptr.To(true)
++		obj.FailCgroupV1 = ptr.To(false)
+ 	}
+ 	if obj.MemoryThrottlingFactor == nil {
+ 		obj.MemoryThrottlingFactor = ptr.To(DefaultMemoryThrottlingFactor)
+diff --git a/pkg/kubelet/apis/config/v1beta1/defaults_test.go b/pkg/kubelet/apis/config/v1beta1/defaults_test.go
+index 471e74924db..2c318f7122d 100644
+--- a/pkg/kubelet/apis/config/v1beta1/defaults_test.go
++++ b/pkg/kubelet/apis/config/v1beta1/defaults_test.go
+@@ -126,7 +126,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(true),
+ 				EnableDebugFlagsHandler:       ptr.To(true),
+ 				SeccompDefault:                ptr.To(false),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To(DefaultMemoryThrottlingFactor),
+ 				RegisterNode:                  ptr.To(true),
+ 				LocalStorageCapacityIsolation: ptr.To(true),
+@@ -263,7 +263,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:          ptr.To(false),
+ 				EnableDebugFlagsHandler:         ptr.To(false),
+ 				SeccompDefault:                  ptr.To(false),
+-				FailCgroupV1:                    ptr.To(true),
++				FailCgroupV1:                    ptr.To(false),
+ 				MemoryThrottlingFactor:          ptr.To[float64](0),
+ 				RegisterNode:                    ptr.To(false),
+ 				LocalStorageCapacityIsolation:   ptr.To(false),
+@@ -368,7 +368,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(false),
+ 				EnableDebugFlagsHandler:       ptr.To(false),
+ 				SeccompDefault:                ptr.To(false),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To[float64](0),
+ 				RegisterNode:                  ptr.To(false),
+ 				LocalStorageCapacityIsolation: ptr.To(false),
+@@ -529,7 +529,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(true),
+ 				EnableDebugFlagsHandler:       ptr.To(true),
+ 				SeccompDefault:                ptr.To(true),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To[float64](1),
+ 				RegisterNode:                  ptr.To(true),
+ 				LocalStorageCapacityIsolation: ptr.To(true),
+@@ -687,7 +687,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(true),
+ 				EnableDebugFlagsHandler:       ptr.To(true),
+ 				SeccompDefault:                ptr.To(true),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To[float64](1),
+ 				RegisterNode:                  ptr.To(true),
+ 				LocalStorageCapacityIsolation: ptr.To(true),
+@@ -786,7 +786,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(true),
+ 				EnableDebugFlagsHandler:       ptr.To(true),
+ 				SeccompDefault:                ptr.To(false),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To(DefaultMemoryThrottlingFactor),
+ 				RegisterNode:                  ptr.To(true),
+ 				LocalStorageCapacityIsolation: ptr.To(true),
+@@ -885,7 +885,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(true),
+ 				EnableDebugFlagsHandler:       ptr.To(true),
+ 				SeccompDefault:                ptr.To(false),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To(DefaultMemoryThrottlingFactor),
+ 				RegisterNode:                  ptr.To(true),
+ 				LocalStorageCapacityIsolation: ptr.To(true),
+@@ -984,7 +984,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(true),
+ 				EnableDebugFlagsHandler:       ptr.To(true),
+ 				SeccompDefault:                ptr.To(false),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To(DefaultMemoryThrottlingFactor),
+ 				RegisterNode:                  ptr.To(true),
+ 				LocalStorageCapacityIsolation: ptr.To(true),
+@@ -1083,7 +1083,7 @@ func TestSetDefaultsKubeletConfiguration(t *testing.T) {
+ 				EnableProfilingHandler:        ptr.To(true),
+ 				EnableDebugFlagsHandler:       ptr.To(true),
+ 				SeccompDefault:                ptr.To(false),
+-				FailCgroupV1:                  ptr.To(true),
++				FailCgroupV1:                  ptr.To(false),
+ 				MemoryThrottlingFactor:        ptr.To(DefaultMemoryThrottlingFactor),
+ 				RegisterNode:                  ptr.To(true),
+ 				LocalStorageCapacityIsolation: ptr.To(true),
+diff --git a/vendor/k8s.io/system-validators/validators/cgroup_validator_linux.go b/vendor/k8s.io/system-validators/validators/cgroup_validator_linux.go
+index e8075cd98df..bd88360ab8b 100644
+--- a/vendor/k8s.io/system-validators/validators/cgroup_validator_linux.go
++++ b/vendor/k8s.io/system-validators/validators/cgroup_validator_linux.go
+@@ -128,7 +128,7 @@ func (c *CgroupsValidator) Validate(spec SysSpec) (warns, errs []error) {
+ 			"skip this validation. For more information, see https://git.k8s.io/enhancements/keps/sig-node/5573-remove-cgroup-v1")
+ 
+ 		if v1DisabledInKubelet {
+-			errs = append(errs, v1Error)
++			warns = append(warns, v1Error)
+ 		} else {
+ 			warns = append(warns, v1Error)
+ 		}
+-- 
+2.34.1
+

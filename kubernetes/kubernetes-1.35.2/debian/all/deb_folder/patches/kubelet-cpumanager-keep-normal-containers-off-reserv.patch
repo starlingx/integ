@@ -1,0 +1,408 @@
+From 5841e6c40e94f0b626ab863ac5d439c6d27086f8 Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Wed, 21 May 2025 07:09:16 -0400
+Subject: [PATCH] kubelet cpumanager keep normal containers off reserved CPUs
+
+When starting the kubelet process, two separate sets of reserved CPUs
+may be specified.  With this change CPUs reserved via
+'--system-reserved=cpu'
+or '--kube-reserved=cpu' will be ignored by kubernetes itself.  This
+explicitly excludes the reserved CPUS from the DefaultCPUset so
+that pods cannot run there.
+
+Note:
+    In this Kubernetes 1.35 patch (compared to 1.34), upstream has
+    adopted logr.Logger in place of klog in many areas. We have made
+    corresponding changes, with no functional impact. There is still
+    an inconsistent and scattered mix of klog and logr usage.
+
+Co-authored-by: Jim Gauld <james.gauld@windriver.com>
+Signed-off-by: Sachin Gopala Krishna <saching.krishna@windriver.com>
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ pkg/kubelet/cm/cpumanager/cpu_manager.go      |  6 ++-
+ pkg/kubelet/cm/cpumanager/cpu_manager_test.go | 19 ++++++--
+ pkg/kubelet/cm/cpumanager/policy_static.go    | 48 ++++++++++++++-----
+ .../cm/cpumanager/policy_static_test.go       | 42 +++++++++++-----
+ 4 files changed, 85 insertions(+), 30 deletions(-)
+
+diff --git a/pkg/kubelet/cm/cpumanager/cpu_manager.go b/pkg/kubelet/cm/cpumanager/cpu_manager.go
+index c1b4b7dec04..0d6f94e7ab8 100644
+--- a/pkg/kubelet/cm/cpumanager/cpu_manager.go
++++ b/pkg/kubelet/cm/cpumanager/cpu_manager.go
+@@ -198,7 +198,11 @@ func NewManager(logger logr.Logger, cpuPolicyName string, cpuPolicyOptions map[s
+ 		// exclusively allocated.
+ 		reservedCPUsFloat := float64(reservedCPUs.MilliValue()) / 1000
+ 		numReservedCPUs := int(math.Ceil(reservedCPUsFloat))
+-		policy, err = NewStaticPolicy(logger, topo, numReservedCPUs, specificCPUs, affinity, cpuPolicyOptions)
++		// NOTE: Set excludeReserved unconditionally to exclude reserved CPUs from default cpuset.
++		// This variable is primarily to make testing easier.
++		excludeReserved := true
++		policy, err = NewStaticPolicy(logger, topo, numReservedCPUs, specificCPUs, affinity, cpuPolicyOptions, excludeReserved)
++
+ 		if err != nil {
+ 			return nil, fmt.Errorf("new static policy error: %w", err)
+ 		}
+diff --git a/pkg/kubelet/cm/cpumanager/cpu_manager_test.go b/pkg/kubelet/cm/cpumanager/cpu_manager_test.go
+index 2361595a4bf..53d405780bd 100644
+--- a/pkg/kubelet/cm/cpumanager/cpu_manager_test.go
++++ b/pkg/kubelet/cm/cpumanager/cpu_manager_test.go
+@@ -292,6 +292,7 @@ func TestCPUManagerAdd(t *testing.T) {
+ 
+ 	logger, _ := ktesting.NewTestContext(t)
+ 
++	testExcl := false
+ 	testPolicy, _ := NewStaticPolicy(
+ 		logger,
+ 		&topology.CPUTopology{
+@@ -308,7 +309,8 @@ func TestCPUManagerAdd(t *testing.T) {
+ 		0,
+ 		cpuset.New(),
+ 		topologymanager.NewFakeManager(),
+-		nil)
++		nil,
++		testExcl)
+ 	testCases := []struct {
+ 		description        string
+ 		updateErr          error
+@@ -561,9 +563,10 @@ func TestCPUManagerAddWithInitContainers(t *testing.T) {
+ 		},
+ 	}
+ 
++	testExcl := false
+ 	for _, testCase := range testCases {
+ 		logger, _ := ktesting.NewTestContext(t)
+-		policy, _ := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil)
++		policy, _ := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil, testExcl)
+ 
+ 		mockState := &mockState{
+ 			assignments:   testCase.stAssignments,
+@@ -801,6 +804,7 @@ func TestReconcileState(t *testing.T) {
+ 
+ 	logger, _ := ktesting.NewTestContext(t)
+ 
++	testExcl := false
+ 	testPolicy, _ := NewStaticPolicy(
+ 		logger,
+ 		&topology.CPUTopology{
+@@ -821,7 +825,8 @@ func TestReconcileState(t *testing.T) {
+ 		0,
+ 		cpuset.New(),
+ 		topologymanager.NewFakeManager(),
+-		nil)
++		nil,
++		testExcl)
+ 
+ 	testCases := []struct {
+ 		description                  string
+@@ -1331,6 +1336,7 @@ func TestCPUManagerAddWithResvList(t *testing.T) {
+ 	}
+ 
+ 	logger, _ := ktesting.NewTestContext(t)
++	testExcl := false
+ 	testPolicy, _ := NewStaticPolicy(
+ 		logger,
+ 		&topology.CPUTopology{
+@@ -1347,7 +1353,8 @@ func TestCPUManagerAddWithResvList(t *testing.T) {
+ 		1,
+ 		cpuset.New(0),
+ 		topologymanager.NewFakeManager(),
+-		nil)
++		nil,
++		testExcl)
+ 	testCases := []struct {
+ 		description        string
+ 		updateErr          error
+@@ -1482,6 +1489,7 @@ func TestCPUManagerGetAllocatableCPUs(t *testing.T) {
+ 		featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.WindowsCPUAndMemoryAffinity, true)
+ 	}
+ 
++	testExcl := false
+ 	nonePolicy, _ := NewNonePolicy(nil)
+ 	staticPolicy, _ := NewStaticPolicy(
+ 		logger,
+@@ -1499,7 +1507,8 @@ func TestCPUManagerGetAllocatableCPUs(t *testing.T) {
+ 		1,
+ 		cpuset.New(0),
+ 		topologymanager.NewFakeManager(),
+-		nil)
++		nil,
++		testExcl)
+ 
+ 	testCases := []struct {
+ 		description        string
+diff --git a/pkg/kubelet/cm/cpumanager/policy_static.go b/pkg/kubelet/cm/cpumanager/policy_static.go
+index e5042cc882f..0327e589d00 100644
+--- a/pkg/kubelet/cm/cpumanager/policy_static.go
++++ b/pkg/kubelet/cm/cpumanager/policy_static.go
+@@ -110,6 +110,8 @@ type staticPolicy struct {
+ 	topology *topology.CPUTopology
+ 	// set of CPUs that is not available for exclusive assignment
+ 	reservedCPUs cpuset.CPUSet
++	// If true, default CPUSet should exclude reserved CPUs
++	excludeReserved bool
+ 	// Superset of reservedCPUs. It includes not just the reservedCPUs themselves,
+ 	// but also any siblings of those reservedCPUs on the same physical die.
+ 	// NOTE: If the reserved set includes full physical CPUs from the beginning
+@@ -133,7 +135,7 @@ var _ Policy = &staticPolicy{}
+ // NewStaticPolicy returns a CPU manager policy that does not change CPU
+ // assignments for exclusively pinned guaranteed containers after the main
+ // container process starts.
+-func NewStaticPolicy(logger logr.Logger, topology *topology.CPUTopology, numReservedCPUs int, reservedCPUs cpuset.CPUSet, affinity topologymanager.Store, cpuPolicyOptions map[string]string) (Policy, error) {
++func NewStaticPolicy(logger logr.Logger, topology *topology.CPUTopology, numReservedCPUs int, reservedCPUs cpuset.CPUSet, affinity topologymanager.Store, cpuPolicyOptions map[string]string, excludeReserved bool) (Policy, error) {
+ 	opts, err := NewStaticPolicyOptions(cpuPolicyOptions)
+ 	if err != nil {
+ 		return nil, err
+@@ -144,14 +146,15 @@ func NewStaticPolicy(logger logr.Logger, topology *topology.CPUTopology, numRese
+ 	}
+ 
+ 	cpuGroupSize := topology.CPUsPerCore()
+-	logger.Info("created with configuration", "options", opts, "cpuGroupSize", cpuGroupSize)
++	logger.V(4).Info("created with configuration", "options", opts, "cpuGroupSize", cpuGroupSize)
+ 
+ 	policy := &staticPolicy{
+-		topology:     topology,
+-		affinity:     affinity,
+-		cpusToReuse:  make(map[string]cpuset.CPUSet),
+-		options:      opts,
+-		cpuGroupSize: cpuGroupSize,
++		topology:        topology,
++		affinity:        affinity,
++		excludeReserved: excludeReserved,
++		cpusToReuse:     make(map[string]cpuset.CPUSet),
++		options:         opts,
++		cpuGroupSize:    cpuGroupSize,
+ 	}
+ 
+ 	allCPUs := topology.CPUDetails.CPUs()
+@@ -216,8 +219,21 @@ func (p *staticPolicy) validateState(logger logr.Logger, s state.State) error {
+ 			return fmt.Errorf("default cpuset cannot be empty")
+ 		}
+ 		// state is empty initialize
+-		s.SetDefaultCPUSet(allCPUs)
+-		logger.Info("Static policy initialized", "defaultCPUSet", allCPUs)
++		if p.excludeReserved {
++			// Exclude reserved CPUs from the default CPUSet to keep containers off them
++			// unless explicitly affined.
++			s.SetDefaultCPUSet(allCPUs.Difference(p.reservedCPUs))
++		} else {
++			s.SetDefaultCPUSet(allCPUs)
++		}
++		logger.Info(
++			"[cpumanager] static policy: CPUSet: allCPUs:%v, reserved:%v, default:%v, CPUsPerCore:%v\n",
++			allCPUs,
++			p.reservedCPUs,
++			s.GetDefaultCPUSet(),
++			p.topology.CPUsPerCore(),
++		)
++		logger.V(4).Info("Static policy initialized", "defaultCPUSet", allCPUs)
+ 		return nil
+ 	}
+ 
+@@ -231,9 +247,11 @@ func (p *staticPolicy) validateState(logger logr.Logger, s state.State) error {
+ 				p.reservedCPUs.Intersection(tmpDefaultCPUset).String(), tmpDefaultCPUset.String())
+ 		}
+ 	} else {
+-		if !p.reservedCPUs.Intersection(tmpDefaultCPUset).Equals(p.reservedCPUs) {
+-			return fmt.Errorf("not all reserved cpus: %q are present in defaultCpuSet: %q",
+-				p.reservedCPUs.String(), tmpDefaultCPUset.String())
++		if !p.excludeReserved {
++			if !p.reservedCPUs.Intersection(tmpDefaultCPUset).Equals(p.reservedCPUs) {
++				return fmt.Errorf("not all reserved cpus: %q are present in defaultCpuSet: %q",
++					p.reservedCPUs.String(), tmpDefaultCPUset.String())
++			}
+ 		}
+ 	}
+ 
+@@ -263,6 +281,9 @@ func (p *staticPolicy) validateState(logger logr.Logger, s state.State) error {
+ 		}
+ 	}
+ 	totalKnownCPUs = totalKnownCPUs.Union(tmpCPUSets...)
++	if p.excludeReserved {
++		totalKnownCPUs = totalKnownCPUs.Union(p.reservedCPUs)
++	}
+ 	if !totalKnownCPUs.Equals(allCPUs) {
+ 		return fmt.Errorf("current set of available CPUs %q doesn't match with CPUs in state %q",
+ 			allCPUs.String(), totalKnownCPUs.String())
+@@ -432,6 +453,9 @@ func (p *staticPolicy) RemoveContainer(logger logr.Logger, s state.State, podUID
+ 		return nil
+ 	}
+ 	s.Delete(podUID, containerName)
++	if p.excludeReserved {
++		toRelease = toRelease.Difference(p.reservedCPUs)
++	}
+ 	// Mutate the shared pool, adding released cpus.
+ 	toRelease = toRelease.Difference(cpusInUse)
+ 	updatedCPUs := s.GetDefaultCPUSet().Union(toRelease)
+diff --git a/pkg/kubelet/cm/cpumanager/policy_static_test.go b/pkg/kubelet/cm/cpumanager/policy_static_test.go
+index df557fe63a7..5d2a5411af3 100644
+--- a/pkg/kubelet/cm/cpumanager/policy_static_test.go
++++ b/pkg/kubelet/cm/cpumanager/policy_static_test.go
+@@ -39,6 +39,7 @@ type staticPolicyTest struct {
+ 	description     string
+ 	topo            *topology.CPUTopology
+ 	numReservedCPUs int
++	excludeReserved bool
+ 	reservedCPUs    *cpuset.CPUSet
+ 	podUID          string
+ 	options         map[string]string
+@@ -73,7 +74,8 @@ func (spt staticPolicyTest) PseudoClone() staticPolicyTest {
+ 
+ func TestStaticPolicyName(t *testing.T) {
+ 	logger, _ := ktesting.NewTestContext(t)
+-	policy, err := NewStaticPolicy(logger, topoSingleSocketHT, 1, cpuset.New(), topologymanager.NewFakeManager(), nil)
++	testExcl := false
++	policy, err := NewStaticPolicy(logger, topoSingleSocketHT, 1, cpuset.New(), topologymanager.NewFakeManager(), nil, testExcl)
+ 	if err != nil {
+ 		t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 	}
+@@ -106,6 +108,15 @@ func TestStaticPolicyStart(t *testing.T) {
+ 			stDefaultCPUSet: cpuset.New(),
+ 			expCSet:         cpuset.New(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+ 		},
++		{
++			description:     "empty cpuset exclude reserved",
++			topo:            topoDualSocketHT,
++			numReservedCPUs: 2,
++			excludeReserved: true,
++			stAssignments:   state.ContainerCPUAssignments{},
++			stDefaultCPUSet: cpuset.New(),
++			expCSet:         cpuset.New(1, 2, 3, 4, 5, 7, 8, 9, 10, 11),
++		},
+ 		{
+ 			description:     "reserved cores 0 & 6 are not present in available cpuset",
+ 			topo:            topoDualSocketHT,
+@@ -175,7 +186,7 @@ func TestStaticPolicyStart(t *testing.T) {
+ 		t.Run(testCase.description, func(t *testing.T) {
+ 			logger, _ := ktesting.NewTestContext(t)
+ 			featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, pkgfeatures.CPUManagerPolicyAlphaOptions, true)
+-			p, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), testCase.options)
++			p, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), testCase.options, testCase.excludeReserved)
+ 			if err != nil {
+ 				t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 			}
+@@ -403,7 +414,7 @@ func TestStaticPolicyAdd(t *testing.T) {
+ 			topo:            topoSingleSocketHT,
+ 			numReservedCPUs: 1,
+ 			stAssignments:   state.ContainerCPUAssignments{},
+-			stDefaultCPUSet: cpuset.New(0, 1, 2, 3, 4, 5, 6, 7),
++			stDefaultCPUSet: cpuset.New(2, 3, 4, 5, 6, 7),
+ 			pod:             makePod("fakePod", "fakeContainer2", "1000m", "1000m"),
+ 			expErr:          nil,
+ 			expCPUAlloc:     true,
+@@ -648,7 +659,8 @@ func runStaticPolicyTestCase(t *testing.T, testCase staticPolicyTest) {
+ 		cpus = testCase.reservedCPUs.Clone()
+ 	}
+ 	logger, _ := ktesting.NewTestContext(t)
+-	policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpus, tm, testCase.options)
++	testExcl := false
++	policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpus, tm, testCase.options, testExcl)
+ 	if err != nil {
+ 		t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 	}
+@@ -723,7 +735,7 @@ func TestStaticPolicyReuseCPUs(t *testing.T) {
+ 
+ 	for _, testCase := range testCases {
+ 		logger, _ := ktesting.NewTestContext(t)
+-		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil)
++		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil, testCase.excludeReserved)
+ 		if err != nil {
+ 			t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 		}
+@@ -780,7 +792,7 @@ func TestStaticPolicyDoNotReuseCPUs(t *testing.T) {
+ 
+ 	for _, testCase := range testCases {
+ 		logger, _ := ktesting.NewTestContext(t)
+-		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil)
++		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil, testCase.excludeReserved)
+ 		if err != nil {
+ 			t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 		}
+@@ -807,6 +819,7 @@ func TestStaticPolicyDoNotReuseCPUs(t *testing.T) {
+ }
+ 
+ func TestStaticPolicyRemove(t *testing.T) {
++	excludeReserved := false
+ 	testCases := []staticPolicyTest{
+ 		{
+ 			description:   "SingleSocketHT, DeAllocOneContainer",
+@@ -866,7 +879,7 @@ func TestStaticPolicyRemove(t *testing.T) {
+ 
+ 	for _, testCase := range testCases {
+ 		logger, _ := ktesting.NewTestContext(t)
+-		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil)
++		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, cpuset.New(), topologymanager.NewFakeManager(), nil, excludeReserved)
+ 		if err != nil {
+ 			t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 		}
+@@ -891,6 +904,7 @@ func TestStaticPolicyRemove(t *testing.T) {
+ }
+ 
+ func TestTopologyAwareAllocateCPUs(t *testing.T) {
++	excludeReserved := false
+ 	testCases := []struct {
+ 		description     string
+ 		topo            *topology.CPUTopology
+@@ -960,7 +974,7 @@ func TestTopologyAwareAllocateCPUs(t *testing.T) {
+ 	}
+ 	for _, tc := range testCases {
+ 		logger, _ := ktesting.NewTestContext(t)
+-		p, err := NewStaticPolicy(logger, tc.topo, 0, cpuset.New(), topologymanager.NewFakeManager(), nil)
++		p, err := NewStaticPolicy(logger, tc.topo, 0, cpuset.New(), topologymanager.NewFakeManager(), nil, excludeReserved)
+ 		if err != nil {
+ 			t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 		}
+@@ -1057,11 +1071,13 @@ func TestStaticPolicyStartWithResvList(t *testing.T) {
+ 			expNewErr:       fmt.Errorf("[cpumanager] unable to reserve the required amount of CPUs (size of 0-1 did not equal 1)"),
+ 		},
+ 	}
++	testExcl := false
+ 	for _, testCase := range testCases {
+ 		t.Run(testCase.description, func(t *testing.T) {
+ 			logger, _ := ktesting.NewTestContext(t)
+ 			featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, pkgfeatures.CPUManagerPolicyAlphaOptions, true)
+-			p, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, testCase.reserved, topologymanager.NewFakeManager(), testCase.cpuPolicyOptions)
++			p, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, testCase.reserved, topologymanager.NewFakeManager(), testCase.cpuPolicyOptions, testExcl)
++
+ 			if !reflect.DeepEqual(err, testCase.expNewErr) {
+ 				t.Errorf("StaticPolicy Start() error (%v). expected error: %v but got: %v",
+ 					testCase.description, testCase.expNewErr, err)
+@@ -1101,7 +1117,7 @@ func TestStaticPolicyAddWithResvList(t *testing.T) {
+ 			numReservedCPUs: 1,
+ 			reserved:        cpuset.New(0),
+ 			stAssignments:   state.ContainerCPUAssignments{},
+-			stDefaultCPUSet: cpuset.New(0, 1, 2, 3, 4, 5, 6, 7),
++			stDefaultCPUSet: cpuset.New(1, 2, 3, 4, 5, 6, 7),
+ 			pod:             makePod("fakePod", "fakeContainer2", "8000m", "8000m"),
+ 			expErr:          fmt.Errorf("not enough cpus available to satisfy request: requested=8, available=7"),
+ 			expCPUAlloc:     false,
+@@ -1137,9 +1153,10 @@ func TestStaticPolicyAddWithResvList(t *testing.T) {
+ 		},
+ 	}
+ 
++	testExcl := true
+ 	for _, testCase := range testCases {
+ 		logger, _ := ktesting.NewTestContext(t)
+-		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, testCase.reserved, topologymanager.NewFakeManager(), nil)
++		policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, testCase.reserved, topologymanager.NewFakeManager(), nil, testExcl)
+ 		if err != nil {
+ 			t.Fatalf("NewStaticPolicy() failed: %v", err)
+ 		}
+@@ -1905,10 +1922,11 @@ func TestStaticPolicyAddWithUncoreAlignment(t *testing.T) {
+ 		},
+ 	}
+ 
++	testExcl := false
+ 	for _, testCase := range testCases {
+ 		t.Run(testCase.description, func(t *testing.T) {
+ 			logger, _ := ktesting.NewTestContext(t)
+-			policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, testCase.reserved, topologymanager.NewFakeManager(), testCase.cpuPolicyOptions)
++			policy, err := NewStaticPolicy(logger, testCase.topo, testCase.numReservedCPUs, testCase.reserved, topologymanager.NewFakeManager(), testCase.cpuPolicyOptions, testExcl)
+ 			if err != nil {
+ 				t.Fatalf("NewStaticPolicy() failed with %v", err)
+ 			}
+-- 
+2.34.1
+
