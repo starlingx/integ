@@ -1,0 +1,609 @@
+From 217676c1029f93cba66331e0ef62ebf7b13bf744 Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Tue, 10 Feb 2026 07:38:50 -0500
+Subject: [PATCH 1/2] Replace legacy facts and module variables for Puppet 8
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Replace deprecated top-scope fact variables with structured facts hash
+and remove deprecated $:: prefix from module variables for Puppet 8.x
+compatibility.
+
+Changes include:
+- $::osfamily → $facts['os']['family']
+- $::operatingsystem → $facts['os']['name']
+- $::operatingsystemmajrelease → $facts['os']['release']['major']
+- $::operatingsystemrelease → $facts['os']['release']['full']
+- $::hostname → $facts['networking']['hostname']
+- $::fqdn → $facts['networking']['fqdn']
+- $::service_provider → $facts['service_provider']
+- $::lsbdistcodename → $facts['os']['distro']['codename']
+- $::selinux → $facts['selinux']
+- $::ceph:: → $ceph:: (44 instances)
+
+This addresses Puppet 8 deprecation of top-scope variables and ensures
+compatibility with modern Puppet versions.
+
+Signed-off-by: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+---
+ manifests/fs.pp                    |  4 ++--
+ manifests/init.pp                  |  2 +-
+ manifests/key.pp                   |  2 +-
+ manifests/mds.pp                   |  6 +++---
+ manifests/mirror.pp                |  4 ++--
+ manifests/mon.pp                   | 10 +++++-----
+ manifests/osd.pp                   | 12 ++++++------
+ manifests/osds.pp                  |  2 +-
+ manifests/params.pp                |  2 +-
+ manifests/pool.pp                  |  4 ++--
+ manifests/profile/mgr.pp           |  2 +-
+ manifests/profile/mirror.pp        |  4 ++--
+ manifests/profile/mon.pp           |  2 +-
+ manifests/profile/rgw.pp           | 12 ++++++------
+ manifests/repo.pp                  | 18 +++++++++---------
+ manifests/rgw.pp                   | 20 ++++++++++----------
+ manifests/rgw/apache.pp            |  4 ++--
+ manifests/rgw/apache_fastcgi.pp    |  6 +++---
+ manifests/rgw/apache_proxy_fcgi.pp |  2 +-
+ manifests/rgw/keystone.pp          | 14 +++++++-------
+ manifests/rgw/keystone/auth.pp     |  6 +++---
+ 21 files changed, 69 insertions(+), 69 deletions(-)
+
+diff --git a/manifests/fs.pp b/manifests/fs.pp
+index d8159d4..9ee9647 100644
+--- a/manifests/fs.pp
++++ b/manifests/fs.pp
+@@ -34,12 +34,12 @@
+ #   Mandatory. Get one with `ceph osd pool ls`
+ #
+ # [*exec_timeout*] The default exec resource timeout, in seconds
+-#   Optional. Defaults to $::ceph::params::exec_timeout
++#   Optional. Defaults to $ceph::params::exec_timeout
+ #
+ define ceph::fs (
+   $metadata_pool,
+   $data_pool,
+-  $exec_timeout = $::ceph::params::exec_timeout,
++  $exec_timeout = $ceph::params::exec_timeout,
+ ) {
+   Ceph_config<||> -> Exec["create-fs-${name}"]
+   Ceph::Pool<||> -> Exec["create-fs-${name}"]
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 69fa143..cb7e277 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -185,7 +185,7 @@ class ceph (
+ this module to assign values and will be removed in a future release.')
+   }
+ 
+-  package { $::ceph::params::packages :
++  package { $ceph::params::packages :
+     ensure => $ensure,
+     tag    => 'ceph'
+   }
+diff --git a/manifests/key.pp b/manifests/key.pp
+index 911df1a..e2f3aff 100644
+--- a/manifests/key.pp
++++ b/manifests/key.pp
+@@ -119,7 +119,7 @@ define ceph::key (
+       group                   => $group,
+       mode                    => $mode,
+       selinux_ignore_defaults => true,
+-      require                 => Package[$::ceph::params::packages],
++      require                 => Package[$ceph::params::packages],
+     }
+   }
+ 
+diff --git a/manifests/mds.pp b/manifests/mds.pp
+index 254d73c..e64c073 100644
+--- a/manifests/mds.pp
++++ b/manifests/mds.pp
+@@ -42,7 +42,7 @@
+ #   Optional. Default is running.
+ #
+ # [*mds_id*] The ID of the MDS instance.
+-#   Optional. Default is $::hostname
++#   Optional. Default is $facts['networking']['hostname']
+ #
+ # [*keyring*] The location of the keyring used by MDSs
+ #   Optional. Same default as ceph.
+@@ -52,13 +52,13 @@
+ #
+ class ceph::mds (
+   $public_addr    = undef,
+-  $pkg_mds        = $::ceph::params::pkg_mds,
++  $pkg_mds        = $ceph::params::pkg_mds,
+   $pkg_mds_ensure = present,
+   $mds_activate   = true,
+   $mds_data       = undef,
+   $mds_enable     = true,
+   $mds_ensure     = 'running',
+-  $mds_id         = $::hostname,
++  $mds_id         = $facts['networking']['hostname'],
+   $keyring        = undef,
+   $cluster        = 'ceph',
+ ) inherits ceph::params {
+diff --git a/manifests/mirror.pp b/manifests/mirror.pp
+index 084a367..09992ef 100644
+--- a/manifests/mirror.pp
++++ b/manifests/mirror.pp
+@@ -50,8 +50,8 @@ define ceph::mirror (
+ 
+   #Xenial reports 'debian' as the service provider
+   #'systemd' should cover supported RHEL type systems
+-  if( ( $::service_provider == 'systemd' ) or
+-  ( $::operatingsystemrelease == '16.04' ) )
++  if( ( $facts['service_provider'] == 'systemd' ) or
++  ( $facts['os']['name']release == '16.04' ) )
+   {
+     Service{
+       name   => $service_name,
+diff --git a/manifests/mon.pp b/manifests/mon.pp
+index 4615d3c..dcf65a0 100644
+--- a/manifests/mon.pp
++++ b/manifests/mon.pp
+@@ -55,7 +55,7 @@
+ #   Optional. $key and $keyring are mutually exclusive.
+ #
+ # [*exec_timeout*] The default exec resource timeout, in seconds
+-#   Optional. Defaults to $::ceph::params::exec_timeout
++#   Optional. Defaults to $ceph::params::exec_timeout
+ #
+ define ceph::mon (
+   $ensure = present,
+@@ -68,7 +68,7 @@ define ceph::mon (
+   $keyring  = undef,
+   $fsid = undef,
+   $service_ensure = 'running',
+-  $exec_timeout = $::ceph::params::exec_timeout,
++  $exec_timeout = $ceph::params::exec_timeout,
+   ) {
+ 
+     include ::stdlib
+@@ -88,11 +88,11 @@ define ceph::mon (
+     $mon_service = "ceph-mon-${id}"
+ 
+     # For Ubuntu Trusty system
+-    if $::service_provider == 'upstart' {
++    if $facts['service_provider'] == 'upstart' {
+       $init = 'upstart'
+       Service {
+         name     => "ceph-mon-${id}",
+-        provider => $::ceph::params::service_provider,
++        provider => $ceph::params::service_provider,
+         start    => "start ceph-mon id=${id}",
+         stop     => "stop ceph-mon id=${id}",
+         status   => "status ceph-mon id=${id}",
+@@ -103,7 +103,7 @@ define ceph::mon (
+       $init = 'sysvinit'
+       Service {
+         name     => "ceph-mon-${id}",
+-        provider => $::ceph::params::service_provider,
++        provider => $ceph::params::service_provider,
+         start    => "service ceph -- start mon.${id}",
+         stop     => "service ceph -- stop mon.${id}",
+         status   => "service ceph -- status mon.${id}",
+diff --git a/manifests/osd.pp b/manifests/osd.pp
+index 11cf492..dbda98a 100644
+--- a/manifests/osd.pp
++++ b/manifests/osd.pp
+@@ -39,14 +39,14 @@
+ #   Optional. Same default as ceph.
+ #
+ # [*exec_timeout*] The default exec resource timeout, in seconds
+-#   Optional. Defaults to $::ceph::params::exec_timeout
++#   Optional. Defaults to $ceph::params::exec_timeout
+ #
+ # [*selinux_file_context*] The SELinux file context to apply
+ #   on the directory backing the OSD service.
+ #   Optional. Defaults to 'ceph_var_lib_t'
+ #
+ # [*fsid*] The ceph cluster FSID
+-#   Optional. Defaults to $::ceph::profile::params::fsid
++#   Optional. Defaults to $ceph::profile::params::fsid
+ #
+ define ceph::osd (
+   $ensure = present,
+@@ -55,7 +55,7 @@ define ceph::osd (
+   $cluster_uuid = undef,
+   $uuid = undef,
+   $osdid = undef,
+-  $exec_timeout = $::ceph::params::exec_timeout,
++  $exec_timeout = $ceph::params::exec_timeout,
+   $selinux_file_context = 'ceph_var_lib_t',
+   $fsid = undef,
+   ) {
+@@ -175,15 +175,15 @@ umount /var/lib/ceph/osd/ceph-${osdid}
+         timeout   => $exec_timeout,
+         tag       => 'prepare',
+       }
+-      if (str2bool($::selinux) == true) {
+-        ensure_packages($::ceph::params::pkg_policycoreutils, {'ensure' => 'present'})
++      if (str2bool($facts['selinux']) == true) {
++        ensure_packages($ceph::params::pkg_policycoreutils, {'ensure' => 'present'})
+         exec { "fcontext_${name}":
+           command => "/bin/true # comment to satisfy puppet syntax requirements
+ set -ex
+ semanage fcontext -a -t ${selinux_file_context} \"$(readlink -f ${data})(/.*)?\"
+ restorecon -R $(readlink -f ${data})
+ ",
+-          require => [Package[$::ceph::params::pkg_policycoreutils],Exec[$ceph_prepare]],
++          require => [Package[$ceph::params::pkg_policycoreutils],Exec[$ceph_prepare]],
+           before  => Exec[$ceph_activate],
+           unless  => "/usr/bin/test -b $(readlink -f ${data}) || (semanage fcontext -l | grep $(readlink -f ${data}))",
+         }
+diff --git a/manifests/osds.pp b/manifests/osds.pp
+index 600ec99..5e54d75 100644
+--- a/manifests/osds.pp
++++ b/manifests/osds.pp
+@@ -36,7 +36,7 @@
+ class ceph::osds(
+   $args = {},
+   $defaults = {},
+-  $pid_max = $::ceph::profile::params::pid_max,
++  $pid_max = $ceph::profile::params::pid_max,
+ )
+ {
+   create_resources(ceph::osd, $args, $defaults)
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 2d4d722..6feb445 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -49,7 +49,7 @@ class ceph::params (
+ ) {
+   $pkg_mds = 'ceph-mds'
+ 
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     'Debian': {
+       $pkg_radosgw         = 'radosgw'
+       $user_radosgw        = 'www-data'
+diff --git a/manifests/pool.pp b/manifests/pool.pp
+index 4067540..89c32e9 100644
+--- a/manifests/pool.pp
++++ b/manifests/pool.pp
+@@ -44,14 +44,14 @@
+ #   Increase or decrease the replica level of a pool.
+ #
+ # [*exec_timeout*] The default exec resource timeout, in seconds
+-#   Optional. Defaults to $::ceph::params::exec_timeout
++#   Optional. Defaults to $ceph::params::exec_timeout
+ #
+ define ceph::pool (
+   $ensure = present,
+   $pg_num = 64,
+   $pgp_num = undef,
+   $size = undef,
+-  $exec_timeout = $::ceph::params::exec_timeout,
++  $exec_timeout = $ceph::params::exec_timeout,
+ ) {
+ 
+   if $ensure == present {
+diff --git a/manifests/profile/mgr.pp b/manifests/profile/mgr.pp
+index 51b7ef2..d8ed8d8 100644
+--- a/manifests/profile/mgr.pp
++++ b/manifests/profile/mgr.pp
+@@ -22,7 +22,7 @@
+ class ceph::profile::mgr {
+   require ::ceph::profile::base
+ 
+-  ceph::mgr { $::hostname:
++  ceph::mgr { $facts['networking']['hostname']:
+     authentication_type => $ceph::profile::params::authentication_type,
+     key                 => $ceph::profile::params::mgr_key,
+     inject_key          => true,
+diff --git a/manifests/profile/mirror.pp b/manifests/profile/mirror.pp
+index 13e6c08..5a8a785 100644
+--- a/manifests/profile/mirror.pp
++++ b/manifests/profile/mirror.pp
+@@ -21,9 +21,9 @@
+ #
+ class ceph::profile::mirror {
+   require ::ceph::profile::client
+-  $rbd_name = $::ceph::profile::params::rbd_mirror_client_name ? {
++  $rbd_name = $ceph::profile::params::rbd_mirror_client_name ? {
+     undef   => 'openstack',
+-    default => $::ceph::profile::params::rbd_mirror_client_name,
++    default => $ceph::profile::params::rbd_mirror_client_name,
+   }
+   ceph::mirror { $rbd_name:
+   }
+diff --git a/manifests/profile/mon.pp b/manifests/profile/mon.pp
+index c680bef..209fef9 100644
+--- a/manifests/profile/mon.pp
++++ b/manifests/profile/mon.pp
+@@ -23,7 +23,7 @@
+ class ceph::profile::mon {
+   require ::ceph::profile::base
+ 
+-  ceph::mon { $::hostname:
++  ceph::mon { $facts['networking']['hostname']:
+     authentication_type => $ceph::profile::params::authentication_type,
+     key                 => $ceph::profile::params::mon_key,
+     keyring             => $ceph::profile::params::mon_keyring,
+diff --git a/manifests/profile/rgw.pp b/manifests/profile/rgw.pp
+index 90bdd9e..86428df 100644
+--- a/manifests/profile/rgw.pp
++++ b/manifests/profile/rgw.pp
+@@ -21,14 +21,14 @@
+ #
+ class ceph::profile::rgw {
+   require ::ceph::profile::base
+-  $rgw_name = $::ceph::profile::params::rgw_name ? {
++  $rgw_name = $ceph::profile::params::rgw_name ? {
+     undef   => 'radosgw.gateway',
+-    default => $::ceph::profile::params::rgw_name,
++    default => $ceph::profile::params::rgw_name,
+   }
+   ceph::rgw { $rgw_name:
+-    user               => $::ceph::profile::params::rgw_user,
+-    rgw_print_continue => $::ceph::profile::params::rgw_print_continue,
+-    frontend_type      => $::ceph::profile::params::frontend_type,
+-    rgw_frontends      => $::ceph::profile::params::rgw_frontends,
++    user               => $ceph::profile::params::rgw_user,
++    rgw_print_continue => $ceph::profile::params::rgw_print_continue,
++    frontend_type      => $ceph::profile::params::frontend_type,
++    rgw_frontends      => $ceph::profile::params::rgw_frontends,
+   }
+ }
+diff --git a/manifests/repo.pp b/manifests/repo.pp
+index 89fb482..5c2decb 100644
+--- a/manifests/repo.pp
++++ b/manifests/repo.pp
+@@ -61,16 +61,16 @@
+ #
+ class ceph::repo (
+   $ensure         = present,
+-  $release        = $::ceph::params::release,
++  $release        = $ceph::params::release,
+   $fastcgi        = false,
+   $proxy          = undef,
+   $proxy_username = undef,
+   $proxy_password = undef,
+   $enable_epel    = true,
+-  $enable_sig     = $::ceph::params::enable_sig,
++  $enable_sig     = $ceph::params::enable_sig,
+   $ceph_mirror    = undef,
+ ) inherits ceph::params {
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     'Debian': {
+       include ::apt
+ 
+@@ -89,7 +89,7 @@ class ceph::repo (
+       apt::source { 'ceph':
+         ensure   => $ensure,
+         location => $ceph_mirror_real,
+-        release  => $::lsbdistcodename,
++        release  => $facts['os']['distro']['codename'],
+         tag      => 'ceph',
+       }
+ 
+@@ -104,7 +104,7 @@ class ceph::repo (
+         apt::source { 'ceph-fastcgi':
+           ensure   => $ensure,
+           location => "http://gitbuilder.ceph.com/libapache-mod-fastcgi-deb-${::lsbdistcodename}-${::hardwaremodel}-basic/ref/master",
+-          release  => $::lsbdistcodename,
++          release  => $facts['os']['distro']['codename'],
+           require  => Apt::Key['ceph-gitbuilder'],
+         }
+ 
+@@ -120,7 +120,7 @@ class ceph::repo (
+       # If you want to deploy Ceph using packages provided by CentOS SIG
+       # https://wiki.centos.org/SpecialInterestGroup/Storage/
+       if $enable_sig {
+-        if $::operatingsystem != 'CentOS' {
++        if $facts['os']['name'] != 'CentOS' {
+           warning("CentOS SIG repository is only supported on CentOS operating system, \
+ not on ${::operatingsystem}, which can lead to packaging issues.")
+         }
+@@ -140,8 +140,8 @@ not on ${::operatingsystem}, which can lead to packaging issues.")
+         Yumrepo['ceph-jewel-sig'] -> Package<| tag == 'ceph' |>
+       } else {
+         # If you want to deploy Ceph using packages provided by ceph.com repositories.
+-        if ((($::operatingsystem == 'RedHat' or $::operatingsystem == 'CentOS') and (versioncmp($::operatingsystemmajrelease, '7') < 0))
+-              or ($::operatingsystem == 'Fedora' and (versioncmp($::operatingsystemmajrelease, '19') < 0))) {
++        if ((($facts['os']['name'] == 'RedHat' or $facts['os']['name'] == 'CentOS') and (versioncmp($facts['os']['name']majrelease, '7') < 0))
++              or ($facts['os']['name'] == 'Fedora' and (versioncmp($facts['os']['name']majrelease, '19') < 0))) {
+           $el = '6'
+         } else {
+           $el = '7'
+@@ -151,7 +151,7 @@ not on ${::operatingsystem}, which can lead to packaging issues.")
+         # the CentOS 7 base channel. Therefore make sure to only exclude the
+         # conflicting packages in the exact combination of CentOS7 and Firefly.
+         # TODO: Remove this once Firefly becomes EOL
+-        if ($::operatingsystem == 'CentOS' and $el == '7' and $release == 'firefly') {
++        if ($facts['os']['name'] == 'CentOS' and $el == '7' and $release == 'firefly') {
+           file_line { 'exclude base':
+             ensure => $ensure,
+             path   => '/etc/yum.repos.d/CentOS-Base.repo',
+diff --git a/manifests/rgw.pp b/manifests/rgw.pp
+index 56fb4a8..2bd0bc5 100644
+--- a/manifests/rgw.pp
++++ b/manifests/rgw.pp
+@@ -71,15 +71,15 @@
+ #
+ 
+ define ceph::rgw (
+-  $pkg_radosgw        = $::ceph::params::pkg_radosgw,
++  $pkg_radosgw        = $ceph::params::pkg_radosgw,
+   $rgw_ensure         = 'running',
+   $rgw_enable         = true,
+   $rgw_data           = "/var/lib/ceph/radosgw/ceph-${name}",
+-  $user               = $::ceph::params::user_radosgw,
++  $user               = $ceph::params::user_radosgw,
+   $keyring_path       = "/etc/ceph/ceph.client.${name}.keyring",
+   $log_file           = '/var/log/ceph/radosgw.log',
+-  $rgw_dns_name       = $::fqdn,
+-  $rgw_socket_path    = $::ceph::params::rgw_socket_path,
++  $rgw_dns_name       = $facts['networking']['fqdn'],
++  $rgw_socket_path    = $ceph::params::rgw_socket_path,
+   $rgw_print_continue = false,
+   $rgw_port           = undef,
+   $frontend_type      = 'apache-fastcgi',
+@@ -99,7 +99,7 @@ define ceph::rgw (
+   }
+ 
+   ceph_config {
+-    "client.${name}/host":               value => $::hostname;
++    "client.${name}/host":               value => $facts['networking']['hostname'];
+     "client.${name}/keyring":            value => $keyring_path;
+     "client.${name}/log_file":           value => $log_file;
+     "client.${name}/user":               value => $user;
+@@ -169,7 +169,7 @@ define ceph::rgw (
+ 
+   # service definition
+   # if Ubuntu does not use systemd
+-  if $::service_provider == 'upstart' {
++  if $facts['service_provider'] == 'upstart' {
+     if $rgw_enable {
+       file { "${rgw_data}/done":
+         ensure => present,
+@@ -182,10 +182,10 @@ define ceph::rgw (
+       start    => "start radosgw id=${name}",
+       stop     => "stop radosgw id=${name}",
+       status   => "status radosgw id=${name}",
+-      provider => $::ceph::params::service_provider,
++      provider => $ceph::params::service_provider,
+     }
+   # Everything else that is supported by puppet-ceph should run systemd.
+-  } elsif $::service_provider == 'systemd' {
++  } elsif $facts['service_provider'] == 'systemd' {
+     Service {
+       name     => "radosgw-${name}",
+       start    => "systemctl start ceph-radosgw",
+@@ -205,12 +205,12 @@ define ceph::rgw (
+       start    => 'service radosgw start',
+       stop     => 'service radosgw stop',
+       status   => 'service radosgw status',
+-      provider => $::ceph::params::service_provider,
++      provider => $ceph::params::service_provider,
+     }
+   }
+ 
+   #for RHEL/CentOS7, systemctl needs to reload to pickup the ceph-radosgw init file
+-  if (($::operatingsystem == 'RedHat' or $::operatingsystem == 'CentOS') and (versioncmp($::operatingsystemmajrelease, '7') >= 0))
++  if (($facts['os']['name'] == 'RedHat' or $facts['os']['name'] == 'CentOS') and (versioncmp($facts['os']['name']majrelease, '7') >= 0))
+   {
+     exec { 'systemctl-reload-from-rgw': #needed for the new init file
+       command => '/usr/bin/systemctl daemon-reload',
+diff --git a/manifests/rgw/apache.pp b/manifests/rgw/apache.pp
+index d17e51e..0497def 100644
+--- a/manifests/rgw/apache.pp
++++ b/manifests/rgw/apache.pp
+@@ -54,9 +54,9 @@ define ceph::rgw::apache (
+   $admin_email      = 'root@localhost',
+   $docroot          = '/var/www',
+   $fcgi_file        = '/var/www/s3gw.fcgi',
+-  $rgw_dns_name     = $::fqdn,
++  $rgw_dns_name     = $facts['networking']['fqdn'],
+   $rgw_port         = 80,
+-  $rgw_socket_path  = $::ceph::params::rgw_socket_path,
++  $rgw_socket_path  = $ceph::params::rgw_socket_path,
+   $syslog           = true,
+   $ceph_apache_repo = true,
+ ) {
+diff --git a/manifests/rgw/apache_fastcgi.pp b/manifests/rgw/apache_fastcgi.pp
+index 3c1eed1..4cd4b6c 100644
+--- a/manifests/rgw/apache_fastcgi.pp
++++ b/manifests/rgw/apache_fastcgi.pp
+@@ -70,9 +70,9 @@ define ceph::rgw::apache_fastcgi (
+   $admin_email          = 'root@localhost',
+   $docroot              = '/var/www',
+   $fcgi_file            = '/var/www/s3gw.fcgi',
+-  $rgw_dns_name         = $::fqdn,
++  $rgw_dns_name         = $facts['networking']['fqdn'],
+   $rgw_port             = '80',
+-  $rgw_socket_path      = $::ceph::params::rgw_socket_path,
++  $rgw_socket_path      = $ceph::params::rgw_socket_path,
+   $syslog               = true,
+   $ceph_apache_repo     = true,
+   $apache_mods          = false,
+@@ -135,7 +135,7 @@ exec /usr/bin/radosgw -c /etc/ceph/ceph.conf -n ${name}",
+   # dependency on ceph apache repo if set
+   $pkg_fastcgi = $::apache::params::mod_packages['fastcgi']
+   if $ceph_apache_repo {
+-    case $::osfamily {
++    case $facts['os']['family'] {
+       'Debian': {
+         Apt::Source['ceph-fastcgi']
+         -> Package[$pkg_fastcgi]
+diff --git a/manifests/rgw/apache_proxy_fcgi.pp b/manifests/rgw/apache_proxy_fcgi.pp
+index bd4f43d..d5a4d8d 100644
+--- a/manifests/rgw/apache_proxy_fcgi.pp
++++ b/manifests/rgw/apache_proxy_fcgi.pp
+@@ -67,7 +67,7 @@
+ define ceph::rgw::apache_proxy_fcgi (
+   $admin_email          = 'root@localhost',
+   $docroot              = '/var/www',
+-  $rgw_dns_name         = $::fqdn,
++  $rgw_dns_name         = $facts['networking']['fqdn'],
+   $rgw_port             = '80',
+   $rewrite_rule         = '.* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]',
+   $setenv               = 'proxy-nokeepalive 1',
+diff --git a/manifests/rgw/keystone.pp b/manifests/rgw/keystone.pp
+index c371fd0..c265411 100644
+--- a/manifests/rgw/keystone.pp
++++ b/manifests/rgw/keystone.pp
+@@ -82,11 +82,11 @@ define ceph::rgw::keystone (
+   $use_pki                          = true,
+   $rgw_keystone_revocation_interval = 600,
+   $nss_db_path                      = '/var/lib/ceph/nss',
+-  $user                             = $::ceph::params::user_radosgw,
+-  $rgw_keystone_admin_domain        = $::ceph::profile::params::rgw_keystone_admin_domain,
+-  $rgw_keystone_admin_project       = $::ceph::profile::params::rgw_keystone_admin_project,
+-  $rgw_keystone_admin_user          = $::ceph::profile::params::rgw_keystone_admin_user,
+-  $rgw_keystone_admin_password      = $::ceph::profile::params::rgw_keystone_admin_password,
++  $user                             = $ceph::params::user_radosgw,
++  $rgw_keystone_admin_domain        = $ceph::profile::params::rgw_keystone_admin_domain,
++  $rgw_keystone_admin_project       = $ceph::profile::params::rgw_keystone_admin_project,
++  $rgw_keystone_admin_user          = $ceph::profile::params::rgw_keystone_admin_user,
++  $rgw_keystone_admin_password      = $ceph::profile::params::rgw_keystone_admin_password,
+ ) {
+ 
+   unless $name =~ /^radosgw\..+/ {
+@@ -131,7 +131,7 @@ define ceph::rgw::keystone (
+ 
+   if $use_pki {
+     # fetch the keystone signing cert, add to nss db
+-    $pkg_nsstools = $::ceph::params::pkg_nsstools
++    $pkg_nsstools = $ceph::params::pkg_nsstools
+     ensure_packages($pkg_nsstools, {'ensure' => 'present'})
+ 
+     file { $nss_db_path:
+@@ -172,7 +172,7 @@ certutil -d ${nss_db_path} -L | grep ^signing_cert
+     }
+ 
+     Package[$pkg_nsstools]
+-    -> Package[$::ceph::params::packages]
++    -> Package[$ceph::params::packages]
+     -> File[$nss_db_path]
+     -> Exec["${name}-nssdb-ca"]
+     -> Exec["${name}-nssdb-signing"]
+diff --git a/manifests/rgw/keystone/auth.pp b/manifests/rgw/keystone/auth.pp
+index 09345ae..329ba12 100644
+--- a/manifests/rgw/keystone/auth.pp
++++ b/manifests/rgw/keystone/auth.pp
+@@ -46,15 +46,15 @@
+ #
+ 
+ class ceph::rgw::keystone::auth (
+-  $password     = $::ceph::profile::params::rgw_keystone_admin_password,
+-  $user         = $::ceph::profile::params::rgw_keystone_admin_user,
++  $password     = $ceph::profile::params::rgw_keystone_admin_password,
++  $user         = $ceph::profile::params::rgw_keystone_admin_user,
+   $email        = 'rgwuser@localhost',
+   $roles        = ['admin', 'Member'],
+   $public_url   = 'http://127.0.0.1:8080/swift/v1',
+   $admin_url    = 'http://127.0.0.1:8080/swift/v1',
+   $internal_url = 'http://127.0.0.1:8080/swift/v1',
+   $region       = 'RegionOne',
+-  $tenant       = $::ceph::profile::params::rgw_keystone_admin_project,
++  $tenant       = $ceph::profile::params::rgw_keystone_admin_project,
+   $rgw_service  = 'swift::object-store',
+ ) {
+ 
+-- 
+2.43.0
+

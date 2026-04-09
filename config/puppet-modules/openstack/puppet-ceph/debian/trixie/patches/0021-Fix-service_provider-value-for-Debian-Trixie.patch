@@ -1,0 +1,33 @@
+From 27c105affb815eb061715dd4e7c94a8b274c785a Mon Sep 17 00:00:00 2001
+From: Gustavo Ornaghi Antunes <gustavo.ornaghiantunes@windriver.com>
+Date: Tue, 10 Feb 2026 09:55:26 -0300
+Subject: [PATCH] Fix service_provider value for Debian Trixie
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch is necessary to allow the host be unlocked when using
+Debian Trixie, because the debian provider is no longer supported.
+
+Signed-off-by: Gustavo Ornaghi Antunes <gustavo.ornaghiantunes@windriver.com>
+Signed-off-by: Ítalo Vieira <italo.gomesvieira@windriver.com>
+---
+ manifests/params.pp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/manifests/params.pp b/manifests/params.pp
+index 6feb445..732e36c 100644
+--- a/manifests/params.pp
++++ b/manifests/params.pp
+@@ -55,7 +55,7 @@ class ceph::params (
+       $user_radosgw        = 'www-data'
+       $pkg_fastcgi         = 'libapache2-mod-fastcgi'
+       $pkg_nsstools        = ['libnss3-tools', 'wget']
+-      $service_provider    = 'debian'
++      $service_provider    = 'base'
+       $pkg_policycoreutils = 'policycoreutils'
+     }
+ 
+-- 
+2.34.1
+
