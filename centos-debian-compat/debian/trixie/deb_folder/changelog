@@ -1,0 +1,5 @@
+centos-debian-compat (1.0) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Matheus Guilhermino <matheus.machadoguilhermino@windriver.com>  Thu, 27 Jan 2022 16:35:37 -0400
