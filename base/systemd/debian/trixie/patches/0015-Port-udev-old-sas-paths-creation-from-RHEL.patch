@@ -1,7 +1,7 @@
-From a2403bcd26c154325871b8e99e809c47fe9f52b8 Mon Sep 17 00:00:00 2001
+From 411d5d6c491903b1e6786909a42a8b6538b773e2 Mon Sep 17 00:00:00 2001
 From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 Date: Wed, 19 Oct 2022 18:41:18 +0300
-Subject: [PATCH 15/15] Port udev old sas paths creation from RHEL
+Subject: [PATCH] Port udev old sas paths creation from RHEL
 
 This ports the following patch file from RHEL:
 0186-udev-also-create-old-sas-paths.patch [1]
@@ -73,15 +73,39 @@ c62b8ee391509d79d67dbdbbcc555ab3d4721409/f/SOURCES/
 branch/master/systemd-config
 
 Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+[lz: Adapt this patch referring to below code changes
+beteen 247.3 and 257.8:
+[4]: https://github.com/systemd/systemd/commit/7f6674624eedc95db2a9877edc6ff424f4453531
+#diff-a712a6f4004cd0bd01dc6e4c9494e329c29cc52de1c4cbc24879c7f03c1aae29L188-R190
+[5]: https://github.com/systemd/systemd/commit/fb53ee0a64f00afc7b2bec1f2d8b664470e2b8ff
+#diff-a712a6f4004cd0bd01dc6e4c9494e329c29cc52de1c4cbc24879c7f03c1aae29L730
+[6]: https://github.com/systemd/systemd/commit/5a54a01634fffb1d20db98ea7de9b06528d05ca4
+#diff-a712a6f4004cd0bd01dc6e4c9494e329c29cc52de1c4cbc24879c7f03c1aae29R786-R790
+[7]: https://github.com/systemd/systemd/commit/089bef66316e5bdc91b9984148e5a6455449c1da
+#diff-a712a6f4004cd0bd01dc6e4c9494e329c29cc52de1c4cbc24879c7f03c1aae29L854-R856
+
+[4] changes "if (!streq(phy_count, "1"))" to "if (num_phys > 1)".
+[5] changes the context for the only one place calling function
+    handle_scsi.
+[6] replace "udev_builtin_add_property(dev, test, "ID_PATH_TAG", tag);"
+    with function "add_id_tag(dev, test, path);".
+[7] adapt the parameter "test" to "event->event_mode" in below functions:
+    udev_builtin_add_property(dev, test, "ID_PATH", path);
+    udev_builtin_add_property(dev, test, "ID_PATH_TAG", tag);
+    So here do the same adaption for parameter of below function
+    in this patch:
+    udev_builtin_add_property(dev, test, "ID_SAS_PATH", path);
+]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- src/udev/udev-builtin-path_id.c | 35 +++++++++++++++++++++++++--------
- 1 file changed, 27 insertions(+), 8 deletions(-)
+ src/udev/udev-builtin-path_id.c | 32 +++++++++++++++++++++++++-------
+ 1 file changed, 25 insertions(+), 7 deletions(-)
 
 diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
-index 0da59e2c75..eea6d7e798 100644
+index 77abff0..96b3ded 100644
 --- a/src/udev/udev-builtin-path_id.c
 +++ b/src/udev/udev-builtin-path_id.c
-@@ -148,7 +148,7 @@ static sd_device *handle_scsi_sas_wide_port(sd_device *parent, char **path) {
+@@ -155,7 +155,7 @@ static sd_device *handle_scsi_sas_wide_port(sd_device *parent, char **path) {
          return parent;
  }
  
@@ -90,7 +114,7 @@ index 0da59e2c75..eea6d7e798 100644
          sd_device *targetdev, *target_parent, *port, *expander;
          _cleanup_(sd_device_unrefp) sd_device *target_sasdev = NULL, *expander_sasdev = NULL, *port_sasdev = NULL;
          const char *sas_address = NULL;
-@@ -159,6 +159,8 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
+@@ -167,6 +167,8 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
          assert(parent);
          assert(path);
  
@@ -99,16 +123,16 @@ index 0da59e2c75..eea6d7e798 100644
          if (sd_device_get_parent_with_subsystem_devtype(parent, "scsi", "scsi_target", &targetdev) < 0)
                  return NULL;
          if (sd_device_get_parent(targetdev, &target_parent) < 0)
-@@ -180,7 +182,7 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
+@@ -187,7 +189,7 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
+         if (device_get_sysattr_unsigned(port_sasdev, "num_phys", &num_phys) < 0)
                  return NULL;
- 
-         /* Check if we are simple disk */
--        if (strncmp(phy_count, "1", 2) != 0)
-+        if (strncmp(phy_count, "1", 2) != 0 || !enable_new_sas_path)
+         /* Check if this is a wide port (i.e. num_phys is 2 or higher) */
+-        if (num_phys > 1)
++        if ((num_phys > 1) || !enable_new_sas_path)
                  return handle_scsi_sas_wide_port(parent, path);
  
          /* Get connected phy */
-@@ -206,6 +208,8 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
+@@ -213,6 +215,8 @@ static sd_device *handle_scsi_sas(sd_device *parent, char **path) {
          else
                   path_prepend(path, "sas-phy%s-%s", phy_id, lun);
  
@@ -117,16 +141,16 @@ index 0da59e2c75..eea6d7e798 100644
          return parent;
  }
  
-@@ -408,7 +412,7 @@ static sd_device *handle_scsi_hyperv(sd_device *parent, char **path, size_t guid
+@@ -412,7 +416,7 @@ static sd_device *handle_scsi_hyperv(sd_device *parent, char **path, size_t guid
          return parent;
  }
  
 -static sd_device *handle_scsi(sd_device *parent, char **path, char **compat_path, bool *supported_parent) {
 +static sd_device *handle_scsi(sd_device *parent, char **path, char **compat_path, bool *supported_parent, bool enable_new_sas_path, bool *new_sas_path) {
-         const char *devtype, *id, *name;
+         const char *id, *name;
  
-         if (sd_device_get_devtype(parent, &devtype) < 0 ||
-@@ -433,7 +437,7 @@ static sd_device *handle_scsi(sd_device *parent, char **path, char **compat_path
+         if (!device_is_devtype(parent, "scsi_device"))
+@@ -436,7 +440,7 @@ static sd_device *handle_scsi(sd_device *parent, char **path, char **compat_path
  
          if (strstr(name, "/end_device-")) {
                  *supported_parent = true;
@@ -135,53 +159,49 @@ index 0da59e2c75..eea6d7e798 100644
          }
  
          if (strstr(name, "/session")) {
-@@ -540,9 +544,13 @@ static int builtin_path_id(sd_device *dev, int argc, char *argv[], bool test) {
-         bool supported_transport = false;
-         bool supported_parent = false;
-         const char *subsystem;
+@@ -703,7 +707,11 @@ static int builtin_path_id(UdevEvent *event, int argc, char *argv[]) {
+         _cleanup_free_ char *path = NULL, *compat_path = NULL;
+         bool supported_transport = false, supported_parent = false;
+         int r;
 +        bool enable_new_sas_path = true;
 +        bool new_sas_path = false;
- 
-         assert(dev);
  
 +restart:
 +        ;
          /* walk up the chain of devices and compose path */
-         parent = dev;
-         while (parent) {
-@@ -554,7 +562,7 @@ static int builtin_path_id(sd_device *dev, int argc, char *argv[], bool test) {
-                 } else if (streq(subsys, "scsi_tape")) {
+         for (sd_device *parent = dev; parent; ) {
+                 const char *sysname;
+@@ -713,7 +721,7 @@ static int builtin_path_id(UdevEvent *event, int argc, char *argv[]) {
+                 } else if (device_in_subsystem(parent, "scsi_tape")) {
                          handle_scsi_tape(parent, &path);
-                 } else if (streq(subsys, "scsi")) {
+                 } else if (device_in_subsystem(parent, "scsi")) {
 -                        parent = handle_scsi(parent, &path, &compat_path, &supported_parent);
 +                        parent = handle_scsi(parent, &path, &compat_path, &supported_parent, enable_new_sas_path, &new_sas_path);
                          supported_transport = true;
-                 } else if (streq(subsys, "cciss")) {
+                 } else if (device_in_subsystem(parent, "cciss")) {
                          parent = handle_cciss(parent, &path);
-@@ -709,9 +717,20 @@ static int builtin_path_id(sd_device *dev, int argc, char *argv[], bool test) {
-                         i--;
-                 tag[i] = '\0';
+@@ -854,9 +862,19 @@ static int builtin_path_id(UdevEvent *event, int argc, char *argv[]) {
  
--                udev_builtin_add_property(dev, test, "ID_PATH", path);
--                udev_builtin_add_property(dev, test, "ID_PATH_TAG", tag);
--        }
-+                if (new_sas_path) {
-+                        udev_builtin_add_property(dev, test, "ID_SAS_PATH", path);
-+                } else {
-+                        udev_builtin_add_property(dev, test, "ID_PATH", path);
-+                        udev_builtin_add_property(dev, test, "ID_PATH_TAG", tag);
-+                }
-+
-+                if (new_sas_path) {
-+                        free(path);
-+                        path = NULL;
-+                        enable_new_sas_path = false;
-+                        goto restart;
-+                }
-+       }
+         add_id_with_usb_revision(dev, event->event_mode, path);
+ 
+-        (void) udev_builtin_add_property(dev, event->event_mode, "ID_PATH", path);
++        if (new_sas_path) {
++                udev_builtin_add_property(dev, event->event_mode, "ID_SAS_PATH", path);
++        } else {
++                (void) udev_builtin_add_property(dev, event->event_mode, "ID_PATH", path);
++                add_id_tag(dev, event->event_mode, path);
++        }
+ 
+-        add_id_tag(dev, event->event_mode, path);
++        if (new_sas_path) {
++                free(path);
++                path = NULL;
++                enable_new_sas_path = false;
++                goto restart;
++        }
  
          /*
           * Compatible link generation for ATA devices
 -- 
-2.34.1
+2.49.0
 

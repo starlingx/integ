@@ -1,19 +1,23 @@
-From 8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7 Mon Sep 17 00:00:00 2001
-Message-Id: <8b63ddb68a39d48ebb621d76a2b1f07f5ff67ac7.1574264572.git.Jim.Somerville@windriver.com>
-From: systemd team <systemd-maint@redhat.com>
-Date: Tue, 8 Nov 2016 17:06:01 -0500
-Subject: [PATCH 1/3] inject millisec in syslog date
+From 4bb1dd8c0cc6b8966829f8876a6097aaaed54cca Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Fri, 26 Sep 2025 09:18:37 +0000
+Subject: [PATCH 1/4] inject millisec in syslog date
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[lz: Rebase the patch when systemd upgrades from 247.3-7 to 257.8-1.
+Adapt the patch because of the context changes caused by
+https://github.com/systemd/systemd/commit/6f5cf41570776f489967d1a7de18260b2bc9acf9
+#diff-80e8b9a89a19d343284ca1714d57c5112a1758698e1437fc7c26a9457d247565L147]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- src/journal/journald-syslog.c | 48 +++++++++++++++++++++++++++++++++++++------
- 1 file changed, 42 insertions(+), 6 deletions(-)
+ src/journal/journald-syslog.c | 44 +++++++++++++++++++++++++++++++----
+ 1 file changed, 39 insertions(+), 5 deletions(-)
 
 diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
-index 1a9db59..36288cb 100644
+index c04115a..5e6c816 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
-@@ -25,6 +25,43 @@
+@@ -28,6 +28,42 @@
  /* Warn once every 30s if we missed syslog message */
  #define WARN_FORWARD_SYSLOG_MISSED_USEC (30 * USEC_PER_SEC)
  
@@ -24,7 +28,7 @@ index 1a9db59..36288cb 100644
 + */
 +static int formatSyslogDate(char * buffer, int bufLen, const struct timeval *tv) {
 +  struct timeval tv_tmp;
-+  long int millisec;
++  long unsigned int millisec;
 +  char tmpbuf[64];
 +  struct tm tm;
 +  time_t t;
@@ -53,36 +57,31 @@ index 1a9db59..36288cb 100644
 +  return snprintf(buffer, bufLen, "%s.%03lu", tmpbuf, millisec);
 +}
 +
-+
  static void forward_syslog_iovec(
                  Server *s,
                  const struct iovec *iovec,
-@@ -125,8 +162,6 @@ void server_forward_syslog(Server *s, in
+@@ -128,7 +164,6 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
          char header_priority[DECIMAL_STR_MAX(priority) + 3], header_time[64],
               header_pid[STRLEN("[]: ") + DECIMAL_STR_MAX(pid_t) + 1];
          int n = 0;
--        time_t t;
 -        struct tm tm;
          _cleanup_free_ char *ident_buf = NULL;
  
          assert(s);
-@@ -141,12 +176,11 @@ void server_forward_syslog(Server *s, in
-         xsprintf(header_priority, "<%i>", priority);
+@@ -144,10 +179,9 @@ void server_forward_syslog(Server *s, int priority, const char *identifier, cons
          iovec[n++] = IOVEC_MAKE_STRING(header_priority);
  
-+
          /* Second: timestamp */
--        t = tv ? tv->tv_sec : ((time_t) (now(CLOCK_REALTIME) / USEC_PER_SEC));
--        if (!localtime_r(&t, &tm))
+-        if (localtime_or_gmtime_usec(tv ? tv->tv_sec * USEC_PER_SEC : now(CLOCK_REALTIME), /* utc= */ false, &tm) < 0)
 -                return;
 -        if (strftime(header_time, sizeof(header_time), "%h %e %T ", &tm) <= 0)
 -                return;
 +        if (formatSyslogDate(header_time, sizeof(header_time), tv) <=0 )
-+           return;
++            return;
 +
          iovec[n++] = IOVEC_MAKE_STRING(header_time);
  
          /* Third: identifier and PID */
 -- 
-1.8.3.1
+2.49.0
 

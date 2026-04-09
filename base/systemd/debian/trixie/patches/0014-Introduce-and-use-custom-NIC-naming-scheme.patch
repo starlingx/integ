@@ -1,7 +1,7 @@
-From 6ba5057d343410d5b5f810974d9f4388cb7a9418 Mon Sep 17 00:00:00 2001
-From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
-Date: Wed, 18 May 2022 13:20:33 +0300
-Subject: [PATCH 14/14] Introduce and use custom NIC naming scheme
+From 58ae49c1871074f27f8f23e357be3bcc4096a261 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Fri, 26 Sep 2025 10:10:26 +0000
+Subject: [PATCH] Introduce and use custom NIC naming scheme
 
 To add some context we start by referencing [1].
 More lab tests are enabled now, which reveal more systemd naming
@@ -32,79 +32,82 @@ udev-builtin-net_id.c#L248-L249
 [9]: https://github.com/systemd/systemd/blob/v247/src/udev/
 udev-builtin-net_id.c#L204-L207
 
-Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
+ Adapt the patch referring to below code changes
+beteen 247.3 and 257.8:
+[10]: https://github.com/systemd/systemd/commit/eaba9bb3e69635d2c490c5e1b0d262b763753e1d
+[11]: https://github.com/systemd/systemd/commit/88d2bda8120dcc375a90e28b64de06b9646ab3b6
+[12]: https://github.com/systemd/systemd/commit/82234e2a21496a7647770c0689d81e19e96192d2
+[13]: https://github.com/systemd/systemd/commit/82cb5f2ad1d530fff7afc78eedb2d486f1ba3abf
+
+[10] change "if (port_name)" to "if (!isempty(info->phys_port_name))";
+[11] add one more check before  "if (!isempty(info->phys_port_name))";
+[12] move the naming process to function "get_port_specifier", so move
+     the check of "!naming_scheme_is(NAMING_VSTX7_0)" in our patch into
+     function "get_port_specifier". The equivalent place to add this
+     check is:
+     https://github.com/systemd/systemd/commit/82234e2a21496a7647770c0689d81e19e96192d2
+     #diff-74ecd06b7b5ba73ee97dbca326e44e3dddf6e8841bda2e073b06bdc4d8bd158dR190
+[13] the functions' names in our patch as "dev_pci_onboard/dev_pci_slot"
+     are changed to "names_pci_onboard/names_pci_slot".
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
  src/shared/netif-naming-scheme.c | 3 +++
  src/shared/netif-naming-scheme.h | 6 ++++++
- src/udev/udev-builtin-net_id.c   | 6 +++---
- 3 files changed, 12 insertions(+), 3 deletions(-)
+ src/udev/udev-builtin-net_id.c   | 2 +-
+ 3 files changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/src/shared/netif-naming-scheme.c b/src/shared/netif-naming-scheme.c
-index df520ab..150fe0d 100644
+index 67b7eb4..37e89cd 100644
 --- a/src/shared/netif-naming-scheme.c
 +++ b/src/shared/netif-naming-scheme.c
-@@ -14,6 +14,9 @@ static const NamingScheme naming_schemes[] = {
-         { "v245", NAMING_V245 },
-         { "v247", NAMING_V247 },
+@@ -26,6 +26,9 @@ static const NamingScheme naming_schemes[] = {
+         { "v255", NAMING_V255 },
+         { "v257", NAMING_V257 },
          /* … add more schemes here, as the logic to name devices is updated … */
 +        /* Need a custom naming scheme to keep naming the same as on CentOS.
 +         * At least for initial release, until upgrade logic is implemented. */
 +        { "vSTX7_0", NAMING_VSTX7_0 },
- };
  
- static const NamingScheme* naming_scheme_from_name(const char *name) {
+         EXTRA_NET_NAMING_MAP
+ };
 diff --git a/src/shared/netif-naming-scheme.h b/src/shared/netif-naming-scheme.h
-index 503a74e..5c90416 100644
+index 3ab1d75..585b166 100644
 --- a/src/shared/netif-naming-scheme.h
 +++ b/src/shared/netif-naming-scheme.h
-@@ -33,6 +33,8 @@ typedef enum NamingSchemeFlags {
-         NAMING_NSPAWN_LONG_HASH    = 1 << 8, /* Shorten nspawn interfaces by including 24bit hash, instead of simple truncation  */
-         NAMING_BRIDGE_NO_SLOT      = 1 << 9, /* Don't use PCI hotplug slot information if the corresponding device is a PCI bridge */
+@@ -46,6 +46,8 @@ typedef enum NamingSchemeFlags {
+         NAMING_FIRMWARE_NODE_SUN         = 1 << 18, /* Use firmware_node/sun to get PCI slot number */
+         NAMING_DEVICETREE_PORT_ALIASES   = 1 << 19, /* Include aliases of OF nodes of a netdev itself, not just its parent. See PR #33958. */
  
 +        NAMING_VSTX7_0 = NAMING_BRIDGE_NO_SLOT,
 +
          /* And now the masks that combine the features above */
          NAMING_V238 = 0,
          NAMING_V239 = NAMING_V238 | NAMING_SR_IOV_V | NAMING_NPAR_ARI,
-@@ -55,3 +57,7 @@ const NamingScheme* naming_scheme(void);
- static inline bool naming_scheme_has(NamingSchemeFlags flags) {
+@@ -83,6 +85,10 @@ static inline bool naming_scheme_has(NamingSchemeFlags flags) {
          return FLAGS_SET(naming_scheme()->flags, flags);
  }
-+
+ 
 +static inline bool naming_scheme_is(NamingSchemeFlags flags) {
 +        return naming_scheme()->flags == flags;
 +}
++
+ typedef enum NamePolicy {
+         NAMEPOLICY_KERNEL,
+         NAMEPOLICY_KEEP,
 diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
-index d06a8c7..825e9f8 100644
+index 09c04b9..98133f4 100644
 --- a/src/udev/udev-builtin-net_id.c
 +++ b/src/udev/udev-builtin-net_id.c
-@@ -201,7 +201,7 @@ static int dev_pci_onboard(sd_device *dev, struct netnames *names) {
-         s = names->pci_onboard;
-         l = sizeof(names->pci_onboard);
-         l = strpcpyf(&s, l, "o%lu", idx);
--        if (port_name)
-+        if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
-                 l = strpcpyf(&s, l, "n%s", port_name);
-         else if (dev_port > 0)
-                 l = strpcpyf(&s, l, "d%lu", dev_port);
-@@ -318,7 +318,7 @@ static int dev_pci_slot(sd_device *dev, struct netnames *names) {
-         l = strpcpyf(&s, l, "p%us%u", bus, slot);
-         if (func > 0 || is_pci_multifunction(names->pcidev))
-                 l = strpcpyf(&s, l, "f%u", func);
--        if (port_name)
-+        if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
-                 l = strpcpyf(&s, l, "n%s", port_name);
-         else if (dev_port > 0)
-                 l = strpcpyf(&s, l, "d%lu", dev_port);
-@@ -388,7 +388,7 @@ static int dev_pci_slot(sd_device *dev, struct netnames *names) {
-                 l = strpcpyf(&s, l, "s%d", hotplug_slot);
-                 if (func > 0 || is_pci_multifunction(names->pcidev))
-                         l = strpcpyf(&s, l, "f%d", func);
--                if (port_name)
-+                if (port_name && !naming_scheme_is(NAMING_VSTX7_0))
-                         l = strpcpyf(&s, l, "n%s", port_name);
-                 else if (dev_port > 0)
-                         l = strpcpyf(&s, l, "d%lu", dev_port);
+@@ -219,7 +219,7 @@ static int get_port_specifier(sd_device *dev, bool fallback_to_dev_id, char **re
+ 
+         /* First, try to use the kernel provided front panel port name for multiple port PCI device. */
+         r = device_get_sysattr_value_filtered(dev, "phys_port_name", &phys_port_name);
+-        if (r >= 0 && !isempty(phys_port_name)) {
++        if (r >= 0 && !isempty(phys_port_name) && !naming_scheme_is(NAMING_VSTX7_0)) {
+                 if (naming_scheme_has(NAMING_SR_IOV_R)) {
+                         int vf_id = -1;
+ 
 -- 
-2.36.1
+2.49.0
 
