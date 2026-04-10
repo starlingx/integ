@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Joseph Vazhappilly Paily <joseph.vazhappillypaily@windriver.com>
+Date: Wed, 9 Apr 2026 00:00:00 +0000
+Subject: [PATCH] Revert udevadm-settle patch
+
+The Debian udevadm-settle.patch adds two system("udevadm settle")
+calls with a default 120-second timeout inside parted's
+linux_disk_commit(). During kickstart disk partitioning in the
+StarlingX installer environment, the udev event queue never fully
+empties, causing each parted mktable/partition operation to block
+for ~4 minutes (2 x 120s timeouts). With multiple disks this adds
+up to ~12+ minutes of unnecessary delay.
+
+This reverts the udevadm-settle.patch changes, restoring the
+upstream parted behavior where parted does not call udevadm settle.
+The caller (kickstart scripts) is responsible for settling udev
+when needed.
+
+Signed-off-by: Joseph Vazhappilly Paily <joseph.vazhappillypaily@windriver.com>
+---
+ libparted/arch/linux.c | 56 ++----------------------------------------
+ 1 file changed, 2 insertions(+), 54 deletions(-)
+
+diff --git a/libparted/arch/linux.c b/libparted/arch/linux.c
+index f6f72360..ccbba865 100644
+--- a/libparted/arch/linux.c
++++ b/libparted/arch/linux.c
+@@ -26,7 +26,6 @@
+ #include <parted/fdasd.h>
+ #endif
+ 
+-#include <stdlib.h>
+ #include <ctype.h>
+ #include <errno.h>
+ #include <fcntl.h>
+@@ -3251,52 +3250,10 @@ _have_blkpg ()
+         return have_blkpg = kver >= KERNEL_VERSION (2,4,0) ? 1 : 0;
+ }
+ 
+-static int
+-_chrooted ()
+-{
+-        static int cached = -1;
+-        struct stat root, init_root;
+-
+-        if (cached != -1)
+-                return cached;
+-
+-        if (stat ("/", &root) || stat ("/proc/1/root", &init_root))
+-                /* We can't tell, but are unlikely to be able to tell in the
+-                 * future either.
+-                 */
+-                cached = 0;
+-        else if (root.st_dev == init_root.st_dev &&
+-                 root.st_ino == init_root.st_ino)
+-                /* / has the same dev/ino as /sbin/init's root, so we're not
+-                 * in a chroot.
+-                 */
+-                cached = 0;
+-        else
+-                /* We must be in a chroot. */
+-                cached = 1;
+-
+-        return cached;
+-}
+-
+ /* Return nonzero upon success, 0 if something fails.  */
+ static int
+ linux_disk_commit (PedDisk* disk)
+ {
+-        int ret = 1;
+-
+-        /* Modern versions of udev may notice the write activity on
+-         * partition devices caused by _flush_cache, and may decide to
+-         * synthesise some change events as a result. These may in turn run
+-         * programs that open partition devices, which will race with us
+-         * trying to remove those devices. To avoid this, we need to wait
+-         * until udevd has finished processing its event queue.
+-         * TODO: for upstream submission, this should check whether udevadm
+-         * exists on $PATH.
+-         */
+-        if (!_chrooted () && system ("udevadm settle") != 0) {
+-                /* ignore failures */
+-        }
+-
+         if (disk->dev->type != PED_DEVICE_FILE) {
+ 
+                 /* We now require BLKPG support.  If this assertion fails,
+@@ -3306,19 +3263,10 @@ linux_disk_commit (PedDisk* disk)
+                 assert (_have_blkpg ());
+ 
+                 if (!_disk_sync_part_table (disk))
+-                        ret = 0;
++                        return 0;
+         }
+ 
+-        /* Now we wait for udevd to finish creating device nodes based on
+-         * the above activity, so that callers can reliably use them.
+-         * TODO: for upstream submission, this should check whether udevadm
+-         * exists on $PATH.
+-         */
+-        if (!_chrooted () && system ("udevadm settle") != 0) {
+-                /* ignore failures */
+-        }
+-
+-        return ret;
++        return 1;
+ }
+ 
+ #if USE_BLKID
+-- 
+2.25.1
