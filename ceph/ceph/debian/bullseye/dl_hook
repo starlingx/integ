@@ -23,7 +23,7 @@ tar -acvvzf - -C ${STX_GIT_SRC_DIR} ceph | tar -xvvzf - --directory ${PKG_BUILD_
 rm -rf ${PKG_BUILD_DIR}/debian
 
 # Additional files
-cp ${PKG_BASE}/files/* ${PKG_BUILD_DIR}/
+cp ${PKG_BASE}/debian/bullseye/files/* ${PKG_BUILD_DIR}/
 
 # External source modules
 SOURCE1='boost_1_72_0.tar.bz2'
