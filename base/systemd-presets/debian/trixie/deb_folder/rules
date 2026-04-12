@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -d debian/tmp/etc/systemd/system-preset
+	install -m 544 stx/systemd/defaults/99-default-disable.preset debian/tmp/etc/systemd/system-preset
+	install -m 544 stx/systemd/defaults/90-default.preset debian/tmp/etc/systemd/system-preset
+	install -d debian/tmp/usr/share/systemd-presets
+	install -m 544 stx/systemd/traits/* debian/tmp/usr/share/systemd-presets
+	dh_install
