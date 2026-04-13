@@ -322,6 +322,8 @@ puppet-memcached
 
 puppet-module-asciiduck-sssd
 
+puppet-module-camptocamp-kmod
+
 #puppet-etcd-1.12.3
 puppet-module-cristifalcas-etcd
 

@@ -1,0 +1,74 @@
+From 8cb3348ebd5525b9718091f3f2cc6785d24b379d Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Wed, 8 Apr 2026 02:46:17 -0400
+Subject: [PATCH] Fix Puppet 8 compatibility in kmod module
+
+Puppet 8 removed support for legacy top-scope fact syntax
+($::factname). Replace all occurrences with the structured
+facts API ($facts['key']):
+
+- $::osfamily -> $facts['os']['family'] in load.pp
+- $::augeasversion -> $facts['augeasversion'] in init.pp
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ manifests/init.pp | 2 +-
+ manifests/load.pp | 8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/manifests/init.pp b/manifests/init.pp
+index 14da62b..0df20e7 100644
+--- a/manifests/init.pp
++++ b/manifests/init.pp
+@@ -7,7 +7,7 @@
+ #
+ class kmod {
+ 
+-  if versioncmp($::augeasversion, '0.9.0') < 0 {
++  if versioncmp($facts['augeasversion'], '0.9.0') < 0 {
+     fail('Augeas 0.10.0 or higher required')
+   }
+   file { '/etc/modprobe.d': ensure => directory }
+diff --git a/manifests/load.pp b/manifests/load.pp
+index 0752568..05bd613 100644
+--- a/manifests/load.pp
++++ b/manifests/load.pp
+@@ -18,7 +18,7 @@ define kmod::load(
+ 
+   case $ensure {
+     'present': {
+-      case $::osfamily {
++      case $facts['os']['family'] {
+         'Debian': {
+           $changes = "clear '${name}'"
+         }
+@@ -35,7 +35,7 @@ define kmod::load(
+     }
+ 
+     'absent': {
+-      case $::osfamily {
++      case $facts['os']['family'] {
+         'Debian': {
+           $changes = "rm '${name}'"
+         }
+@@ -54,7 +54,7 @@ define kmod::load(
+     default: { fail "${module_name}: unknown ensure value ${ensure}" }
+   }
+ 
+-  case $::osfamily {
++  case $facts['os']['family'] {
+     'Debian': {
+       augeas {"Manage ${name} in ${file}":
+         incl    => $file,
+@@ -81,7 +81,7 @@ define kmod::load(
+       }
+     }
+     default: {
+-      fail "${module_name}: Unknown OS family ${::osfamily}"
++      fail "${module_name}: Unknown OS family ${facts['os']['family']}"
+     }
+   }
+ }
+-- 
+2.43.0
+

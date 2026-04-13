@@ -35,6 +35,7 @@ config/puppet-modules/puppetlabs-haproxy
 config/puppet-modules/puppetlabs-postgresql
 config/puppet-modules/puppetlabs-stdlib
 config/puppet-modules/puppet-hash2stuff
+config/puppet-modules/puppet-kmod
 config/puppet-modules/puppet-lvm
 config/puppet-modules/puppet-memcached
 config/puppet-modules/puppet-module-asciiduck-sssd
