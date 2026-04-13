@@ -348,6 +348,8 @@ puppet-module-oslo
 #puppet-puppi
 puppet-puppi
 
+puppet-module-puppetlabs-firewall
+
 #puppet-rabbitmq-8.5.0
 puppet-module-puppetlabs-rabbitmq
 
