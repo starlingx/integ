@@ -1,0 +1,5 @@
+systemd-presets (1.0) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Charles Short  <charles.short@windriver.com>  Mon, 29 Aug 2022 16:35:37 -0400

@@ -1,0 +1,96 @@
+From f89aa049fc05b9b7661b357f95f84bf989feea19 Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Fri, 10 Apr 2026 14:32:57 -0400
+Subject: [PATCH] Rename strongswan-starter to strongswan for Trixie
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ stx/systemd/traits/aio.preset               | 2 +-
+ stx/systemd/traits/controller.preset        | 2 +-
+ stx/systemd/traits/lowlatency.preset        | 2 +-
+ stx/systemd/traits/storage.preset           | 2 +-
+ stx/systemd/traits/worker-lowlatency.preset | 2 +-
+ stx/systemd/traits/worker.preset            | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/stx/systemd/traits/aio.preset b/stx/systemd/traits/aio.preset
+index 2c243e7..5d45579 100644
+--- a/stx/systemd/traits/aio.preset
++++ b/stx/systemd/traits/aio.preset
+@@ -128,7 +128,7 @@ enable logmgmt.service
+ enable sssd.service
+ 
+ # strongswan ipsec daemon
+-enable strongswan-starter.service
++enable strongswan.service
+ 
+ # ipsec auth server
+ enable ipsec-server.service
+diff --git a/stx/systemd/traits/controller.preset b/stx/systemd/traits/controller.preset
+index fa3c968..a325e76 100644
+--- a/stx/systemd/traits/controller.preset
++++ b/stx/systemd/traits/controller.preset
+@@ -129,7 +129,7 @@ disable opt-platform.service
+ enable sssd.service
+ 
+ # strongswan ipsec daemon
+-enable strongswan-starter.service
++enable strongswan.service
+ 
+ # ipsec auth server
+ enable ipsec-server.service
+diff --git a/stx/systemd/traits/lowlatency.preset b/stx/systemd/traits/lowlatency.preset
+index 3df3579..bfa8e76 100644
+--- a/stx/systemd/traits/lowlatency.preset
++++ b/stx/systemd/traits/lowlatency.preset
+@@ -125,7 +125,7 @@ enable logmgmt.service
+ enable sssd.service
+ 
+ # strongswan ipsec daemon
+-enable strongswan-starter.service
++enable strongswan.service
+ 
+ # ipsec auth server
+ enable ipsec-server.service
+diff --git a/stx/systemd/traits/storage.preset b/stx/systemd/traits/storage.preset
+index a60d07a..f7f7ef9 100644
+--- a/stx/systemd/traits/storage.preset
++++ b/stx/systemd/traits/storage.preset
+@@ -126,7 +126,7 @@ disable epmd.socket
+ enable sssd.service
+ 
+ # strongswan ipsec daemon
+-enable strongswan-starter.service
++enable strongswan.service
+ 
+ # storage personality
+ disable ceph-manager.service
+diff --git a/stx/systemd/traits/worker-lowlatency.preset b/stx/systemd/traits/worker-lowlatency.preset
+index 24067b2..229d209 100644
+--- a/stx/systemd/traits/worker-lowlatency.preset
++++ b/stx/systemd/traits/worker-lowlatency.preset
+@@ -121,7 +121,7 @@ enable opt-platform.service
+ enable sssd.service
+ 
+ # strongswan ipsec daemon
+-enable strongswan-starter.service
++enable strongswan.service
+ 
+ # worker-utils.spec
+ enable affine-platform.sh.service
+diff --git a/stx/systemd/traits/worker.preset b/stx/systemd/traits/worker.preset
+index 24067b2..229d209 100644
+--- a/stx/systemd/traits/worker.preset
++++ b/stx/systemd/traits/worker.preset
+@@ -121,7 +121,7 @@ enable opt-platform.service
+ enable sssd.service
+ 
+ # strongswan ipsec daemon
+-enable strongswan-starter.service
++enable strongswan.service
+ 
+ # worker-utils.spec
+ enable affine-platform.sh.service
+-- 
+2.43.0
+
