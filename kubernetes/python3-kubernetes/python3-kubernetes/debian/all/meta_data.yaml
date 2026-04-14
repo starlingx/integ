@@ -1,10 +1,10 @@
 ---
 debname: python3-kubernetes
-debver: 34.1.0
+debver: 35.0.0
 dl_path:
-    name: python3-kubernetes.34.1.0.tar.gz
-    url: https://github.com/kubernetes-client/python/archive/refs/tags/v34.1.0.tar.gz
-    sha256sum: 39f9fc9d4662c44ba5ddf1104a1000cbc7e16ae605cd906d56f0bee83211ce93
+    name: python3-kubernetes.35.0.0.tar.gz
+    url: https://github.com/kubernetes-client/python/archive/refs/tags/v35.0.0.tar.gz
+    sha256sum: 766fa697d4b2a7ef2616c8b720fb4d4b5aa6f48c584cd4ed9411648b098b7d2d
 revision:
     dist: $STX_DIST
     GITREVCOUNT:

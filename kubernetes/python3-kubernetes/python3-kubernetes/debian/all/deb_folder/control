@@ -8,12 +8,7 @@ Build-Depends: debhelper-compat (= 13),
  python3-setuptools,
  python3-all,
  python3-durationpy,
- python3-cachetools,
- python3-google-auth,
- python3-pyasn1,
- python3-pyasn1-modules,
  python3-requests-oauthlib,
- python3-rsa,
  python3-websocket
 Standards-Version: 4.4.1
 
