@@ -1,0 +1,6 @@
+containerd usr/bin
+containerd-* usr/bin
+ctr usr/bin
+config.toml etc/containerd/
+k8s-container-cleanup.sh usr/sbin
+containerd.service lib/systemd/system/
