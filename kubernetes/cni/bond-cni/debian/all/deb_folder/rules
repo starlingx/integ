@@ -1,13 +1,40 @@
 #!/usr/bin/make -f
 
-export PATH := /usr/lib/go-1.24/bin:$(PATH)
+export PATH := /usr/lib/go-1.25/bin:$(PATH)
 export DH_VERBOSE = 1
 export DH_GOLANG_GO_GENERATE := 1
 export INSTALL_DIR := $(CURDIR)/debian/bond-cni/
 
+PLUGINS_VENDOR := /usr/share/gocode/src/github.com/containernetworking/plugins/vendor
+PLUGINS_SRC := /usr/share/gocode/src/github.com/containernetworking/plugins
+
 %:
 	dh $@ --buildsystem=golang --with=golang --builddirectory=_build
 
+override_dh_auto_build:
+	# Reconstruct plugins tree without vendor/ so all plugins packages
+	# resolve deps from top-level GOPATH (eliminates vendored type conflicts)
+	rm -f _build/src/github.com/containernetworking
+	mkdir -p _build/src/github.com/containernetworking/plugins
+	for d in $$(find $(PLUGINS_SRC) -maxdepth 1 -mindepth 1 ! -name vendor); do \
+		ln -sf $$d _build/src/github.com/containernetworking/plugins/$$(basename $$d); \
+	done
+	# Use vendored cni (v1.3.0) instead of system cni (v1.0.1)
+	ln -sf $(PLUGINS_VENDOR)/github.com/containernetworking/cni \
+		_build/src/github.com/containernetworking/cni
+	# Override system github.com deps with plugins' vendored versions
+	for d in $$(find $(PLUGINS_VENDOR)/github.com -maxdepth 1 -mindepth 1 -type d \
+		! -name containernetworking); do \
+		rm -rf _build/src/github.com/$$(basename $$d); \
+		ln -sf $$d _build/src/github.com/$$(basename $$d); \
+	done
+	# Override non-github.com deps with plugins' vendored versions
+	for d in $$(find $(PLUGINS_VENDOR) -maxdepth 1 -mindepth 1 -type d \
+		! -name github.com); do \
+		rm -rf _build/src/$$(basename $$d); \
+		ln -sf $$d _build/src/$$(basename $$d); \
+	done
+	dh_auto_build
 
 override_dh_install:
 	dh_install --sourcedir=$(INSTALL_DIR)

@@ -1,3 +1,10 @@
+bond-cni (1.0-258926ad54a78e3dc070ab416cf79055e79c279a) unstable; urgency=medium
+
+  * Updated using latest commit
+  * Updated golang to 1.25
+
+ -- Rakesh Boya <boya.rakesh@windriver.com>  Thu, 16 Apr 2026 14:48:13 -0400
+
 bond-cni (1.0-2d3e3d9688257dc587ab784a282f31bdffee69d3) unstable; urgency=medium
 
   * Updated using latest commit
