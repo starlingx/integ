@@ -150,7 +150,6 @@ disable barbican-worker.service
 disable keystone.service
 disable postgresql.service
 enable storageconfig.service
-enable kvm_timer_advance_setup.service
 disable worker-config-gate.service
 disable workerconfig.service
 
