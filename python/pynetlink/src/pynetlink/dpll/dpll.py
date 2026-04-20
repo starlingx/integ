@@ -249,3 +249,29 @@ class NetlinkDPLL:
             )
 
         return self._set_pin(pin_info)
+
+    def set_pin_state(self, pin_id: int, pin_state: str):
+        """Change pin state.
+
+        Change the pin state. All pin parents are changed at the same time.
+
+        Raises NetlinkException class in case of error.
+        """
+
+        pin_info = {
+            PinFields.ID: pin_id,
+            PinFields.PARENT_DEVICE: []
+        }
+
+        # get pin's parent ids, and set the state in all of them.
+        pins = self.get_pins_by_id(pin_id)
+        parent_ids = list(pin.dev_id for pin in pins)
+        for parent_id in parent_ids:
+            pin_info[PinFields.PARENT_DEVICE].append(
+                {
+                    PinParentFields.PARENT_ID: parent_id,
+                    PinParentFields.STATE: pin_state
+                }
+            )
+
+        return self._set_pin(pin_info)
