@@ -1,3 +1,10 @@
+kubectl-cert-manager (2.4.1-1) unstable; urgency=medium
+
+  * Update kubectl-cert-manager plugin from v1.7.1 to cmctl v2.4.1
+    to support K8S 1.34 - 1.35.
+
+ -- HemaPriya T <HemaPriya.T@windriver.com>  Tue, 21 Apr 2026 11:12:42 +0000
+
 kubectl-cert-manager (1.7.1-1) unstable; urgency=medium
 
   * Initial release
