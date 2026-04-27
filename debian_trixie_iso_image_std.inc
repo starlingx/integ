@@ -275,6 +275,7 @@ libldap-common
 #slapd-smbk5pwd  # not used
 slapd
 #slapi-dev  # not used
+slapd-ppm
 
 #parted
 #libparted-dev  # not used

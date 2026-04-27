@@ -1,0 +1,86 @@
+From c2b0a0e3c0ebf5870c0310be8fd62d2dedd6cccc Mon Sep 17 00:00:00 2001
+From: Marcelo Loebens <Marcelo.DeCastroLoebens@windriver.com>
+Date: Wed, 8 Apr 2026 18:46:50 -0400
+Subject: [PATCH] Add separate slapd-ppm package for PPM password policy module
+
+Move the ppm (Password Policy Module) out of slapd-contrib into its
+own slapd-ppm package. This provides configurable password strength
+checks including character class requirements, forbidden characters,
+RDN checks, and optional cracklib integration.
+
+Signed-off-by: Marcelo Loebens <Marcelo.DeCastroLoebens@windriver.com>
+---
+ debian/control               | 13 +++++++++++++
+ debian/rules                 |  2 ++
+ debian/slapd-contrib.install |  1 -
+ debian/slapd-ppm.dirs        |  2 ++
+ debian/slapd-ppm.install     |  2 ++
+ 5 files changed, 19 insertions(+), 1 deletion(-)
+ create mode 100644 debian/slapd-ppm.dirs
+ create mode 100644 debian/slapd-ppm.install
+
+diff --git a/debian/control b/debian/control
+index 7b35ee8..de0608e 100644
+--- a/debian/control
++++ b/debian/control
+@@ -62,6 +62,19 @@ Description: contributed plugins for OpenLDAP slapd
+  the OpenLDAP community. While distributed as part of OpenLDAP Software, they
+  are not necessarily supported by the OpenLDAP Project.
+ 
++Package: slapd-ppm
++Section: net
++Architecture: any
++Build-Profiles: <!pkg.openldap.noslapd>
++Depends: slapd (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
++Suggests: cracklib-runtime
++Description: PPM password policy module for OpenLDAP
++ This package provides the ppm (Password Policy Module) overlay for
++ OpenLDAP slapd. It extends the password policy overlay with
++ configurable password strength checks including character class
++ requirements, forbidden characters, RDN checks, and optional
++ cracklib integration.
++
+ Package: ldap-utils
+ Architecture: any
+ Depends: ${shlibs:Depends}, libldap2 (= ${binary:Version}), ${misc:Depends}
+diff --git a/debian/rules b/debian/rules
+index 61b6614..2b2b1cf 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -136,6 +136,8 @@ endif
+ 	find $(installdir)/usr/share/man -name \*.8 \
+ 		| xargs perl -pi -e 's#(\.TH \w+ 8)C#$$1#'
+ 
++	cp -f contrib/slapd-modules/ppm/ppm.example $(installdir)/etc/ldap/ppm.example
++
+ # for indep, we only need the ldap.conf.5 manpage
+ override_dh_auto_build-indep:
+ 	$(MAKE) -C ${builddir}/doc/man/man5
+diff --git a/debian/slapd-contrib.install b/debian/slapd-contrib.install
+index eb97734..20c9ac0 100644
+--- a/debian/slapd-contrib.install
++++ b/debian/slapd-contrib.install
+@@ -1,4 +1,3 @@
+-usr/lib/ldap/ppm.so
+ usr/lib/ldap/pw-apr1.so*
+ usr/lib/ldap/pw-apr1.la
+ usr/lib/ldap/pw-netscape.so*
+diff --git a/debian/slapd-ppm.dirs b/debian/slapd-ppm.dirs
+new file mode 100644
+index 0000000..3d793ea
+--- /dev/null
++++ b/debian/slapd-ppm.dirs
+@@ -0,0 +1,2 @@
++etc/ldap
++usr/lib/ldap
+diff --git a/debian/slapd-ppm.install b/debian/slapd-ppm.install
+new file mode 100644
+index 0000000..ae4bcc8
+--- /dev/null
++++ b/debian/slapd-ppm.install
+@@ -0,0 +1,2 @@
++etc/ldap/ppm.example
++usr/lib/ldap/ppm.so
+-- 
+2.34.1
+
