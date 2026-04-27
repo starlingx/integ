@@ -8,8 +8,6 @@ FROM ${BASE}
 RUN apt-get -y update \
  && apt-get -y install \
     openvswitch-common \
-    openvswitch-dbg \
-    openvswitch-dev \
     openvswitch-ipsec \
     openvswitch-pki \
     openvswitch-switch \
