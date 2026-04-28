@@ -31,6 +31,7 @@ config/puppet-modules/puppet-boolean
 config/puppet-modules/puppet-dnsmasq
 config/puppet-modules/puppet-drbd
 config/puppet-modules/puppet-etcd
+config/puppet-modules/puppetlabs-firewall
 config/puppet-modules/puppetlabs-haproxy
 config/puppet-modules/puppetlabs-postgresql
 config/puppet-modules/puppetlabs-stdlib

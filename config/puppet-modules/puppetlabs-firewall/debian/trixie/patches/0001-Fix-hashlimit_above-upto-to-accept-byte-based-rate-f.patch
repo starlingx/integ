@@ -1,0 +1,56 @@
+From 2c98661b747a7112af0bd78fbf7e9a0826cb11ac Mon Sep 17 00:00:00 2001
+From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+Date: Thu, 9 Apr 2026 06:08:41 -0400
+Subject: [PATCH] Fix hashlimit_above/upto to accept byte-based rate formats
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The puppetlabs-firewall v8.1.7 hashlimit_above and hashlimit_upto
+parameters only validate packet-rate formats (e.g. '40/sec') but
+reject byte-based formats (e.g. '100kb/s') that iptables natively
+supports via --hashlimit-above and --hashlimit-upto.
+
+This causes puppet apply to fail on controller-1 with:
+  Error: Parameter hashlimit_above failed on Firewall[...]:
+  expects a match for Pattern[...], got '0kb/s'
+
+The module's own description for hashlimit_upto acknowledges
+byte-based rates ("amountb/second") but the regex did not
+allow them.
+
+Extend the validation regex to also accept b/s, kb/s, and mb/s
+formats, matching what iptables supports. No functional change
+to the generated iptables rules — the value is passed through
+to iptables as-is.
+
+Signed-off-by: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
+---
+ lib/puppet/type/firewall.rb | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/puppet/type/firewall.rb b/lib/puppet/type/firewall.rb
+index de92760..c1f2a93 100644
+--- a/lib/puppet/type/firewall.rb
++++ b/lib/puppet/type/firewall.rb
+@@ -1411,7 +1411,7 @@ Puppet::ResourceApi.register_type(
+       DESC
+     },
+     hashlimit_upto: {
+-      type: 'Optional[Pattern[/^\d+(?:\/(?:sec|min|hour|day))?$/]]',
++      type: 'Optional[Pattern[/^\d+(?:(?:b|kb|mb)\/s(?:ec)?|\/(?:sec|min|hour|day))?$/]]',
+       desc: <<-DESC
+       Match if the rate is below or equal to amount/quantum. It is specified either as a number, with an optional time quantum suffix (the default is 3/hour), or as amountb/second (number of bytes per second).
+       This parameter or `hashlimit_above` and `hashlimit_name` are required when setting any other hashlimit values.
+@@ -1419,7 +1419,7 @@ Puppet::ResourceApi.register_type(
+       DESC
+     },
+     hashlimit_above: {
+-      type: 'Optional[Pattern[/^\d+(?:\/(?:sec|min|hour|day))?$/]]',
++      type: 'Optional[Pattern[/^\d+(?:(?:b|kb|mb)\/s(?:ec)?|\/(?:sec|min|hour|day))?$/]]',
+       desc: <<-DESC
+       Match if the rate is above amount/quantum.
+       This parameter or `hashlimit_upto` and `hashlimit_name` are required when setting any other hashlimit values.
+-- 
+2.43.0
+
