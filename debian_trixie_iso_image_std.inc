@@ -298,7 +298,7 @@ containernetworking-plugins
 #puppet-5.5.22
 #puppet-master-passenger  # not used
 puppet-agent
-puppetserver
+#puppetserver  # not used
 
 #puppet-boolean-2.0.2
 puppet-boolean
