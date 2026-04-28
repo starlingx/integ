@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Wind River Systems, Inc.
+ * Copyright (c) 2023-2026 Wind River Systems, Inc.
 *
 * SPDX-License-Identifier: Apache-2.0
 *
@@ -21,6 +21,7 @@
 #include <string>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <type_traits>
 #include <atomic>
 #include "PassphraseGenerator.h"
@@ -31,9 +32,12 @@
 #define FAIL_FILE_WRITE       (11)
 #define FAIL_PID_OPEN         (9)
 #define K8_PROVIDER_FILE "encryption-provider.yaml"
+#define PERIODIC_SYNC_INTERVAL_SECS 3600
+#define PLATFORM_SIMPLEX_MODE "/etc/platform/simplex"
 
 using namespace std;
 // Global constants
+static bool wasSimplex = false;
 const char *configFile = "/etc/luks-fs-mgr.d/luks_config.json";
 const char *defaultDirectoryPath = "/var/luks/stx";
 const char *defaultMountPath = "/var/luks/stx/luks_fs";
@@ -1401,6 +1405,9 @@ int initialVolCreate(string &passphrase, string &volName) {
  *
  * Description: This function monitors the LUKS volume status and runs
  *              in loop until there's any issue with the LUKS volume.
+ *              It uses inotifywait for reactive sync on filesystem changes
+ *              and a periodic full sync as a safety net against lost
+ *              inotify events.
  *
  * ************************************************************************/
 void monitorLUKSVolume(bool isController, const string& volumeName) {
@@ -1412,6 +1419,20 @@ void monitorLUKSVolume(bool isController, const string& volumeName) {
     }
     string platformConfigPath = "/opt/platform/config/"
                  +softwareVersion+"/kubernetes/encryption-provider.yaml";
+    time_t lastFullSync = 0;
+
+    // Check if this is a simplex/standalone system using the platform
+    // flag file.
+    bool isSimplex = (access(PLATFORM_SIMPLEX_MODE, F_OK) == 0);
+    if (isSimplex && !wasSimplex) {
+        log("Simplex system detected, skipping sync", LOG_INFO);
+        wasSimplex = true;
+    }
+    else if (!isSimplex && wasSimplex) {
+        log("System no longer in simplex mode, resuming sync", LOG_INFO);
+        wasSimplex = false;
+    }
+
     while (!exitFlag.load()) {
         string statusCommand = "cryptsetup status " + volumeName +
                                                            " 2>/dev/null";
@@ -1439,10 +1460,24 @@ void monitorLUKSVolume(bool isController, const string& volumeName) {
                         " Error code: " + to_string(rc), LOG_ERR);
                 }
             }
-            int rc = syncLuksVolumeChange(luksControllerDataPath);
-            if (rc != 0) {
-                log("Sync failed. Error code: " + to_string(rc), LOG_ERR);
-                break;
+            if (!isSimplex) {
+                int rc = syncLuksVolumeChange(luksControllerDataPath);
+                if (rc != 0) {
+                    log("Sync failed. Error code: " + to_string(rc),
+                        LOG_ERR);
+                    break;
+                }
+                // Periodic full sync to guard against lost inotify events
+                time_t now = time(NULL);
+                if ((now - lastFullSync) >= PERIODIC_SYNC_INTERVAL_SECS) {
+                    log("Periodic full sync of LUKS controller data",
+                        LOG_INFO);
+                    syncLuksVolume();
+                    lastFullSync = now;
+                }
+            } else {
+                // Simplex: no sync needed, just sleep to avoid busy loop
+                sleep(60);
             }
         } else {
             log("Not a controller node. Exiting the service", LOG_INFO);
