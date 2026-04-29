@@ -21,7 +21,7 @@ application/isolated CPUs regardless of what QoS class they're in.
 Moreover, the current starlingx platform containers implementation by
 definition does not have any cpu request and are allocated on reserved
 cpus, that are not under kubernetes management, however they are still
-allocated on the same cgroup of application containers (k8s-infra).
+allocated on the same cgroup of application containers (k8sinfra).
 This causes an imbalance on cpushares calculations performed by
 kubernetes. As a result, platform containers have a much lower priority
 on kernel cpu scheduling, and in case of resource contention
@@ -29,8 +29,8 @@ on kernel cpu scheduling, and in case of resource contention
 causing probe failures and latency spikes on kube-apiserver.
 
 This change allocates platform pods on a dedicated cgroup
-(k8s-infra-stx), so a balanced cpu shares distribution between
-platform and application pods (running on k8s-infra cgroup) can be
+(k8sinfra_stx), so a balanced cpu shares distribution between
+platform and application pods (running on k8sinfra cgroup) can be
 achieved.
 
 Co-authored-by: Jim Gauld <james.gauld@windriver.com>
@@ -567,7 +567,7 @@ index 0f88e10f..79735eb9 100644
  func (m *qosContainerManagerImpl) Start(getNodeAllocatable func() v1.ResourceList, activePods ActivePodsFunc) error {
  	cm := m.cgroupManager
  	rootContainer := m.cgroupRoot
-+	stxRootContainer := []string{"k8s-infra-stx", "kubepods"}
++	stxRootContainer := []string{"k8sinfra_stx", "kubepods"}
 
  	if err := cm.Validate(rootContainer); err != nil {
  		return fmt.Errorf("error validating root container %v : %w", rootContainer, err)

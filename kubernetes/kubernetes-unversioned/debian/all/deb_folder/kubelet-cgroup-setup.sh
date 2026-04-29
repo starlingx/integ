@@ -1,21 +1,18 @@
 #!/bin/bash
 #
-# Copyright (c) 2024-2025 Wind River Systems, Inc.
+# Copyright (c) 2024-2026 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# This script does minimal cgroup setup for kubelet. This creates k8s-infra
-# cgroup for a minimal set of resource controllers, and configures cpuset
-# attributes to span all online cpus and nodes. This will do nothing if
-# the k8s-infra cgroup already exists (i.e., assume already configured).
-# NOTE: The creation of directories under /sys/fs/cgroup is volatile, and
-# does not persist reboots. The cpuset.mems and cpuset.cpus is later updated
-# by puppet kubernetes.pp manifest.
+# Minimal cgroup setup for kubelet. Detects cgroup v1 or v2 and
+# configures the k8sinfra cgroup hierarchy accordingly.
 #
-# Furthermore, it defines an upper memory limit for the kubepods cgroup to 
-# restrain the effects of misbehaving pods runnning on the platform cores.
+# - v1: Creates k8sinfra directories under each controller mount
+# - v2: Creates k8sinfra.slice systemd slice and delegates controllers
 #
-
+# NOTE: Cgroup directories are volatile and do not persist reboots.
+# Cpuset values are later updated by puppet kubernetes.pp manifest.
+#
 # Define minimal path
 PATH=/bin:/usr/bin:/usr/local/bin
 
@@ -34,8 +31,81 @@ function ERROR {
     logger -s -p daemon.error "$0($$): ERROR: $@"
 }
 
-# Create minimal cgroup directories and configure cpuset attributes if required
-function create_cgroup {
+if [ ${UID} -ne 0 ]; then
+    ERROR "Require sudo/root."
+    exit 1
+fi
+
+# Detect cgroup version
+is_cgroup_v2() {
+    [ "$(stat -fc %T /sys/fs/cgroup 2>/dev/null)" = "cgroup2fs" ]
+}
+
+########################################################################
+# CGROUP V2 SETUP
+########################################################################
+
+setup_cgroup_v2() {
+    local CGROUP_NAME="k8sinfra.slice"
+    local CGROUP_PATH="/sys/fs/cgroup/${CGROUP_NAME}"
+    local SUBTREE_CONTROL="${CGROUP_PATH}/cgroup.subtree_control"
+    local CONTROLLERS="+cpuset +cpu +io +memory +hugetlb +pids"
+    local ROOT_SUBTREE="/sys/fs/cgroup/cgroup.subtree_control"
+    local RC=0
+
+    sed -i 's|cgroupDriver:.*|cgroupDriver: systemd|' /var/lib/kubelet/config.yaml 2>/dev/null
+
+    # Enable hugetlb in root subtree control before delegating
+    if ! grep -q hugetlb "${ROOT_SUBTREE}" 2>/dev/null; then
+        LOG "Enabling hugetlb in root subtree control"
+        echo "+hugetlb" > "${ROOT_SUBTREE}" 2>/dev/null
+        RC=$?
+        if [ ${RC} -ne 0 ]; then
+            WARN "Failed to enable hugetlb in ${ROOT_SUBTREE}, rc=${RC}"
+        fi
+    fi
+
+    # Enable cpuset in root subtree control if not already
+    if ! grep -q cpuset "${ROOT_SUBTREE}" 2>/dev/null; then
+        LOG "Enabling cpuset in root subtree control"
+        echo "+cpuset" > "${ROOT_SUBTREE}" 2>/dev/null
+    fi
+
+    # Create the k8sinfra cgroup directory if not present.
+    if [ ! -d "${CGROUP_PATH}" ]; then
+        LOG "Creating cgroup directory: ${CGROUP_PATH}"
+        mkdir -p "${CGROUP_PATH}"
+        RC=$?
+        if [ ${RC} -ne 0 ]; then
+            ERROR "Failed to create ${CGROUP_PATH}, rc=${RC}"
+            exit ${RC}
+        fi
+    else
+        LOG "Cgroup dir already exists: ${CGROUP_PATH}"
+    fi
+
+    # Delegate controllers
+    if ! grep -q cpuset "${SUBTREE_CONTROL}" 2>/dev/null; then
+        LOG "Delegating controllers to ${CGROUP_NAME}: ${CONTROLLERS}"
+        echo "${CONTROLLERS}" > "${SUBTREE_CONTROL}" 2>/dev/null
+        RC=$?
+        if [ ${RC} -ne 0 ]; then
+            ERROR "Failed to delegate controllers to ${SUBTREE_CONTROL}, rc=${RC}"
+            exit ${RC}
+        fi
+    else
+        LOG "Controllers already delegated in ${SUBTREE_CONTROL}"
+    fi
+
+    LOG "cgroup v2 setup complete for ${CGROUP_NAME}"
+    return ${RC}
+}
+
+########################################################################
+# CGROUP V1 SETUP
+########################################################################
+
+create_cgroup_v1() {
     local cg_name=$1
     local cg_nodeset=$2
     local cg_cpuset=$3
@@ -43,13 +113,11 @@ function create_cgroup {
     local CGROUP=/sys/fs/cgroup
     local CONTROLLERS_AUTO_DELETED=("pids" "hugetlb")
     local CONTROLLERS_PRESERVED=("cpuset" "memory" "cpu,cpuacct" "systemd")
-    local cnt=''
-    local CGDIR=''
     local RC=0
 
-    # Ensure that these cgroups are created every time as they are auto deleted
+    # Ensure auto-deleted cgroups are created every time
     for cnt in ${CONTROLLERS_AUTO_DELETED[@]}; do
-        CGDIR=${CGROUP}/${cnt}/${cg_name}
+        local CGDIR=${CGROUP}/${cnt}/${cg_name}
         if [ -d ${CGDIR} ]; then
             LOG "Nothing to do, already configured: ${CGDIR}."
             continue
@@ -63,10 +131,9 @@ function create_cgroup {
         fi
     done
 
-    # These cgroups are preserved so if any of these are encountered additional
-    # cgroup setup is not required
+    # Preserved cgroups — if any exist, skip setup
     for cnt in ${CONTROLLERS_PRESERVED[@]}; do
-        CGDIR=${CGROUP}/${cnt}/${cg_name}
+        local CGDIR=${CGROUP}/${cnt}/${cg_name}
         if [ -d ${CGDIR} ]; then
             LOG "Nothing to do, already configured: ${CGDIR}."
             return ${RC}
@@ -80,9 +147,9 @@ function create_cgroup {
         fi
     done
 
-    # Customize cpuset attributes
+    # Configure cpuset attributes
     LOG "Configuring cgroup: ${cg_name}, nodeset: ${cg_nodeset}, cpuset: ${cg_cpuset}"
-    CGDIR=${CGROUP}/cpuset/${cg_name}
+    local CGDIR=${CGROUP}/cpuset/${cg_name}
     local CGMEMS=${CGDIR}/cpuset.mems
     local CGCPUS=${CGDIR}/cpuset.cpus
     local CGTASKS=${CGDIR}/tasks
@@ -96,7 +163,7 @@ function create_cgroup {
         exit ${RC}
     fi
 
-    # Assign cgroup cpus
+    # Assign cgroup cpuset
     LOG "Assign cpuset ${cg_cpuset} to ${CGCPUS}"
     echo ${cg_cpuset} > ${CGCPUS}
     RC=$?
@@ -123,7 +190,6 @@ function create_cgroup {
 
     return ${RC}
 }
-
 # Define an upper limit for the memory consumed by the kubepod cgroups
 function set_kubepods_memory_limit {
     local cg_name=$1
@@ -153,32 +219,49 @@ function set_kubepods_memory_limit {
     return ${RC}
 }
 
-if [ ${UID} -ne 0 ]; then
-    ERROR "Require sudo/root."
-    exit 1
-fi
+setup_cgroup_v1() {
+    # Configure default kubepods cpuset to span all online cpus and nodes.
+    ONLINE_NODESET=$(/bin/cat /sys/devices/system/node/online)
+    ONLINE_CPUSET=$(/bin/cat /sys/devices/system/cpu/online)
 
-# Configure default kubepods cpuset to span all online cpus and nodes.
-ONLINE_NODESET=$(/bin/cat /sys/devices/system/node/online)
-ONLINE_CPUSET=$(/bin/cat /sys/devices/system/cpu/online)
+    sed -i 's|cgroupDriver:.*|cgroupDriver: cgroupfs|' /var/lib/kubelet/config.yaml 2>/dev/null
 
-# Configure kubelet cgroup to match cgroupRoot.
-create_cgroup 'k8s-infra' ${ONLINE_NODESET} ${ONLINE_CPUSET}
-create_cgroup 'k8s-infra-stx' ${ONLINE_NODESET} ${ONLINE_CPUSET}
+    # Configure kubelet cgroup to match cgroupRoot.
+    create_cgroup_v1 'k8sinfra' ${ONLINE_NODESET} ${ONLINE_CPUSET}
+    create_cgroup_v1 'k8sinfra_stx' ${ONLINE_NODESET} ${ONLINE_CPUSET}
 
-# Use the same amount of memory reserved for the system as reference
-SYSTEM_RESERVED_MEMORY_MiB=$(sed -nr 's/.*--system-reserved=memory=([0-9]+)Mi.*/\1/p' /etc/default/kubelet 2>&1)
-RC=$?
+    # Use the same amount of memory reserved for the system as reference
+    SYSTEM_RESERVED_MEMORY_MiB=$(sed -nr 's/.*--system-reserved=memory=([0-9]+)Mi.*/\1/p' /etc/default/kubelet 2>&1)
+    RC=$?
 
-if [[ ${SYSTEM_RESERVED_MEMORY_MiB} =~ ^[0-9]+$ ]]; then
-    # Convert to bytes
-    SYSTEM_RESERVED_MEMORY_BYTES=$(( SYSTEM_RESERVED_MEMORY_MiB * 1048576 ))
+    if [[ ${SYSTEM_RESERVED_MEMORY_MiB} =~ ^[0-9]+$ ]]; then
+        # Convert to bytes
+        SYSTEM_RESERVED_MEMORY_BYTES=$(( SYSTEM_RESERVED_MEMORY_MiB * 1048576 ))
 
-    # Limit memory consumption on kubepods
-    set_kubepods_memory_limit 'k8s-infra-stx' ${SYSTEM_RESERVED_MEMORY_BYTES}
+        # Limit memory consumption on kubepods
+        set_kubepods_memory_limit 'k8sinfra_stx' ${SYSTEM_RESERVED_MEMORY_BYTES}
 
+    else
+        WARN "Unable to extract the value of reserved system memory from kubelet parameters. rc=${RC}:${SYSTEM_RESERVED_MEMORY_BYTES}"
+    fi
+
+    LOG "cgroup v1 setup complete"
+}
+
+########################################################################
+# MAIN
+########################################################################
+# Update cgroupDriver to match the active cgroup version during
+# migration. This handles the window where grub has switched the
+# cgroup hierarchy but kubelet config has not yet been updated
+# by puppet/kubeadm. Without this, kubelet fails to start on
+# the first reboot after cgroup version change.
+if is_cgroup_v2; then
+    LOG "Detected cgroup v2 (unified hierarchy)"
+    setup_cgroup_v2
 else
-    WARN "Unable to extract the value of reserved system memory from kubelet parameters. rc=${RC}:${SYSTEM_RESERVED_MEMORY_BYTES}"
+    LOG "Detected cgroup v1 (legacy hierarchy)"
+    setup_cgroup_v1
 fi
 
 exit $?
