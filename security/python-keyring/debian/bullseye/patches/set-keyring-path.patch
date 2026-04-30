@@ -1,0 +1,42 @@
+From 32ceb05f8296b95331da9c8169ccd6f668cdd0b9 Mon Sep 17 00:00:00 2001
+From: amantri <ayyappa.mantri@windriver.com>
+Date: Thu, 26 Feb 2026 15:04:04 -0500
+Subject: [PATCH] set keyring path for python keyring library
+
+---
+ keyring/util/platform_.py | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/keyring/util/platform_.py b/keyring/util/platform_.py
+index 79c6264..a21d06c 100644
+--- a/keyring/util/platform_.py
++++ b/keyring/util/platform_.py
+@@ -21,10 +21,22 @@ def _data_root_Linux():
+     Use freedesktop.org Base Dir Specfication to determine storage
+     location.
+     """
+-    fallback = os.path.expanduser('~/.local/share')
+-    root = os.environ.get('XDG_DATA_HOME', None) or fallback
+-    return os.path.join(root, 'python_keyring')
+-
++    # Early exit if XDG_DATA_HOME is set
++    xdg_home = os.environ.get('XDG_DATA_HOME')
++    if xdg_home:
++        return os.path.join(xdg_home, 'python_keyring')
++
++    # Fallback: read SW_VERSION from build.info
++    try:
++        with open("/etc/build.info", 'r') as f:
++            for line in f:
++                if line.startswith('SW_VERSION='):
++                    sw_version = line.split("=", 1)[1].strip().strip('"')
++                    fallback = f'/var/luks/stx/luks_fs/controller/.keyring/{sw_version}'
++                    return os.path.join(fallback, 'python_keyring')
++        raise ValueError("No SW_VERSION found in /etc/build.info")
++    except FileNotFoundError:
++        raise IOError("Cannot read /etc/build.info")
+
+ _config_root_Windows = _data_root_Windows
+
+--
+2.34.1

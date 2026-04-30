@@ -1,77 +1,18 @@
-The upstream commit 1e422ed of keyring moves non-preferred keyring
-backends to keyrings.alt package, so moving fix_keyring_lockfile_location.patch
-to package keyrings.alt
+From 73f4ad54341f8fa32d3fe1b7897105ae11aa056a Mon Sep 17 00:00:00 2001
+From: amantri <ayyappa.mantri@windriver.com>
+Date: Wed, 18 Feb 2026 08:15:49 -0500
+Subject: [PATCH 05/08] Store keyring lock in the storage directory
 
---- a/keyrings/alt/file_base.py
-+++ b/keyrings/alt/file_base.py
-@@ -14,6 +14,7 @@ from keyring.util import platform_, prop
- from .escape import escape as escape_for_ini
- from oslo_concurrency import lockutils
- 
-+lockfile = "keyringlock"
- 
- class FileBacked:
-     @abc.abstractproperty
-@@ -153,11 +154,12 @@ class Keyring(FileBacked, KeyringBackend
-         return (escape_for_ini(service) + r'\0' + escape_for_ini(username)).encode()
- 
-     def _write_config_value(self, service, key, value):
-+        # ensure the file exists
-+        self._ensure_file_path()
- 
--        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
-+        lockdir = os.path.dirname(self.file_path)
- 
--            # ensure the file exists
--            self._ensure_file_path()
-+        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
- 
-             config = None
-             try:
-@@ -206,14 +208,13 @@ class Keyring(FileBacked, KeyringBackend
- 
- 
- 
--
--
-     def _ensure_file_path(self):
-         """
-         Ensure the storage path exists.
-         If it doesn't, create it with "go-rwx" permissions.
-         """
-         storage_root = os.path.dirname(self.file_path)
-+        lockdir = storage_root
-         needs_storage_root = storage_root and not os.path.isdir(storage_root)
-         if needs_storage_root:  # pragma: no cover
-             os.makedirs(storage_root)
-@@ -223,12 +224,21 @@ class Keyring(FileBacked, KeyringBackend
-                 pass
-             user_read_write = 0o644
-             os.chmod(self.file_path, user_read_write)
-+        if not os.path.isfile(lockdir + "/" + lockfile):
-+             import stat
-+             with open(lockdir + "/" + lockfile, 'w'):
-+                 pass
-+             # must have the lock file with the correct group permissisions g+rw
-+             os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
-+
- 
-     def delete_password(self, service, username):
-         """Delete the password for the username of the service."""
-         service = escape_for_ini(service)
-         username = escape_for_ini(username)
--        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
-+
-+        lockdir = os.path.dirname(self.file_path)
-+        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
-             config = configparser.RawConfigParser()
-             if os.path.exists(self.file_path):
-                 config.read(self.file_path)
-Index: keyring-5.3/keyring/backends/file.py
-===================================================================
---- keyring-5.3.orig/keyrings/alt/file.py
-+++ keyring-5.3/keyrings/alt/file.py
-@@ -108,18 +108,6 @@ class EncryptedKeyring(Encrypted, Keyrin
+---
+ keyrings/alt/file.py      | 15 ++-------------
+ keyrings/alt/file_base.py | 20 +++++++++++++++-----
+ 2 files changed, 17 insertions(+), 18 deletions(-)
+
+diff --git a/keyrings/alt/file.py b/keyrings/alt/file.py
+index 974ade4..1e8512b 100644
+--- a/keyrings/alt/file.py
++++ b/keyrings/alt/file.py
+@@ -114,18 +114,6 @@ class EncryptedKeyring(Encrypted, Keyring):
          # set a reference password, used to check that the password provided
          #  matches for subsequent checks.
  
@@ -90,7 +31,7 @@ Index: keyring-5.3/keyring/backends/file.py
          self.set_password(
              'keyring-setting', 'password reference', 'password reference value'
          )
-@@ -134,9 +122,10 @@ class EncryptedKeyring(Encrypted, Keyrin
+@@ -140,9 +128,10 @@ class EncryptedKeyring(Encrypted, Keyring):
              return False
          self._migrate()
  
@@ -102,11 +43,64 @@ Index: keyring-5.3/keyring/backends/file.py
              config = configparser.RawConfigParser()
              config.read(self.file_path)
              try:
-@@ -145,7 +134,6 @@ class EncryptedKeyring(Encrypted, Keyrin
-                 )
-             except (configparser.NoSectionError, configparser.NoOptionError):
-                 # The current file doesn't have the keyring-setting, check the backup
--                logging.warning("_check_file: The current file doesn't have the keyring-setting, check the backup")
-                 if os.path.exists(self.backup_file_path):
-                     config = configparser.RawConfigParser()
-                     config.read(self.backup_file_path)
+diff --git a/keyrings/alt/file_base.py b/keyrings/alt/file_base.py
+index f5eb79d..cc0a562 100644
+--- a/keyrings/alt/file_base.py
++++ b/keyrings/alt/file_base.py
+@@ -14,6 +14,7 @@ from keyring.util import platform_, properties
+ from .escape import escape as escape_for_ini
+ from oslo_concurrency import lockutils
+ 
++lockfile = "keyringlock"
+ 
+ class FileBacked:
+     @abc.abstractproperty
+@@ -153,12 +154,12 @@ class Keyring(FileBacked, KeyringBackend):
+         return (escape_for_ini(service) + r'\0' + escape_for_ini(username)).encode()
+ 
+     def _write_config_value(self, service, key, value):
++        # ensure the file exists
++        self._ensure_file_path()
+ 
+-        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
+-
+-            # ensure the file exists
+-            self._ensure_file_path()
++        lockdir = os.path.dirname(self.file_path)
+ 
++        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
+             config = None
+             try:
+                 # Load the keyring from the disk
+@@ -214,6 +215,7 @@ class Keyring(FileBacked, KeyringBackend):
+         If it doesn't, create it with "go-rwx" permissions.
+         """
+         storage_root = os.path.dirname(self.file_path)
++        lockdir = storage_root
+         needs_storage_root = storage_root and not os.path.isdir(storage_root)
+         if needs_storage_root:  # pragma: no cover
+             os.makedirs(storage_root)
+@@ -223,12 +225,20 @@ class Keyring(FileBacked, KeyringBackend):
+                 pass
+             user_read_write = 0o640
+             os.chmod(self.file_path, user_read_write)
++        if not os.path.isfile(lockdir + "/" + lockfile):
++            import stat
++            with open(lockdir + "/" + lockfile, 'w'):
++                pass
++            # must have the lock file with the correct group permissisions g+rw
++            os.chmod(lockdir + "/" + lockfile, stat.S_IRWXG | stat.S_IRWXU)
++
+ 
+     def delete_password(self, service, username):
+         """Delete the password for the username of the service."""
+         service = escape_for_ini(service)
+         username = escape_for_ini(username)
+-        with lockutils.lock("keyringlock",external=True,lock_path="/tmp"):
++        lockdir = os.path.dirname(self.file_path)
++        with lockutils.lock(lockfile,external=True,lock_path=lockdir):
+             config = configparser.RawConfigParser()
+             if os.path.exists(self.file_path):
+                 config.read(self.file_path)
+-- 
+2.34.1
