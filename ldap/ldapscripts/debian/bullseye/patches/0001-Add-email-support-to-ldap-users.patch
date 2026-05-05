@@ -1,0 +1,263 @@
+From a90437db9bdf16cdfe13558ee1de3be6e4d92aca Mon Sep 17 00:00:00 2001
+From: Leonardo Mendes <Leonardo.MendesSantana@windriver.com>
+Date: Tue, 5 May 2026 09:59:31 -0300
+Subject: [PATCH] Add email support to ldap users
+
+Add support for the `mail` attribute when creating local users.
+Users can now be created with a default or custom email address.
+
+Signed-off-by: Leonardo Mendes <Leonardo.MendesSantana@windriver.com>
+---
+ Makefile                  |  4 +--
+ man/man1/ldapsetupemail.1 | 45 +++++++++++++++++++++++++
+ sbin/ldapsetupemail       | 80 +++++++++++++++++++++++++++++++++++++++
+ sbin/ldapusersetup        | 28 +++++++++++++--
+ 4 files changed, 154 insertions(+), 5 deletions(-)
+ create mode 100644 man/man1/ldapsetupemail.1
+ create mode 100644 sbin/ldapsetupemail
+
+diff --git a/Makefile b/Makefile
+index 6e5b193..93778ec 100644
+--- a/Makefile
++++ b/Makefile
+@@ -41,13 +41,13 @@ SBINFILES =	ldapdeletemachine ldapmodifygroup ldapsetpasswd lsldap ldapadduser l
+ 			ldapdeleteuser ldapsetprimarygroup ldapfinger ldapid ldapgid ldapmodifymachine \
+ 			ldaprenamegroup ldapaddgroup ldapaddusertogroup ldapdeleteuserfromgroup \
+ 			ldapinit ldapmodifyuser ldaprenamemachine ldapaddmachine ldapdeletegroup \
+-			ldaprenameuser ldapmodifysudo ldapdeletesudo ldapusersetup
++			ldaprenameuser ldapmodifysudo ldapdeletesudo ldapusersetup ldapsetupemail
+ MAN1FILES =	ldapdeletemachine.1 ldapmodifymachine.1 ldaprenamemachine.1 ldapadduser.1 \
+ 			ldapdeleteuserfromgroup.1 ldapfinger.1 ldapid.1 ldapgid.1 ldapmodifyuser.1 lsldap.1 \
+ 			ldapaddusertogroup.1 ldaprenameuser.1 ldapinit.1 ldapsetpasswd.1 ldapaddgroup.1 \
+ 			ldapdeletegroup.1 ldapsetprimarygroup.1 ldapmodifygroup.1 ldaprenamegroup.1 \
+ 			ldapaddmachine.1 ldapdeleteuser.1 ldapaddsudo.1 ldapmodifysudo.1 \
+-			ldapdeletesudo.1 ldapusersetup.1
++			ldapdeletesudo.1 ldapusersetup.1 ldapsetupemail.1
+ MAN5FILES = ldapscripts.5
+ TMPLFILES = ldapaddgroup.template.sample ldapaddmachine.template.sample \
+ 			ldapadduser.template.sample
+diff --git a/man/man1/ldapsetupemail.1 b/man/man1/ldapsetupemail.1
+new file mode 100644
+index 0000000..55b736a
+--- /dev/null
++++ b/man/man1/ldapsetupemail.1
+@@ -0,0 +1,45 @@
++.\" Copyright (c) 2026 Wind River Systems, Inc.
++.\"
++.\" This program is free software; you can redistribute it and/or
++.\" modify it under the terms of the GNU General Public License
++.\" as published by the Free Software Foundation; either version 2
++.\" of the License, or (at your option) any later version.
++.\"
++.\" This program is distributed in the hope that it will be useful,
++.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
++.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++.\" GNU General Public License for more details.
++.\"
++.\" You should have received a copy of the GNU General Public License
++.\" along with this program; if not, write to the Free Software
++.\" Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++.\" USA.
++.\"
++.\" Leonardo Mendes
++.\" Leonardo.MendesSantana@windriver.com
++.\"
++.TH ldapsetupemail 1 "April 30, 2026"
++
++.SH NAME
++ldapsetupemail \- add or replace the email attribute of an LDAP user.
++
++.SH SYNOPSIS
++.B ldapsetupemail
++.RB <username | uid>
++.RB <email>
++
++.SH OPTIONS
++.TP
++.B [-u <username | uid> <email>]
++The name or uid of the user to add the email account.
++
++.SH "SEE ALSO"
++ldapdeleteuser(1), ldapaddgroup(1), ldapaddusertogroup(1), ldapmodifyuser(1), ldapscripts(5).
++
++.SH AVAILABILITY
++The ldapscripts are provided under the GNU General Public License v2 (see COPYING for more details).
++The latest version of the ldapscripts is available on :
++.B http://contribs.martymac.org
++
++.SH BUGS
++No bug known.
+diff --git a/sbin/ldapsetupemail b/sbin/ldapsetupemail
+new file mode 100644
+index 0000000..cef4c6b
+--- /dev/null
++++ b/sbin/ldapsetupemail
+@@ -0,0 +1,80 @@
++#!/bin/bash
++
++# ldapsetupemail - Add or update email for an existing LDAP user
++
++#  Copyright (c) 2026 Wind River Systems, Inc.
++#
++#  This program is free software; you can redistribute it and/or
++#  modify it under the terms of the GNU General Public License
++#  as published by the Free Software Foundation; either version 2
++#  of the License, or (at your option) any later version.
++#
++#  This program is distributed in the hope that it will be useful,
++#  but WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#  GNU General Public License for more details.
++#
++#  You should have received a copy of the GNU General Public License
++#  along with this program; if not, write to the Free Software
++#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++#  USA.
++
++if [ $# -ne 2 ]
++then
++  echo "Usage: $0 <username> <email>"
++  exit 1
++fi
++
++# Source runtime file
++_RUNTIMEFILE="/usr/lib/ldapscripts/runtime"
++. "$_RUNTIMEFILE"
++
++_USER="$1"
++_EMAIL="$2"
++
++# Validate username: only allow safe characters to prevent LDIF injection
++if ! [[ "$_USER" =~ ^[a-zA-Z0-9._-]+$ ]]
++then
++  end_die "Invalid username: $_USER (only alphanumeric, dot, underscore, and hyphen allowed)"
++fi
++
++# Sanitize input for LDAP filter to prevent LDAP injection
++_SAFE_USER=$(printf '%s' "$_USER" | sed 's/\\/\\5c/g; s/\*/\\2a/g; s/(/\\28/g; s/)/\\29/g; s/\x00/\\00/g')
++
++# Find username : $1 must exist in LDAP !
++_findentry "$USUFFIX,$SUFFIX" "(&(objectClass=posixAccount)(|(uid=$_SAFE_USER)(uidNumber=$_SAFE_USER)))"
++[ -z "$_ENTRY" ] && end_die "User $_USER not found in LDAP"
++
++if ! [[ "$_EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]
++then
++  end_die "Not a valid email address: $_EMAIL"
++fi
++
++# Use the DN returned by _findentry instead of reconstructing it
++USERDN="$_ENTRY"
++
++# Temporary LDIF file
++mktempf
++
++cat <<EOF > "$_TMPFILE"
++dn: ${USERDN}
++changetype: modify
++replace: mail
++mail: ${_EMAIL}
++EOF
++
++if [ $? -ne 0 ]
++then
++  end_die "Error writing to temporary file $_TMPFILE"
++fi
++
++echo "Updating email for user: ${_USER}"
++
++cat "$_TMPFILE" | _utf8encode | _ldapmodify
++
++if [ $? -ne 0 ]
++then
++  end_die "Error adding user email in LDAP"
++fi
++
++end_ok
+diff --git a/sbin/ldapusersetup b/sbin/ldapusersetup
+index 98c6110..a81e892 100644
+--- a/sbin/ldapusersetup
++++ b/sbin/ldapusersetup
+@@ -2,7 +2,7 @@
+ 
+ #  ldapusersetup : interactive setup for adding users to LDAP
+ 
+-#  Copyright (c) 2015 Wind River Systems, Inc.
++#  Copyright (c) 2015-2026 Wind River Systems, Inc.
+ #
+ #  This program is free software; you can redistribute it and/or
+ #  modify it under the terms of the GNU General Public License
+@@ -26,7 +26,8 @@ where accepted field(s) are as follows:
+ --sudo                        : whether to add this user to sudoer list
+ --secondgroup <grp>           : the secondary group to add this user to
+ --passmax     <value>         : the shadowMax value for this user
+---passwarning <value>         : the shadowWarning value for this user"
++--passwarning <value>         : the shadowWarning value for this user
++--email <value>               : the email value for this user"
+   exit 1
+ fi
+ 
+@@ -40,6 +41,7 @@ _BASHSHELL="/bin/bash"
+ _DEFAULTSHADOWMAX="90"
+ _DEFAULTSHADOWWARNING="2"
+ _SHELL=""
++_DOMAIN=$(echo "$SUFFIX" | sed 's/dc=//g; s/,/./g')
+ 
+ ### Helper functions ###
+ 
+@@ -139,13 +141,24 @@ LdapUpdateShadowWarning () {
+   echo "Updating password expiry to $_newWarning days"
+ }
+ 
++# Add email for user
++# Input : username ($1), email address ($2)
++# Output : none
++LdapSetupEmail() {
++  _newEmail="$2"
++  [ -z "$2" ] && _newEmail="$1@$_DOMAIN"
++  ldapsetupemail "$1" $_newEmail
++  [ $? -eq 0 ] || end_die "Critical setup error: cannot add email to $1"
++}
++
+ # Since this setup script is meant to be a
+ # wrapper on top of existing ldap scripts,
+ # it share invoke those... we could have achieved
+ # loose coupling by not relying on helpers but
+ # at the expense of massively redundant code
+ # duplication.
+-declare -a helper_scripts=("ldapadduser" "ldapaddsudo" "ldapmodifyuser" "ldapaddusertogroup" "$_BASHSHELL")
++declare -a helper_scripts=("ldapadduser" "ldapaddsudo" "ldapmodifyuser" \
++                           "ldapaddusertogroup" "ldapsetupemail" "$_BASHSHELL")
+ 
+ # Do some quick sanity tests to make sure
+ # helper scripts are present
+@@ -198,6 +211,10 @@ user is warned [$_DEFAULTSHADOWWARNING]: "
+   read _shadowWarning
+   LdapUpdateShadowWarning $_username $_shadowWarning
+ 
++  echo -n "Enter email to add [$_username@$_DOMAIN]: "
++  read _email
++  LdapSetupEmail $_username $_email
++
+ else
+   # we have to read command line option
+   while [[ $# > 1 ]]
+@@ -225,6 +242,10 @@ else
+ 	_grp2="$2"
+ 	shift
+ 	;;
++	--email) # optional
++        _email=$2
++	shift
++	;;
+ 	*)
+ 
+ 	;;
+@@ -251,4 +272,5 @@ else
+   # Password modifications
+   LdapUpdateShadowMax $_username $_shadowMax
+   LdapUpdateShadowWarning $_username $_shadowWarning
++  LdapSetupEmail $_username $_email
+ fi
+-- 
+2.43.0
+
