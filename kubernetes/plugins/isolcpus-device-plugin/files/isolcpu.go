@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //
-//  Copyright (c) 2019-2025 Wind River Systems, Inc.
+//  Copyright (c) 2019-2026 Wind River Systems, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
