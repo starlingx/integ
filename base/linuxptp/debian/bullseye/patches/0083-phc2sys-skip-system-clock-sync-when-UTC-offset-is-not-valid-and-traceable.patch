@@ -1,0 +1,74 @@
+Author: Tara Nath Subedi <Tara.Subedi@windriver.com>
+Date:   Wed Apr 29 16:42:06 2026 -0400
+Subject: [PATCH] phc2sys: skip system clock sync when UTC offset is not valid and traceable
+
+phc2sys: skip system clock sync when UTC offset is not valid and traceable
+
+When a PTP grandmaster reports currentUtcOffsetValid=0 or
+timeTraceable=0 in the Time Properties Data Set, the advertised
+currentUtcOffset may not be reliable. Applying an incorrect UTC
+offset to the system clock (CLOCK_REALTIME) can cause large time
+jumps (e.g., 37 seconds for the current TAI-UTC offset).
+
+Use the existing utc_offset_traceable check (currentUtcOffsetValid
+AND timeTraceable) to gate system clock synchronization in both
+do_loop and do_pps_loop. This is consistent with how clock_handle_leap
+in phc2sys and clock_utc_correct in ptp4l already guard the kernel
+TAI offset update. PHC-to-PHC synchronization is unaffected.
+
+Changes in phc2sys.c:
+- do_pps_loop: skip update_clock when utc_offset_traceable is false
+- do_loop: skip CLOCK_REALTIME update when utc_offset_traceable is false
+
+TEST PLAN:
+PASS: Setup PTP4L with currentUtcOffsetValid=0, timeTraceable=0
+PASS: Check do_loop code-path (without -d pps_device)
+      /usr/sbin/phc2sys -f /etc/linuxptp/ptpinstance/phc2sys-phcinst0.conf
+      -s enp81s0f2 -z /var/run/ptp4l-ptpinstc01 -w -m -l 7
+      debug message: phcinst0 skipping system clock sync: UTC offset is not valid or traceable
+PASS: Check do_pps_loop code-path (with -d pps_device)
+      /usr/sbin/phc2sys -f /etc/linuxptp/ptpinstance/phc2sys-phcinst0.conf
+      -d /dev/pps0 -s enp81s0f2 -z /var/run/ptp4l-ptpinstc01 -w -m -l 7
+      debug message: phcinst0 skipping system clock sync: UTC offset is not valid or traceable
+PASS: Setup PTP4L with currentUtcOffsetValid=1, timeTraceable=1
+      Both above with and without pps_device, no more shows debug message
+      Phc2sys starts syncing system-clock.
+
+Signed-off-by: Tara Nath Subedi <tara.subedi@windriver.com>
+---
+ phc2sys.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index fe19ef5..9494655 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1034,6 +1034,12 @@ static int do_pps_loop(struct phc2sys_private *priv, struct clock *clock,
+ 
+ 		if (pmc_agent_update(node) < 0)
+ 			continue;
++		/* don't sync system clock when UTC offset is not valid and traceable */
++		if (!pmc_agent_utc_offset_traceable(node)) {
++			pr_debug("skipping system clock sync: "
++				 "UTC offset is not valid or traceable");
++			continue;
++		}
+ 		update_clock(priv, clock, pps_offset, pps_ts, -1);
+ 	}
+ 	close(fd);
+@@ -1706,6 +1712,15 @@ static int do_loop(struct phc2sys_private *priv, struct config *cfg, int subscri
+ 			    !strcmp(clock->device, priv->master->device))
+ 				continue;
+ 
++			/* don't sync system clock when UTC offset is not valid and traceable */
++			if (clock->clkid == CLOCK_REALTIME &&
++			    priv->master->node &&
++			    !pmc_agent_utc_offset_traceable(priv->master->node)) {
++				pr_debug("skipping system clock sync: "
++					 "UTC offset is not valid or traceable");
++				continue;
++			}
++
+ 			if (!clock->servo) {
+ 				pr_err("cannot update clock without servo");
+ 				return -1;
