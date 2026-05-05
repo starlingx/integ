@@ -1,0 +1,10 @@
+---
+debver: 2026a-0+deb13u1
+dl_path:
+  name: tzdata-debian-2026a-0+deb13u1.tar.gz
+  url: https://salsa.debian.org/glibc-team/tzdata/-/archive/debian/2026a-0+deb13u1/tzdata-debian-2026a-0+deb13u1.tar.gz
+  md5sum: b311c46ca3f9b23d3db7b84f90c057ae
+  sha256sum: c29fec8639ce2bf93852e3a56bc3501c446bdc85697546224c06d4e2885ec71d
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
