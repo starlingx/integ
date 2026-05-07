@@ -1,0 +1,12 @@
+---
+debname: etcd-3.6.9
+debver: 3.6.9
+dl_path:
+  name: etcd-3.6.9.tar.gz
+  url: https://github.com/etcd-io/etcd/releases/download/v3.6.9/etcd-v3.6.9-linux-amd64.tar.gz
+  sha256sum: 633136f13fcadac52e5c0ddcb97912643af6fcb9cb362e75774d0f96f7666396
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 4493a3146c752e2d3cd11ea8fa964a9399dd8b52
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/etcd-3.6.9

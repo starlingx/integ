@@ -32,6 +32,7 @@ override_dh_install:
 	install -v -m 755 -d ${DEBIAN_DESTDIR}/usr/share/bash-completion/completions
 	$(call stage_link,${_etcd_symlinkdir}/stage0,${_bindir},etcd)
 	$(call stage_link,${_etcd_symlinkdir}/stage0,${_bindir},etcdctl)
+	$(call stage_link,${_etcd_symlinkdir}/stage0,${_bindir},etcdutl)
 	$(call stage_link,${_k8s_symlinkdir}/stage1,${_bindir},kubeadm)
 	$(call stage_link,${_k8s_symlinkdir}/stage1,/usr/share/bash-completion/completions,kubectl)
 	$(call stage_link,${_k8s_symlinkdir}/stage2,${_bindir},kubelet)
