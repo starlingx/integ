@@ -1,0 +1,5 @@
+set
+set strict_security=1
+set skip_check_cfg=1
+#search.file ($cmdpath)/EFI/BOOT/grub.cfg root
+set prefix=($root)/EFI/BOOT

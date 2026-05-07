@@ -1,0 +1,42 @@
+From 7f8023fd4fc9c52079cfdeb0bebd6f1ad3340e57 Mon Sep 17 00:00:00 2001
+From: Virgil Bucoci <virgil.bucoci@windriver.com>
+Date: Fri, 14 Aug 2026 16:24:12 +0300
+Subject: [PATCH 5/5] Remove conflicts between grub-pc and grub-efi-amd64
+
+STX installs on both EFI and BIOS machines and it wants to have both
+grub packages installed at the same time.
+
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
+---
+ debian/control | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 1ab2e08d3..9d79f5468 100644
+--- a/debian/control
++++ b/debian/control
+@@ -162,8 +162,8 @@ Package: grub-pc
+ Architecture: any-i386 any-amd64
+ Pre-Depends: ${misc:Pre-Depends}
+ Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-pc-bin (= ${binary:Version}), ucf, freebsd-utils (>= 8.0-4) [kfreebsd-any], ${gfxpayload-depends}
+-Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275
+-Conflicts: grub (<< 0.97-54), grub-efi-amd64, grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen
++Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-ia32, grub-coreboot, grub-ieee1275
++Conflicts: grub (<< 0.97-54), grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen
+ Breaks: grub-legacy (<< 0.97-84~)
+ Multi-Arch: foreign
+ Description: GRand Unified Bootloader, version 2 (PC/BIOS version)
+@@ -397,8 +397,8 @@ Package: grub-efi-amd64
+ Architecture: i386 kopensolaris-i386 any-amd64
+ Pre-Depends: ${misc:Pre-Depends}
+ Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-efi-amd64-bin (= ${binary:Version}), ucf
+-Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-pc, grub-efi-ia32, grub-coreboot, grub-ieee1275
+-Conflicts: grub, grub-legacy, grub-efi-ia32, grub-pc, grub-coreboot, grub-ieee1275, grub-xen, elilo
++Replaces: grub, grub-legacy, grub2 (<< ${source:Version}), grub-common (<= 1.97~beta2-1), grub-efi-ia32, grub-coreboot, grub-ieee1275
++Conflicts: grub, grub-legacy, grub-efi-ia32, grub-coreboot, grub-ieee1275, grub-xen, elilo
+ Multi-Arch: foreign
+ Description: GRand Unified Bootloader, version 2 (EFI-AMD64 version)
+  GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+-- 
+2.47.3
+

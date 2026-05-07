@@ -1,0 +1,80 @@
+From c3417f54913897ed3b2c5053765f8d93bb887b6b Mon Sep 17 00:00:00 2001
+From: Andrew Hamilton <adhamilt@gmail.com>
+Date: Sat, 2 May 2026 10:07:54 -0500
+Subject: [PATCH 10/10] build: Fix parallel build failure
+
+With introduction of GRUB CI, some random build failure have been seen
+when building with make -j# where # is greater than 1.
+It appears this occurs when msgmerge is being called with the update
+flag for de.po. The update flag updates the file in place so this can
+cause issues when multiple threads are attemting to access this at the
+same time.
+
+Added a patch to the po/Makefile.in.in as bumping to a new enough
+version of gexttext does not yet appear feasible as it is not in
+many current distros.
+
+Fixes issue grub#18
+
+[vbucoci] Original patch adds the fix in bootstrap, which is already
+run in the release tarball that debian uses.  Apply the fix to
+po/Makefile.in.in and keep the other changes for context.
+
+Signed-off-by: Andrew Hamilton <adhamilt@gmail.com>
+Reviewed-By: Leo Sandoval lsandova@redhat.com
+Reviewed-by: Josue Hernandez josherna@redhat.com
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
+---
+ conf/Makefile.extra-dist                         |  1 +
+ po/Makefile.in.in                                |  6 ++++++
+ po/gettext-patches/0005-fix-parallel-build.patch | 12 ++++++++++++
+ 3 files changed, 19 insertions(+)
+ create mode 100644 po/gettext-patches/0005-fix-parallel-build.patch
+
+diff --git a/conf/Makefile.extra-dist b/conf/Makefile.extra-dist
+index 5e7126f98..585c00171 100644
+--- a/conf/Makefile.extra-dist
++++ b/conf/Makefile.extra-dist
+@@ -112,6 +112,7 @@ EXTRA_DIST += po/gettext-patches/0001-Support-POTFILES-shell.patch
+ EXTRA_DIST += po/gettext-patches/0002-Handle-gettext_printf-shell-function.patch
+ EXTRA_DIST += po/gettext-patches/0003-Make-msgfmt-output-in-little-endian.patch
+ EXTRA_DIST += po/gettext-patches/0004-Use-SHELL-rather-than-bin-sh.patch
++EXTRA_DIST += po/gettext-patches/0005-fix-parallel-build.patch
+ 
+ EXTRA_DIST += po/POTFILES-shell.in
+ EXTRA_DIST += po/README
+diff --git a/po/Makefile.in.in b/po/Makefile.in.in
+index 285a55a9d..441b21907 100644
+--- a/po/Makefile.in.in
++++ b/po/Makefile.in.in
+@@ -476,3 +476,9 @@ force:
+ # Tell versions [3.59,3.63) of GNU make not to export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
++
++# This Makefile contains rules which don't work with parallel make,
++# namely dist2.
++# See <https://lists.gnu.org/archive/html/bug-gettext/2022-06/msg00022.html>.
++# So, turn off parallel execution in this Makefile.
++.NOTPARALLEL:
+diff --git a/po/gettext-patches/0005-fix-parallel-build.patch b/po/gettext-patches/0005-fix-parallel-build.patch
+new file mode 100644
+index 000000000..3c1171655
+--- /dev/null
++++ b/po/gettext-patches/0005-fix-parallel-build.patch
+@@ -0,0 +1,12 @@
++--- a/gettext-runtime/po/Makefile.in.in	2026-05-02 09:45:41.695298043 -0500
+++++ b/gettext-runtime/po/Makefile.in.in	2026-05-02 09:46:11.498102071 -0500
++@@ -476,3 +476,9 @@
++ # Tell versions [3.59,3.63) of GNU make not to export all variables.
++ # Otherwise a system limit (for SysV at least) may be exceeded.
++ .NOEXPORT:
+++
+++# This Makefile contains rules which don't work with parallel make,
+++# namely dist2.
+++# See <https://lists.gnu.org/archive/html/bug-gettext/2022-06/msg00022.html>.
+++# So, turn off parallel execution in this Makefile.
+++.NOTPARALLEL:
+-- 
+2.47.3
+

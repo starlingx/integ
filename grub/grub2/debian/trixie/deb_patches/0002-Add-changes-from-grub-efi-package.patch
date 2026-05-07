@@ -1,0 +1,97 @@
+From 2c008ae3b21dd8d61e2de689df2a7a254c63e2d9 Mon Sep 17 00:00:00 2001
+From: Virgil Bucoci <virgil.bucoci@windriver.com>
+Date: Fri, 15 May 2026 13:48:44 +0300
+Subject: [PATCH 2/5] Add changes from grub-efi package
+
+StarlingX used grub-efi, a package adapted from LAT for its bootloader.
+This commit adds the the changes from grub-efi and updates them to
+grub 2.12.
+
+It creates 2 grub EFI images with support for ISO, serial and PXE.
+Addtionally one of the images includes PGP signature support and the
+StarlingX public key.
+
+Notable changes:
+
+ - StarlingX grub images are added to grub-efi-amd64-bin package
+   instead of grub-efi-amd64
+
+ - Add SBAT section, newer shim versions refuse to boot if SBAT is
+   missing
+
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
+---
+ debian/rules | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+diff --git a/debian/rules b/debian/rules
+index 7a9414f05..65e782411 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -1,6 +1,8 @@
+ #!/usr/bin/make -f
+ SHELL		:= bash
+ 
++export DH_VERBOSE = 1
++
+ deb_version		:= $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
+ upstream_version	:= $(shell echo $(deb_version) | sed -e "s/-[^-]*$$//")
+ 
+@@ -381,6 +383,15 @@ install/grub-none:
+ 	# files.
+ 	mkdir -p debian/tmp-$(package)/usr/share/locale
+ 
++install/grub-efi-amd64: export EFI_BOOT_PATH := /boot/efi/EFI/BOOT
++install/grub-efi-amd64: export DISTRO_NAME := StarlingX
++install/grub-efi-amd64: export DISTRO_VERSION :=
++install/grub-efi-amd64: export OSTREE_GRUB_PW := $(shell cat debian/starlingx/boot_cfg_pw)
++install/grub-efi-amd64: export OSTREE_GRUB_USER := root
++install/grub-efi-amd64: export OSTREE_CONSOLE := console=ttyS0,115200
++install/grub-efi-amd64: export GRUB_BUILDIN := boot chain configfile efi_gop efinet efivar ext2 fat iso9660 linux loadenv normal part_gpt part_msdos reboot regexp search serial test tftp
++install/grub-efi-amd64: export GRUB_SECURE_BUILDIN := gcry_rsa gcry_sha256 gcry_sha512 password_pbkdf2 pgp --pubkey debian/starlingx/boot_pub_key
++install/grub-efi-amd64: export GRUB_PREFIX_DIR := /EFI/BOOT
+ install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-efi-riscv64 install/grub-efi-loong64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
+ 	set -e ; \
+ 	if [ "$@" = "install/grub-xen" ] ; then \
+@@ -502,6 +513,38 @@ install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia
+ 	# files.
+ 	mkdir -p debian/tmp-$(package)/usr/share/locale
+ 
++	if [ "$@" = "install/grub-efi-amd64" ]; then \
++		grub_dir=`mktemp -d` ; \
++		trap "rm -rf $${grub_dir}" EXIT HUP INT QUIT TERM ; \
++		sed -e "s/@DEB_VERSION@/$(deb_version)/g" \
++			-e "s/@UPSTREAM_VERSION@/$(upstream_version)/g" \
++			<debian/sbat.$(SB_EFI_VENDOR).csv.in \
++			>$${grub_dir}/sbat.$(SB_EFI_VENDOR).csv; \
++		echo "grub.starlingx,1,StarlingX,grub2,$(deb_version),https://opendev.org/starlingx/integ" \
++			>> $${grub_dir}/sbat.$(SB_EFI_VENDOR).csv; \
++		install -d debian/$(package_bin)$(EFI_BOOT_PATH); \
++		install -m 0600 debian/starlingx/grub-runtime.cfg debian/$(package_bin)$(EFI_BOOT_PATH)/grub.cfg; \
++		sed -i -e "s#%DISTRO_NAME%#$(DISTRO_NAME)#g" \
++			-e "s#%DISTRO_VERSION%#$(DISTRO_VERSION)#g" \
++			-e "s#%OSTREE_CONSOLE%#$(OSTREE_CONSOLE)#g" \
++			-e "s#%OSTREE_GRUB_PW%#password_pbkdf2 $(OSTREE_GRUB_USER) $(OSTREE_GRUB_PW)#g" \
++			-e "s#%OSTREE_GRUB_USER%#$(OSTREE_GRUB_USER)#g" \
++			debian/$(package_bin)$(EFI_BOOT_PATH)/grub.cfg; \
++		obj/$(package)/grub-mkimage -c debian/starlingx/cfg_nosecure -p "$(GRUB_PREFIX_DIR)" -d "obj/$(package)/grub-core" \
++			-O "$(SB_PLATFORM)" -o "./bootx64-nosig.efi" \
++			--sbat "$${grub_dir}/sbat.$(SB_EFI_VENDOR).csv" \
++			$(GRUB_BUILDIN); \
++		install -m 0644 ./bootx64-nosig.efi debian/$(package_bin)$(EFI_BOOT_PATH)/bootx64-nosig.efi; \
++		obj/$(package)/grub-editenv debian/$(package_bin)$(EFI_BOOT_PATH)/grubenv create; \
++		install -d debian/$(package_bin)$(EFI_BOOT_PATH)/$(SB_PLATFORM); \
++		obj/$(package)/grub-mkimage -c debian/starlingx/cfg -p "$(GRUB_PREFIX_DIR)" -d "obj/$(package)/grub-core" \
++			-O "$(SB_PLATFORM)" -o "./grubx64.efi" \
++			--sbat "$${grub_dir}/sbat.$(SB_EFI_VENDOR).csv" \
++			$(GRUB_BUILDIN) $(GRUB_SECURE_BUILDIN); \
++		install -m 0644 ./grubx64.efi debian/$(package_bin)$(EFI_BOOT_PATH)/grubx64.efi; \
++		install -m 0644 obj/$(package)/grub-core/*.mod debian/$(package_bin)$(EFI_BOOT_PATH)/$(SB_PLATFORM); \
++	fi
++
+ common_subst = \
+ 	if [ -e debian/grub-common.$(1) ]; then \
+ 		sed 's/@COMMON_PLATFORM@/$(COMMON_PLATFORM)/g' \
+-- 
+2.47.3
+
