@@ -471,7 +471,10 @@ class ServiceMonitor(object):
     def stop_other_service_managers(self):
         service = os.path.join('/etc/init.d', CONFIG.service_name)
         for p in psutil.process_iter():
-            if p.cmdline()[:2] not in [[service], ['/usr/bin/python', service]]:
+            try:
+                if p.cmdline()[:2] not in [[service], ['/usr/bin/python', service]]:
+                    continue
+            except (psutil.NoSuchProcess, psutil.ZombieProcess, psutil.AccessDenied):
                 continue
             if p.pid == os.getpid():
                 continue
