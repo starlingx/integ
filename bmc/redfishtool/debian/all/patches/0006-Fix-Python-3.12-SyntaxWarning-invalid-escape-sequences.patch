@@ -1,0 +1,53 @@
+From c6a61b0ab098699b9fad1612ad52aa4ab865ff6d Mon Sep 17 00:00:00 2001
+From: Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>
+Date: Fri, 8 May 2026 03:21:07 -0400
+Subject: [PATCH] Fix Python 3.12+ SyntaxWarning for invalid escape sequences
+
+On Python 3.12+, invalid escape sequences in regular strings emit
+SyntaxWarning to stderr. When mtcAgent invokes redfishtool and parses
+the combined output, these warnings corrupt the JSON response causing
+'bmc info data parse error' and alarm 200.010.
+
+Use raw strings (r'') for regex patterns containing backslash sequences.
+
+Closes-Bug: CGTS-97355
+Signed-off-by: Abhinav Ayyapasetti <Ayyapasetti.Abhinav@windriver.com>
+---
+ redfishtoollib/Managers.py             | 2 +-
+ redfishtoollib/redfishtoolTransport.py | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/redfishtoollib/Managers.py b/redfishtoollib/Managers.py
+index 5a89659..40c7c5e 100644
+--- a/redfishtoollib/Managers.py
++++ b/redfishtoollib/Managers.py
+@@ -379,7 +379,7 @@ class RfManagersOperations():
+             rft.printErr("   <dateTimeString> in form: \"YYYY-MM-DDThh:mm:ss[+/-]hh:ss\"")
+             return(8,None,False,None)
+         else: #we have an arg[1]
+-            datePattern="(^[2][0]\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[-+][0-1][0-9]:[0-5][0-9]$)"   #  YYYY-MM-DDTHH:mm:ss[+/-]hh:ss
++            datePattern=r"(^[2][0]\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[-+][0-1][0-9]:[0-5][0-9]$)"   #  YYYY-MM-DDTHH:mm:ss[+/-]hh:ss
+             dateMatch=re.search(datePattern,sc.args[1])  # sc.args[1]=<dateTimeString>
+             if( dateMatch ):
+                 dateTimeString=(sc.args[1])  # keep it a string
+diff --git a/redfishtoollib/redfishtoolTransport.py b/redfishtoollib/redfishtoolTransport.py
+index 3eee1c7..32fac4c 100644
+--- a/redfishtoollib/redfishtoolTransport.py
++++ b/redfishtoollib/redfishtoolTransport.py
+@@ -1249,11 +1249,11 @@ class RfTransport():
+         resourceOdataType=resource["@odata.type"]
+     
+         #the odataType format is:  <namespace>.<version>.<type>   where version may have periods in it 
+-        odataTypeMatch = re.compile('^#([a-zA-Z0-9]*)\.([a-zA-Z0-9\._]*)\.([a-zA-Z0-9]*)$')  
++        odataTypeMatch = re.compile(r'^#([a-zA-Z0-9]*)\.([a-zA-Z0-9\._]*)\.([a-zA-Z0-9]*)$')  
+         resourceMatch = re.match(odataTypeMatch, resourceOdataType)
+         if(resourceMatch is None):
+             # try with no version component
+-            odataTypeMatch = re.compile('^#([a-zA-Z0-9]*)\.([a-zA-Z0-9]*)$')
++            odataTypeMatch = re.compile(r'^#([a-zA-Z0-9]*)\.([a-zA-Z0-9]*)$')
+             resourceMatch = re.match(odataTypeMatch, resourceOdataType)
+             if (resourceMatch is None):
+                 rft.printErr("Transport:parseOdataType: Error parsing @odata.type")
+-- 
+2.43.0
+

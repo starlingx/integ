@@ -3,3 +3,4 @@
 0003-Add-config-file-based-setBootOverride-Url-handling-n.patch
 0004-Move-settings-object-get-to-patch_SetBootOverrideUrl.patch
 0005-Use-safe-dict-access-for-Manufacturer-and-Model-in-r.patch
+0006-Fix-Python-3.12-SyntaxWarning-invalid-escape-sequences.patch
