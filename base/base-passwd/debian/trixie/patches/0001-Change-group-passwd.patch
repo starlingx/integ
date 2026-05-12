@@ -82,7 +82,7 @@ index ad1dd2d..6514f99 100644
 +snmpd:*:169:snmpd,fm
 +puppet:x:170:
 +docker-registry:x:171:
-+ntp:x:174:
++ntpsec:x:174:
 +haproxy:x:175:
 +postgres:x:176:
 +sssd:x:177:
@@ -119,7 +119,7 @@ index f1e69a4..97037cf 100644
 +snmpd:*:169:169:net-snmp:/usr/share/snmp:/sbin/nologin
 +puppet:x:170:170:Puppet configuration management daemon,,,:/var/lib/puppet:/usr/sbin/nologin
 +docker-registry:x:171:171::/var/lib/docker-registry:/usr/sbin/nologin
-+ntp:x:174:174::/nonexistent:/usr/sbin/nologin
++ntpsec:x:174:174::/nonexistent:/usr/sbin/nologin
 +haproxy:x:175:175::/var/lib/haproxy:/sbin/nologin
 +postgres:x:176:176:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/sh
 +sssd:x:177:177:SSSD system user,,,:/var/lib/sss:/usr/sbin/nologin
