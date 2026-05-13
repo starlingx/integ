@@ -42,6 +42,7 @@ const char *configFile = "/etc/luks-fs-mgr.d/luks_config.json";
 const char *defaultDirectoryPath = "/var/luks/stx";
 const char *defaultMountPath = "/var/luks/stx/luks_fs";
 const char *createdConfigFile = "/etc/luks-fs-mgr.d/created_luks.json";
+const char *stagingDirectoryPath = "/var/luks/stx/.clone_staging";
 const char *luksControllerDataPath = "/var/luks/stx/luks_fs/controller/";
 const char *pidFileName = "/var/run/luks-fs-mgr.pid";
 atomic<bool> exitFlag(false);
@@ -1520,6 +1521,48 @@ int checkPersonality(bool &isController) {
     }
     return rc;
 }
+/* ***********************************************************************
+ *
+ * Name       : restoreStagingData
+ *
+ * Description: On a cloned system, if a staging directory exists, this
+ *              function copies the staged files into the freshly created
+ *              LUKS mount point and removes the staging directory.
+ *              This allows clone operations to preserve LUKS-protected
+ *              data across hardware ID changes.
+ *
+ * ************************************************************************/
+bool restoreStagingData(const char *mountPath) {
+    if (access(stagingDirectoryPath, F_OK) != 0) {
+        return true;
+    }
+    log("Clone staging directory detected, restoring data to LUKS volume",
+        LOG_INFO);
+    string cpCmd = "/usr/bin/cp -a " + string(stagingDirectoryPath) +
+                   "/. " + string(mountPath) + "/";
+    string outResult;
+    int rc = execCmd(cpCmd, outResult);
+    if (rc != 0) {
+        log("Failed to restore staging data. Error code: " +
+            to_string(rc), LOG_ERR);
+        return false;
+    }
+    // Sanity check: prevent rm -rf on unexpected paths
+    string stagingPath(stagingDirectoryPath);
+    if (stagingPath.empty() || stagingPath == "/") {
+        log("Refusing to remove invalid staging path: " + stagingPath, LOG_ERR);
+        return false;
+    }
+    string rmCmd = "/usr/bin/rm -rf " + stagingPath;
+    rc = execCmd(rmCmd, outResult);
+    if (rc != 0) {
+        log("Failed to remove staging directory. Error code: " +
+            to_string(rc), LOG_ERR);
+        return false;
+    }
+    log("Clone staging data restored successfully", LOG_INFO);
+    return true;
+}
 int main() {
     int rc = 0;
     bool isController = false;
@@ -1576,6 +1619,11 @@ int main() {
                  to_string(rc), LOG_ERR);
             return rc;
         }
+    }
+    // Restore staged clone data if present
+    if (!restoreStagingData(defaultMountPath)) {
+        log("Staging data restore failed.", LOG_ERR);
+        return 1;
     }
     rc = copyKubeProviderFile(isController);
     if (rc != 0) {
