@@ -10,7 +10,7 @@ Signed-off-by: Leonardo Mendes <Leonardo.MendesSantana@windriver.com>
 ---
  Makefile                  |  4 +--
  man/man1/ldapsetupemail.1 | 45 +++++++++++++++++++++++++
- sbin/ldapsetupemail       | 82 +++++++++++++++++++++++++++++++++++++++
+ sbin/ldapsetupemail       | 80 +++++++++++++++++++++++++++++++++++++++
  sbin/ldapusersetup        | 28 +++++++++++++--
  4 files changed, 154 insertions(+), 5 deletions(-)
  create mode 100644 man/man1/ldapsetupemail.1
@@ -92,7 +92,7 @@ new file mode 100644
 index 0000000..cef4c6b
 --- /dev/null
 +++ b/sbin/ldapsetupemail
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,80 @@
 +#!/bin/bash
 +
 +# ldapsetupemail - Add or update email for an existing LDAP user
