@@ -2,6 +2,96 @@
 debname: isolcpus-device-plugin
 debver: 3.0-1
 src_path: files
+dl_hook: dl_hook
+dl_files:
+  fsnotify-v1.9.0.tar.gz:
+    topdir: null
+    url: https://github.com/fsnotify/fsnotify/archive/refs/tags/v1.9.0.tar.gz
+    sha256sum: 3ff59fb248bb76a6bf4fbe99586aec08f7218743187c71da3ff2e34c23cc1a05
+  logr-v1.4.3.tar.gz:
+    topdir: null
+    url: https://github.com/go-logr/logr/archive/refs/tags/v1.4.3.tar.gz
+    sha256sum: 195536e2f36cc061abba5e0f9153a227c39fb9f9a673eec571be1cbceb50d9e1
+  gogo-protobuf-v1.3.2.tar.gz:
+    topdir: null
+    url: https://github.com/gogo/protobuf/archive/refs/tags/v1.3.2.tar.gz
+    sha256sum: 2bb4b13d6e56b3911f09b8e9ddd15708477fbff8823c057cc79dd99c9a452b34
+  intel-device-plugins-v0.35.0.tar.gz:
+    topdir: null
+    url: https://github.com/intel/intel-device-plugins-for-kubernetes/archive/refs/tags/v0.35.0.tar.gz
+    sha256sum: 1a8e4051abd75ccabce5e84dfcc4d21c205d1bd863526f3d513c2eacf3d57fbd
+  moby-sys-capability-v0.4.0.tar.gz:
+    topdir: null
+    url: https://github.com/moby/sys/archive/refs/tags/capability/v0.4.0.tar.gz
+    sha256sum: be257f4fbef61afebafc362ac910016169d25320728af061c4db3a9e3508462c
+  runtime-spec-v1.3.0.tar.gz:
+    topdir: null
+    url: https://github.com/opencontainers/runtime-spec/archive/refs/tags/v1.3.0.tar.gz
+    sha256sum: 136b36bd1087c38bb3202bb3b0421c241bde06f4aa6325da4d5dc03a23e68d1d
+  runtime-tools-edf4cb3d2116.tar.gz:
+    topdir: null
+    url: https://github.com/opencontainers/runtime-tools/archive/edf4cb3d2116.tar.gz
+    sha256sum: d8d74635c6ce878f7b60c1c525e827251b7e48759df710b11a2e14965ad5a4f6
+  pkg-errors-v0.9.1.tar.gz:
+    topdir: null
+    url: https://github.com/pkg/errors/archive/refs/tags/v0.9.1.tar.gz
+    sha256sum: 56bfd893023daa498508bfe161de1be83299fcf15376035e7df79cbd7d6fa608
+  go-yaml-v2-v2.4.3.tar.gz:
+    topdir: null
+    url: https://github.com/yaml/go-yaml/archive/refs/tags/v2.4.3.tar.gz
+    sha256sum: bfd8a614fbceeccd1e24f6775a054581aa27b3ca32fa381c67a0a5b4d7a9c028
+  golang-mod-v0.32.0.tar.gz:
+    topdir: null
+    url: https://github.com/golang/mod/archive/refs/tags/v0.32.0.tar.gz
+    sha256sum: 720e07d384a0dd9822afd605670ba645d1c2e53981a0b9b303c1ddc3a1f0d150
+  golang-net-v0.49.0.tar.gz:
+    topdir: null
+    url: https://github.com/golang/net/archive/refs/tags/v0.49.0.tar.gz
+    sha256sum: b1b704222b6be7ed2e1f8c0d456b973c708b6065a1fe9aab1526a10baf5c01a1
+  golang-sys-v0.41.0.tar.gz:
+    topdir: null
+    url: https://github.com/golang/sys/archive/refs/tags/v0.41.0.tar.gz
+    sha256sum: 812a25425c7e89cd04f5b947501653b23caacc91abe504b820c4c94d5f79084b
+  golang-text-v0.34.0.tar.gz:
+    topdir: null
+    url: https://github.com/golang/text/archive/refs/tags/v0.34.0.tar.gz
+    sha256sum: e80f73101db5eead129a96e99b90163c883ca1317a827c1f15c5da7e099b1df4
+  go-genproto-ff82c1b0f217.tar.gz:
+    topdir: null
+    url: https://github.com/googleapis/go-genproto/archive/ff82c1b0f217.tar.gz
+    sha256sum: 86aa9b679c27f80e8a8352eab07e0db2d057ad11aab1831e9a7cb3b661c9175f
+  grpc-go-v1.79.0.tar.gz:
+    topdir: null
+    url: https://github.com/grpc/grpc-go/archive/refs/tags/v1.79.0.tar.gz
+    sha256sum: 8ee5e43782ae56de639745e9008f5bf4566053686078ea1d94789750f406ec08
+  protobuf-go-v1.36.11.tar.gz:
+    topdir: null
+    url: https://github.com/protocolbuffers/protobuf-go/archive/refs/tags/v1.36.11.tar.gz
+    sha256sum: 517b935001f3d43640489cd1aab531a3ed5927fb34379fa6cb1c1a514e9cb8e8
+  go-yaml-v3-v3.0.1.tar.gz:
+    topdir: null
+    url: https://github.com/go-yaml/yaml/archive/refs/tags/v3.0.1.tar.gz
+    sha256sum: cf05411540d3e6ef8f1fd88434b34f94cedaceb540329031d80e23b74540c4e5
+  klog-v0.4.0.tar.gz:
+    topdir: null
+    url: https://github.com/kubernetes/klog/archive/refs/tags/v0.4.0.tar.gz
+    sha256sum: 67ec121749c5ec79d6912c7d462f1f43dbd22882b4a81549a5e7ce69b61f020e
+  klog-v2.130.1.tar.gz:
+    topdir: null
+    url: https://github.com/kubernetes/klog/archive/refs/tags/v2.130.1.tar.gz
+    sha256sum: 22abd8126261ef47d92e3faa4100b7a309eb9be6c2a709b4268d81b85cc48768
+  kubelet-v0.35.1.tar.gz:
+    topdir: null
+    url: https://github.com/kubernetes/kubelet/archive/refs/tags/v0.35.1.tar.gz
+    sha256sum: 1921704f2cea635149456b5276e668dd1a68a681e8fd4079e2ceb5e9eab83cc5
+  sigs-yaml-v1.6.0.tar.gz:
+    topdir: null
+    url: https://github.com/kubernetes-sigs/yaml/archive/refs/tags/v1.6.0.tar.gz
+    sha256sum: a6c9c723642ed54ef74dab20c4158b6cef0f3f2afca34c1b402c1e5852b1720b
+  cdi-v1.1.0.tar.gz:
+    topdir: null
+    url: https://github.com/cncf-tags/container-device-interface/archive/refs/tags/v1.1.0.tar.gz
+    sha256sum: 8d5846898cdfc3ca90c93b26e43a7e79b199959a6154f2005839bf217fbc13b9
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

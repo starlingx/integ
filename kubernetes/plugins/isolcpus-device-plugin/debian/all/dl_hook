@@ -1,0 +1,54 @@
+#!/bin/bash
+set -ex
+
+PKG_BUILD_NAME=$1
+STX_BASE=$(realpath ${MY_REPO}/stx)
+PKG_BASE=${STX_BASE}/integ/kubernetes/plugins/isolcpus-device-plugin
+
+# Copy source files
+cp -rL ${PKG_BASE}/files ${PKG_BUILD_NAME}
+
+# Create vendor directory with modules.txt
+mkdir -p ${PKG_BUILD_NAME}/vendor
+cp ${PKG_BASE}/files/vendor/modules.txt ${PKG_BUILD_NAME}/vendor/modules.txt
+
+VENDOR="${PKG_BUILD_NAME}/vendor"
+
+# Helper: extract tarball into vendor path
+unpack() {
+    local tarball=$1
+    local dest=$2
+    local strip=${3:-1}
+    mkdir -p "${VENDOR}/${dest}"
+    tar xzf "${tarball}" -C "${VENDOR}/${dest}" --strip-components="${strip}"
+}
+
+unpack fsnotify-v1.9.0.tar.gz "github.com/fsnotify/fsnotify"
+unpack logr-v1.4.3.tar.gz "github.com/go-logr/logr"
+unpack gogo-protobuf-v1.3.2.tar.gz "github.com/gogo/protobuf"
+unpack intel-device-plugins-v0.35.0.tar.gz "github.com/intel/intel-device-plugins-for-kubernetes"
+# moby/sys/capability: extract only the capability/ subdir
+mkdir -p "${VENDOR}/github.com/moby/sys/capability"
+tar xzf moby-sys-capability-v0.4.0.tar.gz --strip-components=2 \
+    -C "${VENDOR}/github.com/moby/sys/capability" \
+    "sys-capability-v0.4.0/capability"
+unpack runtime-spec-v1.3.0.tar.gz "github.com/opencontainers/runtime-spec"
+unpack runtime-tools-edf4cb3d2116.tar.gz "github.com/opencontainers/runtime-tools"
+unpack pkg-errors-v0.9.1.tar.gz "github.com/pkg/errors"
+unpack go-yaml-v2-v2.4.3.tar.gz "go.yaml.in/yaml/v2"
+unpack golang-mod-v0.32.0.tar.gz "golang.org/x/mod"
+unpack golang-net-v0.49.0.tar.gz "golang.org/x/net"
+unpack golang-sys-v0.41.0.tar.gz "golang.org/x/sys"
+unpack golang-text-v0.34.0.tar.gz "golang.org/x/text"
+unpack go-genproto-ff82c1b0f217.tar.gz "google.golang.org/genproto"
+unpack grpc-go-v1.79.0.tar.gz "google.golang.org/grpc"
+unpack protobuf-go-v1.36.11.tar.gz "google.golang.org/protobuf"
+unpack go-yaml-v3-v3.0.1.tar.gz "gopkg.in/yaml.v3"
+unpack klog-v0.4.0.tar.gz "k8s.io/klog"
+unpack klog-v2.130.1.tar.gz "k8s.io/klog/v2"
+unpack kubelet-v0.35.1.tar.gz "k8s.io/kubelet"
+unpack sigs-yaml-v1.6.0.tar.gz "sigs.k8s.io/yaml"
+unpack cdi-v1.1.0.tar.gz "tags.cncf.io/container-device-interface"
+
+# Remove test files (they import packages not in vendor)
+find "${VENDOR}" -name "*_test.go" -delete
