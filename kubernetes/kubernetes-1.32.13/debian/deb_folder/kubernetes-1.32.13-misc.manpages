@@ -1,0 +1,5 @@
+# kubernetes-client
+src/k8s.io/kubernetes/_output/man/kubeadm*
+src/k8s.io/kubernetes/_output/man/kubectl*
+# kubernetes-node
+src/k8s.io/kubernetes/_output/man/kubelet*

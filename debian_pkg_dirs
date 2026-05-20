@@ -74,6 +74,7 @@ kubernetes/helm
 kubernetes/k8s-cni-cache-cleanup
 kubernetes/k8s-pod-recovery
 kubernetes/kubernetes-1.32.2
+kubernetes/kubernetes-1.32.13
 kubernetes/kubernetes-1.33.0
 kubernetes/kubernetes-1.34.1
 kubernetes/kubernetes-1.34.8

@@ -277,6 +277,10 @@ python3-keyrings.alt
 kubernetes-1.32.2-client
 kubernetes-1.32.2-kubeadm
 kubernetes-1.32.2-node
+#kubernetes-1.32.13
+kubernetes-1.32.13-client
+kubernetes-1.32.13-kubeadm
+kubernetes-1.32.13-node
 #kubernetes-1.33.0
 kubernetes-1.33.0-client
 kubernetes-1.33.0-kubeadm
