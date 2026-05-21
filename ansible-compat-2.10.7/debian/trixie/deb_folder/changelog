@@ -1,0 +1,6 @@
+ansible-compat-2.10.7 (1.0-1) unstable; urgency=medium
+
+  * Initial release. Bundles Python 3.9.18 + Ansible 2.10.7 +
+    netaddr + jmespath for N-1 subcloud bootstrap compatibility.
+
+ -- Abhinav Ayyapasetti <ayyapasetti.abhinav@windriver.com>  Thu, 21 May 2026 08:00:23 -0400

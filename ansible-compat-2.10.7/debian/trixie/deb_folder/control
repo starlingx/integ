@@ -1,0 +1,15 @@
+Source: ansible-compat-2.10.7
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.5.0
+Homepage: https://www.starlingx.io
+
+Package: ansible-compat-2.10.7
+Architecture: amd64
+Depends: ${misc:Depends}
+Description: Ansible 2.10 compatibility environment for N-1 subcloud bootstrap
+ Provides a self-contained Python 3.9 + Ansible 2.10.7 environment
+ for running N-1 subcloud playbooks from the system controller.
+ Installed at /opt/stx-ansible-compat/26.03/.

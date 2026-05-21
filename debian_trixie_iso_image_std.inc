@@ -1,5 +1,7 @@
 # List of packages to be included/installed in ISO
 
+#ansible-compat-2.10.7
+ansible-compat-2.10.7
 #base-passwd
 base-passwd
 

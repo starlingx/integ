@@ -1,0 +1,67 @@
+---
+debname: ansible-compat-2.10.7
+debver: 1.0-1
+dl_path:
+  name: cpython-3.9.18+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz
+  url: https://github.com/astral-sh/python-build-standalone/releases/download/20240107/cpython-3.9.18+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz
+  sha256sum: 67912efc04f9156d8f5b48a0348983defb964de043b8c13ddc6cc8a002f8e691
+dl_files:
+  ansible-2.10.7.tar.gz:
+    url: https://files.pythonhosted.org/packages/ba/22/7b58a8ba8e43159dc5cb32d97dd50e2b70b016585dbb188e9f2b61dac1e2/ansible-2.10.7.tar.gz
+    sha256sum: 9ff024500116d53c460cb09ea92e3c9404119f100d1d1ff0de69a9dafca561d5
+    topdir: null
+  ansible-base-2.10.17.tar.gz:
+    url: https://files.pythonhosted.org/packages/fe/56/b18bf0167aa6e2ab195d0c2736992a3a9aeca1ddbefebee554226d211267/ansible-base-2.10.17.tar.gz
+    sha256sum: ef925882ca8d4c3c2ccd091cde199e0c869024ccad0d07a337dcf207bff32f34
+    topdir: null
+  netaddr-1.3.0-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/12/cc/f4fe2c7ce68b92cbf5b2d379ca366e1edae38cccaad00f69f529b460c3ef/netaddr-1.3.0-py3-none-any.whl
+    sha256sum: c2c6a8ebe5554ce33b7d5b3a306b71bbb373e000bbbf2350dd5213cc56e3dbbe
+    topdir: null
+  jmespath-1.1.0-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
+    sha256sum: a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64
+    topdir: null
+  jinja2-3.1.6-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
+    sha256sum: 85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
+    topdir: null
+  pyyaml-6.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl:
+    url: https://files.pythonhosted.org/packages/73/b9/793686b2d54b531203c160ef12bec60228a0109c79bae6c1277961026770/pyyaml-6.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+    sha256sum: 0150219816b6a1fa26fb4699fb7daa9caf09eb1999f3b70fb6e786805e80375a
+    topdir: null
+  cryptography-43.0.3-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl:
+    url: https://files.pythonhosted.org/packages/2a/2c/488776a3dc843f95f86d2f957ca0fc3407d0242b50bede7fad1e339be03f/cryptography-43.0.3-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+    sha256sum: 0f996e7268af62598f2fc1204afa98a3b5712313a55c4c9d434aef49cadc91d4
+    topdir: null
+  cffi-2.0.0-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl:
+    url: https://files.pythonhosted.org/packages/1f/74/cc4096ce66f5939042ae094e2e96f53426a979864aa1f96a621ad128be27/cffi-2.0.0-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+    sha256sum: 61d028e90346df14fedc3d1e5441df818d095f3b87d286825dfcbd6459b7ef63
+    topdir: null
+  pycparser-2.23-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/a0/e3/59cd50310fc9b59512193629e1984c1f95e5c8ae6e5d8c69532ccc65a7fe/pycparser-2.23-py3-none-any.whl
+    sha256sum: e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934
+    topdir: null
+  markupsafe-3.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl:
+    url: https://files.pythonhosted.org/packages/6f/bc/4dc914ead3fe6ddaef035341fee0fc956949bbd27335b611829292b89ee2/markupsafe-3.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+    sha256sum: e8fc20152abba6b83724d7ff268c249fa196d8259ff481f3b1476383f8f24e42
+    topdir: null
+  packaging-26.2-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl
+    sha256sum: 5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e
+    topdir: null
+  typing_extensions-4.15.0-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl
+    sha256sum: f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548
+    topdir: null
+  setuptools-82.0.1-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/9d/76/f789f7a86709c6b087c5a2f52f911838cad707cc613162401badc665acfe/setuptools-82.0.1-py3-none-any.whl
+    sha256sum: a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb
+    topdir: null
+  wheel-0.47.0-py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/87/1b/9e33c09813d65e248f7f773119148a612516a4bea93e9c6f545f78455b7c/wheel-0.47.0-py3-none-any.whl
+    sha256sum: 212281cab4dff978f6cedd499cd893e1f620791ca6ff7107cf270781e587eced
+    topdir: null
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
