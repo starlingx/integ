@@ -1,0 +1,36 @@
+From 49a081961f5523f226a192d9ed049da2f482e48e Mon Sep 17 00:00:00 2001
+From: Steven Webster <steven.webster@windriver.com>
+Date: Wed, 20 May 2026 16:53:29 +0000
+Subject: [PATCH 8/8] Fix IPv6 DAD audit for stacked (VLAN) interfaces
+
+A previous patch to settle-dad.sh prevented duplicate address
+detection when the operstate of an interface is "down".
+
+This was done to prevent the networking.service from reporting
+failure on a NO-CARRIER state because of duplicate address
+detection logic.
+
+In the case of VLAN interfaces, the operstate is not "down"
+but "lowerlayerdown".
+
+Signed-off-by: Steven Webster <steven.webster@windriver.com>
+---
+ settle-dad.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/settle-dad.sh b/settle-dad.sh
+index cebd3ea..5ef6faa 100644
+--- a/settle-dad.sh
++++ b/settle-dad.sh
+@@ -12,7 +12,7 @@ real_iface=${IFACE%:*}
+ no_link=0
+ 
+ for attempt in $(seq 1 $attempts); do
+-	if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) == "down" ]] ; then
++	if [ ! -f /sys/class/net/${real_iface}/operstate ] || [[ $(< /sys/class/net/${real_iface}/operstate) =~ ^(down|lowerlayerdown)$ ]] ; then
+ 		no_link=0
+ 	else
+ 		no_link=1
+-- 
+2.30.2
+

@@ -1,0 +1,29 @@
+From f76501ea8324c3edb74f8494b84866c3122cd458 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Javier=20Fernandez-Sanguino=20Pe=C3=B1a?= <jfs@debian.org>
+Date: Wed, 20 May 2026 17:06:10 +0000
+Subject: [PATCH 138/138] Fix network cable detection for VLAN interfaces
+
+We must check the sysfs operstate "lowerlayerdown" for VLAN
+interfaces.
+
+Signed-off-by: Steven Webster <steven.webster@windriver.com>
+---
+ if-up-scripts/check-network-cable | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/if-up-scripts/check-network-cable b/if-up-scripts/check-network-cable
+index be3d5b3..b624958 100755
+--- a/if-up-scripts/check-network-cable
++++ b/if-up-scripts/check-network-cable
+@@ -103,7 +103,7 @@ check_status_ethtool() {
+ }
+ 
+ check_status_sysfs() {
+-	[ -f /sys/class/net/${IFACE}/operstate ] && [[ $(< /sys/class/net/${IFACE}/operstate) != "down" ]]
++	[ -f /sys/class/net/${IFACE}/operstate ] && [[ $(< /sys/class/net/${IFACE}/operstate) =~ ^(down|lowerlayerdown)$ ]]
+ }
+ 
+ # Status check function for all types of interfaces
+-- 
+2.30.2
+
