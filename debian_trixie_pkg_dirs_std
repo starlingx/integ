@@ -1,3 +1,4 @@
+ansible-compat-2.10.7
 base/base-passwd
 base/cluster-resource-agents
 base/dhcp
