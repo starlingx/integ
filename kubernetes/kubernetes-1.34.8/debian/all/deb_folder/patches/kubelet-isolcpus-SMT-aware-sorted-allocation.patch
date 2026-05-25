@@ -1,0 +1,168 @@
+From 319acd2cc70fa34c7b46050da97ee21c2d03dabf Mon Sep 17 00:00:00 2001
+From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+Date: Mon, 28 Apr 2025 05:11:52 -0400
+Subject: [PATCH] kubelet: isolcpus SMT aware sorted allocation
+
+Enhance isolcpus support in Kubernetes to allocate isolated SMT
+siblings to the same container when SMT/HT is enabled on the host.
+
+As it stands, the device manager code in Kubernetes is not SMT-aware
+(since normally it doesn't deal with CPUs).  However, StarlingX
+exposes isolated CPUs as devices and if possible we want to allocate
+all SMT siblings from a CPU core to the same container in order to
+minimize cross- container interference due to resource contention
+within the CPU core.The existing device manager code returns CPUs
+as devices in unsorted order. This numerically sorts isolcpus
+allocations when SMT/HT is enabled on the host. This logs SMT
+pairs, singletons, and algorithm order details to make the
+algorithm understandable.
+
+The solution is basically to take the list of isolated CPUs and
+re-order it so that the SMT siblings are next to each other.  That
+way the existing resource selection code will allocate the siblings
+together.  As an optimization, if it is known that an odd number
+of isolated CPUs are desired, a singleton SMT sibling will be
+inserted into the list to avoid breaking up sibling pairs.
+
+Signed-off-by: Tao Wang <tao.wang@windriver.com>
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Signed-off-by: Boovan Rajendran <boovan.rajendran@windriver.com>
+Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
+---
+ pkg/kubelet/cm/devicemanager/manager.go | 99 ++++++++++++++++++++++++-
+ 1 file changed, 98 insertions(+), 1 deletion(-)
+
+diff --git a/pkg/kubelet/cm/devicemanager/manager.go b/pkg/kubelet/cm/devicemanager/manager.go
+index 8074fa18e41..2754cd6f0ef 100644
+--- a/pkg/kubelet/cm/devicemanager/manager.go
++++ b/pkg/kubelet/cm/devicemanager/manager.go
+@@ -24,6 +24,8 @@ import (
+ 	"path/filepath"
+ 	"runtime"
+ 	"sort"
++	"strconv"
++	"strings"
+ 	"sync"
+ 	"time"
+ 
+@@ -51,6 +53,7 @@ import (
+ 	"k8s.io/kubernetes/pkg/kubelet/metrics"
+ 	"k8s.io/kubernetes/pkg/kubelet/pluginmanager/cache"
+ 	schedulerframework "k8s.io/kubernetes/pkg/scheduler/framework"
++	"k8s.io/utils/cpuset"
+ )
+ 
+ const nodeWithoutTopology = -1
+@@ -562,6 +565,91 @@ func (m *ManagerImpl) UpdateAllocatedDevices() {
+ 	m.allocatedDevices = m.podDevices.devices()
+ }
+ 
++// Given a list of isolated CPUs in 'devices', and the number of desired CPUs in 'needed',
++// return an ordered list of isolated CPUs such that the first 'needed' CPUs in the list
++// contain as many hyperthread sibling pairs as possible.
++func order_devices_by_sibling(devices sets.Set[string], needed int) ([]string, error) {
++	var dev_lst []string
++	var single_lst []string
++	sibling_lst := make([]string, 0, int(devices.Len()))
++	_iterated_cpu := make(map[string]string)
++	get_sibling := func(cpu string, cpu_lst []string) string {
++		if cpu_lst[0] == cpu {
++			return cpu_lst[1]
++		} else {
++			return cpu_lst[0]
++		}
++	}
++	//Make post-analysis of selection algorithm obvious by numerical sorting
++	//the available isolated cpu_id.
++	cpu_ids := make([]int, 0, int(devices.Len()))
++	for cpu_id := range devices {
++		cpu_id_, _ := strconv.Atoi(cpu_id)
++		cpu_ids = append(cpu_ids, cpu_id_)
++	}
++	sort.Ints(cpu_ids)
++	for _, _cpu_id := range cpu_ids {
++		cpu_id := strconv.Itoa(_cpu_id)
++		// If we've already found cpu_id as a sibling, skip it.
++		if _, ok := _iterated_cpu[cpu_id]; ok {
++			continue
++		}
++		devPath := fmt.Sprintf("/sys/devices/system/cpu/cpu%s/topology/thread_siblings_list", cpu_id)
++		dat, err := os.ReadFile(devPath)
++		if err != nil {
++			return dev_lst, fmt.Errorf("Can't read cpu[%s] thread_siblings_list", cpu_id)
++		}
++		cpustring := strings.TrimSuffix(string(dat), "\n")
++		cpu_pair_set, err := cpuset.Parse(cpustring)
++		if err != nil {
++			return dev_lst, fmt.Errorf("Unable to parse thread_siblings_list[%s] string to cpuset", cpustring)
++		}
++		var cpu_pair_lst []string
++		for _, v := range cpu_pair_set.List() {
++			cpu_pair_lst = append(cpu_pair_lst, strconv.Itoa(v))
++		}
++		sibling_cpu_id := get_sibling(cpu_id, cpu_pair_lst)
++		if _, ok := devices[sibling_cpu_id]; ok {
++			sibling_lst = append(sibling_lst, cpu_id, sibling_cpu_id)
++			_iterated_cpu[sibling_cpu_id] = ""
++		} else {
++			single_lst = append(single_lst, cpu_id)
++		}
++		_iterated_cpu[cpu_id] = ""
++	}
++	if needed%2 == 0 {
++		dev_lst = append(sibling_lst, single_lst...)
++	} else {
++		if len(single_lst) > 1 {
++			_tmp_list := append(sibling_lst, single_lst[1:]...)
++			dev_lst = append(single_lst[0:1], _tmp_list...)
++		} else {
++			if len(single_lst) == 0 {
++				dev_lst = sibling_lst
++			} else {
++				dev_lst = append(single_lst, sibling_lst...)
++			}
++		}
++	}
++	//This algorithm will get some attention. Show minimal details.
++	klog.Infof(
++		"order_devices_by_sibling: needed=%d, smtpairs=%v, singletons=%v, order=%v",
++		needed,
++		sibling_lst,
++		single_lst,
++		dev_lst,
++	)
++	return dev_lst, nil
++}
++func smt_enabled() bool {
++	dat, _ := os.ReadFile("/sys/devices/system/cpu/smt/active")
++	state := strings.TrimSuffix(string(dat), "\n")
++	if state == "0" {
++		return false
++	}
++	return true
++}
++
+ // Returns list of device Ids we need to allocate with Allocate rpc call.
+ // Returns empty list in case we don't need to issue the Allocate rpc call.
+ func (m *ManagerImpl) devicesToAllocate(podUID, contName, resource string, required int, reusableDevices sets.Set[string]) (sets.Set[string], error) {
+@@ -642,7 +730,16 @@ func (m *ManagerImpl) devicesToAllocate(podUID, contName, resource string, requi
+ 		if m.allocatedDevices[resource] == nil {
+ 			m.allocatedDevices[resource] = sets.New[string]()
+ 		}
+-		for device := range devices.Difference(allocated) {
++		availableDevices := sets.List[string](devices.Difference(allocated))
++		// If we're dealing with isolcpus and SMT is enabled, reorder to group SMT siblings together.
++		if resource == "windriver.com/isolcpus" && len(devices) > 0 && smt_enabled() {
++			var err error
++			availableDevices, err = order_devices_by_sibling(devices.Difference(allocated), needed)
++			if err != nil {
++				klog.Errorf("error in order_devices_by_sibling: %v", err)
++			}
++		}
++		for _, device := range availableDevices {
+ 			m.allocatedDevices[resource].Insert(device)
+ 			allocated.Insert(device)
+ 			needed--
+-- 
+2.34.1
+
