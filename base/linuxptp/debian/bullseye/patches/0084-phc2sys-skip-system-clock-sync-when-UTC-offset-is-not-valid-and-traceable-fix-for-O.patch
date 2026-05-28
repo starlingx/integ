@@ -1,0 +1,148 @@
+Author: Tara Nath Subedi <Tara.Subedi@windriver.com>
+Date:   Wed May 27 16:15:42 2026 -0400
+Subject: [PATCH] phc2sys: skip system clock sync when UTC offset is not valid and traceable -- fix for -O
+
+phc2sys: allow clock sync when -O is used (bypass utc_offset_traceable check)
+phc2sys: latch utc_offset_traceable to prevent drift during port state flaps
+
+When the PHC driver initializes, it sets the PHC to the system clock
+(UTC). At this point, ptp4l has not yet disciplined the PHC to TAI,
+so phc2sys must not apply the 37s UTC-TAI correction in update_clock()
+until the PHC is confirmed to be on TAI timescale.
+
+The utc_offset_traceable flag from TIME_PROPERTIES_DATA_SET serves as
+this confirmation: when traceable is set, ptp4l has locked to the GM
+and the PHC is on TAI. However, in environments where ptp4l port state
+flaps between MASTER and SLAVE, the traceable flag also flaps. This
+causes phc2sys to repeatedly block update_clock() during transitions,
+leaving the system clock undisciplined and accumulating drift.
+
+Once the PHC has been stepped to TAI, it does not revert to UTC on a
+port state flap — ptp4l does not step the PHC back when transitioning
+to MASTER. Therefore, the traceable check is only needed as a cold
+start guard to prevent applying the 37s correction while the PHC is
+still on UTC.
+
+Introduce a phc_synced_to_tai latch on the master clock:
+- On cold start (phc_synced_to_tai=0): block update_clock() until
+	utc_offset_traceable is first seen as true
+- Once traceable is observed: set phc_synced_to_tai=1, confirming
+	the PHC is on TAI
+- On subsequent traceability flaps: the latch remains set, allowing
+	update_clock() to continue without blocking
+
+Additionally, when phc2sys is invoked with -O (forced UTC offset),
+the PMC agent never queries pmc_agent_query_utc_offset() from ptp4l,
+so the utc_offset_traceable flag is never populated and remains false.
+Since the user has explicitly provided the offset, the traceable
+protection is unnecessary. Gate the entire traceable check on
+!priv->forced_sync_offset to bypass it when -O is used.
+
+Behavior summary:
+- Cold start, no -O: blocks until PHC confirmed on TAI (first
+	traceable=1), then never blocks again
+- Port state flap after lock: no blocking, no drift
+- -O <offset>: never blocks (user-provided offset, no ptp4l query)
+
+Changes in phc2sys.c:
+- Add phc_synced_to_tai field to struct clock
+- do_loop: replace unconditional traceable gate with one-shot latch
+	on priv->master->phc_synced_to_tai.
+	skip traceable check when forced_sync_offset is set
+- do_pps_loop: apply same latch logic for PPS path
+
+TEST PLAN:
+PASS: A) Setup PTP4L with currentUtcOffsetValid=0, timeTraceable=0
+		/usr/sbin/phc2sys -f /etc/linuxptp/ptpinstance/phc2sys-phcinst0.conf
+		-s enp81s0f2 -z /var/run/ptp4l-ptpinstc01 -w -m -l 7
+		debug message: phcinst0 skipping system clock sync: UTC offset is not valid or traceable
+PASS: B) Setup PTP4L with currentUtcOffsetValid=1, timeTraceable=1
+		no more shows debug message
+		Phc2sys starts syncing system-clock.
+PASS: With "phc2sys -a", same result as above A) and B)
+PASS: With "phc2sys -O 37", works as below for both A) and B)
+		no above debug message
+		Phc2sys starts syncing system-clock.
+PASS: With "phc2sys -w -O 37", works as below for both A) and B)
+		no above debug message
+		Phc2sys starts syncing system-clock.
+PASS: C) Port state flapping (MASTER<->SLAVE) with traceable flapping
+		After initial lock, phc2sys continues syncing through flaps
+		without blocking or drift accumulation.
+
+Signed-off-by: Tara Nath Subedi <tara.subedi@windriver.com>
+---
+ phc2sys.c | 45 ++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 34 insertions(+), 11 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 9494655..077bd5e 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -87,6 +87,7 @@ struct clock {
+ 	int state;
+ 	int new_state;
+ 	int sync_offset;
++	int phc_synced_to_tai;
+ 	int leap_set;
+ 	int utc_offset_set;
+ 	struct servo *servo;
+@@ -1034,11 +1035,21 @@ static int do_pps_loop(struct phc2sys_private *priv, struct clock *clock,
+ 
+ 		if (pmc_agent_update(node) < 0)
+ 			continue;
+-		/* don't sync system clock when UTC offset is not valid and traceable */
+-		if (!pmc_agent_utc_offset_traceable(node)) {
+-			pr_debug("skipping system clock sync: "
+-				 "UTC offset is not valid or traceable");
+-			continue;
++		/* When -O is used, the user has explicitly provided the UTC
++		 * offset and pmc agent does not query utc offset from ptp4l,
++		 * so skip the traceable check. Otherwise, don't sync system
++		 * clock when UTC offset is not valid and traceable.
++		 *
++		 * Once traceable has been seen, the PHC is on TAI and
++		 * will not revert to UTC on a port state flap. */
++		if (!priv->forced_sync_offset) {
++			if (pmc_agent_utc_offset_traceable(node)) {
++				priv->master->phc_synced_to_tai = 1;
++			} else if (!priv->master->phc_synced_to_tai) {
++				pr_debug("skipping system clock sync: "
++					 "UTC offset is not valid or traceable");
++				continue;
++			}
+ 		}
+ 		update_clock(priv, clock, pps_offset, pps_ts, -1);
+ 	}
+@@ -1712,13 +1723,25 @@ static int do_loop(struct phc2sys_private *priv, struct config *cfg, int subscri
+ 			    !strcmp(clock->device, priv->master->device))
+ 				continue;
+ 
+-			/* don't sync system clock when UTC offset is not valid and traceable */
++			/* When -O is used, the user has explicitly provided the UTC
++			 * offset and pmc agent does not query utc offset from ptp4l,
++			 * so skip the traceable check. Otherwise, don't sync system
++			 * clock when UTC offset is not valid and traceable.
++			 *
++			 * Once traceable has been seen, the PHC is on TAI and
++			 * will not revert to UTC on a port state flap. Latch
++			 * this so subsequent traceability flaps do not block
++			 * clock synchronization causing unnecessary drift. */
+ 			if (clock->clkid == CLOCK_REALTIME &&
+-			    priv->master->node &&
+-			    !pmc_agent_utc_offset_traceable(priv->master->node)) {
+-				pr_debug("skipping system clock sync: "
+-					 "UTC offset is not valid or traceable");
+-				continue;
++			    !priv->forced_sync_offset &&
++			    priv->master->node) {
++				if (pmc_agent_utc_offset_traceable(priv->master->node)) {
++					priv->master->phc_synced_to_tai = 1;
++				} else if (!priv->master->phc_synced_to_tai) {
++					pr_debug("skipping system clock sync: "
++						 "UTC offset is not valid or traceable");
++					continue;
++				}
+ 			}
+ 
+ 			if (!clock->servo) {
