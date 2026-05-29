@@ -1,0 +1,7 @@
+---
+debname: python-dotenv
+debver: 1.0.1-1
+archive: https://snapshot.debian.org/archive/debian/20240127T152202Z/pool/main/p/python-dotenv/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

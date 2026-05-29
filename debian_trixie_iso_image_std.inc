@@ -382,6 +382,24 @@ python3-nsenter
 #pynetlink
 pynetlink
 
+#python3-pydantic
+python3-pydantic
+
+#python3-pydantic-core
+python3-pydantic-core
+
+#python3-pydantic-settings
+python3-pydantic-settings
+
+#python3-dotenv
+python3-dotenv
+
+#python3-annotated-types
+python3-annotated-types
+
+#python3-typing-inspection
+python3-typing-inspection
+
 #python3-pyjwkest
 python3-pyjwkest
 
