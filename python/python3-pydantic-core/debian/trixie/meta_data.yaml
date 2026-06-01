@@ -1,0 +1,7 @@
+---
+debname: pydantic-core
+debver: 2.27.2-3
+archive: https://snapshot.debian.org/archive/debian/20250410T144655Z/pool/main/p/pydantic-core/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

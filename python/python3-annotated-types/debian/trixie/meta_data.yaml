@@ -1,0 +1,7 @@
+---
+debname: python-annotated-types
+debver: 0.7.0-1
+archive: https://snapshot.debian.org/archive/debian/20240523T030222Z/pool/main/p/python-annotated-types/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

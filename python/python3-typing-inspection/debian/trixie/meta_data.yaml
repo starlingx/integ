@@ -1,0 +1,7 @@
+---
+debname: python-typing-inspection
+debver: 0.4.2-1
+archive: https://snapshot.debian.org/archive/debian/20251003T143505Z/pool/main/p/python-typing-inspection/
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
