@@ -1,0 +1,97 @@
+{
+  "global": {
+    "poll_interval_ms": 1000,
+    "guard_time_ms": 5000,
+    "max_step_ns": 1000000,
+    "phase_adjust_factor": 1,
+    "force_same_ql_on_fronthaul": true,
+    "phc_interface": "PLACEHOLDER",
+    "log_level": "INFO",
+    "operation_mode": "SW_BASED"
+  },
+  "channels": {
+    "ptp_fr": {
+      "call_channel": "uds:/var/run/ptp4l-ptp_fr"
+    },
+    "ptp_0": {
+      "call_channel": "uds:/var/run/ptp4l-ptp_0"
+    },
+    "ts2_0": {
+      "call_channel": "uds:/var/run/ts2phc-ts0"
+    }
+  },
+  "dpll": {
+    "dpll0": {
+      "name": "zl3073x",
+      "pin_priority_map": "GNSS_REF4P:0, RCLKA_REF1P:10, RCLKB_REF1N:11"
+    },
+    "holdover_config": {
+      "ho_0": { "ho_duration": 30 },
+      "ho_1": { "ho_duration": 60 },
+      "ho_2": { "ho_duration": 240 }
+    }
+  },
+  "ptp": {
+    "ptp_profiles": {
+      "ptp_fr": { "profile": "G.8275.1" },
+      "ptp_0": { "profile": "G.8275.1" }
+    },
+    "ptp_primary_attributes": {
+      "GNSS_REF4P": {
+        "clockClass": 6,
+        "clockAccuracy": "0x22",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0x20"
+      },
+      "RCLKA_REF1P": {
+        "clockClass": 7,
+        "clockAccuracy": "0x22",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0xA0"
+      },
+      "Holdover_0": {
+        "clockClass": 7,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      },
+      "Holdover_1": {
+        "clockClass": 14,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      },
+      "Holdover_2": {
+        "clockClass": 140,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      },
+      "Holdover_3": {
+        "clockClass": 248,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      }
+    },
+    "ptp_secondary_attributes": {
+      "offsetScaledLogVariance": "0x4E20",
+      "currentUtcOffset": 37,
+      "leap61": 0,
+      "leap59": 0,
+      "currentUtcOffsetValid": 1,
+      "ptpTimescale": 1
+    }
+  },
+  "inputs_ql": {
+    "GNSS_REF4P": "PRTC",
+    "RCLKA_REF1P": "EEC1",
+    "RCLKB_REF1N": "EEC1"
+  }
+}

@@ -1,0 +1,5 @@
+dpll-mgr (26.05.5) unstable; urgency=medium
+
+  * Initial packaging for StarlingX
+
+ -- Cole Walker <cole.walker@windriver.com>  Mon, 01 Jun 2026 10:00:00 -0400

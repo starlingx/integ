@@ -1,0 +1,16 @@
+Metadata-Version: 1.1
+Name: dpll-mgr
+Version: 26.05.5
+Summary: Advanced PTP Timing Synchronization Manager
+Home-page: https://www.starlingx.io
+Author: Intel Corporation
+Author-email:
+License: BSD-3-Clause
+
+Description:
+dpll-mgr is a timing synchronization manager for Intel platforms with
+DPLL hardware support. It coordinates PTP clock recovery, DPLL lock
+management, gearshift phase alignment, and GNSS reference monitoring
+for precision timing applications.
+
+Platform: UNKNOWN
