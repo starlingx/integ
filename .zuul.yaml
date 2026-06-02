@@ -8,11 +8,13 @@
         - integ-tox-pep8
         - integ-tox-linters
         - integ-tox-pylint
+        - integ-tox-py39
     gate:
       jobs:
         - integ-tox-pep8
         - integ-tox-linters
         - integ-tox-pylint
+        - integ-tox-py39
     post:
       jobs:
         - stx-integ-upload-git-mirror
@@ -186,6 +188,18 @@
     vars:
       tox_envlist: pylint
       tox_extra_args: -c tox.ini
+
+- job:
+    name: integ-tox-py39
+    parent: tox-py39
+    description: Run py39 tests for integ
+    nodeset: debian-bullseye
+    files:
+      - kubernetes/*
+    vars:
+      python_version: 3.9
+      tox_envlist: py39
+      tox_extra_args: -c kubernetes/kubernetes-unversioned/tox.ini
 
 - job:
     name: stx-integ-upload-git-mirror
