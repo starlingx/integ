@@ -1,0 +1,769 @@
+From 36bf88d1a5f1bcc8886c86c7bf33b8d0e16de74d Mon Sep 17 00:00:00 2001
+From: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+Date: Tue, 2 Jun 2026 08:38:22 -0300
+Subject: [PATCH] add OVS access bridge setup scripts
+
+Add two Python scripts to manage a Linux bridge (ovs0) and
+associated veth pairs for interfaces flagged with ovs-access
+in their stx-description field.
+
+create_ovs_access (if-pre-up.d):
+- Parses /etc/network/interfaces.d/ifcfg-$IFACE looking for
+  a stx-description line containing ovs-access=<ethdev>
+- Creates the ovs0 Linux bridge if it does not exist
+- Creates a veth pair (<ifname> / <ifname>-ovs) and attaches
+  the -ovs end to the bridge
+- Attaches the specified ethernet device to the bridge
+- Verifies all interfaces and the bridge are UP
+- Creates/updates /etc/ovs-access-monitor/ovs-access-monitor.conf
+  with the correct failover_interface value
+- Starts or restarts ovs-access-monitor.service
+
+delete_ovs_access (if-post-down.d):
+- Reverses the operations of create_ovs_access
+- Stops ovs-access-monitor.service if active
+- Detaches the ethernet device from the bridge
+- Deletes the veth pair
+- The ovs0 bridge is intentionally left in place
+
+Both scripts follow the existing ifupdown-extra logging convention:
+messages go to syslog (daemon facility) when DO_SYSLOG=yes, or
+to stdout/stderr otherwise, matching the do_output() pattern
+used by the other scripts in this package.
+
+Packaging:
+- debian/dirs: add if-pre-up.d and if-post-down.d entries
+- debian/ifupdown-extra.install: register both new scripts
+- debian/rules: install both scripts with mode 0755
+
+Signed-off-by: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+---
+ debian/dirs                            |   1 +
+ debian/ifupdown-extra.install          |   2 +
+ debian/rules                           |   4 +
+ if-post-down-scripts/delete_ovs_access | 248 +++++++++++++++
+ if-pre-up-scripts/create_ovs_access    | 423 +++++++++++++++++++++++++
+ 5 files changed, 678 insertions(+)
+ create mode 100755 if-post-down-scripts/delete_ovs_access
+ create mode 100755 if-pre-up-scripts/create_ovs_access
+
+diff --git a/debian/dirs b/debian/dirs
+index 34b0c12..216cbf3 100644
+--- a/debian/dirs
++++ b/debian/dirs
+@@ -3,4 +3,5 @@ etc/default
+ etc/network
+ etc/network/if-pre-up.d
+ etc/network/if-up.d
++etc/network/if-post-down.d
+ usr/lib/systemd/system/
+diff --git a/debian/ifupdown-extra.install b/debian/ifupdown-extra.install
+index bd0db85..c04f5f2 100644
+--- a/debian/ifupdown-extra.install
++++ b/debian/ifupdown-extra.install
+@@ -1,2 +1,4 @@
+ scripts/network-test  /usr/bin/
+ if-up-scripts/ifupdown-extra-functions  /etc/network/if-up.d/
++if-pre-up-scripts/create_ovs_access  /etc/network/if-pre-up.d/
++if-post-down-scripts/delete_ovs_access  /etc/network/if-post-down.d/
+diff --git a/debian/rules b/debian/rules
+index 9178126..77e6b6c 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -23,6 +23,10 @@ override_dh_install:
+ 	install -m755 if-up-scripts/static-routes  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/20static-routes
+ 	install -m755 if-up-scripts/check-route-src  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/25check-route-src
+ 	install -m755 if-up-scripts/check-gateway  $(CURDIR)/debian/ifupdown-extra/etc/network/if-up.d/30check-gateway
++	# Network scripts for ifupdown (pre-up)
++	install -m755 if-pre-up-scripts/create_ovs_access  $(CURDIR)/debian/ifupdown-extra/etc/network/if-pre-up.d/create_ovs_access
++	# Network scripts for ifupdown (post-down)
++	install -m755 if-post-down-scripts/delete_ovs_access  $(CURDIR)/debian/ifupdown-extra/etc/network/if-post-down.d/delete_ovs_access
+ 	# Serviced Unit file
+ 	install -m644 debian/networking-routes.service $(CURDIR)/debian/ifupdown-extra/usr/lib/systemd/system/
+ 
+diff --git a/if-post-down-scripts/delete_ovs_access b/if-post-down-scripts/delete_ovs_access
+new file mode 100755
+index 0000000..07ed758
+--- /dev/null
++++ b/if-post-down-scripts/delete_ovs_access
+@@ -0,0 +1,248 @@
++#!/usr/bin/env python3
++#
++# Script to tear down OVS access veth interfaces based on the
++# stx-description field in /etc/network/interfaces.d/ifcfg-$IFACE.
++#
++# This script runs in the if-post-down.d phase to clean up the veth pair
++# and bridge after the interface is brought down.
++#
++# When an interface config contains a stx-description line with
++# 'ovs-access=<ethdev>', this script will (reverse of create_ovs_access):
++#   1. Detach the ethernet device <ethdev> from the ovs0 bridge
++#   2. Delete the veth pair: <ifname> and <ifname>-ovs
++#
++#   This program is free software; you can redistribute it and/or modify
++#   it under the terms of the GNU General Public License as published by
++#   the Free Software Foundation; either version 2 of the License, or
++#   (at your option) any later version.
++
++import os
++import subprocess
++import sys
++import syslog
++
++INTERFACES_DIR = "/etc/network/interfaces.d"
++BRIDGE_NAME = "ovs0"
++DEFAULT_FILE = "/etc/default/network-test"
++MONITOR_SERVICE = "ovs-access-monitor.service"
++
++# Read defaults
++DO_SYSLOG = "yes"
++VERBOSITY = 0
++
++if os.path.isfile(DEFAULT_FILE):
++    with open(DEFAULT_FILE, "r") as f:
++        for line in f:
++            line = line.strip()
++            if line.startswith("DO_SYSLOG="):
++                DO_SYSLOG = line.split("=", 1)[1].strip('"').strip("'")
++            elif line.startswith("VERBOSITY="):
++                try:
++                    VERBOSITY = int(line.split("=", 1)[1].strip('"').strip("'"))
++                except ValueError:
++                    pass
++
++
++def do_output(level, msg):
++    """Output messages mimicking the do_output() bash function.
++
++    When DO_SYSLOG is 'yes', log via syslog with the appropriate priority.
++    Otherwise, print to stderr for err/warning, stdout for others.
++    """
++    if DO_SYSLOG == "yes":
++        priority_map = {
++            "err": syslog.LOG_ERR,
++            "warning": syslog.LOG_WARNING,
++            "debug": syslog.LOG_DEBUG,
++            "info": syslog.LOG_INFO,
++        }
++        priority = priority_map.get(level, syslog.LOG_INFO)
++        syslog.syslog(syslog.LOG_DAEMON | priority, f"ifupdown: {msg}")
++    else:
++        output = f"ifupdown: {msg}"
++        if level in ("err", "warning"):
++            print(output, file=sys.stderr)
++        else:
++            print(output)
++
++
++def out_err(msg):
++    do_output("err", msg)
++
++
++def out_warn(msg):
++    do_output("warning", msg)
++
++def out_info(msg):
++    do_output("info", msg)
++
++def out_debug(msg):
++    if VERBOSITY >= 1:
++        do_output("debug", msg)
++
++
++def run_cmd(cmd):
++    """Run a command and return (returncode, stdout, stderr)."""
++    out_debug(f"Running: {' '.join(cmd)}")
++    result = subprocess.run(cmd, capture_output=True, text=True)
++    if result.stdout.strip():
++        out_debug(f"stdout: {result.stdout.strip()}")
++    if result.stderr.strip():
++        out_debug(f"stderr: {result.stderr.strip()}")
++    return result.returncode, result.stdout, result.stderr
++
++
++def link_exists(name):
++    """Check if a network link (interface/bridge) already exists."""
++    rc, _, _ = run_cmd(["ip", "link", "show", name])
++    return rc == 0
++
++
++def get_stx_description(iface):
++    """Read the interface config file and return the stx-description line."""
++    config_path = os.path.join(INTERFACES_DIR, f"ifcfg-{iface}")
++    if not os.path.isfile(config_path):
++        out_debug(f"Config file not found: {config_path}")
++        return None
++
++    with open(config_path, "r") as f:
++        for line in f:
++            stripped = line.strip()
++            if stripped.startswith("stx-description"):
++                return stripped
++    return None
++
++
++def get_ifname_from_description(description):
++    """Extract the ifname and eth_device from the stx-description line.
++
++    Expected format: stx-description ifname:<name>,net:<net>,ovs-access=<ethdev>
++    """
++    parts = description.split(None, 1)
++    if len(parts) < 2:
++        return None, None
++
++    fields = parts[1].split(",")
++    ifname = None
++    eth_device = None
++    for field in fields:
++        if field.startswith("ifname:"):
++            ifname = field.split(":", 1)[1]
++        elif field.startswith("ovs-access="):
++            eth_device = field.split("=", 1)[1]
++    return ifname, eth_device
++
++
++def detach_eth_from_bridge(eth_device):
++    """Detach the ethernet device from the bridge."""
++    if not link_exists(eth_device):
++        out_debug(f"Ethernet device {eth_device} does not exist, skipping detach")
++        return True
++
++    out_debug(f"Detaching {eth_device} from bridge {BRIDGE_NAME}")
++
++    rc, _, stderr = run_cmd(["ip", "link", "set", "dev", eth_device, "nomaster"])
++    if rc != 0:
++        out_err(
++            f"Failed to detach {eth_device} from bridge {BRIDGE_NAME}: {stderr.strip()}"
++        )
++        return False
++
++    out_debug(f"Successfully detached {eth_device} from {BRIDGE_NAME}")
++    return True
++
++
++def delete_veth_pair(ifname):
++    """Delete the veth pair. Deleting one end removes both."""
++    if not link_exists(ifname):
++        out_debug(f"Interface {ifname} does not exist, skipping deletion")
++        return True
++
++    out_debug(f"Deleting veth pair: {ifname}")
++    rc, _, stderr = run_cmd(["ip", "link", "del", ifname])
++    if rc != 0:
++        out_err(f"Failed to delete veth interface {ifname}: {stderr.strip()}")
++        return False
++
++    out_debug(f"Successfully deleted veth pair {ifname}")
++    return True
++
++
++def is_service_active(service):
++    """Check if a systemd service is currently active (running)."""
++    rc, _, _ = run_cmd(["systemctl", "is-active", service])
++    return rc == 0
++
++
++def stop_monitor_service():
++    """Stop the ovs-access-monitor service if it is active."""
++    if not is_service_active(MONITOR_SERVICE):
++        out_debug(f"Service {MONITOR_SERVICE} is not active, nothing to stop")
++        return True
++
++    out_debug(f"Stopping service {MONITOR_SERVICE}")
++    rc, _, stderr = run_cmd(["systemctl", "stop", MONITOR_SERVICE])
++    if rc != 0:
++        out_err(f"Failed to stop {MONITOR_SERVICE}: {stderr.strip()}")
++        return False
++
++    out_debug(f"Service {MONITOR_SERVICE} stopped")
++    return True
++
++
++def main():
++    iface = os.environ.get("IFACE")
++    if not iface:
++        out_err("IFACE environment variable not set")
++        sys.exit(1)
++
++    out_debug(f"Processing interface: {iface}")
++
++    description = get_stx_description(iface)
++    if description is None:
++        out_debug(f"No stx-description found for {iface}, skipping")
++        sys.exit(0)
++
++    if "ovs-access" not in description:
++        out_debug(f"No ovs-access in stx-description for {iface}, skipping")
++        sys.exit(0)
++
++    out_debug(f"Found ovs-access for {iface}: {description}")
++
++    # Extract the ifname and ethernet device from stx-description
++    ifname, eth_device = get_ifname_from_description(description)
++    if not ifname:
++        out_err(
++            f"Could not extract ifname from stx-description: {description}"
++        )
++        sys.exit(1)
++
++    if not eth_device:
++        out_err(
++            f"Could not extract ethernet device from ovs-access in stx-description: {description}"
++        )
++        sys.exit(1)
++
++    # Reverse order of create_ovs_access:
++    # 1. Stop the ovs-access-monitor service if active
++    if not stop_monitor_service():
++        out_err(f"Failed to stop {MONITOR_SERVICE}")
++        sys.exit(1)
++
++    # 2. Detach the ethernet device from the bridge
++    if not detach_eth_from_bridge(eth_device):
++        out_err(f"Failed to detach {eth_device} from bridge {BRIDGE_NAME}")
++        sys.exit(1)
++
++    # 3. Delete the veth pair
++    if not delete_veth_pair(ifname):
++        out_err(f"Failed to delete veth pair for {ifname}")
++        sys.exit(1)
++
++    out_info(f"delete_ovs_access completed successfully for {iface}")
++    sys.exit(0)
++
++
++if __name__ == "__main__":
++    syslog.openlog("ifupdown", syslog.LOG_PID, syslog.LOG_DAEMON)
++    main()
+diff --git a/if-pre-up-scripts/create_ovs_access b/if-pre-up-scripts/create_ovs_access
+new file mode 100755
+index 0000000..5be013d
+--- /dev/null
++++ b/if-pre-up-scripts/create_ovs_access
+@@ -0,0 +1,423 @@
++#!/usr/bin/env python3
++#
++# Script to create OVS access veth interfaces based on the
++# stx-description field in /etc/network/interfaces.d/ifcfg-$IFACE.
++#
++# This script runs in the if-pre-up.d phase to ensure the veth pair
++# and bridge are ready before the interface is fully configured.
++#
++# When an interface config contains a stx-description line with
++# 'ovs-access=<ethdev>', this script will:
++#   1. Create a linux bridge named 'ovs0' if it doesn't exist
++#   2. Create a veth pair: <ifname> and <ifname>-ovs
++#   3. Bring both ends of the veth pair up
++#   4. Add <ifname>-ovs as a member of the ovs0 bridge
++#   5. Attach the specified ethernet device <ethdev> to the bridge
++#   6. Configure and start the ovs-access-monitor service
++#
++#   This program is free software; you can redistribute it and/or modify
++#   it under the terms of the GNU General Public License as published by
++#   the Free Software Foundation; either version 2 of the License, or
++#   (at your option) any later version.
++
++import os
++import subprocess
++import sys
++import syslog
++
++INTERFACES_DIR = "/etc/network/interfaces.d"
++BRIDGE_NAME = "ovs0"
++DEFAULT_FILE = "/etc/default/network-test"
++MONITOR_SERVICE = "ovs-access-monitor.service"
++MONITOR_CONF_DIR = "/etc/ovs-access-monitor"
++MONITOR_CONF_FILE = os.path.join(MONITOR_CONF_DIR, "ovs-access-monitor.conf")
++
++# Read defaults
++DO_SYSLOG = "yes"
++VERBOSITY = 0
++
++if os.path.isfile(DEFAULT_FILE):
++    with open(DEFAULT_FILE, "r") as f:
++        for line in f:
++            line = line.strip()
++            if line.startswith("DO_SYSLOG="):
++                DO_SYSLOG = line.split("=", 1)[1].strip('"').strip("'")
++            elif line.startswith("VERBOSITY="):
++                try:
++                    VERBOSITY = int(line.split("=", 1)[1].strip('"').strip("'"))
++                except ValueError:
++                    pass
++
++
++def do_output(level, msg):
++    """Output messages mimicking the do_output() bash function.
++
++    When DO_SYSLOG is 'yes', log via syslog with the appropriate priority.
++    Otherwise, print to stderr for err/warning, stdout for others.
++    """
++    if DO_SYSLOG == "yes":
++        priority_map = {
++            "err": syslog.LOG_ERR,
++            "warning": syslog.LOG_WARNING,
++            "debug": syslog.LOG_DEBUG,
++            "info": syslog.LOG_INFO,
++        }
++        priority = priority_map.get(level, syslog.LOG_INFO)
++        syslog.syslog(syslog.LOG_DAEMON | priority, f"ifupdown: {msg}")
++    else:
++        output = f"ifupdown: {msg}"
++        if level in ("err", "warning"):
++            print(output, file=sys.stderr)
++        else:
++            print(output)
++
++
++def out_err(msg):
++    do_output("err", msg)
++
++
++def out_warn(msg):
++    do_output("warning", msg)
++
++def out_info(msg):
++    do_output("info", msg)
++
++def out_debug(msg):
++    if VERBOSITY >= 1:
++        do_output("debug", msg)
++
++
++def run_cmd(cmd):
++    """Run a command and return (returncode, stdout, stderr)."""
++    out_debug(f"Running: {' '.join(cmd)}")
++    result = subprocess.run(cmd, capture_output=True, text=True)
++    if result.stdout.strip():
++        out_debug(f"stdout: {result.stdout.strip()}")
++    if result.stderr.strip():
++        out_debug(f"stderr: {result.stderr.strip()}")
++    return result.returncode, result.stdout, result.stderr
++
++
++def link_exists(name):
++    """Check if a network link (interface/bridge) already exists."""
++    rc, _, _ = run_cmd(["ip", "link", "show", name])
++    return rc == 0
++
++
++def get_stx_description(iface):
++    """Read the interface config file and return the stx-description line."""
++    config_path = os.path.join(INTERFACES_DIR, f"ifcfg-{iface}")
++    if not os.path.isfile(config_path):
++        out_debug(f"Config file not found: {config_path}")
++        return None
++
++    with open(config_path, "r") as f:
++        for line in f:
++            stripped = line.strip()
++            if stripped.startswith("stx-description"):
++                return stripped
++    return None
++
++
++def ensure_bridge():
++    """Ensure the ovs0 bridge exists and is up."""
++    if not link_exists(BRIDGE_NAME):
++        out_debug(f"Creating bridge {BRIDGE_NAME}")
++        rc, _, stderr = run_cmd(
++            ["ip", "link", "add", BRIDGE_NAME, "type", "bridge"]
++        )
++        if rc != 0:
++            out_err(f"Failed to create bridge {BRIDGE_NAME}: {stderr.strip()}")
++            return False
++    else:
++        out_debug(f"Bridge {BRIDGE_NAME} already exists")
++
++    rc, _, stderr = run_cmd(["ip", "link", "set", BRIDGE_NAME, "up"])
++    if rc != 0:
++        out_err(f"Failed to bring up bridge {BRIDGE_NAME}: {stderr.strip()}")
++        return False
++
++    if not is_link_up(BRIDGE_NAME):
++        out_err(f"Bridge {BRIDGE_NAME} is not UP after configuration")
++        return False
++
++    out_debug(f"Verified bridge {BRIDGE_NAME} is UP")
++    return True
++
++
++def is_link_up(name):
++    """Check if a network link is in UP state.
++
++    Checks the administrative state (UP flag) from ip link output,
++    since operstate can report 'unknown' for bridges and veth devices
++    even when they are functioning correctly.
++    """
++    rc, stdout, _ = run_cmd(["ip", "link", "show", name])
++    if rc != 0:
++        return False
++    # Check for the UP flag in the angle brackets, e.g. <BROADCAST,MULTICAST,UP,LOWER_UP>
++    for line in stdout.splitlines():
++        if name in line and "<" in line:
++            flags_section = line.split("<")[1].split(">")[0]
++            flags = flags_section.split(",")
++            return "UP" in flags
++    return False
++
++
++def create_veth_pair(ifname):
++    """Create a veth pair and attach the -ovs end to the bridge."""
++    peer_name = f"{ifname}-ovs"
++
++    if link_exists(ifname):
++        out_debug(f"Interface {ifname} already exists, skipping creation")
++        return True
++
++    out_debug(f"Creating veth pair: {ifname} <-> {peer_name}")
++    rc, _, stderr = run_cmd(
++        ["ip", "link", "add", ifname, "type", "veth", "peer", "name", peer_name]
++    )
++    if rc != 0:
++        out_err(f"Failed to create veth pair {ifname}/{peer_name}: {stderr.strip()}")
++        return False
++
++    rc, _, stderr = run_cmd(["ip", "link", "set", ifname, "up"])
++    if rc != 0:
++        out_err(f"Failed to bring up {ifname}: {stderr.strip()}")
++        return False
++
++    rc, _, stderr = run_cmd(["ip", "link", "set", peer_name, "up"])
++    if rc != 0:
++        out_err(f"Failed to bring up {peer_name}: {stderr.strip()}")
++        return False
++
++    rc, _, stderr = run_cmd(
++        ["ip", "link", "set", "dev", peer_name, "master", BRIDGE_NAME]
++    )
++    if rc != 0:
++        out_err(
++            f"Failed to add {peer_name} to bridge {BRIDGE_NAME}: {stderr.strip()}"
++        )
++        return False
++
++    # Verify both interfaces and bridge are UP after attaching to bridge
++    if not is_link_up(ifname):
++        out_err(f"Interface {ifname} is not UP after configuration")
++        return False
++
++    if not is_link_up(peer_name):
++        out_err(f"Interface {peer_name} is not UP after configuration")
++        return False
++
++    if not is_link_up(BRIDGE_NAME):
++        out_err(f"Bridge {BRIDGE_NAME} is not UP after attaching {peer_name}")
++        return False
++
++    out_debug(f"Verified {ifname}, {peer_name} and {BRIDGE_NAME} are all UP")
++    out_debug(f"Successfully created veth pair and attached to {BRIDGE_NAME}")
++    return True
++
++
++def get_ifname_from_description(description):
++    """Extract the ifname from the stx-description line.
++
++    Expected format: stx-description ifname:<name>,net:<net>,ovs-access=<ethdev>
++    """
++    # Get the part after 'stx-description '
++    parts = description.split(None, 1)
++    if len(parts) < 2:
++        return None, None
++
++    fields = parts[1].split(",")
++    ifname = None
++    eth_device = None
++    for field in fields:
++        if field.startswith("ifname:"):
++            ifname = field.split(":", 1)[1]
++        elif field.startswith("ovs-access="):
++            eth_device = field.split("=", 1)[1]
++    return ifname, eth_device
++
++
++def attach_eth_to_bridge(eth_device):
++    """Attach the ethernet device to the bridge."""
++    if not link_exists(eth_device):
++        out_err(f"Ethernet device {eth_device} does not exist")
++        return False
++
++    out_debug(f"Attaching {eth_device} to bridge {BRIDGE_NAME}")
++
++    rc, _, stderr = run_cmd(["ip", "link", "set", eth_device, "up"])
++    if rc != 0:
++        out_err(f"Failed to bring up {eth_device}: {stderr.strip()}")
++        return False
++
++    rc, _, stderr = run_cmd(
++        ["ip", "link", "set", "dev", eth_device, "master", BRIDGE_NAME]
++    )
++    if rc != 0:
++        out_err(
++            f"Failed to add {eth_device} to bridge {BRIDGE_NAME}: {stderr.strip()}"
++        )
++        return False
++
++    if not is_link_up(eth_device):
++        out_err(f"Ethernet device {eth_device} is not UP after attaching to bridge")
++        return False
++
++    out_debug(f"Successfully attached {eth_device} to {BRIDGE_NAME}")
++    return True
++
++
++def service_exists(service):
++    """Check if a systemd service unit exists."""
++    rc, _, _ = run_cmd(["systemctl", "cat", service])
++    return rc == 0
++
++
++def is_service_active(service):
++    """Check if a systemd service is currently active (running)."""
++    rc, _, _ = run_cmd(["systemctl", "is-active", service])
++    return rc == 0
++
++
++def ensure_monitor_config(eth_device):
++    """Ensure the ovs-access-monitor config file exists with correct content."""
++    if not os.path.isdir(MONITOR_CONF_DIR):
++        out_debug(f"Creating config directory {MONITOR_CONF_DIR}")
++        os.makedirs(MONITOR_CONF_DIR, exist_ok=True)
++
++    if not os.path.isfile(MONITOR_CONF_FILE):
++        out_debug(f"Creating config file {MONITOR_CONF_FILE}")
++        content = (
++            "# OVS Access Bridge Failover Monitor Configuration\n"
++            "#\n"
++            "# This file is read by the ovs-access-monitor service.\n"
++            "# It should be installed at /etc/ovs-access-monitor/ovs-access-monitor.conf\n"
++            "#\n"
++            "# The actual configuration file is generated by the create_ovs_access\n"
++            "# ifupdown script when an interface with ovs-access flag is brought up.\n"
++            "\n"
++            "# PF interface that provides fallback connectivity to the ovs0 bridge.\n"
++            "# This interface will be added/removed from the bridge depending on\n"
++            "# the OVS agent pod health.\n"
++            "# (Required - no default)\n"
++            f"failover_interface={eth_device}\n"
++        )
++        with open(MONITOR_CONF_FILE, "w") as f:
++            f.write(content)
++    else:
++        out_debug(f"Config file {MONITOR_CONF_FILE} already exists, updating failover_interface")
++        # Read existing content and update failover_interface
++        lines = []
++        found = False
++        with open(MONITOR_CONF_FILE, "r") as f:
++            for line in f:
++                if line.strip().startswith("failover_interface="):
++                    lines.append(f"failover_interface={eth_device}\n")
++                    found = True
++                else:
++                    lines.append(line)
++        if not found:
++            lines.append(f"failover_interface={eth_device}\n")
++        with open(MONITOR_CONF_FILE, "w") as f:
++            f.writelines(lines)
++
++    out_debug(f"Monitor config set: failover_interface={eth_device}")
++    return True
++
++
++def start_monitor_service():
++    """Start or restart the ovs-access-monitor service.
++
++    Uses --no-block to avoid deadlocking with networking.service,
++    since this script runs inside the networking startup path and
++    systemd would otherwise wait for the monitor service to finish
++    starting before completing the networking job.
++    """
++    if not service_exists(MONITOR_SERVICE):
++        out_warn(f"Service {MONITOR_SERVICE} does not exist, skipping")
++        return True
++
++    if is_service_active(MONITOR_SERVICE):
++        out_debug(f"Service {MONITOR_SERVICE} is already running, restarting")
++        rc, _, stderr = run_cmd(
++            ["systemctl", "restart", "--no-block", MONITOR_SERVICE]
++        )
++    else:
++        out_debug(f"Starting service {MONITOR_SERVICE}")
++        rc, _, stderr = run_cmd(
++            ["systemctl", "start", "--no-block", MONITOR_SERVICE]
++        )
++
++    if rc != 0:
++        out_err(f"Failed to start/restart {MONITOR_SERVICE}: {stderr.strip()}")
++        return False
++
++    out_debug(f"Service {MONITOR_SERVICE} start queued")
++    return True
++
++
++def main():
++    iface = os.environ.get("IFACE")
++    if not iface:
++        out_err("IFACE environment variable not set")
++        sys.exit(1)
++
++    out_debug(f"Processing interface: {iface}")
++
++    description = get_stx_description(iface)
++    if description is None:
++        out_debug(f"No stx-description found for {iface}, skipping")
++        sys.exit(0)
++
++    if "ovs-access" not in description:
++        out_debug(f"No ovs-access in stx-description for {iface}, skipping")
++        sys.exit(0)
++
++    out_debug(f"Found ovs-access for {iface}: {description}")
++
++    # Extract the ifname and ethernet device from stx-description
++    ifname, eth_device = get_ifname_from_description(description)
++    if not ifname:
++        out_err(
++            f"Could not extract ifname from stx-description: {description}"
++        )
++        sys.exit(1)
++
++    if not eth_device:
++        out_err(
++            f"Could not extract ethernet device from ovs-access in stx-description: {description}"
++        )
++        sys.exit(1)
++
++    # Ensure bridge exists
++    if not ensure_bridge():
++        out_err(f"Failed to ensure bridge {BRIDGE_NAME}")
++        sys.exit(1)
++
++    # Create the veth pair
++    if not create_veth_pair(ifname):
++        out_err(f"Failed to create veth pair for {ifname}")
++        sys.exit(1)
++
++    # Attach the ethernet device to the bridge
++    if not attach_eth_to_bridge(eth_device):
++        out_err(f"Failed to attach {eth_device} to bridge {BRIDGE_NAME}")
++        sys.exit(1)
++
++    # Ensure monitor config and start the service
++    if not ensure_monitor_config(eth_device):
++        out_err(f"Failed to configure {MONITOR_SERVICE}")
++        sys.exit(1)
++
++    if not start_monitor_service():
++        out_err(f"Failed to start {MONITOR_SERVICE}")
++        sys.exit(1)
++
++    out_info(f"create_ovs_access completed successfully for {iface}")
++    sys.exit(0)
++
++
++if __name__ == "__main__":
++    syslog.openlog("ifupdown", syslog.LOG_PID, syslog.LOG_DAEMON)
++    main()
+-- 
+2.34.1
+
