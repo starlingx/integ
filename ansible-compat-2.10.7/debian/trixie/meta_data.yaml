@@ -10,9 +10,9 @@ dl_files:
     url: https://files.pythonhosted.org/packages/ba/22/7b58a8ba8e43159dc5cb32d97dd50e2b70b016585dbb188e9f2b61dac1e2/ansible-2.10.7.tar.gz
     sha256sum: 9ff024500116d53c460cb09ea92e3c9404119f100d1d1ff0de69a9dafca561d5
     topdir: null
-  ansible-base-2.10.17.tar.gz:
-    url: https://files.pythonhosted.org/packages/fe/56/b18bf0167aa6e2ab195d0c2736992a3a9aeca1ddbefebee554226d211267/ansible-base-2.10.17.tar.gz
-    sha256sum: ef925882ca8d4c3c2ccd091cde199e0c869024ccad0d07a337dcf207bff32f34
+  ansible-base-2.10.7.tar.gz:
+    url: https://files.pythonhosted.org/packages/ba/58/009ab5eccdac9f44c52cc50391d5c8b986bc6559e0d56f3cc558a779ca48/ansible-base-2.10.7.tar.gz
+    sha256sum: b15fa8b2dcfa613d2e7bfc8ec6524b1094d50ed29613b1fcc27237c017fe8d40
     topdir: null
   netaddr-1.3.0-py3-none-any.whl:
     url: https://files.pythonhosted.org/packages/12/cc/f4fe2c7ce68b92cbf5b2d379ca366e1edae38cccaad00f69f529b460c3ef/netaddr-1.3.0-py3-none-any.whl
@@ -22,9 +22,9 @@ dl_files:
     url: https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl
     sha256sum: a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64
     topdir: null
-  jinja2-3.1.6-py3-none-any.whl:
-    url: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
-    sha256sum: 85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
+  jinja2-2.11.3-py2.py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/7e/c2/1eece8c95ddbc9b1aeb64f5783a9e07a286de42191b7204d67b7496ddf35/Jinja2-2.11.3-py2.py3-none-any.whl
+    sha256sum: 03e47ad063331dd6a3f04a43eddca8a966a26ba0c5b7207a9a9e4e08f1b29419
     topdir: null
   pyyaml-6.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl:
     url: https://files.pythonhosted.org/packages/73/b9/793686b2d54b531203c160ef12bec60228a0109c79bae6c1277961026770/pyyaml-6.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -42,9 +42,9 @@ dl_files:
     url: https://files.pythonhosted.org/packages/a0/e3/59cd50310fc9b59512193629e1984c1f95e5c8ae6e5d8c69532ccc65a7fe/pycparser-2.23-py3-none-any.whl
     sha256sum: e5c6e8d3fbad53479cab09ac03729e0a9faf2bee3db8208a550daf5af81a5934
     topdir: null
-  markupsafe-3.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl:
-    url: https://files.pythonhosted.org/packages/6f/bc/4dc914ead3fe6ddaef035341fee0fc956949bbd27335b611829292b89ee2/markupsafe-3.0.3-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
-    sha256sum: e8fc20152abba6b83724d7ff268c249fa196d8259ff481f3b1476383f8f24e42
+  MarkupSafe-2.0.1-cp39-cp39-manylinux1_x86_64.whl:
+    url: https://files.pythonhosted.org/packages/50/99/06eccf68be0bff67ab9a0b90b5382c04769f9ad2e42cae5e5e92f99380cd/MarkupSafe-2.0.1-cp39-cp39-manylinux1_x86_64.whl
+    sha256sum: f5653a225f31e113b152e56f154ccbe59eeb1c7487b39b9d9f9cdb58e6c79dc5
     topdir: null
   packaging-26.2-py3-none-any.whl:
     url: https://files.pythonhosted.org/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl
@@ -61,6 +61,10 @@ dl_files:
   wheel-0.47.0-py3-none-any.whl:
     url: https://files.pythonhosted.org/packages/87/1b/9e33c09813d65e248f7f773119148a612516a4bea93e9c6f545f78455b7c/wheel-0.47.0-py3-none-any.whl
     sha256sum: 212281cab4dff978f6cedd499cd893e1f620791ca6ff7107cf270781e587eced
+    topdir: null
+  six-1.17.0-py2.py3-none-any.whl:
+    url: https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl
+    sha256sum: 4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274
     topdir: null
 revision:
   dist: $STX_DIST
