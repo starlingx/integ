@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+
+pkg_name := $(shell dh_listpackages)
+DEBIAN_DIR := debian/${pkg_name}
+
+export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+override_dh_install:
+	dh_install
+	mv ${DEBIAN_DIR}/etc/init.d/docker_initd.sh ${DEBIAN_DIR}/etc/init.d/docker
+
+override_dh_dwz:
+

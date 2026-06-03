@@ -1,3 +1,9 @@
+docker.io (28.5.2) unstable; urgency=medium
+
+  * Updated for stx debian packaging
+
+ -- HemaPriya T <HemaPriya.T@windriver.com>  Tue, 06 May 2026 06:34:00 +0000
+
 docker.io (28.5.1) unstable; urgency=medium
 
   * Updated for stx debian packaging

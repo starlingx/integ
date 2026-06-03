@@ -20,7 +20,7 @@ Copyright:
 License: Apache-2.0
 
 Other files are included from the upstream docker binary package at
-https://download.docker.com/linux/static/stable/aarch64/docker-28.5.1.tgz
+https://download.docker.com/linux/static/stable/aarch64/docker-28.5.2.tgz
 
 License: Apache-2.0
  Licensed under the Apache License, Version 2.0 (the "License");

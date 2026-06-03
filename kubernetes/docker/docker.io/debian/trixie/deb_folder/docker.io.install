@@ -1,0 +1,8 @@
+#!/usr/bin/dh-exec --with=install
+docker usr/bin/
+dockerd usr/sbin/
+docker-init usr/bin/
+docker-proxy usr/sbin/
+docker.service lib/systemd/system/
+docker.socket lib/systemd/system/
+docker_initd.sh etc/init.d/

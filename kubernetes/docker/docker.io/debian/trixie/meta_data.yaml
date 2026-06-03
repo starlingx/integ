@@ -1,0 +1,12 @@
+---
+debname: docker.io
+debver: 29.4.2
+dl_path:
+  name: docker.io-29.4.2.tgz
+  url: https://download.docker.com/linux/static/stable/x86_64/docker-29.4.2.tgz
+  sha256sum: e985c6dc5008b8d62d6bdf9b5894427d075b335a1391cacf24ee01a7a29a3728
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 104e185b1072b4dc447cd446fb56b58ee0e0d3f8
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/docker/docker.io
