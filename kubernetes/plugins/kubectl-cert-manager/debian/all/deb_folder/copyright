@@ -2,7 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: cert-manager
 Upstream-Contact: https://github.com/cert-manager/
-Source: https://github.com/cert-manager/cert-manager
+Source: https://github.com/cert-manager/cmctl
 Files: *
 Copyright: (C) Copyright 2016 The Kubernetes Authors All Rights Reserved
 License: Apache-2
