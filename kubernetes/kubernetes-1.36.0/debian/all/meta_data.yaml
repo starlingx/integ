@@ -1,0 +1,11 @@
+---
+debver: 1.36.0
+dl_path:
+  name: kubernetes-1.36.0.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.36.0.tar.gz
+  sha256sum: b98652d8ebf5d60d0715cd952e5d489aa10e14ad75d7b6e2425b8de8c65aa4c5
+revision:
+  dist: ${STX_DIST}
+  GITREVCOUNT:
+    BASE_SRCREV: b066dbd4de60e9db4ebbfdf398537d654f3af7ed
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.36.0

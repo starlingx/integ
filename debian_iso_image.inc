@@ -297,6 +297,10 @@ kubernetes-1.34.8-node
 kubernetes-1.35.2-client
 kubernetes-1.35.2-kubeadm
 kubernetes-1.35.2-node
+#kubernetes-1.36.0
+kubernetes-1.36.0-client
+kubernetes-1.36.0-kubeadm
+kubernetes-1.36.0-node
 
 #kubernetes-unversioned
 kubernetes-unversioned
