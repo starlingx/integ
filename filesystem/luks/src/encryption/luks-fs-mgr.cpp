@@ -15,6 +15,8 @@
 #include <syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <libgen.h>
 #include <unistd.h>
 #include <libdaemon/daemon.h>
 #include <iostream>
@@ -467,26 +469,72 @@ bool mountFilesystem(const char *volName, const char *mountPath,
  * ************************************************************************/
 bool writeJSONToFile(const char *filePath, json_object *jsonObj) {
     log("Creating json config file", LOG_INFO);
-    FILE *file = fopen(filePath, "w");
-    if (file == nullptr) {
-        log("Error opening file for writing JSON.", LOG_ERR);
-        return false;
-    }
-    // Convert JSON object to a string
+
+    // Convert JSON object to a string first, before touching any file
     const char *jsonStr = json_object_to_json_string_ext(jsonObj,
                                         JSON_C_TO_STRING_PRETTY);
-    if (jsonStr == nullptr) {
-        log("Error converting JSON to string.", LOG_ERR);
-        fclose(file);
+    if (jsonStr == nullptr || strlen(jsonStr) == 0) {
+        log("Error converting JSON to string or string is empty.", LOG_ERR);
         return false;
     }
-    // Write the JSON string to the file
-    if (fprintf(file, "%s\n", jsonStr) < 0) {
-        log("Error writing JSON to file.", LOG_ERR);
+
+    // Use atomic write pattern: write to temp file, fsync, then rename
+    string tmpPath = string(filePath) + ".XXXXXX";
+    int fd = mkstemp(&tmpPath[0]);
+    if (fd < 0) {
+        log("Error creating temp file for writing JSON.", LOG_ERR);
+        return false;
+    }
+    FILE *file = fdopen(fd, "w");
+    if (file == nullptr) {
+        log("Error opening temp file descriptor for writing.", LOG_ERR);
+        close(fd);
+        unlink(tmpPath.c_str());
+        return false;
+    }
+
+    // Write the JSON string to the temp file
+    int written = fprintf(file, "%s\n", jsonStr);
+    if (written < 0) {
+        log("Error writing JSON to temp file.", LOG_ERR);
         fclose(file);
+        unlink(tmpPath.c_str());
+        return false;
+    }
+
+    // Flush and sync to ensure data is on disk
+    if (fflush(file) != 0) {
+        log("Error flushing JSON temp file.", LOG_ERR);
+        fclose(file);
+        unlink(tmpPath.c_str());
+        return false;
+    }
+    if (fsync(fileno(file)) != 0) {
+        log("Error syncing JSON temp file to disk.", LOG_ERR);
+        fclose(file);
+        unlink(tmpPath.c_str());
         return false;
     }
     fclose(file);
+
+    // Atomic rename: replaces target file only after data is safely on disk
+    if (rename(tmpPath.c_str(), filePath) != 0) {
+        log("Error renaming temp file to target: " +
+            string(filePath), LOG_ERR);
+        unlink(tmpPath.c_str());
+        return false;
+    }
+
+    // Sync parent directory to ensure rename is persisted on disk
+    char *pathCopy = strdup(filePath);
+    char *parentDir = dirname(pathCopy);
+    int dfd = open(parentDir, O_RDONLY | O_DIRECTORY);
+    if (dfd >= 0) {
+        fsync(dfd);
+        close(dfd);
+    }
+    free(pathCopy);
+
     return true;
 }
 /* ***********************************************************************
@@ -1052,6 +1100,52 @@ int copyKubeProviderFile(bool isController) {
 }
 /* ***********************************************************************
  *
+ * Name       : recoverVault
+ *
+ * Description: Attempts to recover a LUKS vault that failed to open.
+ *              On simplex systems, recovery is skipped to avoid
+ *              permanent data loss. On DX/DC, the corrupted vault is
+ *              backed up and recreated from scratch.
+ *
+ * ************************************************************************/
+bool recoverVault(const char* vaultFile, const char* vaultSize,
+                  const char* volName, const char* mountPath,
+                  const char* passphrase) {
+    // On simplex systems, vault recreation causes permanent data loss
+    // (no peer to restore from). Exit without recovery.
+    if (access(PLATFORM_SIMPLEX_MODE, F_OK) == 0) {
+        log("LUKS vault open failed on simplex system. "
+            "Cannot recover without data loss. "
+            "Manual recovery required.", LOG_CRIT);
+        return false;
+    }
+    log("Failed to open existing vault. Attempting recovery "
+        "by recreating the vault.", LOG_WARNING);
+    // Backup corrupted vault image for analysis
+    string backupCmd = "/usr/bin/cp " + string(vaultFile) + " " +
+                       string(vaultFile) + ".corrupted 2>/dev/null";
+    if (system(backupCmd.c_str()) != 0) {
+        log("Warning: failed to backup corrupted vault image.", LOG_WARNING);
+    }
+    string rmCmd = "/usr/bin/rm -f " + string(vaultFile);
+    if (system(rmCmd.c_str()) != 0) {
+        log("Recovery: failed to remove corrupted vault file.", LOG_ERR);
+        return false;
+    }
+    int size = checkVaultSize(vaultSize);
+    if (!createVaultFile(vaultFile, size) ||
+        !setupLUKSEncryption(vaultFile, passphrase) ||
+        !openLUKSVolume(vaultFile, volName, passphrase) ||
+        !createFilesystem(volName) ||
+        !mountFilesystem(volName, mountPath, defaultDirectoryPath)) {
+        log("Recovery: vault recreation failed.", LOG_ERR);
+        return false;
+    }
+    log("Recovery: vault recreated successfully.", LOG_INFO);
+    return true;
+}
+/* ***********************************************************************
+ *
  * Name       : handleResize
  *
  * Description: This function resizes the existing LUKS volume if there is
@@ -1112,7 +1206,17 @@ int handleResize(string &passphrase, string &volName) {
         if (!openLUKSVolume(createdLuksConfig.vaultFile,
                             createdLuksConfig.volName,
                             passphrase.c_str())) {
-            rc = 1;
+            // Recovery: If luksOpen fails (e.g. corrupted header or
+            // passphrase mismatch), recreate the vault from scratch.
+            if (!recoverVault(createdLuksConfig.vaultFile,
+                              createdLuksConfig.vaultSize,
+                              createdLuksConfig.volName,
+                              createdLuksConfig.mountPath,
+                              passphrase.c_str())) {
+                rc = 1;
+                goto cleanup;
+            }
+            volName = string(createdLuksConfig.volName);
             goto cleanup;
         }
         log("LUKS device is successfully opened", LOG_INFO);
@@ -1285,8 +1389,18 @@ int initialVolCreate(string &passphrase, string &volName) {
             log("LUKS device is not open. Try opening", LOG_INFO);
             if (!openLUKSVolume(modifiedVaultFile.c_str(),
                                 luksConfig.volName, passphrase.c_str())) {
-                rc = 1;
-                goto cleanup;
+                // Recovery: If luksOpen fails (e.g. passphrase mismatch
+                // after upgrade where created_luks.json was lost), remove
+                // the stale vault and recreate it from scratch.
+                if (!recoverVault(modifiedVaultFile.c_str(),
+                                  luksConfig.vaultSize,
+                                  luksConfig.volName,
+                                  luksConfig.mountPath,
+                                  passphrase.c_str())) {
+                    rc = 1;
+                    goto cleanup;
+                }
+                goto write_config;
             }
             log("LUKS device is successfully opened", LOG_INFO);
          }
@@ -1365,6 +1479,7 @@ int initialVolCreate(string &passphrase, string &volName) {
         }
         log("Encrypted vault is set up and mounted.", LOG_INFO);
     }
+    write_config:
     if (!isMountPathValid(luksConfig.mountPath, defaultDirectoryPath)) {
         log("Mount path is not valid, using default mount path.", LOG_INFO);
         mountPath = defaultMountPath;  // Use default mount path
@@ -1609,8 +1724,17 @@ int main() {
         // Volume exists, check resize required or not and handle
         rc = handleResize(passphrase, volName);
         if (rc != 0) {
-            log("Volume resize failed. Error code: " + to_string(rc), LOG_ERR);
-            return rc;
+            // handleResize can fail if created_luks.json is corrupt/empty.
+            // Fall through to initialVolCreate which reads luks_config.json
+            // and can open an existing vault without the metadata file.
+            log("handleResize failed (rc=" + to_string(rc) +
+                "), falling back to initialVolCreate", LOG_WARNING);
+            rc = initialVolCreate(passphrase, volName);
+            if (rc != 0) {
+                log("Initial volume creation also failed. Error code: " +
+                     to_string(rc), LOG_ERR);
+                return rc;
+            }
         }
     } else {
         rc = initialVolCreate(passphrase, volName);
