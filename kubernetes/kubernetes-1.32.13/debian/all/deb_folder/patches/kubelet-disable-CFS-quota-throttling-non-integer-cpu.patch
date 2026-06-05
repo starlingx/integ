@@ -38,7 +38,7 @@ index 9e72a7cc97a..733eb9e3e29 100644
 @@ -73,6 +73,9 @@ type Manager interface {
  	// State returns a read-only interface to the internal CPU manager state.
  	State() state.Reader
- 
+
 +	// GetCPUPolicy returns the assigned CPU manager policy
 +	GetCPUPolicy() string
 +
@@ -48,7 +48,7 @@ index 9e72a7cc97a..733eb9e3e29 100644
 @@ -250,6 +253,10 @@ func (m *manager) Start(activePods ActivePodsFunc, sourcesReady config.SourcesRe
  	return nil
  }
- 
+
 +func (m *manager) GetCPUPolicy() string {
 +	return m.policy.Name()
 +}
@@ -62,7 +62,7 @@ index 8f00ec3784b..d28ff1e064e 100644
 +++ b/pkg/kubelet/cm/cpumanager/fake_cpu_manager.go
 @@ -17,7 +17,7 @@ limitations under the License.
  package cpumanager
- 
+
  import (
 -	"k8s.io/api/core/v1"
 +	v1 "k8s.io/api/core/v1"
@@ -71,18 +71,18 @@ index 8f00ec3784b..d28ff1e064e 100644
  	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager/state"
 @@ -28,7 +28,8 @@ import (
  )
- 
+
  type fakeManager struct {
 -	state state.State
 +	policy Policy
 +	state  state.State
  }
- 
+
  func (m *fakeManager) Start(activePods ActivePodsFunc, sourcesReady config.SourcesReady, podStatusProvider status.PodStatusProvider, containerRuntime runtimeService, initialContainers containermap.ContainerMap) error {
 @@ -70,6 +71,10 @@ func (m *fakeManager) State() state.Reader {
  	return m.state
  }
- 
+
 +func (m *fakeManager) GetCPUPolicy() string {
 +	return m.policy.Name()
 +}
@@ -112,8 +112,8 @@ index 6e1ee829d29..406ceddd926 100644
 +		// NOTE: 4.18 kernel attempts to solve CFS throttling problem,
 +		// but there are reports that it is not completely effective.
 +		// This will configure cgroup CFS parameters at pod level:
-+		// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/cpu.cfs_quota_us
-+		// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/cpu.cfs_period_us
++		// /sys/fs/cgroup/cpu/k8sinfra/kubepods/<pod>/cpu.cfs_quota_us
++		// /sys/fs/cgroup/cpu/k8sinfra/kubepods/<pod>/cpu.cfs_period_us
 +		cpuQuota = int64(-1)
 +		cpuPeriod = uint64(100000)
 +
@@ -236,7 +236,7 @@ index 92bab254975..738dfa5795c 100644
 +			expected:         &ResourceConfig{CPUShares: &guaranteedShares, CPUQuota: &cpuNoLimit, CPUPeriod: &guaranteedQuotaPeriod, Memory: &guaranteedMemory},
  		},
  	}
- 
+
 diff --git a/pkg/kubelet/cm/internal_container_lifecycle_linux.go b/pkg/kubelet/cm/internal_container_lifecycle_linux.go
 index 0c3bb2e4999..ac7d9a27527 100644
 --- a/pkg/kubelet/cm/internal_container_lifecycle_linux.go
@@ -247,15 +247,15 @@ index 0c3bb2e4999..ac7d9a27527 100644
  	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 +	v1qos "k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
  )
- 
+
  func (i *internalContainerLifecycleImpl) PreCreateContainer(pod *v1.Pod, container *v1.Container, containerConfig *runtimeapi.ContainerConfig) error {
 @@ -36,6 +37,18 @@ func (i *internalContainerLifecycleImpl) PreCreateContainer(pod *v1.Pod, contain
  		}
  	}
- 
+
 +	// Disable cgroup CFS throttle at the container level.
-+	// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/<container>/cpu.cfs_quota_us
-+	// /sys/fs/cgroup/cpu/k8s-infra/kubepods/<pod>/<container>/cpu.cfs_period_us
++	// /sys/fs/cgroup/cpu/k8sinfra/kubepods/<pod>/<container>/cpu.cfs_quota_us
++	// /sys/fs/cgroup/cpu/k8sinfra/kubepods/<pod>/<container>/cpu.cfs_period_us
 +	// We can only set CpuQuota to -1 if we're allocating the entire CPU.
 +	// For fractional CPUs the CpuQuota is needed to enforce the limit.
 +	cpuQuantity := container.Resources.Requests[v1.ResourceCPU]
@@ -268,6 +268,6 @@ index 0c3bb2e4999..ac7d9a27527 100644
  	if i.memoryManager != nil {
  		numaNodes := i.memoryManager.GetMemoryNUMANodes(pod, container)
  		if numaNodes.Len() > 0 {
--- 
+--
 2.34.1
 

@@ -15,8 +15,8 @@ https://github.com/kubernetes/kubernetes/pull/125923/commits/c51195dbd02abcab288
 
 In the case of cpu manager policy 'none', there are no allocatable cpus.
 Initializing the container manager cpuset using GetAllCPUs() produces a
-write violation for k8s-infra/kubepods/cpuset.cpus since the cpuset is
-larger than the parent cgroup k8s-infra/cpuset.cpus.
+write violation for k8sinfra/kubepods/cpuset.cpus since the cpuset is
+larger than the parent cgroup k8sinfra/cpuset.cpus.
 
 This update initializes 'none' with GetAllocatableCPUs() which is an
 empty cpuset. Note that if GetAllCPUs() were to be used, we should also
@@ -38,14 +38,14 @@ index 7fa180cefdd..a848031349c 100644
  	// Only do so on None policy, as Static policy will do its own updating of the cpuset.
  	// Please see the comment on policy none's GetAllocatableCPUs
 +	// NOTE(jgauld): For None policy, there are no allocatable CPUs.
-+	// We must configure a subset of the k8s-infra parent cpuset, otherwise
-+	// writes to k8s-infra/kubepods cgroupfs cpuset.cpus will fail.
++	// We must configure a subset of the k8sinfra parent cpuset, otherwise
++	// writes to k8sinfra/kubepods cgroupfs cpuset.cpus will fail.
  	if cm.cpuManager.GetAllocatableCPUs().IsEmpty() {
 -		rc.CPUSet = cm.cpuManager.GetAllCPUs()
 +		rc.CPUSet = cm.cpuManager.GetAllocatableCPUs()
  	}
- 
+
  	return rc
--- 
+--
 2.30.2
 

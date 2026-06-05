@@ -21,7 +21,7 @@ application/isolated CPUs regardless of what QoS class they're in.
 Moreover, the current starlingx platform containers implementation by
 definition does not have any cpu request and are allocated on reserved
 cpus, that are not under kubernetes management, however they are still
-allocated on the same cgroup of application containers (k8s-infra).
+allocated on the same cgroup of application containers (k8sinfra).
 This causes an imbalance on cpushares calculations performed by
 kubernetes. As a result, platform containers have a much lower priority
 on kernel cpu scheduling, and in case of resource contention
@@ -29,8 +29,8 @@ on kernel cpu scheduling, and in case of resource contention
 causing probe failures and latency spikes on kube-apiserver.
 
 This change allocates platform pods on a dedicated cgroup
-(k8s-infra-stx), so a balanced cpu shares distribution between
-platform and application pods (running on k8s-infra cgroup) can be
+(k8sinfra_stx), so a balanced cpu shares distribution between
+platform and application pods (running on k8sinfra cgroup) can be
 achieved.
 
 Co-authored-by: Jim Gauld <james.gauld@windriver.com>
@@ -59,12 +59,12 @@ index b67d04849c4..b0a0c888ef9 100644
 +++ b/pkg/kubelet/cm/cpumanager/policy_static.go
 @@ -17,12 +17,18 @@ limitations under the License.
  package cpumanager
- 
+
  import (
 +	"context"
  	"fmt"
  	"strconv"
- 
+
  	v1 "k8s.io/api/core/v1"
 +	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
  	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -79,7 +79,7 @@ index b67d04849c4..b0a0c888ef9 100644
 @@ -44,6 +50,22 @@ const (
  	ErrorSMTAlignment = "SMTAlignmentError"
  )
- 
+
 +// Declared as variables so that they can easily more
 +// overridden during testing
 +type getPodNamespace func(string) (*v1.Namespace, error)
@@ -101,7 +101,7 @@ index b67d04849c4..b0a0c888ef9 100644
  	RequestedCPUs         int
 @@ -335,6 +357,38 @@ func (p *staticPolicy) updateCPUsToReuse(pod *v1.Pod, container *v1.Container, c
  }
- 
+
  func (p *staticPolicy) Allocate(s state.State, pod *v1.Pod, container *v1.Container) (rerr error) {
 +	// Process infra pods before guaranteed pods
 +	if varIsKubeInfra(pod) {
@@ -152,7 +152,7 @@ index b67d04849c4..b0a0c888ef9 100644
 @@ -743,6 +801,70 @@ func (p *staticPolicy) generateCPUTopologyHints(availableCPUs cpuset.CPUSet, reu
  	return hints
  }
- 
+
 +func getPodNamespaceObject(podNamespaceName string) (*v1.Namespace, error) {
 +
 +	kubeConfigPath := constants.GetKubeletKubeConfigPath()
@@ -226,13 +226,13 @@ index 28fea9c8aa7..46f37c2b37d 100644
 +++ b/pkg/kubelet/cm/cpumanager/policy_static_test.go
 @@ -17,13 +17,16 @@ limitations under the License.
  package cpumanager
- 
+
  import (
 +	"errors"
  	"fmt"
  	"reflect"
  	"testing"
- 
+
  	v1 "k8s.io/api/core/v1"
 +	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
  	"k8s.io/apimachinery/pkg/types"
@@ -252,7 +252,7 @@ index 28fea9c8aa7..46f37c2b37d 100644
 @@ -1096,7 +1100,17 @@ func TestStaticPolicyStartWithResvList(t *testing.T) {
  	}
  }
- 
+
 +func fakeIsKubeInfraTrue(pod *v1.Pod) bool {
 +	return true
 +}
@@ -264,7 +264,7 @@ index 28fea9c8aa7..46f37c2b37d 100644
  func TestStaticPolicyAddWithResvList(t *testing.T) {
 +	infraPod := makePod("fakePod", "fakeContainer2", "200m", "200m")
 +	infraPod.Namespace = "kube-system"
- 
+
  	testCases := []staticPolicyTestWithResvList{
  		{
 @@ -1107,6 +1121,7 @@ func TestStaticPolicyAddWithResvList(t *testing.T) {
@@ -305,11 +305,11 @@ index 28fea9c8aa7..46f37c2b37d 100644
 +			expCSet:         cpuset.New(0, 1),
  		},
  	}
- 
+
 @@ -1153,6 +1170,7 @@ func TestStaticPolicyAddWithResvList(t *testing.T) {
  			defaultCPUSet: testCase.stDefaultCPUSet,
  		}
- 
+
 +		varIsKubeInfra = testCase.isKubeInfraPod
  		container := &testCase.pod.Spec.Containers[0]
  		err = policy.Allocate(st, testCase.pod, container)
@@ -494,11 +494,11 @@ index 28fea9c8aa7..46f37c2b37d 100644
 +			expUncoreCache: cpuset.New(0), // best-effort across uncore cache 0 and 1
  		},
  	}
- 
+
 @@ -1832,6 +1850,133 @@ func TestStaticPolicyOptions(t *testing.T) {
  	}
  }
- 
+
 +func makePodWithLabels(podLabels map[string]string) *v1.Pod {
 +	return &v1.Pod{
 +		ObjectMeta: metav1.ObjectMeta{
@@ -644,7 +644,7 @@ index f6c230bc32f..ebb314eb434 100644
 @@ -241,6 +242,7 @@ func TestGetTopologyHints(t *testing.T) {
  			sourcesReady:      &sourcesReadyStub{},
  		}
- 
+
 +		varIsKubeInfra = fakeIsKubeInfraFalse
  		hints := m.GetTopologyHints(&tc.pod, &tc.container)[string(v1.ResourceCPU)]
  		if len(tc.expectedHints) == 0 && len(hints) == 0 {
@@ -652,7 +652,7 @@ index f6c230bc32f..ebb314eb434 100644
 @@ -289,6 +291,7 @@ func TestGetPodTopologyHints(t *testing.T) {
  			sourcesReady:      &sourcesReadyStub{},
  		}
- 
+
 +		varIsKubeInfra = fakeIsKubeInfraFalse
  		podHints := m.GetPodTopologyHints(&tc.pod)[string(v1.ResourceCPU)]
  		if len(tc.expectedHints) == 0 && len(podHints) == 0 {
@@ -660,7 +660,7 @@ index f6c230bc32f..ebb314eb434 100644
 @@ -471,6 +474,7 @@ func TestGetPodTopologyHintsWithPolicyOptions(t *testing.T) {
  				sourcesReady:      &sourcesReadyStub{},
  			}
- 
+
 +			varIsKubeInfra = fakeIsKubeInfraFalse
  			podHints := m.GetPodTopologyHints(&testCase.pod)[string(v1.ResourceCPU)]
  			sort.SliceStable(podHints, func(i, j int) bool {
@@ -675,7 +675,7 @@ index 3159e0ed7fa..8883b8cbf27 100644
  	kubefeatures "k8s.io/kubernetes/pkg/features"
 +	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager"
  )
- 
+
  const (
 @@ -109,13 +110,25 @@ func (m *podContainerManagerImpl) GetPodContainerName(pod *v1.Pod) (CgroupName,
  	podQOS := v1qos.GetPodQOS(pod)
@@ -709,7 +709,7 @@ index 3159e0ed7fa..8883b8cbf27 100644
 +		}
  	}
  	podContainer := GetPodCgroupNameSuffix(pod.UID)
- 
+
 @@ -229,7 +242,8 @@ func (m *podContainerManagerImpl) ReduceCPULimits(podCgroup CgroupName) error {
  func (m *podContainerManagerImpl) IsPodCgroup(cgroupfs string) (bool, types.UID) {
  	// convert the literal cgroupfs form to the driver specific value
@@ -735,19 +735,19 @@ index aac639c1e65..e92e87e1290 100644
 --- a/pkg/kubelet/cm/qos_container_manager_linux.go
 +++ b/pkg/kubelet/cm/qos_container_manager_linux.go
 @@ -25,6 +25,7 @@ import (
- 
+
  	v1 "k8s.io/api/core/v1"
  	"k8s.io/klog/v2"
 +	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager"
- 
+
  	"k8s.io/apimachinery/pkg/util/wait"
- 
+
 @@ -82,6 +83,7 @@ func (m *qosContainerManagerImpl) GetQOSContainersInfo() QOSContainersInfo {
  func (m *qosContainerManagerImpl) Start(getNodeAllocatable func() v1.ResourceList, activePods ActivePodsFunc) error {
  	cm := m.cgroupManager
  	rootContainer := m.cgroupRoot
-+	stxRootContainer := []string{"k8s-infra-stx", "kubepods"}
- 
++	stxRootContainer := []string{"k8sinfra_stx", "kubepods"}
+
  	if err := cm.Validate(rootContainer); err != nil {
  		return fmt.Errorf("error validating root container %v : %w", rootContainer, err)
 @@ -90,15 +92,17 @@ func (m *qosContainerManagerImpl) Start(getNodeAllocatable func() v1.ResourceLis
@@ -761,7 +761,7 @@ index aac639c1e65..e92e87e1290 100644
 +		v1.PodQOSBurstableSTX:  NewCgroupName(stxRootContainer, strings.ToLower(string(v1.PodQOSBurstable))),
 +		v1.PodQOSBestEffortSTX: NewCgroupName(stxRootContainer, strings.ToLower(string(v1.PodQOSBestEffort))),
  	}
- 
+
  	// Create containers for both qos classes
  	for qosClass, containerName := range qosClasses {
  		resourceParameters := &ResourceConfig{}
@@ -807,12 +807,12 @@ index aac639c1e65..e92e87e1290 100644
 +			}
  		}
  	}
- 
+
  	// make sure best effort is always 2 shares
  	bestEffortCPUShares := uint64(MinShares)
  	configs[v1.PodQOSBestEffort].ResourceParameters.CPUShares = &bestEffortCPUShares
 +	configs[v1.PodQOSBestEffortSTX].ResourceParameters.CPUShares = &bestEffortCPUShares
- 
+
  	// set burstable shares based on current observe state
  	burstableCPUShares := MilliCPUToShares(burstablePodCPURequest)
 +	burstableCPUSharesSTX := MilliCPUToShares(burstablePodCPURequestSTX)
@@ -820,7 +820,7 @@ index aac639c1e65..e92e87e1290 100644
 +	configs[v1.PodQOSBurstableSTX].ResourceParameters.CPUShares = &burstableCPUSharesSTX
  	return nil
  }
- 
+
 @@ -327,6 +342,18 @@ func (m *qosContainerManagerImpl) UpdateCgroups() error {
  			Name:               m.qosContainersInfo.BestEffort,
  			ResourceParameters: &ResourceConfig{},
@@ -838,14 +838,14 @@ index aac639c1e65..e92e87e1290 100644
 +			ResourceParameters: &ResourceConfig{},
 +		},
  	}
- 
+
  	// update the qos level cgroup settings for cpu shares
 diff --git a/pkg/kubelet/cm/types.go b/pkg/kubelet/cm/types.go
 index e6338d3af81..bc947a0f01f 100644
 --- a/pkg/kubelet/cm/types.go
 +++ b/pkg/kubelet/cm/types.go
 @@ -97,9 +97,12 @@ type CgroupManager interface {
- 
+
  // QOSContainersInfo stores the names of containers per qos
  type QOSContainersInfo struct {
 -	Guaranteed CgroupName
@@ -858,7 +858,7 @@ index e6338d3af81..bc947a0f01f 100644
 +	BestEffortSTX CgroupName
 +	BurstableSTX  CgroupName
  }
- 
+
  // PodContainerManager stores and manages pod level containers
 diff --git a/staging/src/k8s.io/api/core/v1/types.go b/staging/src/k8s.io/api/core/v1/types.go
 index f7641e485aa..0520c1d76ff 100644
@@ -875,8 +875,8 @@ index f7641e485aa..0520c1d76ff 100644
 +	// PodQOSBestEffortSTX is the BestEffort qos class for STX Platform Pods.
 +	PodQOSBestEffortSTX PodQOSClass = "BestEffortSTX"
  )
- 
+
  // PodDNSConfig defines the DNS parameters of a pod in addition to
--- 
+--
 2.43.0
 
