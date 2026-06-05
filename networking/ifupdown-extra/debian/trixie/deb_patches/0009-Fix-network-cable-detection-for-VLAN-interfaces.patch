@@ -1,0 +1,31 @@
+From 194ae5e5e5cfb20438925e8a67f112b29d6578d6 Mon Sep 17 00:00:00 2001
+From: Steven Webster <steven.webster@windriver.com>
+Date: Wed, 3 Jun 2026 18:36:29 +0000
+Subject: [PATCH 9/9] Fix network cable detection for VLAN interfaces
+
+We must check the sysfs operstate "lowerlayerdown" for VLAN
+interfaces.
+
+This change implements the Trixie part of the patch.
+
+Signed-off-by: Steven Webster <steven.webster@windriver.com>
+---
+ if-up-scripts/check-network-cable | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/if-up-scripts/check-network-cable b/if-up-scripts/check-network-cable
+index ce15e80..510ae88 100755
+--- a/if-up-scripts/check-network-cable
++++ b/if-up-scripts/check-network-cable
+@@ -103,7 +103,7 @@ check_status_ethtool() {
+ }
+ 
+ check_status_sysfs() {
+-	[ -f /sys/class/net/${IFACE}/operstate ] && [[ $(< /sys/class/net/${IFACE}/operstate) != "down" ]]
++	[ -f /sys/class/net/${IFACE}/operstate ] && [[ $(< /sys/class/net/${IFACE}/operstate) =~ ^(down|lowerlayerdown)$ ]]
+ }
+ 
+ # Status check function for all types of interfaces
+-- 
+2.47.2
+
