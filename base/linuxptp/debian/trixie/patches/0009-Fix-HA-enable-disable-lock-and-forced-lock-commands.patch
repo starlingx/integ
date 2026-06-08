@@ -1,0 +1,262 @@
+From f552d74e815e19d04bb8ebd3be1cf715d4bf67a4 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Mon, 1 Jun 2026 17:49:36 -0300
+Subject: [PATCH 09/11] Fix HA enable/disable lock and forced lock commands
+
+This commit fixes the HA commands:
+* forced lock <interface>
+* enable lock <interface>
+* disable lock <interface>
+
+Correct an indexing error in starts_with where the final character
+of the prefix was skipped. This resolves an issue where the function
+incorrectly accepted misspelled keywords.
+
+Correct the string comparisson in ha_handle_enable_lock_msg,
+ha_handle_enable_source_msg and ha_handle_disable_source_msg functions.
+This resolves an issue where those functions failed to find the domain
+corresponding to the interface name.
+
+Correct the src_name variable validation in ha_handle_enable_lock_msg,
+ha_handle_enable_source_msg and ha_handle_disable_source_msg functions.
+Fix an issue when the interface name is not provided as argument.
+
+Check src_domain and prev_src_domain pointers before derreferencing them
+in reconfigure function.
+
+Initilize now variable at resource allocation in do_loop and reconfigure
+functions. This resolve possible access before initialization when
+clock_gettime function fails.
+
+Reduce to debug level the entry messages in match requirements check
+functions.
+
+Test Plan:
+PASS Deploy an SX system with T-GM configuration, HA enabled and
+     two ptp4l instances.
+
+     When 'enable lock <interface>' is requested
+     Then phc2sys disables the automatic clock source selection algorithm
+     And selects as source the domains represented by the interface
+
+     When 'status' command is requested
+     Then the result points the selected source is the interface of the
+     previous command.
+     And the 'Source forced?' is 'yes'.
+
+     When 'disable lock' command is requested
+     Then phc2ys re-enables the automatic clock source selection algorithm
+     And runs the algoritm
+
+     When 'disable source <interface>' is called passing the currect selected
+     interface
+     Then the interface is removed from the list of available interfaces
+     And phc2sys run the algorithm to select a new source
+
+     When 'disable source <interface>' is called passing the last available
+     interface name
+     Then the command is rejected
+     And the error message "Error: Last interface enabled" is returned
+
+PASS (Negative case) 'enable loc' command is rejected, and the error message
+     "Error: Invalid command" is returned.
+
+PASS (Negative case) the commands 'enable lock', 'enable source' and
+     'disable source' not followed by an interface name are rejected, and
+     the following error message with usage example is returned.
+
+PASS (Negative case) the commands 'enable lock', 'enable source' and
+     'disable source' followed by an invalid interface name are rejected,
+     and the following error message is returned.
+     "Error: Interface not found"
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 41 +++++++++++++++++++++--------------------
+ 1 file changed, 21 insertions(+), 20 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 29e6ae9..307f8e6 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -124,7 +124,7 @@ struct ha {
+ 	int stability_timer;
+ 	uint64_t last_update;
+ 	struct ha_limits limits;
+-	int socked_fd;
++	int socket_fd;
+ };
+ 
+ struct domain {
+@@ -577,7 +577,7 @@ static int ha_com_socket_send(int fd, void *buf, size_t buflen)
+ 
+ static bool starts_with(const char *prefix, const char *str)
+ {
+-	return 0 == strncmp(prefix, str, strlen(prefix) - 1);
++	return 0 == strncmp(prefix, str, strlen(prefix));
+ }
+ 
+ static char * str_at_column(char *msg, size_t column)
+@@ -729,7 +729,7 @@ static int ha_handle_enable_lock_msg(struct domain *domains, int n_domains,
+ 	 * then the 3rd argument is the source interface name.
+ 	 */
+ 	src_name = str_at_column(request, 3);
+-	if (strlen(src_name) == 0) {
++	if (src_name == NULL || strlen(src_name) == 0) {
+ 		return snprintf(response, resplen,
+ 						"Error: Usage 'enable lock <interface>'");
+ 	}
+@@ -738,7 +738,7 @@ static int ha_handle_enable_lock_msg(struct domain *domains, int n_domains,
+ 	for (i = 0; i < n_domains; i++) {
+ 		domain = &domains[i];
+ 
+-		if (domain->ha.src_name == src_name) {
++		if (strcmp(domain->ha.src_name, src_name) == 0) {
+ 			src_domain = domain;
+ 			break;
+ 		}
+@@ -786,7 +786,7 @@ static int ha_handle_enable_source_msg(struct domain *domains, int n_domains,
+ 	 * then the 3rd argument is the source interface name.
+ 	 */
+ 	src_name = str_at_column(request, 3);
+-	if (strlen(src_name) == 0) {
++	if (src_name == NULL || strlen(src_name) == 0) {
+ 		return snprintf(response, resplen,
+ 						"Error: Usage 'enable source <interface>'");
+ 	}
+@@ -795,7 +795,7 @@ static int ha_handle_enable_source_msg(struct domain *domains, int n_domains,
+ 	for (i = 0; i < n_domains; i++) {
+ 		domain = &domains[i];
+ 
+-		if (domain->ha.src_name == src_name) {
++		if (strcmp(domain->ha.src_name, src_name) == 0) {
+ 			enable_domain = domain;
+ 			break;
+ 		}
+@@ -826,7 +826,7 @@ static int ha_handle_disable_source_msg(struct domain *domains, int n_domains,
+ 	 * then the 3rd argument is the source interface name.
+ 	 */
+ 	src_name = str_at_column(request, 3);
+-	if (strlen(src_name) == 0) {
++	if (src_name == NULL || strlen(src_name) == 0) {
+ 		return snprintf(response, resplen,
+ 						"Error: Usage 'disable source <interface>'");
+ 	}
+@@ -840,7 +840,7 @@ static int ha_handle_disable_source_msg(struct domain *domains, int n_domains,
+ 		if (domain->ha.domain_enabled)
+ 			counter++;
+ 
+-		if (domain->ha.src_name == src_name) {
++		if (strcmp(domain->ha.src_name, src_name) == 0) {
+ 			disable_domain = domain;
+ 		}
+ 	}
+@@ -905,7 +905,7 @@ static int ha_com_socket_handle_msg(struct domain *domains, int n_domains)
+ 	void *response = NULL;
+ 
+ 	while(true) {
+-		fd = accept(domains[0].ha.socked_fd, NULL, NULL);
++		fd = accept(domains[0].ha.socket_fd, NULL, NULL);
+ 		if (fd < 0) {
+ 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+ 				/* no msg available*/
+@@ -951,7 +951,7 @@ static int ha_com_socket_handle_msg(struct domain *domains, int n_domains)
+ 							   "%s",
+ 							   domains[0].src_domain->ha.src_name);
+ 			} else {
+-				cnt = snprintf((char*)buffer, HA_SCK_BUFFER_SIZE, "None");
++				cnt = snprintf((char*)response, HA_SCK_BUFFER_SIZE, "None");
+ 			}
+ 		} else if (strcmp((const char*)buffer, "forced lock") == 0) {
+ 			cnt = ha_handle_is_forced(domains, n_domains, response,
+@@ -991,7 +991,7 @@ static int ha_com_socket_handle_msg(struct domain *domains, int n_domains)
+ 
+ static bool domain_match_ha_dds_requirements(struct domain *domain)
+ {
+-	pr_info("domain_match_ha_dds_requirements check domain %s",
++	pr_debug("domain_match_ha_dds_requirements check domain %s",
+ 		domain->ha.src_name);
+ 
+ 	/* sanity check */
+@@ -1039,7 +1039,7 @@ static bool domain_match_ha_dds_requirements(struct domain *domain)
+ 
+ static bool domain_match_ha_tds_requirements(struct domain *domain)
+ {
+-	pr_info("domain_match_ha_tds_requirements check domain %s",
++	pr_debug("domain_match_ha_tds_requirements check domain %s",
+ 		domain->ha.src_name);
+ 
+ 	/* sanity check */
+@@ -1076,7 +1076,7 @@ static bool domain_match_ha_tds_requirements(struct domain *domain)
+ 
+ static bool domain_match_ha_pds_requirements(struct domain *domain)
+ {
+-	pr_info("domain_match_ha_pds_requirements check domain %s",
++	pr_debug("domain_match_ha_pds_requirements check domain %s",
+ 		domain->ha.src_name);
+ 
+ 	/* sanity check */
+@@ -1231,7 +1231,7 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 	struct domain *src_domain = NULL, *rt_domain = NULL;
+ 	int i;
+ 	struct timespec tp;
+-	uint64_t now;
++	uint64_t now = 0;
+ 	struct domain *prev_src_domain =  domains[0].src_domain;
+ 
+ 	pr_info("reconfiguring clock state change");
+@@ -1270,12 +1270,13 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 	 * matching the HA requirements, than keep the previous clock for the span
+ 	 * of the stability timer.
+ 	 */
+-	if ((src_domain->ha.ha_enabled && src_domain->ha.stability_timer) &&
++	if ((src_domain && prev_src_domain) &&
++		(src_domain->ha.ha_enabled && src_domain->ha.stability_timer) &&
+ 		(src_domain->ha.priority > prev_src_domain->ha.priority) &&
+ 		prev_src_domain->ha.good &&
+ 		((src_domain->ha.last_update + src_domain->ha.stability_timer * NS_PER_SEC) > now)) {
+ 
+-		pr_debug("keeping current source during the the stability timer");
++		pr_debug("keeping current source during the stability timer");
+ 		src_domain = prev_src_domain;
+ 	}
+ 
+@@ -1585,7 +1586,7 @@ static int do_loop(struct domain *domains, int n_domains)
+ 	struct timespec interval;
+ 	struct domain *domain, *src_domain;
+ 	struct timespec tp;
+-	uint64_t now;
++	uint64_t now  = 0;
+ 
+ 	/* All domains have the same interval */
+ 	interval.tv_sec = domains[0].phc_interval;
+@@ -1640,7 +1641,7 @@ static int do_loop(struct domain *domains, int n_domains)
+ 			    (domain->ha.priority > src_domain->ha.priority) &&
+ 			    (domain->ha.last_update + domain->ha.stability_timer * NS_PER_SEC < now)) {
+ 
+-				pr_debug("statiblity timer expired");
++				pr_debug("stability timer expired");
+ 				state_changed = 1;
+ 			}
+ 		}
+@@ -2566,7 +2567,7 @@ int main(int argc, char *argv[])
+ 
+ 	if (ha_enabled) {
+ 	 	ha_socket_path = config_get_string(cfg, NULL, "ha_phc2sys_com_socket");
+-		ha_com_socket_open(&domains[0].ha.socked_fd, ha_socket_path);
++		ha_com_socket_open(&domains[0].ha.socket_fd, ha_socket_path);
+ 	}
+ 
+ 	if (hardpps_configured(pps_fd)) {
+@@ -2582,7 +2583,7 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ end:
+-	ha_com_socket_close(domains[0].ha.socked_fd);
++	ha_com_socket_close(domains[0].ha.socket_fd);
+ 	for (i = 0; i < n_domains; i++) {
+ 		if (domains[i].agent)
+ 			pmc_agent_destroy(domains[i].agent);
+-- 
+2.34.1
+

@@ -1,0 +1,118 @@
+From fcc7d7134350db2f482a692fc7f8ba244e122665 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Wed, 27 May 2026 17:15:16 -0300
+Subject: [PATCH 07/11] Fix pmc_agent_update query timeout
+
+Updated pmc_agent_query_utc_offset call from instant return
+to 20ms timeout to fix an issue on HA which the selected
+domain had no src_clock set, and as consequence the real
+time clock wasn't adjusted.
+
+The 20ms valud has been determined by experimentation.
+
+Test Plan:
+PASS In a system configured as PTP T-BC, using HA config and two
+     sources, same priority.
+
+     Given both external GMs are up and matching the HA requirements
+
+     When phc2sys starts
+     Then there is no error message:
+     "phcinst0 pmc agent timeout reading tpds"
+
+     And real time clock is updated, indicated by the following debug
+     message:
+     "phcinst0 CLOCK_REALTIME phc offset     -5623 s0 freq  -21063 delay    520"
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c   |  5 +++--
+ pmc_agent.c | 14 ++++++++++----
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index b303d43..b5303e4 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1234,7 +1234,7 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 	uint64_t now;
+ 	struct domain *prev_src_domain =  domains[0].src_domain;
+ 
+-	pr_info("reconfiguring after port state change");
++	pr_info("reconfiguring clock state change");
+ 
+ 	if (!clock_gettime(CLOCK_MONOTONIC, &tp)) {
+ 		now = tp.tv_sec * NS_PER_SEC + tp.tv_nsec;
+@@ -1600,7 +1600,8 @@ static int do_loop(struct domain *domains, int n_domains)
+ 			now = tp.tv_sec * NS_PER_SEC + tp.tv_nsec;
+ 		}
+ 
+-		ha_com_socket_handle_msg(domains, n_domains);
++		if (domains[0].ha.ha_enabled)
++			ha_com_socket_handle_msg(domains, n_domains);
+ 
+ 		for (i = 0; i < n_domains; i++) {
+ 			domain = &domains[i];
+diff --git a/pmc_agent.c b/pmc_agent.c
+index c546dbc..a2b756a 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -302,7 +302,7 @@ int pmc_agent_query_dds(struct pmc_agent *node, int timeout)
+ 	if (is_run_pmc_error(res)) {
+ 		// When there is timeout, treat dds data as invalid
+ 		if (res == RUN_PMC_TMO) {
+-			pr_notice("pmc agent timeout reading pmc dds");
++			pr_notice("timeout reading pmc dds");
+ 			node->dds_valid = false;
+ 		}
+ 		return run_pmc_err2errno(res);
+@@ -338,7 +338,7 @@ int pmc_agent_query_pds(struct pmc_agent *node, int timeout)
+ 	if (is_run_pmc_error(res)) {
+ 		// When there is timeout error, treat pds data as invalid
+ 		if (res == RUN_PMC_TMO) {
+-			pr_notice("pmc agent timeout reading pmc pds");
++			pr_notice("timeout reading pmc pds");
+ 			node->pds_valid = false;
+ 		}
+ 		return run_pmc_err2errno(res);
+@@ -374,7 +374,7 @@ int pmc_agent_query_tds(struct pmc_agent *node, int timeout)
+ 	if (is_run_pmc_error(res)) {
+ 		// When there is timeout error, treat tds data as invalid
+ 		if (res == RUN_PMC_TMO) {
+-			pr_notice("pmc agent timeout reading pmc tds");
++			pr_notice("timeout reading pmc tds");
+ 			node->tds_valid = false;
+ 		}
+ 		return run_pmc_err2errno(res);
+@@ -413,6 +413,9 @@ int pmc_agent_query_port_properties(struct pmc_agent *node, int timeout,
+ 	while (1) {
+ 		res = run_pmc(node, timeout, MID_PORT_PROPERTIES_NP, &msg);
+ 		if (is_run_pmc_error(res)) {
++			if (res == RUN_PMC_TMO) {
++				pr_notice("timeout reading pmc ppn");
++			}
+ 			goto out;
+ 		}
+ 		ppn = management_tlv_data(msg);
+@@ -461,6 +464,9 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 
+ 	res = run_pmc(node, timeout, MID_TIME_PROPERTIES_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
++		if (res == RUN_PMC_TMO) {
++			pr_notice("timeout reading pmc tpds");
++		}
+ 		return run_pmc_err2errno(res);
+ 	}
+ 
+@@ -517,7 +523,7 @@ int pmc_agent_update(struct pmc_agent *node)
+ 		if (node->stay_subscribed) {
+ 			renew_subscription(node, 0);
+ 		}
+-		if (!pmc_agent_query_utc_offset(node, 0)) {
++		if (!pmc_agent_query_utc_offset(node, 20)) {
+ 			node->pmc_last_update = ts;
+ 		}
+ 	}
+-- 
+2.34.1
+

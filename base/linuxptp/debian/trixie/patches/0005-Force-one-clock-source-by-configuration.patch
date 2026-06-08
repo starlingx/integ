@@ -1,0 +1,434 @@
+From df8abd9ba3e80766dc92c876f3035495d636d6a0 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Sun, 24 May 2026 21:58:10 -0300
+Subject: [PATCH 05/11] Force one clock source by configuration
+
+When a HA is enabled and one of the clock sources is configured
+with priority 254, the best clock source selection algorithm is
+disable, and the source will be selected as source regardless
+its state.
+
+Test Plan:
+PASS In a system configured as PTP T-BC, using HA spec and two
+     sources, one of them with HA priority set to 254.
+
+     system ptp-interface-parameter-add phc-iface01 ha_priority=254
+        ha_stability_timer=10
+
+     Given both external GMs are up and matching the HA requirements
+     When the phc2sys service starts
+     Then the following info messages are printed in the log.
+
+     phc2sys[878093.543]: phcinst0 HA automatic source selection is disabled by configuration
+     phc2sys[878093.543]: phcinst0 Only interface enp81s0f3 will be used as source clock
+
+     And the source configured with HA priority 254 is selected source.
+
+     When the GM connected to the selected source degrades
+     Then the selected source remains the same.
+
+     When the GM connected to the selected source recovers
+     Then the selected source remains the same.
+
+     When the GM connected to the other source degrades
+     Then the selected source remains the same.
+
+     When the GM connected to the other source reconver
+     Then the selected source remains the same.
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 191 ++++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 113 insertions(+), 78 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index c291cbe..60fac45 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -71,6 +71,8 @@
+ 
+ #define IFMT "\n\t\t\t\t"
+ 
++#define FORCED_SOURCE_CLOCK_PRIORITY 254
++
+ struct clock {
+ 	LIST_ENTRY(clock) list;
+ 	LIST_ENTRY(clock) dst_list;
+@@ -108,6 +110,16 @@ struct ha_limits {
+ 	bool check_freq_traceable;
+ };
+ 
++struct ha {
++	bool enabled;
++	bool good;
++	char *src_name;
++	int priority;
++	int stability_timer;
++	uint64_t last_update;
++	struct ha_limits limits;
++};
++
+ struct domain {
+ 	unsigned int stats_max_count;
+ 	int sanity_freq_limit;
+@@ -127,12 +139,7 @@ struct domain {
+ 	struct clock *src_clock;
+ 	struct domain *src_domain;
+ 	int src_priority;
+-	bool ha_enabled;
+-	int ha_priority;
+-	struct ha_limits ha_limits;
+-	bool ha_good;
+-	int ha_stability_timer;
+-	uint64_t ha_last_update;
++	struct ha ha;
+ };
+ 
+ static struct config *phc2sys_config;
+@@ -483,47 +490,46 @@ static int reconfigure_domain(struct domain *domain)
+ 
+ static bool domain_match_ha_dds_requirements(struct domain *domain)
+ {
+-	pr_info("domain_match_ha_dds_requirements check domain %p", domain);
++	pr_info("domain_match_ha_dds_requirements check domain %s",
++		domain->ha.src_name);
++
+ 	/* sanity check */
+ 	if (domain->agent == NULL) {
+-		pr_debug("domain pmc agent is (null)");
++		pr_debug("domain %s pmc agent is (null)", domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+-	if (domain->src_clock && domain->src_clock->device) {
+-		pr_info("clock %s", domain->src_clock->device);
+-	}
+-
+ 	struct defaultDS *dds = pmc_agent_get_dds(domain->agent);
+ 	if (dds == NULL) {
+-		pr_debug("domain default data set is invalid");
++		pr_debug("domain %s default data set is invalid",
++			domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+ 	/* max local clock class (lower is better) */
+ 	int local_clock_class = dds->clockQuality.clockClass;
+-	int max_local_clock_class = domain->ha_limits.local.clockClass;
++	int max_local_clock_class = domain->ha.limits.local.clockClass;
+ 	if (local_clock_class > max_local_clock_class) {
+-		pr_debug("local clock class %d > max local clock class %d",
+-			local_clock_class, max_local_clock_class);
++		pr_debug("domain %s local clock class %d > max local clock class %d",
++			domain->ha.src_name, local_clock_class, max_local_clock_class);
+ 		return false;
+ 	}
+ 
+ 	/* max clock accuracy (lower is better) */
+ 	unsigned int clock_accuracy = dds->clockQuality.clockAccuracy;
+-	unsigned int max_clock_accuracy = domain->ha_limits.local.clockAccuracy;
++	unsigned int max_clock_accuracy = domain->ha.limits.local.clockAccuracy;
+ 	if (clock_accuracy > max_clock_accuracy) {
+-		pr_debug("clock accuracy %d > max clock accuracy %d",
+-			clock_accuracy, max_clock_accuracy);
++		pr_debug("domain %s clock accuracy %d > max clock accuracy %d",
++			domain->ha.src_name, clock_accuracy, max_clock_accuracy);
+ 		return false;
+ 	}
+ 
+ 	/* max offset scaled log variance (lower is better) */
+ 	unsigned int offset = dds->clockQuality.offsetScaledLogVariance;
+-	unsigned int max_offset = domain->ha_limits.local.offsetScaledLogVariance;
++	unsigned int max_offset = domain->ha.limits.local.offsetScaledLogVariance;
+ 	if (offset > max_offset) {
+-		pr_debug("offset scaled log variance 0x%x > max offset 0x%x",
+-			offset, max_offset);
++		pr_debug("domain %s offset scaled log variance 0x%x > max offset 0x%x",
++			domain->ha.src_name, offset, max_offset);
+ 		return false;
+ 	}
+ 
+@@ -532,37 +538,35 @@ static bool domain_match_ha_dds_requirements(struct domain *domain)
+ 
+ static bool domain_match_ha_tds_requirements(struct domain *domain)
+ {
+-	pr_info("domain_match_ha_tds_requirements check domain %p", domain);
++	pr_info("domain_match_ha_tds_requirements check domain %s",
++		domain->ha.src_name);
+ 
+ 	/* sanity check */
+ 	if (domain->agent == NULL) {
+-		pr_debug("domain pmc agent is (null)");
++		pr_debug("domain %s pmc agent is (null)", domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+-	if (domain->src_clock && domain->src_clock->device) {
+-		pr_info("clock %s", domain->src_clock->device);
+-	}
+-
+ 	struct timePropertiesDS *tds = pmc_agent_get_tds(domain->agent);
+ 	if (tds == NULL) {
+-		pr_debug("domain time properties data set is invalid");
++		pr_debug("domain %s time properties data set is invalid",
++			domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+ 	/* is time traceable */
+ 	bool time_traceable = tds->flags & TIME_TRACEABLE;
+-	bool check_time_traceable = domain->ha_limits.check_time_traceable;
++	bool check_time_traceable = domain->ha.limits.check_time_traceable;
+ 	if (check_time_traceable && !time_traceable) {
+-		pr_debug("time is not traceable");
++		pr_debug("domain %s time is not traceable", domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+ 	/* is frequency traceable */
+ 	bool freq_traceable = tds->flags & FREQ_TRACEABLE;
+-	bool check_freq_traceable = domain->ha_limits.check_freq_traceable;
++	bool check_freq_traceable = domain->ha.limits.check_freq_traceable;
+ 	if (check_freq_traceable && !freq_traceable) {
+-		pr_debug("frequency is not traceable");
++		pr_debug("domain %s frequency is not traceable", domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+@@ -571,48 +575,45 @@ static bool domain_match_ha_tds_requirements(struct domain *domain)
+ 
+ static bool domain_match_ha_pds_requirements(struct domain *domain)
+ {
+-	pr_info("domain_match_ha_pds_requirements check domain %p", domain);
++	pr_info("domain_match_ha_pds_requirements check domain %s",
++		domain->ha.src_name);
+ 
+ 	/* sanity check */
+ 	if (domain->agent == NULL) {
+-		pr_debug("domain pmc agent is (null)");
++		pr_debug("domain %s pmc agent is (null)", domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+-	if (domain->src_clock && domain->src_clock->device) {
+-		pr_info("clock %s", domain->src_clock->device);
+-	}
+-
+ 	struct parentDS *pds = pmc_agent_get_pds(domain->agent);
+ 	if (pds == NULL) {
+-		pr_debug("domain parent data set is invalid");
++		pr_debug("domain %s parent data set is invalid", domain->ha.src_name);
+ 		return false;
+ 	}
+ 
+ 	/* max gm clock class (lower is better) */
+ 	int gm_clock_class = pds->grandmasterClockQuality.clockClass;
+-	int max_gm_clock_class = domain->ha_limits.gm.clockClass;
++	int max_gm_clock_class = domain->ha.limits.gm.clockClass;
+ 	if (gm_clock_class > max_gm_clock_class) {
+-		pr_debug("GM clock class %d > max clock class %d",
+-			gm_clock_class, max_gm_clock_class);
++		pr_debug("domain %s GM clock class %d > max clock class %d",
++			domain->ha.src_name, gm_clock_class, max_gm_clock_class);
+ 		return false;
+ 	}
+ 
+ 	/* max clock accuracy (lower is better) */
+ 	unsigned int gm_clock_accuracy = pds->grandmasterClockQuality.clockAccuracy;
+-	unsigned int max_gm_clock_accuracy = domain->ha_limits.gm.clockAccuracy;
++	unsigned int max_gm_clock_accuracy = domain->ha.limits.gm.clockAccuracy;
+ 	if (gm_clock_accuracy > max_gm_clock_accuracy) {
+-		pr_debug("GM clock accuracy %d > max clock accuracy %d",
+-			gm_clock_accuracy, max_gm_clock_accuracy);
++		pr_debug("domain %s GM clock accuracy %d > max clock accuracy %d",
++			domain->ha.src_name, gm_clock_accuracy, max_gm_clock_accuracy);
+ 		return false;
+ 	}
+ 
+ 	/* max offset scaled log variance (lower is better) */
+ 	unsigned int offset = pds->grandmasterClockQuality.offsetScaledLogVariance;
+-	unsigned int max_offset = domain->ha_limits.gm.offsetScaledLogVariance;
++	unsigned int max_offset = domain->ha.limits.gm.offsetScaledLogVariance;
+ 	if (offset > max_offset) {
+-		pr_debug("GM offset scaled log variance 0x%x > max offset 0x%x",
+-			offset, max_offset);
++		pr_debug("domain %s GM offset scaled log variance 0x%x > max offset 0x%x",
++			domain->ha.src_name, offset, max_offset);
+ 		return false;
+ 	}
+ 
+@@ -639,29 +640,47 @@ static int compare_domains_ha(struct domain *a, struct domain *b)
+ 	if (!a->src_clock != !b->src_clock)
+ 		return !!b->src_clock - !!a->src_clock;
+ 
+-	a->ha_good = domain_match_ha_requirements(a);
+-	b->ha_good = domain_match_ha_requirements(b);
++	/* Verify if one of the clocks is configured to act as
++	 *  the sole source.
++	 */
++	if (a->ha.priority == FORCED_SOURCE_CLOCK_PRIORITY) {
++		pr_debug("domain %s is configured with priority 254",
++			a->ha.src_name);
++		return -1;
++	}
++	if (a->ha.priority == FORCED_SOURCE_CLOCK_PRIORITY) {
++		pr_debug("domain %s is configured with priority 254",
++			a->ha.src_name);
++		return 1;
++	}
++
++	a->ha.good = domain_match_ha_requirements(a);
++	b->ha.good = domain_match_ha_requirements(b);
+ 	/* only one matches, select it */
+-	if (a->ha_good && !b->ha_good) {
+-		pr_debug("only domain %p matches HA requirements", a);
++	if (a->ha.good && !b->ha.good) {
++		pr_debug("only domain %s matches HA requirements",
++			a->ha.src_name);
+ 		return -1;
+ 	}
+ 
+-	if (b->ha_good && !a->ha_good) {
+-		pr_debug("only domain %p matches HA requirements", b);
++	if (b->ha.good && !a->ha.good) {
++		pr_debug("only domain %s matches HA requirements",
++			b->ha.src_name);
+ 		return 1;
+ 	}
+ 
+ 	/* both match requirements, select the one with the highest priority */
+-	if (a->ha_good || b->ha_good) {
+-		pr_debug("both domains %p and %p match HA requirements", a, b);
++	if (a->ha.good || b->ha.good) {
++		pr_debug("both domains %s and %s match HA requirements",
++			a->ha.src_name, b->ha.src_name);
+ 		pr_debug("selecting the one with higher priority: %d vs %d",
+-			a->ha_priority, b->ha_priority);
+-		return b->ha_priority - a->ha_priority;
++			a->ha.priority, b->ha.priority);
++		return b->ha.priority - a->ha.priority;
+ 	}
+ 
+ 	/* none match requirements, select the one with the best clock class */
+-	pr_debug("none of the following domains match HA requirements: %p and %p", a, b);
++	pr_debug("none of the following domains match HA requirements: %s and %s",
++		a->ha.src_name, b->ha.src_name);
+ 	struct defaultDS *a_dds = pmc_agent_get_dds(a->agent);
+ 	struct defaultDS *b_dds = pmc_agent_get_dds(b->agent);
+ 	if (!a_dds || !b_dds) {
+@@ -713,7 +732,7 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 		if (reconfigure_domain(&domains[i]))
+ 			return;
+ 
+-		if (!domains[0].ha_enabled) {
++		if (!domains[0].ha.enabled) {
+ 			if (compare_domains(src_domain, &domains[i]) > 0) {
+ 				src_domain = &domains[i];
+ 			}
+@@ -736,10 +755,10 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 	 * matching the HA requirements, than keep the previous clock for the span
+ 	 * of the stability timer.
+ 	 */
+-	if ((src_domain->ha_enabled && src_domain->ha_stability_timer) &&
+-		(src_domain->ha_priority > prev_src_domain->ha_priority) &&
+-		prev_src_domain->ha_good &&
+-		((src_domain->ha_last_update + src_domain->ha_stability_timer * NS_PER_SEC) > now)) {
++	if ((src_domain->ha.enabled && src_domain->ha.stability_timer) &&
++		(src_domain->ha.priority > prev_src_domain->ha.priority) &&
++		prev_src_domain->ha.good &&
++		((src_domain->ha.last_update + src_domain->ha.stability_timer * NS_PER_SEC) > now)) {
+ 
+ 		pr_debug("keeping current source during the the stability timer");
+ 		src_domain = prev_src_domain;
+@@ -1099,9 +1118,9 @@ static int do_loop(struct domain *domains, int n_domains)
+ 			 * the current source, and the stability timer has elapsed, trigger
+ 			 * a reconfiguration by setting state_changed.
+ 			 */
+-			if (domain->ha_enabled && domain->ha_good &&
+-			    (domain->ha_priority > src_domain->ha_priority) &&
+-			    (domain->ha_last_update + domain->ha_stability_timer * NS_PER_SEC < now)) {
++			if (domain->ha.enabled && domain->ha.good &&
++			    (domain->ha.priority > src_domain->ha.priority) &&
++			    (domain->ha.last_update + domain->ha.stability_timer * NS_PER_SEC < now)) {
+ 
+ 				pr_debug("statiblity timer expired");
+ 				state_changed = 1;
+@@ -1207,9 +1226,11 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 		parent_ds = management_tlv_data(msg);
+ 		old_parent_ds = pmc_agent_get_pds(domain->agent);
+ 		if (old_parent_ds == NULL || compare_parent_data_set(parent_ds, old_parent_ds)) {
+-			pr_info("domain %p parent data set changed", domain);
++			pr_info("domain %p %s parent data set changed",
++				domain,
++				domain->ha.enabled ? domain->ha.src_name : "");
+ 			domain->state_changed = 1;
+-			domain->ha_last_update = ts;
++			domain->ha.last_update = ts;
+ 			pr_debug("PARENT_DATA_SET"
+ 			IFMT "parentPortIdentity                    %s"
+ 			IFMT "parentStats                           %hhu"
+@@ -1239,9 +1260,11 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 		dds = management_tlv_data(msg);
+ 		old_dds = pmc_agent_get_dds(domain->agent);
+ 		if (old_dds == NULL || compare_default_data_set(dds, old_dds)) {
+-			pr_info("domain %p default data set changed", domain);
++			pr_info("domain %p %s default data set changed",
++				domain,
++				domain->ha.enabled ? domain->ha.src_name : "");
+ 			domain->state_changed = 1;
+-			domain->ha_last_update = ts;
++			domain->ha.last_update = ts;
+ 			pr_debug("DEFAULT_DATA_SET "
+ 			IFMT "twoStepFlag             %d"
+ 			IFMT "slaveOnly               %d"
+@@ -1271,9 +1294,11 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 		tds = management_tlv_data(msg);
+ 		old_tds = pmc_agent_get_tds(domain->agent);
+ 		if (old_tds == NULL || compare_time_properties_data_set(tds, old_tds)) {
+-			pr_info("domain %p time properties data set changed", domain);
++			pr_info("domain %p %s time properties data set changed",
++				domain,
++				domain->ha.enabled ? domain->ha.src_name : "");
+ 			domain->state_changed = 1;
+-			domain->ha_last_update = ts;
++			domain->ha.last_update = ts;
+ 			pr_debug("TIME_PROPERTIES_DATA_SET "
+ 			IFMT "currentUtcOffset      %hd"
+ 			IFMT "leap61                %d"
+@@ -1925,12 +1950,19 @@ int main(int argc, char *argv[])
+ 
+ 		/* initialize all domains with configuration parameters */
+ 		for (i = 0; i < n_domains; i++) {
+-			domains[i].ha_enabled = true;
+-			domains[i].ha_priority = config_get_int(
++			domains[i].ha.enabled = true;
++			domains[i].ha.src_name = src_names[i];
++			domains[i].ha.priority = config_get_int(
+ 				cfg, src_names[i], "ha_priority");
+-			domains[i].ha_stability_timer = config_get_int(
++			if (domains[i].ha.priority == FORCED_SOURCE_CLOCK_PRIORITY) {
++				pr_info("HA automatic source selection is disabled by configuration");
++				pr_info("Only interface %s will be used as source clock", domains[i].ha.src_name);
++			}
++			domains[i].ha.stability_timer = config_get_int(
+ 				cfg, src_names[i], "ha_stability_timer");
+-			domains[i].ha_limits = ha_limits;
++			domains[i].ha.limits = ha_limits;
++			/* at start run the best clock selection algorithm */
++			domains[i].state_changed = true;
+ 		}
+ 	}
+ 
+@@ -1975,6 +2007,9 @@ int main(int argc, char *argv[])
+ 			}
+ 
+ 			if (ha_enabled) {
++				/* force clock source reconfiguration */
++				domains[i].state_changed = 1;
++
+ 				/* fetch initial values */
+ 				pmc_agent_query_dds(domains[i].agent, 20);
+ 				pmc_agent_query_pds(domains[i].agent, 20);
+-- 
+2.34.1
+

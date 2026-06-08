@@ -1,0 +1,104 @@
+From 010fbd9b306528f87b3a1936eeb5236c50bd120b Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Wed, 5 Nov 2025 10:37:28 -0300
+Subject: [PATCH 01/11] Implement logic to skip updates with offset spike.
+
+This change allows ts2phc to be configured to ignore timing updates that
+have a large offset spike in order to mitigate the resulting timing
+skew.
+
+In some circumstances on realtime systems with high CPU load, the
+timestamp consumed by ts2phc can be delayed in reaching ts2phc and
+results in the offset calculation attempting to speed the clock up by a
+large margin.
+
+This change causes ts2phc to ignore updates that would greatly skew the
+clock when ts2phc is already in a synchronized state.
+
+The global configuration option "max_phc_update_skip_cnt" is provided to
+allow users to specify how many consecutive offset spike incidents will
+be ignored before adjusting the clock. The default value is 120. The
+behaviour can be disabled by setting max_phc_update_skip_cnt to 0.
+
+This code is ported from a proposed upstream patch found here:
+https://sourceforge.net/p/linuxptp/mailman/message/44114092/
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ config.c |  1 +
+ ts2phc.c | 19 +++++++++++++++++++
+ ts2phc.h |  2 ++
+ 3 files changed, 22 insertions(+)
+
+diff --git a/config.c b/config.c
+index ad675c8..ea90636 100644
+--- a/config.c
++++ b/config.c
+@@ -366,6 +366,7 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("utc_offset", CURRENT_UTC_OFFSET, 0, INT_MAX),
+ 	GLOB_ITEM_INT("verbose", 0, 0, 1),
+ 	GLOB_ITEM_INT("write_phase_mode", 0, 0, 1),
++	PORT_ITEM_INT("max_phc_update_skip_cnt", 120, 0, 14400),
+ };
+ 
+ static struct unicast_master_table *current_uc_mtab;
+diff --git a/ts2phc.c b/ts2phc.c
+index 03c88b1..d3e0503 100644
+--- a/ts2phc.c
++++ b/ts2phc.c
+@@ -198,6 +198,9 @@ struct ts2phc_clock *ts2phc_clock_add(struct ts2phc_private *priv,
+ 	c->servo_state = SERVO_UNLOCKED;
+ 	c->servo = ts2phc_servo_create(priv, c);
+ 	c->no_adj = config_get_int(priv->cfg, NULL, "free_running");
++	c->max_offset_skip_count = config_get_int(priv->cfg, NULL, "max_phc_update_skip_cnt");
++	c->current_offset_skip_count = 0;
++	pr_debug("clock %s has skip cnt %d", c->name, c->max_offset_skip_count);
+ 	err = asprintf(&c->name, "/dev/ptp%d", phc_index);
+ 	if (err < 0) {
+ 		free(c);
+@@ -476,6 +479,19 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 			continue;
+ 		}
+ 
++		if ((c->servo_state == SERVO_LOCKED) ||
++		    (c->servo_state == SERVO_LOCKED_STABLE)) {
++			if (llabs(offset) >= NS_PER_SEC / 2) {
++				if (c->current_offset_skip_count < c->max_offset_skip_count) {
++					c->current_offset_skip_count++;
++					pr_debug("Offset spike detected. Skip current clock update %s "
++						     "offset %10" PRId64 " s%d",
++							 c->name, offset, c->servo_state);
++					continue;
++				}
++			}
++		}
++
+ 		adj = servo_sample(c->servo, offset, tmv_to_nanoseconds(ts),
+ 				   SAMPLE_WEIGHT, &c->servo_state);
+ 
+@@ -495,6 +511,9 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 			break;
+ 		case SERVO_LOCKED:
+ 		case SERVO_LOCKED_STABLE:
++			if (llabs(offset) < 500) {
++				c->current_offset_skip_count = 0;
++			}
+ 			if (clockadj_set_freq(c->clkid, -adj)) {
+ 				goto servo_unlock;
+ 			}
+diff --git a/ts2phc.h b/ts2phc.h
+index 4833ded..cd84984 100644
+--- a/ts2phc.h
++++ b/ts2phc.h
+@@ -34,6 +34,8 @@ struct ts2phc_clock {
+ 	bool is_target;
+ 	bool is_ts_available;
+ 	tmv_t last_ts;
++	int max_offset_skip_count;
++	int current_offset_skip_count;
+ };
+ 
+ struct ts2phc_port {
+-- 
+2.34.1
+

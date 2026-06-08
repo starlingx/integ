@@ -1,0 +1,922 @@
+From e2b9310129957038b40bcb1e5e92843c6c3041c6 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Thu, 21 May 2026 19:40:39 -0300
+Subject: [PATCH 03/11] Best source selection algorithm
+
+An algorithm to select the best available clock and use it
+as clock source.
+
+A new set of configuration options was introduced to control
+the clock requirements. The clock which fails to match the
+requirements is discarded.
+
+The new configuration options are:
+* ha_max_local_clockClass
+* ha_max_local_clockAccuracy
+* ha_max_local_offsetScaledLogVar
+* ha_max_gm_clockClass
+* ha_max_gm_clockAccuracy
+* ha_max_gm_offsetScaledLogVar
+* ha_gm_timeTraceable
+* ha_gm_frequencyTraceable
+
+The local and Grandmaster options define the maximum value
+it's acceptable, including the value itsef, ie. a source
+clock which local clock class value is lower or equal to
+ha_max_local_clockClass is considered a valid source.
+
+The time and frequency traceable options when set enable
+the flag verification, ie. when ha_gm_timeTraceable a
+source clock is valid only if its time traceable flag
+is set.
+
+If a single clock matches the requirements, it is selected
+as source.
+
+If one or more clock match requirements, the clock with the highest
+priority is selected. In case of tie, the 1st configured clock is
+selected.
+
+The ha_priority option is an interface setting used to configure
+the clock priority. The lowest priority is 0 and the highest is 254,
+and the default value is 0. The ha_priority is used as a tie breaker
+when more then one source clock matches the requirements.
+
+And if no clock match requirements, the clock with the best local
+clock class is selected.
+
+Test Plan:
+PASS In a system configure as PTP T-BC with two external GMs, source
+     clocks configured with the same priority.
+
+     system ptp-instance-parameter-add phc-instc01 cmdline_opts='-w'
+         ha_enabled=1
+     system ptp-interface-add phc-iface01 phc-instc01
+     system host-if-ptp-assign controller-0 enp81s0f3 phc-iface01
+     system ptp-interface-parameter-add phc-iface01 ha_domainNumber=24
+         ha_uds_address=/var/run/ptp4l-ptpinstc01
+     system ptp-interface-add phc-iface02 phc-instc01
+     system host-if-ptp-assign controller-0 enp138s0f3 phc-iface01
+     system ptp-interface-parameter-add phc-iface02 ha_domainNumber=25
+         ha_uds_address=/var/run/ptp4l-ptpinstc02
+
+     When both GMs are available and valid
+     Then enp81s0f3 is selected as source, because it was the first
+     source configured.
+     When GM connected to enp81s0f3 degrades
+     Then the enp138s0f3 is selected as source, as the only one valid.
+     When GM connected to enp81s0f3 recovers
+     Then the enp138s0f3 remains the selected source. As both sources
+     have the same priority, the one already selected remains the
+     source.
+
+PASS In a system configure as PTP T-BC with two external GMs, source
+     clocks configured with the different priorities.
+
+     system ptp-interface-parameter-add phc-iface01 ha_priority=200
+     system ptp-interface-parameter-add phc-iface02 ha_priority=210
+
+     When both GMs are available and valid
+     Then enp138s0f3 is selected as source, beucase it has the highest
+     priority.
+     When the GM connected to enp138s0f3 degrades
+     Then enp81s0f3 is selected as source
+     When the GM connected to enp138s0f3 recovers
+     Then enp138s0f3 is selected as source (non stability timer scenario)
+
+     The stability timer was not delivered in this change.
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ clock.c        |  18 ++-
+ config.c       |  23 +++
+ config.h       |   3 +
+ notification.h |   2 +
+ phc2sys.c      | 388 +++++++++++++++++++++++++++++++++++++++++++++++--
+ pmc_agent.c    |  98 +++++++++++++
+ pmc_agent.h    |  68 +++++++++
+ 7 files changed, 584 insertions(+), 16 deletions(-)
+
+diff --git a/clock.c b/clock.c
+index b66dda5..442d03b 100644
+--- a/clock.c
++++ b/clock.c
+@@ -842,8 +842,10 @@ static void clock_update_grandmaster(struct clock *c)
+ 	c->tds.flags                            = c->time_flags;
+ 	c->tds.timeSource                       = c->time_source;
+ 
+-	if (clock_compare_pds(&old_pds, pds))
++	if (clock_compare_pds(&old_pds, pds)) {
+ 		clock_notify_event(c, NOTIFY_PARENT_DATA_SET);
++		clock_notify_event(c, NOTIFY_DEFAULT_DATA_SET);
++	}
+ }
+ 
+ static void clock_update_slave(struct clock *c)
+@@ -1749,6 +1751,12 @@ void clock_notify_event(struct clock *c, enum notification event)
+ 	case NOTIFY_PARENT_DATA_SET:
+ 		id = MID_PARENT_DATA_SET;
+ 		break;
++	case NOTIFY_DEFAULT_DATA_SET:
++		id = MID_DEFAULT_DATA_SET;
++		break;
++	case NOTIFY_TIME_PROPERTIES_DATA_SET:
++		id = MID_TIME_PROPERTIES_DATA_SET;
++		break;
+ 	default:
+ 		return;
+ 	}
+@@ -2174,8 +2182,14 @@ struct timePropertiesDS clock_time_properties(struct clock *c)
+ 	return tds;
+ }
+ 
++static int clock_compare_tds(struct timePropertiesDS *tds1, struct timePropertiesDS *tds2)
++{
++	return memcmp(tds1, tds2, sizeof (*tds1));
++}
++
+ void clock_update_time_properties(struct clock *c, struct timePropertiesDS tds)
+ {
++	struct timePropertiesDS old_tds = c->tds;
+ 	if ((tds.flags ^ c->tds.flags) & (LEAP_61 | LEAP_59)) {
+ 		pr_info("updating time properties to %s leap second",
+ 			tds.flags & (LEAP_61 | LEAP_59) ?
+@@ -2189,6 +2203,8 @@ void clock_update_time_properties(struct clock *c, struct timePropertiesDS tds)
+ 	}
+ 
+ 	c->tds = tds;
++	if (clock_compare_tds(&tds, &old_tds))
++		clock_notify_event(c, NOTIFY_TIME_PROPERTIES_DATA_SET);
+ }
+ 
+ static void handle_state_decision_event(struct clock *c)
+diff --git a/config.c b/config.c
+index e77ff71..133b501 100644
+--- a/config.c
++++ b/config.c
+@@ -270,6 +270,17 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("gmCapable", 1, 0, 1),
+ 	PORT_ITEM_INT("ha_domainNumber", 0, 0, 127),
+ 	GLOB_ITEM_INT("ha_enabled", 0, 0, 1),
++	GLOB_ITEM_INT("ha_gm_frequencyTraceable", 0, 0, 1),
++	GLOB_ITEM_INT("ha_gm_timeTraceable", 1, 0, 1),
++	GLOB_ITEM_INT("ha_max_gm_clockAccuracy", 0xfe, 0, 0xff),
++	GLOB_ITEM_INT("ha_max_gm_clockClass", 6, 6, 255),
++	GLOB_ITEM_INT("ha_max_gm_offsetScaledLogVar", 0xffff, 0, 0xffff),
++	GLOB_ITEM_INT("ha_max_local_clockAccuracy", 0xfe, 0, 0xff),
++	GLOB_ITEM_INT("ha_max_local_clockClass", 255, 6, 255),
++	GLOB_ITEM_INT("ha_max_local_offsetScaledLogVar", 0xffff, 0, 0xffff),
++	GLOB_ITEM_STR("ha_phc2sys_com_socket", "/var/run/phc2sys-phc-inst1"),
++	PORT_ITEM_INT("ha_priority", 0, 0, 254),
++	PORT_ITEM_INT("ha_stability_timer", 0, 0, INT_MAX),
+ 	PORT_ITEM_STR("ha_uds_address", "/var/run/ptp4l"),
+ 	GLOB_ITEM_ENU("hwts_filter", HWTS_FILTER_NORMAL, hwts_filter_enu),
+ 	PORT_ITEM_INT("hybrid_e2e", 0, 0, 1),
+@@ -1059,6 +1070,18 @@ unsigned int config_get_interfaces(struct config *cfg, char *interfaces[], unsig
+ 	return counter;
+ }
+ 
++bool config_is_option_set(struct config *cfg, const char *section,
++			const char *option)
++{
++	struct config_item *ci;
++	if (section) {
++		ci = config_section_item(cfg, section, option);
++	} else {
++		ci = config_global_item(cfg, option);
++	}
++	return !!ci;
++}
++
+ int config_harmonize_onestep(struct config *cfg)
+ {
+ 	enum timestamp_type tstype = config_get_int(cfg, NULL, "time_stamping");
+diff --git a/config.h b/config.h
+index 645fb42..f074736 100644
+--- a/config.h
++++ b/config.h
+@@ -66,6 +66,9 @@ char *config_get_string(struct config *cfg, const char *section,
+ 
+ unsigned int config_get_interfaces(struct config *cfg, char *interfaces[], unsigned int max);
+ 
++bool config_is_option_set(struct config *cfg, const char *section,
++			const char *option);
++
+ int config_harmonize_onestep(struct config *cfg);
+ 
+ static inline struct option *config_long_options(struct config *cfg)
+diff --git a/notification.h b/notification.h
+index c1a6395..3fe192a 100644
+--- a/notification.h
++++ b/notification.h
+@@ -45,6 +45,8 @@ enum notification {
+ 	NOTIFY_PORT_STATE,
+ 	NOTIFY_TIME_SYNC,
+ 	NOTIFY_PARENT_DATA_SET,
++	NOTIFY_DEFAULT_DATA_SET,
++	NOTIFY_TIME_PROPERTIES_DATA_SET,
+ };
+ 
+ #endif
+diff --git a/phc2sys.c b/phc2sys.c
+index fe970b5..92ff8a9 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -69,6 +69,8 @@
+ 
+ #define MAX_DOMAINS 128
+ 
++#define IFMT "\n\t\t\t\t"
++
+ struct clock {
+ 	LIST_ENTRY(clock) list;
+ 	LIST_ENTRY(clock) dst_list;
+@@ -99,6 +101,13 @@ struct port {
+ 	struct clock *clock;
+ };
+ 
++struct ha_limits {
++	struct ClockQuality local;
++	struct ClockQuality gm;
++	bool check_time_traceable;
++	bool check_freq_traceable;
++};
++
+ struct domain {
+ 	unsigned int stats_max_count;
+ 	int sanity_freq_limit;
+@@ -118,6 +127,9 @@ struct domain {
+ 	struct clock *src_clock;
+ 	struct domain *src_domain;
+ 	int src_priority;
++	bool ha_enabled;
++	int ha_priority;
++	struct ha_limits ha_limits;
+ };
+ 
+ static struct config *phc2sys_config;
+@@ -400,7 +412,8 @@ static int reconfigure_domain(struct domain *domain)
+ 		if (c->clkid == CLOCK_REALTIME) {
+ 			/* If present, it can always be a sink clock */
+ 			LIST_INSERT_HEAD(&domain->dst_clocks, c, dst_list);
+-			domain->src_clock = c->dest_only ? NULL : c;
++			if (!domain->src_clock)
++				domain->src_clock = c->dest_only ? NULL : c;
+ 			return 0;
+ 		}
+ 
+@@ -465,6 +478,201 @@ static int reconfigure_domain(struct domain *domain)
+ 	return 0;
+ }
+ 
++static bool domain_match_ha_dds_requirements(struct domain *domain)
++{
++	pr_info("domain_match_ha_dds_requirements check domain %p", domain);
++	/* sanity check */
++	if (domain->agent == NULL) {
++		pr_debug("domain pmc agent is (null)");
++		return false;
++	}
++
++	if (domain->src_clock && domain->src_clock->device) {
++		pr_info("clock %s", domain->src_clock->device);
++	}
++
++	struct defaultDS *dds = pmc_agent_get_dds(domain->agent);
++	if (dds == NULL) {
++		pr_debug("domain default data set is invalid");
++		return false;
++	}
++
++	/* max local clock class (lower is better) */
++	int local_clock_class = dds->clockQuality.clockClass;
++	int max_local_clock_class = domain->ha_limits.local.clockClass;
++	if (local_clock_class > max_local_clock_class) {
++		pr_debug("local clock class %d > max local clock class %d",
++			local_clock_class, max_local_clock_class);
++		return false;
++	}
++
++	/* max clock accuracy (lower is better) */
++	unsigned int clock_accuracy = dds->clockQuality.clockAccuracy;
++	unsigned int max_clock_accuracy = domain->ha_limits.local.clockAccuracy;
++	if (clock_accuracy > max_clock_accuracy) {
++		pr_debug("clock accuracy %d > max clock accuracy %d",
++			clock_accuracy, max_clock_accuracy);
++		return false;
++	}
++
++	/* max offset scaled log variance (lower is better) */
++	unsigned int offset = dds->clockQuality.offsetScaledLogVariance;
++	unsigned int max_offset = domain->ha_limits.local.offsetScaledLogVariance;
++	if (offset > max_offset) {
++		pr_debug("offset scaled log variance 0x%x > max offset 0x%x",
++			offset, max_offset);
++		return false;
++	}
++
++	return true;
++}
++
++static bool domain_match_ha_tds_requirements(struct domain *domain)
++{
++	pr_info("domain_match_ha_tds_requirements check domain %p", domain);
++
++	/* sanity check */
++	if (domain->agent == NULL) {
++		pr_debug("domain pmc agent is (null)");
++		return false;
++	}
++
++	if (domain->src_clock && domain->src_clock->device) {
++		pr_info("clock %s", domain->src_clock->device);
++	}
++
++	struct timePropertiesDS *tds = pmc_agent_get_tds(domain->agent);
++	if (tds == NULL) {
++		pr_debug("domain time properties data set is invalid");
++		return false;
++	}
++
++	/* is time traceable */
++	bool time_traceable = tds->flags & TIME_TRACEABLE;
++	bool check_time_traceable = domain->ha_limits.check_time_traceable;
++	if (check_time_traceable && !time_traceable) {
++		pr_debug("time is not traceable");
++		return false;
++	}
++
++	/* is frequency traceable */
++	bool freq_traceable = tds->flags & FREQ_TRACEABLE;
++	bool check_freq_traceable = domain->ha_limits.check_freq_traceable;
++	if (check_freq_traceable && !freq_traceable) {
++		pr_debug("frequency is not traceable");
++		return false;
++	}
++
++	return true;
++}
++
++static bool domain_match_ha_pds_requirements(struct domain *domain)
++{
++	pr_info("domain_match_ha_pds_requirements check domain %p", domain);
++
++	/* sanity check */
++	if (domain->agent == NULL) {
++		pr_debug("domain pmc agent is (null)");
++		return false;
++	}
++
++	if (domain->src_clock && domain->src_clock->device) {
++		pr_info("clock %s", domain->src_clock->device);
++	}
++
++	struct parentDS *pds = pmc_agent_get_pds(domain->agent);
++	if (pds == NULL) {
++		pr_debug("domain parent data set is invalid");
++		return false;
++	}
++
++	/* max gm clock class (lower is better) */
++	int gm_clock_class = pds->grandmasterClockQuality.clockClass;
++	int max_gm_clock_class = domain->ha_limits.gm.clockClass;
++	if (gm_clock_class > max_gm_clock_class) {
++		pr_debug("GM clock class %d > max clock class %d",
++			gm_clock_class, max_gm_clock_class);
++		return false;
++	}
++
++	/* max clock accuracy (lower is better) */
++	unsigned int gm_clock_accuracy = pds->grandmasterClockQuality.clockAccuracy;
++	unsigned int max_gm_clock_accuracy = domain->ha_limits.gm.clockAccuracy;
++	if (gm_clock_accuracy > max_gm_clock_accuracy) {
++		pr_debug("GM clock accuracy %d > max clock accuracy %d",
++			gm_clock_accuracy, max_gm_clock_accuracy);
++		return false;
++	}
++
++	/* max offset scaled log variance (lower is better) */
++	unsigned int offset = pds->grandmasterClockQuality.offsetScaledLogVariance;
++	unsigned int max_offset = domain->ha_limits.gm.offsetScaledLogVariance;
++	if (offset > max_offset) {
++		pr_debug("GM offset scaled log variance 0x%x > max offset 0x%x",
++			offset, max_offset);
++		return false;
++	}
++
++	return true;
++}
++
++static bool domain_match_ha_requirements(struct domain *domain)
++{
++	return domain_match_ha_dds_requirements(domain) &&
++		domain_match_ha_tds_requirements(domain) &&
++		domain_match_ha_pds_requirements(domain);
++}
++
++static int compare_domains_ha(struct domain *a, struct domain *b)
++{
++	if (!a || !b) {
++		if (a && a->src_clock)
++			return -1;
++		if (b && b->src_clock)
++			return 1;
++		return 0;
++	}
++
++	if (!a->src_clock != !b->src_clock)
++		return !!b->src_clock - !!a->src_clock;
++
++	bool a_matches = domain_match_ha_requirements(a);
++	bool b_matches = domain_match_ha_requirements(b);
++	/* only one matches, select it */
++	if (a_matches && !b_matches) {
++		pr_debug("only domain %p matches HA requirements", a);
++		return -1;
++	}
++
++	if (b_matches && !a_matches) {
++		pr_debug("only domain %p matches HA requirements", b);
++		return 1;
++	}
++
++	/* both match requirements, select the one with the highest priority */
++	if (a_matches || b_matches) {
++		pr_debug("both domains %p and %p match HA requirements", a, b);
++		pr_debug("selecting the one with higher priority: %d vs %d",
++			a->ha_priority, b->ha_priority);
++		return b->ha_priority - a->ha_priority;
++	}
++
++	/* none match requirements, select the one with the best clock class */
++	pr_debug("none of the following domains match HA requirements: %p and %p", a, b);
++	struct defaultDS *a_dds = pmc_agent_get_dds(a->agent);
++	struct defaultDS *b_dds = pmc_agent_get_dds(b->agent);
++	if (!a_dds || !b_dds) {
++		if (a_dds)
++			return -1;
++		if (b_dds)
++			return 1;
++		return 0;
++	}
++	pr_debug("selecting the one with lowest clock class: %d vs %d",
++		a_dds->clockQuality.clockClass, b_dds->clockQuality.clockClass);
++	return b_dds->clockQuality.clockClass - a_dds->clockQuality.clockClass;
++}
++
+ static int compare_domains(struct domain *a, struct domain *b)
+ {
+ 	if (!a || !b) {
+@@ -495,8 +703,14 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 		if (reconfigure_domain(&domains[i]))
+ 			return;
+ 
+-		if (compare_domains(src_domain, &domains[i]) > 0) {
+-			src_domain = &domains[i];
++		if (!domains[0].ha_enabled) {
++			if (compare_domains(src_domain, &domains[i]) > 0) {
++				src_domain = &domains[i];
++			}
++		} else {
++			if (compare_domains_ha(src_domain, &domains[i]) > 0) {
++				src_domain = &domains[i];
++			}
+ 		}
+ 
+ 		if (domains[i].has_rt_clock)
+@@ -888,12 +1102,31 @@ static int clock_compute_state(struct domain *domain,
+ 	return state;
+ }
+ 
++static int compare_parent_data_set(struct parentDS *pds1, struct parentDS *pds2)
++{
++	return memcmp(pds1, pds2, sizeof(*pds1));
++}
++
++static int compare_default_data_set(struct defaultDS *dds1, struct defaultDS *dds2)
++{
++	return memcmp(dds1, dds2, sizeof(*dds1));
++}
++
++static int compare_time_properties_data_set(struct timePropertiesDS *tds1,
++				struct timePropertiesDS *tds2)
++{
++	return memcmp(tds1, tds2, sizeof(*tds1));
++}
++
+ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 				   int excluded)
+ {
+ 	struct domain *domain = (struct domain *) context;
+ 	int mgt_id, state;
+ 	struct portDS *pds;
++	struct parentDS *parent_ds, *old_parent_ds;
++	struct defaultDS *dds, *old_dds;
++	struct timePropertiesDS *tds, *old_tds;
+ 	struct port *port;
+ 	struct clock *clock;
+ 
+@@ -922,6 +1155,94 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 			}
+ 		}
+ 		return 1;
++	case MID_PARENT_DATA_SET:
++		parent_ds = management_tlv_data(msg);
++		old_parent_ds = pmc_agent_get_pds(domain->agent);
++		if (old_parent_ds == NULL || compare_parent_data_set(parent_ds, old_parent_ds)) {
++			pr_info("domain %p parent data set changed", domain);
++			domain->state_changed = 1;
++			pr_debug("PARENT_DATA_SET"
++			IFMT "parentPortIdentity                    %s"
++			IFMT "parentStats                           %hhu"
++			IFMT "observedParentOffsetScaledLogVariance 0x%04hx"
++			IFMT "observedParentClockPhaseChangeRate    0x%08x"
++			IFMT "grandmasterPriority1                  %hhu"
++			IFMT "gm.ClockClass                         %hhu"
++			IFMT "gm.ClockAccuracy                      0x%02hhx"
++			IFMT "gm.OffsetScaledLogVariance            0x%04hx"
++			IFMT "grandmasterPriority2                  %hhu"
++			IFMT "grandmasterIdentity                   %s",
++			pid2str(&parent_ds->parentPortIdentity),
++			parent_ds->parentStats,
++			parent_ds->observedParentOffsetScaledLogVariance,
++			parent_ds->observedParentClockPhaseChangeRate,
++			parent_ds->grandmasterPriority1,
++			parent_ds->grandmasterClockQuality.clockClass,
++			parent_ds->grandmasterClockQuality.clockAccuracy,
++			parent_ds->grandmasterClockQuality.offsetScaledLogVariance,
++			parent_ds->grandmasterPriority2,
++			cid2str(&parent_ds->grandmasterIdentity));
++		}
++		pmc_agent_save_pds(domain->agent, parent_ds);
++		return 1;
++
++	case MID_DEFAULT_DATA_SET:
++		dds = management_tlv_data(msg);
++		old_dds = pmc_agent_get_dds(domain->agent);
++		if (old_dds == NULL || compare_default_data_set(dds, old_dds)) {
++			pr_info("domain %p default data set changed", domain);
++			domain->state_changed = 1;
++			pr_debug("DEFAULT_DATA_SET "
++			IFMT "twoStepFlag             %d"
++			IFMT "slaveOnly               %d"
++			IFMT "numberPorts             %hu"
++			IFMT "priority1               %hhu"
++			IFMT "clockClass              %hhu"
++			IFMT "clockAccuracy           0x%02hhx"
++			IFMT "offsetScaledLogVariance 0x%04hx"
++			IFMT "priority2               %hhu"
++			IFMT "clockIdentity           %s"
++			IFMT "domainNumber            %hhu",
++			dds->flags & DDS_TWO_STEP_FLAG ? 1 : 0,
++			dds->flags & DDS_SLAVE_ONLY ? 1 : 0,
++			dds->numberPorts,
++			dds->priority1,
++			dds->clockQuality.clockClass,
++			dds->clockQuality.clockAccuracy,
++			dds->clockQuality.offsetScaledLogVariance,
++			dds->priority2,
++			cid2str(&dds->clockIdentity),
++			dds->domainNumber);
++		}
++		pmc_agent_save_dds(domain->agent, dds);
++		return 1;
++
++	case MID_TIME_PROPERTIES_DATA_SET:
++		tds = management_tlv_data(msg);
++		old_tds = pmc_agent_get_tds(domain->agent);
++		if (old_tds == NULL || compare_time_properties_data_set(tds, old_tds)) {
++			pr_info("domain %p time properties data set changed", domain);
++			domain->state_changed = 1;
++			pr_debug("TIME_PROPERTIES_DATA_SET "
++			IFMT "currentUtcOffset      %hd"
++			IFMT "leap61                %d"
++			IFMT "leap59                %d"
++			IFMT "currentUtcOffsetValid %d"
++			IFMT "ptpTimescale          %d"
++			IFMT "timeTraceable         %d"
++			IFMT "frequencyTraceable    %d"
++			IFMT "timeSource            0x%02hhx",
++			tds->currentUtcOffset,
++			tds->flags & LEAP_61 ? 1 : 0,
++			tds->flags & LEAP_59 ? 1 : 0,
++			tds->flags & UTC_OFF_VALID ? 1 : 0,
++			tds->flags & PTP_TIMESCALE ? 1 : 0,
++			tds->flags & TIME_TRACEABLE ? 1 : 0,
++			tds->flags & FREQ_TRACEABLE ? 1 : 0,
++			tds->timeSource);
++		}
++		pmc_agent_save_tds(domain->agent, tds);
++		return 1;
+ 	}
+ 	return 0;
+ }
+@@ -1187,6 +1508,7 @@ int main(int argc, char *argv[])
+ 		.phc_interval = 1.0,
+ 	};
+ 	int n_domains = 0;
++	struct ha_limits ha_limits;
+ 
+ 	memset(domains, 0, sizeof (domains));
+ 
+@@ -1525,13 +1847,37 @@ int main(int argc, char *argv[])
+ 				cfg, src_names[i], "ha_uds_address");
+ 
+ 			/* get interfaces domain number */
+-			domain_numbers[i] = config_get_int(
+-				cfg, src_names[i], "ha_domainNumber");
++			domain_numbers[i] = global_domain_number;
++			if (config_is_option_set(cfg, src_names[i], "ha_domainNumber")) {
++				domain_numbers[i] = config_get_int(
++					cfg, src_names[i], "ha_domainNumber");
++			}
++		}
+ 
+-			/* use global domain number if HA domain number
+-			   not present in interface's configuration*/
+-			if (domain_numbers[i] < 0)
+-				domain_numbers[i] = global_domain_number;
++		/* get HA limits configuration */
++		ha_limits.local.clockClass =
++			config_get_int(cfg, NULL, "ha_max_local_clockClass");
++		ha_limits.local.clockAccuracy =
++			config_get_int(cfg, NULL, "ha_max_local_clockAccuracy");
++		ha_limits.local.offsetScaledLogVariance =
++			config_get_int(cfg, NULL, "ha_max_local_offsetScaledLogVar");
++		ha_limits.check_time_traceable =
++			config_get_int(cfg, NULL, "ha_gm_timeTraceable");
++		ha_limits.check_freq_traceable =
++			config_get_int(cfg, NULL, "ha_gm_frequencyTraceable");
++		ha_limits.gm.clockClass =
++			config_get_int(cfg, NULL, "ha_max_gm_clockClass");
++		ha_limits.gm.clockAccuracy =
++			config_get_int(cfg, NULL, "ha_max_gm_clockAccuracy");
++		ha_limits.gm.offsetScaledLogVariance =
++			config_get_int(cfg, NULL, "ha_max_gm_offsetScaledLogVar");
++
++		/* initialize all domains with configuration parameters */
++		for (i = 0; i < n_domains; i++) {
++			domains[i].ha_enabled = true;
++			domains[i].ha_priority = config_get_int(
++				cfg, src_names[i], "ha_priority");
++			domains[i].ha_limits = ha_limits;
+ 		}
+ 	}
+ 
+@@ -1543,8 +1889,7 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	for (i = 0; i < src_cnt; i++) {
+-		struct domain *domain = &domains[i];
+-		r = phc2sys_static_src_configuration(domain, src_names[i]);
++		r = phc2sys_static_src_configuration(&domains[i], src_names[i]);
+ 		if (r) {
+ 			goto end;
+ 		}
+@@ -1576,6 +1921,17 @@ int main(int argc, char *argv[])
+ 					pr_notice("Waiting for ptp4l...");
+ 			}
+ 
++			if (ha_enabled) {
++				/* fetch initial values */
++				pmc_agent_query_dds(domains[i].agent, 20);
++				pmc_agent_query_pds(domains[i].agent, 20);
++				pmc_agent_query_tds(domains[i].agent, 20);
++
++				if (pmc_agent_subscribe(domains[i].agent, 1000, domains[i].phc_interval)) {
++					goto end;
++				}
++			}
++
+ 			if (!domains[i].forced_sync_offset) {
+ 				r = pmc_agent_query_utc_offset(domains[i].agent, 1000);
+ 				if (r) {
+@@ -1584,10 +1940,12 @@ int main(int argc, char *argv[])
+ 				}
+ 			}
+ 
+-			if (domains[i].forced_sync_offset ||
+-				!phc2sys_using_systemclock(&domains[i]) ||
+-				hardpps_configured(pps_fd)) {
+-				pmc_agent_disable(domains[i].agent);
++			if (!ha_enabled) {
++				if (domains[i].forced_sync_offset ||
++					!phc2sys_using_systemclock(&domains[i]) ||
++					hardpps_configured(pps_fd)) {
++					pmc_agent_disable(domains[i].agent);
++				}
+ 			}
+ 		}
+ 	}
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 494c174..c546dbc 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -40,6 +40,10 @@ struct pmc_agent {
+ 
+ 	struct defaultDS dds;
+ 	bool dds_valid;
++	struct parentDS pds;
++	bool pds_valid;
++	struct timePropertiesDS tds;
++	bool tds_valid;
+ 	int leap;
+ 	int pmc_ds_requested;
+ 	bool stay_subscribed;
+@@ -58,6 +62,9 @@ static void send_subscription(struct pmc_agent *node)
+ 	memset(&sen, 0, sizeof(sen));
+ 	sen.duration = UPDATES_PER_SUBSCRIPTION * node->update_interval;
+ 	event_bitmask_set(sen.bitmask, NOTIFY_PORT_STATE, TRUE);
++	event_bitmask_set(sen.bitmask, NOTIFY_PARENT_DATA_SET, TRUE);
++	event_bitmask_set(sen.bitmask, NOTIFY_DEFAULT_DATA_SET, TRUE);
++	event_bitmask_set(sen.bitmask, NOTIFY_TIME_PROPERTIES_DATA_SET, TRUE);
+ 	pmc_send_set_action(node->pmc, MID_SUBSCRIBE_EVENTS_NP, &sen, sizeof(sen));
+ }
+ 
+@@ -293,6 +300,11 @@ int pmc_agent_query_dds(struct pmc_agent *node, int timeout)
+ 
+ 	res = run_pmc(node, timeout, MID_DEFAULT_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
++		// When there is timeout, treat dds data as invalid
++		if (res == RUN_PMC_TMO) {
++			pr_notice("pmc agent timeout reading pmc dds");
++			node->dds_valid = false;
++		}
+ 		return run_pmc_err2errno(res);
+ 	}
+ 	dds = (struct defaultDS *) management_tlv_data(msg);
+@@ -302,6 +314,92 @@ int pmc_agent_query_dds(struct pmc_agent *node, int timeout)
+ 	return 0;
+ }
+ 
++void pmc_agent_save_dds(struct pmc_agent *node, struct defaultDS *dds)
++{
++	memcpy(&node->dds, dds, sizeof(node->dds));
++	node->dds_valid = true;
++}
++
++struct defaultDS * pmc_agent_get_dds(struct pmc_agent *node)
++{
++	struct defaultDS *dds = NULL;
++	if (node->dds_valid)
++		dds = &node->dds;
++	return dds;
++}
++
++int pmc_agent_query_pds(struct pmc_agent *node, int timeout)
++{
++	struct ptp_message *msg;
++	struct parentDS *pds;
++	int res;
++
++	res = run_pmc(node, timeout, MID_PARENT_DATA_SET, &msg);
++	if (is_run_pmc_error(res)) {
++		// When there is timeout error, treat pds data as invalid
++		if (res == RUN_PMC_TMO) {
++			pr_notice("pmc agent timeout reading pmc pds");
++			node->pds_valid = false;
++		}
++		return run_pmc_err2errno(res);
++	}
++	pds = (struct parentDS *) management_tlv_data(msg);
++	memcpy(&node->pds, pds, sizeof(node->pds));
++	node->pds_valid = true;
++	msg_put(msg);
++	return 0;
++}
++
++void pmc_agent_save_pds(struct pmc_agent *node, struct parentDS *pds)
++{
++	memcpy(&node->pds, pds, sizeof(node->pds));
++	node->pds_valid = true;
++}
++
++struct parentDS * pmc_agent_get_pds(struct pmc_agent *node)
++{
++	struct parentDS *pds = NULL;
++	if (node->pds_valid)
++		pds = &node->pds;
++	return pds;
++}
++
++int pmc_agent_query_tds(struct pmc_agent *node, int timeout)
++{
++	struct ptp_message *msg;
++	struct timePropertiesDS *tds;
++	int res;
++
++	res = run_pmc(node, timeout, MID_TIME_PROPERTIES_DATA_SET, &msg);
++	if (is_run_pmc_error(res)) {
++		// When there is timeout error, treat tds data as invalid
++		if (res == RUN_PMC_TMO) {
++			pr_notice("pmc agent timeout reading pmc tds");
++			node->tds_valid = false;
++		}
++		return run_pmc_err2errno(res);
++	}
++	tds = (struct timePropertiesDS*) management_tlv_data(msg);
++	memcpy(&node->tds, tds, sizeof(node->tds));
++	node->tds_valid = true;
++	msg_put(msg);
++	return 0;
++}
++
++void pmc_agent_save_tds(struct pmc_agent *node, struct timePropertiesDS *tds)
++{
++	memcpy(&node->tds, tds, sizeof(node->tds));
++	node->tds_valid = true;
++}
++
++struct timePropertiesDS * pmc_agent_get_tds(struct pmc_agent *node)
++{
++	struct timePropertiesDS *tds = NULL;
++	if (node->tds_valid)
++		tds = &node->tds;
++	return tds;
++}
++
+ int pmc_agent_query_port_properties(struct pmc_agent *node, int timeout,
+ 				    unsigned int port, enum port_state *state,
+ 				    int *tstamping, int *phc_index, char *iface)
+diff --git a/pmc_agent.h b/pmc_agent.h
+index ef5552e..008c959 100644
+--- a/pmc_agent.h
++++ b/pmc_agent.h
+@@ -92,6 +92,74 @@ int pmc_agent_get_sync_offset(struct pmc_agent *agent);
+  */
+ int pmc_agent_query_dds(struct pmc_agent *agent, int timeout);
+ 
++/**
++ * Saves the local clock's default data set from ptp4l service.
++ *
++ * @param agent Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @param dds   Pointer to default data set
++ */
++void pmc_agent_save_dds(struct pmc_agent *agent, struct defaultDS *dds);
++
++/**
++ * Get local clock's default data set cached in the agent.
++ *
++ * @param agent Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @return      Pointer to the cached dds, NULL if dds is invalid.
++ */
++struct defaultDS * pmc_agent_get_dds(struct pmc_agent *agent);
++
++/**
++ * Queries the parent data set from the ptp4l service.
++ * The result of the query will be cached inside of the agent.
++ *
++ * @param agent   Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @param timeout Transmit and receive timeout in milliseconds.
++ * @return        Zero on success, negative error code otherwise.
++ */
++int pmc_agent_query_pds(struct pmc_agent *agent, int timeout);
++
++/**
++ * Saves the parent data set from ptp4l service.
++ *
++ * @param agent Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @param pds   Pointer to the parent data set.
++ */
++void pmc_agent_save_pds(struct pmc_agent *agent, struct parentDS *pds);
++
++/**
++ * Get the parent data set cached in the agent.
++ *
++ * @param agent Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @return      Pointer to the cached pds, NULL if pds is invalid.
++ */
++struct parentDS * pmc_agent_get_pds(struct pmc_agent *agent);
++
++/**
++ * Queries the time properties data set from the ptp4l service.
++ * The result of the query will be cached inside of the agent.
++ *
++ * @param agent    Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @param timeout  Transmit and receive timeout in milliseconds.
++ * @return         Zero on success, negative error code otherwise.
++ */
++int pmc_agent_query_tds(struct pmc_agent *agent, int timeout);
++
++/**
++ * Saved the time properties data set from ptp4l service.
++ *
++ * @param agent Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @param tds   Pointer to the time properties data set.
++ */
++void pmc_agent_save_tds(struct pmc_agent *agent, struct timePropertiesDS *tds);
++
++/**
++ * Get the time properties data set cached in agent.
++ *
++ * @param agent Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @return      Pointer to the cached tds, NULL if tds is invalid.
++ */
++struct timePropertiesDS * pmc_agent_get_tds(struct pmc_agent *agent);
++
+ /**
+  * Queries the port properties of a given port from the ptp4l service.
+  *
+-- 
+2.34.1
+

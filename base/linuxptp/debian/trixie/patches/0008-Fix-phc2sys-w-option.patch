@@ -1,0 +1,64 @@
+From 5aa4ea00d0cc6efcc45f11e02529556e2633a9e8 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Thu, 28 May 2026 15:09:57 -0300
+Subject: [PATCH 08/11] Fix phc2sys -w option
+
+This commit fixes the phc2sys configuration with -w option and
+without HA, which crashed at the service start up.
+
+Test Plan:
+PASS Verify phc2sys -z uds_address -d 24 -w
+
+     ptp-instance-parameter-add phc1 cmdline_opts='-s enp81s0f0
+       -z /var/run/ptp4l-ptpinstc01 -d 24 -w'
+
+PASS Verify phc2sys -z uds_address -w (domain number in conf file)
+
+     ptp-instance-parameter-add phc1 cmdline_opts='-s enp81s0f0
+       -z /var/run/ptp4l-ptpinstc01 -w'
+     ptp-instance-parameter-add phc1 domainNumber=24
+
+PASS Verify phc2sys -w (domain number and uds in conf file)
+
+     ptp-instance-parameter-add phc1 cmdline_opts='-s enp81s0f0 -w'
+     ptp-instance-parameter-add phc1 domainNumber=24
+     ptp-instance-parameter-add phc1 uds_address=/var/run/ptp4l-ptpinstc01
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index b5303e4..29e6ae9 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -2449,6 +2449,9 @@ int main(int argc, char *argv[])
+ 			}
+ 		}
+ 
++		uds_remote_cnt = src_cnt;
++		domain_number_cnt = src_cnt;
++
+ 		/* get HA limits configuration */
+ 		ha_limits.local.clockClass =
+ 			config_get_int(cfg, NULL, "ha_max_local_clockClass");
+@@ -2508,9 +2511,12 @@ int main(int argc, char *argv[])
+ 			snprintf(uds_local, sizeof(uds_local),
+ 				"/var/run/phc2sys.%d.%d", getpid(), i);
+ 
+-			config_set_string(cfg, "uds_address", uds_remotes[i]);
+-
+-			config_set_int(cfg, "domainNumber", domain_numbers[i]);
++			if (uds_remote_cnt > i)
++				config_set_string(cfg, "uds_address",
++						  uds_remotes[i]);
++			if (domain_number_cnt > i)
++				config_set_int(cfg, "domainNumber",
++					       domain_numbers[i]);
+ 
+ 			if (init_pmc_node(cfg, domains[i].agent, uds_local,
+ 					  phc2sys_recv_subscribed, &domains[i]))
+-- 
+2.34.1
+

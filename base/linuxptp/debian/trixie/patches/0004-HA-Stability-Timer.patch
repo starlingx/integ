@@ -1,0 +1,224 @@
+From 5a2de72851b583c49942925c864ba016a64e735a Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Sat, 23 May 2026 10:54:52 -0300
+Subject: [PATCH 04/11] HA Stability Timer
+
+In system configured with sources of different priorities, when the
+highest priority clock source recovers from instability, it is selected
+immediately. The new configuration option ha_stability_timer changes
+this behavior.
+
+When the stability timer is set in the clock, the highest priority
+clock source is only selected after this timer expires.
+
+The ha_stability_timer is configured in seconds, and it is disabled
+by default.
+
+Test Plan:
+PASS In a system configured as PTP T-BC, using HA spec and two
+     sources with different priorities, and stability timer set
+     to 10s.
+
+     system ptp-interface-parameter-add phc-iface01 ha_priority=200
+        ha_stability_timer=10
+     system ptp-interface-parameter-add phc-iface02 ha_priority=210
+        ha_stability_timer=10
+
+     Given both external GMs are up and matching the HA requirements,
+     the source with highest priority will be selected first.
+
+     When the GM connected to the source with the highest priority degrades
+     Then the one with the lowest priority is selected
+
+     When the GM connected to the source with the highest priority recovers
+     Then due to the stability timer, the lowest priority source remains
+     selected.
+
+     Before the 10s elapse.
+     When the GM connected to the source with the lowest priority degrades
+     Then the source with the highest priority is selected immediately,
+     ignoring the stability timer, because it is the only clock source
+     matching the HA requirements.
+
+     Given the lowest clock source haven't degraded during the stability timer
+     When the 10s elapses
+     Then the highest priority source is selected
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 65 ++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 59 insertions(+), 6 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 92ff8a9..c291cbe 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -130,6 +130,9 @@ struct domain {
+ 	bool ha_enabled;
+ 	int ha_priority;
+ 	struct ha_limits ha_limits;
++	bool ha_good;
++	int ha_stability_timer;
++	uint64_t ha_last_update;
+ };
+ 
+ static struct config *phc2sys_config;
+@@ -636,21 +639,21 @@ static int compare_domains_ha(struct domain *a, struct domain *b)
+ 	if (!a->src_clock != !b->src_clock)
+ 		return !!b->src_clock - !!a->src_clock;
+ 
+-	bool a_matches = domain_match_ha_requirements(a);
+-	bool b_matches = domain_match_ha_requirements(b);
++	a->ha_good = domain_match_ha_requirements(a);
++	b->ha_good = domain_match_ha_requirements(b);
+ 	/* only one matches, select it */
+-	if (a_matches && !b_matches) {
++	if (a->ha_good && !b->ha_good) {
+ 		pr_debug("only domain %p matches HA requirements", a);
+ 		return -1;
+ 	}
+ 
+-	if (b_matches && !a_matches) {
++	if (b->ha_good && !a->ha_good) {
+ 		pr_debug("only domain %p matches HA requirements", b);
+ 		return 1;
+ 	}
+ 
+ 	/* both match requirements, select the one with the highest priority */
+-	if (a_matches || b_matches) {
++	if (a->ha_good || b->ha_good) {
+ 		pr_debug("both domains %p and %p match HA requirements", a, b);
+ 		pr_debug("selecting the one with higher priority: %d vs %d",
+ 			a->ha_priority, b->ha_priority);
+@@ -693,9 +696,16 @@ static void reconfigure(struct domain *domains, int n_domains)
+ {
+ 	struct domain *src_domain = NULL, *rt_domain = NULL;
+ 	int i;
++	struct timespec tp;
++	uint64_t now;
++	struct domain *prev_src_domain =  domains[0].src_domain;
+ 
+ 	pr_info("reconfiguring after port state change");
+ 
++	if (!clock_gettime(CLOCK_MONOTONIC, &tp)) {
++		now = tp.tv_sec * NS_PER_SEC + tp.tv_nsec;
++	}
++
+ 	for (i = 0; i < n_domains; i++) {
+ 		while (!LIST_EMPTY(&domains[i].dst_clocks))
+ 			LIST_REMOVE(LIST_FIRST(&domains[i].dst_clocks), dst_list);
+@@ -721,6 +731,20 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 		return;
+ 	}
+ 
++	/* Given HA is enabled and the stability timer is set, if the new selected
++	 * clock source has higher priority than the previous one, and the prev is
++	 * matching the HA requirements, than keep the previous clock for the span
++	 * of the stability timer.
++	 */
++	if ((src_domain->ha_enabled && src_domain->ha_stability_timer) &&
++		(src_domain->ha_priority > prev_src_domain->ha_priority) &&
++		prev_src_domain->ha_good &&
++		((src_domain->ha_last_update + src_domain->ha_stability_timer * NS_PER_SEC) > now)) {
++
++		pr_debug("keeping current source during the the stability timer");
++		src_domain = prev_src_domain;
++	}
++
+ 	if (rt_domain && src_domain != rt_domain) {
+ 		pr_info("selecting CLOCK_REALTIME for synchronization");
+ 	}
+@@ -1025,7 +1049,9 @@ static int do_loop(struct domain *domains, int n_domains)
+ {
+ 	int i, state_changed, prev_sub;
+ 	struct timespec interval;
+-	struct domain *domain;
++	struct domain *domain, *src_domain;
++	struct timespec tp;
++	uint64_t now;
+ 
+ 	/* All domains have the same interval */
+ 	interval.tv_sec = domains[0].phc_interval;
+@@ -1035,6 +1061,11 @@ static int do_loop(struct domain *domains, int n_domains)
+ 		clock_nanosleep(CLOCK_MONOTONIC, 0, &interval, NULL);
+ 
+ 		state_changed = 0;
++		src_domain = domains[0].src_domain;
++		if (!clock_gettime(CLOCK_MONOTONIC, &tp)) {
++			now = tp.tv_sec * NS_PER_SEC + tp.tv_nsec;
++		}
++
+ 		for (i = 0; i < n_domains; i++) {
+ 			domain = &domains[i];
+ 			if (pmc_agent_update(domain->agent) < 0) {
+@@ -1063,6 +1094,18 @@ static int do_loop(struct domain *domains, int n_domains)
+ 					continue;
+ 				}
+ 			}
++
++			/* Given ha is enabled, domain is good and has higher priority than
++			 * the current source, and the stability timer has elapsed, trigger
++			 * a reconfiguration by setting state_changed.
++			 */
++			if (domain->ha_enabled && domain->ha_good &&
++			    (domain->ha_priority > src_domain->ha_priority) &&
++			    (domain->ha_last_update + domain->ha_stability_timer * NS_PER_SEC < now)) {
++
++				pr_debug("statiblity timer expired");
++				state_changed = 1;
++			}
+ 		}
+ 
+ 		if (state_changed) {
+@@ -1129,10 +1172,15 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 	struct timePropertiesDS *tds, *old_tds;
+ 	struct port *port;
+ 	struct clock *clock;
++	struct timespec tp;
++	uint64_t ts;
+ 
+ 	mgt_id = management_tlv_id(msg);
+ 	if (mgt_id == excluded)
+ 		return 0;
++	if (!clock_gettime(CLOCK_MONOTONIC, &tp)) {
++		ts = tp.tv_sec * NS_PER_SEC + tp.tv_nsec;
++	}
+ 	switch (mgt_id) {
+ 	case MID_PORT_DATA_SET:
+ 		pds = management_tlv_data(msg);
+@@ -1161,6 +1209,7 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 		if (old_parent_ds == NULL || compare_parent_data_set(parent_ds, old_parent_ds)) {
+ 			pr_info("domain %p parent data set changed", domain);
+ 			domain->state_changed = 1;
++			domain->ha_last_update = ts;
+ 			pr_debug("PARENT_DATA_SET"
+ 			IFMT "parentPortIdentity                    %s"
+ 			IFMT "parentStats                           %hhu"
+@@ -1192,6 +1241,7 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 		if (old_dds == NULL || compare_default_data_set(dds, old_dds)) {
+ 			pr_info("domain %p default data set changed", domain);
+ 			domain->state_changed = 1;
++			domain->ha_last_update = ts;
+ 			pr_debug("DEFAULT_DATA_SET "
+ 			IFMT "twoStepFlag             %d"
+ 			IFMT "slaveOnly               %d"
+@@ -1223,6 +1273,7 @@ static int phc2sys_recv_subscribed(void *context, struct ptp_message *msg,
+ 		if (old_tds == NULL || compare_time_properties_data_set(tds, old_tds)) {
+ 			pr_info("domain %p time properties data set changed", domain);
+ 			domain->state_changed = 1;
++			domain->ha_last_update = ts;
+ 			pr_debug("TIME_PROPERTIES_DATA_SET "
+ 			IFMT "currentUtcOffset      %hd"
+ 			IFMT "leap61                %d"
+@@ -1877,6 +1928,8 @@ int main(int argc, char *argv[])
+ 			domains[i].ha_enabled = true;
+ 			domains[i].ha_priority = config_get_int(
+ 				cfg, src_names[i], "ha_priority");
++			domains[i].ha_stability_timer = config_get_int(
++				cfg, src_names[i], "ha_stability_timer");
+ 			domains[i].ha_limits = ha_limits;
+ 		}
+ 	}
+-- 
+2.34.1
+

@@ -1,0 +1,428 @@
+From b1e5faa0e3902f34dd4eae4065c8f4b0270f2d37 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Wed, 14 Jan 2026 12:38:16 -0300
+Subject: [PATCH 02/11] (HA) Enhance phc2sys to accept multiple source
+ interfaces
+
+This change is part of the High Availability (HA) feature, that allows
+phc2sys to be configured with multiple source interfaces, and
+multiple ptp4l connections, from the same or different domains.
+
+This new feature introduces clock source redundancy using
+an active-standby model. In this setup, only one interface
+is selected as clock source at any given time. If the current
+clock source experiences degradation, the system automatically
+selects an alternative, reliable interface to maintain optimal
+performance.
+
+Three new configuration options were introduced in this change:
+* ha_enabled
+* ha_domainNumber
+* ha_uds_address
+
+When set the ha_enabled configuration enables the HA feature.
+
+The ha_domainNumber and ha_uds_address settings are interface
+specific rather than global configurations. These settings
+enable an interface source to utilize a distinct domain and
+establish a separate ptp4l connection. They override the global
+domainNumber and uds_address values, for that specific interface.
+
+Example:
+
+domainNumber 20
+ha_enabled 1
+
+[ens1f1]
+ha_ domainNumber 24
+ha_uds_address /var/run/ptp4l-ptp-inst1
+
+[ens1f2]
+ha_ domainNumber 25
+ha_uds_address /var/run/ptp4l-ptp-inst2
+
+Test Cases:
+PASS In a system configured as PTP T-GM, and phc2sys static
+     clock source interface.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-s enp81s0f2 -O -37'
+
+     Look at phc2sys log messages, and verify realtime clock
+     is being set by source's PHC.
+
+     phcinst0 CLOCK_REALTIME phc offset 12 s0 freq -20674 delay 501
+
+PASS In a system configured as PTP T-BC, and phc2sys auto clock
+     source configuration.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-a -r -R 10 -u 600'
+     system ptp-instance-parameter-add phcinst0 domainNumber=24
+     system ptp-instance-parameter-add phcinst0 uds_address=
+        /var/run/ptp4l-ptp-inst1
+
+     Look at phc2sys log messages, and verify realtime clock
+     is being set by source's PHC.
+
+     phcinst0 CLOCK_REALTIME phc offset 12 s0 freq -20674 delay 501
+
+PASS In a system configured as PTP T-BC, and phc2sys configured
+     with multiple domains.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-a -r -R 10 -u 600 -n 24 -z /var/run/ptp4l-ptp-inst1
+        -n 24 -z /var/run/ptp4l-ptp-inst2'
+
+     Look at phc2sys log messages, and verify realtime clock
+     is being set by source's PHC.
+
+PASS In a system configured as PTP T-GM, and phc2sys configured
+     with HA enabled and two or more interfaces.
+
+     system ptp-instance-add phcinst0 cmdline_opts='-w'
+     system ptp-instance-add phcinst0 ha_enabled=1
+     system ptp-instance-add phcinst0 domainNumber=24
+     system ptp-interface-add phciface0 phcinst0
+     system host-if-ptp-assign controller-0 ptp0 phciface0
+     system ptp-interface-parameter-add phciface0
+        ha_uds_address=/var/run/ptp4l-ptpinst0
+     system ptp-interface-add phciface1 phcinst0
+     system host-if-ptp-assign controller-0 ptp1 phciface1
+     system ptp-interface-parameter-add phciface1
+        ha_uds_address=/var/run/ptp4l-ptpinst1
+
+     Look at phc2sys log messages, and verify realtime clock
+     is being set by source's PHC.
+
+PASS (Negative Test Case) In a system configured as T-GM, and
+     phc2sys configured with both static clock source and
+     auto mode.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-s enp81s0f2 -O -37 -a'
+
+     The phc2sys service will fail with error message:
+     "autoconfiguration cannot be mixed with manual config options."
+
+PASS (Negative Test Case) In a system configured as T-BC, and
+     phc2sys configured with neither static clock source nor
+     auto mode.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-r -R 10 -u 600'
+
+     The phc2sys service will fail with error message:
+     "autoconfiguration or valid source clock must be selected."
+
+PASS (Negative Test Case) In a system configured as T-GM, and
+     phc2sys configured with neither auto mode nor wait for ptp4l (-w)
+     nor sync-source time offset.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-s enp81s0f3'
+
+     The phc2sys service will fail with error message:
+     "time offset must be specified using -w or -O"
+
+PASS (Negative Test Case) In a system configured as T-GM, and
+     phc2sys configured with multiple specific sources but
+     HA disabled.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-s enp81s0f3 -s enp138s0f3 -O 37'
+
+     The phc2sys service will fail with error message:
+     "too many source clocks
+     Use 'ha_enabled 1' to accept more than one source clock"
+
+PASS (Negative Test Case) In a system configured as T-BC, and
+     phc2sys configured with multiple domains but without
+     auto mode.
+
+     system ptp-instance-parameter-add phcinst0 cmdline_opts=
+        '-n 24 -z /var/run/ptp4l-ptpinstc01 -n 25
+         -z /var/run/ptp4l-ptpinstc02'
+
+     The phc2sys service will fail with error message:
+     "autoconfiguration needed with multiple domains."
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ config.c  |  18 ++++++++
+ config.h  |   2 +
+ phc2sys.c | 131 +++++++++++++++++++++++++++++++++++++-----------------
+ 3 files changed, 111 insertions(+), 40 deletions(-)
+
+diff --git a/config.c b/config.c
+index ea90636..e77ff71 100644
+--- a/config.c
++++ b/config.c
+@@ -268,6 +268,9 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("G.8275.defaultDS.localPriority", 128, 1, UINT8_MAX),
+ 	PORT_ITEM_INT("G.8275.portDS.localPriority", 128, 1, UINT8_MAX),
+ 	GLOB_ITEM_INT("gmCapable", 1, 0, 1),
++	PORT_ITEM_INT("ha_domainNumber", 0, 0, 127),
++	GLOB_ITEM_INT("ha_enabled", 0, 0, 1),
++	PORT_ITEM_STR("ha_uds_address", "/var/run/ptp4l"),
+ 	GLOB_ITEM_ENU("hwts_filter", HWTS_FILTER_NORMAL, hwts_filter_enu),
+ 	PORT_ITEM_INT("hybrid_e2e", 0, 0, 1),
+ 	PORT_ITEM_INT("ignore_source_id", 0, 0, 1),
+@@ -1041,6 +1044,21 @@ char *config_get_string(struct config *cfg, const char *section,
+ 	return ci->val.s;
+ }
+ 
++unsigned int config_get_interfaces(struct config *cfg, char *interfaces[], unsigned int max)
++{
++	struct interface *iface = NULL;
++	unsigned int counter = 0;
++
++	STAILQ_FOREACH(iface, &cfg->interfaces, list) {
++		if (counter == max) {
++			pr_err("bug: too many interfaces!");
++			return (unsigned int)-1;
++		}
++		interfaces[counter++] = interface_name(iface);
++	}
++	return counter;
++}
++
+ int config_harmonize_onestep(struct config *cfg)
+ {
+ 	enum timestamp_type tstype = config_get_int(cfg, NULL, "time_stamping");
+diff --git a/config.h b/config.h
+index 14d2f64..645fb42 100644
+--- a/config.h
++++ b/config.h
+@@ -64,6 +64,8 @@ int config_get_int(struct config *cfg, const char *section,
+ char *config_get_string(struct config *cfg, const char *section,
+ 			const char *option);
+ 
++unsigned int config_get_interfaces(struct config *cfg, char *interfaces[], unsigned int max);
++
+ int config_harmonize_onestep(struct config *cfg);
+ 
+ static inline struct option *config_long_options(struct config *cfg)
+diff --git a/phc2sys.c b/phc2sys.c
+index 1745558..fe970b5 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -64,9 +64,10 @@
+ 
+ #define PHC_PPS_OFFSET_LIMIT 10000000
+ 
++#define MAX_SRC_CLOCKS 128
+ #define MAX_DST_CLOCKS 128
+ 
+-#define MAX_DOMAINS 16
++#define MAX_DOMAINS 128
+ 
+ struct clock {
+ 	LIST_ENTRY(clock) list;
+@@ -1169,13 +1170,14 @@ static void usage(char *progname)
+ 
+ int main(int argc, char *argv[])
+ {
+-	char *config = NULL, *progname, *src_name = NULL;
++	char *config = NULL, *progname, *src_names[MAX_SRC_CLOCKS];
+ 	const char *dst_names[MAX_DST_CLOCKS], *uds_remotes[MAX_DOMAINS];
+ 	char uds_local[MAX_IFNAME_SIZE + 1];
+ 	int domain_numbers[MAX_DOMAINS], domain_number_cnt = 0;
+ 	int i, autocfg = 0, c, index, ntpshm_segment, offset = 0;
+ 	int pps_fd = -1, print_level = LOG_INFO, r = -1, rt = 0;
+ 	int wait_sync = 0, dst_cnt = 0, uds_remote_cnt = 0;
++	int src_cnt = 0, ha_enabled = 0, global_domain_number = 0;
+ 	struct config *cfg;
+ 	struct option *opts;
+ 	double phc_rate, tmp;
+@@ -1241,7 +1243,11 @@ int main(int argc, char *argv[])
+ 				"'-i' has been deprecated. please use '-s' instead.\n");
+             /* fallthrough */
+ 		case 's':
+-			src_name = optarg;
++			if (src_cnt == MAX_SRC_CLOCKS) {
++				fprintf(stderr, "too many source clocks\n");
++				goto bad_usage;
++			}
++			src_names[src_cnt++] = optarg;
+ 			break;
+ 		case 'E':
+ 			if (!strcasecmp(optarg, "pi")) {
+@@ -1384,11 +1390,22 @@ int main(int argc, char *argv[])
+ 		return c;
+ 	}
+ 
++	ha_enabled = config_get_int(cfg, NULL, "ha_enabled");
++	if (ha_enabled && src_cnt == 0) {
++		/* get the source interface list from configuration file */
++		src_cnt = config_get_interfaces(cfg, src_names, MAX_SRC_CLOCKS);
++		if (src_cnt == (unsigned int)-1) {
++			fprintf(stderr, "too many interfaces in configuration file\n");
++			fprintf(stderr, "maximum number of interfaces is %u\n", MAX_SRC_CLOCKS);
++			goto bad_usage;
++		}
++	}
++
+ 	if (!autocfg && dst_cnt == 0) {
+ 		dst_names[dst_cnt++] = "CLOCK_REALTIME";
+ 	}
+ 
+-	if (autocfg && (src_name || dst_cnt > 0 || hardpps_configured(pps_fd) ||
++	if (autocfg && (src_cnt > 0 || dst_cnt > 0 || hardpps_configured(pps_fd) ||
+ 			wait_sync || settings.forced_sync_offset)) {
+ 		fprintf(stderr,
+ 			"autoconfiguration cannot be mixed with manual config options.\n");
+@@ -1400,7 +1417,7 @@ int main(int argc, char *argv[])
+ 		goto bad_usage;
+ 	}
+ 
+-	if (!autocfg && !hardpps_configured(pps_fd) && !src_name) {
++	if (!autocfg && !hardpps_configured(pps_fd) && src_cnt == 0) {
+ 		fprintf(stderr,
+ 			"autoconfiguration or valid source clock must be selected.\n");
+ 		goto bad_usage;
+@@ -1443,6 +1460,10 @@ int main(int argc, char *argv[])
+ 			fprintf(stderr, "too many domains\n");
+ 			goto bad_usage;
+ 		}
++	} else if (ha_enabled) {
++		n_domains = src_cnt;
++		if (rt)
++			n_domains += 1;
+ 	} else {
+ 		n_domains = 1;
+ 	}
+@@ -1487,6 +1508,33 @@ int main(int argc, char *argv[])
+ 		goto end;
+ 	}
+ 
++	if (!ha_enabled && src_cnt > 1) {
++		fprintf(stderr, "too many source clocks\n");
++		fprintf(stderr, "Use 'ha_enabled 1' to accept more than one source clock\n");
++		goto bad_usage;
++	}
++
++	if (ha_enabled) {
++		/* save global domain number */
++		global_domain_number = config_get_int(
++			cfg, NULL, "domainNumber");
++
++		for (i = 0; i < src_cnt; i++) {
++			/* get interfaces uds address */
++			uds_remotes[i] = config_get_string(
++				cfg, src_names[i], "ha_uds_address");
++
++			/* get interfaces domain number */
++			domain_numbers[i] = config_get_int(
++				cfg, src_names[i], "ha_domainNumber");
++
++			/* use global domain number if HA domain number
++			   not present in interface's configuration*/
++			if (domain_numbers[i] < 0)
++				domain_numbers[i] = global_domain_number;
++		}
++	}
++
+ 	for (i = 0; i < dst_cnt; i++) {
+ 		r = phc2sys_static_dst_configuration(&domains[0], dst_names[i]);
+ 		if (r) {
+@@ -1494,50 +1542,53 @@ int main(int argc, char *argv[])
+ 		}
+ 	}
+ 
+-	r = phc2sys_static_src_configuration(&domains[0], src_name);
+-	if (r) {
+-		goto end;
++	for (i = 0; i < src_cnt; i++) {
++		struct domain *domain = &domains[i];
++		r = phc2sys_static_src_configuration(domain, src_names[i]);
++		if (r) {
++			goto end;
++		}
+ 	}
+ 
+ 	r = -1;
+ 
+ 	if (wait_sync) {
+-		snprintf(uds_local, sizeof(uds_local),
+-			 "/var/run/phc2sys.%d", getpid());
+-
+-		if (uds_remote_cnt > 0)
+-			config_set_string(cfg, "uds_address",
+-					  uds_remotes[uds_remote_cnt - 1]);
+-		if (domain_number_cnt > 0)
+-			config_set_int(cfg, "domainNumber",
+-				       domain_numbers[domain_number_cnt - 1]);
+-
+-		if (init_pmc_node(cfg, domains[0].agent, uds_local,
+-				  phc2sys_recv_subscribed, &domains[0]))
+-			goto end;
++		for (i = 0; i < src_cnt; i++) {
++			/* compute local uds address */
++			snprintf(uds_local, sizeof(uds_local),
++				"/var/run/phc2sys.%d.%d", getpid(), i);
+ 
+-		while (is_running()) {
+-			r = run_pmc_wait_sync(domains[0].agent, 1000);
+-			if (r < 0)
+-				goto end;
+-			if (r > 0)
+-				break;
+-			else
+-				pr_notice("Waiting for ptp4l...");
+-		}
++			config_set_string(cfg, "uds_address", uds_remotes[i]);
++
++			config_set_int(cfg, "domainNumber", domain_numbers[i]);
+ 
+-		if (!domains[0].forced_sync_offset) {
+-			r = pmc_agent_query_utc_offset(domains[0].agent, 1000);
+-			if (r) {
+-				pr_err("failed to get UTC offset");
++			if (init_pmc_node(cfg, domains[i].agent, uds_local,
++					  phc2sys_recv_subscribed, &domains[i]))
+ 				goto end;
++
++			while (is_running()) {
++				r = run_pmc_wait_sync(domains[i].agent, 1000);
++				if (r < 0)
++					goto end;
++				if (r > 0)
++					break;
++				else
++					pr_notice("Waiting for ptp4l...");
+ 			}
+-		}
+ 
+-		if (domains[0].forced_sync_offset ||
+-		    !phc2sys_using_systemclock(&domains[0]) ||
+-		    hardpps_configured(pps_fd)) {
+-			pmc_agent_disable(domains[0].agent);
++			if (!domains[i].forced_sync_offset) {
++				r = pmc_agent_query_utc_offset(domains[i].agent, 1000);
++				if (r) {
++					pr_err("failed to get UTC offset");
++					goto end;
++				}
++			}
++
++			if (domains[i].forced_sync_offset ||
++				!phc2sys_using_systemclock(&domains[i]) ||
++				hardpps_configured(pps_fd)) {
++				pmc_agent_disable(domains[i].agent);
++			}
+ 		}
+ 	}
+ 
+@@ -1550,7 +1601,7 @@ int main(int argc, char *argv[])
+ 		servo_sync_interval(dst->servo, 1.0);
+ 		r = do_pps_loop(&domains[0], dst, pps_fd);
+ 	} else {
+-		r = do_loop(&domains[0], 1);
++		r = do_loop(domains, n_domains);
+ 	}
+ 
+ end:
+-- 
+2.34.1
+

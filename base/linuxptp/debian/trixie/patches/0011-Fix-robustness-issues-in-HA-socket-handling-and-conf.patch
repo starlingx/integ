@@ -1,0 +1,111 @@
+From ce2996c62a388f69df99d2adce1160a755361381 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Tue, 2 Jun 2026 22:51:53 -0300
+Subject: [PATCH 11/11] Fix robustness issues in HA socket handling and config
+ file parsing
+
+This commit contains 3 robustness fixes, two in the HA communication
+socket handling functions and one in the configuration parser
+submodule.
+
+The buffer used in ha_com_socket_recv to read incoming messages is
+HA_SCK_BUFFER_SIZE bytes long, but it's necessary to reserve 1 byte
+for the null terminator, so it's required to inform
+HA_SCK_BUFFER_SIZE - 1 bytes to avoid a buffer overflow.
+
+In the ha_com_socket_handle_msg function the receive and response
+buffers are allocated inside a loop to receive multiple incoming
+messages in a sequence. To avoid a memory leak it's necessary to free
+those buffers every loop cycle.
+
+The config_get_interfaces function is used to retrieve the name of
+all interface configured in the .conf file. It receives as parameter
+an array and the array size. When the number of interfaces reaches
+the array size the function stops to fill the array to avoid a buffer
+overflow and returns the total number of interfaces in the configuration
+file for a proper fault handling.
+
+Test Plan:
+PASS Verify that a message of HA_SCK_BUFFER_SIZE - 1 bytes is received.
+PASS Verify that a message of HA_SCK_BUFFER_SIZE bytes is truncated.
+PASS Verify that a message of more than HA_SCK_BUFFER_SIZE bytes is also
+     truncated.
+PASS Verify that phc2sys accepts a configuration file with 128 (MAX_SRC_CLOCKS)
+     interfaces.
+PASS (Negative Case) Verify that phc2sys rejects a configuration file with
+     more thant MAX_SRC_CLOCKS interfaces, and returns the following error
+     message:
+     "too many interfaces in configuration file
+      maximum number of interfaces is 128"
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ config.c  |  7 +++----
+ phc2sys.c | 11 ++++++++---
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/config.c b/config.c
+index 12f0067..f26bad4 100644
+--- a/config.c
++++ b/config.c
+@@ -1062,11 +1062,10 @@ unsigned int config_get_interfaces(struct config *cfg, char *interfaces[], unsig
+ 	unsigned int counter = 0;
+ 
+ 	STAILQ_FOREACH(iface, &cfg->interfaces, list) {
+-		if (counter == max) {
+-			pr_err("bug: too many interfaces!");
+-			return (unsigned int)-1;
++		if (counter < max) {
++			interfaces[counter] = interface_name(iface);
+ 		}
+-		interfaces[counter++] = interface_name(iface);
++		counter++;
+ 	}
+ 	return counter;
+ }
+diff --git a/phc2sys.c b/phc2sys.c
+index 307f8e6..7104512 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -552,7 +552,7 @@ static int ha_com_socket_recv(int fd, void *buf, size_t buflen)
+ {
+ 	int cnt;
+ 
+-	cnt = read(fd, buf, buflen);
++	cnt = read(fd, buf, buflen - 1);
+ 	if (cnt <= 0) {
+ 		pr_err("ha_com_socket: read failed: %m");
+ 		return -errno;
+@@ -981,6 +981,10 @@ static int ha_com_socket_handle_msg(struct domain *domains, int n_domains)
+ 		res = ha_com_socket_send(fd, response, cnt);
+ 
+ 		close(fd);
++		free(buffer);
++		buffer = NULL;
++		free(response);
++		response = NULL;
+ 	}
+ 
+ 	free(buffer);
+@@ -2093,7 +2097,8 @@ int main(int argc, char *argv[])
+ 	int i, autocfg = 0, c, index, ntpshm_segment, offset = 0;
+ 	int pps_fd = -1, print_level = LOG_INFO, r = -1, rt = 0;
+ 	int wait_sync = 0, dst_cnt = 0, uds_remote_cnt = 0;
+-	int src_cnt = 0, ha_enabled = 0, global_domain_number = 0;
++	int ha_enabled = 0, global_domain_number = 0;
++	unsigned int src_cnt = 0;
+ 	struct config *cfg;
+ 	struct option *opts;
+ 	double phc_rate, tmp;
+@@ -2312,7 +2317,7 @@ int main(int argc, char *argv[])
+ 	if (ha_enabled && src_cnt == 0) {
+ 		/* get the source interface list from configuration file */
+ 		src_cnt = config_get_interfaces(cfg, src_names, MAX_SRC_CLOCKS);
+-		if (src_cnt == (unsigned int)-1) {
++		if (src_cnt > MAX_SRC_CLOCKS) {
+ 			fprintf(stderr, "too many interfaces in configuration file\n");
+ 			fprintf(stderr, "maximum number of interfaces is %u\n", MAX_SRC_CLOCKS);
+ 			goto bad_usage;
+-- 
+2.34.1
+
