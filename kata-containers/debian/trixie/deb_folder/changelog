@@ -1,3 +1,9 @@
+kata-containers (3.29.0) stable; urgency=medium
+
+  * Upgrade to 3.29.0
+
+ -- rbanavas <rbanavas@windriver.com>  Mon, 28 Apr 2026 03:54:00 -0400
+
 kata-containers (3.1.3) stable; urgency=medium
 
   * Initial release
