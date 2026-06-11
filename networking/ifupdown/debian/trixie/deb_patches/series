@@ -5,3 +5,4 @@
 0005-Fix-IPv6-DAD-failure-detection-during-address-assign.patch
 0006-Fix-IPv6-preferred-lifetime-for-aliased-interfaces.patch
 0007-Add-SRC-IP-for-default-routes.patch
+0008-Fix-IPv6-DAD-audit-for-stacked-VLAN-interfaces.patch
