@@ -1,0 +1,20 @@
+Source: dpll-mgr
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+ libcjson-dev,
+ libgps-dev,
+ linux-libc-dev
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: dpll-mgr
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Advanced PTP Timing Synchronization Manager
+ dpll-mgr is a timing synchronization manager for Intel platforms with
+ DPLL hardware support. It coordinates PTP clock recovery, DPLL lock
+ management, gearshift phase alignment, and GNSS reference monitoring
+ for precision timing applications.

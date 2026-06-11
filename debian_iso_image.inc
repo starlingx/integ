@@ -508,6 +508,9 @@ stalld
 #synce4l
 synce4l
 
+#dpll-mgr
+dpll-mgr
+
 #systemd
 libnss-myhostname
 #libnss-mymachines  # not used
