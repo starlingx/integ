@@ -1,0 +1,35 @@
+From 9474c12c33ca456fdbb10a21fdd2d9c0e7d9d02f Mon Sep 17 00:00:00 2001
+From: iarantes <israel.arantesmoraes@windriver.com>
+Date: Wed, 10 Jun 2026 14:50:59 -0300
+Subject: [PATCH] Fix OVS-DPDK alternative priority for Trixie
+
+In Debian Trixie, the openvswitch-switch-dpdk package registers its
+ovs-vswitchd binary with alternatives priority 50, while
+openvswitch-switch registers with priority 100. This causes the
+non-DPDK version to be selected by default, resulting in
+"DPDK not supported in this copy of Open vSwitch" errors when
+vswitchType is set to ovs-dpdk.
+
+On Bullseye, the DPDK version had priority 200. Upstream Debian
+lowered it to 50 for Trixie because DPDK requires SSE3 which not
+all generic amd64 systems support. For StarlingX this is not a
+concern as all supported hardware exceeds SSE3.
+
+This patch restores the DPDK alternative priority to 200 so it
+takes precedence when both packages are installed.
+
+---
+ debian/openvswitch-switch-dpdk.postinst | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/debian/openvswitch-switch-dpdk.postinst
++++ b/debian/openvswitch-switch-dpdk.postinst
+@@ -5,7 +5,7 @@
+ case "$1" in
+     configure)
+         update-alternatives --install /usr/sbin/ovs-vswitchd ovs-vswitchd \
+-            /usr/lib/openvswitch-switch-dpdk/ovs-vswitchd-dpdk 50
++            /usr/lib/openvswitch-switch-dpdk/ovs-vswitchd-dpdk 200
+         ;;
+ 
+     abort-upgrade|abort-remove|abort-deconfigure)
