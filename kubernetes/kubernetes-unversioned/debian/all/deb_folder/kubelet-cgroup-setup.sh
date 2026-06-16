@@ -251,6 +251,22 @@ setup_cgroup_v1() {
 ########################################################################
 # MAIN
 ########################################################################
+# Fix cgroupRoot rename in config.yaml before kubelet reads it.
+# During platform or k8s upgrade, various code paths (kubeadm upgrade
+# apply, change_k8s_control_plane_params.py) regenerate config.yaml
+# from the kubelet-config ConfigMap. If the ConfigMap has not yet been
+# updated with the new name, config.yaml gets overwritten back to
+# /k8s-infra while the cgroup directories use the new name /k8sinfra.
+# This mismatch causes kubelet to fail at startup validation.
+#
+# This sed runs as ExecStartPre on every kubelet start and ensures
+# config.yaml always has the correct cgroupRoot before kubelet reads it.
+# TODO(ajaiswal): Remove this workaround once k8sinfra migration not required
+if grep -q 'cgroupRoot:.*/k8s-infra' /var/lib/kubelet/config.yaml 2>/dev/null; then
+    LOG "Migrating cgroupRoot from /k8s-infra to /k8sinfra in config.yaml"
+    sed -i 's|cgroupRoot:.*/k8s-infra|cgroupRoot: /k8sinfra|' /var/lib/kubelet/config.yaml
+fi
+
 # Update cgroupDriver to match the active cgroup version during
 # migration. This handles the window where grub has switched the
 # cgroup hierarchy but kubelet config has not yet been updated
