@@ -1,3 +1,9 @@
+pynetlink (1.0.2-0) unstable; urgency=medium
+
+  * Fix package's install dependencies.
+
+-- Andre Mauricio Zelak <andre.zelak@windriver.com> Wed, 10 Jun 2026 18:04:00 -0300
+
 pynetlink (1.0.1-0) unstable; urgency=medium
 
   * Handling unknown enumerator value in Netlink DPLL.
