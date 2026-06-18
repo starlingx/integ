@@ -14,7 +14,8 @@ override_dh_auto_build:
 		ansible-base==2.10.7 \
 		"jinja2>=2.11,<3.0" \
 		netaddr==1.3.0 \
-		jmespath==1.1.0
+		jmespath==1.1.0 \
+		pexpect==4.9.0
 	# Replace the vendored six (1.13.0) in ansible module_utils with a modern
 	# version that supports Python 3.12+. This is needed because delegate_to:
 	# localhost tasks execute modules with the system Python (3.13 on Trixie).
