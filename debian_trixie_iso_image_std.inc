@@ -327,6 +327,9 @@ slapd
 #slapi-dev  # not used
 slapd-ppm
 
+#ovs-access-monitor
+ovs-access-monitor
+
 #parted
 #libparted-dev  # not used
 libparted-fs-resize0

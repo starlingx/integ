@@ -1,0 +1,25 @@
+[Unit]
+Description=OVS Access Bridge Failover Monitor
+Documentation=https://www.starlingx.io
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ovs-access-monitor
+Restart=always
+RestartSec=5
+# Ensure clean environment
+Environment=OVS_ACCESS_MONITOR_CONF=/etc/ovs-access-monitor/ovs-access-monitor.conf
+# Allow network admin operations (ip link set)
+AmbientCapabilities=CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN
+# Security hardening
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/run
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	@echo "Nothing to build (pure Python script)"
+
+override_dh_auto_install:
+	install -d -m 755 $(DEBIAN_DESTDIR)/usr/bin
+	install -p -D -m 755 scripts/ovs-access-monitor $(DEBIAN_DESTDIR)/usr/bin/ovs-access-monitor
+	install -d -m 755 $(DEBIAN_DESTDIR)/etc/ovs-access-monitor
+	install -p -D -m 644 config/ovs-access-monitor.conf.sample $(DEBIAN_DESTDIR)/etc/ovs-access-monitor/ovs-access-monitor.conf.sample
+	install -d -m 755 $(DEBIAN_DESTDIR)/usr/lib/systemd/system
+	install -p -D -m 644 systemd/ovs-access-monitor.service $(DEBIAN_DESTDIR)/usr/lib/systemd/system/ovs-access-monitor.service
+	dh_install
+
+override_dh_auto_test:
+	@echo "Skipping tests"

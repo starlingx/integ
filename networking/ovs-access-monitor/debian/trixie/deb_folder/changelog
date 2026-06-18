@@ -1,0 +1,5 @@
+ovs-access-monitor (1.0.0) unstable; urgency=medium
+
+  * Initial packaging for StarlingX
+
+ -- Andre Kantek <andrefernandozanella.kantek@windriver.com>  Mon, 16 Jun 2026 10:00:00 -0300

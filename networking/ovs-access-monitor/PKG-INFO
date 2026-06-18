@@ -1,0 +1,17 @@
+Metadata-Version: 1.1
+Name: ovs-access-monitor
+Version: 1.0.0
+Summary: OVS Access Bridge Failover Monitor
+Home-page: https://www.starlingx.io
+Author: Wind River Systems, Inc.
+Author-email: starlingx-discuss@lists.starlingx.io
+License: Apache-2.0
+
+Description:
+ovs-access-monitor is a systemd service that monitors the health of the
+OVS agent pod and manages PF interface membership in the ovs0 Linux bridge.
+When the pod is healthy, the PF is removed from the bridge (traffic flows
+through the pod's veth). When the pod is unhealthy or absent, the PF is
+re-added to provide fallback connectivity.
+
+Platform: UNKNOWN

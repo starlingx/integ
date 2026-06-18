@@ -1,0 +1,461 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+"""OVS Access Bridge Failover Monitor.
+
+This service monitors the health of the OVS agent pod via its HTTP status
+endpoint and manages PF interface membership in the ovs0 Linux bridge:
+
+- When the pod is HEALTHY: remove the PF from ovs0 (traffic flows via the
+  pod's veth interface).
+- When the pod is UNHEALTHY: add the PF back to ovs0 (fallback connectivity
+  via the physical function).
+
+Configuration is read from /etc/ovs-access-monitor/ovs-access-monitor.conf.
+"""
+
+import configparser
+import logging
+import os
+import signal
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+import json
+
+LOG = logging.getLogger("ovs-access-monitor")
+
+# Defaults
+DEFAULT_CONFIG_PATH = "/etc/ovs-access-monitor/ovs-access-monitor.conf"
+DEFAULT_MONITORING_PERIOD = 0.5
+DEFAULT_STATUS_PORT = 19082
+DEFAULT_BRIDGE_NAME = "ovs0"
+DEFAULT_UNHEALTHY_THRESHOLD = 3
+
+
+class Config:
+    """Parsed configuration for ovs-access-monitor."""
+
+    def __init__(self, path):
+        if not os.path.isfile(path):
+            raise FileNotFoundError(
+                f"Configuration file not found: {path}"
+            )
+
+        parser = configparser.ConfigParser()
+        # Read as a simple key=value file by injecting a default section
+        with open(path, "r", encoding="utf-8") as f:
+            config_string = "[DEFAULT]\n" + f.read()
+        parser.read_string(config_string)
+
+        defaults = parser["DEFAULT"]
+
+        self.failover_interface = defaults.get("failover_interface", "").strip()
+        if not self.failover_interface:
+            raise ValueError(
+                "failover_interface must be set in configuration file"
+            )
+
+        self.monitoring_period = float(
+            defaults.get("monitoring_period", str(DEFAULT_MONITORING_PERIOD))
+        )
+        if self.monitoring_period <= 0:
+            raise ValueError("monitoring_period must be positive")
+
+        self.status_port = int(
+            defaults.get("status_port", str(DEFAULT_STATUS_PORT))
+        )
+
+        self.bridge_name = defaults.get(
+            "bridge_name", DEFAULT_BRIDGE_NAME
+        ).strip()
+
+        self.unhealthy_threshold = int(
+            defaults.get(
+                "unhealthy_threshold", str(DEFAULT_UNHEALTHY_THRESHOLD)
+            )
+        )
+
+    def __repr__(self):
+        return (
+            f"Config(failover_interface={self.failover_interface!r}, "
+            f"monitoring_period={self.monitoring_period}, "
+            f"status_port={self.status_port}, "
+            f"bridge_name={self.bridge_name!r}, "
+            f"unhealthy_threshold={self.unhealthy_threshold})"
+        )
+
+
+def run_cmd(cmd):
+    """Run a command and return (returncode, stdout, stderr)."""
+    LOG.debug("Running: %s", " ".join(cmd))
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, check=False
+    )
+    if result.stdout.strip():
+        LOG.debug("stdout: %s", result.stdout.strip())
+    if result.stderr.strip():
+        LOG.debug("stderr: %s", result.stderr.strip())
+    return result.returncode, result.stdout, result.stderr
+
+
+def link_exists(name):
+    """Check if a network link exists."""
+    rc, _, _ = run_cmd(["ip", "link", "show", name])
+    return rc == 0
+
+
+def is_member_of_bridge(interface, bridge):
+    """Check if interface is a member of the given bridge."""
+    rc, stdout, _ = run_cmd(["ip", "link", "show", interface])
+    if rc != 0:
+        return False
+    return f"master {bridge}" in stdout
+
+
+def add_to_bridge(interface, bridge):
+    """Add interface as a member of bridge."""
+    if is_member_of_bridge(interface, bridge):
+        LOG.debug(
+            "%s is already a member of %s, nothing to do",
+            interface, bridge
+        )
+        return True
+
+    LOG.info("Adding %s to bridge %s (PF fallback active)", interface, bridge)
+    rc, _, stderr = run_cmd(
+        ["ip", "link", "set", "dev", interface, "master", bridge]
+    )
+    if rc != 0:
+        LOG.error(
+            "Failed to add %s to bridge %s: %s",
+            interface, bridge, stderr.strip()
+        )
+        return False
+    return True
+
+
+def remove_from_bridge(interface, bridge):
+    """Remove interface from bridge."""
+    if not is_member_of_bridge(interface, bridge):
+        LOG.debug(
+            "%s is not a member of %s, nothing to do",
+            interface, bridge
+        )
+        return True
+
+    LOG.info(
+        "Removing %s from bridge %s (OVS pod active)",
+        interface, bridge
+    )
+    rc, _, stderr = run_cmd(["ip", "link", "set", "dev", interface, "nomaster"])
+    if rc != 0:
+        LOG.error(
+            "Failed to remove %s from bridge %s: %s",
+            interface, bridge, stderr.strip()
+        )
+        return False
+    return True
+
+
+def set_link_up(interface):
+    """Bring a network interface up."""
+    LOG.info("Setting %s UP", interface)
+    rc, _, stderr = run_cmd(
+        ["ip", "link", "set", "dev", interface, "up"]
+    )
+    if rc != 0:
+        LOG.error(
+            "Failed to set %s up: %s",
+            interface, stderr.strip()
+        )
+        return False
+    return True
+
+
+def set_link_down(interface):
+    """Bring a network interface down."""
+    LOG.info("Setting %s DOWN", interface)
+    rc, _, stderr = run_cmd(
+        ["ip", "link", "set", "dev", interface, "down"]
+    )
+    if rc != 0:
+        LOG.error(
+            "Failed to set %s down: %s",
+            interface, stderr.strip()
+        )
+        return False
+    return True
+
+
+def is_link_up(interface):
+    """Check if a network interface is administratively UP."""
+    rc, stdout, _ = run_cmd(["ip", "link", "show", interface])
+    if rc != 0:
+        return False
+    for line in stdout.splitlines():
+        if interface in line and "<" in line:
+            flags = line.split("<")[1].split(">")[0].split(",")
+            return "UP" in flags
+    return False
+
+
+def find_veth_on_bridge(bridge):
+    """Find the veth interface attached to bridge by bridge-cni.
+
+    The bridge-cni creates interfaces named veth<hash> (e.g.
+    vethf43858ac). This function returns the name of the first
+    veth interface that is a member of the given bridge, or None
+    if no such interface exists.
+    """
+    rc, stdout, _ = run_cmd(["ip", "-o", "link", "show", "master", bridge])
+    if rc != 0:
+        return None
+
+    for line in stdout.splitlines():
+        # Format: "idx: name@peer: <FLAGS> ..."
+        parts = line.split(":", 2)
+        if len(parts) < 2:
+            continue
+        iface_name = parts[1].strip().split("@")[0]
+        if iface_name.startswith("veth"):
+            LOG.debug(
+                "Found veth interface %s on bridge %s",
+                iface_name, bridge
+            )
+            return iface_name
+    return None
+
+
+def query_pod_health(port):
+    """Query the OVS agent pod status endpoint.
+
+    Returns True if the pod reports healthy, False otherwise.
+    """
+    url = f"http://localhost:{port}/status"
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            if resp.status != 200:
+                LOG.debug(
+                    "Status endpoint returned HTTP %d", resp.status
+                )
+                return False
+            data = json.loads(resp.read().decode("utf-8"))
+            healthy = data.get("healthy", False)
+            if not healthy:
+                LOG.debug(
+                    "Pod reports unhealthy: %s",
+                    data.get("error", "unknown")
+                )
+            return healthy
+    except urllib.error.URLError as e:
+        LOG.debug("Cannot reach status endpoint: %s", e)
+        return False
+    except (json.JSONDecodeError, OSError) as e:
+        LOG.debug("Error reading status response: %s", e)
+        return False
+
+
+class OvsAccessMonitor:
+    """Main monitor loop with hysteresis."""
+
+    def __init__(self, config):
+        self.config = config
+        self.running = True
+        self.consecutive_unhealthy = 0
+        # None = unknown, True = healthy, False = unhealthy
+        self.current_state = None
+
+    def stop(self, signum=None, _frame=None):
+        """Signal handler to stop the monitor gracefully."""
+        LOG.info("Received signal %s, shutting down", signum)
+        self.running = False
+
+    def preflight_checks(self):
+        """Verify preconditions before entering the main loop."""
+        if not link_exists(self.config.bridge_name):
+            LOG.warning(
+                "Bridge %s does not exist yet, will wait for it",
+                self.config.bridge_name
+            )
+            return False
+
+        if not link_exists(self.config.failover_interface):
+            LOG.error(
+                "Failover interface %s does not exist",
+                self.config.failover_interface
+            )
+            return False
+
+        return True
+
+    def enforce_state(self, pod_healthy):
+        """Enforce bridge membership based on pod health.
+
+        Rules:
+        - Pod HEALTHY: remove PF from bridge, set veth UP.
+        - Pod UNHEALTHY: add PF to bridge, set veth DOWN.
+        - No veth on bridge: PF must stay in bridge regardless.
+
+        Uses hysteresis: requires unhealthy_threshold consecutive
+        unhealthy readings before switching to failover. A single
+        healthy reading switches immediately to pod mode.
+        """
+        veth_iface = find_veth_on_bridge(self.config.bridge_name)
+
+        # If there is no veth interface on the bridge, the pod's
+        # bridge-cni hasn't created it yet (or pod is gone).
+        # PF must stay attached for connectivity.
+        if veth_iface is None:
+            LOG.debug(
+                "No veth interface on %s, ensuring PF is attached",
+                self.config.bridge_name
+            )
+            add_to_bridge(
+                self.config.failover_interface,
+                self.config.bridge_name
+            )
+            if self.current_state is not False:
+                LOG.info(
+                    "No veth on bridge, forcing PF fallback"
+                )
+                self.current_state = False
+            self.consecutive_unhealthy = self.config.unhealthy_threshold
+            return
+
+        if pod_healthy:
+            self.consecutive_unhealthy = 0
+            if self.current_state is not True:
+                LOG.info("Pod is healthy, switching to pod mode")
+                self.current_state = True
+            remove_from_bridge(
+                self.config.failover_interface,
+                self.config.bridge_name
+            )
+            if not is_link_up(veth_iface):
+                set_link_up(veth_iface)
+        else:
+            self.consecutive_unhealthy += 1
+            if self.consecutive_unhealthy >= self.config.unhealthy_threshold:
+                if self.current_state is not False:
+                    LOG.info(
+                        "Pod unhealthy for %d consecutive "
+                        "checks, switching to PF fallback",
+                        self.consecutive_unhealthy
+                    )
+                    self.current_state = False
+                add_to_bridge(
+                    self.config.failover_interface,
+                    self.config.bridge_name
+                )
+                if is_link_up(veth_iface):
+                    set_link_down(veth_iface)
+            else:
+                LOG.debug(
+                    "Pod unhealthy (%d/%d threshold), waiting",
+                    self.consecutive_unhealthy,
+                    self.config.unhealthy_threshold
+                )
+
+    def run(self):
+        """Main monitoring loop."""
+        LOG.info("Starting ovs-access-monitor")
+        LOG.info("Configuration: %s", self.config)
+
+        # Wait for bridge to appear
+        while self.running and not self.preflight_checks():
+            LOG.info(
+                "Preconditions not met, retrying in %.1fs",
+                self.config.monitoring_period
+            )
+            time.sleep(self.config.monitoring_period)
+
+        if not self.running:
+            return
+
+        LOG.info(
+            "Monitoring bridge %s with failover interface %s "
+            "(period=%.1fs, unhealthy_threshold=%d)",
+            self.config.bridge_name,
+            self.config.failover_interface,
+            self.config.monitoring_period,
+            self.config.unhealthy_threshold
+        )
+
+        while self.running:
+            # Skip enforcement if bridge disappeared (e.g. interface down)
+            if not link_exists(self.config.bridge_name):
+                LOG.warning(
+                    "Bridge %s disappeared, skipping this cycle",
+                    self.config.bridge_name
+                )
+                time.sleep(self.config.monitoring_period)
+                continue
+
+            pod_healthy = query_pod_health(self.config.status_port)
+            self.enforce_state(pod_healthy)
+            time.sleep(self.config.monitoring_period)
+
+        LOG.info("ovs-access-monitor stopped")
+
+
+def setup_logging():
+    """Configure logging to stdout (journald captures it)."""
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s %(name)s %(levelname)s: %(message)s",
+            datefmt="%Y-%m-%dT%H:%M:%S"
+        )
+    )
+    LOG.addHandler(handler)
+    LOG.setLevel(logging.INFO)
+
+    # Allow debug via environment variable
+    if os.environ.get("OVS_ACCESS_MONITOR_DEBUG", "").lower() in (
+        "1", "true", "yes"
+    ):
+        LOG.setLevel(logging.DEBUG)
+
+
+def main():
+    """Entry point."""
+    setup_logging()
+
+    config_path = os.environ.get(
+        "OVS_ACCESS_MONITOR_CONF", DEFAULT_CONFIG_PATH
+    )
+
+    try:
+        config = Config(config_path)
+    except (FileNotFoundError, ValueError) as e:
+        LOG.error("Configuration error: %s", e)
+        sys.exit(1)
+
+    monitor = OvsAccessMonitor(config)
+
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGTERM, monitor.stop)
+    signal.signal(signal.SIGINT, monitor.stop)
+
+    monitor.run()
+
+
+if __name__ == "__main__":
+    main()
