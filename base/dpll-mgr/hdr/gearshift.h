@@ -65,8 +65,8 @@
  * @state: Application state
  * @new_master: New master source after failover
  *
- * Failover to GNSS: ptp4l(ptp_fr) -> NEUTRAL, ts2phc(ts2_0) -> DRIVE
- * Failover to PTP:  ts2phc(ts2_0) -> NEUTRAL, ptp4l(ptp_fr)  -> DRIVE
+ * Failover to GNSS: ptp4l(ptp_bh) -> NEUTRAL, ts2phc(ts2_0) -> DRIVE
+ * Failover to PTP:  ts2phc(ts2_0) -> NEUTRAL, ptp4l(ptp_bh)  -> DRIVE
  */
 void handle_sw_based_failover(AppState *state, enum pin_source new_master);
 

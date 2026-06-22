@@ -73,7 +73,6 @@
 /* PTP Management Protocol Constants */
 #define PTP_MANAGEMENT 0x0D
 #define PTP_VERSION 0x02
-#define PTP_DOMAIN_NUMBER 0  /* Domain number for ptp4l instances */
 
 /* Management Action Fields */
 #define GET 0
@@ -256,5 +255,24 @@ typedef struct {
 /* Function prototypes */
 void monitor_and_adjust_phase_offset(AppState *state);
 void read_clock_parameters_from_master(AppState *state, struct ynl_sock *dpll_sock);
+
+/* Global running flag - cleared by signal handler */
+extern volatile sig_atomic_t running;
+
+/* Common helpers used by both event and poll loop files */
+void determine_current_master(AppState *state, struct ynl_sock *dpll_sock);
+const char *pin_source_to_string(enum pin_source source);
+void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock);
+
+/**
+ * run_main_loop - Main application loop
+ * @state:     Application state
+ * @dpll_sock: Initialised DPLL netlink socket
+ *
+ * Implemented in apts_manager_event.c (BUILD_MODE=event) or
+ * apts_manager_poll.c (BUILD_MODE=poll).  Called from main() after
+ * all initialisation is complete.
+ */
+void run_main_loop(AppState *state, struct ynl_sock *dpll_sock);
 
 #endif /* TIMING_MANAGER_H */

@@ -99,7 +99,7 @@ int build_management_message(uint8_t *buffer, size_t buffer_size,
     hdr->versionPTP_messageType = (0x01 << 4) | PTP_VERSION;
     /* Management message total length includes the actual_tlv_data (min 8 bytes) */
     hdr->messageLength = htons(sizeof(PTPHeader) + mgmt_fields_len + sizeof(ManagementTLV) + actual_tlv_data);
-    hdr->domainNumber = PTP_DOMAIN_NUMBER;
+    hdr->domainNumber = (uint8_t)g_config.manager.ptp_domain_number;
     /* Set sourcePortIdentity: use process ID for uniqueness (8 bytes clockId + 2 bytes portNum) */
     uint32_t pid = (uint32_t)getpid();
     hdr->sourcePortIdentity.id[0] = 0xFF;  /* Local administration */
@@ -187,7 +187,7 @@ int build_subscription_message(uint8_t *buffer, size_t buffer_size,
     hdr->messageType_versionPTP = (0x0 << 4) | (PTP_MANAGEMENT & 0x0F);
     hdr->versionPTP_messageType = (0x01 << 4) | PTP_VERSION;
     hdr->messageLength = htons(sizeof(PTPHeader) + mgmt_fields_len + sizeof(ManagementTLV) + subscription_data_len);
-    hdr->domainNumber = PTP_DOMAIN_NUMBER;
+    hdr->domainNumber = (uint8_t)g_config.manager.ptp_domain_number;
     
     /* Set sourcePortIdentity */
     uint32_t pid = (uint32_t)getpid();

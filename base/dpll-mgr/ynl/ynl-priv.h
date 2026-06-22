@@ -4,6 +4,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include <linux/types.h>
 
 struct ynl_parse_arg;

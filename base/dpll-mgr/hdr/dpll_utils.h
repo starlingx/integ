@@ -43,6 +43,24 @@
 #include <linux/types.h>
 #include <linux/dpll.h>
 
+/*
+ * Compatibility stubs for older kernels that lack these DPLL enum types.
+ * The Makefile probes linux/dpll.h at build time and sets HAVE_* flags
+ * when the kernel already provides them, so the stubs are only compiled
+ * on kernels that need them.
+ */
+#ifndef HAVE_DPLL_LOCK_STATUS_ERROR
+enum dpll_lock_status_error {
+	DPLL_LOCK_STATUS_ERROR_UNSPEC = 0,
+};
+#endif
+
+#ifndef HAVE_DPLL_FEATURE_STATE
+enum dpll_feature_state {
+	DPLL_FEATURE_STATE_UNSPEC = 0,
+};
+#endif
+
 #include <ynl/dpll-user.h>
 #include "log.h"
 

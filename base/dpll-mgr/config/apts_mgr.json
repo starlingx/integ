@@ -1,0 +1,250 @@
+{
+  "global": {
+    "poll_interval_ms": 1000,
+    "guard_time_ms": 5000,
+    "max_step_ns": 1000000,
+    "phase_adjust_factor": 1, 
+    "force_same_ql_on_fronthaul": true,
+    "phc_interface": "eno8303np0",
+    "log_level": "INFO",
+    "operation_mode": "SW_BASED",
+    "ptp_domain_number": 0
+  },
+  "channels": {
+    "ptp_bh": {
+      "call_channel": "uds:/var/run/ptp_bh.ptp4l"
+    },
+    "ptp_0": {
+      "call_channel": "uds:/var/run/ptp_0.ptp4l"
+    },
+    "ptp_1": {
+      "call_channel": "uds:/var/run/ptp_1.ptp4l"
+    },
+    "ptp_2": {
+      "call_channel": "uds:/var/run/ptp_2.ptp4l"
+    },
+    "ts2_0": {
+      "call_channel": "uds:/var/run/ts2phc0"
+    },
+    "ts2_1": {
+      "call_channel": "uds:/var/run/ts2phc1"
+    },
+    "synce4l_0": {
+      "call_channel": "uds:/var/run/synce4l0"
+    },
+    "synce4l_1": {
+      "call_channel": "uds:/var/run/synce4l1"
+    }
+  },
+  "dpll": {
+    "dpll0": {
+      "name": "DPLL0_FREQ",
+      "pin_priority_map": "GNSS_REF4P:0, SMA3_REF3N:2, SMA1_REF3P:3, RCLKA_REF1P:10, RCLKB_REF1N:11, SDP0_REF0N:15, SDP2_REF0P:15"
+    },
+    "dpll1": {
+      "name": "DPLL1_PHASE",
+      "pin_priority_map": "GNSS_REF4P:0, SMA3_REF3N:2, SMA1_REF3P:3, RCLKA_REF1P:10, RCLKB_REF1N:11, SDP0_REF0N:12, SDP2_REF0P:13"
+    },
+    "holdover_config": {
+      "ho_0": {
+        "ho_duration": 30
+      },
+      "ho_1": {
+        "ho_duration": 60
+      },
+      "ho_2": {
+        "ho_duration": 240
+      }
+    }
+  },
+  "dpll_policy": {
+    "rclkb": {
+      "low_prio": 11,
+      "high_prio": 9,
+      "compare_source": "QL",
+      "tie_break": "prefer_A"
+    }
+  },
+  "ptp": {
+    "ptp_profiles": {
+      "ptp_bh": {
+        "profile": "G.8275.1"
+      },
+      "ptp_0": {
+        "profile": "G.8275.1"
+      },
+      "ptp_1": {
+        "profile": "G.8275.1"
+      },
+      "ptp_2": {
+        "profile": "G.8275.1"
+      }
+    },
+    "ptp_primary_attributes": {
+      "GNSS_REF4P": {
+        "clockClass": 6,
+        "clockAccuracy": "0x22",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0x20"
+      },
+      "SMA3_REF3N": {
+        "clockClass": 7,
+        "clockAccuracy": "0x23",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0x30"
+      },
+      "SMA1_REF3P": {
+        "clockClass": 7,
+        "clockAccuracy": "0x23",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0x30"
+      },
+      "RCLKA_REF1P": {
+        "clockClass": 7,
+        "clockAccuracy": "0x22",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0xA0"
+      },
+      "RCLKB_REF1N": {
+        "clockClass": 7,
+        "clockAccuracy": "0x22",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0xA0"
+      },
+      "SDP0_REF0N": {
+        "clockClass": 7,
+        "clockAccuracy": "0x22",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0x90"
+      },
+      "SDP2_REF0P": {
+        "clockClass": 7,
+        "clockAccuracy": "0x22",
+        "timeTraceable": 1,
+        "frequencyTraceable": 1,
+        "timeSource": "0x90"
+      },
+      "Holdover_0": {
+        "clockClass": 13,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      },
+      "Holdover_1": {
+        "clockClass": 14,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      },
+      "Holdover_2": {
+        "clockClass": 15,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      },
+      "Holdover_3": {
+        "clockClass": 16,
+        "clockAccuracy": "0xFE",
+        "timeTraceable": 0,
+        "frequencyTraceable": 0,
+        "timeSource": "0xA0"
+      }
+    },
+    "ptp_secondary_attributes": {
+      "offsetScaledLogVariance": "0x4E20",
+      "currentUtcOffset": 37,
+      "leap61": 0,
+      "leap59": 0,
+      "currentUtcOffsetValid": 1,
+      "ptpTimescale": 1
+    }
+  },
+  "synce": {
+    "ql_type": 1,
+    "use_extended_ql": true
+  },
+  "ql_map": {
+    "option1": {
+      "ePRTC": {
+        "QL": "0x2",
+        "extQL": "0x21"
+      },
+      "PRTC": {
+        "QL": "0x2",
+        "extQL": "0x20"
+      },
+      "PRC": {
+        "QL": "0x2",
+        "extQL": "0xFF"
+      },
+      "SSU_A": {
+        "QL": "0x4",
+        "extQL": "0xFF"
+      },
+      "SSU_B": {
+        "QL": "0x8",
+        "extQL": "0xFF"
+      },
+      "EEC1": {
+        "QL": "0xB",
+        "extQL": "0xFF"
+      }
+    },
+    "option2": {
+      "ePRTC": {
+        "QL": "0x1",
+        "extQL": "0x21"
+      },
+      "PRTC": {
+        "QL": "0x1",
+        "extQL": "0x20"
+      },
+      "PRS": {
+        "QL": "0x1",
+        "extQL": "0xFF"
+      },
+      "STU": {
+        "QL": "0x0",
+        "extQL": "0xFF"
+      },
+      "ST2": {
+        "QL": "0x7",
+        "extQL": "0xFF"
+      },
+      "TNC": {
+        "QL": "0x4",
+        "extQL": "0xFF"
+      },
+      "ST3E": {
+        "QL": "0xD",
+        "extQL": "0xFF"
+      },
+      "EEC2": {
+        "QL": "0xA",
+        "extQL": "0xFF"
+      },
+      "PROV": {
+        "QL": "0xE",
+        "extQL": "0xFF"
+      }
+    }
+  },
+  "inputs_ql": {
+    "GNSS_REF4P": "PRTC",
+    "SMA3_REF3N": "PRS",
+    "SMA1_REF3P": "PRS",
+    "RCLKA_REF1P": "EEC1",
+    "RCLKB_REF1N": "EEC1",
+    "SDP0_REF0N": "EEC1",
+    "SDP2_REF0P": "EEC1"
+  }
+}
