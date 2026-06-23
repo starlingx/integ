@@ -1,0 +1,33 @@
+From a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0 Mon Sep 17 00:00:00 2001
+From: Edson Dias <edson-dias@windriver.com>
+Date: Fri, 19 Jun 2026 00:00:00 +0000
+Subject: [PATCH 3/3] Replace hardcoded replicas in source-controller template
+
+The source-controller deployment template has replicas hardcoded to 1.
+Replace it with a templated value that can be overridden via
+.Values.sourceController.replicas, defaulting to 1 if not set.
+
+Signed-off-by: Edson Dias <edson-dias@windriver.com>
+---
+ charts/flux2/templates/source-controller.yaml | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/charts/flux2/templates/source-controller.yaml b/charts/flux2/templates/source-controller.yaml
+index 97266de..b385f63 100644
+--- a/charts/flux2/templates/source-controller.yaml
++++ b/charts/flux2/templates/source-controller.yaml
+@@ -15,7 +15,11 @@ metadata:
+     {{- end }}
+   name: source-controller
+ spec:
+-  replicas: 1
++  {{- if hasKey .Values.sourceController "replicas" }}
++  replicas: {{ .Values.sourceController.replicas }}
++  {{- else }}
++  replicas: 1
++  {{- end }}
+   selector:
+     matchLabels:
+       app: source-controller
+--
+2.34.1
