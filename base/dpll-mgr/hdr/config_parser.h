@@ -34,7 +34,7 @@
  * @file config_parser.h
  * @brief JSON Configuration Parser Header
  * 
- * This module parses the dpll_mgr.json configuration file and
+ * This module parses the apts_mgr.json configuration file and
  * stores settings in global structures for access throughout
  * the application.
  */
@@ -89,6 +89,7 @@ typedef struct {
     char log_level[MAX_NAME_LEN];  /* Log level: ERROR, INFO, DEBUG, RAW */
     char phc_interface[MAX_NAME_LEN];  /* Network interface for PHC device discovery */
     OperationMode operation_mode;          /* HW_BASED (default) or SW_BASED */
+    int ptp_domain_number;             /* PTP domain number for ptp4l instances */
 } ManagerConfig;
 
 /* Channel Configuration */

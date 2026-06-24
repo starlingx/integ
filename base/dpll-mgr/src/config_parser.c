@@ -34,7 +34,7 @@
  * @file config_parser.c
  * @brief JSON Configuration Parser Implementation
  * 
- * This module parses the dpll_mgr.json configuration file using cJSON
+ * This module parses the apts_mgr.json configuration file using cJSON
  * and populates global configuration structures.
  */
 
@@ -156,6 +156,10 @@ static int parse_manager_config(cJSON *json)
     } else {
         g_config.manager.operation_mode = OPERATION_MODE_HW_BASED;
     }
+
+    item = cJSON_GetObjectItem(manager, "ptp_domain_number");
+    if (item) g_config.manager.ptp_domain_number = item->valueint;
+
     return 0;
 }
 
@@ -323,9 +327,6 @@ static int parse_ptp_profiles_config(cJSON *json)
     cJSON *ptp_profiles = NULL;
     if (ptp) {
         ptp_profiles = cJSON_GetObjectItem(ptp, "ptp_profiles");
-    }
-    if (!ptp_profiles) {
-        ptp_profiles = cJSON_GetObjectItem(json, "ptp_profiles");
     }
     if (!ptp_profiles) {
         LOG_ERROR("'ptp_profiles' section not found in config\n");

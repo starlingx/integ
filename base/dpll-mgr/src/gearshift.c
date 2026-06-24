@@ -46,7 +46,7 @@
 #include "../hdr/log.h"
 
 /* Timeout in milliseconds to wait for a GET response after a SET */
-#define GEARSHIFT_VERIFY_TIMEOUT_MS 500
+#define GEARSHIFT_VERIFY_TIMEOUT_MS 1100
 
 /**
  * read_gearshift_response - Read and verify the RESPONSE to a SET/GET already sent.
@@ -109,7 +109,7 @@ static bool read_gearshift_response(int sockfd, const struct sockaddr_un *peer_a
 
         if (mgmt_id != MGMT_ID_GEARSHIFT_NP) {
             /* Async notification (e.g. TIME_STATUS_NP 0xC000) delivered to this
-             * socket because dpll_mgr is subscribed for events on the same UDS.
+             * socket because apts_mgr is subscribed for events on the same UDS.
              * Discard it and keep waiting for the actual gearshift response. */
             LOG_DEBUG("gearshift: skipping async notification 0x%04X from %s\n",
                       mgmt_id, peer_addr->sun_path);

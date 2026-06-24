@@ -56,13 +56,15 @@
 #include "../hdr/phc_utils.h"
 #include "../hdr/dpll_phase_adjust.h"
 #include "../hdr/gearshift.h"
+#include <poll.h>
+#include <ynl/ynl.h>
 
-#ifndef DPLL_MGR_VERSION
-#define DPLL_MGR_VERSION "unknown"
+#ifndef APTS_MGR_VERSION
+#define APTS_MGR_VERSION "unknown"
 #endif
 
-/* Global flag for signal handling */
-static volatile sig_atomic_t running = 1;
+/* Global flag for signal handling - cleared by signal_handler(), read by loop files */
+volatile sig_atomic_t running = 1;
 
 /* Global log file pointer */
 FILE *g_log_file = NULL;
@@ -95,7 +97,7 @@ static void signal_handler(int signum)
  */
 static int ensure_runtime_directory(void)
 {
-    const char *runtime_dir = "/var/run/dpll_mgr";
+    const char *runtime_dir = "/var/run/apts_mgr";
     struct stat st;
 
     /* Try to create directory first (atomic operation) */
@@ -157,7 +159,7 @@ static int create_uds_socket(const char *path, struct sockaddr_un *peer_addr)
     memset(&local_addr, 0, sizeof(local_addr));
     local_addr.sun_family = AF_UNIX;
     int ret = snprintf(local_addr.sun_path, sizeof(local_addr.sun_path), 
-             "/var/run/dpll_mgr/timing_mgr.%d.%d", getpid(), socket_counter++);
+             "/var/run/apts_mgr/timing_mgr.%d.%d", getpid(), socket_counter++);
     if (ret < 0 || ret >= (int)sizeof(local_addr.sun_path)) {
         LOG_ERROR("Socket path truncation detected\n");
         close(sockfd);
@@ -211,7 +213,7 @@ static void cleanup_state(AppState *state)
     if (state->local_socket_fd >= 0) {
         close(state->local_socket_fd);
         char temp_path[256];
-        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/dpll_mgr/timing_mgr.%d.0", getpid());
+        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/apts_mgr/timing_mgr.%d.0", getpid());
         if (!(ret < 0 || ret >= (int)sizeof(temp_path))) {
             unlink(temp_path);
         }
@@ -221,7 +223,7 @@ static void cleanup_state(AppState *state)
         if (state->remotes[i].socket_fd >= 0) {
             close(state->remotes[i].socket_fd);
             char temp_path[256];
-            int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/dpll_mgr/timing_mgr.%d.%d", getpid(), i + 1);
+            int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/apts_mgr/timing_mgr.%d.%d", getpid(), i + 1);
             if (!(ret < 0 || ret >= (int)sizeof(temp_path))) {
                 unlink(temp_path);
             }
@@ -231,7 +233,7 @@ static void cleanup_state(AppState *state)
     if (state->ts2phc_socket_fd >= 0) {
         close(state->ts2phc_socket_fd);
         char temp_path[256];
-        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/dpll_mgr/timing_mgr.%d.ts2", getpid());
+        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/apts_mgr/timing_mgr.%d.ts2", getpid());
         if (ret > 0 && ret < (int)sizeof(temp_path))
             unlink(temp_path);
         state->ts2phc_socket_fd = -1;
@@ -294,7 +296,7 @@ static int get_gnss_parameters(AppState *state, enum pin_source master_index)
     params->frequency_traceable = gnss_params.frequency_traceable ? 1 : 0;
 #endif
     /* NOTE: time_source and ptp_timescale are NOT updated here - they remain as 
-     * configured in dpll_mgr.json since they're static for GNSS (GPS = 0x20) */
+     * configured in apts_mgr.json since they're static for GNSS (GPS = 0x20) */
     
     /* Copy gm_identity from PTP index (local clock identity) */
     /* When acting as grandmaster (on GNSS), use our local clock identity */
@@ -363,7 +365,7 @@ static enum pin_source pin_name_to_enum(const char *pin_name)
  *
  * Returns: String name of the pin source
  */
-static const char* pin_source_to_string(enum pin_source source)
+const char* pin_source_to_string(enum pin_source source)
 {
     switch (source) {
         case SDP2_REF0P: return "SDP2_REF0P";
@@ -667,7 +669,7 @@ static void evaluate_ptp_gm_connection(AppState *state)
  * - When locked: current_master = connected_pin_source
  * - When in holdover: HOLDOVER_0/1/2/3 based on duration
  */
-static void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
+void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
 {
     enum dpll_mode mode;
     __u32 connected_pin_id;
@@ -907,20 +909,44 @@ last:
 }
 
 /**
+ * process_dpll_master_state - Determine current master and handle failover
+ * @state: Application state
+ * @dpll_sock: DPLL netlink socket
+ *
+ * Shared helper called from both the polling loop and the event-based loop.
+ * Calls determine_current_master(), detects a master transition, triggers
+ * gearshift / clock parameter refresh on transition, and saves prev_master.
+ */
+void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock)
+{
+    determine_current_master(state, dpll_sock);
+
+    if (state->prev_master != state->current_master) {
+        LOG_INFO("FAILOVER DETECTED: %s -> %s\n",
+                 pin_source_to_string(state->prev_master),
+                 pin_source_to_string(state->current_master));
+        if (g_config.manager.operation_mode == OPERATION_MODE_SW_BASED)
+            handle_sw_based_failover(state, state->current_master);
+        read_clock_parameters_from_master(state, dpll_sock);
+    }
+    state->prev_master = state->current_master;
+}
+
+/**
  * Print usage information
  */
 static void print_usage(const char *prog_name) 
 {
     printf("Usage: %s [-c <config_file>] [-o <log_file>] [-h] [-v]\n", prog_name);
     printf("\nOptions:\n");
-    printf("  -c, --config <file>    Configuration file path (default: config/dpll_mgr.json)\n");
+    printf("  -c, --config <file>    Configuration file path (default: config/apts_mgr.json)\n");
     printf("  -o, --output <file>    Log output file (default: stdout)\n");
     printf("  -h, --help             Show this help message\n");
     printf("  -v, --version          Show application version\n");
     printf("\nExamples:\n");
     printf("  %s\n", prog_name);
-    printf("      (Uses default config: config/dpll_mgr.json, logs to stdout)\n\n");
-    printf("  %s -c /etc/dpll_mgr.json -o /var/log/dpll-mgr.log\n", prog_name);
+    printf("      (Uses default config: config/apts_mgr.json, logs to stdout)\n\n");
+    printf("  %s -c /etc/apts_mgr.json -o /var/log/apts.log\n", prog_name);
     printf("      (Uses specified configuration file and log file)\n");
 }
 
@@ -962,7 +988,7 @@ static void initialize_logging_early(const char *log_file_path)
     }
     
     /* Print application banner */
-    LOG_INFO("DPLL Manager Version: %s\n", DPLL_MGR_VERSION);
+    LOG_INFO("APTS Manager Version: %s\n", APTS_MGR_VERSION);
     LOG_INFO("Timing Manager Starting...\n");
 }
 
@@ -1209,7 +1235,7 @@ static int parse_and_validate_arguments(int argc, char *argv[],
                 print_usage(argv[0]);
                 return 1;  /* Help shown, exit gracefully */
             case 'v':
-                printf("%s\n", DPLL_MGR_VERSION);
+                printf("%s\n", APTS_MGR_VERSION);
                 return 1;  /* Version shown, exit gracefully */
             default:
                 print_usage(argv[0]);
@@ -1219,7 +1245,7 @@ static int parse_and_validate_arguments(int argc, char *argv[],
     
     /* Set default config path if not provided */
     if (*config_file_path == NULL) {
-        *config_file_path = "config/dpll_mgr.json";
+        *config_file_path = "config/apts_mgr.json";
     }
     
     return 0;  /* Success */
@@ -1269,10 +1295,10 @@ static bool load_uds_paths_from_config(char **fr_uds_path_out,
         return false;
     }
 
-    /* Get local UDS path from config (ptp_fr channel) */
-    const ChannelConfig *ch = config_get_channel("ptp_fr");
+    /* Get local UDS path from config (ptp_bh channel) */
+    const ChannelConfig *ch = config_get_channel("ptp_bh");
     if (!ch || ch->call_channel[0] == '\0') {
-        LOG_ERROR("Error: ptp_fr not found in config\n");
+        LOG_ERROR("Error: ptp_bh not found in config\n");
         return false;
     }
 
@@ -1384,7 +1410,7 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
 
         char ts2_local[108];
         int lret = snprintf(ts2_local, sizeof(ts2_local),
-                            "/var/run/dpll_mgr/timing_mgr.%d.ts2", getpid());
+                            "/var/run/apts_mgr/timing_mgr.%d.ts2", getpid());
         if (lret > 0 && lret < (int)sizeof(ts2_local)) {
             unlink(ts2_local);
             int ts2_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
@@ -1587,59 +1613,10 @@ int main(int argc, char *argv[])
        }
     }
     
-    /* Main loop */
-    LOG_INFO("=== ENTERING MAIN LOOP ===\n");
-    LOG_INFO("Starting main loop (Press Ctrl+C to exit)...\n");
-    LOG_INFO("Operation Mode: EVENT-BASED (SUBSCRIBE_EVENTS_NP subscription)\n");
-    
-    while (running) {
-        struct timespec now;
-        clock_gettime(CLOCK_MONOTONIC, &now);
+    /* Main loop - dispatches to the event-based or poll-based implementation
+     * selected at build time (BUILD_MODE=event or BUILD_MODE=poll). */
+    run_main_loop(&state, dpll_sock);
 
-        /* Determine the current DPLL status */
-        determine_current_master(&state, dpll_sock);
-        
-        /* Detect master transition */
-        if (state.prev_master != state.current_master) {
-            LOG_INFO("FAILOVER DETECTED: %s -> %s \n",
-                   pin_source_to_string(state.prev_master), 
-                   pin_source_to_string(state.current_master));
-            if (g_config.manager.operation_mode == OPERATION_MODE_SW_BASED)
-                handle_sw_based_failover(&state, state.current_master);
-            read_clock_parameters_from_master(&state, dpll_sock);
-        }
-        state.prev_master = state.current_master;
-             
-        /* Subscribe to ptp4l events (both modes need port state notifications) */
-#ifdef ENABLE_PTP_SUBSCRIPTION
-        long volatile elapsed = now.tv_sec - state.last_subscription.tv_sec;
-        if (elapsed > (SUBSCRIPTION_DURATION - 10)) {
-            state.subscription_active = false;
-            int ret = send_subscription_request(state.local_socket_fd, &state.local_peer_addr, &state.local_sequence_id);
-            if (ret) {
-                clock_gettime(CLOCK_MONOTONIC, &state.last_subscription);
-            } else {
-                LOG_ERROR("Subscription request failed\n");
-            }
-        }
-#endif
-        process_ptp_messages(&state);
-
-        /* HW_BASED mode only: adjust phase offset */
-        if (g_config.manager.operation_mode != OPERATION_MODE_SW_BASED) {
-            if (state.ptp_pin_state == DPLL_PIN_STATE_SELECTABLE ||
-                state.ptp_pin_state == DPLL_PIN_STATE_CONNECTED) {
-                monitor_and_adjust_phase_offset(&state);
-            } else {
-                LOG_DEBUG("Skipping phase adjustment: ptp_pin_state=%d (need SELECTABLE=%d or CONNECTED=%d)\n",
-                         state.ptp_pin_state, DPLL_PIN_STATE_SELECTABLE, DPLL_PIN_STATE_CONNECTED);
-            }
-        }
-        
-        /* Sleep to run at 125 iterations per second (8ms = 8000 microseconds) */
-        usleep(8000);
-    }
-    
     LOG_INFO("Shutting down...\n");
     cleanup_state(&state);
     
