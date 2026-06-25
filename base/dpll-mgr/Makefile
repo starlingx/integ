@@ -3,7 +3,7 @@
 # Copyright (c) 2026, Intel Corporation
 
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wextra -Werror -std=gnu11 -D_GNU_SOURCE
+CFLAGS = -g -O2 -Wall -Wextra -Werror -std=gnu11 -D_GNU_SOURCE -Iinclude
 CFLAGS += -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fstack-clash-protection
 CFLAGS += -fPIE -fcf-protection=full
 CFLAGS += -Wformat-security -Werror=format-security
@@ -39,7 +39,7 @@ CFLAGS += -DAPTS_MGR_VERSION=\"$(APTS_VERSION)\"
 # Older kernels may lack dpll_lock_status_error / dpll_feature_state.
 # Probe by trying to compile a snippet that references the guard macros;
 # if the probe succeeds the kernel header already defines the types.
-DPLL_PROBE_FLAGS := -include linux/dpll.h -fsyntax-only
+DPLL_PROBE_FLAGS := -Iinclude -include linux/dpll.h -fsyntax-only
 HAVE_DPLL_LOCK_STATUS_ERROR := $(shell echo 'int x = DPLL_A_LOCK_STATUS_ERROR;' | \
 	$(CC) $(DPLL_PROBE_FLAGS) -x c - 2>/dev/null && echo 1)
 HAVE_DPLL_FEATURE_STATE := $(shell echo 'int x = DPLL_A_PHASE_OFFSET_MONITOR;' | \

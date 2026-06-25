@@ -1,2 +1,3 @@
 usr/bin/dpll-mgr
 etc/dpll-mgr/dpll_mgr.conf.sample
+etc/dpll-mgr/apts_mgr.json.sample

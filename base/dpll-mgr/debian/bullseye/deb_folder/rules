@@ -10,7 +10,7 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	install -d -m 755 $(DEBIAN_DESTDIR)/usr/bin
-	install -p -D -m 755 dpll_mgr $(DEBIAN_DESTDIR)/usr/bin/dpll-mgr
+	install -p -D -m 755 apts_mgr $(DEBIAN_DESTDIR)/usr/bin/dpll-mgr
 	install -d -m 755 $(DEBIAN_DESTDIR)/etc/dpll-mgr
 	install -p -D -m 644 config/dpll_mgr.conf.sample $(DEBIAN_DESTDIR)/etc/dpll-mgr/dpll_mgr.conf.sample
 	install -p -D -m 644 config/apts_mgr.json $(DEBIAN_DESTDIR)/etc/dpll-mgr/apts_mgr.json.sample
