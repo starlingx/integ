@@ -10,15 +10,15 @@ Signed-off-by: Li Zhou <li.zhou@windriver.com>
 [lz: adapt the patch for debian folder version has been changed
 from 2.06-1 to 2.12-9.]
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[cr: adapt series for debian folder version 2.12-9+deb13u2]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
 ---
- debian/patches/series | 144 ------------------------------------------
- 1 file changed, 144 deletions(-)
+ debian/patches/series | 146 ------------------------------------------
+ 1 file changed, 146 deletions(-)
 
-diff --git a/debian/patches/series b/debian/patches/series
-index 789b0dc..86524f1 100644
 --- a/debian/patches/series
 +++ b/debian/patches/series
-@@ -1,146 +1,2 @@
+@@ -1,148 +1,2 @@
 -olpc-prefix-hack.patch
 -core-in-fs.patch
 -grub-legacy-0-based-partitions.patch
@@ -91,6 +91,8 @@ index 789b0dc..86524f1 100644
 -fdt-device-tree-fixup-protocol.patch
  extra_deps_lst.patch
 -upstream/acpi-Fix-out-of-bounds-access-in-grub_acpi_xsdt_find_tabl.patch
+-upstream/zfs-fix-LINUX_ROOT_DEVICE-when-grub-probe-fails.patch
+-upstream/kern-riscv-efi-init-Use-time-register-in-grub_efi_ge.patch
 -install-signed.patch
 -grub-install-extra-removable.patch
 -grub-install-removable-shim.patch
@@ -167,4 +169,3 @@ index 789b0dc..86524f1 100644
 -cve-2025-jan/fs-xfs-Handle-root-inode-read-failure-in-grub_xfs_mount.patch
 -- 
 2.49.0
-
