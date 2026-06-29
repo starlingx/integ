@@ -1,3 +1,4 @@
 0001-Cleanup-package-depends-lists.patch
 0002-Update-Copyright-and-License.patch
 0003-Add-lvm2-package-to-initramfs.patch
+0004-Add-util-linux-extra-for-hwclock.patch
