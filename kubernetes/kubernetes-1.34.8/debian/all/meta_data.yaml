@@ -7,5 +7,5 @@ dl_path:
 revision:
   dist: ${STX_DIST}
   GITREVCOUNT:
-    BASE_SRCREV: f01a90792a965b66eaad4c355dbee6730690f6a1
+    BASE_SRCREV: 763e9dc8e1ed6f80e9836ad182bedd534086ef30
     SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.34.8
