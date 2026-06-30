@@ -9,18 +9,21 @@ Add name/type/region to keystone_endpoint
 A pre-starlingx change.  Was squashed with misc other puppet-keystone
 changes. Splitting the changes for clarity.
 
-Original git log for [name, service_name_real]: Allow DC to setup
+Original git log for [name, service_name]: Allow DC to setup
 endpoints in keystone. An earlier hack to get puppet-keystone working,
 did not work with distributed cloud endpoints. This hack will allow DC
 to [work].
 
-Original git log for [type, service_type], and [region, region]: Remove
+Original git log for [type, service_type_real], and [region, region]: Remove
 trailing service_type. Fix stalled puppet catalog for puppet-keystone.
 puppet-keystone was adding extra service type strings to endpoints and
 then failing to apply the puppet catalog.
 
 Rebased onto puppet-keystone 25.0.0-3
 Signed-off-by: Michel Thebeau <Michel.Thebeau@windriver.com>
+
+[fix rebase on puppet-keystone 25.0.0-4 (service_name_real to service_name)]
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
 
 Original sign-offs of the squashed patch; rebases and refactors:
 Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
@@ -43,7 +46,7 @@ index eb37b7e..ecb55a8 100644
  
      ensure_resource('keystone_service', "${service_name}::${service_type}", {
        'ensure'      => $ensure,
-+      'name'        => $service_name_real,
++      'name'        => $service_name,
 +      'type'        => $service_type,
        'description' => $service_description,
      })
@@ -52,7 +55,7 @@ index eb37b7e..ecb55a8 100644
      }
      ensure_resource('keystone_endpoint', "${region}/${service_name}::${service_type}", {
        'ensure'       => $ensure,
-+      'name'         => $service_name_real,
++      'name'         => $service_name,
 +      'type'         => $service_type,
 +      'region'       => $region,
        'public_url'   => $public_url,
