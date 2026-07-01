@@ -1,0 +1,80 @@
+Description: Skip Before=local-fs.target for runtime and noauto mounts
+ systemd 257 adds Before=local-fs.target to all non-network local
+ mounts including transient mounts created at runtime by containerd,
+ kubelet, ceph, and CNI, as well as fstab mounts with 'noauto' that
+ are triggered later by services. This delays local-fs.target by ~90s.
+ .
+ Two fixes:
+ 1. fstab-generator: Do not write Before=local-fs.target for mounts
+    with 'noauto' option. These mounts are not auto-started, so they
+    should not block local-fs.target when triggered later by services.
+ 2. mount.c: Skip Before=local-fs.target for mounts that are either
+    explicitly deferred (noauto in fstab) or dynamically created by
+    services at runtime (discovered from /proc/self/mountinfo without
+    a fstab entry). This restores systemd 247 behavior where such
+    mounts never blocked local-fs.target.
+ .
+ The key rule: from_proc_self_mountinfo && !from_fragment means systemd
+ discovered this mount from the kernel mount table but has no fstab
+ entry for it. It was created by a service at runtime and cannot exist
+ at boot time, so it must not block local-fs.target.
+Author: Joseph Vazhappilly <joseph.vazhappillypaily@windriver.com>
+Last-Update: 2026-07-06
+
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -113,6 +113,15 @@
+         return fstab_test_yes_no_option(m->parameters_fragment.options, "nofail\0" "fail\0");
+ }
+ 
++static bool mount_is_noauto(const Mount *m) {
++        assert(m);
++
++        if (!m->from_fragment)
++                return false;
++
++        return fstab_test_yes_no_option(m->parameters_fragment.options, "noauto\0" "auto\0");
++}
++
+ static bool mount_is_loop(const MountParameters *p) {
+         assert(p);
+ 
+@@ -457,7 +466,26 @@
+                 before = SPECIAL_LOCAL_FS_TARGET;
+         }
+ 
+-        if (before && !mount_is_nofail(m)) {
++        /* Skip Before=local-fs.target for mounts that cannot or should not
++         * block early boot. This restores systemd 247 behavior where runtime
++         * mounts and explicitly deferred mounts never delayed local-fs.target.
++         * The noauto check is belt-and-suspenders with the fstab-generator
++         * change below — catches mounts whose unit was loaded from cache or
++         * created by other generators. */
++        bool skip_before = false;
++        if (before && streq(before, SPECIAL_LOCAL_FS_TARGET)) {
++                if (mount_is_noauto(m))
++                        skip_before = true;
++                else if (path_startswith(m->where, "/run/"))
++                        skip_before = true;
++                else if (p && streq_ptr(p->fstype, "overlay"))
++                        skip_before = true;
++                else if (p && streq_ptr(p->fstype, "nsfs"))
++                        skip_before = true;
++                else if (m->from_proc_self_mountinfo && !m->from_fragment)
++                        skip_before = true;
++        }
++        if (before && !mount_is_nofail(m) && !skip_before) {
+                 r = unit_add_dependency_by_name(UNIT(m), UNIT_BEFORE, before, /* add_reference= */ true, mask);
+                 if (r < 0)
+                         return r;
+--- a/src/fstab-generator/fstab-generator.c
++++ b/src/fstab-generator/fstab-generator.c
+@@ -618,7 +618,7 @@
+ 
+         /* Order the mount unit we generate relative to target_unit, so that DefaultDependencies= on the
+          * target unit won't affect us. */
+-        if (target_unit && !FLAGS_SET(flags, MOUNT_NOFAIL))
++        if (target_unit && !FLAGS_SET(flags, MOUNT_NOFAIL) && !FLAGS_SET(flags, MOUNT_NOAUTO))
+                 fprintf(f, "Before=%s\n", target_unit);
+ 
+         if (passno != 0) {
