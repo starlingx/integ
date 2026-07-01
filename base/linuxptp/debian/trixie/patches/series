@@ -9,3 +9,4 @@
 0009-Fix-HA-enable-disable-lock-and-forced-lock-commands.patch
 0010-ts2phc-Add-holdover-support.patch
 0011-Fix-robustness-issues-in-HA-socket-handling-and-conf.patch
+0012-phc2sys-set-kernel-TAI-offset-when-manual-UTC-offset.patch

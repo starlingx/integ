@@ -1,0 +1,133 @@
+From ed355a059d6b88cc7c61c442d40f7c84ffdda813 Mon Sep 17 00:00:00 2001
+From: Bruno Veiga <Bruno.VeigadeAlmeida@windriver.com>
+Date: Fri, 12 Jun 2026 14:43:53 -0300
+Subject: [PATCH] phc2sys: set kernel TAI offset when manual UTC offset is
+ configured
+
+When phc2sys is started with a manual UTC offset (-O 37), the
+forced_sync_offset flag disables the pmc agent entirely. This means
+utc_offset_traceable is never set, and sysclk_set_tai_offset() is
+never called. Applications using CLOCK_TAI see TAI=0 instead of the
+correct offset.
+
+This change adds a new command-line option '-V' and a corresponding
+configuration parameter 'utc_offset_valid' to phc2sys. When used
+together with -O, it internally marks the UTC offset as valid,
+allowing sysclk_set_tai_offset() to be called with the configured
+offset value.
+
+The new option is backward-compatible and opt-in: it does not change
+existing behavior unless explicitly configured.
+
+A new GLOB_ITEM_INT entry was added to config.c to support the
+'utc_offset_valid' option in the configuration file.
+
+Test Plan:
+PASS T-GM with manual UTC offset and -V command-line flag.
+
+     sudo phc2sys -s <iface> -c CLOCK_REALTIME -O 37 -V -m
+
+     Baseline (before phc2sys): TAI_DELTA = 0
+     After phc2sys starts with -V: TAI_DELTA = 37
+
+     Verified sysclk_set_tai_offset(37) is called and
+     CLOCK_TAI returns the correct time.
+
+PASS T-GM with manual UTC offset and utc_offset_valid in config file.
+
+     Configuration:
+     utc_offset 37
+     utc_offset_valid 1
+
+     sudo phc2sys -f <config> -s <iface> -c CLOCK_REALTIME -m
+
+     After phc2sys starts: TAI_DELTA = 37
+
+PASS (Negative Case) T-GM with manual UTC offset, without -V and
+     without utc_offset_valid.
+
+     sudo phc2sys -s <iface> -c CLOCK_REALTIME -O 37 -m
+
+     TAI_DELTA remains 0, confirming existing behavior is
+     unchanged without the new option.
+
+Signed-off-by: Bruno Veiga <Bruno.VeigadeAlmeida@windriver.com>
+---
+ config.c  |  1 +
+ phc2sys.c | 13 +++++++++++--
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/config.c b/config.c
+index f26bad4..0ba35d5 100644
+--- a/config.c
++++ b/config.c
+@@ -379,6 +379,7 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("use_syslog", 1, 0, 1),
+ 	GLOB_ITEM_STR("userDescription", ""),
+ 	GLOB_ITEM_INT("utc_offset", CURRENT_UTC_OFFSET, 0, INT_MAX),
++	GLOB_ITEM_INT("utc_offset_valid", 0, 0, 1),
+ 	GLOB_ITEM_INT("verbose", 0, 0, 1),
+ 	GLOB_ITEM_INT("write_phase_mode", 0, 0, 1),
+ 	PORT_ITEM_INT("max_phc_update_skip_cnt", 120, 0, 14400),
+diff --git a/phc2sys.c b/phc2sys.c
+index 7104512..546cda3 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -147,6 +147,7 @@ struct domain {
+ 	struct domain *src_domain;
+ 	int src_priority;
+ 	struct ha ha;
++	int utc_offset_valid;
+ };
+ 
+ static struct config *phc2sys_config;
+@@ -1987,7 +1988,7 @@ static int clock_handle_leap(struct domain *domain, struct clock *clock,
+ 		}
+ 	}
+ 
+-	if (pmc_agent_utc_offset_traceable(agent) &&
++	if ((domain->utc_offset_valid || pmc_agent_utc_offset_traceable(agent)) &&
+ 	    clock->utc_offset_set != clock->sync_offset) {
+ 		if (clock->clkid == CLOCK_REALTIME)
+ 			sysclk_set_tai_offset(clock->sync_offset);
+@@ -2077,6 +2078,7 @@ static void usage(char *progname)
+ 		" -u [num]       number of clock updates in summary stats (0)\n"
+ 		" -n [num]       domain number (0)\n"
+ 		" -x             apply leap seconds by servo instead of kernel\n"
++		" -V             force UTC offset valid flag when used with -O\n"
+ 		" -z [path]      server address for UDS (/var/run/ptp4l)\n"
+ 		" -l [num]       set the logging level to 'num' (6)\n"
+ 		" -t [tag]       add tag to log messages\n"
+@@ -2129,7 +2131,7 @@ int main(int argc, char *argv[])
+ 	progname = strrchr(argv[0], '/');
+ 	progname = progname ? 1+progname : argv[0];
+ 	while (EOF != (c = getopt_long(argc, argv,
+-				"arc:d:f:s:E:P:I:S:F:R:N:O:L:M:i:u:wn:xz:l:t:mqvh",
++				"arc:d:f:s:E:P:I:S:F:R:N:O:VL:M:i:u:wn:xz:l:t:mqvh",
+ 				opts, &index))) {
+ 		switch (c) {
+ 		case 0:
+@@ -2226,6 +2228,12 @@ int main(int argc, char *argv[])
+ 			}
+ 			settings.forced_sync_offset = -1;
+ 			break;
++		case 'V':
++			if (config_set_int(cfg, "utc_offset_valid", 1)) {
++				goto end;
++			}
++			settings.utc_offset_valid = 1;
++			break;
+ 		case 'L':
+ 			if (get_arg_val_i(c, optarg, &settings.sanity_freq_limit, 0, INT_MAX) ||
+ 			    config_set_int(cfg, "sanity_freq_limit", settings.sanity_freq_limit)) {
+@@ -2373,6 +2381,7 @@ int main(int argc, char *argv[])
+ 	}
+ 	settings.kernel_leap = config_get_int(cfg, NULL, "kernel_leap");
+ 	settings.sanity_freq_limit = config_get_int(cfg, NULL, "sanity_freq_limit");
++	settings.utc_offset_valid = config_get_int(cfg, NULL, "utc_offset_valid");
+ 
+ 	if (autocfg) {
+ 		if (n_domains == 0)
+-- 
+2.43.0
+
