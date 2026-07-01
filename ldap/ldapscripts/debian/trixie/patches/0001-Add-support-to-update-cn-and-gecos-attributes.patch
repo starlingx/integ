@@ -1,0 +1,254 @@
+From 35b9913631b4f2e1a373f87b5aa836481de54ef5 Mon Sep 17 00:00:00 2001
+From: Leonardo Mendes <Leonardo.MendesSantana@windriver.com>
+Date: Wed, 1 Jul 2026 10:23:21 -0300
+Subject: [PATCH] Add support to update cn and gecos attributes
+
+Add support for updating the cn and gecos attributes when creating
+local ldap users, allowing users to customize the full name.
+
+Signed-off-by: Leonardo Mendes <Leonardo.MendesSantana@windriver.com>
+---
+ Makefile                     |  5 ++-
+ man/man1/ldapsetupfullname.1 | 45 +++++++++++++++++++++
+ sbin/ldapsetupfullname       | 78 ++++++++++++++++++++++++++++++++++++
+ sbin/ldapusersetup           | 28 ++++++++++++-
+ 4 files changed, 152 insertions(+), 4 deletions(-)
+ create mode 100644 man/man1/ldapsetupfullname.1
+ create mode 100755 sbin/ldapsetupfullname
+ mode change 100644 => 100755 sbin/ldapusersetup
+
+diff --git a/Makefile b/Makefile
+index 93778ec..0806de4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -41,13 +41,14 @@ SBINFILES =	ldapdeletemachine ldapmodifygroup ldapsetpasswd lsldap ldapadduser l
+ 			ldapdeleteuser ldapsetprimarygroup ldapfinger ldapid ldapgid ldapmodifymachine \
+ 			ldaprenamegroup ldapaddgroup ldapaddusertogroup ldapdeleteuserfromgroup \
+ 			ldapinit ldapmodifyuser ldaprenamemachine ldapaddmachine ldapdeletegroup \
+-			ldaprenameuser ldapmodifysudo ldapdeletesudo ldapusersetup ldapsetupemail
++			ldaprenameuser ldapmodifysudo ldapdeletesudo ldapusersetup ldapsetupemail \
++			ldapsetupfullname
+ MAN1FILES =	ldapdeletemachine.1 ldapmodifymachine.1 ldaprenamemachine.1 ldapadduser.1 \
+ 			ldapdeleteuserfromgroup.1 ldapfinger.1 ldapid.1 ldapgid.1 ldapmodifyuser.1 lsldap.1 \
+ 			ldapaddusertogroup.1 ldaprenameuser.1 ldapinit.1 ldapsetpasswd.1 ldapaddgroup.1 \
+ 			ldapdeletegroup.1 ldapsetprimarygroup.1 ldapmodifygroup.1 ldaprenamegroup.1 \
+ 			ldapaddmachine.1 ldapdeleteuser.1 ldapaddsudo.1 ldapmodifysudo.1 \
+-			ldapdeletesudo.1 ldapusersetup.1 ldapsetupemail.1
++			ldapdeletesudo.1 ldapusersetup.1 ldapsetupemail.1 ldapsetupfullname.1
+ MAN5FILES = ldapscripts.5
+ TMPLFILES = ldapaddgroup.template.sample ldapaddmachine.template.sample \
+ 			ldapadduser.template.sample
+diff --git a/man/man1/ldapsetupfullname.1 b/man/man1/ldapsetupfullname.1
+new file mode 100644
+index 0000000..384157f
+--- /dev/null
++++ b/man/man1/ldapsetupfullname.1
+@@ -0,0 +1,45 @@
++.\" Copyright (c) 2026 Wind River Systems, Inc.
++.\"
++.\" This program is free software; you can redistribute it and/or
++.\" modify it under the terms of the GNU General Public License
++.\" as published by the Free Software Foundation; either version 2
++.\" of the License, or (at your option) any later version.
++.\"
++.\" This program is distributed in the hope that it will be useful,
++.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
++.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++.\" GNU General Public License for more details.
++.\"
++.\" You should have received a copy of the GNU General Public License
++.\" along with this program; if not, write to the Free Software
++.\" Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++.\" USA.
++.\"
++.\" Leonardo Mendes
++.\" Leonardo.MendesSantana@windriver.com
++.\"
++.TH ldapsetupfullname 1 "July 01, 2026"
++
++.SH NAME
++ldapsetupfullname \- update cn and gecos attribute of an LDAP user.
++
++.SH SYNOPSIS
++.B ldapsetupfullname
++.RB <username | uid>
++.RB <full name>
++
++.SH OPTIONS
++.TP
++.B [<username | uid> <full name>]
++  LDAP username and user's full name. If it contains spaces, enclose it in double quotes.
++
++.SH "SEE ALSO"
++ldapdeleteuser(1), ldapaddgroup(1), ldapaddusertogroup(1), ldapmodifyuser(1), ldapscripts(5).
++
++.SH AVAILABILITY
++The ldapscripts are provided under the GNU General Public License v2 (see COPYING for more details).
++The latest version of the ldapscripts is available on :
++.B http://contribs.martymac.org
++
++.SH BUGS
++No bug known.
+diff --git a/sbin/ldapsetupfullname b/sbin/ldapsetupfullname
+new file mode 100755
+index 0000000..a6f1bba
+--- /dev/null
++++ b/sbin/ldapsetupfullname
+@@ -0,0 +1,78 @@
++#!/bin/bash
++
++# ldapsetufullname - Update full name for an existing LDAP user
++
++#  Copyright (c) 2026 Wind River Systems, Inc.
++#
++#  This program is free software; you can redistribute it and/or
++#  modify it under the terms of the GNU General Public License
++#  as published by the Free Software Foundation; either version 2
++#  of the License, or (at your option) any later version.
++#
++#  This program is distributed in the hope that it will be useful,
++#  but WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#  GNU General Public License for more details.
++#
++#  You should have received a copy of the GNU General Public License
++#  along with this program; if not, write to the Free Software
++#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++#  USA.
++
++if [ $# -ne 2 ]
++then
++  echo "Usage: $0 <username> <full name>"
++  exit 1
++fi
++
++# Source runtime file
++_RUNTIMEFILE="/usr/lib/ldapscripts/runtime"
++. "$_RUNTIMEFILE"
++
++_USER="$1"
++_FULLNAME="$2"
++
++# Validate username: only allow safe characters to prevent LDIF injection
++if ! [[ "$_USER" =~ ^[a-zA-Z0-9._-]+$ ]]
++then
++  end_die "Invalid username: $_USER (only alphanumeric, dot, underscore, and hyphen allowed)"
++fi
++
++# Sanitize input for LDAP filter to prevent LDAP injection
++_SAFE_USER=$(printf '%s' "$_USER" | sed 's/\\/\\5c/g; s/\*/\\2a/g; s/(/\\28/g; s/)/\\29/g; s/\x00/\\00/g')
++
++# Find username : $1 must exist in LDAP !
++_findentry "$USUFFIX,$SUFFIX" "(&(objectClass=posixAccount)(|(uid=$_SAFE_USER)(uidNumber=$_SAFE_USER)))"
++[ -z "$_ENTRY" ] && end_die "User $_USER not found in LDAP"
++
++# Use the DN returned by _findentry instead of reconstructing it
++USERDN="$_ENTRY"
++
++# Temporary LDIF file
++mktempf
++
++cat <<EOF > "$_TMPFILE"
++dn: ${USERDN}
++changetype: modify
++replace: cn
++cn: ${_FULLNAME}
++-
++replace: gecos
++gecos: ${_FULLNAME}
++EOF
++
++if [ $? -ne 0 ]
++then
++  end_die "Error writing to temporary file $_TMPFILE"
++fi
++
++echo "Updating full name for user: ${_USER}"
++
++cat "$_TMPFILE" | _utf8encode | _ldapmodify
++
++if [ $? -ne 0 ]
++then
++  end_die "Error updating user full name in LDAP"
++fi
++
++end_ok
+diff --git a/sbin/ldapusersetup b/sbin/ldapusersetup
+old mode 100644
+new mode 100755
+index 4534a26..684dbcc
+--- a/sbin/ldapusersetup
++++ b/sbin/ldapusersetup
+@@ -27,7 +27,9 @@ where accepted field(s) are as follows:
+ --secondgroup <grp>           : the secondary group to add this user to
+ --passmax     <value>         : the shadowMax value for this user
+ --passwarning <value>         : the shadowWarning value for this user
+---email <value>               : the email value for this user"
++--email       <value>         : the email value for this user
++--fullname    <value>         : the full name value for this user, if it
++                                contains spaces, enclose it in double quotes."
+   exit 1
+ fi
+ 
+@@ -151,6 +153,16 @@ LdapSetupEmail() {
+   [ $? -eq 0 ] || end_die "Critical setup error: cannot add email to $1"
+ }
+ 
++# Update full name for user
++# Input : username ($1), full name ($2)
++# Output : none
++LdapSetupFullName() {
++  _fullname="$2"
++  [ -z "$2" ] && _fullname="$1"
++  ldapsetupfullname "$1" "$_fullname"
++  [ $? -eq 0 ] || end_die "Critical setup error: cannot add full name to $1"
++}
++
+ # Since this setup script is meant to be a
+ # wrapper on top of existing ldap scripts,
+ # it share invoke those... we could have achieved
+@@ -158,7 +170,8 @@ LdapSetupEmail() {
+ # at the expense of massively redundant code
+ # duplication.
+ declare -a helper_scripts=("ldapadduser" "ldapaddsudo" "ldapmodifyuser" \
+-                           "ldapaddusertogroup" "ldapsetupemail" "$_BASHSHELL")
++                           "ldapaddusertogroup" "ldapsetupemail" \
++                           "ldapsetupfullname" "$_BASHSHELL")
+ 
+ # Do some quick sanity tests to make sure
+ # helper scripts are present
+@@ -175,6 +188,10 @@ if [ "$#" -eq 0 ]; then
+   read _username
+   LdapAddUser "$_username"
+ 
++  echo -e "Enter user's full name to add to LDAP:[$_username]: "
++  read _fullname
++  LdapSetupFullName "$_username" "$_fullname"
++
+   # Replace the login shell. Only bash is supported now.
+   LdapAddLoginShell "$_username"
+ 
+@@ -226,6 +243,10 @@ else
+ 	_username="$2"
+ 	shift
+ 	;;
++       -f|--fullname) # optional
++       _fullname="$2"
++	shift
++	;;
+ 	--sudo)      # optional
+ 	_sudo="yes"
+ 	;;
+@@ -257,6 +278,9 @@ else
+   [ -z "$_username" ] && end_die "No username argument specified"
+   LdapAddUser $_username
+ 
++  # Change user full name
++  LdapSetupFullName $_username "$_fullname"
++
+   # Change Login Shell
+   LdapAddLoginShell $_username "$_loginshell"
+ 
+-- 
+2.43.0
+
