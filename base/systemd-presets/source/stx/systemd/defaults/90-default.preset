@@ -24,3 +24,7 @@ enable dmraid-activation.service
 
 # Others
 enable virlogd.socket
+
+# Network Storage Interface
+enable iscsid.*
+enable open-iscsi.service
