@@ -98,6 +98,7 @@ networking/ifenslave
 networking/lldpd
 networking/net-tools
 networking/openvswitch
+networking/ovs-access-monitor
 ostree/initramfs-ostree
 ostree/mttyexec
 ostree/ostree

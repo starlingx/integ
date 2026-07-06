@@ -1,0 +1,21 @@
+Source: ovs-access-monitor
+Section: net
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+ dh-python,
+ python3-all
+Standards-Version: 4.5.1
+Homepage: https://www.starlingx.io
+
+Package: ovs-access-monitor
+Architecture: all
+Depends: ${misc:Depends},
+ python3,
+ iproute2
+Description: OVS Access Bridge Failover Monitor
+ ovs-access-monitor is a systemd service that monitors the health of the
+ OVS agent pod and manages PF interface membership in the ovs0 Linux bridge.
+ When the pod is healthy, the PF is removed from the bridge (traffic flows
+ through the pod's veth). When the pod is unhealthy or absent, the PF is
+ re-added to provide fallback connectivity.
