@@ -1,0 +1,312 @@
+From b64ef10ac56e73c8362939ff65de86998ea33903 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Fri, 26 Jun 2026 15:04:03 -0400
+Subject: [PATCH 14/14] bmc, clock, port: multi-port BMCA correctness for
+ unicast BC
+
+Fixes split-brain conditions in 2-port unicast BC topology where both
+ports simultaneously claim GM, creating timing loops. Also hardens
+foreign master record handling on inhibit_announce ports.
+
+BMCA changes (bmc.c, clock.c, clock.h):
+- inhibit_announce ports return PS_LISTENING from bmc_state_decision(),
+  never independently claiming GM.
+- clock_has_inhibit_port() blocks non-inhibit ports from reaching
+  M1/M2 GRAND_MASTER paths until the inhibit port has acquired
+  upstream.
+- Guard clock_update_grandmaster() with best == NULL check to prevent
+  overwriting valid parentDS during port processing order races.
+
+Foreign master record hardening (port.c):
+- fc_prune(): skip age-expiry on inhibit_announce ports. These ports
+  cannot re-announce to rebuild a pruned record, so expiring valid
+  messages would starve BMCA permanently. Cap loop still runs to
+  bound memory.
+- Timeout handler: move fc_clear() below inhibit_announce early-return.
+  Inhibit ports preserve their foreign master record on timeout and
+  signal BMCA to re-evaluate without destroying evidence.
+- port_foreign_clock_active() exported for unicast_client timer use.
+
+Replaces bullseye patches: 0079, 0081, 0082 (item 2)
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ bmc.c   | 18 ++++++++++++++++
+ clock.c | 15 ++++++++++++-
+ clock.h |  7 ++++++
+ port.c  | 67 +++++++++++++++++++++++++++++++++++++++++++++++----------
+ port.h  | 15 +++++++++++++
+ 5 files changed, 110 insertions(+), 12 deletions(-)
+
+diff --git a/bmc.c b/bmc.c
+index ebc0789..6f57dc9 100644
+--- a/bmc.c
++++ b/bmc.c
+@@ -19,7 +19,9 @@
+ #include <string.h>
+ 
+ #include "bmc.h"
++#include "clock.h"
+ #include "ds.h"
++#include "port.h"
+ 
+ static int portid_cmp(struct PortIdentity *a, struct PortIdentity *b)
+ {
+@@ -151,8 +153,20 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	if (!port_best && PS_LISTENING == ps)
+ 		return ps;
+ 
++	/*
++	 * Split-brain guard: a non-inhibit port must not claim GM/MASTER
++	 * when the clock has an inhibit_announce port that hasn't acquired
++	 * an upstream master yet (clock_best_port is NULL or non-inhibit).
++	 */
++	int inhibit_gm_guard = !port_inhibit_announce(r) &&
++		clock_has_inhibit_port(c) &&
++		(!clock_best_port(c) ||
++		 !port_inhibit_announce(clock_best_port(c)));
++
+ 	if (clock_class(c) <= 127) {
+ 		if (compare(clock_ds, port_best) > 0) {
++			if (port_inhibit_announce(r) || inhibit_gm_guard)
++				return PS_LISTENING;
+ 			return PS_GRAND_MASTER; /*M1*/
+ 		} else {
+ 			return PS_PASSIVE; /*P1*/
+@@ -160,6 +174,8 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	}
+ 
+ 	if (compare(clock_ds, clock_best) > 0) {
++		if (port_inhibit_announce(r) || inhibit_gm_guard)
++			return PS_LISTENING;
+ 		return PS_GRAND_MASTER; /*M2*/
+ 	}
+ 
+@@ -170,6 +186,8 @@ enum port_state bmc_state_decision(struct clock *c, struct port *r,
+ 	if (compare(clock_best, port_best) == A_BETTER_TOPO) {
+ 		return PS_PASSIVE; /*P2*/
+ 	} else {
++		if (port_inhibit_announce(r))
++			return PS_LISTENING;
+ 		return PS_MASTER; /*M3*/
+ 	}
+ }
+diff --git a/clock.c b/clock.c
+index 442d03b..37d5875 100644
+--- a/clock.c
++++ b/clock.c
+@@ -1453,6 +1453,17 @@ struct port *clock_best_port(struct clock *c)
+ 	return c->best ? c->best->port : NULL;
+ }
+ 
++int clock_has_inhibit_port(struct clock *c)
++{
++	struct port *p;
++
++	LIST_FOREACH(p, &c->ports, list) {
++		if (port_inhibit_announce(p))
++			return 1;
++	}
++	return 0;
++}
++
+ struct dataset *clock_default_ds(struct clock *c)
+ {
+ 	struct dataset *out = &c->default_dataset;
+@@ -2254,6 +2265,9 @@ static void handle_state_decision_event(struct clock *c)
+ 	c->best = best;
+ 	c->best_id = best_id;
+ 
++	if (!best)
++		clock_update_grandmaster(c);
++
+ 	LIST_FOREACH(piter, &c->ports, list) {
+ 		enum port_state ps;
+ 		enum fsm_event event;
+@@ -2265,7 +2279,6 @@ static void handle_state_decision_event(struct clock *c)
+ 		case PS_GRAND_MASTER:
+ 			pr_notice("%s: assuming the grand master role",
+ 				  port_log_name(piter));
+-			clock_update_grandmaster(c);
+ 			event = EV_RS_GRAND_MASTER;
+ 			break;
+ 		case PS_MASTER:
+diff --git a/clock.h b/clock.h
+index ce9ae91..bf24a00 100644
+--- a/clock.h
++++ b/clock.h
+@@ -67,6 +67,13 @@ struct dataset *clock_best_foreign(struct clock *c);
+  */
+ struct port *clock_best_port(struct clock *c);
+ 
++/**
++ * Check if the clock has any port with inhibit_announce set.
++ * @param c  The clock instance.
++ * @return   Non-zero if any port has inhibit_announce, zero otherwise.
++ */
++int clock_has_inhibit_port(struct clock *c);
++
+ /**
+  * Obtain the clockClass attribute from a clock.
+  * @param c  The clock instance.
+diff --git a/port.c b/port.c
+index b7fbfb1..147e0ad 100644
+--- a/port.c
++++ b/port.c
+@@ -314,9 +314,9 @@ static void fc_prune(struct foreign_clock *fc)
+ {
+ 	struct timespec now;
+ 	struct ptp_message *m;
++	unsigned int before = fc->n_messages;
+ 
+-	clock_gettime(CLOCK_MONOTONIC, &now);
+-
++	/* Cap at threshold unconditionally (bounded memory) */
+ 	while (fc->n_messages > FOREIGN_MASTER_THRESHOLD) {
+ 		m = TAILQ_LAST(&fc->messages, messages);
+ 		TAILQ_REMOVE(&fc->messages, m, list);
+@@ -324,6 +324,16 @@ static void fc_prune(struct foreign_clock *fc)
+ 		msg_put(m);
+ 	}
+ 
++	/*
++	 * Skip age-expiry on inhibit_announce ports: they cannot
++	 * re-announce to rebuild a pruned record, so expiring valid
++	 * messages here would starve BMCA permanently.
++	 */
++	if (fc->port && fc->port->inhibit_announce)
++		goto out;
++
++	clock_gettime(CLOCK_MONOTONIC, &now);
++
+ 	while (!TAILQ_EMPTY(&fc->messages)) {
+ 		m = TAILQ_LAST(&fc->messages, messages);
+ 		if (msg_current(m, now))
+@@ -332,6 +342,12 @@ static void fc_prune(struct foreign_clock *fc)
+ 		fc->n_messages--;
+ 		msg_put(m);
+ 	}
++
++out:
++	if (fc->n_messages < before)
++		pr_debug("[BMCA] fc_prune %s: %u->%u messages",
++			 pid2str(&fc->dataset.sender),
++			 before, fc->n_messages);
+ }
+ 
+ static int delay_req_current(struct ptp_message *m, struct timespec now)
+@@ -1608,7 +1624,13 @@ int port_delay_request(struct port *p)
+ 	msg->header.logMessageInterval = 0x7f;
+ 
+ 	if (p->hybrid_e2e) {
+-		struct ptp_message *dst = TAILQ_FIRST(&p->best->messages);
++		struct ptp_message *dst;
++		if (!p->best || TAILQ_EMPTY(&p->best->messages)) {
++			pr_debug("%s: no best master for delay request",
++				 p->log_name);
++			goto out;
++		}
++		dst = TAILQ_FIRST(&p->best->messages);
+ 		msg->address = dst->address;
+ 		msg->header.flagField[0] |= UNICAST;
+ 	}
+@@ -1951,6 +1973,7 @@ int port_initialize(struct port *p)
+ 	if (unicast_client_enabled(p) && unicast_client_set_tmo(p)) {
+ 		goto no_tmo;
+ 	}
++	unicast_client_reset(p);
+ 
+ 	/* No need to open rtnl socket on UDS port. */
+ 	if (!port_is_uds(p)) {
+@@ -2849,9 +2872,6 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 	case FD_SYNC_RX_TIMER:
+ 		pr_debug("%s: %s timeout", p->log_name,
+ 			 fd_index == FD_SYNC_RX_TIMER ? "rx sync" : "announce");
+-		if (p->best) {
+-			fc_clear(p->best);
+-		}
+ 
+ 		if (fd_index == FD_SYNC_RX_TIMER) {
+ 			p->service_stats.sync_timeout++;
+@@ -2869,10 +2889,22 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 		}
+ 
+ 		if (p->inhibit_announce) {
++			/*
++			 * inhibit_announce ports cannot re-announce, so they
++			 * cannot rebuild a cleared foreign master record.
++			 * Preserve the record and signal BMCA to re-evaluate.
++			 */
+ 			port_clr_tmo(p->fda.fd[FD_ANNOUNCE_TIMER]);
+-		} else {
+-			port_set_announce_tmo(p);
++			clock_set_sde(p->clock, 1);
++			delay_req_prune(p);
++			return EV_NONE;
++		}
++
++		/* Normal ports: clear the foreign master record on timeout */
++		if (p->best) {
++			fc_clear(p->best);
+ 		}
++		port_set_announce_tmo(p);
+ 
+ 		delay_req_prune(p);
+ 		if (clock_slave_only(p->clock) && p->delayMechanism != DM_P2P &&
+@@ -2880,9 +2912,6 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 			return EV_FAULT_DETECTED;
+ 		}
+ 
+-		if (p->inhibit_announce) {
+-			return EV_NONE;
+-		}
+ 		return EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES;
+ 
+ 	case FD_DELAY_TIMER:
+@@ -3546,3 +3575,19 @@ void port_update_unicast_state(struct port *p)
+ 		p->unicast_state_dirty = false;
+ 	}
+ }
++
++int port_inhibit_announce(struct port *p)
++{
++	return p->inhibit_announce;
++}
++
++int port_foreign_clock_active(struct port *p, struct PortIdentity *pid)
++{
++	struct foreign_clock *fc;
++
++	LIST_FOREACH(fc, &p->foreign_masters, list) {
++		if (pid_eq(&fc->dataset.sender, pid))
++			return fc->n_messages >= FOREIGN_MASTER_THRESHOLD;
++	}
++	return 0;
++}
+diff --git a/port.h b/port.h
+index 57c8c2f..7c15b8b 100644
+--- a/port.h
++++ b/port.h
+@@ -364,4 +364,19 @@ void tc_cleanup(void);
+  */
+ void port_update_unicast_state(struct port *p);
+ 
++/**
++ * Returns whether the port has inhibit_announce set.
++ * @param p      A port instance.
++ * @return       Non-zero if inhibit_announce is set, zero otherwise.
++ */
++int port_inhibit_announce(struct port *p);
++
++/**
++ * Returns non-zero if the given portIdentity has an active foreign master
++ * record (at or above FOREIGN_MASTER_THRESHOLD).
++ * @param p    The port in question.
++ * @param pid  The portIdentity to look up.
++ */
++int port_foreign_clock_active(struct port *p, struct PortIdentity *pid);
++
+ #endif
+-- 
+2.43.0
+

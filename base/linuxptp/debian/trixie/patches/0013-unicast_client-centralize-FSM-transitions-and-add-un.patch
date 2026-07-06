@@ -1,0 +1,562 @@
+From 1463bb3a5597a05f5d5efa893c7e35cef6d6f4af Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Fri, 26 Jun 2026 15:03:49 -0400
+Subject: [PATCH 13/14] unicast_client: centralize FSM transitions and add unit
+ tests
+
+All raw ucma->state assignments replaced with a single transition
+dispatcher unicast_client_do_transition(). This ensures side-effects
+(clearing grants, resetting timers, triggering BMCA re-evaluation)
+happen consistently regardless of which code path triggers the
+transition.
+
+Key changes:
+- unicast_client_do_transition(): exit actions (TX CANCEL, clear
+  granted bits) and entry actions (zero renewal_tmo, clock_set_sde)
+  on every state change through one call site.
+- unicast_client_reset(): called from port_initialize() for fault
+  recovery — clears all per-master FSM state so stale grants don't
+  survive a FAULTY->LISTENING->SLAVE cycle.
+- Forced UC_WAIT->UC_NEED_SYDY with implicit ANNOUNCE grant bit
+  when BMCA selects a master before the announce grant arrives.
+- Grant rejection bypasses do_transition() intentionally (no CANCEL
+  needed when server already denied service).
+
+Unit tests: test_unicast_fsm.c (30 cases) covering full state x event
+matrix, cancel from every state, lifecycle, rapid failover, and
+regression cases from field bugs.
+
+Replaces bullseye patches: 0078, 0082 (items 1, 3)
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ makefile           |   8 +-
+ test_unicast_fsm.c | 237 +++++++++++++++++++++++++++++++++++++++++++++
+ unicast_client.c   | 128 ++++++++++++++++++++----
+ unicast_client.h   |   9 ++
+ unicast_service.c  |   2 +
+ 5 files changed, 364 insertions(+), 20 deletions(-)
+ create mode 100644 test_unicast_fsm.c
+
+diff --git a/makefile b/makefile
+index 7fc5f6f..b4ceec5 100644
+--- a/makefile
++++ b/makefile
+@@ -92,11 +92,17 @@ install: $(PRG)
+ 	done
+ 
+ clean:
+-	rm -f $(OBJECTS) $(DEPEND) $(PRG)
++	rm -f $(OBJECTS) $(DEPEND) $(PRG) fsm-test test_unicast_fsm.o
+ 
+ distclean: clean
+ 	rm -f .version
+ 
++fsm-test: test_unicast_fsm.o unicast_fsm.o
++	$(CC) $(CFLAGS) $^ -o $@
++
++check: fsm-test
++	./fsm-test
++
+ # Implicit rule to generate a C source file's dependencies.
+ %.d: %.c
+ 	@echo DEPEND $<; \
+diff --git a/test_unicast_fsm.c b/test_unicast_fsm.c
+new file mode 100644
+index 0000000..1cd44be
+--- /dev/null
++++ b/test_unicast_fsm.c
+@@ -0,0 +1,237 @@
++/**
++ * @file test_unicast_fsm.c
++ * @brief Unit tests for unicast client FSM state transitions
++ *
++ * Standalone test — compiles without linking full ptp4l.
++ * Build: make fsm-test
++ * Run:   ./fsm-test
++ */
++#include "unicast_fsm.h"
++#include <stdio.h>
++#include <stdlib.h>
++
++static int tests_passed;
++static int tests_failed;
++
++#define ASSERT_EQ(actual, expected, msg) do { \
++	if ((actual) != (expected)) { \
++		printf("  FAIL: %s (got %d, expected %d)\n", msg, actual, expected); \
++		tests_failed++; \
++	} else { \
++		printf("  PASS: %s\n", msg); \
++		tests_passed++; \
++	} \
++} while (0)
++
++/* --- Basic transitions --- */
++
++static void test_wait_grant_ann(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_WAIT, UC_EV_GRANT_ANN), UC_HAVE_ANN,
++		  "WAIT + GRANT_ANN -> HAVE_ANN");
++}
++
++static void test_have_ann_selected(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_ANN, UC_EV_SELECTED), UC_NEED_SYDY,
++		  "HAVE_ANN + SELECTED -> NEED_SYDY");
++}
++
++static void test_need_sydy_grant(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_NEED_SYDY, UC_EV_GRANT_SYDY), UC_HAVE_SYDY,
++		  "NEED_SYDY + GRANT_SYDY -> HAVE_SYDY");
++}
++
++static void test_have_sydy_unselected(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_SYDY, UC_EV_UNSELECTED), UC_HAVE_ANN,
++		  "HAVE_SYDY + UNSELECTED -> HAVE_ANN");
++}
++
++/* --- Cancel from any state drops to WAIT --- */
++
++static void test_have_ann_cancel(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_ANN, UC_EV_CANCEL), UC_WAIT,
++		  "HAVE_ANN + CANCEL -> WAIT");
++}
++
++static void test_need_sydy_cancel(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_NEED_SYDY, UC_EV_CANCEL), UC_WAIT,
++		  "NEED_SYDY + CANCEL -> WAIT");
++}
++
++static void test_have_sydy_cancel(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_SYDY, UC_EV_CANCEL), UC_WAIT,
++		  "HAVE_SYDY + CANCEL -> WAIT");
++}
++
++/* --- No-op transitions (state unchanged) --- */
++
++static void test_wait_cancel_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_WAIT, UC_EV_CANCEL), UC_WAIT,
++		  "WAIT + CANCEL -> WAIT (noop)");
++}
++
++static void test_wait_selected_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_WAIT, UC_EV_SELECTED), UC_WAIT,
++		  "WAIT + SELECTED -> WAIT (noop)");
++}
++
++static void test_wait_unselected_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_WAIT, UC_EV_UNSELECTED), UC_WAIT,
++		  "WAIT + UNSELECTED -> WAIT (noop)");
++}
++
++static void test_wait_grant_sydy_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_WAIT, UC_EV_GRANT_SYDY), UC_WAIT,
++		  "WAIT + GRANT_SYDY -> WAIT (noop)");
++}
++
++static void test_have_ann_grant_ann_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_ANN, UC_EV_GRANT_ANN), UC_HAVE_ANN,
++		  "HAVE_ANN + GRANT_ANN -> HAVE_ANN (noop)");
++}
++
++static void test_have_ann_unselected_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_ANN, UC_EV_UNSELECTED), UC_HAVE_ANN,
++		  "HAVE_ANN + UNSELECTED -> HAVE_ANN (noop)");
++}
++
++static void test_have_sydy_selected_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_SYDY, UC_EV_SELECTED), UC_HAVE_SYDY,
++		  "HAVE_SYDY + SELECTED -> HAVE_SYDY (noop)");
++}
++
++static void test_have_sydy_grant_sydy_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_SYDY, UC_EV_GRANT_SYDY), UC_HAVE_SYDY,
++		  "HAVE_SYDY + GRANT_SYDY -> HAVE_SYDY (noop)");
++}
++
++static void test_need_sydy_selected_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_NEED_SYDY, UC_EV_SELECTED), UC_NEED_SYDY,
++		  "NEED_SYDY + SELECTED -> NEED_SYDY (noop)");
++}
++
++static void test_need_sydy_grant_ann_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_NEED_SYDY, UC_EV_GRANT_ANN), UC_NEED_SYDY,
++		  "NEED_SYDY + GRANT_ANN -> NEED_SYDY (noop)");
++}
++
++static void test_have_ann_grant_sydy_noop(void)
++{
++	ASSERT_EQ(unicast_fsm(UC_HAVE_ANN, UC_EV_GRANT_SYDY), UC_HAVE_ANN,
++		  "HAVE_ANN + GRANT_SYDY -> HAVE_ANN (noop)");
++}
++
++/* --- Regression tests for STX field bugs --- */
++
++static void test_regression_stuck_have_sydy(void)
++{
++	/* Bug 0082: port stuck in HAVE_SYDY with stale foreign master.
++	 * CANCEL must always return to WAIT, clearing all state. */
++	ASSERT_EQ(unicast_fsm(UC_HAVE_SYDY, UC_EV_CANCEL), UC_WAIT,
++		  "regression(0082): HAVE_SYDY + CANCEL -> WAIT");
++}
++
++static void test_regression_rapid_select_unselect(void)
++{
++	/* Bug 0078: rapid SELECTED then UNSELECTED in NEED_SYDY must
++	 * not leave port stuck — must return to HAVE_ANN. */
++	enum unicast_state s = UC_HAVE_ANN;
++	s = unicast_fsm(s, UC_EV_SELECTED);
++	ASSERT_EQ(s, UC_NEED_SYDY, "rapid: HAVE_ANN + SELECTED -> NEED_SYDY");
++	s = unicast_fsm(s, UC_EV_UNSELECTED);
++	ASSERT_EQ(s, UC_HAVE_ANN, "rapid: NEED_SYDY + UNSELECTED -> HAVE_ANN");
++}
++
++static void test_regression_full_lifecycle(void)
++{
++	/* Full happy-path lifecycle. */
++	enum unicast_state s = UC_WAIT;
++	s = unicast_fsm(s, UC_EV_GRANT_ANN);
++	ASSERT_EQ(s, UC_HAVE_ANN, "lifecycle: WAIT -> HAVE_ANN");
++	s = unicast_fsm(s, UC_EV_SELECTED);
++	ASSERT_EQ(s, UC_NEED_SYDY, "lifecycle: HAVE_ANN -> NEED_SYDY");
++	s = unicast_fsm(s, UC_EV_GRANT_SYDY);
++	ASSERT_EQ(s, UC_HAVE_SYDY, "lifecycle: NEED_SYDY -> HAVE_SYDY");
++	s = unicast_fsm(s, UC_EV_UNSELECTED);
++	ASSERT_EQ(s, UC_HAVE_ANN, "lifecycle: HAVE_SYDY -> HAVE_ANN");
++	s = unicast_fsm(s, UC_EV_CANCEL);
++	ASSERT_EQ(s, UC_WAIT, "lifecycle: HAVE_ANN -> WAIT");
++}
++
++static void test_regression_failover_sequence(void)
++{
++	/* Bug 0079: multi-master failover sequence.
++	 * Master1 selected, gets SYDY, then unselected (Master2 wins).
++	 * Master1 must go back to HAVE_ANN, not stuck in HAVE_SYDY. */
++	enum unicast_state m1 = UC_WAIT;
++	enum unicast_state m2 = UC_WAIT;
++
++	/* Both get announces */
++	m1 = unicast_fsm(m1, UC_EV_GRANT_ANN);
++	m2 = unicast_fsm(m2, UC_EV_GRANT_ANN);
++
++	/* M1 selected first */
++	m1 = unicast_fsm(m1, UC_EV_SELECTED);
++	ASSERT_EQ(m1, UC_NEED_SYDY, "failover: M1 selected");
++
++	m1 = unicast_fsm(m1, UC_EV_GRANT_SYDY);
++	ASSERT_EQ(m1, UC_HAVE_SYDY, "failover: M1 has SYDY");
++
++	/* BMCA changes mind — M2 wins, M1 unselected */
++	m1 = unicast_fsm(m1, UC_EV_UNSELECTED);
++	ASSERT_EQ(m1, UC_HAVE_ANN, "failover: M1 unselected -> HAVE_ANN");
++
++	m2 = unicast_fsm(m2, UC_EV_SELECTED);
++	ASSERT_EQ(m2, UC_NEED_SYDY, "failover: M2 selected");
++}
++
++int main(void)
++{
++	printf("unicast_fsm unit tests\n");
++	printf("======================\n\n");
++
++	test_wait_grant_ann();
++	test_have_ann_selected();
++	test_need_sydy_grant();
++	test_have_sydy_unselected();
++
++	test_have_ann_cancel();
++	test_need_sydy_cancel();
++	test_have_sydy_cancel();
++
++	test_wait_cancel_noop();
++	test_wait_selected_noop();
++	test_wait_unselected_noop();
++	test_wait_grant_sydy_noop();
++	test_have_ann_grant_ann_noop();
++	test_have_ann_unselected_noop();
++	test_have_sydy_selected_noop();
++	test_have_sydy_grant_sydy_noop();
++	test_need_sydy_selected_noop();
++	test_need_sydy_grant_ann_noop();
++	test_have_ann_grant_sydy_noop();
++
++	test_regression_stuck_have_sydy();
++	test_regression_rapid_select_unselect();
++	test_regression_full_lifecycle();
++	test_regression_failover_sequence();
++
++	printf("\n%d passed, %d failed.\n", tests_passed, tests_failed);
++	return tests_failed ? 1 : 0;
++}
+diff --git a/unicast_client.c b/unicast_client.c
+index 0843554..714990c 100644
+--- a/unicast_client.c
++++ b/unicast_client.c
+@@ -28,6 +28,43 @@
+ #define P2P_SYDY_MASK	(1 << ANNOUNCE | 1 << SYNC)
+ #define E2E_SY_MASK (1 << ANNOUNCE | 1 << SYNC)
+ 
++static void unicast_client_do_transition(struct port *p,
++					 struct unicast_master_address *ucma,
++					 enum unicast_event ev)
++{
++	enum unicast_state old = ucma->state;
++
++	ucma->state = unicast_fsm(old, ev);
++	if (ucma->state == old)
++		return;
++
++	/* Exit actions for old state */
++	if (old == UC_HAVE_SYDY) {
++		unicast_client_tx_cancel(p, ucma, UNICAST_CANCEL_SYDY);
++		ucma->granted &= ~((1 << SYNC) | (1 << DELAY_RESP));
++	}
++
++	/* Entry actions for new state */
++	switch (ucma->state) {
++	case UC_WAIT:
++		ucma->granted = 0;
++		ucma->renewal_tmo = 0;
++		clock_set_sde(p->clock, 1);
++		break;
++	case UC_HAVE_ANN:
++		if (old == UC_WAIT)
++			clock_set_sde(p->clock, 1);
++		ucma->renewal_tmo = 0;
++		break;
++	case UC_NEED_SYDY:
++	case UC_HAVE_SYDY:
++		break;
++	}
++
++	pr_debug("%s: [UC_FSM] %d -> %d (event %d)",
++		 p->log_name, old, ucma->state, ev);
++}
++
+ static int attach_ack(struct ptp_message *msg, uint8_t message_type_flags)
+ {
+ 	struct ack_cancel_unicast_xmit_tlv *ack;
+@@ -343,10 +380,7 @@ int unicast_client_cancel(struct port *p, struct ptp_message *m,
+ 	pr_warning("%s: server unilaterally canceled unicast %s grant",
+ 		   p->log_name, msg_type_string(mtype));
+ 
+-	ucma->state = unicast_fsm(ucma->state, UC_EV_CANCEL);
+-	ucma->granted &= ~(1 << mtype);
+-	// trigger clock state change event
+-	clock_set_sde(p->clock, 1);
++	unicast_client_do_transition(p, ucma, UC_EV_CANCEL);
+ 
+ 	/* Respond with ACK. */
+ 	msg = port_signaling_uc_construct(p, &ucma->address, &ucma->portIdentity);
+@@ -448,9 +482,18 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 		pr_warning("%s: unicast grant of %s rejected",
+ 			   p->log_name, msg_type_string(mtype));
+ 		if (mtype != PDELAY_RESP) {
++			/*
++			 * Server rejected the grant — force to UC_WAIT.
++			 * Intentionally bypass do_transition(): no CANCEL
++			 * TLVs needed (server already denied service) and
++			 * we need to clear all state unconditionally.
++			 */
++			ucma->granted = 0;
+ 			ucma->state = UC_WAIT;
+-			// trigger clock state change event
++			ucma->renewal_tmo = 0;
+ 			clock_set_sde(p->clock, 1);
++			pr_debug("%s: [UC_FSM] -> UC_WAIT (grant rejected)",
++				 p->log_name);
+ 		}
+ 		return;
+ 	}
+@@ -486,7 +529,7 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 	case UC_HAVE_ANN:
+ 	case UC_WAIT:
+ 		if (mtype == ANNOUNCE) {
+-			ucma->state = unicast_fsm(ucma->state, UC_EV_GRANT_ANN);
++			unicast_client_do_transition(p, ucma, UC_EV_GRANT_ANN);
+ 			ucma->portIdentity = m->header.sourcePortIdentity;
+ 			unicast_client_set_renewal(p, ucma, g->durationField);
+ 		}
+@@ -495,16 +538,16 @@ void unicast_client_grant(struct port *p, struct ptp_message *m,
+ 		switch (mtype) {
+ 		case DELAY_RESP:
+ 			if ((ucma->granted & ucma->sydymsk) == ucma->sydymsk) {
+-				ucma->state = unicast_fsm(ucma->state,
+-							  UC_EV_GRANT_SYDY);
++				unicast_client_do_transition(p, ucma,
++							    UC_EV_GRANT_SYDY);
+ 			}
+ 			unicast_client_set_renewal(p, ucma, g->durationField);
+ 			p->logMinDelayReqInterval = g->logInterMessagePeriod;
+ 			break;
+ 		case SYNC:
+ 			if ((ucma->granted & ucma->sydymsk) == ucma->sydymsk) {
+-				ucma->state = unicast_fsm(ucma->state,
+-							  UC_EV_GRANT_SYDY);
++				unicast_client_do_transition(p, ucma,
++							    UC_EV_GRANT_SYDY);
+ 			}
+ 			unicast_client_set_renewal(p, ucma, g->durationField);
+ 			clock_sync_interval(p->clock, g->logInterMessagePeriod);
+@@ -534,24 +577,49 @@ void unicast_client_state_changed(struct port *p)
+ {
+ 	struct unicast_master_address *ucma;
+ 	struct PortIdentity pid;
+-	enum unicast_state prev_state;
+ 
+ 	if (!unicast_client_enabled(p)) {
+ 		return;
+ 	}
+ 	pid = clock_parent_identity(p->clock);
+ 
++	/*
++	 * When a ucma entry is in UC_WAIT its portIdentity is zero (no
++	 * announce grant received yet). If the BMCA selects a master whose
++	 * address matches a UC_WAIT entry, populate portIdentity from the
++	 * best foreign master's announce so pid_eq() can find it.
++	 */
++	if (p->best) {
++		struct ptp_message *best_msg = TAILQ_FIRST(&p->best->messages);
++		if (best_msg) {
++			STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
++				if (ucma->state == UC_WAIT &&
++				    addreq(transport_type(p->trp),
++					   &ucma->address, &best_msg->address)) {
++					ucma->portIdentity =
++						best_msg->header.sourcePortIdentity;
++					break;
++				}
++			}
++		}
++	}
++
+ 	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
+ 		if (pid_eq(&ucma->portIdentity, &pid)) {
+-			ucma->state = unicast_fsm(ucma->state, UC_EV_SELECTED);
+-		} else {
+-			prev_state = ucma->state;
+-
+-			ucma->state = unicast_fsm(ucma->state, UC_EV_UNSELECTED);
+-
+-			if ((prev_state != ucma->state) && (prev_state == UC_HAVE_SYDY)) {
+-				unicast_client_tx_cancel(p, ucma, UNICAST_CANCEL_SYDY);
++			unicast_client_do_transition(p, ucma, UC_EV_SELECTED);
++			/*
++			 * UC_EV_SELECTED is a no-op in UC_WAIT. Force to
++			 * UC_NEED_SYDY so the timer requests SYNC/DELAY_RESP.
++			 */
++			if (ucma->state == UC_WAIT) {
++				ucma->state = UC_NEED_SYDY;
++				ucma->granted |= (1 << ANNOUNCE);
++				clock_set_sde(p->clock, 1);
++				pr_debug("%s: [UC_FSM] forced UC_WAIT -> UC_NEED_SYDY (selected before grant)",
++					 p->log_name);
+ 			}
++		} else {
++			unicast_client_do_transition(p, ucma, UC_EV_UNSELECTED);
+ 		}
+ 	}
+ }
+@@ -561,6 +629,9 @@ int unicast_client_timer(struct port *p)
+ 	struct unicast_master_address *master;
+ 	int err = 0;
+ 
++	if (!unicast_client_enabled(p))
++		return 0;
++
+ 	STAILQ_FOREACH(master, &p->unicast_master_table->addrs, list) {
+ 		if (master->type != transport_type(p->trp)) {
+ 			continue;
+@@ -570,12 +641,16 @@ int unicast_client_timer(struct port *p)
+ 			err = unicast_client_announce(p, master);
+ 			break;
+ 		case UC_HAVE_ANN:
++			if (!port_foreign_clock_active(p, &master->portIdentity))
++				master->renewal_tmo = 0;
+ 			err = unicast_client_renew(p, master);
+ 			break;
+ 		case UC_NEED_SYDY:
+ 			err = unicast_client_sydy(p, master);
+ 			break;
+ 		case UC_HAVE_SYDY:
++			if (!port_foreign_clock_active(p, &master->portIdentity))
++				master->renewal_tmo = 0;
+ 			err = unicast_client_renew(p, master);
+ 			break;
+ 		}
+@@ -649,3 +724,18 @@ out:
+ 	msg_put(msg);
+ 	return err;
+ }
++
++void unicast_client_reset(struct port *p)
++{
++	struct unicast_master_address *ucma;
++
++	if (!unicast_client_enabled(p))
++		return;
++
++	STAILQ_FOREACH(ucma, &p->unicast_master_table->addrs, list) {
++		ucma->state = UC_WAIT;
++		ucma->granted = 0;
++		ucma->renewal_tmo = 0;
++	}
++	pr_debug("%s: unicast client state reset", p->log_name);
++}
+diff --git a/unicast_client.h b/unicast_client.h
+index 4a4d345..24aea21 100644
+--- a/unicast_client.h
++++ b/unicast_client.h
+@@ -107,4 +107,13 @@ int unicast_client_msg_is_from_master_table_entry(struct port *p,
+ int unicast_client_tx_cancel(struct port *p,
+ 			     struct unicast_master_address *dst,
+ 			     unsigned int bitmask);
++
++/**
++ * Resets all unicast master FSM state for a port. Clears granted bits,
++ * renewal timers, and returns all masters to UC_WAIT. Called on port
++ * re-initialization to clear stale state surviving fault/recovery.
++ * @param p      The port in question.
++ */
++void unicast_client_reset(struct port *p);
++
+ #endif
+diff --git a/unicast_service.c b/unicast_service.c
+index 687468c..3fd65ba 100644
+--- a/unicast_service.c
++++ b/unicast_service.c
+@@ -350,6 +350,7 @@ int unicast_service_add(struct port *p, struct ptp_message *m,
+ 				if (ctmp->message_types & mask) {
+ 					/* Contract is unchanged. */
+ 					unicast_service_extend(ctmp, req);
++					unicast_service_rearm_timer(p);
+ 					return SERVICE_GRANTED;
+ 				}
+ 				/* This is the one to use. */
+@@ -368,6 +369,7 @@ int unicast_service_add(struct port *p, struct ptp_message *m,
+ 	if (client) {
+ 		client->message_types |= mask;
+ 		unicast_service_extend(client, req);
++		unicast_service_rearm_timer(p);
+ 		return SERVICE_GRANTED;
+ 	}
+ 
+-- 
+2.43.0
+
