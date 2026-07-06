@@ -450,11 +450,28 @@ def main():
 
     monitor = OvsAccessMonitor(config)
 
-    # Register signal handlers for graceful shutdown
+    # Register signal handlers before writing PID file to avoid a race
+    # where pmon sends SIGTERM before handlers are in place.
     signal.signal(signal.SIGTERM, monitor.stop)
     signal.signal(signal.SIGINT, monitor.stop)
 
+    # Write PID file for pmon monitoring
+    pidfile = "/var/run/ovs-access-monitor.pid"
+    try:
+        with open(pidfile, "w", encoding="utf-8") as f:
+            f.write(str(os.getpid()))
+    except OSError as e:
+        LOG.warning("Cannot write PID file %s: %s", pidfile, e)
+
     monitor.run()
+
+    # Cleanup PID file on graceful exit. On kill -9 the stale PID file
+    # is harmless: pmon detects the process is gone via kill(pid, 0) and
+    # systemd overwrites the file on the next restart.
+    try:
+        os.remove(pidfile)
+    except OSError:
+        pass
 
 
 if __name__ == "__main__":

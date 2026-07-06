@@ -1,0 +1,154 @@
+From 7c00fb6a211aa3f6d73a6c5bca5420e598b645dd Mon Sep 17 00:00:00 2001
+From: Andre Kantek <andrefernandozanella.kantek@windriver.com>
+Date: Wed, 8 Jul 2026 09:49:09 -0300
+Subject: [PATCH] Add pmon support for ovs-access-monitor
+
+Install the pmon configuration file to /etc/pmon.d/
+during interface creation so that pmon monitors the
+ovs-access-monitor process. Remove it on teardown to
+prevent pmon from restarting the process during
+cleanup.
+
+Changes:
+- create_ovs_access: create pmon symlink from
+  /etc/pmon.d/ to /usr/share/ovs-access-monitor/
+- delete_ovs_access: remove pmon symlink from
+  /etc/pmon.d/ before stopping the service
+---
+ if-post-down-scripts/delete_ovs_access | 34 +++++++++++++++++++++--
+ if-pre-up-scripts/create_ovs_access    | 38 ++++++++++++++++++++++++++
+ 2 files changed, 69 insertions(+), 3 deletions(-)
+
+diff --git a/if-post-down-scripts/delete_ovs_access b/if-post-down-scripts/delete_ovs_access
+index 07ed758..f77bc84 100755
+--- a/if-post-down-scripts/delete_ovs_access
++++ b/if-post-down-scripts/delete_ovs_access
+@@ -25,6 +25,8 @@ INTERFACES_DIR = "/etc/network/interfaces.d"
+ BRIDGE_NAME = "ovs0"
+ DEFAULT_FILE = "/etc/default/network-test"
+ MONITOR_SERVICE = "ovs-access-monitor.service"
++PMON_CONF_DIR = "/etc/pmon.d"
++PMON_CONF_DST = os.path.join(PMON_CONF_DIR, "ovs-access-monitor.conf")
+ 
+ # Read defaults
+ DO_SYSLOG = "yes"
+@@ -190,6 +192,27 @@ def stop_monitor_service():
+     return True
+ 
+ 
++def remove_pmon_config():
++    """Remove the pmon configuration symlink for ovs-access-monitor.
++
++    Removes the pmon symlink from /etc/pmon.d/ so that pmon stops monitoring
++    the ovs-access-monitor process.
++    """
++    if not os.path.exists(PMON_CONF_DST) and not os.path.islink(PMON_CONF_DST):
++        out_debug(f"Pmon config not found at {PMON_CONF_DST}, nothing to remove")
++        return True
++
++    out_debug(f"Removing pmon config: {PMON_CONF_DST}")
++    try:
++        os.remove(PMON_CONF_DST)
++    except OSError as e:
++        out_err(f"Failed to remove pmon config {PMON_CONF_DST}: {e}")
++        return False
++
++    out_debug(f"Pmon config removed from {PMON_CONF_DST}")
++    return True
++
++
+ def main():
+     iface = os.environ.get("IFACE")
+     if not iface:
+@@ -224,17 +247,22 @@ def main():
+         sys.exit(1)
+ 
+     # Reverse order of create_ovs_access:
+-    # 1. Stop the ovs-access-monitor service if active
++    # 1. Remove pmon config to stop process monitoring
++    if not remove_pmon_config():
++        out_err("Failed to remove pmon configuration")
++        sys.exit(1)
++
++    # 2. Stop the ovs-access-monitor service if active
+     if not stop_monitor_service():
+         out_err(f"Failed to stop {MONITOR_SERVICE}")
+         sys.exit(1)
+ 
+-    # 2. Detach the ethernet device from the bridge
++    # 3. Detach the ethernet device from the bridge
+     if not detach_eth_from_bridge(eth_device):
+         out_err(f"Failed to detach {eth_device} from bridge {BRIDGE_NAME}")
+         sys.exit(1)
+ 
+-    # 3. Delete the veth pair
++    # 4. Delete the veth pair
+     if not delete_veth_pair(ifname):
+         out_err(f"Failed to delete veth pair for {ifname}")
+         sys.exit(1)
+diff --git a/if-pre-up-scripts/create_ovs_access b/if-pre-up-scripts/create_ovs_access
+index 5be013d..c733ed3 100755
+--- a/if-pre-up-scripts/create_ovs_access
++++ b/if-pre-up-scripts/create_ovs_access
+@@ -31,6 +31,9 @@ DEFAULT_FILE = "/etc/default/network-test"
+ MONITOR_SERVICE = "ovs-access-monitor.service"
+ MONITOR_CONF_DIR = "/etc/ovs-access-monitor"
+ MONITOR_CONF_FILE = os.path.join(MONITOR_CONF_DIR, "ovs-access-monitor.conf")
++PMON_CONF_DIR = "/etc/pmon.d"
++PMON_CONF_SRC = "/usr/share/ovs-access-monitor/ovs-access-monitor.conf"
++PMON_CONF_DST = os.path.join(PMON_CONF_DIR, "ovs-access-monitor.conf")
+ 
+ # Read defaults
+ DO_SYSLOG = "yes"
+@@ -357,6 +360,36 @@ def start_monitor_service():
+     return True
+ 
+ 
++def install_pmon_config():
++    """Install the pmon configuration symlink for ovs-access-monitor.
++
++    Creates a symlink from /etc/pmon.d/ovs-access-monitor.conf pointing to
++    /usr/share/ovs-access-monitor/ovs-access-monitor.conf so that pmon will
++    monitor the ovs-access-monitor process.
++    """
++    if not os.path.isfile(PMON_CONF_SRC):
++        out_warn(f"Pmon config source not found: {PMON_CONF_SRC}, skipping pmon setup")
++        return True
++
++    if not os.path.isdir(PMON_CONF_DIR):
++        out_debug(f"Creating pmon config directory {PMON_CONF_DIR}")
++        os.makedirs(PMON_CONF_DIR, exist_ok=True)
++
++    if os.path.exists(PMON_CONF_DST) or os.path.islink(PMON_CONF_DST):
++        out_debug(f"Pmon config already exists at {PMON_CONF_DST}, removing")
++        os.remove(PMON_CONF_DST)
++
++    out_debug(f"Creating pmon symlink: {PMON_CONF_DST} -> {PMON_CONF_SRC}")
++    try:
++        os.symlink(PMON_CONF_SRC, PMON_CONF_DST)
++    except OSError as e:
++        out_err(f"Failed to create pmon symlink: {e}")
++        return False
++
++    out_debug(f"Pmon symlink created at {PMON_CONF_DST}")
++    return True
++
++
+ def main():
+     iface = os.environ.get("IFACE")
+     if not iface:
+@@ -410,6 +443,11 @@ def main():
+         out_err(f"Failed to configure {MONITOR_SERVICE}")
+         sys.exit(1)
+ 
++    # Install pmon config for process monitoring
++    if not install_pmon_config():
++        out_err("Failed to install pmon configuration")
++        sys.exit(1)
++
+     if not start_monitor_service():
+         out_err(f"Failed to start {MONITOR_SERVICE}")
+         sys.exit(1)
+-- 
+2.34.1
+
