@@ -211,9 +211,6 @@ grub-pc
 grub2-common
 grub2
 
-#grubby
-grubby
-
 #haproxy-config
 haproxy
 haproxy-config
