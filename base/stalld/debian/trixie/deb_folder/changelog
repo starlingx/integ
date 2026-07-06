@@ -1,3 +1,9 @@
+stalld (1.25.1) unstable; urgency=low
+
+  * Patch updated version of stalld to 1.25.1
+
+ -- Ionut Nechita <ionut.nechita@windriver.com>  Wed, 19 Nov 2025 00:00:00 +0000
+
 stalld (1.19.8) unstable; urgency=low
 
   * Patch updated version of stalld to v1.19.8
