@@ -8,3 +8,4 @@ install-ldapscripts-files-to-etc.patch
 0001-Reset-password-after-user-is-added.patch
 0001-Update-ldapsetpasswd-error-message.patch
 0001-Add-email-support-to-ldap-users.patch
+0001-Add-support-to-update-cn-and-gecos-attributes.patch
