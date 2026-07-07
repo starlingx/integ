@@ -10,3 +10,5 @@
 0010-ts2phc-Add-holdover-support.patch
 0011-Fix-robustness-issues-in-HA-socket-handling-and-conf.patch
 0012-phc2sys-set-kernel-TAI-offset-when-manual-UTC-offset.patch
+0013-unicast_client-centralize-FSM-transitions-and-add-un.patch
+0014-bmc-clock-port-multi-port-BMCA-correctness-for-unica.patch
