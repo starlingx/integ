@@ -102,6 +102,27 @@
 #define MGMT_ID_PORT_PROPERTIES_NP              0xC004
 #define MGMT_ID_PORT_STATS_NP                   0xC005
 #define MGMT_ID_GEARSHIFT_NP                    0xC0F0
+#define MGMT_ID_GEAR_STATUS_NP                  0xC0F1
+
+/* Gear source identifiers (matches linuxptp gear_source enum) */
+#define GEAR_SRC_CONFIG  0
+#define GEAR_SRC_PMC     1
+#define GEAR_SRC_IPC     2
+#define GEAR_SRC_LOCAL   3
+
+static const char * const gear_source_str[] = {
+    [GEAR_SRC_CONFIG] = "Config",
+    [GEAR_SRC_PMC]    = "PMC",
+    [GEAR_SRC_IPC]    = "IPC",
+    [GEAR_SRC_LOCAL]  = "Local",
+};
+
+/* gear_status_np - response payload for MGMT_ID_GEAR_STATUS_NP GET */
+struct gear_status_np {
+    uint8_t  gear;    /* enum gear_mode: 0=Park 1=Neutral 2=Drive */
+    uint8_t  source;  /* enum gear_source: who last changed the gear */
+    uint16_t flags;   /* reserved, always 0 */
+};
 
 /* Convert file descriptor to clockid_t for PHC operations */
 #ifndef FD_TO_CLOCKID
@@ -209,7 +230,7 @@ typedef struct {
     RemoteInstance remotes[MAX_REMOTE_INSTANCES];
     int rx_count;
     
-    ClockParameters clock_params[16];  /* Clock parameters indexed by pin_source */
+    ClockParameters clock_params[PIN_SOURCE_INT_OSC + 1];  /* Clock parameters indexed by pin_source */
     bool subscription_active;
     struct timespec last_subscription;
     

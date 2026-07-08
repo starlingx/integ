@@ -1,0 +1,335 @@
+[
+  {
+    "DPLL": "REF0P",
+    "Timing Module (ps)": 130,
+    "Motherboard (ps)": 5732,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF0N",
+    "Timing Module (ps)": 130,
+    "Motherboard (ps)": 5694,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF1P",
+    "Timing Module (ps)": 150,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF1N",
+    "Timing Module (ps)": 150,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF2P",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF2N",
+    "Timing Module (ps)": 140,
+    "Motherboard (ps)": 207,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF3P",
+    "Timing Module (ps)": 2350,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF3N",
+    "Timing Module (ps)": 2340,
+    "Motherboard (ps)": 785,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF4P",
+    "Timing Module (ps)": 160,
+    "Motherboard (ps)": 245,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "REF4N",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT0P",
+    "Timing Module (ps)": 2430,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT0N",
+    "Timing Module (ps)": 250,
+    "Motherboard (ps)": 1727,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT1P",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT1N",
+    "Timing Module (ps)": 160,
+    "Motherboard (ps)": 5665,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT2P",
+    "Timing Module (ps)": 140,
+    "Motherboard (ps)": 1071,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT2N",
+    "Timing Module (ps)": 140,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT3P",
+    "Timing Module (ps)": 130,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT3N",
+    "Timing Module (ps)": 140,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT4P",
+    "Timing Module (ps)": 120,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT4N",
+    "Timing Module (ps)": 120,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT5P",
+    "Timing Module (ps)": 90,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT5N",
+    "Timing Module (ps)": 100,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT6P",
+    "Timing Module (ps)": 2340,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT6N",
+    "Timing Module (ps)": 100,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT7P",
+    "Timing Module (ps)": 150,
+    "Motherboard (ps)": 1011,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT7N",
+    "Timing Module (ps)": 150,
+    "Motherboard (ps)": 1830,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT8P",
+    "Timing Module (ps)": 150,
+    "Motherboard (ps)": 3456,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT8N",
+    "Timing Module (ps)": 140,
+    "Motherboard (ps)": 3318,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT9P",
+    "Timing Module (ps)": 130,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "OUT9N",
+    "Timing Module (ps)": 140,
+    "Motherboard (ps)": 0,
+    "Integrator Adjustment (ps)": 0
+  },
+  {
+    "DPLL": "GNSS_ANT",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 262,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 262
+  },
+  {
+    "DPLL": "OCP1",
+    "Timing Module (ps)": 160,
+    "Motherboard (ps)": 6524,
+    "System (ps)": 6308,
+    "Add-in Card (ps)": 500,
+    "Integrator Adjustment (ps)": 500,
+    "Total (ps)": 13992
+  },
+  {
+    "DPLL": "OCP2",
+    "Timing Module (ps)": 160,
+    "Motherboard (ps)": 6731,
+    "System (ps)": 6415,
+    "Add-in Card (ps)": 500,
+    "Integrator Adjustment (ps)": 500,
+    "Total (ps)": 14306
+  },
+  {
+    "DPLL": "OCP3",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "OCP4",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "OCP5",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "OCP6",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "OCP7",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "OCP8",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe1",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe2",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe3",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe4",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe5",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe6",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe7",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  },
+  {
+    "DPLL": "PCIe8",
+    "Timing Module (ps)": 0,
+    "Motherboard (ps)": 0,
+    "System (ps)": 0,
+    "Add-in Card (ps)": 0,
+    "Integrator Adjustment (ps)": 0,
+    "Total (ps)": 0
+  }
+]

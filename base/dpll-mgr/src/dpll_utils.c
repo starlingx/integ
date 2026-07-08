@@ -96,7 +96,7 @@ int dpll_one_pin_by_package_label(struct ynl_sock *ys,
 	/* pin-get dump returns pin objects with parent_device entries per DPLL device */
 	pin_list = dpll_pin_dump(ys, 0);
 
-	while(pin_list && (cnt < 24)) {
+	while(pin_list && (cnt < 32)) {
 		if (pin_list->obj.package_label &&
 		    strncmp(pin_list->obj.package_label,
 					package_label,
@@ -387,6 +387,49 @@ int dpll_pin_get_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 		}
 	}
 	return prio;
+}
+
+/**
+ * dpll_pin_get_phase_adjust_gran - Read phase-adjust granularity for a pin
+ * @ys:            YNL socket
+ * @package_label: Pin package label (e.g. "OUT0P")
+ *
+ * Returns the phase_adjust_gran value reported by the kernel for the pin.
+ * If the field is not present or the pin is not found, returns 1 (meaning
+ * any picosecond value is acceptable).
+ *
+ * NOTE: Requires YNL generated from kernel >= 6.14 (phase_adjust_gran field).
+ * With bundled 6.12 YNL, this function always returns 0 (disabled).
+ */
+__u32 dpll_pin_get_phase_adjust_gran(struct ynl_sock *ys,
+				     const char *package_label)
+{
+#ifdef HAVE_DPLL_PHASE_ADJUST_GRAN
+	struct dpll_pin_get_rsp pin_rsp = {0};
+	int ret;
+
+	ret = dpll_one_pin_by_package_label(ys, (char *)package_label,
+					    &pin_rsp);
+	if (ret) {
+		LOG_ERROR("dpll_pin_get_phase_adjust_gran: pin %s not found\n",
+			  package_label);
+		return 0;
+	}
+
+	if (pin_rsp._present.phase_adjust_gran &&
+	    pin_rsp.phase_adjust_gran > 0) {
+		LOG_DEBUG("pin %s phase_adjust_gran=%u ps\n",
+			  package_label, pin_rsp.phase_adjust_gran);
+		return pin_rsp.phase_adjust_gran;
+	}
+
+	LOG_DEBUG("pin %s phase_adjust_gran not present\n", package_label);
+	return 0;
+#else
+	(void)ys;
+	(void)package_label;
+	return 0;
+#endif
 }
 
 int init_dpll()

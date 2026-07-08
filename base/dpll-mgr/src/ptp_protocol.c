@@ -65,6 +65,7 @@ size_t get_mgmt_id_data_size(uint16_t mgmt_id)
         case MGMT_ID_GRANDMASTER_SETTINGS_NP:  return 8;   /* 62 bytes total (from earlier test) */
         case MGMT_ID_SUBSCRIBE_EVENTS_NP:      return 18;  /* For subscription */
         case MGMT_ID_GEARSHIFT_NP:             return 2;   /* management_tlv_datum: val + reserved */
+        case MGMT_ID_GEAR_STATUS_NP:           return 4;   /* gear_status_np: gear(1) + source(1) + flags(2) */
         default:                               return 18;  /* Default minimum */
     }
 }

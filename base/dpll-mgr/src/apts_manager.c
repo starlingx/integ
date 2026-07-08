@@ -57,6 +57,7 @@
 #include "../hdr/dpll_phase_adjust.h"
 #include "../hdr/gearshift.h"
 #include "../hdr/status_writer.h"
+#include "../hdr/timing_delays.h"
 #include <poll.h>
 #include <ynl/ynl.h>
 
@@ -1442,8 +1443,15 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
                 if (bind(ts2_fd, (struct sockaddr *)&la, sizeof(la)) == 0 &&
                     chmod(ts2_local, 0660) == 0) {
                     int flags = fcntl(ts2_fd, F_GETFL, 0);
-                    if (flags >= 0)
-                        fcntl(ts2_fd, F_SETFL, flags | O_NONBLOCK);
+                    if (flags >= 0) {
+                        if (fcntl(ts2_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+                            LOG_ERROR("Failed to set O_NONBLOCK on ts2phc socket: %s\n",
+                                      strerror(errno));
+                            close(ts2_fd);
+                            unlink(ts2_local);
+                            return -1;
+                        }
+                    }
                     size_t ts2_path_len = strlen(ts2_path);
                     if (ts2_path_len >= sizeof(state->ts2phc_peer_addr.sun_path)) {
                         LOG_ERROR("ts2phc peer path too long: %s\n", ts2_path);
@@ -1500,6 +1508,11 @@ int main(int argc, char *argv[])
         LOG_ERROR("Failed to load configuration from %s\n", config_path);
         return EXIT_FAILURE;
     }
+
+    /* Load timing delay table from timing_delays.json */
+#ifdef DPLL_ZL3073X_TIMING_DELAYS
+    timing_delays_init("config/timing_delays.json");
+#endif
     
     /* Load UDS paths from config */
     static char fr_uds_buf[MAX_PATH_LEN];
@@ -1603,6 +1616,13 @@ int main(int argc, char *argv[])
     LOG_INFO("Applying pin priorities to PPS device (device %u)...\n", state.pps_dpll_device_id);
     apply_pin_priorities(dpll_sock, state.pps_dpll_device_id, state.pps_priority_table,
                         sizeof(state.pps_priority_table) / sizeof(state.pps_priority_table[0]));
+
+    /* Apply timing-delay phase compensation from timing_delays.json */
+#ifdef DPLL_ZL3073X_TIMING_DELAYS
+    LOG_INFO("Applying timing-delay phase compensation from timing_delays.json\n");
+    if (apply_timing_delays_phase_adjust(dpll_sock) != 0)
+        LOG_ERROR("Some timing-delay phase adjustments failed; continuing\n");
+#endif
 
     /* Initialize local context by reading clock parameters from current master */
     LOG_DEBUG("Initializing local context with current clock data\n");

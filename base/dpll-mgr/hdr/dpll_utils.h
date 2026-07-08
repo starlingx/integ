@@ -70,18 +70,36 @@ enum dpll_feature_state {
  */
 enum pin_source {
 	PIN_SOURCE_UNKNOWN = 0,
-	SDP2_REF0P,        // PTP via SDP2
-	SDP0_REF0N,        // PTP via SDP0
-	GNSS_REF4P,        // GNSS via REF4P
-	GNSS_REF4N,        // GNSS via REF4N (unused)
-	RCLKA_REF1P,       // SyncE via RCLKA
-	RCLKB_REF1N,       // SyncE via RCLKB
-	SMA1_REF3P,        // SMA1 via REF3P
-	SMA3_REF3N,        // SMA3 via REF3N
+	SDP2_REF0P,        // PTP via SDP2       (package-label: REF0P)
+	SDP0_REF0N,        // PTP via SDP0       (package-label: REF0N)
+	GNSS_REF4P,        // GNSS via REF4P     (package-label: REF4P)
+	GNSS_REF4N,        // GNSS via REF4N     (package-label: REF4N)
+	RCLKA_REF1P,       // SyncE via RCLKA    (package-label: REF1P)
+	RCLKB_REF1N,       // SyncE via RCLKB    (package-label: REF1N)
+	SMA1_REF3P,        // SMA1 via REF3P     (package-label: REF3P)
+	SMA3_REF3N,        // SMA3 via REF3N     (package-label: REF3N)
+	DPLL_REF2N,        // REF2N input        (package-label: REF2N)
 	HOLDOVER_0,        // Holdover state < max_step_ns
 	HOLDOVER_1,        // Holdover state > max_step_ns
 	HOLDOVER_2,        // Holdover state > 2*max_step_ns
 	HOLDOVER_3,        // Holdover state > 3*max_step_ns
+	/* Output pins — indexed for timing-delay table lookup */
+	DPLL_OUT0P,        // OUT0P differential output
+	DPLL_OUT0N,        // OUT0N differential output
+	DPLL_OUT1P,        // OUT1P differential output
+	DPLL_OUT1N,        // OUT1N differential output
+	DPLL_OUT2P,        // OUT2P differential output
+	DPLL_OUT2N,        // OUT2N differential output
+	DPLL_OUT3,         // OUT3  single-ended output
+	DPLL_OUT4,         // OUT4  single-ended output
+	DPLL_OUT5,         // OUT5  single-ended output
+	DPLL_OUT6P,        // OUT6P differential output
+	DPLL_OUT6N,        // OUT6N differential output
+	DPLL_OUT7P,        // OUT7P differential output
+	DPLL_OUT7N,        // OUT7N differential output
+	DPLL_OUT8P,        // OUT8P differential output
+	DPLL_OUT8N,        // OUT8N differential output
+	DPLL_OUT9,         // OUT9  single-ended output
 	PIN_SOURCE_INT_OSC,         // Internal oscillator
 };
 
@@ -261,5 +279,16 @@ int dpll_pin_get_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
  */
 __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label, 
 				 __s64 phase_adjust);
+
+/**
+ * dpll_pin_get_phase_adjust_gran - Read phase-adjust granularity for a pin
+ * @ys:            YNL socket
+ * @package_label: Pin package label (e.g. "OUT0P")
+ *
+ * Returns: phase_adjust_gran in picoseconds (> 0) on success;
+ *          0 on error (pin not found or field not reported by kernel).
+ */
+__u32 dpll_pin_get_phase_adjust_gran(struct ynl_sock *ys,
+				     const char *package_label);
 
 #endif /* _DPLL_UTILS_H */

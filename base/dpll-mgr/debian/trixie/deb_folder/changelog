@@ -1,5 +1,16 @@
-dpll-mgr (26.05.5) unstable; urgency=medium
+dpll-mgr (1.1.0) unstable; urgency=medium
+
+  * Update to Intel apts_mgr July 3 2026 drop
+  * Add timing delay compensation (ZL3073x phase_adjust)
+  * Add MGMT_ID_GEAR_STATUS_NP (0xC0F1)
+  * Add startup master detection and gear correction
+  * Pin count limit raised 24 -> 32
+
+ -- Cole Walker <cole.walker@windriver.com>  Tue, 08 Jul 2026 15:00:00 -0400
+
+dpll-mgr (1.0.0) unstable; urgency=medium
 
   * Initial packaging for StarlingX
+  * Based on Intel apts_mgr May/June 2026 drops
 
  -- Cole Walker <cole.walker@windriver.com>  Mon, 01 Jun 2026 10:00:00 -0400

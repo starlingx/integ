@@ -14,4 +14,5 @@ override_dh_auto_install:
 	install -d -m 755 $(DEBIAN_DESTDIR)/etc/dpll-mgr
 	install -p -D -m 644 config/dpll_mgr.conf.sample $(DEBIAN_DESTDIR)/etc/dpll-mgr/dpll_mgr.conf.sample
 	install -p -D -m 644 config/apts_mgr.json $(DEBIAN_DESTDIR)/etc/dpll-mgr/apts_mgr.json.sample
+	install -p -D -m 644 config/timing_delays.json $(DEBIAN_DESTDIR)/etc/dpll-mgr/timing_delays.json.sample
 	dh_install

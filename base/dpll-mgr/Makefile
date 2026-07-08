@@ -7,12 +7,29 @@ CFLAGS = -g -O2 -Wall -Wextra -Werror -std=gnu11 -D_GNU_SOURCE -Iinclude
 CFLAGS += -D_FORTIFY_SOURCE=3 -fstack-protector-strong -fstack-clash-protection
 CFLAGS += -fPIE -fcf-protection=full
 CFLAGS += -Wformat-security -Werror=format-security
+
 CFLAGS += -DSTATIC_PARAMS_FROM_CONFIG
 CFLAGS += -DENABLE_PTP_SUBSCRIPTION
 # Use PARK as the idle gear on failover (default). To use NEUTRAL instead,
 # pass EXTRA_CFLAGS=-UUSE_GEAR_PARK to make, e.g.:
 #   make EXTRA_CFLAGS=-UUSE_GEAR_PARK
 CFLAGS += -DUSE_GEAR_PARK
+# ZL3073x timing-delay phase compensation.
+# To disable: comment out the line below.
+DPLL_ZL3073X_TIMING_DELAYS := 1
+# Enable input (REF) and output (OUT) pin compensation independently.
+# Note: DPLL_ZL3073X_TIMING_DELAYS must be enabled for these to take effect.
+# Comment out either line to disable that direction.
+CFLAGS += -DDPLL_IP_TIMING_DELAY
+CFLAGS += -DDPLL_OP_TIMING_DELAY
+
+ifdef DPLL_ZL3073X_TIMING_DELAYS
+CFLAGS += -DDPLL_ZL3073X_TIMING_DELAYS
+TIMING_DELAYS_SRC = $(SRC_DIR)/timing_delays.c
+TIMING_DELAYS_HDR = $(HDR_DIR)/timing_delays.h
+TIMING_DELAYS_OBJ = $(OBJ_DIR)/timing_delays.o
+endif
+
 # ---------------------------------------------------------------------------
 # Build mode: poll (default) or event
 #   make                    -> poll-based  (periodic DPLL state polling)
@@ -68,13 +85,15 @@ BIN_DIR = .
 # Source and object files
 SOURCES = $(SRC_DIR)/apts_manager.c $(SRC_DIR)/ptp_protocol.c $(SRC_DIR)/gnss_utils.c \
 	$(SRC_DIR)/dpll_utils.c $(SRC_DIR)/config_parser.c $(SRC_DIR)/phc_utils.c \
-	$(SRC_DIR)/dpll_phase_adjust.c $(SRC_DIR)/gearshift.c $(SRC_DIR)/status_writer.c $(LOOP_SRC)
+	$(SRC_DIR)/dpll_phase_adjust.c $(SRC_DIR)/gearshift.c $(SRC_DIR)/status_writer.c \
+	$(TIMING_DELAYS_SRC) $(LOOP_SRC)
 HEADERS = $(HDR_DIR)/apts_manager.h $(HDR_DIR)/ptp_protocol.h $(HDR_DIR)/config_parser.h \
 	$(HDR_DIR)/phc_utils.h $(HDR_DIR)/dpll_phase_adjust.h $(HDR_DIR)/gearshift.h \
-	$(HDR_DIR)/status_writer.h
+	$(HDR_DIR)/status_writer.h $(TIMING_DELAYS_HDR)
 OBJECTS = $(OBJ_DIR)/apts_manager.o $(OBJ_DIR)/ptp_protocol.o $(OBJ_DIR)/gnss_utils.o \
 	$(OBJ_DIR)/dpll.o $(OBJ_DIR)/config_parser.o $(OBJ_DIR)/phc_utils.o \
-	$(OBJ_DIR)/dpll_phase_adjust.o $(OBJ_DIR)/gearshift.o $(OBJ_DIR)/status_writer.o $(LOOP_OBJ)
+	$(OBJ_DIR)/dpll_phase_adjust.o $(OBJ_DIR)/gearshift.o $(OBJ_DIR)/status_writer.o \
+	$(TIMING_DELAYS_OBJ) $(LOOP_OBJ)
 TARGET = $(BIN_DIR)/apts_mgr # Default target
 all: $(TARGET)
 
@@ -121,6 +140,11 @@ $(OBJ_DIR)/gearshift.o: $(SRC_DIR)/gearshift.c $(HEADERS) | $(OBJ_DIR)
 
 # Compile status_writer
 $(OBJ_DIR)/status_writer.o: $(SRC_DIR)/status_writer.c $(HEADERS) | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -I. -c $< -o $@
+
+# Compile timing_delays
+$(OBJ_DIR)/timing_delays.o: $(SRC_DIR)/timing_delays.c $(HDR_DIR)/timing_delays.h \
+		$(HDR_DIR)/dpll_utils.h $(HDR_DIR)/log.h | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 # Compile poll-based loop (BUILD_MODE=poll)

@@ -140,10 +140,13 @@ static bool read_gearshift_response(int sockfd, const struct sockaddr_un *peer_a
 }
 
 /**
- * get_gearshift - Send MID_GEARSHIFT_NP GET and return current gear value.
+ * get_gearshift - Send MGMT_ID_GEAR_STATUS_NP GET and return current gear value.
  * @sockfd: Already-bound UDS socket file descriptor
  * @peer_addr: Peer address of the target daemon
  * @current_gear: Output — populated with the gear value reported by the daemon
+ *
+ * Uses MGMT_ID_GEAR_STATUS_NP (0xC0F1) which returns a gear_status_np struct
+ * containing gear, source, and flags — richer than the raw GEARSHIFT_NP GET.
  *
  * Returns: true on success (current_gear is valid), false on failure.
  */
@@ -155,7 +158,7 @@ static bool get_gearshift(int sockfd, const struct sockaddr_un *peer_addr,
 
     uint8_t msg[512];
     int len = build_management_message(msg, sizeof(msg), 0,
-                                       MGMT_ID_GEARSHIFT_NP, GET,
+                                       MGMT_ID_GEAR_STATUS_NP, GET,
                                        NULL, 0);
     if (len < 0) {
         LOG_ERROR("get_gearshift: failed to build GET message\n");
@@ -217,19 +220,25 @@ static bool get_gearshift(int sockfd, const struct sockaddr_un *peer_addr,
             return false;
         }
 
-        if (mgmt_id != MGMT_ID_GEARSHIFT_NP) {
+        if (mgmt_id != MGMT_ID_GEAR_STATUS_NP) {
             /* Async notification on the shared UDS socket — discard and retry */
             LOG_DEBUG("get_gearshift: skipping async notification 0x%04X from %s\n",
                       mgmt_id, peer_addr->sun_path);
             continue;
         }
 
-        if (data_len < 1) {
-            LOG_ERROR("get_gearshift: short data from %s\n", peer_addr->sun_path);
+        if (data_len < sizeof(struct gear_status_np)) {
+            LOG_ERROR("get_gearshift: short data from %s (got %zu, need %zu)\n",
+                      peer_addr->sun_path, data_len, sizeof(struct gear_status_np));
             return false;
         }
 
-        *current_gear = data[0];
+        const struct gear_status_np *gs = (const struct gear_status_np *)data;
+        *current_gear = gs->gear;
+        LOG_DEBUG("get_gearshift: %s gear=%u source=%s flags=0x%04X\n",
+                  peer_addr->sun_path, gs->gear,
+                  gs->source < 4 ? gear_source_str[gs->source] : "unknown",
+                  gs->flags);
         return true;
     }
 }
