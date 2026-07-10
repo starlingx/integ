@@ -68,12 +68,13 @@ BIN_DIR = .
 # Source and object files
 SOURCES = $(SRC_DIR)/apts_manager.c $(SRC_DIR)/ptp_protocol.c $(SRC_DIR)/gnss_utils.c \
 	$(SRC_DIR)/dpll_utils.c $(SRC_DIR)/config_parser.c $(SRC_DIR)/phc_utils.c \
-	$(SRC_DIR)/dpll_phase_adjust.c $(SRC_DIR)/gearshift.c $(LOOP_SRC)
+	$(SRC_DIR)/dpll_phase_adjust.c $(SRC_DIR)/gearshift.c $(SRC_DIR)/status_writer.c $(LOOP_SRC)
 HEADERS = $(HDR_DIR)/apts_manager.h $(HDR_DIR)/ptp_protocol.h $(HDR_DIR)/config_parser.h \
-	$(HDR_DIR)/phc_utils.h $(HDR_DIR)/dpll_phase_adjust.h $(HDR_DIR)/gearshift.h
+	$(HDR_DIR)/phc_utils.h $(HDR_DIR)/dpll_phase_adjust.h $(HDR_DIR)/gearshift.h \
+	$(HDR_DIR)/status_writer.h
 OBJECTS = $(OBJ_DIR)/apts_manager.o $(OBJ_DIR)/ptp_protocol.o $(OBJ_DIR)/gnss_utils.o \
 	$(OBJ_DIR)/dpll.o $(OBJ_DIR)/config_parser.o $(OBJ_DIR)/phc_utils.o \
-	$(OBJ_DIR)/dpll_phase_adjust.o $(OBJ_DIR)/gearshift.o $(LOOP_OBJ)
+	$(OBJ_DIR)/dpll_phase_adjust.o $(OBJ_DIR)/gearshift.o $(OBJ_DIR)/status_writer.o $(LOOP_OBJ)
 TARGET = $(BIN_DIR)/apts_mgr # Default target
 all: $(TARGET)
 
@@ -116,6 +117,10 @@ $(OBJ_DIR)/dpll_phase_adjust.o: $(SRC_DIR)/dpll_phase_adjust.c $(HEADERS) | $(OB
 
 # Compile gearshift
 $(OBJ_DIR)/gearshift.o: $(SRC_DIR)/gearshift.c $(HEADERS) | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -I. -c $< -o $@
+
+# Compile status_writer
+$(OBJ_DIR)/status_writer.o: $(SRC_DIR)/status_writer.c $(HEADERS) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 # Compile poll-based loop (BUILD_MODE=poll)

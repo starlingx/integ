@@ -56,6 +56,7 @@
 #include "../hdr/phc_utils.h"
 #include "../hdr/dpll_phase_adjust.h"
 #include "../hdr/gearshift.h"
+#include "../hdr/status_writer.h"
 #include <poll.h>
 #include <ynl/ynl.h>
 
@@ -921,6 +922,22 @@ void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock)
 {
     determine_current_master(state, dpll_sock);
 
+    /* Detect lock status change (independent of master change) */
+    if (state->lock_status != state->prev_lock_status) {
+        LOG_INFO("Lock status changed: %s -> %s\n",
+                 lock_status_to_string(state->prev_lock_status),
+                 lock_status_to_string(state->lock_status));
+        state->prev_lock_status = state->lock_status;
+        /* Track first lock for boot grace period */
+        if (!state->ever_locked &&
+            (state->lock_status == DPLL_LOCK_STATUS_LOCKED ||
+             state->lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ)) {
+            state->ever_locked = true;
+            LOG_INFO("First lock achieved — alarm suppression lifted\n");
+        }
+        write_status_json(state);
+    }
+
     if (state->prev_master != state->current_master) {
         LOG_INFO("FAILOVER DETECTED: %s -> %s\n",
                  pin_source_to_string(state->prev_master),
@@ -928,6 +945,9 @@ void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock)
         if (g_config.manager.operation_mode == OPERATION_MODE_SW_BASED)
             handle_sw_based_failover(state, state->current_master);
         read_clock_parameters_from_master(state, dpll_sock);
+        /* Note: on holdover entry, both lock_status and master change —
+         * this results in two writes (harmless on tmpfs, idempotent). */
+        write_status_json(state);
     }
     state->prev_master = state->current_master;
 }
@@ -1449,6 +1469,12 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
         LOG_INFO("ts2_0 channel not configured, ts2phc gearshift unavailable\n");
     }
 
+    /* Initialize status tracking fields */
+    state->gear_ptp_bh = GEAR_IDLE;
+    state->gear_ts2_0 = GEAR_DRIVE;
+    state->prev_lock_status = DPLL_LOCK_STATUS_UNLOCKED;
+    state->ever_locked = false;
+
     return true;
 }
 
@@ -1516,6 +1542,12 @@ int main(int argc, char *argv[])
     if (ensure_runtime_directory() < 0) {
         LOG_ERROR("Failed to setup runtime directory\n");
         return EXIT_FAILURE;
+    }
+
+    /* Create status file directory for external consumers */
+    if (mkdir(STATUS_FILE_DIR, 0755) < 0 && errno != EEXIST) {
+        LOG_ERROR("Failed to create status directory %s: %s\n",
+                  STATUS_FILE_DIR, strerror(errno));
     }
 
     /* Initialize application state */
@@ -1615,6 +1647,16 @@ int main(int argc, char *argv[])
     
     /* Main loop - dispatches to the event-based or poll-based implementation
      * selected at build time (BUILD_MODE=event or BUILD_MODE=poll). */
+    /* Set ever_locked if DPLL is already locked at startup */
+    if (state.lock_status == DPLL_LOCK_STATUS_LOCKED ||
+        state.lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ) {
+        state.ever_locked = true;
+    }
+    state.prev_lock_status = state.lock_status;
+
+    write_status_json(&state);
+    LOG_INFO("Initial status.json written to %s\n", STATUS_FILE_PATH);
+
     run_main_loop(&state, dpll_sock);
 
     LOG_INFO("Shutting down...\n");

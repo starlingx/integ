@@ -249,6 +249,16 @@ typedef struct {
     int ts2phc_socket_fd;                /* Bound socket for ts2phc gearshift (SW_BASED) */
     struct sockaddr_un ts2phc_peer_addr; /* ts2phc UDS peer address (ts2_0 channel) */
 
+    /* Gearshift state tracking (SW_BASED mode) — for status.json */
+    uint8_t gear_ptp_bh;   /* Current gear for ptp4l channel */
+    uint8_t gear_ts2_0;    /* Current gear for ts2phc channel */
+
+    /* Previous lock status for transition detection */
+    enum dpll_lock_status prev_lock_status;
+
+    /* Boot grace: suppress "unlocked" alarm until first lock achieved */
+    bool ever_locked;
+
     FILE *log_file;  /* Log file handle (NULL = stdout) */
 } AppState;
 

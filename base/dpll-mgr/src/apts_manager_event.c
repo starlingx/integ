@@ -199,6 +199,13 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
 
         process_ptp_messages(state);
 
+        /* Re-evaluate holdover tiers on poll timeout. During holdover, no
+         * DPLL notifications arrive (hardware state is static), so tier
+         * progression must be checked periodically. The 1s poll timeout
+         * ensures this runs at least once per second. */
+        if (state->in_holdover)
+            process_dpll_master_state(state, dpll_sock);
+
         /* HW_BASED mode: periodic phase adjustment */
         if (g_config.manager.operation_mode != OPERATION_MODE_SW_BASED) {
             if (state->ptp_pin_state == DPLL_PIN_STATE_SELECTABLE ||
