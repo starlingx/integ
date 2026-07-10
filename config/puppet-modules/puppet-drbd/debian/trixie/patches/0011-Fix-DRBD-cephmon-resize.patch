@@ -29,7 +29,7 @@ index 11cf7ee..8d2f901 100644
    # drbd is very tenacious about asking for aproval if there is data on the
    # volume already.
    exec { "initialize DRBD metadata for ${name}":
-     command => "yes yes | drbdadm create-md ${name} -W--peer-max-bio-size=128k",
+     command => "drbdadm --force create-md ${name} -W--peer-max-bio-size=128k",
 -    onlyif  => "test -e ${disk}",
 +    onlyif  => "test -e ${disk} && ! drbdadm dstate ${name}",
      unless  => "drbdadm dump-md ${name} || (drbdadm cstate ${name} | egrep -q '^(PausedSync|Sync|Connected|WFConnection|StandAlone|Verify)') || (drbdadm show-gi ${name} | grep 'meta-data: need apply-al')",
