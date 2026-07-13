@@ -34,7 +34,7 @@ enable nfs-common.service
 enable nfs-server.service
 
 # 00-pxe-network-installer.preset
-enable pxeboot-feed.service
+enable pxeboot_feed.service
 
 # 00-sm-api.preset
 enable sm-api.service
@@ -87,7 +87,7 @@ disable openvswitch.service
 # qemu-kvm.spec (Package currently not included)
 
 # mtce-compute.spec
-enable goenabled-worker.service
+enable goenabledWorker.service
 
 # lighthtpd
 enable lighttpd.service
@@ -131,8 +131,12 @@ enable strongswan-starter.service
 enable ipsec-server.service
 
 # worker-utils.spec
-enable affine-platform.sh.service
+enable affine-platform.service
 enable affine-tasks.service
+
+# worker personality (required for AIO lowlatency worker subfunction)
+enable worker-config-gate.service
+enable workerconfig.service
 
 # usm initialize service
 disable usm-initialize.service
