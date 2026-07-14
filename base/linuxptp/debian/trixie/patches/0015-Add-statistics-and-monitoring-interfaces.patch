@@ -1,0 +1,1119 @@
+From 11c3643562e314d60c07afb6f1fec25875e48d62 Mon Sep 17 00:00:00 2001
+From: adeheldb <andre.deheldbadur@windriver.com>
+Date: Wed, 17 Jun 2026 13:50:42 -0300
+Subject: [PATCH] Add statistics and monitoring interfaces
+
+Add statistics and monitoring interfaces
+
+Update or create management interfaces in linuxptp daemons to expose
+synchronization data that was previously internal-only.
+
+Features:
+
+1. OFFSET_STATS_NP management TLV (ptp4l, MID 0xC100)
+   New clock-level GET-only TLV exposing offset statistics (min, max,
+   mean, stddev, rms, num_samples) cached from the existing
+   summary_interval computation. Returns all-zero with num_samples=0
+   when summary_interval <= 0 or no samples have accumulated.
+
+2. sync_lost field in PORT_SERVICE_STATS_NP (ptp4l)
+   Appends a uint64 sync_lost counter to the existing per-port service
+   stats TLV. Counts forward gaps in Sync message sequence numbers
+   using uint16 modular arithmetic with a 32768 half-window threshold.
+   Resets to zero on daemon restart.
+
+3. phc2sys monitoring socket (/var/run/phc2sys-mon-<instance>)
+   New unconditional SOCK_STREAM JSON socket (mode 0666), independent
+   of the existing HA socket. Responds to {"command":"stats"} with
+   servo offset, delay, servo state, and clock source.
+
+4. ts2phc monitoring socket (/var/run/ts2phc-mon-<instance>)
+   Same JSON protocol as phc2sys. Exposes PHC-to-external-source
+   offset. Delay always reported as -1.
+
+All four features are delivered as a single patch because they share
+a common purpose: exposing internal synchronization state through
+programmatic interfaces. They touch independent daemons with no shared
+code, enabling a single apply/revert lifecycle.
+
+TEST PLAN:
+PASS: Build the linuxptp package on Trixie environment
+PASS: Load engineer .deb file in Trixie system and verify
+      OFFSET_STATS_NP functionality.
+PASS: Load engineer .deb file in Trixie system and verify
+      PORT_SERVICE_STATS_NP functionality.
+PASS: Load engineer .deb file in Trixie system and verify
+      SOCK_STREAM JSON functionality for phc2sys.
+PASS: Load engineer .deb file in Trixie system and verify
+      SOCK_STREAM JSON functionality for ts2phc.
+PASS: Connect to phc2sys-mon socket without sending data for 5s.
+      Second client query returns response within 2s. Daemon
+      servo loop shows no interruption.
+PASS: Connect to ts2phc-mon socket without sending data for 5s.
+      Second client query returns response within 2s. Daemon
+      servo loop shows no interruption.
+PASS: 3 concurrent clients querying monitoring socket in a loop
+      for 30s while ts2phc is actively syncing. No servo disruption
+      or clock step observed.
+PASS: kill -9 ts2phc, restart daemon. Monitoring socket is
+      re-created and responds to queries (stale socket cleanup).
+PASS: With ha_enabled=1, both phc2sys-mon-* and ha_phc2sys_com_socket
+      coexist and respond independently.
+PASS: With summary_interval=0, GET OFFSET_STATS_NP returns
+      num_samples=0 and all fields zero.
+PASS: Send unknown command {"command":"reset"} to monitoring socket.
+      Daemon returns {"error":"unknown command"} and does not crash.
+PASS: Send malformed non-JSON input to monitoring socket.
+      Daemon returns {"error":"unknown command"} and does not crash.
+PASS: phc2sys -a -r invoked without -f (no config file).
+      Daemon does not segfault. Monitoring socket created at
+      /var/run/phc2sys-mon-default.
+PASS: Query phc2sys monitoring socket immediately after restart
+      (before servo lock). Returns {"error":"no servo data"}.
+
+Signed-off-by: adeheldb <andre.deheldbadur@windriver.com>
+
+---
+ clock.c        |  34 ++++++++---
+ config.c       |   1 +
+ ddt.h          |   1 +
+ makefile       |   8 +--
+ mon_socket.c   | 163 +++++++++++++++++++++++++++++++++++++++++++++++++
+ mon_socket.h   |  60 ++++++++++++++++++
+ phc2sys.8      |   9 +++
+ phc2sys.c      | 121 ++++++++++++++++++++++++++++++++++++
+ pmc.8          |   2 +
+ pmc.c          |  24 +++++++-
+ pmc_common.c   |   1 +
+ port.c         |  21 +++++++
+ port_private.h |   2 +
+ tlv.c          |  31 ++++++++++
+ tlv.h          |  12 ++++
+ ts2phc.8       |   9 +++
+ ts2phc.c       |  98 +++++++++++++++++++++++++++++
+ ts2phc.h       |   7 +++
+ 18 files changed, 591 insertions(+), 13 deletions(-)
+ create mode 100644 mon_socket.c
+ create mode 100644 mon_socket.h
+
+diff --git a/clock.c b/clock.c
+index 37d5875..9e450bf 100644
+--- a/clock.c
++++ b/clock.c
+@@ -140,6 +140,8 @@ struct clock {
+ 	struct clock_description desc;
+ 	struct clock_stats stats;
+ 	int stats_interval;
++	struct stats_result offset_stats_cache;
++	uint32_t offset_stats_count;
+ 	struct clockcheck *sanity_check;
+ 	struct interface *uds_rw_if;
+ 	struct interface *uds_ro_if;
+@@ -155,7 +157,7 @@ struct clock the_clock;
+ static void handle_state_decision_event(struct clock *c);
+ static int clock_resize_pollfd(struct clock *c, int new_nports);
+ static void clock_remove_port(struct clock *c, struct port *p);
+-static void clock_stats_display(struct clock_stats *s);
++static void clock_stats_display(struct clock_stats *s, struct clock *c);
+ 
+ static int clock_alttime_offset_append(struct clock *c, int key, struct ptp_message *m)
+ {
+@@ -577,6 +579,18 @@ static int clock_management_fill_response(struct clock *c, struct port *p,
+ 		mtd->val = c->local_sync_uncertain;
+ 		datalen = sizeof(*mtd);
+ 		break;
++	case MID_OFFSET_STATS_NP: {
++		struct offset_stats_np *osn;
++		osn = (struct offset_stats_np *) tlv->data;
++		osn->offset_min    = (int64_t)  c->offset_stats_cache.min;
++		osn->offset_max    = (int64_t)  c->offset_stats_cache.max;
++		osn->offset_mean   = (int64_t)  c->offset_stats_cache.mean;
++		osn->offset_stddev = (uint64_t) c->offset_stats_cache.stddev;
++		osn->offset_rms    = (uint64_t) c->offset_stats_cache.rms;
++		osn->num_samples   = c->offset_stats_count;
++		datalen = sizeof(*osn);
++		break;
++	}
+ 	default:
+ 		/* The caller should *not* respond to this message. */
+ 		tlv_extra_recycle(extra);
+@@ -699,7 +713,7 @@ static int clock_management_set(struct clock *c, struct port *p,
+ 			/* Display stats on change of local_sync_uncertain */
+ 			if (c->local_sync_uncertain != mtd->val
+ 			    && stats_get_num_values(c->stats.offset))
+-				clock_stats_display(&c->stats);
++				clock_stats_display(&c->stats, c);
+ 			c->local_sync_uncertain = mtd->val;
+ 			respond = 1;
+ 			break;
+@@ -711,25 +725,31 @@ static int clock_management_set(struct clock *c, struct port *p,
+ 	return respond ? 1 : 0;
+ }
+ 
+-static void clock_stats_update(struct clock_stats *s,
++static void clock_stats_update(struct clock *c,
+ 			       double offset, double freq)
+ {
++	struct clock_stats *s = &c->stats;
+ 	stats_add_value(s->offset, offset);
+ 	stats_add_value(s->freq, freq);
+ 
+ 	if (stats_get_num_values(s->offset) < s->max_count)
+ 		return;
+ 
+-	clock_stats_display(s);
++	clock_stats_display(s, c);
+ }
+ 
+-static void clock_stats_display(struct clock_stats *s)
++static void clock_stats_display(struct clock_stats *s, struct clock *c)
+ {
+ 	struct stats_result offset_stats, freq_stats, delay_stats;
+ 
+ 	stats_get_result(s->offset, &offset_stats);
+ 	stats_get_result(s->freq, &freq_stats);
+ 
++	if (c) {
++		c->offset_stats_cache = offset_stats;
++		c->offset_stats_count = stats_get_num_values(s->offset);
++	}
++
+ 	/* Path delay stats are updated separately, they may be empty. */
+ 	if (!stats_get_result(s->delay, &delay_stats)) {
+ 		pr_info("rms %4.0f max %4.0f "
+@@ -793,7 +813,7 @@ static enum servo_state clock_no_adjust(struct clock *c, tmv_t ingress,
+ 	freq = (1.0 - ratio) * 1e9;
+ 
+ 	if (c->stats.max_count > 1) {
+-		clock_stats_update(&c->stats, tmv_dbl(c->master_offset), freq);
++		clock_stats_update(c, tmv_dbl(c->master_offset), freq);
+ 	} else {
+ 		pr_info("master offset %10" PRId64 " s%d freq %+7.0f "
+ 			"path delay %9" PRId64,
+@@ -2094,7 +2114,7 @@ enum servo_state clock_synchronize(struct clock *c, tmv_t ingress, tmv_t origin)
+ 	}
+ 
+ 	if (c->stats.max_count > 1) {
+-		clock_stats_update(&c->stats, tmv_dbl(c->master_offset), adj);
++		clock_stats_update(c, tmv_dbl(c->master_offset), adj);
+ 	} else {
+ 		pr_info("master offset %10" PRId64 " s%d freq %+7.0f "
+ 			"path delay %9" PRId64,
+diff --git a/config.c b/config.c
+index 0ba35d5..5f633a6 100644
+--- a/config.c
++++ b/config.c
+@@ -279,6 +279,7 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("ha_max_local_clockClass", 255, 6, 255),
+ 	GLOB_ITEM_INT("ha_max_local_offsetScaledLogVar", 0xffff, 0, 0xffff),
+ 	GLOB_ITEM_STR("ha_phc2sys_com_socket", "/var/run/phc2sys-phc-inst1"),
++	GLOB_ITEM_STR("mon_socket_path", ""),
+ 	PORT_ITEM_INT("ha_priority", 0, 0, 254),
+ 	PORT_ITEM_INT("ha_stability_timer", 0, 0, INT_MAX),
+ 	PORT_ITEM_STR("ha_uds_address", "/var/run/ptp4l"),
+diff --git a/ddt.h b/ddt.h
+index 5dc5530..a8c3b29 100644
+--- a/ddt.h
++++ b/ddt.h
+@@ -118,6 +118,7 @@ struct PortServiceStats {
+ 	uint64_t qualification_timeout;
+ 	uint64_t sync_mismatch;
+ 	uint64_t followup_mismatch;
++	uint64_t sync_lost;
+ };
+ 
+ struct unicast_master_entry {
+diff --git a/makefile b/makefile
+index b4ceec5..a478441 100644
+--- a/makefile
++++ b/makefile
+@@ -58,7 +58,7 @@ nsm: config.o $(FILTERS) hash.o interface.o msg.o nsm.o phc.o print.o \
+ pmc: config.o hash.o interface.o msg.o phc.o pmc.o pmc_common.o print.o sk.o \
+  tlv.o $(TRANSP) util.o version.o
+ 
+-phc2sys: clockadj.o clockcheck.o config.o hash.o interface.o msg.o \
++phc2sys: clockadj.o clockcheck.o config.o hash.o interface.o mon_socket.o msg.o \
+  phc.o phc2sys.o pmc_agent.o pmc_common.o print.o $(SERVOS) sk.o stats.o \
+  sysoff.o tlv.o $(TRANSP) util.o version.o
+ 
+@@ -68,9 +68,9 @@ phc_ctl: phc_ctl.o phc.o sk.o util.o clockadj.o sysoff.o print.o version.o
+ 
+ timemaster: phc.o print.o rtnl.o sk.o timemaster.o util.o version.o
+ 
+-ts2phc: config.o clockadj.o hash.o interface.o msg.o phc.o pmc_agent.o \
+- pmc_common.o print.o $(SERVOS) sk.o $(TS2PHC) tlv.o transport.o raw.o \
+- udp.o udp6.o uds.o util.o version.o
++ts2phc: config.o clockadj.o hash.o interface.o mon_socket.o msg.o phc.o \
++ pmc_agent.o pmc_common.o print.o $(SERVOS) sk.o $(TS2PHC) tlv.o \
++ transport.o raw.o udp.o udp6.o uds.o util.o version.o
+ 
+ tz2alt: config.o hash.o interface.o lstab.o msg.o phc.o pmc_common.o print.o \
+  sk.o tlv.o $(TRANSP) tz2alt.o util.o version.o
+diff --git a/mon_socket.c b/mon_socket.c
+new file mode 100644
+index 0000000..16944a5
+--- /dev/null
++++ b/mon_socket.c
+@@ -0,0 +1,163 @@
++/**
++ * @file mon_socket.c
++ * @brief Monitoring socket implementation for statistics reporting.
++ * @note Copyright (C) 2026 Wind River Systems, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License along
++ * with this program; if not, write to the Free Software Foundation, Inc.,
++ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++ */
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/socket.h>
++#include <sys/stat.h>
++#include <sys/un.h>
++#include <unistd.h>
++
++#include "mon_socket.h"
++#include "print.h"
++
++#define MON_SCK_PATH_LEN 108
++#define MON_SCK_FILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
++
++int mon_socket_open(const char *path, const char *config_file,
++		    const char *prefix, int *fd_out, char **path_out)
++{
++	/* Sentinel to disable monitoring socket entirely */
++	if (path && strcmp(path, "disabled") == 0) {
++		*fd_out = -1;
++		*path_out = NULL;
++		pr_info("mon_socket: disabled by configuration");
++		return 0;
++	}
++
++	int fd, err;
++	struct sockaddr_un sa;
++	char *path_buf;
++	int prefix_len;
++
++	path_buf = malloc(MON_SCK_PATH_LEN);
++	if (!path_buf) {
++		pr_err("mon_socket: failed to allocate path buffer");
++		return -1;
++	}
++
++	if (!path || path[0] == '\0') {
++		if (!config_file) {
++			snprintf(path_buf, MON_SCK_PATH_LEN,
++				 "/var/run/%s-mon-default", prefix);
++		} else {
++			const char *base = strrchr(config_file, '/');
++
++			base = base ? base + 1 : config_file;
++			prefix_len = strlen(prefix);
++
++			if (strncmp(base, prefix, prefix_len) == 0 &&
++			    base[prefix_len] == '-') {
++				const char *inst = base + prefix_len + 1;
++				char *dot = strstr(inst, ".conf");
++				int len = dot ? (int)(dot - inst)
++					      : (int)strlen(inst);
++
++				snprintf(path_buf, MON_SCK_PATH_LEN,
++					 "/var/run/%s-mon-%.*s",
++					 prefix, len, inst);
++			} else {
++				snprintf(path_buf, MON_SCK_PATH_LEN,
++					 "/var/run/%s-mon-default", prefix);
++			}
++		}
++	} else {
++		strncpy(path_buf, path, MON_SCK_PATH_LEN - 1);
++		path_buf[MON_SCK_PATH_LEN - 1] = '\0';
++	}
++
++	unlink(path_buf);
++
++	fd = socket(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0);
++	if (fd < 0) {
++		pr_err("mon_socket: socket failed: %m");
++		free(path_buf);
++		return -1;
++	}
++
++	memset(&sa, 0, sizeof(sa));
++	sa.sun_family = AF_LOCAL;
++	strncpy(sa.sun_path, path_buf, sizeof(sa.sun_path) - 1);
++
++	err = bind(fd, (struct sockaddr *)&sa, sizeof(sa));
++	if (err < 0) {
++		pr_err("mon_socket: bind(%s) failed: %m", path_buf);
++		close(fd);
++		free(path_buf);
++		return -1;
++	}
++
++	err = listen(fd, 5);
++	if (err < 0) {
++		pr_err("mon_socket: listen failed: %m");
++		close(fd);
++		free(path_buf);
++		return -1;
++	}
++
++	chmod(path_buf, MON_SCK_FILEMODE);
++	pr_info("mon_socket: listening on %s", path_buf);
++
++	*fd_out = fd;
++	*path_out = path_buf;
++
++	return 0;
++}
++
++int mon_socket_accept(int fd, char *buf, size_t buflen)
++{
++	int client_fd;
++	ssize_t n;
++
++	if (fd < 0)
++		return -1;
++
++	client_fd = accept(fd, NULL, NULL);
++	if (client_fd < 0)
++		return -1;
++
++	n = recv(client_fd, buf, buflen - 1, MSG_DONTWAIT);
++	if (n <= 0) {
++		close(client_fd);
++		return -1;
++	}
++	buf[n] = '\0';
++
++	return client_fd;
++}
++
++void mon_socket_reply(int client_fd, const char *resp)
++{
++	send(client_fd, resp, strlen(resp), MSG_NOSIGNAL);
++	close(client_fd);
++}
++
++void mon_socket_close(int *fd, char **path)
++{
++	if (*fd >= 0) {
++		close(*fd);
++		*fd = -1;
++	}
++	if (*path) {
++		unlink(*path);
++		free(*path);
++		*path = NULL;
++	}
++}
+diff --git a/mon_socket.h b/mon_socket.h
+new file mode 100644
+index 0000000..eb9c5c6
+--- /dev/null
++++ b/mon_socket.h
+@@ -0,0 +1,60 @@
++/**
++ * @file mon_socket.h
++ * @brief Monitoring socket interface for statistics reporting.
++ * @note Copyright (C) 2026 Wind River Systems, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License along
++ * with this program; if not, write to the Free Software Foundation, Inc.,
++ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++ */
++#ifndef HAVE_MON_SOCKET_H
++#define HAVE_MON_SOCKET_H
++
++#define MON_SCK_BUFFER_SIZE 4096
++
++/**
++ * Open a monitoring socket.
++ * @param path  Configured path, or NULL to auto-derive from config_file.
++ * @param config_file  Config file path used to derive socket name.
++ * @param prefix  Daemon prefix for auto-derived path (e.g. "phc2sys", "ts2phc").
++ * @param fd_out  Pointer to store the listening socket fd.
++ * @param path_out  Pointer to store the heap-allocated socket path.
++ * @return Zero on success, -1 on error.
++ */
++int mon_socket_open(const char *path, const char *config_file,
++		    const char *prefix, int *fd_out, char **path_out);
++
++/**
++ * Accept a pending client and read its request.
++ * @param fd  The listening socket fd.
++ * @param buf  Buffer to store the received message.
++ * @param buflen  Size of the buffer.
++ * @return The client fd on success, -1 if no client or error.
++ */
++int mon_socket_accept(int fd, char *buf, size_t buflen);
++
++/**
++ * Send a response and close the client connection.
++ * @param client_fd  The client socket fd.
++ * @param resp  The response string to send.
++ */
++void mon_socket_reply(int client_fd, const char *resp);
++
++/**
++ * Close a monitoring socket and remove its path.
++ * @param fd  Pointer to the socket fd (set to -1 on return).
++ * @param path  Pointer to the path string (freed and set to NULL on return).
++ */
++void mon_socket_close(int *fd, char **path);
++
++#endif
+diff --git a/phc2sys.8 b/phc2sys.8
+index df0608a..a9229dc 100644
+--- a/phc2sys.8
++++ b/phc2sys.8
+@@ -331,6 +331,15 @@ Same as option
+ .B \-t
+ (see above).
+ 
++.TP
++.B mon_socket_path
++Path for the monitoring Unix domain socket used by external tools (e.g.,
++ptp-metrics-exporter) to query synchronization statistics via JSON.
++If empty (the default), the path is derived from the configuration filename
++as /var/run/phc2sys-mon-\fI<instance>\fP.
++If set to "disabled", the monitoring socket is not created.
++The default is "".
++
+ .TP
+ .B ntpshm_segment
+ The number of the SHM segment used by ntpshm servo.  The default is 0.
+diff --git a/phc2sys.c b/phc2sys.c
+index 546cda3..4e93b65 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -32,6 +32,7 @@
+ #include <sys/queue.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
++#include <sys/un.h>
+ #include <unistd.h>
+ 
+ #include <linux/pps.h>
+@@ -43,6 +44,7 @@
+ #include "ds.h"
+ #include "fsm.h"
+ #include "missing.h"
++#include "mon_socket.h"
+ #include "notification.h"
+ #include "ntpshm.h"
+ #include "phc.h"
+@@ -92,6 +94,14 @@ struct clock {
+ 	int utc_offset_set;
+ 	struct servo *servo;
+ 	enum servo_state servo_state;
++	int64_t mon_offset;
++	int64_t mon_delay;
++	int mon_valid;
++	/* Windowed stats cache (populated by update_clock_stats before reset) */
++	double mon_rms;
++	double mon_stddev;
++	double mon_max_abs;
++	unsigned int mon_num_samples;
+ 	char *device;
+ 	const char *source_label;
+ 	struct stats *offset_stats;
+@@ -148,6 +158,10 @@ struct domain {
+ 	int src_priority;
+ 	struct ha ha;
+ 	int utc_offset_valid;
++	struct {
++		int fd;
++		char *path;
++	} mon;
+ };
+ 
+ static struct config *phc2sys_config;
+@@ -1328,6 +1342,12 @@ static void update_clock_stats(struct clock *clock, unsigned int max_count,
+ 	stats_get_result(clock->offset_stats, &offset_stats);
+ 	stats_get_result(clock->freq_stats, &freq_stats);
+ 
++	/* Cache windowed stats for monitoring socket */
++	clock->mon_rms = offset_stats.rms;
++	clock->mon_stddev = offset_stats.stddev;
++	clock->mon_max_abs = offset_stats.max_abs;
++	clock->mon_num_samples = stats_get_num_values(clock->offset_stats);
++
+ 	if (!stats_get_result(clock->delay_stats, &delay_stats)) {
+ 		pr_info("%s "
+ 			"rms %4.0f max %4.0f "
+@@ -1401,6 +1421,9 @@ static void update_clock(struct domain *domain, struct clock *clock,
+ 			clockcheck_set_freq(clock->sanity_check, -ppb);
+ 		break;
+ 	}
++	clock->mon_offset = offset;
++	clock->mon_delay = delay;
++	clock->mon_valid = 1;
+ 
+ report:
+ 	if (clock->offset_stats) {
+@@ -1585,6 +1608,92 @@ static int update_domain_clocks(struct domain *domain)
+ 	return 0;
+ }
+ 
++/* Monitoring socket */
++
++static const char *servo_state_str(enum servo_state s)
++{
++	switch (s) {
++	case SERVO_UNLOCKED:
++		return "UNLOCKED";
++	case SERVO_JUMP:
++		return "JUMP";
++	case SERVO_LOCKED:
++		return "LOCKED";
++	case SERVO_LOCKED_STABLE:
++		return "LOCKED_STABLE";
++	default:
++		return "UNKNOWN";
++	}
++}
++
++static void mon_socket_handle(struct domain *domains, int n_domains)
++{
++	int client_fd;
++	char buf[MON_SCK_BUFFER_SIZE];
++	char resp[MON_SCK_BUFFER_SIZE];
++	struct clock *src = NULL;
++	struct domain *active_domain = NULL;
++	struct clock *dst = NULL;
++
++	client_fd = mon_socket_accept(domains[0].mon.fd, buf, sizeof(buf));
++	if (client_fd < 0)
++		return;
++
++	if (!strstr(buf, "\"command\"") || !strstr(buf, "\"stats\"")) {
++		snprintf(resp, sizeof(resp),
++			 "{\"error\":\"unknown command\"}");
++		mon_socket_reply(client_fd, resp);
++		return;
++	}
++
++	/* The active source clock and its owning domain are stored in
++	 * domains[0] by reconfigure() / ha_set_clock_source().
++	 * Use src_domain to find the domain with the active destination clocks. */
++	src = domains[0].src_clock;
++	active_domain = domains[0].src_domain;
++	if (!src || !active_domain) {
++		snprintf(resp, sizeof(resp),
++			 "{\"error\":\"no servo data\"}");
++		mon_socket_reply(client_fd, resp);
++		return;
++	}
++
++	/* Find the destination clock with valid monitoring data */
++	LIST_FOREACH(dst, &active_domain->dst_clocks, dst_list) {
++		if (dst->mon_valid)
++			break;
++	}
++	if (!dst) {
++		snprintf(resp, sizeof(resp),
++			 "{\"error\":\"no servo data\"}");
++		mon_socket_reply(client_fd, resp);
++		return;
++	}
++
++	snprintf(resp, sizeof(resp),
++		 "{\"version\":1,"
++		 "\"clocks\":["
++		 "{\"offset\":%" PRId64 ","
++		 "\"delay\":%" PRId64 ","
++		 "\"servo_state\":\"%s\","
++		 "\"clock_source\":\"%s\","
++		 "\"rms\":%.0f,"
++		 "\"stddev\":%.0f,"
++		 "\"max_abs\":%.0f,"
++		 "\"num_samples\":%u"
++		 "}]}",
++		 dst->mon_offset,
++		 dst->mon_delay,
++		 servo_state_str(dst->servo_state),
++		 src->device ? src->device : "unknown",
++		 dst->mon_num_samples ? dst->mon_rms : 0.0,
++		 dst->mon_num_samples ? dst->mon_stddev : 0.0,
++		 dst->mon_num_samples ? dst->mon_max_abs : 0.0,
++		 dst->mon_num_samples);
++
++	mon_socket_reply(client_fd, resp);
++}
++
+ static int do_loop(struct domain *domains, int n_domains)
+ {
+ 	int i, state_changed, prev_sub;
+@@ -1608,6 +1717,8 @@ static int do_loop(struct domain *domains, int n_domains)
+ 
+ 		if (domains[0].ha.ha_enabled)
+ 			ha_com_socket_handle_msg(domains, n_domains);
++		if (domains[0].mon.fd >= 0)
++			mon_socket_handle(domains, n_domains);
+ 
+ 		for (i = 0; i < n_domains; i++) {
+ 			domain = &domains[i];
+@@ -2114,6 +2225,7 @@ int main(int argc, char *argv[])
+ 	const char *ha_socket_path;
+ 
+ 	memset(domains, 0, sizeof (domains));
++	domains[0].mon.fd = -1;
+ 
+ 	handle_term_signals();
+ 
+@@ -2412,6 +2524,9 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	if (autocfg) {
++		mon_socket_open(config_get_string(cfg, NULL, "mon_socket_path"),
++				config, "phc2sys",
++				&domains[0].mon.fd, &domains[0].mon.path);
+ 		for (i = 0; i < n_domains; i++) {
+ 			if (rt && i + 1 == n_domains) {
+ 				if (auto_init_rt(&domains[n_domains - 1],
+@@ -2583,6 +2698,11 @@ int main(int argc, char *argv[])
+ 	 	ha_socket_path = config_get_string(cfg, NULL, "ha_phc2sys_com_socket");
+ 		ha_com_socket_open(&domains[0].ha.socket_fd, ha_socket_path);
+ 	}
++	if (!autocfg) {
++		mon_socket_open(config_get_string(cfg, NULL, "mon_socket_path"),
++				config, "phc2sys",
++				&domains[0].mon.fd, &domains[0].mon.path);
++	}
+ 
+ 	if (hardpps_configured(pps_fd)) {
+ 		struct clock *dst = LIST_FIRST(&domains[0].dst_clocks);
+@@ -2598,6 +2718,7 @@ int main(int argc, char *argv[])
+ 
+ end:
+ 	ha_com_socket_close(domains[0].ha.socket_fd);
++	mon_socket_close(&domains[0].mon.fd, &domains[0].mon.path);
+ 	for (i = 0; i < n_domains; i++) {
+ 		if (domains[i].agent)
+ 			pmc_agent_destroy(domains[i].agent);
+diff --git a/pmc.8 b/pmc.8
+index 629eadf..4c23a54 100644
+--- a/pmc.8
++++ b/pmc.8
+@@ -187,6 +187,8 @@ The default is 0.
+ .TP
+ .B NULL_MANAGEMENT
+ .TP
++.B OFFSET_STATS_NP
++.TP
+ .B PARENT_DATA_SET
+ .TP
+ .B PORT_DATA_SET
+diff --git a/pmc.c b/pmc.c
+index 9faf790..e598f1b 100644
+--- a/pmc.c
++++ b/pmc.c
+@@ -568,7 +568,8 @@ static void pmc_show(struct ptp_message *msg, FILE *fp)
+ 		IFMT "master_sync_timeout       %" PRIu64
+ 		IFMT "qualification_timeout     %" PRIu64
+ 		IFMT "sync_mismatch             %" PRIu64
+-		IFMT "followup_mismatch         %" PRIu64,
++		IFMT "followup_mismatch         %" PRIu64
++		IFMT "sync_lost                 %" PRIu64,
+ 		pid2str(&pssp->portIdentity),
+ 		pssp->stats.announce_timeout,
+ 		pssp->stats.sync_timeout,
+@@ -579,8 +580,27 @@ static void pmc_show(struct ptp_message *msg, FILE *fp)
+ 		pssp->stats.master_sync_timeout,
+ 		pssp->stats.qualification_timeout,
+ 		pssp->stats.sync_mismatch,
+-		pssp->stats.followup_mismatch);
++		pssp->stats.followup_mismatch,
++		pssp->stats.sync_lost);
++		break;
++	case MID_OFFSET_STATS_NP: {
++		struct offset_stats_np *osn;
++		osn = (struct offset_stats_np *) mgt->data;
++		fprintf(fp, "OFFSET_STATS_NP "
++		IFMT "offset_min      %" PRId64
++		IFMT "offset_max      %" PRId64
++		IFMT "offset_mean     %" PRId64
++		IFMT "offset_stddev   %" PRIu64
++		IFMT "offset_rms      %" PRIu64
++		IFMT "num_samples     %u",
++		osn->offset_min,
++		osn->offset_max,
++		osn->offset_mean,
++		osn->offset_stddev,
++		osn->offset_rms,
++		osn->num_samples);
+ 		break;
++	}
+ 	case MID_UNICAST_MASTER_TABLE_NP:
+ 		umtn = (struct unicast_master_table_np *) mgt->data;
+ 		fprintf(fp, "UNICAST_MASTER_TABLE_NP "
+diff --git a/pmc_common.c b/pmc_common.c
+index 62e34a6..34bdc3f 100644
+--- a/pmc_common.c
++++ b/pmc_common.c
+@@ -153,6 +153,7 @@ struct management_id idtab[] = {
+ 	{ "PORT_PROPERTIES_NP", MID_PORT_PROPERTIES_NP, do_get_action },
+ 	{ "PORT_STATS_NP", MID_PORT_STATS_NP, do_get_action },
+ 	{ "PORT_SERVICE_STATS_NP", MID_PORT_SERVICE_STATS_NP, do_get_action },
++	{ "OFFSET_STATS_NP", MID_OFFSET_STATS_NP, do_get_action },
+ 	{ "UNICAST_MASTER_TABLE_NP", MID_UNICAST_MASTER_TABLE_NP, do_get_action },
+ 	{ "PORT_HWCLOCK_NP", MID_PORT_HWCLOCK_NP, do_get_action },
+ 	{ "POWER_PROFILE_SETTINGS_NP", MID_POWER_PROFILE_SETTINGS_NP, do_set_action },
+diff --git a/port.c b/port.c
+index 147e0ad..63244db 100644
+--- a/port.c
++++ b/port.c
+@@ -47,6 +47,12 @@
+ 
+ #define ANNOUNCE_SPAN 1
+ 
++/*
++ * Half the 16-bit sequence space: deltas >= this threshold are
++ * treated as backward (late/duplicate), not forward gaps.
++ */
++#define SYNC_SEQ_HALF_WINDOW 32768
++
+ enum syfu_event {
+ 	SYNC_MISMATCH,
+ 	SYNC_MATCH,
+@@ -2563,6 +2569,21 @@ void process_sync(struct port *p, struct ptp_message *m)
+ 		return;
+ 	}
+ 
++	/* Forward-gap detection for sync_lost */
++	{
++		UInteger16 seq = m->header.sequenceId;
++		if (p->rx_sync_seen) {
++			UInteger16 expected = p->last_rx_sync_seqnum + 1;
++			UInteger16 delta = (UInteger16)(seq - expected);
++			if (delta != 0 && delta < SYNC_SEQ_HALF_WINDOW) {
++				p->service_stats.sync_lost += delta;
++			}
++		} else {
++			p->rx_sync_seen = 1;
++		}
++		p->last_rx_sync_seqnum = seq;
++	}
++
+ 	if (!msg_unicast(m) &&
+ 	    m->header.logMessageInterval != p->log_sync_interval) {
+ 		if (m->header.logMessageInterval < -10 ||
+diff --git a/port_private.h b/port_private.h
+index 1072ad6..121d4b6 100644
+--- a/port_private.h
++++ b/port_private.h
+@@ -91,6 +91,8 @@ struct port {
+ 		UInteger16 signaling;
+ 		UInteger16 sync;
+ 	} seqnum;
++	UInteger16 last_rx_sync_seqnum;
++	int rx_sync_seen;
+ 	tmv_t peer_delay;
+ 	struct tsproc *tsproc;
+ 	int log_sync_interval;
+diff --git a/tlv.c b/tlv.c
+index 9b82bd9..2ce9198 100644
+--- a/tlv.c
++++ b/tlv.c
+@@ -434,8 +434,25 @@ static int mgt_post_recv(struct management_tlv *m, uint16_t data_len,
+ 			__le64_to_cpu(pssn->stats.sync_mismatch);
+ 		pssn->stats.followup_mismatch =
+ 			__le64_to_cpu(pssn->stats.followup_mismatch);
++		pssn->stats.sync_lost =
++			__le64_to_cpu(pssn->stats.sync_lost);
+ 		extra_len = sizeof(struct port_service_stats_np);
+ 		break;
++	case MID_OFFSET_STATS_NP:
++		if (data_len < sizeof(struct offset_stats_np))
++			goto bad_length;
++		{
++			struct offset_stats_np *osn;
++			osn = (struct offset_stats_np *)m->data;
++			osn->offset_min    = __le64_to_cpu(osn->offset_min);
++			osn->offset_max    = __le64_to_cpu(osn->offset_max);
++			osn->offset_mean   = __le64_to_cpu(osn->offset_mean);
++			osn->offset_stddev = __le64_to_cpu(osn->offset_stddev);
++			osn->offset_rms    = __le64_to_cpu(osn->offset_rms);
++			osn->num_samples   = __le32_to_cpu(osn->num_samples);
++		}
++		extra_len = sizeof(struct offset_stats_np);
++		break;
+ 	case MID_UNICAST_MASTER_TABLE_NP:
+ 		if (data_len < sizeof(struct unicast_master_table_np))
+ 			goto bad_length;
+@@ -639,6 +656,20 @@ static void mgt_pre_send(struct management_tlv *m, struct tlv_extra *extra)
+ 			__cpu_to_le64(pssn->stats.sync_mismatch);
+ 		pssn->stats.followup_mismatch =
+ 			__cpu_to_le64(pssn->stats.followup_mismatch);
++		pssn->stats.sync_lost =
++			__cpu_to_le64(pssn->stats.sync_lost);
++		break;
++	case MID_OFFSET_STATS_NP:
++		{
++			struct offset_stats_np *osn;
++			osn = (struct offset_stats_np *)m->data;
++			osn->offset_min    = __cpu_to_le64(osn->offset_min);
++			osn->offset_max    = __cpu_to_le64(osn->offset_max);
++			osn->offset_mean   = __cpu_to_le64(osn->offset_mean);
++			osn->offset_stddev = __cpu_to_le64(osn->offset_stddev);
++			osn->offset_rms    = __cpu_to_le64(osn->offset_rms);
++			osn->num_samples   = __cpu_to_le32(osn->num_samples);
++		}
+ 		break;
+ 	case MID_UNICAST_MASTER_TABLE_NP:
+ 		umtn = (struct unicast_master_table_np *)m->data;
+diff --git a/tlv.h b/tlv.h
+index 8b51ffd..3c02fc0 100644
+--- a/tlv.h
++++ b/tlv.h
+@@ -130,6 +130,9 @@ enum management_action {
+ #define MID_PORT_HWCLOCK_NP				0xC009
+ #define MID_POWER_PROFILE_SETTINGS_NP			0xC00A
+ 
++/* StarlingX: clock-level offset statistics */
++#define MID_OFFSET_STATS_NP				0xC100
++
+ /* Management error ID values */
+ #define MID_RESPONSE_TOO_BIG				0x0001
+ #define MID_NO_SUCH_ID					0x0002
+@@ -431,6 +434,15 @@ struct port_service_stats_np {
+ 	struct PortServiceStats stats;
+ } PACKED;
+ 
++struct offset_stats_np {
++	int64_t  offset_min;
++	int64_t  offset_max;
++	int64_t  offset_mean;
++	uint64_t offset_stddev;
++	uint64_t offset_rms;
++	uint32_t num_samples;
++} PACKED;
++
+ struct unicast_master_table_np {
+ 	uint16_t actual_table_size;
+ 	struct unicast_master_entry unicast_masters[0];
+diff --git a/ts2phc.8 b/ts2phc.8
+index 47abbb5..dc88f97 100644
+--- a/ts2phc.8
++++ b/ts2phc.8
+@@ -161,6 +161,15 @@ with the log level of the message as a number.  The default is an empty string
+ (which cannot be set in the configuration file as the option requires an
+ argument).
+ 
++.TP
++.B mon_socket_path
++Path for the monitoring Unix domain socket used by external tools (e.g.,
++ptp-metrics-exporter) to query synchronization statistics via JSON.
++If empty (the default), the path is derived from the configuration filename
++as /var/run/ts2phc-mon-\fI<instance>\fP.
++If set to "disabled", the monitoring socket is not created.
++The default is "".
++
+ .TP
+ .B ts2phc.holdover
+ The holdover interval, specified in seconds. When the ToD information stops
+diff --git a/ts2phc.c b/ts2phc.c
+index e4b3365..6698cba 100644
+--- a/ts2phc.c
++++ b/ts2phc.c
+@@ -7,15 +7,20 @@
+  * @note SPDX-License-Identifier: GPL-2.0+
+  */
+ #include <errno.h>
++#include <inttypes.h>
+ #include <net/if.h>
+ #include <stdlib.h>
++#include <string.h>
++#include <sys/stat.h>
+ #include <sys/types.h>
++#include <sys/un.h>
+ #include <unistd.h>
+ 
+ #include "clockadj.h"
+ #include "config.h"
+ #include "contain.h"
+ #include "interface.h"
++#include "mon_socket.h"
+ #include "phc.h"
+ #include "print.h"
+ #include "ts2phc.h"
+@@ -477,6 +482,8 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 		if (!c->is_target)
+ 			continue;
+ 
++		c->mon_valid = 0;
++
+ 		valid = ts2phc_clock_get_tstamp(c, &ts);
+ 		if (!valid) {
+ 			pr_debug("%s timestamp not valid, skipping", c->name);
+@@ -548,6 +555,9 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 			}
+ 			break;
+ 		}
++		c->mon_offset = offset;
++		c->mon_delay = -1;
++		c->mon_valid = 1;
+ 		continue;
+ 
+ servo_unlock:
+@@ -605,6 +615,86 @@ static void usage(char *progname)
+ 		progname);
+ }
+ 
++/* Monitoring socket */
++
++static const char *ts2phc_servo_state_str(enum servo_state s)
++{
++	switch (s) {
++	case SERVO_UNLOCKED:
++		return "UNLOCKED";
++	case SERVO_JUMP:
++		return "JUMP";
++	case SERVO_LOCKED:
++		return "LOCKED";
++	case SERVO_LOCKED_STABLE:
++		return "LOCKED_STABLE";
++	default:
++		return "UNKNOWN";
++	}
++}
++
++static void ts2phc_mon_handle(struct ts2phc_private *priv)
++{
++	int client_fd, off, first;
++	char buf[MON_SCK_BUFFER_SIZE];
++	char resp[MON_SCK_BUFFER_SIZE];
++	struct ts2phc_clock *c;
++
++	client_fd = mon_socket_accept(priv->mon.fd, buf, sizeof(buf));
++	if (client_fd < 0)
++		return;
++
++	if (!strstr(buf, "\"command\"") || !strstr(buf, "\"stats\"")) {
++		snprintf(resp, sizeof(resp),
++			 "{\"error\":\"unknown command\"}");
++		mon_socket_reply(client_fd, resp);
++		return;
++	}
++
++	off = snprintf(resp, sizeof(resp),
++		       "{\"version\":1,\"clocks\":[");
++	first = 1;
++
++	LIST_FOREACH(c, &priv->clocks, list) {
++		char entry[256];
++		int elen;
++
++		if (!c->is_target || !c->mon_valid)
++			continue;
++
++		elen = snprintf(entry, sizeof(entry),
++				"%s{"
++				"\"offset\":%" PRId64 ","
++				"\"delay\":-1,"
++				"\"servo_state\":\"%s\","
++				"\"clock_source\":\"%s\""
++				"}",
++				first ? "" : ",",
++				c->mon_offset,
++				ts2phc_servo_state_str(c->servo_state),
++				c->name ? c->name : "unknown");
++
++		if (off + elen >= (int)sizeof(resp) - 32) {
++			off += snprintf(resp + off, sizeof(resp) - off,
++					"],\"truncated\":true}");
++			goto send_response;
++		}
++		memcpy(resp + off, entry, elen);
++		off += elen;
++		first = 0;
++	}
++
++	off += snprintf(resp + off, sizeof(resp) - off, "]}");
++
++	if (first) {
++		snprintf(resp, sizeof(resp),
++			 "{\"error\":\"no servo data\"}");
++	}
++
++send_response:
++	mon_socket_reply(client_fd, resp);
++}
++
+ int main(int argc, char *argv[])
+ {
+ 	int c, err = 0, have_sink = 0, index, print_level;
+@@ -794,9 +884,16 @@ int main(int argc, char *argv[])
+ 
+ 	priv.holdover_length = config_get_int(cfg, NULL, "ts2phc.holdover");
+ 	priv.holdover_start = 0;
++	priv.mon.fd = -1;
++	priv.mon.path = NULL;
++	mon_socket_open(config_get_string(cfg, NULL, "mon_socket_path"),
++			config, "ts2phc",
++			&priv.mon.fd, &priv.mon.path);
+ 
+ 	while (is_running()) {
+ 		struct ts2phc_clock *c;
++		if (priv.mon.fd >= 0)
++			ts2phc_mon_handle(&priv);
+ 
+ 		if (autocfg) {
+ 			/* Collect updates from ptp4l */
+@@ -830,5 +927,6 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	ts2phc_cleanup(&priv);
++	mon_socket_close(&priv.mon.fd, &priv.mon.path);
+ 	return err;
+ }
+diff --git a/ts2phc.h b/ts2phc.h
+index e42335a..df86702 100644
+--- a/ts2phc.h
++++ b/ts2phc.h
+@@ -29,6 +29,9 @@ struct ts2phc_clock {
+ 	enum port_state new_state;
+ 	struct servo *servo;
+ 	enum servo_state servo_state;
++	int64_t mon_offset;
++	int64_t mon_delay;
++	int mon_valid;
+ 	char *name;
+ 	bool no_adj;
+ 	bool is_target;
+@@ -59,6 +62,10 @@ struct ts2phc_private {
+ 	LIST_HEAD(clock_head, ts2phc_clock) clocks;
+ 	int holdover_length;
+ 	time_t holdover_start;
++	struct {
++		int fd;
++		char *path;
++	} mon;
+ };
+ 
+ struct ts2phc_clock *ts2phc_clock_add(struct ts2phc_private *priv,
+-- 
+2.43.0
+
