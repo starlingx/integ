@@ -1,6 +1,6 @@
-From 36bf88d1a5f1bcc8886c86c7bf33b8d0e16de74d Mon Sep 17 00:00:00 2001
-From: Andre Kantek <andrefernandozanella.kantek@windriver.com>
-Date: Tue, 2 Jun 2026 08:38:22 -0300
+From 1c4995b9807cceb4b4afa983fa8c3cc222d84255 Mon Sep 17 00:00:00 2001
+From: Ferdinando Terada <Ferdinando.GodoyTerada@windriver.com>
+Date: Mon, 13 Jul 2026 09:33:35 -0300
 Subject: [PATCH] add OVS access bridge setup scripts
 
 Add two Python scripts to manage a Linux bridge (ovs0) and
@@ -83,7 +83,7 @@ index 9178126..77e6b6c 100755
  
 diff --git a/if-post-down-scripts/delete_ovs_access b/if-post-down-scripts/delete_ovs_access
 new file mode 100755
-index 0000000..07ed758
+index 0000000..648ec55
 --- /dev/null
 +++ b/if-post-down-scripts/delete_ovs_access
 @@ -0,0 +1,248 @@
@@ -264,11 +264,11 @@ index 0000000..07ed758
 +
 +
 +def stop_monitor_service():
-+    """Stop the ovs-access-monitor service if it is active."""
-+    if not is_service_active(MONITOR_SERVICE):
-+        out_debug(f"Service {MONITOR_SERVICE} is not active, nothing to stop")
-+        return True
++    """Stop the ovs-access-monitor service unconditionally.
 +
++    Always issues systemctl stop to also cancel any pending start jobs
++    that were queued via --no-block but not yet processed by systemd.
++    """
 +    out_debug(f"Stopping service {MONITOR_SERVICE}")
 +    rc, _, stderr = run_cmd(["systemctl", "stop", MONITOR_SERVICE])
 +    if rc != 0:

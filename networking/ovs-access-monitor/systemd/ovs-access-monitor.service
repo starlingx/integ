@@ -1,12 +1,13 @@
 [Unit]
 Description=OVS Access Bridge Failover Monitor
 Documentation=https://www.starlingx.io
-After=network.target
+After=network.target pmon.service
 Wants=network.target
 
 [Service]
 Type=simple
 ExecStart=/usr/bin/ovs-access-monitor
+PIDFile=/var/run/ovs-access-monitor.pid
 Restart=always
 RestartSec=5
 # Ensure clean environment

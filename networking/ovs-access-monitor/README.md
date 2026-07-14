@@ -215,6 +215,8 @@ networking/ovs-access-monitor/
 ├── README.md
 ├── config/
 │   └── ovs-access-monitor.conf.sample
+├── pmon/
+│   └── ovs-access-monitor.conf          ← pmon registration config
 ├── scripts/
 │   └── ovs-access-monitor              ← main Python daemon
 ├── systemd/
@@ -233,3 +235,31 @@ networking/ovs-access-monitor/
 - Python 3 (standard library only — no pip packages required)
 - iproute2 (`ip` command)
 - systemd
+- pmon (process monitor from starlingx/metal) — monitors this service for
+  automatic restart and raises alarm 200.006 if unrecoverable
+
+## pmon Integration
+
+The pmon config file is shipped at
+`/usr/share/ovs-access-monitor/ovs-access-monitor.conf` but is **not**
+installed into `/etc/pmon.d/` by default. This is because the service is
+optional — it only runs on hosts with the `ovs-access` flag set on an
+interface.
+
+The ifupdown scripts are responsible for managing pmon registration:
+
+- **`create_ovs_access`** (if-pre-up): After enabling the service, creates
+  a symlink to the pmon conf:
+  ```bash
+  ln -sf /usr/share/ovs-access-monitor/ovs-access-monitor.conf /etc/pmon.d/
+  ```
+  pmon detects the new file via inotify and begins monitoring automatically.
+
+- **`delete_ovs_access`** (if-post-down): Before stopping the service,
+  removes the pmon symlink:
+  ```bash
+  rm -f /etc/pmon.d/ovs-access-monitor.conf
+  ```
+  pmon detects the removal and stops monitoring the process.
+
+This avoids false alarms on hosts where the service is not intended to run.
