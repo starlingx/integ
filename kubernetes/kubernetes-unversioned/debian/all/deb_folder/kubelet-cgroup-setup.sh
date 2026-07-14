@@ -55,6 +55,14 @@ setup_cgroup_v2() {
 
     sed -i 's|cgroupDriver:.*|cgroupDriver: systemd|' /var/lib/kubelet/config.yaml 2>/dev/null
 
+    # Ensure kubelet and containerd use systemd cgroups after B&R/migration,
+    # since kubelet relies on the cgroup driver reported by the CRI runtime.
+    if grep -q "SystemdCgroup = false" /etc/containerd/config.toml 2>/dev/null; then
+        LOG "Ensuring kubelet/containerd use systemd cgroups after B&R/migration to cgroup v2"
+        sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+        systemctl try-restart containerd.service
+    fi
+
     # Enable hugetlb in root subtree control before delegating
     if ! grep -q hugetlb "${ROOT_SUBTREE}" 2>/dev/null; then
         LOG "Enabling hugetlb in root subtree control"
@@ -226,6 +234,14 @@ setup_cgroup_v1() {
 
     sed -i 's|cgroupDriver:.*|cgroupDriver: cgroupfs|' /var/lib/kubelet/config.yaml 2>/dev/null
 
+    # Ensure kubelet and containerd use cgroupfs after B&R/migration, since
+    # kubelet relies on the cgroup driver reported by the CRI runtime.
+    if grep -q "SystemdCgroup = true" /etc/containerd/config.toml 2>/dev/null; then
+        LOG "Ensuring kubelet/containerd use cgroupfs after B&R/migration to cgroup v1"
+        sed -i 's/SystemdCgroup = true/SystemdCgroup = false/' /etc/containerd/config.toml
+        systemctl try-restart containerd.service
+    fi
+
     # Configure kubelet cgroup to match cgroupRoot.
     create_cgroup_v1 'k8sinfra' ${ONLINE_NODESET} ${ONLINE_CPUSET}
     create_cgroup_v1 'k8sinfra_stx' ${ONLINE_NODESET} ${ONLINE_CPUSET}
@@ -272,6 +288,7 @@ fi
 # cgroup hierarchy but kubelet config has not yet been updated
 # by puppet/kubeadm. Without this, kubelet fails to start on
 # the first reboot after cgroup version change.
+# FUTURE: Remove cgroupDriver fixups after cgroup v2 migration complete.
 if is_cgroup_v2; then
     LOG "Detected cgroup v2 (unified hierarchy)"
     setup_cgroup_v2
