@@ -296,7 +296,7 @@ run_state_machine() {
 load_ceph_mgr_restful_key() {
     [ ! -z "${MGR_RESTFUL_KEY}" ] && return 0
 
-    MGR_RESTFUL_KEY=$(cat "${DATA_PATH}/.ceph_mgr_restful_key")
+    MGR_RESTFUL_KEY=$(cat "${DATA_PATH}/.ceph_mgr_restful_key" 2>/dev/null)
     [ -z "${MGR_RESTFUL_KEY}" ] && renew_ceph_mgr_restful_key
     [ -z "${MGR_RESTFUL_KEY}" ] && return 1
     return 0
@@ -319,7 +319,7 @@ renew_ceph_mgr_restful_key() {
 load_ceph_mgr_restful_service() {
     [ ! -z "${MGR_RESTFUL_SERVICE}" ] && return 0
 
-    MGR_RESTFUL_SERVICE=$(cat "${DATA_PATH}/.ceph_mgr_restful_service")
+    MGR_RESTFUL_SERVICE=$(cat "${DATA_PATH}/.ceph_mgr_restful_service" 2>/dev/null)
     [ -z "${MGR_RESTFUL_SERVICE}" ] && renew_ceph_mgr_restful_service
     [ -z "${MGR_RESTFUL_SERVICE}" ] && return 1
     return 0
@@ -1074,6 +1074,16 @@ for name in $what; do
     fi
 
     get_conf asok "$run_dir/$cluster-$type.$id.asok" "admin socket"
+
+    # StarlingX: Check if the OSD device has the expected "ceph data"
+    # partition label. If not (e.g. after B&R with wipe_ceph_osds=true), skip this OSD.
+    if [ "$type" = "osd" ]; then
+        partlabel=$(lsblk -no PARTLABEL "$first_dev")
+        if [ "$partlabel" != "ceph data" ]; then
+            log "$name" "INFO" "Skipping Ceph $name as it is not created"
+            continue
+        fi
+    fi
 
     case "$command" in
         start|onestart)

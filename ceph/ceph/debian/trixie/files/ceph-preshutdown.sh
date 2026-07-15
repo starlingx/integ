@@ -44,6 +44,12 @@ for dev in /dev/rbd[0-9]*; do
     logger -t ${script} "Unmapped $dev"
 done
 
+# Stop Ceph MDS, OSD, MON and MGR with 10s timeout
+timeout 10s /etc/init.d/ceph-init-wrapper stop mds
+timeout 10s /etc/init.d/ceph-init-wrapper stop osd
+timeout 10s /etc/init.d/ceph-init-wrapper stop mon
+timeout 10s /etc/init.d/mgr-restful-plugin stop
+
 lsmod | grep -q '^rbd\>' && /usr/sbin/modprobe -r rbd
 lsmod | grep -q '^libceph\>' && /usr/sbin/modprobe -r libceph
 

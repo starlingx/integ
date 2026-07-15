@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019-2024 Wind River Systems, Inc.
+# Copyright (c) 2019-2026 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -42,6 +42,8 @@ CEPH_FILE="$VOLATILE_PATH/.ceph_started"
 CEPH_GET_MON_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_mon_status"
 CEPH_GET_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_getting_osd_status"
 CEPH_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_status_failure.txt"
+CEPH_MDS_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_mds_status_failure.txt"
+CEPH_FIXED_MON_STATUS_FAILURE_TEXT_FILE="/tmp/ceph_fixed_mon_status_failure.txt"
 CEPH_MON_LIB_PATH=/var/lib/ceph/mon
 
 BINDIR=/usr/bin
@@ -75,6 +77,14 @@ LOCK_CEPH_OSD_STATUS_FILE="$VOLATILE_PATH/.ceph_osd_service"
 # continuing to execute a service action
 MONITOR_STATUS_TIMEOUT=30
 MAX_STATUS_TIMEOUT=120
+
+STATE_RUNNING="Running"
+STATE_STOPPED="Stopped"
+
+SM_CEPH_MON_STATE_FILE="$VOLATILE_PATH/ceph/.sm-ceph-mon-state"
+SM_CEPH_OSD_STATE_FILE="$VOLATILE_PATH/ceph/.sm-ceph-osd-state"
+SM_CEPH_MON_CURRENT_STATE=$(cat ${SM_CEPH_MON_STATE_FILE} 2>/dev/null)
+SM_CEPH_OSD_CURRENT_STATE=$(cat ${SM_CEPH_OSD_STATE_FILE} 2>/dev/null)
 
 RC=0
 
@@ -112,6 +122,63 @@ log () {
     wlog "${prefix}" "${log_level}" "${message}"
     return 0
 }
+
+is_ppid_sm()
+{
+    local ppid_name
+    ppid_name=$(cat /proc/${PPID}/comm)
+    if [[ $ppid_name == "sm" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Save service current state
+save_state()
+{
+    local ppid_name
+    local state_file="$1"
+    local new_state="$2"
+    if is_ppid_sm; then
+        if [[ ${state_file} == "${SM_CEPH_MON_STATE_FILE}" ]]; then
+            if [[ ${new_state} == "${SM_CEPH_MON_CURRENT_STATE}" ]]; then
+                return
+            fi
+            SM_CEPH_MON_CURRENT_STATE=${new_state}
+        elif [[ ${state_file} == "${SM_CEPH_OSD_STATE_FILE}" ]]; then
+            if [[ ${new_state} == "${SM_CEPH_OSD_CURRENT_STATE}" ]]; then
+                return
+            fi
+            SM_CEPH_OSD_CURRENT_STATE=${new_state}
+        fi
+
+        echo "${new_state}" > "${state_file}"
+        log INFO "Updating ${state_file} state to ${new_state}."
+    else
+        ppid_name=$(cat /proc/${PPID}/comm)
+        log WARN "Cannot save state to ${state_file}. Expected 'sm' ppid, found '${ppid_name}'."
+    fi
+}
+
+# Sanity check for the SM_CEPH_MON_CURRENT_STATE variable
+if is_ppid_sm && [ "${SM_CEPH_MON_CURRENT_STATE}" != "${STATE_RUNNING}" ]; then
+    timeout 5 sm-query service ceph-mon 2>/dev/null | grep -q enabled-active
+    if [ $? -eq 0 ]; then
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_RUNNING}
+    else
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_STOPPED}
+    fi
+fi
+
+# Sanity check for the SM_CEPH_OSD_CURRENT_STATE variable
+if is_ppid_sm && [ "${SM_CEPH_OSD_CURRENT_STATE}" != "${STATE_RUNNING}" ]; then
+    timeout 5 sm-query service ceph-osd 2>/dev/null | grep -q enabled-active
+    if [ $? -eq 0 ]; then
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_RUNNING}
+    else
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_STOPPED}
+    fi
+fi
 
 # Identify the ceph network interface from /etc/platform/platform.conf file
 # The network interface will be set to the 'ceph_network_interface' variable
@@ -284,32 +351,11 @@ with_service_lock ()
     RC=$?
 }
 
-has_daemon_running ()
-{
-    local service="$1"
-    if [ ${#service} -eq 3 ]; then
-        # Check based on service type
-        local count_pid_files=$(ls -1 /var/run/ceph/${service}.*.pid 2>/dev/null | wc -l)
-        if [ ${count_pid_files} -gt 0 ]; then
-            return 0
-        fi
-    else
-        # Check based on service name
-        if [ -f /var/run/ceph/${service}.pid ]; then
-            return 0
-        fi
-    fi
-
-    return 1
-}
-
 start ()
 {
     local service="$1"
-    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
-    eval service="${service}"
 
-    log INFO "Ceph START ${service} command received"
+    log INFO "Ceph START${service:+ ${service}} command received"
 
     # For AIO-DX, ceph services have special treatment
     if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; then
@@ -346,29 +392,33 @@ start ()
 
     # Start the service
     with_service_lock "${service}" ${CEPH_SCRIPT} start ${service}
-    log INFO "Ceph START ${service} command finished."
+
+    if [ "$RC" -eq 0 ] && [[ "${service}" == *"mon"* ]]; then
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_RUNNING}
+    elif [ "$RC" -eq 0 ] && [[ "${service}" == *"osd"* ]]; then
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_RUNNING}
+    fi
+
+    log INFO "Ceph START${service:+ ${service}} command finished."
 }
 
 stop ()
 {
     local cmd="stop"
     local service="$1"
-    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
-    eval service="${service}"
     [ "$2" == "force" ] && cmd="forcestop"
 
-    log INFO "Ceph ${cmd^^} ${service} command received."
-
-    if [ ! -z "${service}" ]; then
-        has_daemon_running ${service}
-        if [ $? -ne 0 ]; then
-            log INFO "Ceph ${service} daemon is already stopped. No action is required."
-            exit 0
-        fi
-    fi
+    log INFO "Ceph ${cmd^^}${service:+ ${service}} command received."
 
     with_service_lock "${service}" ${CEPH_SCRIPT} ${cmd} ${service}
-    log INFO "Ceph ${cmd^^} ${service} command finished."
+
+    if [ "$RC" -eq 0 ] && [[ "${service}" == *"mon"* ]]; then
+        save_state ${SM_CEPH_MON_STATE_FILE} ${STATE_STOPPED}
+    elif [ "$RC" -eq 0 ] && [[ "${service}" == *"osd"* ]]; then
+        save_state ${SM_CEPH_OSD_STATE_FILE} ${STATE_STOPPED}
+    fi
+
+    log INFO "Ceph ${cmd^^}${service:+ ${service}} command finished."
 }
 
 restart ()
@@ -377,10 +427,10 @@ restart ()
         # Ceph is not running on this node, return success
         exit 0
     fi
-    log INFO "Ceph RESTART $1 command received."
+    log INFO "Ceph RESTART${1:+ $1} command received."
     stop "$1"
     start "$1"
-    log INFO "Ceph RESTART $1 command finished."
+    log INFO "Ceph RESTART${1:+ $1} command finished."
 }
 
 log_and_restart_blocked_osds ()
@@ -407,9 +457,12 @@ log_and_kill_hung_procs ()
         pid=$(cat $pid_file)
         log $name "INFO" "Dealing with hung process (pid:$pid)"
 
-        # monitoring interval
         log $name "INFO" "Increasing log level"
-        WAIT_FOR_CMD=10 execute_ceph_cmd ret $name "ceph daemon $name config set debug_$type 20/20"
+        if ! ${CEPH_SCRIPT} debug-verbose $name; then
+            log $name "WARN" "Unable to increase log level"
+        fi
+
+        # monitoring interval
         monitoring=$MONITORING_INTERVAL
         while [ $monitoring -gt 0 ]; do
             if [ $(($monitoring % $TRACE_LOOP_INTERVAL)) -eq 0 ]; then
@@ -438,22 +491,39 @@ log_and_kill_hung_procs ()
             sleep 2
         done
         kill -KILL $pid &>/dev/null
+
+        log $name "INFO" "Restoring log level"
+        if ! ${CEPH_SCRIPT} debug-normal $name; then
+            log $name "WARN" "Unable to restore log level"
+        fi
     done
 }
 
 status ()
 {
     local target="$1"  # no shift here
-    # Evaluate the parameter because of local monitor (controller.${HOSTNAME})
-    eval target="$target"
     [ -z "${target}" ] && target="mon osd"
 
+    log INFO "status ${target}"
+
     if [ ! -f ${CEPH_FILE} ]; then
-        # Ceph is not running on this node, return success
+        log INFO "Ceph is not running on this node, returning success."
         exit 0
     fi
 
-    log INFO "status ${target}";
+    if is_ppid_sm; then
+        if [[ "${target}" == *"mon"* ]] && \
+           [[ "${SM_CEPH_MON_CURRENT_STATE}" != "${STATE_RUNNING}" ]]; then
+            log INFO "Ceph Mon is masked as ${SM_CEPH_MON_CURRENT_STATE} state, returning exit 1."
+            exit 1
+        fi
+
+        if [[ "${target}" == *"osd"* ]] && \
+           [[ "${SM_CEPH_OSD_CURRENT_STATE}" != "${STATE_RUNNING}" ]]; then
+            log INFO "Ceph OSD is masked as ${SM_CEPH_OSD_CURRENT_STATE} state, returning exit 1."
+            exit 1
+        fi
+    fi
 
     if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]] && [[ "$target" == "osd" ]]; then
         has_ceph_network_carrier
@@ -512,22 +582,29 @@ status ()
     result=`${CEPH_SCRIPT} status $target {LOCK_CEPH_MON_STATUS_FD}>&- {LOCK_CEPH_OSD_STATUS_FD}>&-`
     RC=$?
     if [ "$RC" -ne 0 ]; then
-        erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
-        hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
-        blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
-        stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $target}' | sed 's/://g' | sed 's/, $//g'`
-        invalid=0
+        erred_procs=`echo "$result" | sort | uniq | awk ' /not running|dead|failed/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        hung_procs=`echo "$result" | sort | uniq | awk ' /hung/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        blocked_ops_procs=`echo "$result" | sort | uniq | awk ' /blocked ops/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+        stuck_peering_procs=`echo "$result" | sort | uniq | awk ' /stuck peering/ {printf "%s ", $1}' | sed 's/://g' | sed 's/, $//g'`
+
+        if [ -z $erred_procs ] && [ -z $hung_procs ] && [ -z $blocked_ops_procs ] && [ -z $stuck_peering_procs ]; then
+            log $target "WARN" "Unknown error (return code: $RC): $result"
+            exit $RC
+        fi
+
         host=`hostname`
         if [[ "$system_type" == "All-in-one" ]] && [[ "$system_mode" != "simplex" ]]; then
             # On 2 node configuration we have a floating monitor
             host_fixed="$host"
             host="controller"
         fi
+
+        invalid_processes=""
         for i in $(echo $erred_procs $hung_procs); do
             if [[ "$i" =~ osd.?[0-9]?[0-9]|mon.$host|mon.$host_fixed|mds.${HOSTNAME} ]]; then
                 continue
             else
-                invalid=1
+                invalid_processes+="$i "
             fi
         done
 
@@ -537,19 +614,27 @@ status ()
             "Restarting OSD stuck peering"
         log_and_kill_hung_procs $hung_procs
 
+        if [[ "${target}" == "mon.$host_fixed" ]]; then
+            CEPH_STATUS_FAILURE_TEXT_FILE=$CEPH_FIXED_MON_STATUS_FAILURE_TEXT_FILE
+        elif [[ "${target}" == *"mds"* ]]; then
+            CEPH_STATUS_FAILURE_TEXT_FILE=$CEPH_MDS_STATUS_FAILURE_TEXT_FILE
+        fi
+
         rm -f $CEPH_STATUS_FAILURE_TEXT_FILE
-        if [ $invalid -eq 0 ]; then
+
+        if [ -z "$invalid_processes" ]; then
             text=""
             for i in $erred_procs; do
                 text+="$i, "
             done
+
             for i in $hung_procs; do
                 text+="$i (process hang), "
             done
             echo "$text" | tr -d '\n' > $CEPH_STATUS_FAILURE_TEXT_FILE
         else
-            echo "$host: '${CEPH_SCRIPT} status $target' result contains invalid process names: $erred_procs"
-            echo "Undetermined osd or monitor id" > $CEPH_STATUS_FAILURE_TEXT_FILE
+            echo "$host: '${CEPH_SCRIPT} status $target' result contains invalid process names: $invalid_processes"
+            echo "Undetermined osd|mds|mon id: $invalid_processes" > $CEPH_STATUS_FAILURE_TEXT_FILE
         fi
     fi
 
@@ -588,9 +673,13 @@ status ()
     fi
 }
 
+# Evaluate the parameter because of local monitor (controller.${HOSTNAME})
+if [ -n "${args[1]}" ]; then
+    eval args[1]="${args[1]}"
+fi
 
 start=$(date +%s%N)
-log INFO "action:${args[0]}:start-at:${start: 0:-6} ms"
+log INFO "action:${args[0]}${args[1]:+:${args[1]}}:start-at:${start:0:-6} ms"
 case "${args[0]}" in
     start)
         if [ ! -f ${CEPH_FILE} ]; then
@@ -621,8 +710,7 @@ case "${args[0]}" in
         ;;
 esac
 end=$(date +%s%N)
-log INFO "action:${args[0]}:end-at:${end: 0:-6} ms"
+log INFO "action:${args[0]}${args[1]:+:${args[1]}}:end-at:${end:0:-6} ms"
 diff=$((end-start))
-log INFO "action:${args[0]}:took:${diff: 0:-6} ms"
-
+log INFO "action:${args[0]}${args[1]:+:${args[1]}}:took:${diff:0:-6} ms"
 exit $RC
