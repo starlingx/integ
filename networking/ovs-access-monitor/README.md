@@ -210,7 +210,6 @@ This deletes the override file and reloads the daemon in one step.
 
 ```
 networking/ovs-access-monitor/
-├── PKG-INFO
 ├── LICENSE
 ├── README.md
 ├── config/
