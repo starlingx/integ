@@ -15,7 +15,7 @@
 #ifndef STATUS_WRITER_H
 #define STATUS_WRITER_H
 
-#include "apts_manager.h"
+#include "dpll_manager.h"
 
 #define STATUS_FILE_DIR  "/var/run/dpll_mgr"
 #define STATUS_FILE_PATH "/var/run/dpll_mgr/status.json"
@@ -36,7 +36,7 @@ void write_status_json(const AppState *state);
  * @status: DPLL lock status enum value
  *
  * Returns: "locked", "unlocked", "holdover", "locked_ho_acq", or "unknown"
- * Also used for logging in apts_manager.c.
+ * Also used for logging in dpll_manager.c.
  */
 const char *lock_status_to_string(enum dpll_lock_status status);
 

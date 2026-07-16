@@ -37,20 +37,20 @@ endif
 # ---------------------------------------------------------------------------
 BUILD_MODE ?= event
 ifeq ($(BUILD_MODE),poll)
-LOOP_SRC    = $(SRC_DIR)/apts_manager_poll.c
-LOOP_OBJ    = $(OBJ_DIR)/apts_manager_poll.o
+LOOP_SRC    = $(SRC_DIR)/dpll_manager_poll.c
+LOOP_OBJ    = $(OBJ_DIR)/dpll_manager_poll.o
 else ifeq ($(BUILD_MODE),event)
-LOOP_SRC    = $(SRC_DIR)/apts_manager_event.c
-LOOP_OBJ    = $(OBJ_DIR)/apts_manager_event.o
+LOOP_SRC    = $(SRC_DIR)/dpll_manager_event.c
+LOOP_OBJ    = $(OBJ_DIR)/dpll_manager_event.o
 else
 $(error Unknown BUILD_MODE '$(BUILD_MODE)'. Use 'poll' (default) or 'event')
 endif
 CFLAGS += $(EXTRA_CFLAGS)
-APTS_VERSION := $(shell cat VERSION 2>/dev/null | tr -d '[:space:]')
-ifeq ($(strip $(APTS_VERSION)),)
-APTS_VERSION := unknown
+DPLL_VERSION := $(shell cat VERSION 2>/dev/null | tr -d '[:space:]')
+ifeq ($(strip $(DPLL_VERSION)),)
+DPLL_VERSION := unknown
 endif
-CFLAGS += -DAPTS_MGR_VERSION=\"$(APTS_VERSION)\"
+CFLAGS += -DDPLL_MGR_VERSION=\"$(DPLL_VERSION)\"
 
 # Kernel DPLL API compatibility probes.
 # Older kernels may lack dpll_lock_status_error / dpll_feature_state.
@@ -83,18 +83,18 @@ OBJ_DIR = obj
 BIN_DIR = .
 
 # Source and object files
-SOURCES = $(SRC_DIR)/apts_manager.c $(SRC_DIR)/ptp_protocol.c $(SRC_DIR)/gnss_utils.c \
+SOURCES = $(SRC_DIR)/dpll_manager.c $(SRC_DIR)/ptp_protocol.c $(SRC_DIR)/gnss_utils.c \
 	$(SRC_DIR)/dpll_utils.c $(SRC_DIR)/config_parser.c $(SRC_DIR)/phc_utils.c \
 	$(SRC_DIR)/dpll_phase_adjust.c $(SRC_DIR)/gearshift.c $(SRC_DIR)/status_writer.c \
 	$(TIMING_DELAYS_SRC) $(LOOP_SRC)
-HEADERS = $(HDR_DIR)/apts_manager.h $(HDR_DIR)/ptp_protocol.h $(HDR_DIR)/config_parser.h \
+HEADERS = $(HDR_DIR)/dpll_manager.h $(HDR_DIR)/ptp_protocol.h $(HDR_DIR)/config_parser.h \
 	$(HDR_DIR)/phc_utils.h $(HDR_DIR)/dpll_phase_adjust.h $(HDR_DIR)/gearshift.h \
 	$(HDR_DIR)/status_writer.h $(TIMING_DELAYS_HDR)
-OBJECTS = $(OBJ_DIR)/apts_manager.o $(OBJ_DIR)/ptp_protocol.o $(OBJ_DIR)/gnss_utils.o \
+OBJECTS = $(OBJ_DIR)/dpll_manager.o $(OBJ_DIR)/ptp_protocol.o $(OBJ_DIR)/gnss_utils.o \
 	$(OBJ_DIR)/dpll.o $(OBJ_DIR)/config_parser.o $(OBJ_DIR)/phc_utils.o \
 	$(OBJ_DIR)/dpll_phase_adjust.o $(OBJ_DIR)/gearshift.o $(OBJ_DIR)/status_writer.o \
 	$(TIMING_DELAYS_OBJ) $(LOOP_OBJ)
-TARGET = $(BIN_DIR)/apts_mgr # Default target
+TARGET = $(BIN_DIR)/dpll_mgr # Default target
 all: $(TARGET)
 
 # Create object directory
@@ -106,8 +106,8 @@ $(TARGET): $(OBJECTS) $(YNL_OBJS) | $(BIN_DIR)
 	$(CC) -o $@ $(OBJECTS) $(YNL_OBJS) $(LDFLAGS)
 	@echo "Built timing_manager successfully"
 
-# Compile apts_manager
-$(OBJ_DIR)/apts_manager.o: $(SRC_DIR)/apts_manager.c $(HEADERS) | $(OBJ_DIR)
+# Compile dpll_manager
+$(OBJ_DIR)/dpll_manager.o: $(SRC_DIR)/dpll_manager.c $(HEADERS) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 # Compile ptp_protocol
@@ -148,11 +148,11 @@ $(OBJ_DIR)/timing_delays.o: $(SRC_DIR)/timing_delays.c $(HDR_DIR)/timing_delays.
 	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 # Compile poll-based loop (BUILD_MODE=poll)
-$(OBJ_DIR)/apts_manager_poll.o: $(SRC_DIR)/apts_manager_poll.c $(HEADERS) | $(OBJ_DIR)
+$(OBJ_DIR)/dpll_manager_poll.o: $(SRC_DIR)/dpll_manager_poll.c $(HEADERS) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 # Compile event-based loop (BUILD_MODE=event)
-$(OBJ_DIR)/apts_manager_event.o: $(SRC_DIR)/apts_manager_event.c $(HEADERS) | $(OBJ_DIR)
+$(OBJ_DIR)/dpll_manager_event.o: $(SRC_DIR)/dpll_manager_event.c $(HEADERS) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I. -c $< -o $@
 
 # Bundled YNL objects (compiled with relaxed warnings)
@@ -170,13 +170,13 @@ clean:
 
 # Install target
 install: $(TARGET)
-	install -D -m 755 $(TARGET) /usr/local/bin/apts_mgr
+	install -D -m 755 $(TARGET) /usr/local/bin/dpll_mgr
 	@echo "Installed timing_manager to /usr/local/bin/"
 
 # Uninstall target
 uninstall:
-	rm -f /usr/local/bin/apts_mgr
-	@echo "Uninstalled apts_mgr"
+	rm -f /usr/local/bin/dpll_mgr
+	@echo "Uninstalled dpll_mgr"
 
 # Help target
 help:

@@ -31,7 +31,7 @@
 
 
 /**
- * @file timing_manager.c
+ * @file dpll_manager.c
  * @brief Timing Manager Application
  * 
  * This application:
@@ -48,7 +48,7 @@
 
 #define _DEFAULT_SOURCE
 #define MODULE "SM"
-#include "../hdr/apts_manager.h"
+#include "../hdr/dpll_manager.h"
 #include "../hdr/dpll_utils.h"
 #include "../hdr/ptp_protocol.h"
 #include "../hdr/gnss_utils.h"
@@ -61,8 +61,8 @@
 #include <poll.h>
 #include <ynl/ynl.h>
 
-#ifndef APTS_MGR_VERSION
-#define APTS_MGR_VERSION "unknown"
+#ifndef DPLL_MGR_VERSION
+#define DPLL_MGR_VERSION "unknown"
 #endif
 
 /* Global flag for signal handling - cleared by signal_handler(), read by loop files */
@@ -99,7 +99,7 @@ static void signal_handler(int signum)
  */
 static int ensure_runtime_directory(void)
 {
-    const char *runtime_dir = "/var/run/apts_mgr";
+    const char *runtime_dir = "/var/run/dpll_mgr";
     struct stat st;
 
     /* Try to create directory first (atomic operation) */
@@ -161,7 +161,7 @@ static int create_uds_socket(const char *path, struct sockaddr_un *peer_addr)
     memset(&local_addr, 0, sizeof(local_addr));
     local_addr.sun_family = AF_UNIX;
     int ret = snprintf(local_addr.sun_path, sizeof(local_addr.sun_path), 
-             "/var/run/apts_mgr/timing_mgr.%d.%d", getpid(), socket_counter++);
+             "/var/run/dpll_mgr/timing_mgr.%d.%d", getpid(), socket_counter++);
     if (ret < 0 || ret >= (int)sizeof(local_addr.sun_path)) {
         LOG_ERROR("Socket path truncation detected\n");
         close(sockfd);
@@ -215,7 +215,7 @@ static void cleanup_state(AppState *state)
     if (state->local_socket_fd >= 0) {
         close(state->local_socket_fd);
         char temp_path[256];
-        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/apts_mgr/timing_mgr.%d.0", getpid());
+        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/dpll_mgr/timing_mgr.%d.0", getpid());
         if (!(ret < 0 || ret >= (int)sizeof(temp_path))) {
             unlink(temp_path);
         }
@@ -225,7 +225,7 @@ static void cleanup_state(AppState *state)
         if (state->remotes[i].socket_fd >= 0) {
             close(state->remotes[i].socket_fd);
             char temp_path[256];
-            int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/apts_mgr/timing_mgr.%d.%d", getpid(), i + 1);
+            int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/dpll_mgr/timing_mgr.%d.%d", getpid(), i + 1);
             if (!(ret < 0 || ret >= (int)sizeof(temp_path))) {
                 unlink(temp_path);
             }
@@ -235,7 +235,7 @@ static void cleanup_state(AppState *state)
     if (state->ts2phc_socket_fd >= 0) {
         close(state->ts2phc_socket_fd);
         char temp_path[256];
-        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/apts_mgr/timing_mgr.%d.ts2", getpid());
+        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/dpll_mgr/timing_mgr.%d.ts2", getpid());
         if (ret > 0 && ret < (int)sizeof(temp_path))
             unlink(temp_path);
         state->ts2phc_socket_fd = -1;
@@ -298,7 +298,7 @@ static int get_gnss_parameters(AppState *state, enum pin_source master_index)
     params->frequency_traceable = gnss_params.frequency_traceable ? 1 : 0;
 #endif
     /* NOTE: time_source and ptp_timescale are NOT updated here - they remain as 
-     * configured in apts_mgr.json since they're static for GNSS (GPS = 0x20) */
+     * configured in dpll_mgr.json since they're static for GNSS (GPS = 0x20) */
     
     /* Copy gm_identity from PTP index (local clock identity) */
     /* When acting as grandmaster (on GNSS), use our local clock identity */
@@ -960,14 +960,14 @@ static void print_usage(const char *prog_name)
 {
     printf("Usage: %s [-c <config_file>] [-o <log_file>] [-h] [-v]\n", prog_name);
     printf("\nOptions:\n");
-    printf("  -c, --config <file>    Configuration file path (default: config/apts_mgr.json)\n");
+    printf("  -c, --config <file>    Configuration file path (default: config/dpll_mgr.json)\n");
     printf("  -o, --output <file>    Log output file (default: stdout)\n");
     printf("  -h, --help             Show this help message\n");
     printf("  -v, --version          Show application version\n");
     printf("\nExamples:\n");
     printf("  %s\n", prog_name);
-    printf("      (Uses default config: config/apts_mgr.json, logs to stdout)\n\n");
-    printf("  %s -c /etc/apts_mgr.json -o /var/log/apts.log\n", prog_name);
+    printf("      (Uses default config: config/dpll_mgr.json, logs to stdout)\n\n");
+    printf("  %s -c /etc/dpll_mgr.json -o /var/log/dpll_mgr.log\n", prog_name);
     printf("      (Uses specified configuration file and log file)\n");
 }
 
@@ -1009,7 +1009,7 @@ static void initialize_logging_early(const char *log_file_path)
     }
     
     /* Print application banner */
-    LOG_INFO("APTS Manager Version: %s\n", APTS_MGR_VERSION);
+    LOG_INFO("DPLL Manager Version: %s\n", DPLL_MGR_VERSION);
     LOG_INFO("Timing Manager Starting...\n");
 }
 
@@ -1256,7 +1256,7 @@ static int parse_and_validate_arguments(int argc, char *argv[],
                 print_usage(argv[0]);
                 return 1;  /* Help shown, exit gracefully */
             case 'v':
-                printf("%s\n", APTS_MGR_VERSION);
+                printf("%s\n", DPLL_MGR_VERSION);
                 return 1;  /* Version shown, exit gracefully */
             default:
                 print_usage(argv[0]);
@@ -1266,7 +1266,7 @@ static int parse_and_validate_arguments(int argc, char *argv[],
     
     /* Set default config path if not provided */
     if (*config_file_path == NULL) {
-        *config_file_path = "config/apts_mgr.json";
+        *config_file_path = "config/dpll_mgr.json";
     }
     
     return 0;  /* Success */
@@ -1431,7 +1431,7 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
 
         char ts2_local[108];
         int lret = snprintf(ts2_local, sizeof(ts2_local),
-                            "/var/run/apts_mgr/timing_mgr.%d.ts2", getpid());
+                            "/var/run/dpll_mgr/timing_mgr.%d.ts2", getpid());
         if (lret > 0 && lret < (int)sizeof(ts2_local)) {
             unlink(ts2_local);
             int ts2_fd = socket(AF_UNIX, SOCK_DGRAM, 0);

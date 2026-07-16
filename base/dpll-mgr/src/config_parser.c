@@ -34,7 +34,7 @@
  * @file config_parser.c
  * @brief JSON Configuration Parser Implementation
  * 
- * This module parses the apts_mgr.json configuration file using cJSON
+ * This module parses the dpll_mgr.json configuration file using cJSON
  * and populates global configuration structures.
  */
 

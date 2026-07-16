@@ -40,7 +40,7 @@
 #ifndef GEARSHIFT_H
 #define GEARSHIFT_H
 
-#include "apts_manager.h"
+#include "dpll_manager.h"
 
 /* Gear mode values matching linuxptp enum gear_mode */
 #define GEAR_PARK     0

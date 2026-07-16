@@ -33,7 +33,7 @@
 #ifndef DPLL_PHASE_ADJUST_H
 #define DPLL_PHASE_ADJUST_H
 
-#include "apts_manager.h"
+#include "dpll_manager.h"
 
 int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns);
 void monitor_and_adjust_phase_offset(AppState *state);

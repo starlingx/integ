@@ -30,7 +30,7 @@
  */
 
 /**
- * @file apts_manager_poll.c
+ * @file dpll_manager_poll.c
  * @brief Polling-based main loop for APTS Manager
  *
  * Compiled when BUILD_MODE=poll (default).
@@ -42,7 +42,7 @@
 #define _DEFAULT_SOURCE
 #define MODULE "POLL"
 
-#include "../hdr/apts_manager.h"
+#include "../hdr/dpll_manager.h"
 #include "../hdr/ptp_protocol.h"
 #include "../hdr/dpll_phase_adjust.h"
 #include "../hdr/config_parser.h"
