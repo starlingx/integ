@@ -1,0 +1,35 @@
+From 0102204c6f1c67bae07ca505b0f90cf1449cd3bf Mon Sep 17 00:00:00 2001
+From: Adriano Oliveira <adriano.oliveira@windriver.com>
+Date: Wed, 15 Jul 2026 16:57:51 -0400
+Subject: [PATCH] Use /usr/lib/systemd path for trixie
+
+Debian Trixie uses /usr/lib/systemd/system instead of the legacy
+/lib/systemd/system path. Update the configure flag so that DRBD
+reactor and service units are installed to the correct location.
+
+This replaces the previous approach (0004-Fix-build-image-failure.patch)
+which removed the --with-systemdunitdir flag entirely, causing all
+upstream unit files to be installed to / instead of the systemd
+unit directory.
+
+Signed-off-by: Adriano Oliveira <adriano.oliveira@windriver.com>
+---
+ debian/rules | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index 9d841ca..dc60be3 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -22,7 +22,7 @@ override_dh_auto_configure:
+ 		--with-rgmanager \
+ 		--with-bashcompletion \
+ 		--with-initscripttype=both \
+-		--with-systemdunitdir=/lib/systemd/system \
++		--with-systemdunitdir=/usr/lib/systemd/system \
+ 		--with-bashcompletion=no
+ 
+ override_dh_auto_install:
+-- 
+2.43.0
+
