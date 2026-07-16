@@ -1,0 +1,98 @@
+From: Caio Bruchert <caio.bruchert@windriver.com>
+Date: Mon, 6 Jul 2026 16:00:00 -0300
+Subject: dpll_mon: skip pin readiness gates during initialization
+
+When dpll_mon initializes, it goes through multiple states waiting for
+pins to be discovered (PIN_DUMP_WAIT), then sets them to DNU priority
+(PINS_VALID), then waits for confirmation (PINS_INITED). On GNR-D
+platforms with zl3073x, these checks block indefinitely because:
+
+1. Pin ID resolution via netlink may not complete (pins never 'ready')
+2. Active GNSS pin cannot be set to DNU priority (firmware refuses)
+3. Other pins may have firmware-specific max priorities != dnu_prio
+
+Fix by transitioning directly to RUNNING after requesting the pin dump
+and attempting a best-effort DNU priority set. The pin priority
+management during normal operation (source selection) does not depend
+on these init-time gates.
+
+Also add a NULL check in dpll_mon_pin_prio_clear() for the parent pin
+lookup. When the DNU set runs before the pin dump response is fully
+processed, muxed pins may reference parent pins not yet in the list,
+causing a NULL pointer dereference.
+
+Signed-off-by: Caio Bruchert <caio.bruchert@windriver.com>
+---
+--- a/dpll_mon.c	2026-07-07 10:47:32.894172758 -0300
++++ b/dpll_mon.c	2026-07-07 10:47:32.912041618 -0300
+@@ -470,34 +470,9 @@
+ 	return 0;
+ }
+ 
+-static int pins_ready(struct dpll_mon *dm)
+-{
+-	struct dpll_mon_pin *pin;
+ 
+-	STAILQ_FOREACH(pin, &dm->pins, list) {
+-		if (!pin->ready) {
+-			pr_debug_pin("pin not ready", pin);
+-			return 0;
+-		}
+-	}
+-
+-	return 1;
+-}
+-
+-static int pins_dnu(struct dpll_mon *dm)
+-{
+-	struct dpll_mon_pin *pin;
+ 
+-	STAILQ_FOREACH(pin, &dm->pins, list) {
+-		if (pin->prio_valid && pin->prio != dm->dev_dnu_prio) {
+-			pr_debug("not expected pin id:%u prio: %u",
+-				 pin->id, pin->prio);
+-			return 0;
+-		}
+-	}
+ 
+-	return 1;
+-}
+ 
+ static void invalidate_pins(struct dpll_mon *dm)
+ {
+@@ -774,23 +749,12 @@
+ 			dpll_mon_state_set(dm, DPLL_MON_STATE_PIN_DUMP_WAIT);
+ 		break;
+ 	case DPLL_MON_STATE_PIN_DUMP_WAIT:
+-		if (pins_ready(dm))
+-			dpll_mon_state_set(dm, DPLL_MON_STATE_PINS_VALID);
+-		else if (need_reinit(dm))
+-			dpll_mon_state_set(dm, DPLL_MON_STATE_DPLL_REINIT);
++		dpll_mon_pins_prio_dnu_set(dm);
++		dpll_mon_state_set(dm, DPLL_MON_STATE_RUNNING);
++		pr_info("dpll device for %s - init successful", dm->name);
+ 		break;
+ 	case DPLL_MON_STATE_PINS_VALID:
+-		ret = dpll_mon_pins_prio_dnu_set(dm);
+-		if (!ret)
+-			dpll_mon_state_set(dm, DPLL_MON_STATE_PINS_INITED);
+-		break;
+ 	case DPLL_MON_STATE_PINS_INITED:
+-		if (pins_dnu(dm)) {
+-			dpll_mon_state_set(dm, DPLL_MON_STATE_RUNNING);
+-			pr_info("dpll device for %s - init successful", dm->name);
+-		} else if (need_reinit(dm)) {
+-			dpll_mon_state_set(dm, DPLL_MON_STATE_DPLL_REINIT);
+-		}
+ 		break;
+ 	case DPLL_MON_STATE_DPLL_REINIT:
+ 		pr_info("dpll device for %s - reinit requested", dm->name);
+@@ -1040,6 +1015,8 @@
+ 	STAILQ_FOREACH(pp, &pin->parents, list) {
+ 		if (pp->state == DPLL_PIN_STATE_CONNECTED) {
+ 			parent = find_pin(dm, pp->id);
++			if (!parent)
++				continue;
+ 			parent->parent_used_by = PARENT_NOT_USED;
+ 			ret = disconnect_parent(dm, pin->id, parent->id);
+ 			if (ret < 0)
