@@ -15,6 +15,7 @@
 #include <syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <unistd.h>
@@ -36,6 +37,7 @@
 #define K8_PROVIDER_FILE "encryption-provider.yaml"
 #define PERIODIC_SYNC_INTERVAL_SECS 3600
 #define PLATFORM_SIMPLEX_MODE "/etc/platform/simplex"
+#define USM_UPGRADE_IN_PROGRESS "/etc/platform/.usm_upgrade_in_progress"
 
 using namespace std;
 // Global constants
@@ -372,6 +374,36 @@ bool openLUKSVolume(const string &modifiedVaultFile, const char *volName,
                            to_string(status), LOG_ERR);
         return false;
     }
+}
+/* ***********************************************************************
+ *
+ * Name       : openLUKSVolumeWithStatus
+ *
+ * Description: Opens a LUKS volume and returns the cryptsetup exit
+ *              code, allowing callers to distinguish between passphrase
+ *              mismatch (code 2) and other failures.
+ *
+ *              Return codes:
+ *              0 = success
+ *              1 = wrong parameters
+ *              2 = no permission (bad passphrase / passphrase mismatch)
+ *              3 = out of memory
+ *              4 = wrong device specified (corrupted header)
+ *              5 = device already exists or device is busy
+ *
+ * ************************************************************************/
+int openLUKSVolumeWithStatus(const string &modifiedVaultFile,
+                             const char *volName,
+                             const string &passphrase) {
+    string command = "echo -n \"" + string(passphrase) +
+                     "\" | cryptsetup luksOpen " +
+                     string(modifiedVaultFile) + " " + string(volName);
+    int status = system(command.c_str());
+    // system() returns the wait status; extract the exit code
+    if (WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    }
+    return -1;  // abnormal termination (signal, etc.)
 }
 /* ***********************************************************************
  *
@@ -819,6 +851,18 @@ void syncLuksVolume() {
             isActive = 1;
         }
         if (isActive && isNotStandAlone) {
+            // Skip sync if a platform upgrade is in progress.
+            // During upgrade, controllers run different software versions
+            // and the LUKS vault may not yet be fully populated with
+            // migrated data. Pushing an incomplete vault to the
+            // peer with --delete would destroy properly migrated data.
+            if (access(USM_UPGRADE_IN_PROGRESS, F_OK) == 0) {
+                log("Skipping LUKS volume sync: platform upgrade in "
+                    "progress (controller software versions do not match)",
+                    LOG_INFO);
+                return;
+            }
+
             logMsg = "Active controller found is " + hostname;
             log(logMsg, LOG_INFO);
             // Check the name of standby controller
@@ -1102,47 +1146,81 @@ int copyKubeProviderFile(bool isController) {
  *
  * Name       : recoverVault
  *
- * Description: Attempts to recover a LUKS vault that failed to open.
- *              On simplex systems, recovery is skipped to avoid
- *              permanent data loss. On DX/DC, the corrupted vault is
- *              backed up and recreated from scratch.
+ * Description: Handles LUKS vault open failure. The vault is never
+ *              destroyed — recreating it causes loss of critical data
+ *              (encryption-provider.yaml, IPsec keys/certs, keyring)
+ *              which prevents K8s and IPsec services from starting,
+ *              making recovery via peer rsync impossible.
+ *
+ *              Instead, retry luksOpen up to 3 times (to handle
+ *              transient I/O errors) and if all retries fail, log a
+ *              critical alarm and return false to fail the service.
+ *              Administrative manual intervention is required.
  *
  * ************************************************************************/
-bool recoverVault(const char* vaultFile, const char* vaultSize,
+bool recoverVault(const char* vaultFile,
                   const char* volName, const char* mountPath,
                   const char* passphrase) {
-    // On simplex systems, vault recreation causes permanent data loss
-    // (no peer to restore from). Exit without recovery.
-    if (access(PLATFORM_SIMPLEX_MODE, F_OK) == 0) {
-        log("LUKS vault open failed on simplex system. "
-            "Cannot recover without data loss. "
-            "Manual recovery required.", LOG_CRIT);
-        return false;
+
+    const int maxRetries = 3;
+    const int retryDelaySec = 10;
+    const int CRYPTSETUP_BAD_PASSPHRASE = 2;
+    int lastExitCode = 0;
+
+    log("LUKS vault open failed. Retrying luksOpen (max " +
+        to_string(maxRetries) + " attempts) before failing.",
+        LOG_WARNING);
+
+    for (int attempt = 1; attempt <= maxRetries; ++attempt) {
+        log("luksOpen retry attempt " + to_string(attempt) + "/" +
+            to_string(maxRetries), LOG_INFO);
+
+        sleep(retryDelaySec);
+
+        lastExitCode = openLUKSVolumeWithStatus(string(vaultFile),
+                                                volName,
+                                                string(passphrase));
+        if (lastExitCode == 0) {
+            log("luksOpen succeeded on retry attempt " +
+                to_string(attempt), LOG_INFO);
+            if (!mountFilesystem(volName, mountPath,
+                                 defaultDirectoryPath)) {
+                log("Mount failed after successful luksOpen on retry.",
+                    LOG_ERR);
+                return false;
+            }
+            return true;
+        }
+
+        // Passphrase mismatch will never succeed on retry.
+        if (lastExitCode == CRYPTSETUP_BAD_PASSPHRASE) {
+            log("luksOpen failed with exit code 2 (bad passphrase). "
+                "The vault passphrase does not match the current key. "
+                "Administrative manual intervention is required. "
+                "Possible actions: (1) Lock/unlock the host to "
+                "re-provision the vault, (2) Reinstall the host. "
+                "luks-fs-mgr service will now exit with failure.",
+                LOG_CRIT);
+            return false;
+        }
     }
-    log("Failed to open existing vault. Attempting recovery "
-        "by recreating the vault.", LOG_WARNING);
-    // Backup corrupted vault image for analysis
-    string backupCmd = "/usr/bin/cp " + string(vaultFile) + " " +
-                       string(vaultFile) + ".corrupted 2>/dev/null";
-    if (system(backupCmd.c_str()) != 0) {
-        log("Warning: failed to backup corrupted vault image.", LOG_WARNING);
-    }
-    string rmCmd = "/usr/bin/rm -f " + string(vaultFile);
-    if (system(rmCmd.c_str()) != 0) {
-        log("Recovery: failed to remove corrupted vault file.", LOG_ERR);
-        return false;
-    }
-    int size = checkVaultSize(vaultSize);
-    if (!createVaultFile(vaultFile, size) ||
-        !setupLUKSEncryption(vaultFile, passphrase) ||
-        !openLUKSVolume(vaultFile, volName, passphrase) ||
-        !createFilesystem(volName) ||
-        !mountFilesystem(volName, mountPath, defaultDirectoryPath)) {
-        log("Recovery: vault recreation failed.", LOG_ERR);
-        return false;
-    }
-    log("Recovery: vault recreated successfully.", LOG_INFO);
-    return true;
+
+    // All retries exhausted — vault cannot be opened.
+    // Do NOT destroy the vault. Critical data (encryption-provider.yaml,
+    // IPsec keys/certs, keyring credentials) resides on the LUKS
+    // filesystem. Destroying the vault would prevent K8s cluster startup
+    // and IPsec SA establishment, making peer-based recovery impossible.
+    log("LUKS vault open failed after " + to_string(maxRetries) +
+        " retries (last exit code: " + to_string(lastExitCode) +
+        "). Vault file: " + string(vaultFile) +
+        ". The vault image may have a corrupted LUKS header or "
+        "experienced a disk I/O error. "
+        "Administrative manual intervention is required. "
+        "Possible actions: (1) Lock/unlock the host to "
+        "re-trigger provisioning, (2) Reinstall the host. "
+        "luks-fs-mgr service will now exit with failure.", LOG_CRIT);
+
+    return false;
 }
 /* ***********************************************************************
  *
@@ -1207,9 +1285,9 @@ int handleResize(string &passphrase, string &volName) {
                             createdLuksConfig.volName,
                             passphrase.c_str())) {
             // Recovery: If luksOpen fails (e.g. corrupted header or
-            // passphrase mismatch), recreate the vault from scratch.
+            // passphrase mismatch), retry and fail the service if
+            // unsuccessful. The vault is never destroyed.
             if (!recoverVault(createdLuksConfig.vaultFile,
-                              createdLuksConfig.vaultSize,
                               createdLuksConfig.volName,
                               createdLuksConfig.mountPath,
                               passphrase.c_str())) {
@@ -1390,10 +1468,9 @@ int initialVolCreate(string &passphrase, string &volName) {
             if (!openLUKSVolume(modifiedVaultFile.c_str(),
                                 luksConfig.volName, passphrase.c_str())) {
                 // Recovery: If luksOpen fails (e.g. passphrase mismatch
-                // after upgrade where created_luks.json was lost), remove
-                // the stale vault and recreate it from scratch.
+                // after upgrade where created_luks.json was lost), retry
+                // and fail the service if unsuccessful.
                 if (!recoverVault(modifiedVaultFile.c_str(),
-                                  luksConfig.vaultSize,
                                   luksConfig.volName,
                                   luksConfig.mountPath,
                                   passphrase.c_str())) {
