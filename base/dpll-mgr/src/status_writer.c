@@ -123,6 +123,8 @@ void write_status_json(const AppState *state)
                             (double)get_holdover_duration_s(state));
     cJSON_AddNumberToObject(root, "holdover_level",
                             get_holdover_level(state));
+    cJSON_AddNumberToObject(root, "clock_class",
+                            (double)state->clock_params[state->current_master].gm_clock_class);
 
     /* Gearshift — SW_BASED only; empty object in HW_BASED */
     cJSON *gear = cJSON_CreateObject();
