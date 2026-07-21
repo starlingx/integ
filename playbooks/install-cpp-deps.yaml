@@ -1,0 +1,14 @@
+- hosts: all
+  become: true
+  tasks:
+    - name: Install C++ build and coverage tools
+      apt:
+        name:
+          - g++
+          - gcovr
+          - lcov
+          - libjson-c-dev
+          - libdaemon-dev
+          - pkg-config
+        state: present
+        update_cache: true

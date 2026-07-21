@@ -1,0 +1,34 @@
+- hosts: all
+  become: true
+  tasks:
+    - name: Check if Go is installed
+      command: go version
+      register: go_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Go from official tarball
+      when: go_check.rc != 0
+      block:
+        - name: Download Go
+          get_url:
+            url: https://go.dev/dl/go1.22.2.linux-amd64.tar.gz
+            dest: /tmp/go.tar.gz
+
+        - name: Extract Go
+          unarchive:
+            src: /tmp/go.tar.gz
+            dest: /usr/local
+            remote_src: true
+
+        - name: Add Go to PATH
+          copy:
+            content: 'export PATH=$PATH:/usr/local/go/bin'
+            dest: /etc/profile.d/go.sh
+            mode: '0644'
+
+        - name: Symlink go binary
+          file:
+            src: /usr/local/go/bin/go
+            dest: /usr/local/bin/go
+            state: link

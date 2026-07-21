@@ -26,6 +26,7 @@ disable = C, R,
           pointless-string-statement,
           raise-missing-from,
           redefined-outer-name,
+          import-error,  # TODO(dharniss.gr): install keyring/prettytable once cgts-client constraints fixed
 
 [REPORTS]
 # Set the output format. Available formats are text, parseable, colorized, msvs

@@ -9,6 +9,28 @@
         - integ-tox-linters
         - integ-tox-pylint
         - integ-tox-py39
+        - integ-tox-coverage:
+            voting: false
+        - integ-tox-coverage-cpp:
+            voting: false
+        - integ-tox-coverage-go:
+            voting: false
+        - integ-tox-bandit:
+            voting: false
+        - integ-tox-pep8-trixie:
+            voting: false
+        - integ-tox-linters-trixie:
+            voting: false
+        - integ-tox-pylint-trixie:
+            voting: false
+        - integ-tox-coverage-trixie:
+            voting: false
+        - integ-tox-coverage-cpp-trixie:
+            voting: false
+        - integ-tox-coverage-go-trixie:
+            voting: false
+        - integ-tox-bandit-trixie:
+            voting: false
     gate:
       jobs:
         - integ-tox-pep8
@@ -213,6 +235,127 @@
       - name: git_mirror_credentials
         secret: stx-integ-github-secret3
         pass-to-parent: true
+
+- job:
+    name: integ-tox-coverage
+    parent: tox
+    description: |
+      Run all tests with coverage analysis
+    nodeset: debian-bullseye
+    vars:
+      tox_envlist: coverage
+    timeout: 3600
+
+- job:
+    name: integ-tox-coverage-cpp
+    parent: tox
+    description: |
+      Run C++ tests with gcov/lcov coverage
+    nodeset: debian-bullseye
+    pre-run: playbooks/install-cpp-deps.yaml
+    vars:
+      tox_envlist: coverage-cpp
+    timeout: 1800
+
+- job:
+    name: integ-tox-coverage-go
+    parent: tox
+    description: |
+      Run Go tests with coverage analysis
+    nodeset: debian-bullseye
+    pre-run: playbooks/install-go-deps.yaml
+    vars:
+      tox_envlist: coverage-go
+    timeout: 1800
+
+- job:
+    name: integ-tox-bandit
+    parent: tox
+    description: |
+      Run security analysis with bandit
+    nodeset: debian-bullseye
+    vars:
+      tox_envlist: bandit
+    timeout: 1800
+
+
+- job:
+    name: integ-tox-pep8-trixie
+    parent: tox
+    description: |
+      Check conformance with pep8 (Python 3.13/Trixie)
+    nodeset: debian-trixie-8GB
+    vars:
+      tox_envlist: pep8-trixie
+      tox_extra_args: -c tox.ini
+
+- job:
+    name: integ-tox-linters-trixie
+    parent: tox
+    description: |
+      Run linters (Python 3.13/Trixie)
+    nodeset: debian-trixie-8GB
+    vars:
+      tox_envlist: linters-trixie
+      tox_extra_args: -c tox.ini
+
+- job:
+    name: integ-tox-pylint-trixie
+    parent: tox
+    description: |
+      Tox-based pylint job (Python 3.13/Trixie)
+    nodeset: debian-trixie-8GB
+    required-projects:
+      - starlingx/config
+    vars:
+      tox_envlist: pylint-trixie
+      tox_extra_args: -c tox.ini
+
+- job:
+    name: integ-tox-coverage-trixie
+    parent: tox
+    description: |
+      Run all tests with coverage analysis (Python 3.13/Trixie)
+    nodeset: debian-trixie-8GB
+    vars:
+      tox_envlist: coverage-trixie
+      tox_extra_args: -c tox.ini
+    timeout: 3600
+
+- job:
+    name: integ-tox-coverage-cpp-trixie
+    parent: tox
+    description: |
+      Run C++ tests with gcov/lcov coverage (Trixie)
+    nodeset: debian-trixie-8GB
+    pre-run: playbooks/install-cpp-deps.yaml
+    vars:
+      tox_envlist: coverage-cpp-trixie
+      tox_extra_args: -c tox.ini
+    timeout: 1800
+
+- job:
+    name: integ-tox-coverage-go-trixie
+    parent: tox
+    description: |
+      Run Go tests with coverage analysis (Trixie)
+    nodeset: debian-trixie-8GB
+    pre-run: playbooks/install-go-deps.yaml
+    vars:
+      tox_envlist: coverage-go-trixie
+      tox_extra_args: -c tox.ini
+    timeout: 1800
+
+- job:
+    name: integ-tox-bandit-trixie
+    parent: tox
+    description: |
+      Run security analysis with bandit (Python 3.13/Trixie)
+    nodeset: debian-trixie-8GB
+    vars:
+      tox_envlist: bandit-trixie
+      tox_extra_args: -c tox.ini
+    timeout: 1800
 
 - secret:
     name: stx-integ-github-secret3
