@@ -1,0 +1,79 @@
+From a8f2e41c0d9b3e1f5c7a02d9e6b4f8c1a3d5e7f9 Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Mon, 21 Jul 2026 14:15:00 -0400
+Subject: [PATCH] port: Fix master loss detection on inhibit_announce ports
+
+On unicast T-BC slave ports configured with inhibit_announce=1, the
+announce receipt timeout handler clears the timer permanently and
+preserves the foreign master record. When the upstream master dies,
+BMCA is signaled but sees the stale record and concludes the master
+is still present. The port remains stuck in SLAVE state indefinitely.
+
+Observed: ptsptp2 (unicast T-BC slave, domain 44) stays in SLAVE for
+6+ minutes after ptsptp1 (T-GM) is stopped. PMC becomes unresponsive.
+No ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES event is ever generated.
+
+Root cause: The inhibit_announce early-return path:
+1. Clears the announce timer (port_clr_tmo) - never re-arms
+2. Preserves the foreign master record - BMCA thinks master is alive
+3. Returns EV_NONE - no FSM state transition
+
+Fix: differentiate behavior by port state:
+- SLAVE/UNCALIBRATED: the master SHOULD be actively sending. If the
+  timeout fires, the master is genuinely gone. Clear the foreign
+  master record so BMCA can react, re-arm the timer, and return
+  EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES to trigger a state transition.
+- LISTENING/PASSIVE: preserve the existing behavior (keep record
+  intact, signal BMCA only). These states need the record preserved
+  for initial grant negotiation and startup convergence.
+
+This also fixes the secondary symptom where delay_req floods to the
+dead master address saturate the poll loop - once BMCA transitions
+the port out of SLAVE, delay requests stop.
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ port.c | 27 ++++++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 7 deletions(-)
+
+diff --git a/port.c b/port.c
+index 147e0ad..c3a8b9f 100644
+--- a/port.c
++++ b/port.c
+@@ -2911,14 +2911,27 @@
+ 
+ 		if (p->inhibit_announce) {
+ 			/*
+-			 * inhibit_announce ports cannot re-announce, so they
+-			 * cannot rebuild a cleared foreign master record.
+-			 * Preserve the record and signal BMCA to re-evaluate.
++			 * In SLAVE/UNCALIBRATED: the master should be actively
++			 * sending. Timeout means it is gone - clear the record
++			 * and fire the timeout event so the FSM can transition.
++			 *
++			 * In LISTENING/PASSIVE: preserve the foreign master
++			 * record (cannot be rebuilt without re-announcing) and
++			 * signal BMCA to re-evaluate without a state transition.
+ 			 */
+-			port_clr_tmo(p->fda.fd[FD_ANNOUNCE_TIMER]);
+-			clock_set_sde(p->clock, 1);
+-			delay_req_prune(p);
+-			return EV_NONE;
++			if (p->state == PS_SLAVE || p->state == PS_UNCALIBRATED) {
++				if (p->best) {
++					fc_clear(p->best);
++				}
++				port_set_announce_tmo(p);
++				delay_req_prune(p);
++				return EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES;
++			} else {
++				port_clr_tmo(p->fda.fd[FD_ANNOUNCE_TIMER]);
++				clock_set_sde(p->clock, 1);
++				delay_req_prune(p);
++				return EV_NONE;
++			}
+ 		}
+ 
+ 		/* Normal ports: clear the foreign master record on timeout */
+-- 
+2.43.0
