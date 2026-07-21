@@ -1,4 +1,4 @@
-From 54d6a97ca89dea6b93a6a2a9290cd2d6b0122b2e Mon Sep 17 00:00:00 2001
+From 347b9ca08915a4957e197ce74aba1d7e3ef02119 Mon Sep 17 00:00:00 2001
 From: Lans Zhang <jia.zhang@windriver.com>
 Date: Fri, 25 Mar 2016 10:52:34 +0800
 Subject: [PATCH 1/5] LockDown: add system warm reset
@@ -12,6 +12,7 @@ enable UEFI secure boot immediately.
 Signed-off-by: Lans Zhang <jia.zhang@windriver.com>
 [lz: Adapt git log and do some minor wording cleanups.]
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
 ---
  LockDown.c | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
@@ -42,5 +43,5 @@ index 29df9de..3a2b476 100644
  	return EFI_SUCCESS;
  }
 -- 
-2.17.1
+2.47.3
 

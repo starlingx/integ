@@ -23,7 +23,7 @@ index c20cd9a..78bca19 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -8,6 +8,13 @@ override_dh_auto_build:
- 	cp uefi_sb_keys/* ./
+ 	cp debian/uefi_sb_keys/* ./
  	mv tis-boot.crt DB.crt
  	dh_auto_build
 +	cp -f DB.esl DB-orig.esl
