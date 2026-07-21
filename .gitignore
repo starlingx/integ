@@ -30,3 +30,6 @@ releasenotes/build
 
 # docker registry token server vendor(dependencies)
 kubernetes/registry-token-server/src/vendor/
+
+# UT Coverage reports
+UTCoverage/
