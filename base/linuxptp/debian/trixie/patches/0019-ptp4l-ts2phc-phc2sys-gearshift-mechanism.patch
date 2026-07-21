@@ -1,0 +1,1710 @@
+From ff43242b3a7e8856efd8be585ff4a805cf85fe6e Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Thu, 16 Jul 2026 15:38:24 -0400
+Subject: [PATCH] ptp4l, ts2phc, phc2sys: gearshift mechanism
+ (Park/Neutral/Drive)
+
+Add the gearshift mechanism allowing ptp4l, ts2phc, and phc2sys to be
+dynamically switched between Park, Neutral, and Drive modes via PMC
+management messages. This enables safe coexistence of multiple timing
+applications sharing a PHC when switching between GNSS and PTP sources.
+
+Gear modes:
+  Park    -- No PHC updates, no servo processing
+  Neutral -- Servo runs but PHC adjustments suppressed
+  Drive   -- Normal operation (default)
+
+New management TLVs:
+  MID_GEARSHIFT_NP (0xC0F0) -- SET gear mode (P/N/D)
+  MID_GEAR_STATUS_NP (0xC0F1) -- GET current gear and source
+
+Key behaviors:
+  - Servo reset on PARK->DRIVE transition (prevents stale integrator)
+  - Gear state reflected in log output as (P)/(N) suffix
+  - NOTIFY_GEAR_STATE event for subscribers
+  - Config file option: gear=P|N|D (default: Drive)
+  - Per-clock gear in ptp4l, per-instance in ts2phc, per-clock in phc2sys
+
+Based on Intel LinuxPTP 4.4 gearshift delivery (July 3 2026), ported
+to linuxptp 4.2 (wrs-master-trixie).
+
+Co-developed-by: Kevin Bross <kevin.bross@intel.com>
+Signed-off-by: Cole Walker <Cole.Walker@windriver.com>
+---
+ clock.c           | 212 +++++++++++++++++++++++++++++++++++++--------
+ config.c          |   2 +
+ notification.h    |   1 +
+ phc2sys.8         |  18 ++++
+ phc2sys.c         |  82 +++++++++++-------
+ pmc.8             |  15 ++++
+ pmc.c             |  19 +++-
+ pmc_agent.c       |  62 +++++++++++++
+ pmc_agent.h       |  41 +++++++++
+ pmc_common.c      |  93 +++++++++++++++++++-
+ pmc_common.h      |   3 +
+ ptp4l.8           |  20 +++++
+ servo.c           |  31 +++++++
+ servo.h           |   8 +-
+ tlv.h             |  51 +++++++++++
+ ts2phc.8          |  23 +++++
+ ts2phc.c          | 216 +++++++++++++++++++++++++++++++++++++++++-----
+ ts2phc.h          |   9 ++
+ ts2phc_pps_sink.c |  22 ++++-
+ 19 files changed, 831 insertions(+), 97 deletions(-)
+
+diff --git a/clock.c b/clock.c
+index 9e450bf..b11d42c 100644
+--- a/clock.c
++++ b/clock.c
+@@ -17,6 +17,7 @@
+  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+  */
+ #include <errno.h>
++#include <ctype.h>
+ #include <time.h>
+ #include <linux/net_tstamp.h>
+ #include <poll.h>
+@@ -112,6 +113,9 @@ struct clock {
+ 	int nports; /* does not include the two UDS ports */
+ 	int last_port_number;
+ 	int sde;
++	/* Gearshift state (per instance) */
++	enum gear_mode gear;
++	enum gear_source gear_source;
+ 	int free_running;
+ 	int freq_est_interval;
+ 	int local_sync_uncertain;
+@@ -157,7 +161,7 @@ struct clock the_clock;
+ static void handle_state_decision_event(struct clock *c);
+ static int clock_resize_pollfd(struct clock *c, int new_nports);
+ static void clock_remove_port(struct clock *c, struct port *p);
+-static void clock_stats_display(struct clock_stats *s, struct clock *c);
++static void clock_stats_display(struct clock *c);
+ 
+ static int clock_alttime_offset_append(struct clock *c, int key, struct ptp_message *m)
+ {
+@@ -591,6 +595,25 @@ static int clock_management_fill_response(struct clock *c, struct port *p,
+ 		datalen = sizeof(*osn);
+ 		break;
+ 	}
++	case MID_GEARSHIFT_NP:
++	{
++		UInteger8 *gear = (UInteger8 *) tlv->data;
++
++		*gear = c->gear;
++		datalen = sizeof(*gear);
++		break;
++	}
++	case MID_GEAR_STATUS_NP:
++	{
++		struct gear_status_np *gs;
++
++		gs = (struct gear_status_np *) tlv->data;
++		gs->gear = c->gear;
++		gs->source = c->gear_source;
++		gs->flags = 0;
++		datalen = sizeof(*gs);
++		break;
++	}
+ 	default:
+ 		/* The caller should *not* respond to this message. */
+ 		tlv_extra_recycle(extra);
+@@ -713,13 +736,43 @@ static int clock_management_set(struct clock *c, struct port *p,
+ 			/* Display stats on change of local_sync_uncertain */
+ 			if (c->local_sync_uncertain != mtd->val
+ 			    && stats_get_num_values(c->stats.offset))
+-				clock_stats_display(&c->stats, c);
++				clock_stats_display(c);
+ 			c->local_sync_uncertain = mtd->val;
+ 			respond = 1;
+ 			break;
+ 		}
+ 		break;
++	case MID_GEARSHIFT_NP:
++	{
++		enum gear_mode old = c->gear;
++		UInteger8 new = *(UInteger8 *)tlv->data;
++		char *s = GEAR_INITIALS;
++
++		if (new <= GEAR_DRIVE) {
++			c->gear = new;
++			/* TODO: handle other sources */
++			c->gear_source = GEAR_SRC_PMC;
++
++			if (old != new && new == GEAR_DRIVE && c->servo) {
++				servo_reset(c->servo);
++				c->servo_state = SERVO_UNLOCKED;
++			}
++
++			if (old != c->gear) {
++				pr_info("Gear change %c -> %c (source=pmc)",
++					s[old], s[new]);
++				/* Notify subscribers */
++				clock_notify_event(c, NOTIFY_GEAR_STATE);
++			}
++			/* Always tell gear source if -l 7, even if no change */
++			pr_debug("Gear source now %d", c->gear_source);
++			respond = 1;
++		} else {
++			pr_info("Bad attempted gear change to %d", new);
++		}
++		break;
+ 	}
++	} /* end switch (id) */
+ 	if (respond && !clock_management_get_response(c, p, id, req))
+ 		pr_err("failed to send management set response");
+ 	return respond ? 1 : 0;
+@@ -735,34 +788,42 @@ static void clock_stats_update(struct clock *c,
+ 	if (stats_get_num_values(s->offset) < s->max_count)
+ 		return;
+ 
+-	clock_stats_display(s, c);
++	clock_stats_display(c);
+ }
+ 
+-static void clock_stats_display(struct clock_stats *s, struct clock *c)
++static void clock_stats_display(struct clock *c)
+ {
++	struct clock_stats *s = &c->stats;
+ 	struct stats_result offset_stats, freq_stats, delay_stats;
+ 
+ 	stats_get_result(s->offset, &offset_stats);
+ 	stats_get_result(s->freq, &freq_stats);
+ 
+-	if (c) {
+-		c->offset_stats_cache = offset_stats;
+-		c->offset_stats_count = stats_get_num_values(s->offset);
+-	}
++	/* Cache windowed stats for monitoring socket */
++	c->offset_stats_cache = offset_stats;
++	c->offset_stats_count = stats_get_num_values(s->offset);
++
++	/* Gear suffix reflects gear mode if other than Drive */
++	const char *gsuf = GEAR_DRIVE_INDICATOR;
++
++	if (c->gear == GEAR_NEUTRAL)
++		gsuf = GEAR_NEUTRAL_INDICATOR;
++	else if (c->gear == GEAR_PARK)
++		gsuf = GEAR_PARK_INDICATOR;
+ 
+ 	/* Path delay stats are updated separately, they may be empty. */
+ 	if (!stats_get_result(s->delay, &delay_stats)) {
+ 		pr_info("rms %4.0f max %4.0f "
+ 			"freq %+6.0f +/- %3.0f "
+-			"delay %5.0f +/- %3.0f",
++			"delay %5.0f +/- %3.0f%s",
+ 			offset_stats.rms, offset_stats.max_abs,
+ 			freq_stats.mean, freq_stats.stddev,
+-			delay_stats.mean, delay_stats.stddev);
++			delay_stats.mean, delay_stats.stddev, gsuf);
+ 	} else {
+ 		pr_info("rms %4.0f max %4.0f "
+-			"freq %+6.0f +/- %3.0f",
++			"freq %+6.0f +/- %3.0f%s",
+ 			offset_stats.rms, offset_stats.max_abs,
+-			freq_stats.mean, freq_stats.stddev);
++			freq_stats.mean, freq_stats.stddev, gsuf);
+ 	}
+ 
+ 	stats_reset(s->offset);
+@@ -812,13 +873,21 @@ static enum servo_state clock_no_adjust(struct clock *c, tmv_t ingress,
+ 		tmv_dbl(tmv_sub(ingress, f->ingress1));
+ 	freq = (1.0 - ratio) * 1e9;
+ 
++	/* Gear suffix reflects gear mode if other than Drive */
++	const char *gsuf = GEAR_DRIVE_INDICATOR;
++
++	if (c->gear == GEAR_NEUTRAL)
++		gsuf = GEAR_NEUTRAL_INDICATOR;
++	else if (c->gear == GEAR_PARK)
++		gsuf = GEAR_PARK_INDICATOR;
++
+ 	if (c->stats.max_count > 1) {
+ 		clock_stats_update(c, tmv_dbl(c->master_offset), freq);
+ 	} else {
+ 		pr_info("master offset %10" PRId64 " s%d freq %+7.0f "
+-			"path delay %9" PRId64,
++			"path delay %9" PRId64 "%s",
+ 			tmv_to_nanoseconds(c->master_offset), state, freq,
+-			tmv_to_nanoseconds(c->path_delay));
++			tmv_to_nanoseconds(c->path_delay), gsuf);
+ 	}
+ 
+ 	fui = 1.0 + (c->status.cumulativeScaledRateOffset + 0.0) / POW2_41;
+@@ -1312,6 +1381,31 @@ struct clock *clock_create(enum clock_type type, struct config *config,
+ 	c->time_source = config_get_int(config, NULL, "timeSource");
+ 	c->step_window = config_get_int(config, NULL, "step_window");
+ 
++	/* Default gear state: Drive (backward compatible) */
++	c->gear = GEAR_DRIVE;
++	c->gear_source = GEAR_SRC_CONFIG;
++
++	{
++		const char *gear_str;
++
++		gear_str = config_get_string(c->config, NULL, "gear");
++		if (gear_str && strlen(gear_str) > 0) {
++			/* Compare first character only (P/N/D or Park/Neutral/Drive) */
++			char initial = toupper((unsigned char)gear_str[0]);
++
++			if (initial == 'P') {
++				c->gear = GEAR_PARK;
++			} else if (initial == 'N') {
++				c->gear = GEAR_NEUTRAL;
++			} else if (initial == 'D') {
++				c->gear = GEAR_DRIVE;
++			} else {
++				pr_err("Bad gear string: %s", gear_str);
++				return NULL;
++			}
++		}
++	}
++
+ 	if (c->free_running) {
+ 		c->clkid = CLOCK_INVALID;
+ 		if (timestamping == TS_SOFTWARE || timestamping == TS_LEGACY_HW) {
+@@ -1452,6 +1546,13 @@ struct clock *clock_create(enum clock_type type, struct config *config,
+ 		}
+ 	}
+ 
++	/* Log gear information if not Drive (quiet under normal drive mode) */
++	if (c->gear < GEAR_DRIVE) {
++		tmp = GEAR_INITIALS;
++		pr_info("Initial gear=%c", tmp[c->gear]);
++	}
++	pr_debug("gear source=%d", c->gear_source);
++
+ 	c->dds.numberPorts = c->nports;
+ 
+ 	LIST_FOREACH(p, &c->ports, list) {
+@@ -1762,6 +1863,17 @@ int clock_manage(struct clock *c, struct port *p, struct ptp_message *msg)
+ 	return changed;
+ }
+ 
++static inline int clock_has_subscribers(struct clock *c, enum notification event)
++{
++	struct clock_subscriber *s;
++
++	LIST_FOREACH(s, &c->subscribers, list) {
++		if (event_bitmask_get(s->events, event))
++			return 1;
++	}
++	return 0;
++}
++
+ void clock_notify_event(struct clock *c, enum notification event)
+ {
+ 	struct port *uds = c->uds_rw_port;
+@@ -1775,6 +1887,11 @@ void clock_notify_event(struct clock *c, enum notification event)
+ 
+ 	pid = port_identity(uds);
+ 
++	/* Function to avoid notifications if no subscribers */
++	if (!clock_has_subscribers(c, event))
++		return;
++
++
+ 	switch (event) {
+ 	case NOTIFY_TIME_SYNC:
+ 		id = MID_TIME_STATUS_NP;
+@@ -1788,6 +1905,9 @@ void clock_notify_event(struct clock *c, enum notification event)
+ 	case NOTIFY_TIME_PROPERTIES_DATA_SET:
+ 		id = MID_TIME_PROPERTIES_DATA_SET;
+ 		break;
++	case NOTIFY_GEAR_STATE:
++		id = MID_GEAR_STATUS_NP;
++		break;
+ 	default:
+ 		return;
+ 	}
+@@ -2018,14 +2138,17 @@ static int clock_synchronize_locked(struct clock *c, double adj)
+ 	if (c->sanity_check) {
+ 		clockcheck_freq(c->sanity_check, clockadj_get_freq(c->clkid));
+ 	}
+-	if (clockadj_set_freq(c->clkid, -adj)) {
+-		return -1;
+-	}
+-	if (c->clkid == CLOCK_REALTIME) {
+-		sysclk_set_sync();
+-	}
+-	if (c->sanity_check) {
+-		clockcheck_set_freq(c->sanity_check, -adj);
++	/* As part of gearshift, only make actual changes when in Drive */
++	if (gear_allows_adjust(c->gear)) {
++		if (clockadj_set_freq(c->clkid, -adj)) {
++			return -1;
++		}
++		if (c->clkid == CLOCK_REALTIME) {
++			sysclk_set_sync();
++		}
++		if (c->sanity_check) {
++			clockcheck_set_freq(c->sanity_check, -adj);
++		}
+ 	}
+ 	return 0;
+ }
+@@ -2049,7 +2172,7 @@ enum servo_state clock_synchronize(struct clock *c, tmv_t ingress, tmv_t origin)
+ 	tsproc_down_ts(c->tsproc, origin, ingress);
+ 
+ 	if (tsproc_update_offset(c->tsproc, &c->master_offset, &weight)) {
+-		if (c->free_running) {
++		if (c->free_running || gear_is_park(c->gear)) {
+ 			return clock_no_adjust(c, ingress, origin);
+ 		} else {
+ 			return state;
+@@ -2062,7 +2185,7 @@ enum servo_state clock_synchronize(struct clock *c, tmv_t ingress, tmv_t origin)
+ 
+ 	c->cur.offsetFromMaster = tmv_to_TimeInterval(c->master_offset);
+ 
+-	if (c->free_running) {
++	if (c->free_running || gear_is_park(c->gear)) {
+ 		state = clock_no_adjust(c, ingress, origin);
+ 		clock_notify_event(c, NOTIFY_TIME_SYNC);
+ 		return state;
+@@ -2079,11 +2202,14 @@ enum servo_state clock_synchronize(struct clock *c, tmv_t ingress, tmv_t origin)
+ 	case SERVO_UNLOCKED:
+ 		break;
+ 	case SERVO_JUMP:
+-		if (clockadj_set_freq(c->clkid, -adj)) {
+-			goto servo_unlock;
+-		}
+-		if (clockadj_step(c->clkid, -tmv_to_nanoseconds(c->master_offset))) {
+-			goto servo_unlock;
++		/* As part of gearshift, only make actual changes when in Drive */
++		if (gear_allows_adjust(c->gear)) {
++			if (clockadj_set_freq(c->clkid, -adj)) {
++				goto servo_unlock;
++			}
++			if (clockadj_step(c->clkid, -tmv_to_nanoseconds(c->master_offset))) {
++				goto servo_unlock;
++			}
+ 		}
+ 		c->ingress_ts = tmv_zero();
+ 		if (c->sanity_check) {
+@@ -2101,13 +2227,17 @@ enum servo_state clock_synchronize(struct clock *c, tmv_t ingress, tmv_t origin)
+ 		break;
+ 	case SERVO_LOCKED_STABLE:
+ 		if (c->write_phase_mode) {
+-			if (clockadj_set_phase(c->clkid, -offset)) {
+-				goto servo_unlock;
++			if (gear_allows_adjust(c->gear)) {
++				if (clockadj_set_phase(c->clkid, -offset)) {
++					goto servo_unlock;
++				}
+ 			}
+ 			adj = 0;
+ 		} else {
+-			if (clock_synchronize_locked(c, adj)) {
+-				goto servo_unlock;
++			if (gear_allows_adjust(c->gear)) {
++				if (clock_synchronize_locked(c, adj)) {
++					goto servo_unlock;
++				}
+ 			}
+ 		}
+ 		break;
+@@ -2116,10 +2246,18 @@ enum servo_state clock_synchronize(struct clock *c, tmv_t ingress, tmv_t origin)
+ 	if (c->stats.max_count > 1) {
+ 		clock_stats_update(c, tmv_dbl(c->master_offset), adj);
+ 	} else {
++		/* Gear suffix reflects gear mode if other than Drive */
++		const char *gsuf = GEAR_DRIVE_INDICATOR;
++
++		if (c->gear == GEAR_NEUTRAL)
++			gsuf = GEAR_NEUTRAL_INDICATOR;
++		else if (c->gear == GEAR_PARK)
++			gsuf = GEAR_PARK_INDICATOR;
++
+ 		pr_info("master offset %10" PRId64 " s%d freq %+7.0f "
+-			"path delay %9" PRId64,
++			"path delay %9" PRId64 "%s",
+ 			tmv_to_nanoseconds(c->master_offset), state, adj,
+-			tmv_to_nanoseconds(c->path_delay));
++			tmv_to_nanoseconds(c->path_delay), gsuf);
+ 	}
+ 
+ 	clock_notify_event(c, NOTIFY_TIME_SYNC);
+@@ -2146,7 +2284,7 @@ void clock_sync_interval(struct clock *c, int n)
+ 	c->fest.max_count = (1U << shift);
+ 
+ 	/* In free-running mode stats accumulate once per freq_est_interval */
+-	if (c->free_running)
++	if (c->free_running || gear_is_park(c->gear))
+ 		shift = c->stats_interval - n - shift;
+ 	else
+ 		shift = c->stats_interval - n;
+@@ -2342,7 +2480,7 @@ void clock_check_ts(struct clock *c, uint64_t ts)
+ 
+ double clock_rate_ratio(struct clock *c)
+ {
+-	if (c->free_running) {
++	if (c->free_running || gear_is_park(c->gear)) {
+ 		return c->master_local_rr;
+ 	}
+ 	return servo_rate_ratio(c->servo);
+diff --git a/config.c b/config.c
+index 5f633a6..ae28b46 100644
+--- a/config.c
++++ b/config.c
+@@ -267,6 +267,7 @@ struct config_item config_tab[] = {
+ 	PORT_ITEM_INT("freq_est_interval", 1, INT_MIN, INT_MAX),
+ 	GLOB_ITEM_INT("G.8275.defaultDS.localPriority", 128, 1, UINT8_MAX),
+ 	PORT_ITEM_INT("G.8275.portDS.localPriority", 128, 1, UINT8_MAX),
++	GLOB_ITEM_STR("gear", NULL),
+ 	GLOB_ITEM_INT("gmCapable", 1, 0, 1),
+ 	PORT_ITEM_INT("ha_domainNumber", 0, 0, 127),
+ 	GLOB_ITEM_INT("ha_enabled", 0, 0, 1),
+@@ -364,6 +365,7 @@ struct config_item config_tab[] = {
+ 	PORT_ITEM_INT("ts2phc.perout_phase", -1, 0, 999999999),
+ 	PORT_ITEM_INT("ts2phc.pin_index", 0, 0, INT_MAX),
+ 	GLOB_ITEM_INT("ts2phc.pulsewidth", 500000000, 1000000, 999000000),
++	GLOB_ITEM_INT("ts2phc.seed_system_time", 0, 0, 1),
+ 	GLOB_ITEM_STR("ts2phc.tod_source", "generic"),
+ 	PORT_ITEM_ENU("tsproc_mode", TSPROC_FILTER, tsproc_enu),
+ 	GLOB_ITEM_INT("twoStepFlag", 1, 0, 1),
+diff --git a/notification.h b/notification.h
+index 3fe192a..47b535b 100644
+--- a/notification.h
++++ b/notification.h
+@@ -47,6 +47,7 @@ enum notification {
+ 	NOTIFY_PARENT_DATA_SET,
+ 	NOTIFY_DEFAULT_DATA_SET,
+ 	NOTIFY_TIME_PROPERTIES_DATA_SET,
++	NOTIFY_GEAR_STATE, /* gearshift mechanism */
+ };
+ 
+ #endif
+diff --git a/phc2sys.8 b/phc2sys.8
+index a9229dc..3f49ce2 100644
+--- a/phc2sys.8
++++ b/phc2sys.8
+@@ -518,5 +518,23 @@ might be not what is expected.
+ It is recommended to use seperate configuration files for ptp4l and
+ phc2sys in order to avoid any unexpected behavior.
+ 
++.SH GEARSHIFT
++Gearshift controls whether this phc2sys instance is permitted to
++discipline the PHC.
++
++.TP
++.B D (Drive)
++PHC discipline is active. This is the default mode.
++
++.TP
++.B N (Neutral)
++Synchronization state is tracked, but PHC writes are suppressed.
++
++.TP
++.B P (Park)
++Monitor-only mode. No PHC discipline is applied.
++
++Gear can be queried or updated at runtime via PMC commands (see pmc(8)).
++
+ .SH SEE ALSO
+ .BR ptp4l (8)
+diff --git a/phc2sys.c b/phc2sys.c
+index 6ceffa2..d6aaef0 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -108,6 +108,7 @@ struct clock {
+ 	struct stats *freq_stats;
+ 	struct stats *delay_stats;
+ 	struct clockcheck *sanity_check;
++	enum gear_mode gear;
+ };
+ 
+ struct port {
+@@ -230,6 +231,7 @@ static struct clock *clock_add(struct domain *domain, const char *device,
+ 	c->phc_index = phc_index;
+ 	c->servo_state = SERVO_UNLOCKED;
+ 	c->device = device ? strdup(device) : NULL;
++	c->gear = GEAR_DRIVE;
+ 
+ 	if (c->clkid == CLOCK_REALTIME) {
+ 		c->source_label = "sys";
+@@ -1348,22 +1350,30 @@ static void update_clock_stats(struct clock *clock, unsigned int max_count,
+ 	clock->mon_max_abs = offset_stats.max_abs;
+ 	clock->mon_num_samples = stats_get_num_values(clock->offset_stats);
+ 
++	/* Gear suffix reflects gear mode if other than Drive */
++	const char *gsuf = GEAR_DRIVE_INDICATOR;
++
++	if (clock->gear == GEAR_NEUTRAL)
++		gsuf = GEAR_NEUTRAL_INDICATOR;
++	else if (clock->gear == GEAR_PARK)
++		gsuf = GEAR_PARK_INDICATOR;
++
+ 	if (!stats_get_result(clock->delay_stats, &delay_stats)) {
+ 		pr_info("%s "
+ 			"rms %4.0f max %4.0f "
+ 			"freq %+6.0f +/- %3.0f "
+-			"delay %5.0f +/- %3.0f",
++			"delay %5.0f +/- %3.0f%s",
+ 			clock->device,
+ 			offset_stats.rms, offset_stats.max_abs,
+ 			freq_stats.mean, freq_stats.stddev,
+-			delay_stats.mean, delay_stats.stddev);
++			delay_stats.mean, delay_stats.stddev, gsuf);
+ 	} else {
+ 		pr_info("%s "
+ 			"rms %4.0f max %4.0f "
+-			"freq %+6.0f +/- %3.0f",
++			"freq %+6.0f +/- %3.0f%s",
+ 			clock->device,
+ 			offset_stats.rms, offset_stats.max_abs,
+-			freq_stats.mean, freq_stats.stddev);
++			freq_stats.mean, freq_stats.stddev, gsuf);
+ 	}
+ 
+ 	stats_reset(clock->offset_stats);
+@@ -1401,19 +1411,23 @@ static void update_clock(struct domain *domain, struct clock *clock,
+ 	case SERVO_UNLOCKED:
+ 		break;
+ 	case SERVO_JUMP:
+-		if (clockadj_step(clock->clkid, -offset)) {
+-			goto servo_unlock;
++		if (gear_allows_adjust(clock->gear)) {
++			if (clockadj_step(clock->clkid, -offset)) {
++				goto servo_unlock;
++			}
++			if (clock->sanity_check)
++				clockcheck_step(clock->sanity_check, -offset);
+ 		}
+-		if (clock->sanity_check)
+-			clockcheck_step(clock->sanity_check, -offset);
+ 		/* Fall through. */
+ 	case SERVO_LOCKED:
+ 	case SERVO_LOCKED_STABLE:
+ 		if (clock->sanity_check)
+ 			clockcheck_freq(clock->sanity_check,
+ 					clockadj_get_freq(clock->clkid));
+-		if (clockadj_set_freq(clock->clkid, -ppb)) {
+-			goto servo_unlock;
++		if (gear_allows_adjust(clock->gear)) {
++			if (clockadj_set_freq(clock->clkid, -ppb)) {
++				goto servo_unlock;
++			}
+ 		}
+ 		if (clock->clkid == CLOCK_REALTIME)
+ 			sysclk_set_sync();
+@@ -1426,18 +1440,26 @@ static void update_clock(struct domain *domain, struct clock *clock,
+ 	clock->mon_valid = 1;
+ 
+ report:
++		/* Gear suffix reflects gear mode if other than Drive */
++		const char *gsuf = GEAR_DRIVE_INDICATOR;
++
++		if (clock->gear == GEAR_NEUTRAL)
++			gsuf = GEAR_NEUTRAL_INDICATOR;
++		else if (clock->gear == GEAR_PARK)
++			gsuf = GEAR_PARK_INDICATOR;
++
+ 	if (clock->offset_stats) {
+ 		update_clock_stats(clock, domain->stats_max_count, offset, ppb, delay);
+ 	} else {
+ 		if (delay >= 0) {
+ 			pr_info("%s %s offset %9" PRId64 " s%d freq %+7.0f "
+-				"delay %6" PRId64,
++				"delay %6" PRId64 "%s",
+ 				clock->device, domain->src_clock->source_label,
+-				offset, state, ppb, delay);
++				offset, state, ppb, delay, gsuf);
+ 		} else {
+-			pr_info("%s %s offset %9" PRId64 " s%d freq %+7.0f",
++			pr_info("%s %s offset %9" PRId64 " s%d freq %+7.0f%s",
+ 				clock->device, domain->src_clock->source_label,
+-				offset, state, ppb);
++				offset, state, ppb, gsuf);
+ 		}
+ 	}
+ 	return;
+@@ -1516,10 +1538,18 @@ static int do_pps_loop(struct domain *domain, struct clock *clock,
+ 			/* Convert the time stamp to the PHC time. */
+ 			phc_ts -= phc_offset;
+ 
++			/* Gear suffix reflects gear mode if other than Drive */
++			const char *gsuf = GEAR_DRIVE_INDICATOR;
++
++			if (clock->gear == GEAR_NEUTRAL)
++				gsuf = GEAR_NEUTRAL_INDICATOR;
++			else if (clock->gear == GEAR_PARK)
++				gsuf = GEAR_PARK_INDICATOR;
++
+ 			/* Check if it is close to the start of the second. */
+ 			if (phc_ts % NS_PER_SEC > PHC_PPS_OFFSET_LIMIT) {
+ 				pr_warning("PPS is not in sync with PHC"
+-					   " (0.%09lld)", phc_ts % NS_PER_SEC);
++					   " (0.%09lld%s)", phc_ts % NS_PER_SEC, gsuf);
+ 				continue;
+ 			}
+ 
+@@ -2325,23 +2355,15 @@ int main(int argc, char *argv[])
+ 			src_names[src_cnt++] = optarg;
+ 			break;
+ 		case 'E':
+-			if (!strcasecmp(optarg, "pi")) {
+-				config_set_int(cfg, "clock_servo",
+-					       CLOCK_SERVO_PI);
+-			} else if (!strcasecmp(optarg, "linreg")) {
+-				config_set_int(cfg, "clock_servo",
+-					       CLOCK_SERVO_LINREG);
+-			} else if (!strcasecmp(optarg, "ntpshm")) {
+-				config_set_int(cfg, "clock_servo",
+-					       CLOCK_SERVO_NTPSHM);
+-			} else if (!strcasecmp(optarg, "refclock_sock")) {
+-				config_set_int(cfg, "clock_servo",
+-					       CLOCK_SERVO_REFCLOCK_SOCK);
+-			} else {
+-				fprintf(stderr,
+-					"invalid servo name %s\n", optarg);
++			enum servo_type st;
++
++			st = servo_type_from_name(optarg);
++			if (st == CLOCK_SERVO_INVALID) {
++				fprintf(stderr, "invalid servo name %s\n", optarg);
+ 				goto end;
+ 			}
++
++			config_set_int(cfg, "clock_servo", st);
+ 			break;
+ 		case 'P':
+ 			if (get_arg_val_d(c, optarg, &tmp, 0.0, DBL_MAX) ||
+diff --git a/pmc.8 b/pmc.8
+index 4c23a54..04d0d72 100644
+--- a/pmc.8
++++ b/pmc.8
+@@ -235,5 +235,20 @@ applies also for pmc. This might be not what is expected.
+ To avoid securely these unexpected behaviour, different configuration files
+ for ptp4l and pmc are recommended.
+ 
++.SH GEARSHIFT COMMANDS
++The following PMC commands are used to control and observe gearshift
++state for ptp4l, ts2phc, and phc2sys instances.
++
++.TP
++.B pmc SET gear {D|N|P}
++Set the active gear of the target instance.
++
++.TP
++.B pmc GET gear_status_np
++Query the current gear, the source of the last change, and status flags.
++
++When multiple instances are running, the -u option is used to specify
++the Unix domain socket of the target application instance.
++
+ .SH SEE ALSO
+ .BR ptp4l (8)
+diff --git a/pmc.c b/pmc.c
+index e598f1b..d32d69e 100644
+--- a/pmc.c
++++ b/pmc.c
+@@ -164,6 +164,7 @@ static void pmc_show(struct ptp_message *msg, FILE *fp)
+ 	struct grandmaster_settings_np *gsn;
+ 	struct port_service_stats_np *pssp;
+ 	struct mgmt_clock_description *cd;
++	struct gear_status_np *gear_state;
+ 	struct management_tlv_datum *mtd;
+ 	struct unicast_master_entry *ume;
+ 	struct subscribe_events_np *sen;
+@@ -452,11 +453,13 @@ static void pmc_show(struct ptp_message *msg, FILE *fp)
+ 			IFMT "duration               %hu"
+ 			IFMT "NOTIFY_PORT_STATE      %s"
+ 			IFMT "NOTIFY_TIME_SYNC       %s"
+-			IFMT "NOTIFY_PARENT_DATA_SET %s",
++			IFMT "NOTIFY_PARENT_DATA_SET %s"
++			IFMT "NOTIFY_GEAR_STATE      %s",
+ 			sen->duration,
+ 			event_bitmask_get(sen->bitmask, NOTIFY_PORT_STATE) ? "on" : "off",
+ 			event_bitmask_get(sen->bitmask, NOTIFY_TIME_SYNC) ? "on" : "off",
+-			event_bitmask_get(sen->bitmask, NOTIFY_PARENT_DATA_SET) ? "on" : "off");
++			event_bitmask_get(sen->bitmask, NOTIFY_PARENT_DATA_SET) ? "on" : "off",
++			event_bitmask_get(sen->bitmask, NOTIFY_GEAR_STATE) ? "on" : "off");
+ 		break;
+ 	case MID_SYNCHRONIZATION_UNCERTAIN_NP:
+ 		mtd = (struct management_tlv_datum *) mgt->data;
+@@ -673,6 +676,18 @@ static void pmc_show(struct ptp_message *msg, FILE *fp)
+ 		fprintf(fp, "LOG_MIN_PDELAY_REQ_INTERVAL "
+ 			IFMT "logMinPdelayReqInterval %hhd", mtd->val);
+ 		break;
++	case MID_GEARSHIFT_NP:
++		buf = (uint8_t *)GEAR_INITIALS;
++		fprintf(fp, "Gear = %c", buf[*(UInteger8 *) mgt->data]);
++		break;
++	case MID_GEAR_STATUS_NP:
++		gear_state = (struct gear_status_np *) mgt->data;
++		buf = (uint8_t *)GEAR_INITIALS;
++		fprintf(fp, "Gear = %c, source = %s, flags = %#04x",
++			buf[gear_state->gear],
++			GEAR_SOURCE_STRINGS[gear_state->source],
++			gear_state->flags);
++		break;
+ 	}
+ out:
+ 	fprintf(fp, "\n");
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 3919af7..4d6682f 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -25,6 +25,7 @@
+ #include "notification.h"
+ #include "pmc_agent.h"
+ #include "print.h"
++#include "tlv.h"
+ #include "util.h"
+ 
+ /* The subscription duration needs to be longer than the update interval to be
+@@ -54,6 +55,10 @@ struct pmc_agent {
+ 	/* Callback on message reception */
+ 	pmc_node_recv_subscribed_t *recv_subscribed;
+ 	void *recv_context;
++
++	/* Callback for servicing incoming management GET/SET requests */
++	pmc_node_management_handler_t *management_handler;
++	void *management_context;
+ };
+ 
+ static void send_subscription(struct pmc_agent *node)
+@@ -260,6 +265,63 @@ struct pmc_agent *pmc_agent_create(void)
+ 	return agent;
+ }
+ 
++int pmc_agent_service_requests(struct pmc_agent *agent)
++{
++	struct management_tlv *mgt;
++	struct ptp_message *msg;
++	int action;
++	struct pollfd pfd;
++
++	if (!agent->pmc)
++		return 0;
++
++	pfd.fd = pmc_get_transport_fd(agent->pmc);
++	pfd.events = POLLIN | POLLPRI;
++	if (poll(&pfd, 1, 0) <= 0)
++		return 0;
++	if (!(pfd.revents & (POLLIN | POLLPRI)))
++		return 0;
++
++	msg = pmc_recv(agent->pmc);
++	if (!msg)
++		return 0;
++
++	if (msg_type(msg) != MANAGEMENT) {
++		msg_put(msg);
++		return 0;
++	}
++
++	action = management_action(msg);
++	if (action != GET && action != SET) {
++		msg_put(msg);
++		return 0;
++	}
++
++	mgt = (struct management_tlv *) msg->management.suffix;
++
++	if (agent->management_handler)
++		agent->management_handler(agent->management_context,
++					  agent->pmc, msg, action, mgt->id);
++
++	msg_put(msg);
++	return 0;
++}
++
++int pmc_agent_get_fd(struct pmc_agent *agent)
++{
++	if (!agent->pmc)
++		return -1;
++	return pmc_get_transport_fd(agent->pmc);
++}
++
++void pmc_agent_set_management_handler(struct pmc_agent *agent,
++				      pmc_node_management_handler_t *handler,
++				      void *context)
++{
++	agent->management_handler = handler;
++	agent->management_context = context;
++}
++
+ void pmc_agent_destroy(struct pmc_agent *agent)
+ {
+ 	if (agent->pmc) {
+diff --git a/pmc_agent.h b/pmc_agent.h
+index 333e8ba..9bc3e7f 100644
+--- a/pmc_agent.h
++++ b/pmc_agent.h
+@@ -32,6 +32,19 @@ struct pmc_agent;
+ typedef int pmc_node_recv_subscribed_t(void *context, struct ptp_message *msg,
+ 				       int excluded);
+ 
++/**
++ * Callback type for handling incoming management GET/SET requests.
++ * Called by pmc_agent_service_requests() when a request arrives.
++ * @param context  Opaque pointer registered via pmc_agent_set_management_handler().
++ * @param pmc      The pmc instance to use for sending responses.
++ * @param msg      The received management message.
++ * @param action   GET or SET.
++ * @param mgt_id   Management TLV ID.
++ */
++typedef void pmc_node_management_handler_t(void *context, struct pmc *pmc,
++					   struct ptp_message *msg,
++					   int action, int mgt_id);
++
+ int init_pmc_node(struct config *cfg, struct pmc_agent *agent, const char *uds,
+ 		  pmc_node_recv_subscribed_t *recv_subscribed, void *context);
+ int run_pmc_wait_sync(struct pmc_agent *agent, int timeout);
+@@ -42,6 +55,34 @@ int run_pmc_wait_sync(struct pmc_agent *agent, int timeout);
+  */
+ struct pmc_agent *pmc_agent_create(void);
+ 
++/**
++ * Handles incoming management GET/SET requests on the agent's UDS socket.
++ * Dispatches to the handler registered via pmc_agent_set_management_handler().
++ * Should be called regularly when the agent is not in autocfg mode.
++ * @param agent  Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @return       0 on success, negative on error.
++ */
++int pmc_agent_service_requests(struct pmc_agent *agent);
++
++/**
++ * Returns the file descriptor used by the agent's transport.
++ * Useful for including in an external poll() set.
++ * @param agent  Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @return       A valid fd, or -1 if the agent has no transport.
++ */
++int pmc_agent_get_fd(struct pmc_agent *agent);
++
++/**
++ * Registers a handler for incoming management GET/SET requests.
++ * The handler is process-specific (e.g. ts2phc registers a gear handler).
++ * @param agent    Pointer to a PMC instance obtained via @ref pmc_agent_create().
++ * @param handler  Callback to invoke on each management request.
++ * @param context  Opaque pointer passed back to the handler.
++ */
++void pmc_agent_set_management_handler(struct pmc_agent *agent,
++				      pmc_node_management_handler_t *handler,
++				      void *context);
++
+ /**
+  * Destroys an instance of a PMC agent.
+  * @param agent  Pointer to a PMC instance obtained via @ref pmc_agent_create().
+diff --git a/pmc_common.c b/pmc_common.c
+index 34bdc3f..1231c97 100644
+--- a/pmc_common.c
++++ b/pmc_common.c
+@@ -18,6 +18,7 @@
+  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+  */
+ #include <errno.h>
++#include <ctype.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/types.h>
+@@ -157,6 +158,10 @@ struct management_id idtab[] = {
+ 	{ "UNICAST_MASTER_TABLE_NP", MID_UNICAST_MASTER_TABLE_NP, do_get_action },
+ 	{ "PORT_HWCLOCK_NP", MID_PORT_HWCLOCK_NP, do_get_action },
+ 	{ "POWER_PROFILE_SETTINGS_NP", MID_POWER_PROFILE_SETTINGS_NP, do_set_action },
++
++	/* Gearshift setting and status query */
++	{ "GEARSHIFT_NP", MID_GEARSHIFT_NP, do_set_action },
++	{ "GEAR_STATUS_NP", MID_GEAR_STATUS_NP, do_get_action },
+ };
+ 
+ static void do_get_action(struct pmc *pmc, int action, int index, char *str)
+@@ -180,10 +185,12 @@ static void do_set_action(struct pmc *pmc, int action, int index, char *str)
+ 	char onoff_port_state[4] = "off";
+ 	char onoff_time_status[4] = "off";
+ 	char onoff_parent_data_set[4] = "off";
++	char onoff_gearshift[4] = "off";
+ 	char display_name[11] = {0};
+ 	uint64_t jump;
+ 	uint8_t key;
+ 	int enable;
++	char *s;
+ 
+ 	mtd.reserved = 0;
+ 
+@@ -212,6 +219,34 @@ static void do_set_action(struct pmc *pmc, int action, int index, char *str)
+ 		}
+ 		pmc_send_set_action(pmc, code, &mtd, sizeof(mtd));
+ 		break;
++	/* handle gear setting */
++	case MID_GEARSHIFT_NP:
++	{
++		char gear_char;
++
++		cnt = sscanf(str, " %*s %*s %c", &gear_char);
++		if (cnt != 1) {
++			fprintf(stderr, "%s SET needs 1 value\n",
++				idtab[index].name);
++			break;
++		}
++		/* convert character (P/N/D) to ordinal (enum) value */
++		s = GEAR_INITIALS;
++		gear_char = (char)toupper((unsigned char)gear_char);
++		for (cnt = 0; cnt < (int)strlen(s); cnt++) {
++			if (gear_char == s[cnt]) {
++				mtd.val = cnt;
++				break;
++			}
++		}
++		if (cnt >= (int)strlen(s)) {
++			fprintf(stderr, "%s: invalid gear '%c', use P, N or D\n",
++				idtab[index].name, gear_char);
++			break;
++		}
++		pmc_send_set_action(pmc, code, &mtd, sizeof(mtd));
++		break;
++	}
+ 	case MID_ALTERNATE_TIME_OFFSET_ENABLE:
+ 		cnt = sscanf(str,  " %*s %*s keyField %hhu enable %d",
+ 			     &mtd.val, &enable);
+@@ -247,7 +282,7 @@ static void do_set_action(struct pmc *pmc, int action, int index, char *str)
+ 			     &atop.currentOffset,
+ 			     &atop.jumpSeconds,
+ 			     &jump);
+-		if (cnt != 4) {
++		if (cnt < 4) {
+ 			fprintf(stderr, "%s SET needs 4 values\n",
+ 				idtab[index].name);
+ 			break;
+@@ -306,12 +341,14 @@ static void do_set_action(struct pmc *pmc, int action, int index, char *str)
+ 			     "duration          %hu "
+ 			     "NOTIFY_PORT_STATE %3s "
+ 			     "NOTIFY_TIME_SYNC  %3s "
+-			     "NOTIFY_PARENT_DATA_SET %3s ",
++			     "NOTIFY_PARENT_DATA_SET %3s "
++			     "NOTIFY_GEAR_STATE %3s ",
+ 			     &sen.duration,
+ 			     onoff_port_state,
+ 			     onoff_time_status,
+-			     onoff_parent_data_set);
+-		if (cnt != 4) {
++			     onoff_parent_data_set,
++			     onoff_gearshift);
++		if (cnt < 4) {
+ 			fprintf(stderr, "%s SET needs 4 values\n",
+ 				idtab[index].name);
+ 			break;
+@@ -326,6 +363,9 @@ static void do_set_action(struct pmc *pmc, int action, int index, char *str)
+ 			event_bitmask_set(sen.bitmask, NOTIFY_PARENT_DATA_SET,
+ 					  TRUE);
+ 		}
++		if (!strcasecmp(onoff_gearshift, "on")) {
++			event_bitmask_set(sen.bitmask, NOTIFY_GEAR_STATE, TRUE);
++		}
+ 		pmc_send_set_action(pmc, code, &sen, sizeof(sen));
+ 		break;
+ 	case MID_SYNCHRONIZATION_UNCERTAIN_NP:
+@@ -687,6 +727,10 @@ static int pmc_tlv_datalen(struct pmc *pmc, int id)
+ 	case MID_LOG_MIN_PDELAY_REQ_INTERVAL:
+ 		len += sizeof(struct management_tlv_datum);
+ 		break;
++	/* Get status of gearshift setting */
++	case MID_GEAR_STATUS_NP:
++		len += sizeof(struct gear_status_np);
++		break;
+ 	}
+ 	return len + len % 2;
+ }
+@@ -807,6 +851,47 @@ int pmc_send_set_aton(struct pmc *pmc, int id, uint8_t key, const char *name)
+ 	return 0;
+ }
+ 
++int pmc_send_response(struct pmc *pmc, struct ptp_message *req,
++		      int id, const void *data, int datalen)
++{
++	struct management_tlv *mgt;
++	struct tlv_extra *extra;
++	struct ptp_message *rsp;
++	int pdulen, padded;
++
++	rsp = pmc_message(pmc, RESPONSE);
++	if (!rsp)
++		return -1;
++
++	rsp->management.targetPortIdentity = req->header.sourcePortIdentity;
++	rsp->header.sequenceId = req->header.sequenceId;
++
++	padded = datalen + (datalen % 2);
++	mgt = (struct management_tlv *) rsp->management.suffix;
++	mgt->type = TLV_MANAGEMENT;
++	mgt->length = sizeof(mgt->id) + padded;
++	mgt->id = id;
++	if (datalen > 0)
++		memcpy(mgt->data, data, datalen);
++	if (padded > datalen)
++		mgt->data[datalen] = 0;
++
++	pdulen = rsp->header.messageLength + sizeof(*mgt) + padded;
++	rsp->header.messageLength = pdulen;
++
++	extra = tlv_extra_alloc();
++	if (!extra) {
++		msg_put(rsp);
++		return -ENOMEM;
++	}
++	extra->tlv = (struct TLV *) rsp->management.suffix;
++	msg_tlv_attach(rsp, extra);
++
++	pmc_send(pmc, rsp);
++	msg_put(rsp);
++	return 0;
++}
++
+ struct ptp_message *pmc_recv(struct pmc *pmc)
+ {
+ 	struct ptp_message *msg;
+diff --git a/pmc_common.h b/pmc_common.h
+index 6fb2fae..aa1df28 100644
+--- a/pmc_common.h
++++ b/pmc_common.h
+@@ -43,6 +43,9 @@ int pmc_send_set_action(struct pmc *pmc, int id, void *data, int datasize);
+ 
+ int pmc_send_set_aton(struct pmc *pmc, int id, uint8_t key, const char *name);
+ 
++int pmc_send_response(struct pmc *pmc, struct ptp_message *req,
++		      int id, const void *data, int datalen);
++
+ struct ptp_message *pmc_recv(struct pmc *pmc);
+ 
+ int pmc_target(struct pmc *pmc, struct PortIdentity *pid);
+diff --git a/ptp4l.8 b/ptp4l.8
+index 4cb9adb..91f7619 100644
+--- a/ptp4l.8
++++ b/ptp4l.8
+@@ -1078,6 +1078,26 @@ Example for Intel E810 card:
+ Assigning priority needs careful consideration as assigning too high
+ priority to any task might make system unstable.
+ 
++.SH GEARSHIFT
++The gearshift mechanism controls whether this ptp4l instance is permitted
++to discipline the PHC.
++
++.TP
++.B D (Drive)
++The servo is active and PHC adjustments are applied. This is the default
++behavior if no gear is specified.
++
++.TP
++.B N (Neutral)
++The servo continues running, but PHC adjustments are suppressed.
++
++.TP
++.B P (Park)
++Monitor-only mode. No servo operation and no PHC adjustments are applied.
++
++The active gear may be queried or changed at runtime using PMC management
++commands (see pmc(8)).
++
+ .SH SEE ALSO
+ .BR pmc (8),
+ .BR phc2sys (8)
+diff --git a/servo.c b/servo.c
+index 6d6753e..3669594 100644
+--- a/servo.c
++++ b/servo.c
+@@ -177,3 +177,34 @@ int servo_offset_threshold(struct servo *servo)
+ {
+ 	return servo->offset_threshold;
+ }
++
++/**
++ * Define a way to correlate servo names and servo IDs
++ */
++struct servo_desc {
++	const char *name;
++	enum servo_type type;
++};
++
++static const struct servo_desc servo_table[] = {
++	{ "pi",            CLOCK_SERVO_PI },
++	{ "linreg",        CLOCK_SERVO_LINREG },
++	{ "ntpshm",        CLOCK_SERVO_NTPSHM },
++	{ "refclock_sock", CLOCK_SERVO_REFCLOCK_SOCK },
++};
++
++/**
++ * Define a way to look up servo type from name string
++ */
++enum servo_type servo_type_from_name(const char *name)
++{
++	size_t i;
++
++	for (i = 0; i < ARRAY_SIZE(servo_table); i++) {
++		if (!strcasecmp(name, servo_table[i].name)) {
++			return servo_table[i].type;
++		}
++	}
++
++	return CLOCK_SERVO_INVALID;
++}
+diff --git a/servo.h b/servo.h
+index 6122295..9c44719 100644
+--- a/servo.h
++++ b/servo.h
+@@ -28,9 +28,10 @@ struct config;
+ struct servo;
+ 
+ /**
+- * Defines the available servo cores
++ * Defines the available servo cores, with -1 being invalid
+  */
+ enum servo_type {
++	CLOCK_SERVO_INVALID = -1,
+ 	CLOCK_SERVO_PI,
+ 	CLOCK_SERVO_LINREG,
+ 	CLOCK_SERVO_NTPSHM,
+@@ -38,6 +39,11 @@ enum servo_type {
+ 	CLOCK_SERVO_REFCLOCK_SOCK,
+ };
+ 
++/**
++ * Define a function prototype to look up server types from description
++ */
++enum servo_type servo_type_from_name(const char *name);
++
+ /**
+  * Defines the caller visible states of a clock servo.
+  */
+diff --git a/tlv.h b/tlv.h
+index 3c02fc0..332c0ff 100644
+--- a/tlv.h
++++ b/tlv.h
+@@ -20,6 +20,7 @@
+ #ifndef HAVE_TLV_H
+ #define HAVE_TLV_H
+ 
++#include <stdbool.h>
+ #include <sys/queue.h>
+ 
+ #include "ddt.h"
+@@ -142,6 +143,56 @@ enum management_action {
+ #define MID_NOT_SUPPORTED				0x0006
+ #define MID_GENERAL_ERROR				0xFFFE
+ 
++
++/* Gearshift control and status (non-standard, application-local) */
++#define MID_GEARSHIFT_NP                       0xC0F0
++#define MID_GEAR_STATUS_NP                     0xC0F1
++
++enum gear_mode {
++	GEAR_PARK     = 0,
++	GEAR_NEUTRAL  = 1,
++	GEAR_DRIVE    = 2,
++};
++
++enum gear_source {
++	GEAR_SRC_CONFIG = 0,
++	GEAR_SRC_PMC    = 1,
++	GEAR_SRC_IPC    = 2,
++	GEAR_SRC_LOCAL  = 3,
++};
++
++#define GEAR_SOURCE_STRINGS \
++	((const char * const []){"Config", "PMC", "IPC", "Local"})
++
++struct gear_status_np {
++	UInteger8  gear;
++	UInteger8  source;
++	UInteger16 flags;
++};
++
++/* gsuf strings used for log files to indicate gear */
++#define GEAR_PARK_INDICATOR			" (P)"
++#define GEAR_NEUTRAL_INDICATOR		" (N)"
++#define GEAR_DRIVE_INDICATOR		" "
++/* Alternate to keep column alignment if anything after gsuf in logs:
++ * #define GEAR_DRIVE_INDICATOR		"    "
++ */
++
++#define GEAR_INITIALS				((char *)"PND")
++#define GEAR_PARK_CHOICE			"P"
++#define GEAR_NEUTRAL_CHOICE			"N"
++#define GEAR_DRIVE_CHOICE			"D"
++
++/* Inline functions for checking gear status, used in multiple .c files */
++static inline bool gear_allows_adjust(enum gear_mode g)
++{
++	return g == GEAR_DRIVE;
++}
++static inline bool gear_is_park(enum gear_mode g)
++{
++	return g == GEAR_PARK;
++}
++
+ /* Values for the SYNCHRONIZATION_UNCERTAIN_NP management TLV */
+ #define SYNC_UNCERTAIN_DONTCARE	0xff
+ #define SYNC_UNCERTAIN_FALSE	0
+diff --git a/ts2phc.8 b/ts2phc.8
+index dc88f97..05c4083 100644
+--- a/ts2phc.8
++++ b/ts2phc.8
+@@ -293,6 +293,29 @@ using the file, and this might not be what is expected.
+ It is recommended to use separate configuration files for ptp4l,
+ phc2sys, and ts2phc in order to avoid any unexpected behavior.
+ 
++.TP
++.B ts2phc.seed_system_time
++When set to 1, if the PPS source is \fBnmea\fP and no valid RMC sentence has been received yet, \fBts2phc\fP will seed the Time-of-Day from the system clock (\fBCLOCK_REALTIME\fP) and align it to the PPS boundary, effectively behaving as if an initial satellite fix were present. Once a valid NMEA timestamp is available, the program will use it. The default is 0 (disabled).
++
++.SH GEARSHIFT
++The gearshift mechanism determines whether this ts2phc instance is
++allowed to discipline the PHC.
++
++.TP
++.B D (Drive)
++GNSS-sourced PHC discipline is enabled. This is the default mode.
++
++.TP
++.B N (Neutral)
++GNSS data continues to be processed, but PHC adjustments are suppressed.
++
++.TP
++.B P (Park)
++Monitor-only mode. No PHC discipline occurs.
++
++Gear may be modified at runtime via PMC commands directed at the ts2phc
++management socket (see pmc(8)).
++
+ .SH SEE ALSO
+ .BR phc2sys (8)
+ .BR ptp4l (8)
+diff --git a/ts2phc.c b/ts2phc.c
+index 6698cba..cca6ea4 100644
+--- a/ts2phc.c
++++ b/ts2phc.c
+@@ -127,6 +127,77 @@ static int ts2phc_recv_subscribed(void *context, struct ptp_message *msg,
+ 	return 0;
+ }
+ 
++static void ts2phc_management_handler(void *context, struct pmc *pmc,
++				      struct ptp_message *msg,
++				      int action, int mgt_id)
++{
++	struct ts2phc_private *priv = context;
++	struct management_tlv *mgt;
++	struct gear_status_np gs;
++	UInteger8 new_gear;
++
++	mgt = (struct management_tlv *) msg->management.suffix;
++
++	switch (action) {
++	case GET:
++		switch (mgt_id) {
++		case MID_GEARSHIFT_NP:
++			pmc_send_response(pmc, msg, mgt_id,
++					  &priv->gear, sizeof(priv->gear));
++			break;
++		case MID_GEAR_STATUS_NP:
++			gs.gear   = priv->gear;
++			gs.source = priv->gear_source;
++			gs.flags  = 0;
++			pmc_send_response(pmc, msg, mgt_id, &gs, sizeof(gs));
++			break;
++		default:
++			break;
++		}
++		break;
++
++	case SET:
++		switch (mgt_id) {
++		case MID_GEARSHIFT_NP:
++		{
++			const char *s = GEAR_INITIALS;
++			struct ts2phc_clock *clk;
++
++			new_gear = *(UInteger8 *) mgt->data;
++			if (new_gear > GEAR_DRIVE) {
++				pr_err("bad gear shift request: %u", (unsigned int)new_gear);
++				break;
++			}
++			pr_info("Gear change %c -> %c (source=pmc)",
++				s[priv->gear], s[new_gear]);
++
++			/* Reset servo when re-engaging Drive from Park so the
++			 * servo starts fresh rather than resuming stale state.
++			 */
++			if (priv->gear != new_gear && new_gear == GEAR_DRIVE) {
++				LIST_FOREACH(clk, &priv->clocks, list) {
++					if (clk->servo) {
++						servo_reset(clk->servo);
++						clk->servo_state = SERVO_UNLOCKED;
++						pr_info("%s servo reset to s0 on Drive re-engage",
++							clk->name);
++					}
++				}
++			}
++
++			priv->gear        = new_gear;
++			priv->gear_source = GEAR_SRC_PMC;
++			pmc_send_response(pmc, msg, mgt_id,
++					  &priv->gear, sizeof(priv->gear));
++			break;
++		}
++		default:
++			break;
++		}
++		break;
++	}
++}
++
+ static struct servo *ts2phc_servo_create(struct ts2phc_private *priv,
+ 					 struct ts2phc_clock *clock)
+ {
+@@ -200,6 +271,7 @@ struct ts2phc_clock *ts2phc_clock_add(struct ts2phc_private *priv,
+ 	c->clkid = clkid;
+ 	c->fd = CLOCKID_TO_FD(clkid);
+ 	c->phc_index = phc_index;
++	c->gear = GEAR_DRIVE;
+ 	c->servo_state = SERVO_UNLOCKED;
+ 	c->servo = ts2phc_servo_create(priv, c);
+ 	c->no_adj = config_get_int(priv->cfg, NULL, "free_running");
+@@ -410,6 +482,13 @@ static int ts2phc_pps_source_implicit_tstamp(struct ts2phc_private *priv,
+ 
+ 	err = ts2phc_pps_source_getppstime(priv->src, &source_ts);
+ 	if (err < 0) {
++		if (priv->seed_system_time) {
++			pr_err("source ts not valid — seeding from system clock");
++			/* Return 1 (not 0) so callers know this is a system-clock
++			 * seed and can trigger holdover rather than normal sync.
++			 */
++			return 1;
++		}
+ 		pr_err("source ts not valid");
+ 		return err;
+ 	}
+@@ -491,8 +570,10 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 		}
+ 
+ 		if (holdover) {
+-			if (c->servo_state != SERVO_LOCKED_STABLE)
+-				continue;
++			if (!priv->seed_system_time) {
++				if (c->servo_state != SERVO_LOCKED_STABLE)
++					continue;
++			}
+ 			source_ts = tmv_to_timespec(ts);
+ 			if (source_ts.tv_nsec > NS_PER_SEC / 2)
+ 				source_ts.tv_sec++;
+@@ -502,9 +583,17 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 
+ 		offset = tmv_to_nanoseconds(tmv_sub(ts, source_tmv));
+ 
+-		if (c->no_adj) {
+-			pr_info("%s offset %10" PRId64, c->name,
+-				offset);
++		/* Gear suffix reflects gear mode if other than Drive */
++		const char *gsuf = GEAR_DRIVE_INDICATOR;
++
++		if (c->gear == GEAR_NEUTRAL)
++			gsuf = GEAR_NEUTRAL_INDICATOR;
++		else if (c->gear == GEAR_PARK)
++			gsuf = GEAR_PARK_INDICATOR;
++
++		if (c->no_adj || gear_is_park(c->gear)) {
++			pr_info("%s offset %10" PRId64 "%s%s", c->name,
++				offset, holdover ? " holdover" : "        ", gsuf);
+ 			continue;
+ 		}
+ 
+@@ -524,25 +613,29 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 		adj = servo_sample(c->servo, offset, tmv_to_nanoseconds(ts),
+ 				   SAMPLE_WEIGHT, &c->servo_state);
+ 
+-		if (holdover && c->servo_state != SERVO_LOCKED_STABLE) {
+-			pr_info("%s lost holdover lock (offset %10" PRId64 ")",
+-				c->name, offset);
+-			continue;
++		if (!priv->seed_system_time) {
++			if (holdover && c->servo_state != SERVO_LOCKED_STABLE) {
++				pr_info("%s lost holdover lock (offset %10" PRId64 ")",
++					c->name, offset);
++				continue;
++			}
+ 		}
+ 
+-		pr_info("%s offset %10" PRId64 " s%d freq %+7.0f%s",
++		pr_info("%s offset %10" PRId64 " s%d freq %+7.0f%s%s",
+ 			c->name, offset, c->servo_state, adj,
+-			holdover ? " holdover" : "");
++			holdover ? " holdover" : "        ", gsuf);
+ 
+ 		switch (c->servo_state) {
+ 		case SERVO_UNLOCKED:
+ 			break;
+ 		case SERVO_JUMP:
+-			if (clockadj_set_freq(c->clkid, -adj)) {
+-				goto servo_unlock;
+-			}
+-			if (clockadj_step(c->clkid, -offset)) {
+-				goto servo_unlock;
++			if (gear_allows_adjust(c->gear)) {
++				if (clockadj_set_freq(c->clkid, -adj)) {
++					goto servo_unlock;
++				}
++				if (clockadj_step(c->clkid, -offset)) {
++					goto servo_unlock;
++				}
+ 			}
+ 			break;
+ 		case SERVO_LOCKED:
+@@ -550,10 +643,12 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 			if (llabs(offset) < 500) {
+ 				c->current_offset_skip_count = 0;
+ 			}
+-			if (clockadj_set_freq(c->clkid, -adj)) {
+-				goto servo_unlock;
++			if (gear_allows_adjust(c->gear)) {
++				if (clockadj_set_freq(c->clkid, -adj)) {
++					goto servo_unlock;
++				}
++				break;
+ 			}
+-			break;
+ 		}
+ 		c->mon_offset = offset;
+ 		c->mon_delay = -1;
+@@ -600,6 +695,7 @@ static void usage(char *progname)
+ 		" -c [dev|name]  PHC time sink (like /dev/ptp0 or eth0)\n"
+ 		"                (may be specified multiple times)\n"
+ 		" -f [file]      read configuration from 'file'\n"
++		" -g [P|N|D]      initial gear: Park, Neutral, Drive (default D)\n"
+ 		" -h             prints this message and exits\n"
+ 		" -l [num]       set the logging level to 'num'\n"
+ 		" -m             print messages to stdout\n"
+@@ -727,7 +823,7 @@ int main(int argc, char *argv[])
+ 	/* Process the command line arguments. */
+ 	progname = strrchr(argv[0], '/');
+ 	progname = progname ? 1 + progname : argv[0];
+-	while (EOF != (c = getopt_long(argc, argv, "ac:f:hi:l:mqs:v", opts, &index))) {
++	while (EOF != (c = getopt_long(argc, argv, "ac:f:g:hi:l:mqs:v", opts, &index))) {
+ 		switch (c) {
+ 		case 0:
+ 			if (config_parse_option(cfg, opts[index].name, optarg)) {
+@@ -749,6 +845,12 @@ int main(int argc, char *argv[])
+ 		case 'f':
+ 			config = optarg;
+ 			break;
++		case 'g':
++			if (config_set_string(cfg, "gear", optarg)) {
++				ts2phc_cleanup(&priv);
++				return -1;
++			}
++			break;
+ 		case 'l':
+ 			if (get_arg_val_i(c, optarg, &print_level,
+ 					  PRINT_LEVEL_MIN, PRINT_LEVEL_MAX)) {
+@@ -802,13 +904,19 @@ int main(int argc, char *argv[])
+ 
+ 	STAILQ_INIT(&priv.sinks);
+ 
++	priv.seed_system_time = config_get_int(priv.cfg, NULL, "ts2phc.seed_system_time");
++
+ 	snprintf(uds_local, sizeof(uds_local), "/var/run/ts2phc.%d",
+ 		 getpid());
+ 
+ 	if (autocfg) {
++		/* PMC client mode: connect to ptp4l to subscribe for port
++		 * state changes.
++		 */
+ 		err = init_pmc_node(cfg, priv.agent, uds_local,
+ 				    ts2phc_recv_subscribed, &priv);
+ 		if (err) {
++			fprintf(stderr, "failed to init pmc node\n");
+ 			ts2phc_cleanup(&priv);
+ 			return -1;
+ 		}
+@@ -817,11 +925,54 @@ int main(int argc, char *argv[])
+ 			ts2phc_cleanup(&priv);
+ 			return -1;
+ 		}
++	} else {
++		/* PMC server mode: bind a fixed UDS path so pmc CLI can
++		 * reach ts2phc with '-s <uds_address>'.
++		 */
++		snprintf(uds_local, sizeof(uds_local), "%s",
++			 config_get_string(cfg, NULL, "uds_address"));
++		err = init_pmc_node(cfg, priv.agent, uds_local,
++				    ts2phc_recv_subscribed, &priv);
++		if (err) {
++			fprintf(stderr, "failed to init pmc node\n");
++			ts2phc_cleanup(&priv);
++			return -1;
++		}
++		priv.gear        = GEAR_DRIVE;
++		priv.gear_source = GEAR_SRC_CONFIG;
++
++		/* Apply gear from config file or -g option */
++		{
++			char *gear_str = config_get_string(cfg, NULL, "gear");
++
++			if (gear_str) {
++				char g = gear_str[0];
++
++				if (g == 'P' || g == 'p') {
++					priv.gear = GEAR_PARK;
++				} else if (g == 'N' || g == 'n') {
++					priv.gear = GEAR_NEUTRAL;
++				} else if (g == 'D' || g == 'd') {
++					priv.gear = GEAR_DRIVE;
++				} else {
++					fprintf(stderr, "bad gear value: %s\n", gear_str);
++					ts2phc_cleanup(&priv);
++					return -1;
++				}
++			}
++		}
++		if (priv.gear < GEAR_DRIVE) {
++			const char *s = GEAR_INITIALS;
++
++			pr_info("Initial gear=%c", s[priv.gear]);
++		}
++		pmc_agent_set_management_handler(priv.agent,
++						 ts2phc_management_handler,
++						 &priv);
+ 	}
+ 
+ 	STAILQ_FOREACH(iface, &cfg->interfaces, list) {
+ 		const char *dev = interface_name(iface);
+-
+ 		if (1 == config_get_int(cfg, dev, "ts2phc.master")) {
+ 			int perout_phase;
+ 
+@@ -882,6 +1033,10 @@ int main(int argc, char *argv[])
+ 		return -1;
+ 	}
+ 
++	/* TODO: seed_system_time feature
++	 * Requires ts2phc_pps_source_get_type() which is a 4.4 API.
++	 * Will be ported as a separate commit.
++	 */
+ 	priv.holdover_length = config_get_int(cfg, NULL, "ts2phc.holdover");
+ 	priv.holdover_start = 0;
+ 	priv.mon.fd = -1;
+@@ -915,6 +1070,25 @@ int main(int argc, char *argv[])
+ 			pr_err("poll failed");
+ 			break;
+ 		}
++
++		/* Propagate any PMC-driven gear change to all clocks.
++		 * pmc_agent_service_requests() is called inside the sink poll
++		 * when the management fd fires, so check gear here after.
++		 */
++		{
++			struct ts2phc_clock *clk;
++			LIST_FOREACH(clk, &priv.clocks, list) {
++				if (clk->gear != priv.gear) {
++					const char *s = GEAR_INITIALS;
++
++					pr_info("%s gear change %c -> %c",
++						clk->name,
++						s[clk->gear], s[priv.gear]);
++					clk->gear = priv.gear;
++				}
++			}
++		}
++
+ 		if (err > 0) {
+ 			err = ts2phc_collect_pps_source_tstamp(&priv);
+ 			if (err) {
+diff --git a/ts2phc.h b/ts2phc.h
+index df86702..abf43ad 100644
+--- a/ts2phc.h
++++ b/ts2phc.h
+@@ -13,6 +13,7 @@
+ 
+ #include "pmc_agent.h"
+ #include "servo.h"
++#include "tlv.h"
+ #include "ts2phc_pps_source.h"
+ #include "ts2phc_pps_sink.h"
+ 
+@@ -34,9 +35,14 @@ struct ts2phc_clock {
+ 	int mon_valid;
+ 	char *name;
+ 	bool no_adj;
++
++	/* Seed ToD from system time at start when NMEA ToD is not yet available. */
++	int	seed_system_time;   /* 0/1: enabled via ts2phc.seed_system_time (default 1) */
++
+ 	bool is_target;
+ 	bool is_ts_available;
+ 	tmv_t last_ts;
++	enum gear_mode gear;
+ 	int max_offset_skip_count;
+ 	int current_offset_skip_count;
+ };
+@@ -66,6 +72,9 @@ struct ts2phc_private {
+ 		int fd;
+ 		char *path;
+ 	} mon;
++	int seed_system_time; /* 0/1: seed ToD from system time when NMEA not yet ready */
++	enum gear_mode gear;
++	enum gear_source gear_source;
+ };
+ 
+ struct ts2phc_clock *ts2phc_clock_add(struct ts2phc_private *priv,
+diff --git a/ts2phc_pps_sink.c b/ts2phc_pps_sink.c
+index 05ac225..c35472d 100644
+--- a/ts2phc_pps_sink.c
++++ b/ts2phc_pps_sink.c
+@@ -62,7 +62,7 @@ static int ts2phc_pps_sink_array_create(struct ts2phc_private *priv)
+ 	if (!polling_array->sink)
+ 		goto err_alloc_sinks;
+ 
+-	polling_array->pfd = malloc(priv->n_sinks *
++	polling_array->pfd = malloc((priv->n_sinks + 1) *
+ 				    sizeof(*polling_array->pfd));
+ 	if (!polling_array->pfd)
+ 		goto err_alloc_pfd;
+@@ -83,6 +83,12 @@ static int ts2phc_pps_sink_array_create(struct ts2phc_private *priv)
+ 		polling_array->pfd[i].fd = sink->clock->fd;
+ 	}
+ 
++	/* Extra slot for the management (UDS) socket so that PMC requests
++	 * wake up the blocking poll immediately.
++	 */
++	polling_array->pfd[priv->n_sinks].fd = pmc_agent_get_fd(priv->agent);
++	polling_array->pfd[priv->n_sinks].events = POLLIN | POLLPRI;
++
+ 	priv->polling_array = polling_array;
+ 
+ 	return 0;
+@@ -272,6 +278,14 @@ static enum extts_result ts2phc_pps_sink_event(struct ts2phc_private *priv,
+ 
+ 	err = ts2phc_pps_source_getppstime(priv->src, &source_ts);
+ 	if (err < 0) {
++		if (priv->seed_system_time) {
++			/* GNSS down: skip the ignore check (source_ts
++			 * would be fake) and go straight to recording
++			 * the EXTTS timestamp so holdover can use it.
++			 */
++			pr_debug("source ts not valid — recording extts for holdover");
++			return 1;
++		}
+ 		pr_debug("source ts not valid");
+ 		return 0;
+ 	}
+@@ -379,7 +393,7 @@ int ts2phc_pps_sink_poll(struct ts2phc_private *priv)
+ 	while (!all_sinks_have_events) {
+ 		struct ts2phc_pps_sink *sink;
+ 
+-		cnt = poll(polling_array->pfd, priv->n_sinks, 2000);
++		cnt = poll(polling_array->pfd, priv->n_sinks + 1, 2000);
+ 		if (cnt < 0) {
+ 			if (errno == EINTR) {
+ 				return 0;
+@@ -392,6 +406,10 @@ int ts2phc_pps_sink_poll(struct ts2phc_private *priv)
+ 			return 0;
+ 		}
+ 
++		/* Service any incoming PMC management request first */
++		if (polling_array->pfd[priv->n_sinks].revents & (POLLIN|POLLPRI))
++			pmc_agent_service_requests(priv->agent);
++
+ 		for (i = 0; i < priv->n_sinks; i++) {
+ 			if (polling_array->pfd[i].revents & (POLLIN|POLLPRI)) {
+ 				enum extts_result result;
+-- 
+2.43.0
+

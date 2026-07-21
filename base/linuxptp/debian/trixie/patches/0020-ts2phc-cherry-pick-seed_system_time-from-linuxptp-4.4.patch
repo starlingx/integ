@@ -1,0 +1,109 @@
+From 20c6ee7613b0991514f8013dd1febeb55820797b Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Thu, 16 Jul 2026 13:18:53 -0400
+Subject: [PATCH] ts2phc: cherry-pick seed_system_time from linuxptp 4.4
+
+Port the seed_system_time feature so ts2phc can seed Time-of-Day from
+the system clock (CLOCK_REALTIME) on boot when no initial GPS/NMEA fix
+is available. Once a valid NMEA timestamp arrives, normal operation
+resumes.
+
+Changes:
+- Add ts2phc_pps_source_get_type() API (mirrors 4.4 interface)
+- Store source type in ts2phc_pps_source struct
+- On startup: if seed_system_time=1 and source is NMEA and no valid
+  RMC yet, seed ToD from system clock aligned to PPS boundary
+- In ts2phc_pps_sink: when source_ts is not valid and seeding is
+  enabled, record EXTTS timestamp for holdover rather than discarding
+- Config option: ts2phc.seed_system_time (default: 0)
+- Man page documentation for the new option
+
+This allows ts2phc to enter holdover immediately on boot rather than
+waiting indefinitely for the first GNSS fix, which is critical for
+systems with slow cold-start acquisition.
+
+Co-developed-by: Kevin Bross <kevin.bross@intel.com>
+Signed-off-by: Cole Walker <Cole.Walker@windriver.com>
+---
+ ts2phc.c                    | 14 +++++++++++---
+ ts2phc_pps_source.c         |  7 +++++++
+ ts2phc_pps_source.h         |  2 ++
+ ts2phc_pps_source_private.h |  1 +
+ 4 files changed, 21 insertions(+), 3 deletions(-)
+
+diff --git a/ts2phc.c b/ts2phc.c
+index cca6ea4..6b0a92d 100644
+--- a/ts2phc.c
++++ b/ts2phc.c
+@@ -1033,10 +1033,18 @@ int main(int argc, char *argv[])
+ 		return -1;
+ 	}
+ 
+-	/* TODO: seed_system_time feature
+-	 * Requires ts2phc_pps_source_get_type() which is a 4.4 API.
+-	 * Will be ported as a separate commit.
++	/* If seed_system_time is enabled and NMEA is not yet ready,
++	 * seed the initial timestamp from the system clock.
+ 	 */
++	if (priv.seed_system_time &&
++	    ts2phc_pps_source_get_type(priv.src) == TS2PHC_PPS_SOURCE_NMEA) {
++		struct timespec source_ts;
++
++		if (ts2phc_pps_source_getppstime(priv.src, &source_ts) < 0) {
++			clock_gettime(CLOCK_REALTIME, &source_ts);
++			pr_notice("nmea: seeding ToD from system time until first RMC");
++		}
++	}
+ 	priv.holdover_length = config_get_int(cfg, NULL, "ts2phc.holdover");
+ 	priv.holdover_start = 0;
+ 	priv.mon.fd = -1;
+diff --git a/ts2phc_pps_source.c b/ts2phc_pps_source.c
+index c333f65..ae2ad46 100644
+--- a/ts2phc_pps_source.c
++++ b/ts2phc_pps_source.c
+@@ -26,6 +26,8 @@ struct ts2phc_pps_source *ts2phc_pps_source_create(struct ts2phc_private *priv,
+ 		src = ts2phc_phc_pps_source_create(priv, dev);
+ 		break;
+ 	}
++	if (src)
++		src->type = type;
+ 	return src;
+ }
+ 
+@@ -46,3 +48,8 @@ struct ts2phc_clock *ts2phc_pps_source_get_clock(struct ts2phc_pps_source *src)
+ 
+ 	return NULL;
+ }
++
++enum ts2phc_pps_source_type ts2phc_pps_source_get_type(struct ts2phc_pps_source *src)
++{
++	return src->type;
++}
+diff --git a/ts2phc_pps_source.h b/ts2phc_pps_source.h
+index 293c693..2f249f3 100644
+--- a/ts2phc_pps_source.h
++++ b/ts2phc_pps_source.h
+@@ -51,6 +51,8 @@ void ts2phc_pps_source_destroy(struct ts2phc_pps_source *src);
+  */
+ int ts2phc_pps_source_getppstime(struct ts2phc_pps_source *src, struct timespec *ts);
+ 
++enum ts2phc_pps_source_type ts2phc_pps_source_get_type(struct ts2phc_pps_source *src);
++
+ struct ts2phc_clock *ts2phc_pps_source_get_clock(struct ts2phc_pps_source *src);
+ 
+ #endif
+diff --git a/ts2phc_pps_source_private.h b/ts2phc_pps_source_private.h
+index 99e6a78..3c21bca 100644
+--- a/ts2phc_pps_source_private.h
++++ b/ts2phc_pps_source_private.h
+@@ -16,6 +16,7 @@ struct ts2phc_pps_source {
+ 	void (*destroy)(struct ts2phc_pps_source *src);
+ 	int (*getppstime)(struct ts2phc_pps_source *src, struct timespec *ts);
+ 	struct ts2phc_clock *(*get_clock)(struct ts2phc_pps_source *src);
++	enum ts2phc_pps_source_type type;
+ };
+ 
+ #endif
+-- 
+2.43.0
+

@@ -16,3 +16,5 @@
 0016-phc2sys-skip-system-clock-sync-utc-offset-not-valid.patch
 0017-port-Fix-master-loss-detection-on-inhibit_announce-p.patch
 0018-ts2phc-phc2sys-add-PHC-readiness-gate-to-prevent-37s.patch
+0019-ptp4l-ts2phc-phc2sys-gearshift-mechanism.patch
+0020-ts2phc-cherry-pick-seed_system_time-from-linuxptp-4.4.patch
