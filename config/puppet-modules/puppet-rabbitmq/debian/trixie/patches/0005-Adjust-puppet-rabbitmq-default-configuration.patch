@@ -7,12 +7,12 @@ Remove loopback users restriction and tcp_listen_options
 configuration
 
 Signed-off-by: Adriano Oliveira <adriano.oliveira@windriver.com>
+[cr: Adapted the patch for version 8.5.0-8+deb13u1.]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
 ---
  templates/rabbitmq.config.erb | 24 +-----------------------
  1 file changed, 1 insertion(+), 23 deletions(-)
 
-diff --git a/templates/rabbitmq.config.erb b/templates/rabbitmq.config.erb
-index af45aa8..51d5292 100644
 --- a/templates/rabbitmq.config.erb
 +++ b/templates/rabbitmq.config.erb
 @@ -8,7 +8,7 @@
@@ -24,8 +24,8 @@ index af45aa8..51d5292 100644
  <% if @auth_backends -%>
      {auth_backends, [<%= @auth_backends.map { |v| "#{v}" }.join(', ') %>]},
  <% elsif @ldap_auth -%>
-@@ -18,28 +18,6 @@
-     {cluster_nodes, {[<%= @cluster_nodes.map { |n| "\'rabbit@#{n}\'" }.join(', ') %>], <%= @cluster_node_type %>}},
+@@ -19,28 +19,6 @@
+     {rabbit, [{disk_nodes, [<%= @cluster_nodes.map { |n| "\'rabbit@#{n}\'" }.join(', ') %>]}]},
      {cluster_partition_handling, <%= @cluster_partition_handling %>},
  <% end -%>
 -    {tcp_listen_options, [
@@ -55,4 +55,3 @@ index af45aa8..51d5292 100644
  <%- end -%>
 -- 
 2.17.1
-

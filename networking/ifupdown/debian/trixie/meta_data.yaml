@@ -1,7 +1,7 @@
 ---
-debver: 0.8.44
+debver: 0.8.44+deb13u1
 debname: ifupdown
-archive: https://snapshot.debian.org/archive/debian/20251130T202713Z/pool/main/i/ifupdown/
+archive: https://snapshot.debian.org/archive/debian/20260110T230127Z/pool/main/i/ifupdown/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
