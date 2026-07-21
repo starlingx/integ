@@ -1,8 +1,8 @@
-# APTS Manager - Assisted partial timing support manager
+# DPLL Manager - Assisted partial timing support manager
 
 ## Overview
 
-APTS (Assisted Partial Timing Support) Manager is a user space reference software application based on Linux platform meant to handle time synchronization, timing failover between multiple clock source like GNSS/PTP/SyncE, holdover, and extended holdover scenarios for FlexRAN GNR-D platform which has the following hardware components with respect to the timing.
+DPLL Manager (formerly APTS Manager) is a user space reference software application based on Linux platform meant to handle time synchronization, timing failover between multiple clock source like GNSS/PTP/SyncE, holdover, and extended holdover scenarios for FlexRAN GNR-D platform which has the following hardware components with respect to the timing.
 - Microchip Timing Module ZL3073x
 - GNR-D Integrated PHC (PTP Hardware Clock as part of the GNR-D SoC)
 - Cater Flat/Connersville(CNV) NIC PHC
@@ -14,11 +14,11 @@ APTS (Assisted Partial Timing Support) Manager is a user space reference softwar
 - **Holdover Support**: Detects holdover entry/exit and maintains timing behavior using holdover state handling when no valid upstream source is available.
 - **Clock Parameter Forwarding to Other Leaders**: Reads timing/clock datasets from the json file and forwards synchronized parameters to configured remote ptp4l leader instances.
 - **DPLL Integration**: Monitors DPLL state and applies phase/frequency adjustments for timing alignment. In HW_BASED mode, continuously monitors DPLL pin phase offset and applies incremental corrections to keep offset within bounds.
-- **DPLL Pin Priority Configuration**: At startup, reads `dpll0.pin_priority_map` and `dpll1.pin_priority_map` from `apts_mgr.json` and programs pin priorities into the EEC (DPLL0/frequency) and PPS (DPLL1/phase) DPLL devices.
+- **DPLL Pin Priority Configuration**: At startup, reads `dpll0.pin_priority_map` and `dpll1.pin_priority_map` from `dpll_mgr.json` and programs pin priorities into the EEC (DPLL0/frequency) and PPS (DPLL1/phase) DPLL devices.
 - **Timing Delay Compensation**: At startup, reads per-pin propagation delays from `config/timing_delays.json` and programs each DPLL pin's `phase_adjust` to compensate for board-level and system-level delays (ZL3073x only). Input (REF) and output (OUT) pin compensation can be enabled independently at compile time.
 - **SW_BASED Operation Mode**: On failover, sends `GEARSHIFT_NP` PMC management messages to ptp4l and ts2phc to switch the active timing source in software, without hardware DPLL phase adjustment.
 - **Gear Park / Neutral Mode on Failover**: Controls whether the idle gear on failover is set to PARK or NEUTRAL. Configurable at compile time via `USE_GEAR_PARK` (default: PARK); pass `EXTRA_CFLAGS=-UUSE_GEAR_PARK` to switch to NEUTRAL.
-- **Event-Driven Mode (CPU Optimization)**: In `BUILD_MODE=event`, APTS Manager subscribes to kernel DPLL netlink multicast notifications instead of polling. This eliminates periodic netlink requests, significantly reducing CPU usage compared to poll mode.
+- **Event-Driven Mode (CPU Optimization)**: In `BUILD_MODE=event`, DPLL Manager subscribes to kernel DPLL netlink multicast notifications instead of polling. This eliminates periodic netlink requests, significantly reducing CPU usage compared to poll mode.
 - **Startup Master Detection and Gear Correction**: At bringup, queries the DPLL connected pin state to identify the current active timing master (GNSS, PTP, or holdover). If the detected master does not match the configured gear state in ptp4l/ts2phc, the correct gear is applied automatically — eliminating the need for manual gear pre-configuration.
 - **Logging**: Provides configurable logging levels (RAW, INFO, ERROR, DEBUG) with optional file output.
 
@@ -27,13 +27,13 @@ APTS (Assisted Partial Timing Support) Manager is a user space reference softwar
 
 ### Core Files
 
-1. **apts_manager.c** - Main application logic, initialization, and shared main loop utilities
-2. **apts_mgr_event.c** - Event-based main loop (BUILD_MODE=event): subscribes to zl3073x DPLL events, listens for device status change notifications, and processes them to identify failover
-3. **apts_mgr_poll.c** - Poll-based main loop (BUILD_MODE=poll): periodically polls DPLL device state via netlink; on detected state changes, reads pin states to identify failover
+1. **dpll_manager.c** - Main application logic, initialization, and shared main loop utilities
+2. **dpll_mgr_event.c** - Event-based main loop (BUILD_MODE=event): subscribes to zl3073x DPLL events, listens for device status change notifications, and processes them to identify failover
+3. **dpll_mgr_poll.c** - Poll-based main loop (BUILD_MODE=poll): periodically polls DPLL device state via netlink; on detected state changes, reads pin states to identify failover
 4. **ptp_protocol.c** - PTP management protocol message handling
 5. **dpll_utils.c** - DPLL device state monitoring and pin control
 6. **dpll_phase_adjust.c** - DPLL phase offset monitoring and incremental adjustment logic
-7. **config_parser.c** - Boot-time configuration loader that parses `apts_mgr.json` into the application control block.
+7. **config_parser.c** - Boot-time configuration loader that parses `dpll_mgr.json` into the application control block.
 8. **gnss_utils.c** - GNSS parameter retrieval and mapping into the timing control flow.
 9. **gearshift.c** - Software-based failover control. Sends `MGMT_ID_GEARSHIFT_NP` (0xC0F0) PMC management messages to ptp4l and ts2phc daemons on source transitions. Used only when `operation_mode` is `SW_BASED`.
 10. **phc_utils.c** - PHC device discovery and phase/frequency adjustment utilities.
@@ -50,7 +50,7 @@ APTS (Assisted Partial Timing Support) Manager is a user space reference softwar
 
 ## Installation Dependencies
 
-Before building APTS Manager, ensure the following dependencies are installed:
+Before building DPLL Manager, ensure the following dependencies are installed:
 
 ### Required Libraries
 
@@ -171,7 +171,7 @@ make clean all EXTRA_CFLAGS=-UDPLL_OP_TIMING_DELAY
 
 ### Notes
 
-- The default target builds `apts_mgr` in the workspace root. If `BUILD_MODE` is not specified, `event` mode is used by default.
+- The default target builds `dpll_mgr` in the workspace root. If `BUILD_MODE` is not specified, `event` mode is used by default.
 - **Event mode** (`BUILD_MODE=event`): DPLL device status change notifications are received via the kernel multicast group; master transitions are detected within one kernel notification latency.
 - **Poll mode** (`BUILD_MODE=poll`): DPLL device and pin status are queried periodically using netlink messages.
 - In `SW_BASED` mode, DPLL phase adjustment is disabled; failover is handled exclusively via `GEARSHIFT_NP` PMC messages.
@@ -181,12 +181,12 @@ make clean all EXTRA_CFLAGS=-UDPLL_OP_TIMING_DELAY
 ### Basic Usage
 
 ```bash
-./apts_mgr [-c <config_file>] [-o <log_file>] [-h]
+./dpll_mgr [-c <config_file>] [-o <log_file>] [-h]
 ```
 
 ### Command Line Options
 
-- `-c, --config <file>` - Configuration file path (default: `config/apts_mgr.json`)
+- `-c, --config <file>` - Configuration file path (default: `config/dpll_mgr.json`)
 - `-o, --output <file>` - Log output file (default: stdout)
 - `-h, --help` - Show help message
 
@@ -194,20 +194,20 @@ make clean all EXTRA_CFLAGS=-UDPLL_OP_TIMING_DELAY
 
 **Run with default configuration:**
 ```bash
-./apts_mgr
+./dpll_mgr
 ```
 
 **Run with explicit config file:**
 ```bash
-./apts_mgr -c config/apts_mgr.json
+./dpll_mgr -c config/dpll_mgr.json
 ```
 
 **Monitor with logging:**
 ```bash
-./apts_mgr -c config/apts_mgr.json -o /var/log/apts_mgr.log
+./dpll_mgr -c config/dpll_mgr.json -o /var/log/dpll_mgr.log
 ```
 
-leader/free running ptp4l UDS paths are configured in `config/apts_mgr.json`.
+leader/free running ptp4l UDS paths are configured in `config/dpll_mgr.json`.
 If there is any change, updates are also needed in the config file.
 
 ## Prerequisites to run
@@ -220,7 +220,7 @@ If there is any change, updates are also needed in the config file.
 
 ### ptp4l Configuration
 
-The required ptp4l configuration depends on the `operation_mode` set in `apts_mgr.json`:
+The required ptp4l configuration depends on the `operation_mode` set in `dpll_mgr.json`:
 
 **HW_BASED mode** — ptp4l runs in free-running mode:
 ```bash
@@ -243,14 +243,14 @@ Example ptp4l configuration files are available in the `config/` directory.
 
 ### Runtime Configuration
 
-- Main configuration file: `config/apts_mgr.json` (or custom path via `-c`)
+- Main configuration file: `config/dpll_mgr.json` (or custom path via `-c`)
 - Channel mapping: time-receiver channel (`ptp_fr`/`ptp_bh`), clock-param receiver channels (`ptp_0`, `ptp_1`, `ptp_2`, ...), and ts2phc channels (`ts2_0`, `ts2_1`, `ts2_2`)
 - DPLL policy/settings: pin priority maps and holdover duration thresholds
 - Log destination: stdout by default, file path via `-o`
 
 ### Operation Mode
 
-Set via `operation_mode` in the `global` section of `config/apts_mgr.json`:
+Set via `operation_mode` in the `global` section of `config/dpll_mgr.json`:
 
 ```json
 {
@@ -276,7 +276,7 @@ Gear values: `PARK=P`, `NEUTRAL=N`, `DRIVE=D`
 
 ### Timing Delay Compensation
 
-At startup, APTS Manager reads `config/timing_delays.json` and programs each ZL3073x DPLL pin's `phase_adjust` register to compensate for accumulated propagation delays across the timing path.
+At startup, DPLL Manager reads `config/timing_delays.json` and programs each ZL3073x DPLL pin's `phase_adjust` register to compensate for accumulated propagation delays across the timing path.
 
 #### Output pin granularity rounding
 
@@ -360,7 +360,7 @@ make clean all EXTRA_CFLAGS=-UDPLL_IP_TIMING_DELAY
 
 ```
 Timing Manager Starting...
-Configuration loaded successfully from: config/apts_mgr.json
+Configuration loaded successfully from: config/dpll_mgr.json
 DPLL netlink initialized successfully
 Operation Mode: EVENT-BASED (SUBSCRIBE_EVENTS_NP subscription)
 FAILOVER DETECTED: <old_source> -> <new_source>
@@ -380,10 +380,10 @@ FAILOVER DETECTED: <old_source> -> <new_source>
 
 3. **Not receiving messages from ptp4l / Failed to send message to ptp4l**
    - Check that the PTP domain number matches the grandmaster's domain number in all of the following:
-     1. `config/apts_mgr.json`
+     1. `config/dpll_mgr.json`
      2. PTP configuration files (e.g., `config/ptp4l_*.cfg`)
      3. TS2PHC configuration files (e.g., `config/ts2phc_*.cfg`)
-     4. `hdr/apts_manager.h` — defines the domain number used when sending PMC management messages
+     4. `hdr/dpll_manager.h` — defines the domain number used when sending PMC management messages
    - If the domain number is correct, restart the `ptp4l` process.
 
 4. **Grandmaster change or PTP domain number change**
@@ -408,7 +408,7 @@ FAILOVER DETECTED: <old_source> -> <new_source>
      ```bash
      tcpdump -i <backhaul_interface> -n udp port 319 or udp port 320
      ```
-   - If no PTP packets are seen, the grandmaster may be connected to a different interface. Identify the correct interface and update the ptp4l startup command (`-i` option) and `config/apts_mgr.json` UDS paths accordingly.
+   - If no PTP packets are seen, the grandmaster may be connected to a different interface. Identify the correct interface and update the ptp4l startup command (`-i` option) and `config/dpll_mgr.json` UDS paths accordingly.
 
 8. **Redeclaration of `dpll_lock_status_error` or `dpll_feature_state`**
    - This gap exists only in certain kernel versions where `ynl/dpll-user.h`
@@ -444,8 +444,8 @@ FAILOVER DETECTED: <old_source> -> <new_source>
 
 ```bash
 # Extract the release package and enter the directory
-$ tar -xzvf apts_mgr-<VERSION>.tar.gz
-$ cd apts_mgr-<VERSION>
+$ tar -xzvf dpll_mgr-<VERSION>.tar.gz
+$ cd dpll_mgr-<VERSION>
 
 # Bring-up steps
 # COMMON NOTE (all scripts):
@@ -481,7 +481,7 @@ https://time.is/UTC, then stop both processes.
 # Note: If using a patched linuxptp build from a custom directory, pass that
 # directory as the argument so the script picks up the correct binaries.
 # This script uses the cfg files in config directory and assume GNSS is the
-# initial master. APTS Manager will auto-detect the current master at bringup
+# initial master. DPLL Manager will auto-detect the current master at bringup
 # and correct the gear if required.
 $ ./scripts/start_services.sh [/path/to/linuxptp]
 
@@ -496,7 +496,7 @@ $ ./scripts/start_services.sh [/path/to/linuxptp]
 # - /etc/linuxptp configuration file install path and permissions
 
 # If the above scripts fails start the processes manually.use the following
-# commands to start ptp4l processes (paths must match config/apts_mgr.json):
+# commands to start ptp4l processes (paths must match config/dpll_mgr.json):
 $ ptp4l -i <iface_fr> -m -l 7 -f config/ptp4l_time_receiver.cfg
 $ ptp4l -i <iface_0> -m -l 7 -f config/ptp4l_0.cfg
 # Start socat to duplicate the NMEA stream from gpsd to ts2phc instances
@@ -519,10 +519,10 @@ $ ts2phc -f config/ts2phc_cf.cfg -s nmea -m -l 7 >> $HOME/ptp_logs/ts2phc_cf_out
 #   GNSS master: ts2phc gear = D (DRIVE), ptp4l gear = P (PARK)
 #   PTP master:  ts2phc gear = P (PARK),  ptp4l gear = D (DRIVE)
 
-# Run APTS Manager
-# NOTE: Before starting, verify the domain number in config/apts_mgr.json matches
+# Run DPLL Manager
+# NOTE: Before starting, verify the domain number in config/dpll_mgr.json matches
 #       the grandmaster's PTP domain number and edit if required.
-$ ./apts_mgr -c config/apts_mgr.json -o test.log
+$ ./dpll_mgr -c config/dpll_mgr.json -o test.log
 
 # Verify operation
 $ tail -f test.log
@@ -537,16 +537,16 @@ $ ptp4l -i <iface_0> -m -l 7 -f config/ptp4l_0.cfg
 $ ptp4l -i <iface_1> -m -l 7 -f config/ptp4l_1.cfg
 $ ptp4l -i <iface_2> -m -l 7 -f config/ptp4l_2.cfg
 
-# Terminal 2: Run APTS Manager
-$ ./apts_mgr -c config/apts_mgr.json \
-             -o apts_mgr.log
+# Terminal 2: Run DPLL Manager
+$ ./dpll_mgr -c config/dpll_mgr.json \
+             -o dpll_mgr.log
 ```
 
 ## Known Issues
-- Time offset is not converging to 0 in case of PTP is driving the Timing Module and the PTP DPLL input pin REF0N phase is adjusted by the apts_mgr (HW_BASED mode).
+- Time offset is not converging to 0 in case of PTP is driving the Timing Module and the PTP DPLL input pin REF0N phase is adjusted by the dpll_mgr (HW_BASED mode).
 - In some deployments, ptp4l may intermittently flip between LISTENING and UNCALIBRATED states when Announce/Sync messages are briefly interrupted; verify `domainNumber` and `transportSpecific` match the GM profile, and tune `logAnnounceInterval`/`announceReceiptTimeout` (with expected behavior when `free_running 1` is enabled in HW_BASED mode).
-- When the PTP port goes down and then comes back up, APTS Manager may not receive a port-up notification because ptp4l is running in free-running mode (HW_BASED). In this case, the PTP pin state needs to be moved manually to the selectable state.
-- In SW_BASED mode, if a `GEARSHIFT_NP` response is not received within 500 ms (e.g., ts2phc not running), apts_mgr logs an error and continues; the gear state of the unresponsive daemon remains unchanged.
+- When the PTP port goes down and then comes back up, DPLL Manager may not receive a port-up notification because ptp4l is running in free-running mode (HW_BASED). In this case, the PTP pin state needs to be moved manually to the selectable state.
+- In SW_BASED mode, if a `GEARSHIFT_NP` response is not received within 500 ms (e.g., ts2phc not running), dpll_mgr logs an error and continues; the gear state of the unresponsive daemon remains unchanged.
 
 
 ## Support

@@ -1,0 +1,1 @@
+rm_conffile /etc/dpll-mgr/apts_mgr.json.sample 1.1.0.stx.5~

@@ -44,7 +44,7 @@
 #ifndef _PTP_PROTOCOL_H
 #define _PTP_PROTOCOL_H
 
-#include "apts_manager.h"
+#include "dpll_manager.h"
 
 /**
  * get_mgmt_id_data_size - Get expected data size for a management ID

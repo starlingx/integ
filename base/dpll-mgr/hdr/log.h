@@ -71,9 +71,9 @@ extern LogLevel g_log_level;    /* Current log level threshold */
  * Logging Macros
  */
 
-#define LOG_INFO(...) do { if (g_log_level >= LOG_LEVEL_INFO) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[apts_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
-#define LOG_ERROR(...) do { if (g_log_level >= LOG_LEVEL_ERROR) { FILE *out = g_log_file ? g_log_file : stderr; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[apts_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
-#define LOG_DEBUG(...) do { if (g_log_level >= LOG_LEVEL_DEBUG) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[apts_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
-#define LOG_RAW(...) do { if (g_log_level >= LOG_LEVEL_RAW) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[apts_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
+#define LOG_INFO(...) do { if (g_log_level >= LOG_LEVEL_INFO) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
+#define LOG_ERROR(...) do { if (g_log_level >= LOG_LEVEL_ERROR) { FILE *out = g_log_file ? g_log_file : stderr; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
+#define LOG_DEBUG(...) do { if (g_log_level >= LOG_LEVEL_DEBUG) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
+#define LOG_RAW(...) do { if (g_log_level >= LOG_LEVEL_RAW) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
 
 #endif /* LOG_H */

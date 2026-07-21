@@ -300,8 +300,8 @@ void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock);
  * @state:     Application state
  * @dpll_sock: Initialised DPLL netlink socket
  *
- * Implemented in apts_manager_event.c (BUILD_MODE=event) or
- * apts_manager_poll.c (BUILD_MODE=poll).  Called from main() after
+ * Implemented in dpll_manager_event.c (BUILD_MODE=event) or
+ * dpll_manager_poll.c (BUILD_MODE=poll).  Called from main() after
  * all initialisation is complete.
  */
 void run_main_loop(AppState *state, struct ynl_sock *dpll_sock);

@@ -34,7 +34,7 @@
  * @file config_parser.h
  * @brief JSON Configuration Parser Header
  * 
- * This module parses the apts_mgr.json configuration file and
+ * This module parses the dpll_mgr.json configuration file and
  * stores settings in global structures for access throughout
  * the application.
  */
@@ -50,7 +50,7 @@
 
 /**
  * Priority entry structure for pin priority table
- * Defined here so both config_parser and apts_manager can use it
+ * Defined here so both config_parser and dpll_manager can use it
  */
 typedef struct {
     char pin_name[32];       /* Pin name (e.g., "GNSS_REF4P") */

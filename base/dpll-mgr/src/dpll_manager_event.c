@@ -30,7 +30,7 @@
  */
 
 /**
- * @file apts_manager_event.c
+ * @file dpll_manager_event.c
  * @brief Event-based main loop for APTS Manager
  *
  * Compiled when BUILD_MODE=event.
@@ -47,7 +47,7 @@
 
 #include <poll.h>
 #include <ynl/ynl.h>
-#include "../hdr/apts_manager.h"
+#include "../hdr/dpll_manager.h"
 #include "../hdr/ptp_protocol.h"
 #include "../hdr/dpll_phase_adjust.h"
 #include "../hdr/dpll_utils.h"
