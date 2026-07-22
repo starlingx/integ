@@ -1,3 +1,15 @@
+synce4l (1.1.2) unstable; urgency=medium
+
+  * Upversion to 1.1.2
+  * Fix infinite loop in dpll_mon_destroy() without DPLL
+  * Fix crash in dpll_rt_recv() with duplicated pin data
+  * Initialize pin ID to -1 to prevent stale ID confusion
+  * Change default smc_socket_path to /run/synce4l_socket
+  * Fix possible resource leak and thread stack size
+  * Rebase 0001 patch for 1.1.2 context
+
+ -- Cole Walker <cole.walker@windriver.com>  Wed, 22 Jul 2026 10:15:00 +0000
+
 synce4l (1.1.0) unstable; urgency=medium
 
   * New upstream release
