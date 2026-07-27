@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE = 1
+
+DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	dh_auto_install -- prefix=/usr mandir=/usr/share/man
+
+override_dh_install:
+	install -d -m 755 ${DEBIAN_DESTDIR}/usr/sbin
+	install -p -D -m 755 synce4l ${DEBIAN_DESTDIR}/usr/sbin/synce4l
+	dh_install
