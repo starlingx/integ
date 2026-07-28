@@ -15,3 +15,4 @@
 0015-Add-statistics-and-monitoring-interfaces.patch
 0016-phc2sys-skip-system-clock-sync-utc-offset-not-valid.patch
 0017-port-Fix-master-loss-detection-on-inhibit_announce-p.patch
+0018-ts2phc-phc2sys-add-PHC-readiness-gate-to-prevent-37s.patch

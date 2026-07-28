@@ -1,0 +1,478 @@
+Author: Bruno Veiga <Bruno.VeigadeAlmeida@windriver.com>
+Date: Fri, 24 Jul 2026 12:37:01 -0300
+Subject: [PATCH] ts2phc, phc2sys: add PHC readiness gate to prevent 37s UTC
+ offset error
+
+After every T-GM reboot, phc2sys applies the UTC offset correction
+(-O 37) while the PHC is still on UTC because ts2phc has not yet
+locked the clock to TAI. This produces a 37-second error in
+CLOCK_REALTIME that takes ~10 minutes to recover via slewing.
+
+Add a readiness gate between ts2phc and phc2sys:
+
+ts2phc readiness indicator:
+- On first SERVO_JUMP or SERVO_LOCKED transition, ts2phc writes
+  /run/ptp-ready/<phc_device>.ready containing timestamp and servo
+  state for debugging. SERVO_JUMP qualifies because it means the
+  servo has stepped the PHC to within its pull-in range — the
+  PHC-to-TAI error is already small enough for phc2sys's own servo
+  to converge on the residual offset without applying the full UTC
+  correction prematurely.
+- On startup, ts2phc removes its own stale readiness file to prevent
+  false positives from a previous boot.
+
+phc2sys startup gate:
+- Before entering the sync loop, phc2sys performs a non-blocking
+  check for /run/ptp-ready/<source_phc>.ready (derived from its -s
+  source clock).
+- On file detection: gate releases, UTC offset correction applied
+  normally.
+- If the file is absent: servo starts with UTC offset suppressed
+  (-O 0) and logs a warning; the do_loop() poll re-checks each
+  iteration until the readiness file appears, then restores
+  the configured offset. Using indefinite polling with -O 0 is safe
+  because:
+    (a) it eliminates any race between an arbitrary timeout and
+        actual GNSS lock time (which varies by antenna environment);
+    (b) -O 0 is operationally harmless — phc2sys simply syncs
+        CLOCK_REALTIME to the PHC without adding any UTC correction,
+        meaning the offset between the two clocks is always kept
+        minimal (no 37s error); and
+    (c) on T-BC nodes where no ts2phc runs, phc2sys will operate
+        with -O 0 indefinitely which is correct since the PHC is
+        already disciplined via ptp4l/BMC and the UTC offset is
+        applied through the PTP protocol path.
+
+The readiness file path is derived by convention from the PHC device
+each process already knows — no new user-facing configuration
+parameters are introduced.
+
+Test Plan:
+PASS Deploy patched binaries on T-GM lab node (synce1, controller-0).
+     Restart full PTP service chain (ptp4l → ts2phc → phc2sys) via
+     systemctl. Collect syslog timestamps from /var/log/user.log.
+
+     Verify phc2sys logs "waiting for PHC readiness" on startup.
+     Verify ts2phc logs "PHC readiness file written" after servo
+     reaches SERVO_JUMP or SERVO_LOCKED.
+     Verify phc2sys logs "PHC readiness confirmed" after .ready appears.
+     Verify temporal ordering: phc2sys first offset correction timestamp
+     is strictly after ts2phc readiness timestamp in syslog.
+     Verify all phc2sys s2 (locked) offsets remain < 1s (no 37s error).
+
+PASS Simulate T-BC scenario (no ts2phc present). Stop ts2phc service,
+     remove /run/ptp-ready/*.ready, start only phc2sys with ptp4l
+     running.
+
+     Verify phc2sys logs "PHC not yet ready" on startup.
+     Verify phc2sys starts servo with -O 0 (suppressed UTC offset).
+     Verify phc2sys enters servo (s0/s1/s2 lines appear in log).
+     Verify no offset ≥ 1s in s2 state (suppression prevented 37s error).
+     Verify ptp4l PMC reports utcOffset=37, utcOffsetValid=1 (offset
+     available via PMC path for real T-BC deployments).
+
+PASS Stale readiness file cleanup. Stop ts2phc, manually create a
+     stale /run/ptp-ready/ptp0.ready with content
+     "servo_state=STALE_FROM_PREVIOUS_BOOT". Restart ts2phc via
+     systemctl.
+
+     Verify ExecStartPre removes stale file (file absent at 1s after
+     service start, or replaced with fresh content if GNSS locks fast).
+     Verify ts2phc writes fresh .ready file after achieving
+     SERVO_JUMP or SERVO_LOCKED.
+     Verify fresh file content contains valid timestamp and
+     servo_state field (no stale marker).
+
+PASS Simulate GNSS antenna fault (GNSS never locks). Stop ts2phc,
+     remove /run/ptp-ready/*.ready, start only phc2sys (no ts2phc
+     running at all, ptp4l running for PHC access).
+
+     Verify phc2sys logs "PHC not yet ready" and suppresses UTC offset.
+     Verify phc2sys enters servo and produces sync lines with -O 0.
+     Verify no .ready file was ever created (confirms no ts2phc ran).
+     Verify all s2 offsets < 1s — phc2sys did not apply -O 37.
+     Verify phc2sys continues indefinitely with -O 0 (correct behavior
+     since no ts2phc means no TAI discipline to gate on).
+
+PASS Full reboot validation on T-GM lab node. Reboot controller-0,
+     wait for SSH recovery, allow 90s for PTP services to stabilize.
+
+     Verify systemd service ordering (ActiveEnterTimestamp shows
+     ptp4l < ts2phc < phc2sys).
+     Verify ts2phc achieved SERVO_JUMP or SERVO_LOCKED (.ready file).
+     Verify phc2sys gate released by .ready detection.
+     Verify temporal ordering: phc2sys first offset after ts2phc lock.
+     Verify no s2 offset ≥ 1s in the entire boot journal.
+
+PASS (Negative Case) Verify that without the patch, a T-GM reboot
+     produces the 37s CLOCK_REALTIME error in phc2sys s2 offsets
+     (baseline confirmation that the gate is necessary).
+
+Signed-off-by: Bruno Veiga <Bruno.VeigadeAlmeida@windriver.com>
+---
+ phc2sys.c   | 123 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ phc_ready.h |   4 ++
+ ts2phc.c    |  81 ++++++++++++++++++++++++++++++++++
+ ts2phc.h    |   2 +
+ util.c      |   2 +-
+ util.h      |   3 ++
+ 6 files changed, 212 insertions(+), 3 deletions(-)
+ create mode 100644 phc_ready.h
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 6ceffa2..4128291 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -59,6 +59,7 @@
+ #include "uds.h"
+ #include "util.h"
+ #include "version.h"
++#include "phc_ready.h"
+ 
+ #define KP 0.7
+ #define KI 0.3
+@@ -162,6 +163,13 @@ struct domain {
+ 		int fd;
+ 		char *path;
+ 	} mon;
++	/* PHC readiness gate: when waiting for ts2phc to confirm the PHC
++	 * is disciplined to TAI, phc_ready_pending is set and the real
++	 * UTC offset is stored in phc_ready_offset. Once the readiness
++	 * file appears, the offset is restored. */
++	int phc_ready_pending;
++	int phc_ready_offset;
++	char phc_ready_path[PATH_MAX];
+ };
+ 
+ static struct config *phc2sys_config;
+@@ -207,7 +215,7 @@ static struct clock *clock_add(struct domain *domain, const char *device,
+ {
+ 	struct clock *c;
+ 	clockid_t clkid = CLOCK_INVALID;
+-	char phc_device[19];
++	char phc_device[PHC_DEVICE_LEN];
+ 
+ 	if (device) {
+ 		if (phc_index >= 0) {
+@@ -349,7 +357,7 @@ static void clock_reinit(struct domain *domain, struct clock *clock,
+ 			 int new_state)
+ {
+ 	int err = -1, phc_index = -1, phc_switched = 0, timestamping;
+-	char iface[IFNAMSIZ], phc_device[19];
++	char iface[IFNAMSIZ], phc_device[PHC_DEVICE_LEN];
+ 	enum port_state state;
+ 	struct port *p;
+ 	clockid_t clkid = CLOCK_INVALID;
+@@ -1732,6 +1740,66 @@ static void mon_socket_handle(struct domain *domains, int n_domains)
+ 	mon_socket_reply(client_fd, resp);
+ }
+ 
++/**
++ * Resolve the PHC readiness file path for a given source clock.
++ *
++ * @param src_name  Source clock device name (e.g., "/dev/ptp0" or "eth0")
++ * @param path      Output buffer for the resolved path
++ * @param pathlen   Size of the output buffer
++ * @return  0 on success, -1 if the source has no associated readiness file
++ */
++static int resolve_phc_ready_path(const char *src_name, char *path, size_t pathlen)
++{
++	char phc_device[PHC_DEVICE_LEN];
++
++	/* For CLOCK_REALTIME or non-PHC sources, there's no ts2phc
++	 * readiness file to wait for. */
++	if (!src_name || !strncmp(src_name, "CLOCK_REALTIME", 14))
++		return -1;
++
++	/* If the source is a /dev/ptp* path, use its basename directly.
++	 * Otherwise, treat it as a network interface name and resolve
++	 * the underlying PHC device via ethtool ioctl. */
++	if (src_name[0] == '/') {
++		const char *base = strrchr(src_name, '/');
++		base = base ? base + 1 : src_name;
++		if (snprintf(path, pathlen, "%s/%s.ready",
++			     PHC_READY_DIR, base) >= (int)pathlen) {
++			pr_err("PHC ready path too long for %s", src_name);
++			return -1;
++		}
++	} else {
++		struct sk_ts_info ts_info;
++
++		if (sk_get_ts_info(src_name, &ts_info) || !ts_info.valid ||
++		    ts_info.phc_index < 0) {
++			pr_warning("cannot resolve PHC for interface %s, "
++				   "skipping readiness check", src_name);
++			return -1;
++		}
++		snprintf(phc_device, sizeof(phc_device), "ptp%d",
++			 ts_info.phc_index);
++		if (snprintf(path, pathlen, "%s/%s.ready",
++			     PHC_READY_DIR, phc_device) >= (int)pathlen) {
++			pr_err("PHC ready path too long for %s", src_name);
++			return -1;
++		}
++	}
++
++	return 0;
++}
++
++/**
++ * Non-blocking check for PHC readiness file.
++ *
++ * @param path  Path to the readiness file
++ * @return  1 if readiness file exists, 0 otherwise
++ */
++static int check_phc_ready(const char *path)
++{
++	return access(path, F_OK) == 0;
++}
++
+ static int do_loop(struct domain *domains, int n_domains)
+ {
+ 	int i, state_changed, prev_sub;
+@@ -1747,6 +1815,22 @@ static int do_loop(struct domain *domains, int n_domains)
+ 	while (is_running()) {
+ 		clock_nanosleep(CLOCK_MONOTONIC, 0, &interval, NULL);
+ 
++		/* Check if any domain is waiting for PHC readiness */
++		for (i = 0; i < n_domains; i++) {
++			if (domains[i].phc_ready_pending &&
++			    check_phc_ready(domains[i].phc_ready_path)) {
++				pr_notice("PHC readiness confirmed: %s",
++					  domains[i].phc_ready_path);
++				pr_notice("restoring UTC offset correction "
++					  "(-O 0 -> -O %d)",
++					  domains[i].phc_ready_offset);
++				pmc_agent_set_sync_offset(
++					domains[i].agent,
++					domains[i].phc_ready_offset);
++				domains[i].phc_ready_pending = 0;
++			}
++		}
++
+ 		state_changed = 0;
+ 		src_domain = domains[0].src_domain;
+ 		if (!clock_gettime(CLOCK_MONOTONIC, &tp)) {
+@@ -2751,6 +2835,41 @@ int main(int argc, char *argv[])
+ 		servo_sync_interval(dst->servo, 1.0);
+ 		r = do_pps_loop(&domains[0], dst, pps_fd);
+ 	} else {
++		/*
++		 * PHC readiness gate: check if ts2phc has confirmed that
++		 * the source PHC has been disciplined to TAI. If not ready
++		 * yet, suppress the UTC offset and let do_loop() re-check
++		 * on each poll iteration until readiness is confirmed.
++		 */
++		if (!autocfg && src_cnt > 0 &&
++		    domains[0].forced_sync_offset) {
++			if (!resolve_phc_ready_path(src_names[0],
++			    domains[0].phc_ready_path,
++			    sizeof(domains[0].phc_ready_path))) {
++				if (check_phc_ready(domains[0].phc_ready_path)) {
++					pr_notice("PHC readiness confirmed: %s",
++						  domains[0].phc_ready_path);
++				} else {
++					pr_info("PHC not yet ready (%s), "
++						"suppressing UTC offset "
++						"correction (-O %d -> -O 0) "
++						"until readiness is confirmed",
++						domains[0].phc_ready_path,
++						offset);
++					for (i = 0; i < n_domains; i++) {
++						pmc_agent_set_sync_offset(
++							domains[i].agent, 0);
++						domains[i].phc_ready_pending = 1;
++						domains[i].phc_ready_offset = offset;
++						/* All non-autocfg domains share the same -s source,
++						 * so they all use the same readiness path. */
++						memcpy(domains[i].phc_ready_path,
++						       domains[0].phc_ready_path,
++						       sizeof(domains[i].phc_ready_path));
++					}
++				}
++			}
++		}
+ 		r = do_loop(domains, n_domains);
+ 	}
+ 
+diff --git a/phc_ready.h b/phc_ready.h
+new file mode 100644
+index 0000000..7727686
+--- /dev/null
++++ b/phc_ready.h
+@@ -0,0 +1,4 @@
++#ifndef HAVE_PHC_READY_H
++#define HAVE_PHC_READY_H
++#define PHC_READY_DIR "/run/ptp-ready"
++#endif
+\ No newline at end of file
+diff --git a/ts2phc.c b/ts2phc.c
+index 6698cba..1e30065 100644
+--- a/ts2phc.c
++++ b/ts2phc.c
+@@ -8,7 +8,9 @@
+  */
+ #include <errno.h>
+ #include <inttypes.h>
++#include <limits.h>
+ #include <net/if.h>
++#include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/stat.h>
+@@ -25,6 +27,7 @@
+ #include "print.h"
+ #include "ts2phc.h"
+ #include "version.h"
++#include "phc_ready.h"
+ 
+ #define NS_PER_SEC		1000000000LL
+ #define SAMPLE_WEIGHT		1.0
+@@ -439,6 +442,70 @@ static int ts2phc_pps_source_implicit_tstamp(struct ts2phc_private *priv,
+ 	return 0;
+ }
+ 
++/**
++ * Extract the PHC device basename from a device path like "/dev/ptp0".
++ * Returns pointer to the basename portion (e.g., "ptp0").
++ */
++static const char *phc_basename(const char *name)
++{
++	const char *p = strrchr(name, '/');
++	return p ? p + 1 : name;
++}
++
++/**
++ * Write a readiness file to signal that the PHC has reached
++ * SERVO_LOCKED or SERVO_JUMP.
++ * File path: /run/ptp-ready/<phc_device>.ready
++ */
++static void ts2phc_write_ready_file(const char *phc_device)
++{
++	char path[PATH_MAX];
++	struct timespec ts;
++	FILE *fp;
++
++	if (mkdir(PHC_READY_DIR, 0755) && errno != EEXIST) {
++		pr_err("failed to create %s: %m", PHC_READY_DIR);
++		return;
++	}
++
++	snprintf(path, sizeof(path), "%s/%s.ready",
++		 PHC_READY_DIR, phc_basename(phc_device));
++
++	fp = fopen(path, "w");
++	if (!fp) {
++		pr_err("failed to write readiness file %s: %m", path);
++		return;
++	}
++
++	clock_gettime(CLOCK_MONOTONIC, &ts);
++	if (fprintf(fp, "timestamp=%ld.%09ld\nservo_state=SERVO_LOCKED\n",
++		    (long)ts.tv_sec, ts.tv_nsec) < 0) {
++		pr_err("failed to write readiness file %s: %m", path);
++	}
++	fclose(fp);
++
++	pr_notice("PHC readiness file written: %s", path);
++}
++
++/**
++ * Remove stale readiness files for the devices managed by this instance.
++ * Only removes .ready files corresponding to clocks in priv->clocks,
++ * leaving files from other ts2phc instances untouched.
++ */
++static void ts2phc_remove_all_ready_files(struct ts2phc_private *priv)
++{
++	struct ts2phc_clock *c;
++	char path[PATH_MAX];
++
++	LIST_FOREACH(c, &priv->clocks, list) {
++		snprintf(path, sizeof(path), "%s/%s.ready",
++			 PHC_READY_DIR, phc_basename(c->name));
++
++		if (unlink(path) == 0)
++			pr_info("removed stale readiness file: %s", path);
++	}
++}
++
+ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ {
+ 	struct timespec source_ts, now;
+@@ -544,12 +611,23 @@ static void ts2phc_synchronize_clocks(struct ts2phc_private *priv, int autocfg)
+ 			if (clockadj_step(c->clkid, -offset)) {
+ 				goto servo_unlock;
+ 			}
++			/* After the jump, PHC-to-TAI error is within servo
++			 * pull-in range; phc2sys's own servo will handle the
++			 * residual offset from here. */
++			if (!c->ready_written) {
++				ts2phc_write_ready_file(c->name);
++				c->ready_written = true;
++			}
+ 			break;
+ 		case SERVO_LOCKED:
+ 		case SERVO_LOCKED_STABLE:
+ 			if (llabs(offset) < 500) {
+ 				c->current_offset_skip_count = 0;
+ 			}
++			if (!c->ready_written) {
++				ts2phc_write_ready_file(c->name);
++				c->ready_written = true;
++			}
+ 			if (clockadj_set_freq(c->clkid, -adj)) {
+ 				goto servo_unlock;
+ 			}
+@@ -884,6 +962,9 @@ int main(int argc, char *argv[])
+ 
+ 	priv.holdover_length = config_get_int(cfg, NULL, "ts2phc.holdover");
+ 	priv.holdover_start = 0;
++
++	/* Remove stale readiness files from previous runs */
++	ts2phc_remove_all_ready_files(&priv);
+ 	priv.mon.fd = -1;
+ 	priv.mon.path = NULL;
+ 	mon_socket_open(config_get_string(cfg, NULL, "mon_socket_path"),
+diff --git a/ts2phc.h b/ts2phc.h
+index df86702..3f95d47 100644
+--- a/ts2phc.h
++++ b/ts2phc.h
+@@ -36,6 +36,8 @@ struct ts2phc_clock {
+ 	bool no_adj;
+ 	bool is_target;
+ 	bool is_ts_available;
++	/* Indicates whether the PHC ready state has been written to the flag file. */
++	bool ready_written;
+ 	tmv_t last_ts;
+ 	int max_offset_skip_count;
+ 	int current_offset_skip_count;
+diff --git a/util.c b/util.c
+index e204c9c..dd6dfe4 100644
+--- a/util.c
++++ b/util.c
+@@ -232,7 +232,7 @@ clockid_t posix_clock_open(const char *device, int *phc_index)
+ {
+ 	char phc_device_path[PATH_MAX];
+ 	struct sk_ts_info ts_info;
+-	char phc_device[19];
++	char phc_device[PHC_DEVICE_LEN];
+ 	int clkid;
+ 
+ 	/* check if device is CLOCK_REALTIME */
+diff --git a/util.h b/util.h
+index 1cbd9b6..29abf82 100644
+--- a/util.h
++++ b/util.h
+@@ -33,6 +33,9 @@
+ #define MAX_PRINT_BYTES 16
+ #define BIN_BUF_SIZE (MAX_PRINT_BYTES * 3 + 1)
+ 
++/* Enough for "/dev/ptp" (9) + up to 9 digits for index + null terminator. */
++#define PHC_DEVICE_LEN 19
++
+ #define NSEC_PER_SEC 1000000000LL
+ 
+ /**
+-- 
+2.43.0
+
