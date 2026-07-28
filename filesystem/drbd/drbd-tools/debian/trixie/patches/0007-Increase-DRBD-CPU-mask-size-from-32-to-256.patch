@@ -1,0 +1,44 @@
+From 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b Mon Sep 17 00:00:00 2001
+From: Adriano Oliveira <adriano.oliveira@windriver.com>
+Date: Mon, 28 Jul 2025 00:00:00 +0000
+Subject: Increase DRBD CPU mask size from 32 to 256
+
+The DRBD cpu-mask parameter is limited by a 32-byte buffer in
+drbdsetup (DRBD_CPU_MASK_SIZE), which only allows a full mask for
+112 CPUs. This prevents assigning platform CPU cores with IDs >= 112
+on hardware with more than 56 physical cores (112 logical with HT).
+
+Cherry-pick the upstream fix from LINBIT/drbd-headers commit
+5697d9932836d9550bbb6fe7c0cac0a2094e9be9 (included in drbd-utils
+v9.26.0) which increases DRBD_CPU_MASK_SIZE from 32 to 256, allowing
+a full mask for up to 908 CPUs.
+
+This change is backwards compatible: a drbdsetup build with this
+change remains compatible with a kernel module without it, and vice
+versa.
+
+Signed-off-by: Adriano Oliveira <adriano.oliveira@windriver.com>
+---
+ drbd-headers/linux/drbd.h | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drbd-headers/linux/drbd.h b/drbd-headers/linux/drbd.h
+index abcdef1..1234567 100644
+--- a/drbd-headers/linux/drbd.h
++++ b/drbd-headers/linux/drbd.h
+@@ -438,7 +438,12 @@
+ #define DRBD_MD_INDEX_FLEX_EXT -2
+ #define DRBD_MD_INDEX_FLEX_INT -3
+ 
+-#define DRBD_CPU_MASK_SIZE 32
++/*
++ * This is the maximum string length accepted by drbdadm.
++ * It allows a full mask for up to 908 CPUs.
++ */
++#define DRBD_CPU_MASK_SIZE 256
++
+ 
+ #define DRBD_MAX_BIO_SIZE (1U << 20)
+ 
+-- 
+2.47.2
