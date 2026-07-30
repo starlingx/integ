@@ -1,7 +1,7 @@
 From 69f304131e494f09be981c8185211b83a84128aa Mon Sep 17 00:00:00 2001
 From: Sai Lakshmi Teja Vanka <SaiLakshmiTeja.Vanka@windriver.com>
 Date: Mon, 4 Aug 2025 12:21:03 +0000
-Subject: [PATCH] drbd overview
+Subject: drbd overview
 
 Remove deprecation warning from drbd-overview.pl
 
