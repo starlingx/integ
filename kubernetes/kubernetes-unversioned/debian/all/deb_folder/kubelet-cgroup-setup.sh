@@ -51,6 +51,9 @@ setup_cgroup_v2() {
     local SUBTREE_CONTROL="${CGROUP_PATH}/cgroup.subtree_control"
     local CONTROLLERS="+cpuset +cpu +io +memory +hugetlb +pids"
     local ROOT_SUBTREE="/sys/fs/cgroup/cgroup.subtree_control"
+    local KUBEPODS_SLICE="k8sinfra-kubepods.slice"
+    local KUBEPODS_PATH="/sys/fs/cgroup/${CGROUP_NAME}/${KUBEPODS_SLICE}"
+    local KUBEPODS_SUBTREE="${KUBEPODS_PATH}/cgroup.subtree_control"
     local RC=0
 
     sed -i 's|cgroupDriver:.*|cgroupDriver: systemd|' /var/lib/kubelet/config.yaml 2>/dev/null
@@ -63,7 +66,17 @@ setup_cgroup_v2() {
         systemctl try-restart containerd.service
     fi
 
-    # Enable hugetlb in root subtree control before delegating
+    # Enable cpuset in root subtree control if not already.
+    if ! grep -q cpuset "${ROOT_SUBTREE}" 2>/dev/null; then
+        LOG "Enabling cpuset in root subtree control"
+        echo "+cpuset" > "${ROOT_SUBTREE}" 2>/dev/null
+        RC=$?
+        if [ ${RC} -ne 0 ]; then
+            WARN "Failed to enable cpuset in ${ROOT_SUBTREE}, rc=${RC}"
+        fi
+    fi
+
+    # Enable hugetlb in root subtree control if not already.
     if ! grep -q hugetlb "${ROOT_SUBTREE}" 2>/dev/null; then
         LOG "Enabling hugetlb in root subtree control"
         echo "+hugetlb" > "${ROOT_SUBTREE}" 2>/dev/null
@@ -73,27 +86,46 @@ setup_cgroup_v2() {
         fi
     fi
 
-    # Enable cpuset in root subtree control if not already
-    if ! grep -q cpuset "${ROOT_SUBTREE}" 2>/dev/null; then
-        LOG "Enabling cpuset in root subtree control"
-        echo "+cpuset" > "${ROOT_SUBTREE}" 2>/dev/null
-    fi
+    # Pre-create both k8sinfra.slice and k8sinfra-kubepods.slice via
+    # systemd BEFORE kubelet starts.  This prevents a race condition
+    # (upstream kubernetes/kubernetes#122955) where:
+    #   1. Script writes +cpuset to k8sinfra.slice/cgroup.subtree_control
+    #   2. Kubelet starts and asks systemd to manage k8sinfra.slice
+    #   3. Systemd re-creates the slice, wiping subtree_control
+    #   4. Kubelet validates kubepods cgroup — cpuset missing — crash
+    #
+    # By starting the slices here, they already exist when kubelet runs.
+    # Systemd does not re-create an already-active slice, so it will not
+    # wipe the subtree_control settings written below.
 
-    # Create the k8sinfra cgroup directory if not present.
-    if [ ! -d "${CGROUP_PATH}" ]; then
-        LOG "Creating cgroup directory: ${CGROUP_PATH}"
-        mkdir -p "${CGROUP_PATH}"
+    # Start k8sinfra.slice
+    if ! systemctl is-active --quiet "${CGROUP_NAME}" 2>/dev/null; then
+        LOG "Starting systemd slice: ${CGROUP_NAME}"
+        systemctl start "${CGROUP_NAME}"
         RC=$?
         if [ ${RC} -ne 0 ]; then
-            ERROR "Failed to create ${CGROUP_PATH}, rc=${RC}"
+            ERROR "Failed to start ${CGROUP_NAME}, rc=${RC}"
             exit ${RC}
         fi
-    else
-        LOG "Cgroup dir already exists: ${CGROUP_PATH}"
     fi
 
-    # Delegate controllers
+    # Wait for cgroup directory to be available.
+    local RETRIES=10
+    while [ ! -d "${CGROUP_PATH}" ] && [ ${RETRIES} -gt 0 ]; do
+        sleep 0.5
+        RETRIES=$((RETRIES - 1))
+    done
+
+    if [ ! -d "${CGROUP_PATH}" ]; then
+        ERROR "Cgroup directory ${CGROUP_PATH} not available after starting ${CGROUP_NAME}"
+        exit 1
+    fi
+
+    # Delegate controllers to k8sinfra.slice subtree.
     if ! grep -q cpuset "${SUBTREE_CONTROL}" 2>/dev/null; then
+        # Stop child slices that may block the write — kernel rejects
+        # subtree_control changes when child cgroups exist.
+        systemctl stop "${KUBEPODS_SLICE}" 2>/dev/null
         LOG "Delegating controllers to ${CGROUP_NAME}: ${CONTROLLERS}"
         echo "${CONTROLLERS}" > "${SUBTREE_CONTROL}" 2>/dev/null
         RC=$?
@@ -103,6 +135,28 @@ setup_cgroup_v2() {
         fi
     else
         LOG "Controllers already delegated in ${SUBTREE_CONTROL}"
+    fi
+
+    # Pre-create the kubepods child cgroup and delegate controllers.
+    # Kubelet validates that cpuset is available in kubepods for QOS
+    # containers.  Without this, kubelet fails with:
+    # "cgroup k8sinfra kubepods has some missing controllers: cpuset"
+    # We use mkdir (not systemctl start) because k8sinfra-kubepods.slice
+    # only exists as a systemd unit after kubelet creates it.
+    if [ ! -d "${KUBEPODS_PATH}" ]; then
+        LOG "Creating kubepods cgroup: ${KUBEPODS_PATH}"
+        mkdir -p "${KUBEPODS_PATH}"
+    fi
+
+    if ! grep -q cpuset "${KUBEPODS_SUBTREE}" 2>/dev/null; then
+        LOG "Delegating controllers to ${KUBEPODS_SLICE}: ${CONTROLLERS}"
+        echo "${CONTROLLERS}" > "${KUBEPODS_SUBTREE}" 2>/dev/null
+        RC=$?
+        if [ ${RC} -ne 0 ]; then
+            WARN "Failed to delegate controllers to ${KUBEPODS_SUBTREE}, rc=${RC}"
+        fi
+    else
+        LOG "Controllers already delegated in ${KUBEPODS_SUBTREE}"
     fi
 
     LOG "cgroup v2 setup complete for ${CGROUP_NAME}"
