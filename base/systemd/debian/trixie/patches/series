@@ -7,3 +7,6 @@ disable-default-presets.patch
 
 # Fix SAS paths for multiple disks
 0015-Port-udev-old-sas-paths-creation-from-RHEL.patch
+
+# Skip Before=local-fs.target for runtime mounts (containers, CNI, ceph)
+0016-skip-local-fs-target-for-runtime-mounts.patch
