@@ -1,26 +1,27 @@
-From 7bf206a8899a5df0bbc361a39eb5b38a6f0b0882 Mon Sep 17 00:00:00 2001
+From 56a49b6f073eec76dcddacedfa896bf0b3eaa074 Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Thu, 25 Aug 2022 18:10:28 +0800
 Subject: [PATCH] shim: replace the debian cert file with ours
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
 ---
  debian/rules | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/debian/rules b/debian/rules
-index 58620be..0434c4d 100755
+index 4a357f38..683b28c8 100755
 --- a/debian/rules
 +++ b/debian/rules
-@@ -11,7 +11,7 @@ ifeq ($(shell dpkg-vendor --is ubuntu && echo yes),yes)
- 	distributor=ubuntu
- COMMON_OPTIONS ?= ENABLE_SHIM_CERT=1 ENABLE_SBSIGN=1
- else
--	cert=debian/debian-uefi-ca.der
-+	cert=tis-shim.der
- 	distributor=debian
- endif
+@@ -4,7 +4,7 @@ include /usr/share/dpkg/architecture.mk
  
+ # Downstreams: add your own certs here. Only Debian binaries will be signed by this key.
+ # You must generate and manage your own key if you (re)build shim, GRUB, or Linux.
+-cert=debian/debian-uefi-ca.der
++cert=tis-shim.der
+ distributor=debian
+ 
+ deb_version             := $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
 -- 
-2.17.1
+2.47.3
 
