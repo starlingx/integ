@@ -19,3 +19,4 @@
 0019-ptp4l-ts2phc-phc2sys-gearshift-mechanism.patch
 0020-ts2phc-cherry-pick-seed_system_time-from-linuxptp-4.4.patch
 0021-Fix-HA-clock-selection-after-ptp4l-instance-outage.patch
+0022-GM-L3-BC1-L2-BC2-BC1-ClockClass-remains-6-after-GM-loss.patch

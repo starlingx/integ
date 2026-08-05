@@ -1,0 +1,72 @@
+From: Tara Nath Subedi <Tara.Subedi@windriver.com>
+Date: Fri, 07 Aug 2026 16:46:57 -0400
+Subject: [PATCH] GM <–L3–> BC1 <–L2–> BC2; BC1 ClockClass remains 6 after GM loss
+
+Update parentDS when port assumes grand master role
+
+In handle_state_decision_event(), clock_update_grandmaster() is only
+called when best == NULL (no foreign master on any port). The
+PS_GRAND_MASTER case in the per-port BMCA loop does not update
+c->dad.pds. This creates a window where c->dad.pds retains stale data:
+
+When a BC node loses its upstream GM, the peer BC may briefly send an
+announce with its own local clockClass (e.g. 248). The receiving BC
+sees this inferior clockClass, BMCA determines local is better, and
+returns PS_GRAND_MASTER. However, best != NULL (the peer's announce is
+still a valid foreign master record), so clock_update_grandmaster() at
+the top of the function is skipped. No port gets PS_SLAVE either, so
+clock_update_slave() is not called. Neither function updates c->dad.pds
+which still holds the old GM data (clockClass 6) from the previous
+BMCA cycle when the port was SLAVE.
+
+The first announce sent after the transition (~1ms) reads from this
+stale c->dad.pds and propagates clockClass 6 to the peer BC, which
+re-slaves to it. Once stable in MASTER state on both ports, no further
+SDE is triggered and c->dad.pds is never corrected.
+
+The fix calls clock_update_grandmaster() in the PS_GRAND_MASTER case,
+ensuring parentDS reflects local GM settings before the first announce
+is sent. This is safe because:
+- PS_GRAND_MASTER and PS_SLAVE are mutually exclusive in a single BMCA
+  cycle (if local is better than clock_best, no port gets PS_SLAVE)
+- clock_update_grandmaster() is idempotent (clock_compare_pds guards
+  against spurious notifications)
+- inhibit_announce ports never receive PS_GRAND_MASTER from BMCA
+
+Test Plan:
+- Setup: GM <--L3--> BC1 <--L2--> BC2 (T-BC topology)
+- Verify steady state: both BCs report gm.ClockClass=6, lock-state=LOCKED
+- Stop GM traffic (disable unicast grants or disconnect GM)
+- Verify within 5s:
+  - BC1/BC2 clockclass no more stuck to 6, degrades (e.g. 248, 135, 165)
+  - all port state: MASTER, PARENT_DATA_SET follows its GRANDMASTER_SETTINGS_NP
+  - one port state: SLAVE, PARENT_DATA_SET follows peer's PARENT_DATA_SET
+  - Clock-class change notifications are fired for both instances
+  - Lock-state transitions to HOLDOVER then FREERUN
+- Restore GM traffic
+- Verify both BCs re-lock to GM with clockClass=6
+- Repeat tests setting different clockclass(248, 135, 165) on GRANDMASTER_SETTINGS_NP
+  between two BC1 and BC2, to mimic different BC winner -- Same behavior
+
+Closes-Bug: 2162870
+
+Signed-off-by: Tara Nath Subedi <Tara.Subedi@windriver.com>
+---
+ clock.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/clock.c b/clock.c
+index b11d42c..4a07af1 100644
+--- a/clock.c
++++ b/clock.c
+@@ -2437,6 +2437,7 @@ static void handle_state_decision_event(struct clock *c)
+ 		case PS_GRAND_MASTER:
+ 			pr_notice("%s: assuming the grand master role",
+ 				  port_log_name(piter));
++			clock_update_grandmaster(c);
+ 			event = EV_RS_GRAND_MASTER;
+ 			break;
+ 		case PS_MASTER:
+-- 
+2.34.1
+
