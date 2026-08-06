@@ -1,0 +1,181 @@
+From 948d8a81a78cce523028ac3abc9aa82e3d637fbf Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Tue, 4 Aug 2026 08:07:26 -0300
+Subject: [PATCH] Fix HA clock selection after ptp4l instance
+ outage/recovery
+
+This commit contains fixes for the HA clock selection when
+a ptp4l instance goes out of or comes back into service.
+
+Fix the phc2sys main loop (do_loop) to trigger the best
+clock selection algorithm after a ptp4l instance recovery.
+
+Also fix the main loop to monitor all configured domains
+when the HA feature is set, regardless of whether the domain
+has the RT clock.
+
+Initialize the RT clock has_rt_clock flag in domain index 0
+to fix RT clock synchronization when the domain's ptp4l
+instance is out of service.
+
+The 'reconfigure_domain' function only processes domains that
+either have the RT clock configured (has_rt_clock flag is true)
+or have an active connection to a ptp4l instance, marked by
+the agent_subscribed flag.
+
+Although the RT clock was already configured in domain index 0,
+the has_rt_clock flag wasn't set.
+
+As a consequence, when the ptp4l instance is out of service and
+phc2sys detects the connection loss, the agent_subscribed flag
+is false and no clock is configured as a sink, causing the
+RT clock synchronization to stop.
+
+Fix the list of valid sources to not include clock sources
+that ptp4l instance is down.
+
+The phc2sys main loop (do_loop) checks the ptp4l status every
+second (PHC interval) by calling the 'pmc_agent_update' function,
+which requests a Time Properties Data Set update.
+
+When the update request times out, for example when the ptp4l
+instance is out of service, the data is deemed invalid and the
+tds_valid flag in the PMC agent node structure is set to false.
+
+As a result, the best clock selection algorithm and the valid
+sources command will consider the clock source to be outside
+the HA quality requirements.
+
+This commit also changes the ha_phc2sys_com_socket default value
+to match the one configured in stx/collectd.
+
+Test Plan:
+On both configurations T-GM or T-BC:
+PASS Given two ptp4l instances configured and phc2sys has HA enabled,
+     check that "valid sources" shows two interfaces.
+
+     echo -n "valid sources" | socat -t 1 - UNIX-CONNECT:/var/run/phc2sys-phc-ha
+     enp138s0f0 enp81s0f0
+
+PASS Stop ptp4l #1 and check user.log and "valid sources" response:
+
+     First, the Time Properties Data Set update request will timeout,
+     marked by "timeout reading pmc tpds" log message
+
+     After 20s the connections is deemed lost:
+        Lost connection to ptp4l #1
+
+     Followed by a best clock selection:
+        reconfiguring clock state change
+        selecting enp81s0f0 as domain source clock
+        domain_match_ha_dds_requirements check domain enp138s0f0
+        domain_match_ha_tds_requirements check domain enp138s0f0
+        domain enp138s0f0 time properties data set is invalid
+        domain_match_ha_dds_requirements check domain enp81s0f0
+        domain_match_ha_tds_requirements check domain enp81s0f0
+        domain_match_ha_pds_requirements check domain enp81s0f0
+        only domain enp81s0f0 matches HA requirements
+
+     And the RT clock synchronization:
+        selecting CLOCK_REALTIME for synchronization
+        CLOCK_REALTIME phc offset 6 s2 freq -17509 delay 502
+
+     List of valid sources will present only one clock source:
+
+     echo -n "valid sources" | socat -t 1 - UNIX-CONNECT:/var/run/phc2sys-phc-ha
+     enp81s0f0
+
+     ha_com_socket: command received: valid sources
+     domain_match_ha_dds_requirements check domain enp138s0f0
+     domain_match_ha_tds_requirements check domain enp138s0f0
+     domain enp138s0f0 time properties data set is invalid
+     domain_match_ha_dds_requirements check domain enp81s0f0
+     domain_match_ha_tds_requirements check domain enp81s0f0
+     domain_match_ha_pds_requirements check domain enp81s0f0
+     ha_com_socket: response: enp81s0f0
+
+PASS Restart ptp4l #1 and check user.log and "valid sources" response:
+
+     When the ptp4l restarts, the connection is reestablished.
+     The log message "timeout reading pmc tpds" is no longer
+     printed and the following message is shown:
+     "Recovered connection to ptp4l #1"
+
+PASS Repeat the test with ptp4l #2 and check user.log and
+     "valid sources" response.
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ config.c    |  2 +-
+ phc2sys.c   | 21 ++++++++++++++++-----
+ pmc_agent.c |  1 +
+ 3 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/config.c b/config.c
+index ae28b46..39affea 100644
+--- a/config.c
++++ b/config.c
+@@ -279,7 +279,7 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("ha_max_local_clockAccuracy", 0xfe, 0, 0xff),
+ 	GLOB_ITEM_INT("ha_max_local_clockClass", 255, 6, 255),
+ 	GLOB_ITEM_INT("ha_max_local_offsetScaledLogVar", 0xffff, 0, 0xffff),
+-	GLOB_ITEM_STR("ha_phc2sys_com_socket", "/var/run/phc2sys-phc-inst1"),
++	GLOB_ITEM_STR("ha_phc2sys_com_socket", "/var/run/phc2sys-phc-ha"),
+ 	GLOB_ITEM_STR("mon_socket_path", ""),
+ 	PORT_ITEM_INT("ha_priority", 0, 0, 254),
+ 	PORT_ITEM_INT("ha_stability_timer", 0, 0, INT_MAX),
+diff --git a/phc2sys.c b/phc2sys.c
+index 33b0658..83cebb4 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1881,12 +1881,20 @@ static int do_loop(struct domain *domains, int n_domains)
+ 			prev_sub = domain->agent_subscribed;
+ 			domain->agent_subscribed =
+ 				pmc_agent_is_subscribed(domain->agent);
+-			if (!domain->has_rt_clock && !domain->agent_subscribed) {
+-				if (prev_sub) {
+-					pr_err("Lost connection to ptp4l #%d", i + 1);
+-					state_changed = 1;
++			if (domain->ha.ha_enabled || !domain->has_rt_clock) {
++				if (!domain->agent_subscribed) {
++					if (prev_sub) {
++						pr_err("Lost connection to ptp4l #%d", i + 1);
++						state_changed = 1;
++					}
++					continue;
++				}
++				else {
++					if (!prev_sub) {
++						pr_info("Recovered connection to ptp4l #%d", i + 1);
++						state_changed = 1;
++					}
+ 				}
+-				continue;
+ 			}
+ 
+ 			if (domain->state_changed) {
+@@ -2746,6 +2754,9 @@ int main(int argc, char *argv[])
+ 
+ 		/* initialize all domains with configuration parameters */
+ 		for (i = 0; i < n_domains; i++) {
++			if (i == 0) {
++				auto_init_rt(&domains[i], 0);
++			}
+ 			domains[i].ha.ha_enabled = true;
+ 			domains[i].ha.domain_enabled = true;
+ 			domains[i].ha.src_name = src_names[i];
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 4d6682f..2006d57 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -530,6 +530,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 	if (is_run_pmc_error(res)) {
+ 		if (res == RUN_PMC_TMO) {
+ 			pr_notice("timeout reading pmc tpds");
++			node->tds_valid = false;
+ 		}
+ 		return run_pmc_err2errno(res);
+ 	}
+-- 
+2.34.1
+
