@@ -18,3 +18,4 @@
 0018-ts2phc-phc2sys-add-PHC-readiness-gate-to-prevent-37s.patch
 0019-ptp4l-ts2phc-phc2sys-gearshift-mechanism.patch
 0020-ts2phc-cherry-pick-seed_system_time-from-linuxptp-4.4.patch
+0021-Fix-HA-clock-selection-after-ptp4l-instance-outage.patch
