@@ -1,6 +1,6 @@
-From 20c6ee7613b0991514f8013dd1febeb55820797b Mon Sep 17 00:00:00 2001
+From 4abc6baeac8c84980613ab437c588b46a2af399e Mon Sep 17 00:00:00 2001
 From: Cole Walker <cole.walker@windriver.com>
-Date: Thu, 16 Jul 2026 13:18:53 -0400
+Date: Fri, 7 Aug 2026 10:56:41 -0400
 Subject: [PATCH] ts2phc: cherry-pick seed_system_time from linuxptp 4.4
 
 Port the seed_system_time feature so ts2phc can seed Time-of-Day from
@@ -13,10 +13,7 @@ Changes:
 - Store source type in ts2phc_pps_source struct
 - On startup: if seed_system_time=1 and source is NMEA and no valid
   RMC yet, seed ToD from system clock aligned to PPS boundary
-- In ts2phc_pps_sink: when source_ts is not valid and seeding is
-  enabled, record EXTTS timestamp for holdover rather than discarding
 - Config option: ts2phc.seed_system_time (default: 0)
-- Man page documentation for the new option
 
 This allows ts2phc to enter holdover immediately on boot rather than
 waiting indefinitely for the first GNSS fix, which is critical for
@@ -32,10 +29,10 @@ Signed-off-by: Cole Walker <Cole.Walker@windriver.com>
  4 files changed, 21 insertions(+), 3 deletions(-)
 
 diff --git a/ts2phc.c b/ts2phc.c
-index cca6ea4..6b0a92d 100644
+index f9d249a..0062692 100644
 --- a/ts2phc.c
 +++ b/ts2phc.c
-@@ -1033,10 +1033,18 @@ int main(int argc, char *argv[])
+@@ -1111,10 +1111,18 @@ int main(int argc, char *argv[])
  		return -1;
  	}
  
@@ -56,7 +53,7 @@ index cca6ea4..6b0a92d 100644
 +	}
  	priv.holdover_length = config_get_int(cfg, NULL, "ts2phc.holdover");
  	priv.holdover_start = 0;
- 	priv.mon.fd = -1;
+ 
 diff --git a/ts2phc_pps_source.c b/ts2phc_pps_source.c
 index c333f65..ae2ad46 100644
 --- a/ts2phc_pps_source.c
