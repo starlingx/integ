@@ -906,3 +906,93 @@ int config_parse_priority_map(const char *pin_priority_map, PinPriorityEntry *pr
     free(map_copy);
     return 0;
 }
+
+/**
+ * config_validate - Validate required fields and value ranges
+ *
+ * Called after config_init() — JSON is already parsed into g_config.
+ * Reports ALL errors (does not early-return on first) so operators
+ * can fix multiple issues in one pass.
+ *
+ * Returns 0 on success, -1 on failure with specific fields logged.
+ */
+int config_validate(void)
+{
+    int errors = 0;
+
+    /* Manager section */
+    if (g_config.manager.operation_mode != OPERATION_MODE_HW_BASED &&
+        g_config.manager.operation_mode != OPERATION_MODE_SW_BASED) {
+        pr_err("Config validation: 'manager.operation_mode' must be "
+               "'hw_based' or 'sw_based'\n");
+        errors++;
+    }
+
+    if (g_config.manager.phc_interface[0] == '\0' &&
+        g_config.manager.operation_mode == OPERATION_MODE_HW_BASED) {
+        pr_err("Config validation: 'manager.phc_interface' is required "
+               "for hw_based mode\n");
+        errors++;
+    }
+
+    /* DPLL section — at least dpll0 must be configured */
+    if (g_config.dpll0.name[0] == '\0') {
+        pr_err("Config validation: 'dpll0.name' is required\n");
+        errors++;
+    }
+
+    if (g_config.dpll0.pin_priority_map[0] == '\0') {
+        pr_err("Config validation: 'dpll0.pin_priority_map' is required\n");
+        errors++;
+    }
+
+    /* PTP interfaces — at least one channel needed */
+    if (g_config.channel_count == 0) {
+        pr_err("Config validation: at least one PTP channel "
+               "(ptp_interfaces) is required\n");
+        errors++;
+    }
+
+    /* Verify ptp_bh channel exists (local UDS for DPLL<->ptp4l) */
+    bool has_ptp_bh = false;
+    for (int i = 0; i < g_config.channel_count; i++) {
+        if (strcmp(g_config.channels[i].name, "ptp_bh") == 0) {
+            has_ptp_bh = true;
+            if (strncmp(g_config.channels[i].call_channel, "uds:", 4) != 0) {
+                pr_err("Config validation: 'ptp_interfaces.ptp_bh' must "
+                       "start with 'uds:' (got '%s')\n",
+                       g_config.channels[i].call_channel);
+                errors++;
+            }
+            break;
+        }
+    }
+    if (!has_ptp_bh) {
+        pr_err("Config validation: 'ptp_interfaces.ptp_bh' channel "
+               "is required (local ptp4l UDS)\n");
+        errors++;
+    }
+
+    /* Holdover config — need at least ho_0 */
+    if (g_config.holdover_config_count == 0) {
+        pr_err("Config validation: at least one holdover tier "
+               "(holdover_config.ho_0) is required\n");
+        errors++;
+    }
+
+    /* PTP primary attributes — need at least one source mapping */
+    if (g_config.ptp_primary_attr_count == 0) {
+        pr_err("Config validation: at least one 'ptp_primary_attributes' "
+               "entry is required\n");
+        errors++;
+    }
+
+    if (errors > 0) {
+        pr_err("Config validation failed: %d error(s) in configuration\n",
+               errors);
+        return -1;
+    }
+
+    pr_info("Config validation passed\n");
+    return 0;
+}

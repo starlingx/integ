@@ -219,5 +219,8 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
                           DPLL_PIN_STATE_CONNECTED);
             }
         }
+
+        /* Pet the systemd watchdog — confirms main loop is alive */
+        sd_notify(0, "WATCHDOG=1");
     }
 }

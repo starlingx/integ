@@ -310,7 +310,7 @@ ynl_attr_put_str(struct nlmsghdr *nlh, unsigned int attr_type, const char *str)
 	attr->nla_type = attr_type;
 
 	strcpy((char *)ynl_attr_data(attr), str);
-	attr->nla_len = NLA_HDRLEN + NLA_ALIGN(len);
+	attr->nla_len = NLA_HDRLEN + len + 1;
 
 	nlh->nlmsg_len += NLMSG_ALIGN(attr->nla_len);
 }

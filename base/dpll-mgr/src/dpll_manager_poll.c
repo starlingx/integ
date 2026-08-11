@@ -103,5 +103,8 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
 
         /* Sleep 8 ms → ~125 iterations per second */
         usleep(8000);
+
+        /* Pet the systemd watchdog — confirms main loop is alive */
+        sd_notify(0, "WATCHDOG=1");
     }
 }

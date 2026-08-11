@@ -51,6 +51,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <syslog.h>
+#include <systemd/sd-daemon.h>
 
 /**
  * Log levels - controls verbosity of output

@@ -213,6 +213,17 @@ extern GlobalConfig g_config;
 int config_init(const char *config_file_path);
 
 /**
+ * Validate semantic correctness of parsed configuration
+ *
+ * Called after config_init() — JSON is already parsed into g_config.
+ * Checks required fields, value ranges, and cross-field dependencies.
+ * Reports all errors (does not stop at first).
+ *
+ * @return 0 on success, -1 on failure with specific fields logged
+ */
+int config_validate(void);
+
+/**
  * Free any resources allocated during configuration parsing
  */
 void config_cleanup(void);

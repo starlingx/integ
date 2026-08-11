@@ -69,7 +69,7 @@ CFLAGS += -DHAVE_DPLL_FEATURE_STATE
 endif
 #LDFLAGS = -pie -Wl,-z,relro,-z,now,-z,noexecstack -lgps -lcjson -lynl
 LDFLAGS = -pie -Wl,-z,relro,-z,now,-z,noexecstack \
-          -lgps -lcjson
+          -lgps -lcjson -lsystemd
 
 # Bundled YNL (kernel netlink library)
 YNL_DIR = ynl

@@ -1110,8 +1110,8 @@ static struct ynl_sock* initialize_interfaces(AppState *state)
            state->is_ptp_connected_to_gm ? "CONNECTED" : "NOT CONNECTED");
 
     if (!state->is_ptp_connected_to_gm) {
-        pr_err("Grandmaster not connected. Cannot proceed with initialization.\n");
-        return NULL;
+        pr_info("Grandmaster not connected at startup. "
+                "Will retry in main loop via UDS reconnect.\n");
     }
 
 #if 0
@@ -1199,6 +1199,14 @@ static struct ynl_sock* initialize_interfaces(AppState *state)
         pr_err("DPLL features will not be available. Check if DPLL kernel module is loaded.\n");
         return NULL;
     }
+
+    /* Signal systemd that core initialization is complete.
+     * DPLL netlink is connected and device IDs discovered — the daemon is
+     * functional.  GM connectivity is checked next but is not required for
+     * the service to be considered "ready". */
+    sd_notifyf(0, "READY=1\nSTATUS=Monitoring DPLL device %u",
+               state->eec_dpll_device_id);
+    pr_info("Service ready (sd_notify READY=1 sent)\n");
     
     return dpll_sock;
 }
@@ -1512,6 +1520,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    /* Validate semantic correctness of parsed config */
+    if (config_validate() != 0) {
+        sd_notifyf(0, "STATUS=Config validation failed");
+        return EXIT_FAILURE;
+    }
+
     /* Load timing delay table from timing_delays.json */
 #ifdef DPLL_ZL3073X_TIMING_DELAYS
     timing_delays_init("config/timing_delays.json");
@@ -1679,9 +1693,10 @@ int main(int argc, char *argv[])
 
     write_status_json(&state);
     pr_info("Initial status.json written to %s\n", STATUS_FILE_PATH);
-
     run_main_loop(&state, dpll_sock);
 
+    /* Signal systemd that we are shutting down */
+    sd_notify(0, "STOPPING=1");
     pr_info("Shutting down...\n");
     cleanup_state(&state);
     

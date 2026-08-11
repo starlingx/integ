@@ -5,6 +5,7 @@ Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
 Build-Depends: debhelper-compat (= 13),
  libcjson-dev,
  libgps-dev,
+ libsystemd-dev,
  linux-libc-dev
 Standards-Version: 4.5.1
 Homepage: https://www.starlingx.io
