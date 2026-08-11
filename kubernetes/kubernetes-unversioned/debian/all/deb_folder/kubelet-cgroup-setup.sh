@@ -193,12 +193,12 @@ create_cgroup_v1() {
         fi
     done
 
-    # Preserved cgroups — if any exist, skip setup
+    # Preserved cgroups — create if missing, always update cpuset below
     for cnt in ${CONTROLLERS_PRESERVED[@]}; do
         local CGDIR=${CGROUP}/${cnt}/${cg_name}
         if [ -d ${CGDIR} ]; then
-            LOG "Nothing to do, already configured: ${CGDIR}."
-            return ${RC}
+            LOG "Already exists: ${CGDIR}."
+            continue
         fi
         LOG "Creating: ${CGDIR}"
         mkdir -p ${CGDIR}
