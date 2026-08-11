@@ -1,0 +1,281 @@
+From c4d5e6f7a8b9012345678abcdef0123456789abc Mon Sep 17 00:00:00 2001
+From: Caio Bruchert <caio.bruchert@windriver.com>
+Date: Thu, 7 Aug 2026 15:00:00 -0300
+Subject: [PATCH] synce_dev: add source_ports for ext_src QL pass-through
+
+On E825/GNR-D platforms in DPLL netlink mode, the recovered clock
+input is represented as an external source (ext_src) because the
+ICE driver does not register per-port rclk sub-pins on the zl3073x
+DPLL. This means synce4l uses the static input_QL value from config
+for TX, ignoring port RX ESMC.
+
+Add a source_ports config parameter to ext_src sections. When set,
+dev_step_dpll() reads the live RX QL from the listed ports on every
+step and updates ext_src->ql and port->ql_forced when it changes,
+triggering a TX TLV rebuild. Multiple ports can be specified
+(comma-separated); the first non-DNU port is used.
+
+When all source_ports are DNU or failed, DNU is transmitted on all
+ports once (matching the behavior when a source is lost). A flag
+prevents repeated TLV rebuilds while in the DNU state and forces
+a rebuild when recovering from DNU back to a valid source.
+
+If source_ports is not set, existing behavior is preserved (static
+input_QL used for TX). This keeps GNSS ext_src working correctly.
+
+The TX propagation logic is specific to DPLL netlink mode
+(dev_step_dpll). Legacy command mode (dev_step_line_input) is not
+affected. The SMC socket GET_QL handlers (synce_dev_get_ql and
+synce_dev_get_ext_ql) use source_ports in both modes to report
+live RX QL when queried.
+
+Also fix synce_dev_set_ext_src_ql() to properly propagate QL changes
+received via the SMC socket to the TX ports when the updated ext_src
+is the currently active source.
+
+Also add a NULL guard in the source_ports check within
+dev_step_dpll() to prevent a crash when no clock source is active
+(e.g. DPLL in HOLDOVER with no ext_src configured).
+
+Config example (DPLL netlink mode):
+  [{rclk_synce0}]
+  board_label CLK_78M125_NAC0_SYNCE0
+  input_QL 0x02
+  source_ports eno8303,eno8403
+
+Signed-off-by: Caio Bruchert <caio.bruchert@windriver.com>
+---
+
+diff --git i/config.c w/config.c
+index 274c2d3..f90c94e 100644
+--- i/config.c
++++ w/config.c
+@@ -210,6 +210,7 @@ struct config_item config_tab_synce[] = {
+ 	EXT_ITEM_INT("input_ext_QL", 0, 0, 255),
+ 	EXT_ITEM_STR("external_enable_cmd", NULL),
+ 	EXT_ITEM_STR("external_disable_cmd", NULL),
++	EXT_ITEM_STR("source_ports", NULL),
+ 	SRC_ITEM_INT("internal_prio", 128, 0, 255),
+ };
+ 
+diff --git i/synce_dev.c w/synce_dev.c
+index 5e2bbb9..e424619 100644
+--- i/synce_dev.c
++++ w/synce_dev.c
+@@ -644,6 +644,47 @@ free_out:
+ 	return ret;
+ }
+ 
++static int port_name_in_list(const char *name, const char *list)
++{
++	if (!name || !list)
++		return 0;
++
++	const char *p = list;
++	int nlen = strlen(name);
++
++	while (*p) {
++		while (*p == ',' || *p == ' ')
++			p++;
++		if (!*p)
++			break;
++		const char *end = p;
++		while (*end && *end != ',' && *end != ' ')
++			end++;
++		if ((end - p) == nlen && strncmp(p, name, nlen) == 0)
++			return 1;
++		p = end;
++	}
++	return 0;
++}
++
++static struct synce_port *find_best_source_port(struct synce_dev *dev,
++						const char *source_ports)
++{
++	struct synce_clock_source *c;
++
++	LIST_FOREACH(c, &dev->clock_sources, list) {
++		if (c->type != PORT)
++			continue;
++		if (!port_name_in_list(c->port->name, source_ports))
++			continue;
++		if (synce_port_is_rx_dnu(c->port) ||
++		    synce_port_rx_ql_failed(c->port))
++			continue;
++		return c->port;
++	}
++	return NULL;
++}
++
+ static int dev_step_dpll(struct synce_dev *dev)
+ {
+ 	struct synce_clock_source *c, *active = NULL;
+@@ -666,8 +707,59 @@ static int dev_step_dpll(struct synce_dev *dev)
+ 		}
+ 	}
+ 
+-	if (active == dev->best_source)
++	if (active == dev->best_source) {
++		if (active && active->type == EXT_SRC &&
++		    active->ext_src->source_ports) {
++			struct synce_port *sp;
++
++			sp = find_best_source_port(dev,
++						   active->ext_src->source_ports);
++			if (sp) {
++				uint8_t rx_ql;
++				struct synce_msg_ext_ql rx_ext_ql;
++				struct synce_clock_source *c;
++				int changed = 0;
++
++				if (active->ext_src->source_ports_dnu)
++					changed = 1;
++				active->ext_src->source_ports_dnu = 0;
++				synce_port_ctrl_get_rx_ql(sp->pc, &rx_ql);
++				if (rx_ql != active->ext_src->ql) {
++					active->ext_src->ql = rx_ql;
++					changed = 1;
++				}
++				if (dev->extended_tlv &&
++				    !synce_port_ctrl_get_rx_ext_ql(sp->pc,
++								  &rx_ext_ql)) {
++					if (rx_ext_ql.enhancedSsmCode !=
++					    active->ext_src->ext_ql) {
++						active->ext_src->ext_ql =
++							rx_ext_ql.enhancedSsmCode;
++						changed = 1;
++					}
++				}
++				if (changed) {
++					LIST_FOREACH(c, &dev->clock_sources, list)
++						if (c->type == PORT)
++							set_port_ql_from_ext_src(dev,
++								c->port,
++								active->ext_src);
++					dev_update_ql(dev);
++				}
++			} else {
++				if (!active->ext_src->source_ports_dnu) {
++					struct synce_clock_source *c;
++
++					LIST_FOREACH(c, &dev->clock_sources, list)
++						if (c->type == PORT)
++							port_set_dnu(c->port,
++								dev->extended_tlv);
++					active->ext_src->source_ports_dnu = 1;
++				}
++			}
++		}
+ 		return ret;
++	}
+ 	if (!active && dev->best_source) {
+ 		pr_info("EEC_HOLDOVER on %s", dev->name);
+ 		dev->best_source = NULL;
+@@ -715,10 +807,21 @@ void synce_dev_get_ql(struct synce_dev *dev, uint8_t *ql)
+ 		return;
+ 
+ 	best = dev->best_source;
+-	if (best->type == PORT)
++	if (best->type == PORT) {
+ 		synce_port_ctrl_get_rx_ql(best->port->pc, ql);
+-	else
++	} else {
++		if (best->ext_src->source_ports) {
++			struct synce_port *sp;
++
++			sp = find_best_source_port(dev,
++						   best->ext_src->source_ports);
++			if (sp) {
++				synce_port_ctrl_get_rx_ql(sp->pc, ql);
++				return;
++			}
++		}
+ 		*ql = best->ext_src->ql;
++	}
+ }
+ 
+ void synce_dev_get_ext_ql(struct synce_dev *dev, uint8_t *ext_ql)
+@@ -740,6 +843,19 @@ void synce_dev_get_ext_ql(struct synce_dev *dev, uint8_t *ext_ql)
+ 		if (!err)
+ 			*ext_ql = ext_ql_msg.enhancedSsmCode;
+ 	} else {
++		if (best->ext_src->source_ports) {
++			struct synce_port *sp;
++
++			sp = find_best_source_port(dev,
++						   best->ext_src->source_ports);
++			if (sp) {
++				err = synce_port_ctrl_get_rx_ext_ql(sp->pc,
++								    &ext_ql_msg);
++				if (!err)
++					*ext_ql = ext_ql_msg.enhancedSsmCode;
++				return;
++			}
++		}
+ 		*ext_ql = best->ext_src->ext_ql;
+ 	}
+ }
+@@ -759,7 +875,8 @@ int synce_dev_check_ext_src_name(struct synce_dev *dev, char *ext_src_name)
+ void synce_dev_set_ext_src_ql(struct synce_dev *dev, char *ext_src_name,
+ 			      int extended, int ql)
+ {
+-	struct synce_clock_source *c;
++	struct synce_clock_source *c, *target = NULL;
++	int found = 0;
+ 
+ 	LIST_FOREACH(c, &dev->clock_sources, list) {
+ 		if (c->type == EXT_SRC) {
+@@ -768,14 +885,26 @@ void synce_dev_set_ext_src_ql(struct synce_dev *dev, char *ext_src_name,
+ 					c->ext_src->ql = ql;
+ 				else
+ 					c->ext_src->ext_ql = ql;
++				found = 1;
++				target = c;
++				break;
+ 			}
+ 		}
++		if (found)
++			break;
+ 	}
+ 
+ 	pr_info("changed QL for %s on %s, new %s = %d", ext_src_name, dev->name,
+ 		extended ? "EXT_QL" : "QL", ql);
+-	dev->rebuild_prio = 1;
+-	synce_dev_step(dev);
++	if (found && dev->ext_src_is_best && dev->best_source == target) {
++		struct synce_clock_source *p;
++		LIST_FOREACH(p, &dev->clock_sources, list)
++			if (p->type == PORT)
++				set_port_ql_from_ext_src(dev, p->port, target->ext_src);
++		dev_update_ql(dev);
++	} else {
++		dev->rebuild_prio = 1;
++	}
+ }
+ 
+ int synce_dev_init(struct synce_dev *dev, struct config *cfg)
+diff --git i/synce_ext_src.c w/synce_ext_src.c
+index c3f32d4..d013e90 100644
+--- i/synce_ext_src.c
++++ w/synce_ext_src.c
+@@ -81,6 +81,7 @@ int synce_ext_src_init(struct synce_ext_src *ext_src, struct config *cfg,
+ 	ext_src->board_label = config_get_string(cfg, ext_src->name, "board_label");
+ 	ext_src->panel_label = config_get_string(cfg, ext_src->name, "panel_label");
+ 	ext_src->package_label = config_get_string(cfg, ext_src->name, "package_label");
++	ext_src->source_ports = config_get_string(cfg, ext_src->name, "source_ports");
+ 
+ 	if (dpll_mon) {
+ 		ext_src->pin = dpll_mon_add_pin(dpll_mon, ext_src->board_label,
+diff --git i/synce_ext_src.h w/synce_ext_src.h
+index 8736248..b4a7a00 100644
+--- i/synce_ext_src.h
++++ w/synce_ext_src.h
+@@ -26,6 +26,8 @@ struct synce_ext_src {
+ 	char *board_label;
+ 	char *panel_label;
+ 	char *package_label;
++	char *source_ports;
++	int source_ports_dnu;
+ 	uint32_t pin_id;
+ 	const uint16_t *priority_list;
+ 	int priority_list_count;
