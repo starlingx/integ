@@ -1,4 +1,4 @@
-From 948d8a81a78cce523028ac3abc9aa82e3d637fbf Mon Sep 17 00:00:00 2001
+From e50a3b7c2d85b831ea7670208e8b3dcb9d4164aa Mon Sep 17 00:00:00 2001
 From: Andre Mauricio Zelak <andre.zelak@windriver.com>
 Date: Tue, 4 Aug 2026 08:07:26 -0300
 Subject: [PATCH] Fix HA clock selection after ptp4l instance
@@ -108,8 +108,8 @@ Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
 ---
  config.c    |  2 +-
  phc2sys.c   | 21 ++++++++++++++++-----
- pmc_agent.c |  1 +
- 3 files changed, 18 insertions(+), 6 deletions(-)
+ pmc_agent.c |  2 ++
+ 3 files changed, 19 insertions(+), 6 deletions(-)
 
 diff --git a/config.c b/config.c
 index ae28b46..39affea 100644
@@ -165,7 +165,7 @@ index 33b0658..83cebb4 100644
  			domains[i].ha.domain_enabled = true;
  			domains[i].ha.src_name = src_names[i];
 diff --git a/pmc_agent.c b/pmc_agent.c
-index 4d6682f..2006d57 100644
+index 4d6682f..f8d8ca2 100644
 --- a/pmc_agent.c
 +++ b/pmc_agent.c
 @@ -530,6 +530,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
@@ -176,6 +176,14 @@ index 4d6682f..2006d57 100644
  		}
  		return run_pmc_err2errno(res);
  	}
+@@ -555,6 +556,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 		node->leap = 0;
+ 		node->utc_offset_traceable = 0;
+ 	}
++	pmc_agent_save_tds(node, tds);
+ 	msg_put(msg);
+ 	return 0;
+ }
 -- 
 2.34.1
 
