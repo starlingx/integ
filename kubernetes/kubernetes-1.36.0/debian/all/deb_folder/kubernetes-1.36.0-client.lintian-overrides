@@ -1,9 +1,0 @@
-## Generated man pages: TODO
-manpage-has-bad-whatis-entry usr/share/man/*
-manpage-has-errors-from-man usr/share/man/man1/*
-
-## Bash-completion script does not have to be executable:
-script-not-executable usr/share/bash-completion/completions/kubectl
-
-## Override annoying/useless messages
-kubernetes-client: spelling-error-in-binary
