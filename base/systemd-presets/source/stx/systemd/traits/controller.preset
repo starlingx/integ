@@ -25,7 +25,7 @@ disable haproxy.service
 enable iscsi-shutdown.service
 
 # 00-mtce-compute.preset
-disable goenabledWorker.service
+disable goenabled-worker.service
 
 # 00-mtce-control.preset
 enable hbsAgent.service
@@ -37,7 +37,7 @@ enable nfs-common.service
 enable nfs-server.service
 
 # 00-pxe-network-installer.preset
-enable pxeboot_feed.service
+enable pxeboot-feed.service
 
 # 00-sm-api.preset
 enable sm-api.service
@@ -135,7 +135,7 @@ enable strongswan-starter.service
 enable ipsec-server.service
 
 # worker-utils.spec
-disable affine-platform.service
+disable affine-platform.sh.service
 disable affine-tasks.service
 
 disable worker-config-gate.service

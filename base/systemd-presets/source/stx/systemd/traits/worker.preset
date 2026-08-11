@@ -25,7 +25,7 @@ disable haproxy.service
 enable iscsi-shutdown.service
 
 # 00-mtce-compute.preset
-enable goenabledWorker.service
+enable goenabled-worker.service
 
 # 00-mtce-control.preset
 disable hbsAgent.service
@@ -124,7 +124,7 @@ enable sssd.service
 enable strongswan-starter.service
 
 # worker-utils.spec
-enable affine-platform.service
+enable affine-platform.sh.service
 enable affine-tasks.service
 
 # worker personality
