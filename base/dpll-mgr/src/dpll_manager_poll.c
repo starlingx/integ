@@ -62,9 +62,9 @@
  */
 void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
 {
-    LOG_INFO("=== ENTERING POLLING MAIN LOOP ===\n");
-    LOG_INFO("Starting polling loop (Press Ctrl+C to exit)...\n");
-    LOG_INFO("Operation Mode: POLLING\n");
+    pr_info("=== ENTERING POLLING MAIN LOOP ===\n");
+    pr_info("Starting polling loop (Press Ctrl+C to exit)...\n");
+    pr_info("Operation Mode: POLLING\n");
 
     while (running) {
         struct timespec now;
@@ -81,7 +81,7 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
             if (ret) {
                 clock_gettime(CLOCK_MONOTONIC, &state->last_subscription);
             } else {
-                LOG_ERROR("Subscription request failed\n");
+                pr_err("Subscription request failed\n");
             }
         }
 #endif
@@ -93,7 +93,7 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
                 state->ptp_pin_state == DPLL_PIN_STATE_CONNECTED) {
                 monitor_and_adjust_phase_offset(state);
             } else {
-                LOG_DEBUG("Skipping phase adjustment: ptp_pin_state=%d "
+                pr_dbg("Skipping phase adjustment: ptp_pin_state=%d "
                           "(need SELECTABLE=%d or CONNECTED=%d)\n",
                           state->ptp_pin_state,
                           DPLL_PIN_STATE_SELECTABLE,

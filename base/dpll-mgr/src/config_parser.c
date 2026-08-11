@@ -65,7 +65,7 @@ static char* read_file_to_string(const char *filename)
 {
     FILE *file = fopen(filename, "r");
     if (!file) {
-        LOG_ERROR("Cannot open config file: %s\n", filename);
+        pr_err("Cannot open config file: %s\n", filename);
         return NULL;
     }
 
@@ -74,14 +74,14 @@ static char* read_file_to_string(const char *filename)
     fseek(file, 0, SEEK_SET);
 
     if (file_size <= 0) {
-        LOG_ERROR("Invalid file size: %ld\n", file_size);
+        pr_err("Invalid file size: %ld\n", file_size);
         fclose(file);
         return NULL;
     }
 
     char *content = (char*)malloc(file_size + 1);
     if (!content) {
-        LOG_ERROR("Memory allocation failed\n");
+        pr_err("Memory allocation failed\n");
         fclose(file);
         return NULL;
     }
@@ -103,7 +103,7 @@ static int parse_manager_config(cJSON *json)
         manager = cJSON_GetObjectItem(json, "manager");
     }
     if (!manager) {
-        LOG_ERROR("'global'/'manager' section not found in config\n");
+        pr_err("'global'/'manager' section not found in config\n");
         return 0;
     }
 
@@ -170,7 +170,7 @@ static int parse_channels_config(cJSON *json)
 {
     cJSON *channels = cJSON_GetObjectItem(json, "channels");
     if (!channels) {
-        LOG_ERROR("'channels' section not found in config\n");
+        pr_err("'channels' section not found in config\n");
         return 0;
     }
 
@@ -179,7 +179,7 @@ static int parse_channels_config(cJSON *json)
     
     cJSON_ArrayForEach(channel, channels) {
         if (g_config.channel_count >= MAX_CHANNELS) {
-            LOG_ERROR("Maximum channel count exceeded\n");
+            pr_err("Maximum channel count exceeded\n");
             break;
         }
 
@@ -205,7 +205,7 @@ static int parse_dpll_config(cJSON *json)
 {
     cJSON *dpll = cJSON_GetObjectItem(json, "dpll");
     if (!dpll) {
-        LOG_ERROR("'dpll' section not found in config\n");
+        pr_err("'dpll' section not found in config\n");
         return 0;
     }
 
@@ -272,7 +272,7 @@ static int parse_dpll_config(cJSON *json)
             }
         }
         
-        LOG_DEBUG("Parsed %d holdover configurations\n", g_config.holdover_config_count);
+        pr_dbg("Parsed %d holdover configurations\n", g_config.holdover_config_count);
     }
 
     return 0;
@@ -292,7 +292,7 @@ static int parse_dpll_policy_config(cJSON *json)
         dpll_policy = cJSON_GetObjectItem(json, "dpll_policy");
     }
     if (!dpll_policy) {
-        LOG_ERROR("'dpll_policy' section not found in config\n");
+        pr_err("'dpll_policy' section not found in config\n");
         return 0;
     }
 
@@ -329,7 +329,7 @@ static int parse_ptp_profiles_config(cJSON *json)
         ptp_profiles = cJSON_GetObjectItem(ptp, "ptp_profiles");
     }
     if (!ptp_profiles) {
-        LOG_ERROR("'ptp_profiles' section not found in config\n");
+        pr_err("'ptp_profiles' section not found in config\n");
         return 0;
     }
 
@@ -338,7 +338,7 @@ static int parse_ptp_profiles_config(cJSON *json)
     
     cJSON_ArrayForEach(profile, ptp_profiles) {
         if (g_config.ptp_profile_count >= MAX_PTP_PROFILES) {
-            LOG_ERROR("Maximum PTP profile count exceeded\n");
+            pr_err("Maximum PTP profile count exceeded\n");
             break;
         }
 
@@ -371,7 +371,7 @@ static int parse_ptp_primary_attributes(cJSON *json)
         ptp_primary_attrs = cJSON_GetObjectItem(json, "ptp_primary_attributes");
     }
     if (!ptp_primary_attrs) {
-        LOG_ERROR("'ptp_primary_attributes' section not found in config\n");
+        pr_err("'ptp_primary_attributes' section not found in config\n");
         return 0;
     }
 
@@ -380,7 +380,7 @@ static int parse_ptp_primary_attributes(cJSON *json)
     
     cJSON_ArrayForEach(attrs, ptp_primary_attrs) {
         if (g_config.ptp_primary_attr_count >= MAX_PTP_ATTRIBUTES) {
-            LOG_ERROR("Maximum PTP attributes count exceeded\n");
+            pr_err("Maximum PTP attributes count exceeded\n");
             break;
         }
 
@@ -432,7 +432,7 @@ static int parse_ptp_secondary_defaults(cJSON *json)
         }
     }
     if (!ptp_secondary) {
-        LOG_ERROR("'ptp_secondary_attributes'/'ptp_secondary_defaults' section not found in config\n");
+        pr_err("'ptp_secondary_attributes'/'ptp_secondary_defaults' section not found in config\n");
         return 0;
     }
 
@@ -467,7 +467,7 @@ static int parse_synce_config(cJSON *json)
 {
     cJSON *synce = cJSON_GetObjectItem(json, "synce");
     if (!synce) {
-        LOG_ERROR("'synce' section not found in config\n");
+        pr_err("'synce' section not found in config\n");
         return 0;
     }
 
@@ -498,7 +498,7 @@ static int parse_ql_option(cJSON *ql_map, const char *option_name, QualityLevelM
     cJSON *level = NULL;
     cJSON_ArrayForEach(level, option) {
         if (map->entry_count >= MAX_QL_LEVELS) {
-            LOG_ERROR("Maximum QL level count exceeded for %s\n", option_name);
+            pr_err("Maximum QL level count exceeded for %s\n", option_name);
             break;
         }
 
@@ -527,7 +527,7 @@ static int parse_ql_map_config(cJSON *json)
 {
     cJSON *ql_map = cJSON_GetObjectItem(json, "ql_map");
     if (!ql_map) {
-        LOG_ERROR("'ql_map' section not found in config\n");
+        pr_err("'ql_map' section not found in config\n");
         return 0;
     }
 
@@ -544,7 +544,7 @@ static int parse_inputs_ql_config(cJSON *json)
 {
     cJSON *inputs_ql = cJSON_GetObjectItem(json, "inputs_ql");
     if (!inputs_ql) {
-        LOG_ERROR("'inputs_ql' section not found in config\n");
+        pr_err("'inputs_ql' section not found in config\n");
         return 0;
     }
 
@@ -553,7 +553,7 @@ static int parse_inputs_ql_config(cJSON *json)
     
     cJSON_ArrayForEach(input, inputs_ql) {
         if (g_config.inputs_ql_count >= MAX_INPUT_QL) {
-            LOG_ERROR("Maximum input QL count exceeded\n");
+            pr_err("Maximum input QL count exceeded\n");
             break;
         }
 
@@ -576,7 +576,7 @@ static int parse_inputs_ql_config(cJSON *json)
 int config_init(const char *config_file_path)
 {
     if (!config_file_path) {
-        LOG_ERROR("Config file path is NULL\n");
+        pr_err("Config file path is NULL\n");
         return -1;
     }
 
@@ -596,7 +596,7 @@ int config_init(const char *config_file_path)
     if (!json) {
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr) {
-            LOG_ERROR("JSON parse error before: %s\n", error_ptr);
+            pr_err("JSON parse error before: %s\n", error_ptr);
         }
         return -1;
     }
@@ -617,7 +617,7 @@ int config_init(const char *config_file_path)
     cJSON_Delete(json);
 
     if (result == 0) {
-        LOG_INFO("Configuration loaded successfully from: %s\n", config_file_path);
+        pr_info("Configuration loaded successfully from: %s\n", config_file_path);
     }
 
     return result;
@@ -637,76 +637,76 @@ void config_cleanup(void)
  */
 void config_print(void)
 {
-    LOG_INFO("=== Configuration Summary ===\n");
-    LOG_INFO("Global/Manager:\n");
-    LOG_INFO("  poll_interval_ms: %d\n", g_config.manager.poll_interval_ms);
-    LOG_INFO("  prefer_phc: %s\n", g_config.manager.prefer_phc ? "true" : "false");
-    LOG_INFO("  guard_time_ms: %d\n", g_config.manager.guard_time_ms);
-    LOG_INFO("  hysteresis_ns: %d\n", g_config.manager.hysteresis_ns);
-    LOG_INFO("  min_holdover_s: %d\n", g_config.manager.min_holdover_s);
-    LOG_INFO("  max_step_ns: %ld\n", g_config.manager.max_step_ns);
-    LOG_INFO("  phase_offset_factor: %d\n", g_config.manager.phase_offset_factor);
-    LOG_INFO("  force_same_ql_on_fronthaul: %s\n", g_config.manager.force_same_ql_on_fronthaul ? "true" : "false");
-    LOG_INFO("  phc_interface: %s\n", g_config.manager.phc_interface);
-    LOG_INFO("  operation_mode: %s\n",
+    pr_info("=== Configuration Summary ===\n");
+    pr_info("Global/Manager:\n");
+    pr_info("  poll_interval_ms: %d\n", g_config.manager.poll_interval_ms);
+    pr_info("  prefer_phc: %s\n", g_config.manager.prefer_phc ? "true" : "false");
+    pr_info("  guard_time_ms: %d\n", g_config.manager.guard_time_ms);
+    pr_info("  hysteresis_ns: %d\n", g_config.manager.hysteresis_ns);
+    pr_info("  min_holdover_s: %d\n", g_config.manager.min_holdover_s);
+    pr_info("  max_step_ns: %ld\n", g_config.manager.max_step_ns);
+    pr_info("  phase_offset_factor: %d\n", g_config.manager.phase_offset_factor);
+    pr_info("  force_same_ql_on_fronthaul: %s\n", g_config.manager.force_same_ql_on_fronthaul ? "true" : "false");
+    pr_info("  phc_interface: %s\n", g_config.manager.phc_interface);
+    pr_info("  operation_mode: %s\n",
              g_config.manager.operation_mode == OPERATION_MODE_SW_BASED ? "SW_BASED" : "HW_BASED");
     
-    LOG_INFO("Channels: %d\n", g_config.channel_count);
+    pr_info("Channels: %d\n", g_config.channel_count);
     for (int i = 0; i < g_config.channel_count; i++) {
-        LOG_INFO("  %s: %s\n", g_config.channels[i].name, 
+        pr_info("  %s: %s\n", g_config.channels[i].name, 
                g_config.channels[i].call_channel);
     }
     
-    LOG_INFO("DPLL0:\n");
-    LOG_INFO("  name: %s\n", g_config.dpll0.name);
-    LOG_INFO("  pin_priority_map: %s\n", g_config.dpll0.pin_priority_map);
+    pr_info("DPLL0:\n");
+    pr_info("  name: %s\n", g_config.dpll0.name);
+    pr_info("  pin_priority_map: %s\n", g_config.dpll0.pin_priority_map);
     
-    LOG_INFO("DPLL1:\n");
-    LOG_INFO("  name: %s\n", g_config.dpll1.name);
-    LOG_INFO("  pin_priority_map: %s\n", g_config.dpll1.pin_priority_map);
+    pr_info("DPLL1:\n");
+    pr_info("  name: %s\n", g_config.dpll1.name);
+    pr_info("  pin_priority_map: %s\n", g_config.dpll1.pin_priority_map);
     
-    LOG_INFO("DPLL Policy (rclkb):\n");
-    LOG_INFO("  low_prio: %d\n", g_config.dpll_policy.low_prio);
-    LOG_INFO("  high_prio: %d\n", g_config.dpll_policy.high_prio);
-    LOG_INFO("  compare_source: %s\n", g_config.dpll_policy.compare_source);
-    LOG_INFO("  tie_break: %s\n", g_config.dpll_policy.tie_break);
+    pr_info("DPLL Policy (rclkb):\n");
+    pr_info("  low_prio: %d\n", g_config.dpll_policy.low_prio);
+    pr_info("  high_prio: %d\n", g_config.dpll_policy.high_prio);
+    pr_info("  compare_source: %s\n", g_config.dpll_policy.compare_source);
+    pr_info("  tie_break: %s\n", g_config.dpll_policy.tie_break);
     
-    LOG_INFO("PTP Profiles: %d\n", g_config.ptp_profile_count);
+    pr_info("PTP Profiles: %d\n", g_config.ptp_profile_count);
     for (int i = 0; i < g_config.ptp_profile_count; i++) {
-        LOG_INFO("  %s: %s\n", g_config.ptp_profiles[i].instance_name,
+        pr_info("  %s: %s\n", g_config.ptp_profiles[i].instance_name,
                g_config.ptp_profiles[i].profile);
     }
     
-    LOG_INFO("PTP Primary Attributes: %d\n", g_config.ptp_primary_attr_count);
+    pr_info("PTP Primary Attributes: %d\n", g_config.ptp_primary_attr_count);
     for (int i = 0; i < g_config.ptp_primary_attr_count; i++) {
         PtpPrimaryAttributes *attr = &g_config.ptp_primary_attrs[i];
-        LOG_INFO("  %s:\n", attr->pin_name);
-        LOG_INFO("    clockClass: %d\n", attr->clockClass);
-        LOG_INFO("    clockAccuracy: %s\n", attr->clockAccuracy);
-        LOG_INFO("    timeTraceable: %d\n", attr->timeTraceable);
-        LOG_INFO("    frequencyTraceable: %d\n", attr->frequencyTraceable);
-        LOG_INFO("    timeSource: %s\n", attr->timeSource);
+        pr_info("  %s:\n", attr->pin_name);
+        pr_info("    clockClass: %d\n", attr->clockClass);
+        pr_info("    clockAccuracy: %s\n", attr->clockAccuracy);
+        pr_info("    timeTraceable: %d\n", attr->timeTraceable);
+        pr_info("    frequencyTraceable: %d\n", attr->frequencyTraceable);
+        pr_info("    timeSource: %s\n", attr->timeSource);
     }
     
-    LOG_INFO("PTP Secondary Defaults:\n");
-    LOG_INFO("  offsetScaledLogVariance: %s\n", g_config.ptp_secondary_defaults.offsetScaledLogVariance);
-    LOG_INFO("  currentUtcOffset: %d\n", g_config.ptp_secondary_defaults.currentUtcOffset);
-    LOG_INFO("  leap61: %d\n", g_config.ptp_secondary_defaults.leap61);
-    LOG_INFO("  leap59: %d\n", g_config.ptp_secondary_defaults.leap59);
-    LOG_INFO("  currentUtcOffsetValid: %d\n", g_config.ptp_secondary_defaults.currentUtcOffsetValid);
-    LOG_INFO("  ptpTimescale: %d\n", g_config.ptp_secondary_defaults.ptpTimescale);
+    pr_info("PTP Secondary Defaults:\n");
+    pr_info("  offsetScaledLogVariance: %s\n", g_config.ptp_secondary_defaults.offsetScaledLogVariance);
+    pr_info("  currentUtcOffset: %d\n", g_config.ptp_secondary_defaults.currentUtcOffset);
+    pr_info("  leap61: %d\n", g_config.ptp_secondary_defaults.leap61);
+    pr_info("  leap59: %d\n", g_config.ptp_secondary_defaults.leap59);
+    pr_info("  currentUtcOffsetValid: %d\n", g_config.ptp_secondary_defaults.currentUtcOffsetValid);
+    pr_info("  ptpTimescale: %d\n", g_config.ptp_secondary_defaults.ptpTimescale);
     
-    LOG_INFO("SyncE:\n");
-    LOG_INFO("  ql_type: %d\n", g_config.synce.ql_type);
-    LOG_INFO("  use_extended_ql: %s\n", g_config.synce.use_extended_ql ? "true" : "false");
+    pr_info("SyncE:\n");
+    pr_info("  ql_type: %d\n", g_config.synce.ql_type);
+    pr_info("  use_extended_ql: %s\n", g_config.synce.use_extended_ql ? "true" : "false");
     
-    LOG_INFO("Input Quality Levels: %d\n", g_config.inputs_ql_count);
+    pr_info("Input Quality Levels: %d\n", g_config.inputs_ql_count);
     for (int i = 0; i < g_config.inputs_ql_count; i++) {
-        LOG_INFO("  %s: %s\n", g_config.inputs_ql[i].pin_name,
+        pr_info("  %s: %s\n", g_config.inputs_ql[i].pin_name,
                g_config.inputs_ql[i].ql_level);
     }
     
-    LOG_INFO("============================\n\n");
+    pr_info("============================\n\n");
 }
 
 /**
@@ -829,7 +829,7 @@ static void extract_package_label_from_pin(const char *pin_name, char *label_buf
 int config_parse_priority_map(const char *pin_priority_map, PinPriorityEntry *priority_table, int table_size)
 {
     if (!pin_priority_map || !priority_table || table_size <= 0) {
-        LOG_ERROR("Invalid parameters for priority map parsing\n");
+        pr_err("Invalid parameters for priority map parsing\n");
         return -1;
     }
     
@@ -843,7 +843,7 @@ int config_parse_priority_map(const char *pin_priority_map, PinPriorityEntry *pr
     // Make a copy of the string for parsing (strtok modifies the string)
     char *map_copy = strdup(pin_priority_map);
     if (!map_copy) {
-        LOG_ERROR("Memory allocation failed\n");
+        pr_err("Memory allocation failed\n");
         return -1;
     }
     
@@ -858,7 +858,7 @@ int config_parse_priority_map(const char *pin_priority_map, PinPriorityEntry *pr
         // Find the colon separator
         char *colon = strchr(pair, ':');
         if (!colon) {
-            LOG_ERROR("Invalid priority pair format: %s\n", pair);
+            pr_err("Invalid priority pair format: %s\n", pair);
             pair = strtok_r(NULL, ",", &saveptr);
             continue;
         }
@@ -894,10 +894,10 @@ int config_parse_priority_map(const char *pin_priority_map, PinPriorityEntry *pr
             // Store priority
             priority_table[pin_src].priority = priority;
             
-            LOG_DEBUG("  Priority: %s (package_label: %s, index %d) = %d\n", 
+            pr_dbg("  Priority: %s (package_label: %s, index %d) = %d\n", 
                    pin_name, priority_table[pin_src].package_label, pin_src, priority);
         } else if (pin_src == PIN_SOURCE_UNKNOWN) {
-            LOG_ERROR("Unknown pin name: %s\n", pin_name);
+            pr_err("Unknown pin name: %s\n", pin_name);
         }
         
         pair = strtok_r(NULL, ",", &saveptr);

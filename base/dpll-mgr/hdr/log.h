@@ -33,9 +33,16 @@
 /**
  * @file log.h
  * @brief Logging System Header
- * 
+ *
  * Centralized logging macros and level definitions for the application.
  * All modules should include this header for consistent logging.
+ *
+ * Supports two output modes:
+ * - Syslog (default): LOG_USER facility -> /var/log/user.log
+ * - File (debug): -o <file> flag retains CLOCK_MONOTONIC timestamps
+ *
+ * Macro names use pr_* prefix (kernel-style) to avoid collision with
+ * syslog.h LOG_INFO/LOG_ERR integer constants.
  */
 
 #ifndef LOG_H
@@ -43,23 +50,24 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <syslog.h>
 
 /**
  * Log levels - controls verbosity of output
  */
 typedef enum {
-    LOG_LEVEL_ERROR = 0,    /* Critical errors only */
-    LOG_LEVEL_INFO = 1,     /* Informational messages */
-    LOG_LEVEL_DEBUG = 2,    /* Detailed debugging */
-    LOG_LEVEL_RAW = 3       /* Raw data dumps */
+    DPLL_LOG_LEVEL_ERROR = 0,    /* Critical errors only */
+    DPLL_LOG_LEVEL_INFO  = 1,    /* Informational messages */
+    DPLL_LOG_LEVEL_DEBUG = 2,    /* Detailed debugging */
+    DPLL_LOG_LEVEL_RAW   = 3     /* Raw data dumps */
 } LogLevel;
 
 /* Global logging configuration */
-extern FILE *g_log_file;        /* Log output file (NULL = stdout/stderr) */
+extern FILE *g_log_file;        /* Log output file (NULL = syslog mode) */
 extern LogLevel g_log_level;    /* Current log level threshold */
 
 /**
- * Helper macro to get timestamp in ptp4l format [seconds.microseconds]
+ * Helper macro to get timestamp in ptp4l format [seconds.milliseconds]
  */
 #define GET_TIMESTAMP() ({ \
     struct timespec _ts; \
@@ -68,12 +76,62 @@ extern LogLevel g_log_level;    /* Current log level threshold */
 })
 
 /**
- * Logging Macros
+ * Logging Macros — pr_* naming avoids syslog.h LOG_* constant collision
+ *
+ * When g_log_file is set (-o flag), output goes to file with timestamps.
+ * When g_log_file is NULL (default), output goes to syslog(LOG_USER).
  */
 
-#define LOG_INFO(...) do { if (g_log_level >= LOG_LEVEL_INFO) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
-#define LOG_ERROR(...) do { if (g_log_level >= LOG_LEVEL_ERROR) { FILE *out = g_log_file ? g_log_file : stderr; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
-#define LOG_DEBUG(...) do { if (g_log_level >= LOG_LEVEL_DEBUG) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
-#define LOG_RAW(...) do { if (g_log_level >= LOG_LEVEL_RAW) { FILE *out = g_log_file ? g_log_file : stdout; struct timespec _ts = GET_TIMESTAMP(); fprintf(out, "[dpll_mgr][%ld.%03ld] ", _ts.tv_sec, _ts.tv_nsec / 1000000); fprintf(out, __VA_ARGS__); fflush(out); } } while(0)
+#define pr_info(fmt, ...) do { \
+    if (g_log_level >= DPLL_LOG_LEVEL_INFO) { \
+        if (g_log_file) { \
+            struct timespec _ts = GET_TIMESTAMP(); \
+            fprintf(g_log_file, "[dpll-mgr][%ld.%03ld] " fmt, \
+                    _ts.tv_sec, _ts.tv_nsec / 1000000, ##__VA_ARGS__); \
+            fflush(g_log_file); \
+        } else { \
+            syslog(LOG_INFO, fmt, ##__VA_ARGS__); \
+        } \
+    } \
+} while(0)
+
+#define pr_err(fmt, ...) do { \
+    if (g_log_level >= DPLL_LOG_LEVEL_ERROR) { \
+        if (g_log_file) { \
+            struct timespec _ts = GET_TIMESTAMP(); \
+            fprintf(g_log_file, "[dpll-mgr][%ld.%03ld] ERROR: " fmt, \
+                    _ts.tv_sec, _ts.tv_nsec / 1000000, ##__VA_ARGS__); \
+            fflush(g_log_file); \
+        } else { \
+            syslog(LOG_ERR, fmt, ##__VA_ARGS__); \
+        } \
+    } \
+} while(0)
+
+#define pr_dbg(fmt, ...) do { \
+    if (g_log_level >= DPLL_LOG_LEVEL_DEBUG) { \
+        if (g_log_file) { \
+            struct timespec _ts = GET_TIMESTAMP(); \
+            fprintf(g_log_file, "[dpll-mgr][%ld.%03ld] " fmt, \
+                    _ts.tv_sec, _ts.tv_nsec / 1000000, ##__VA_ARGS__); \
+            fflush(g_log_file); \
+        } else { \
+            syslog(LOG_DEBUG, fmt, ##__VA_ARGS__); \
+        } \
+    } \
+} while(0)
+
+#define pr_raw(fmt, ...) do { \
+    if (g_log_level >= DPLL_LOG_LEVEL_RAW) { \
+        if (g_log_file) { \
+            struct timespec _ts = GET_TIMESTAMP(); \
+            fprintf(g_log_file, "[dpll-mgr][%ld.%03ld] " fmt, \
+                    _ts.tv_sec, _ts.tv_nsec / 1000000, ##__VA_ARGS__); \
+            fflush(g_log_file); \
+        } else { \
+            syslog(LOG_DEBUG, fmt, ##__VA_ARGS__); \
+        } \
+    } \
+} while(0)
 
 #endif /* LOG_H */

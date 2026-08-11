@@ -271,38 +271,38 @@ bool send_subscription_request(int sock_fd, struct sockaddr_un *peer_addr, uint1
     int msg_len = build_subscription_message(buffer, sizeof(buffer), *sequence_id,
                                              SUBSCRIPTION_DURATION, event_bitmask);
     if (msg_len < 0) {
-        LOG_ERROR("Failed to build subscription message\n");
+        pr_err("Failed to build subscription message\n");
         return false;
     }
     
     ssize_t sent = sendto(sock_fd, buffer, msg_len, 0, (struct sockaddr *)peer_addr, sizeof(*peer_addr));
     if (sent < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            LOG_DEBUG("sendto would block, skipping subscription request\n");
+            pr_dbg("sendto would block, skipping subscription request\n");
             return false;
         }
-        LOG_ERROR("Failed to send subscription message: %s\n", strerror(errno));
+        pr_err("Failed to send subscription message: %s\n", strerror(errno));
         return false;
     }
     
     if (sent != msg_len) {
-        LOG_ERROR("Partial send: sent %zd of %d bytes\n", sent, msg_len);
+        pr_err("Partial send: sent %zd of %d bytes\n", sent, msg_len);
         return false;
     }
     
 #ifdef HEX_DUMP
     /* Debug: print first 64 bytes as hex */
-    LOG_DEBUG("Sent %zd bytes SUBSCRIBE_EVENTS_NP:\n", sent);
-    LOG_RAW("HEX: ");
+    pr_dbg("Sent %zd bytes SUBSCRIBE_EVENTS_NP:\n", sent);
+    pr_raw("HEX: ");
     for (int i = 0; i < (msg_len < 64 ? msg_len : 64); i++) {
-        LOG_RAW("%02X ", buffer[i]);
-        if ((i + 1) % 16 == 0) LOG_RAW("\n     ");
+        pr_raw("%02X ", buffer[i]);
+        if ((i + 1) % 16 == 0) pr_raw("\n     ");
     }
-    LOG_RAW("\n");
+    pr_raw("\n");
 #endif
     
     (*sequence_id)++;
-    LOG_INFO("Subscription request sent (duration: %d sec)\n", SUBSCRIPTION_DURATION);
+    pr_info("Subscription request sent (duration: %d sec)\n", SUBSCRIPTION_DURATION);
     return true;
 }
 
@@ -315,24 +315,24 @@ int send_get_request(int sockfd, struct sockaddr_un *peer_addr, uint16_t mgmt_id
     uint8_t msg[512];
     int len = build_management_message(msg, sizeof(msg), *seq, mgmt_id, GET, NULL, 0);
     if (len < 0) {
-        LOG_ERROR("Failed to build management message\n");
+        pr_err("Failed to build management message\n");
         return EINVAL;
     }
     
-    LOG_DEBUG("Sending GET request for mgmt_id=0x%04X to %s, len=%d\n", mgmt_id, peer_addr->sun_path, len);
+    pr_dbg("Sending GET request for mgmt_id=0x%04X to %s, len=%d\n", mgmt_id, peer_addr->sun_path, len);
     
     ssize_t sent = sendto(sockfd, msg, len, 0, (struct sockaddr *)peer_addr, sizeof(*peer_addr));
     if (sent < 0) {
         int err = errno;
         if (err == EAGAIN || err == EWOULDBLOCK) {
-            LOG_DEBUG("sendto() would block\n");
+            pr_dbg("sendto() would block\n");
             return err;
         }
-        LOG_ERROR("sendto() failed for GET request: %s\n", strerror(err));
+        pr_err("sendto() failed for GET request: %s\n", strerror(err));
         return err;
     }
     
-    LOG_DEBUG("Sent %zd bytes successfully\n", sent);
+    pr_dbg("Sent %zd bytes successfully\n", sent);
     (*seq)++;
     return 0;
 }
@@ -348,7 +348,7 @@ bool parse_management_response(const uint8_t *buffer, size_t len,
     const size_t mgmt_fields_len = 14;  /* targetPortIdentity(10) + hops(2) + actionField(1) + reserved(1) + padding(8) */
     
     if (len < sizeof(PTPHeader) + mgmt_fields_len + sizeof(ManagementTLV)) {
-        LOG_DEBUG("Message too short: %zu < %zu\n", len, sizeof(PTPHeader) + mgmt_fields_len + sizeof(ManagementTLV));
+        pr_dbg("Message too short: %zu < %zu\n", len, sizeof(PTPHeader) + mgmt_fields_len + sizeof(ManagementTLV));
         return false;
     }
     
@@ -357,11 +357,11 @@ bool parse_management_response(const uint8_t *buffer, size_t len,
     
     /* Verify it's a management message - messageType is in LOW nibble of first byte */
     uint8_t msg_type = hdr->messageType_versionPTP & 0x0F;
-    LOG_DEBUG("Message type byte: 0x%02X, extracted msg_type: 0x%X, expected: 0x%X\n", 
+    pr_dbg("Message type byte: 0x%02X, extracted msg_type: 0x%X, expected: 0x%X\n", 
            hdr->messageType_versionPTP, msg_type, PTP_MANAGEMENT);
     
     if (msg_type != PTP_MANAGEMENT) {
-        LOG_DEBUG("Not a management message: type=0x%X\n", msg_type);
+        pr_dbg("Not a management message: type=0x%X\n", msg_type);
         return false;
     }
     
@@ -369,7 +369,7 @@ bool parse_management_response(const uint8_t *buffer, size_t len,
     *data = buffer + sizeof(PTPHeader) + mgmt_fields_len + sizeof(ManagementTLV);
     *data_len = ntohs(tlv->lengthField) - 2;  /* Subtract managementId size */
     
-    LOG_DEBUG("Successfully parsed: mgmt_id=0x%04X, data_len=%zu\n", *mgmt_id, *data_len);
+    pr_dbg("Successfully parsed: mgmt_id=0x%04X, data_len=%zu\n", *mgmt_id, *data_len);
     return true;
 }
 
@@ -380,15 +380,15 @@ bool parse_management_response(const uint8_t *buffer, size_t len,
  */
 void process_time_status_np(AppState *state, const uint8_t *data, size_t data_len)
 {
-    LOG_DEBUG("Processing TIME_STATUS_NP response (data_len=%zu)\n", data_len);
+    pr_dbg("Processing TIME_STATUS_NP response (data_len=%zu)\n", data_len);
     
     if (!state) {
-        LOG_ERROR("Invalid state pointer in process_time_status_np\n");
+        pr_err("Invalid state pointer in process_time_status_np\n");
         return;
     }
 
     if (data_len < 50) {
-        LOG_ERROR("TIME_STATUS_NP data too short (%zu bytes, expected >= 50)\n", data_len);
+        pr_err("TIME_STATUS_NP data too short (%zu bytes, expected >= 50)\n", data_len);
         return;
     }
     
@@ -432,7 +432,7 @@ void process_time_status_np(AppState *state, const uint8_t *data, size_t data_le
      * 1 = external GM is being tracked (grandmasterIdentity != clockIdentity)
      * 0 = no external GM (free-running or LISTENING) */
     bool gm_present = ((int32_t)ntohl(*(const uint32_t *)(data + 38))) != 0;
-    LOG_DEBUG("gmPresent=%d\n", gm_present);
+    pr_dbg("gmPresent=%d\n", gm_present);
 
     /* Use active PTP source index (REF0P or REF0N) */
     enum pin_source ptp_idx =
@@ -448,7 +448,7 @@ void process_time_status_np(AppState *state, const uint8_t *data, size_t data_le
     if (current_utc_offset_valid) {
         state->clock_params[ptp_idx].current_utc_offset = current_utc_offset;
     } else {
-        LOG_DEBUG("TIME_STATUS_NP has invalid UTC offset flag; keeping existing currentUtcOffset=%d\n",
+        pr_dbg("TIME_STATUS_NP has invalid UTC offset flag; keeping existing currentUtcOffset=%d\n",
                  state->clock_params[ptp_idx].current_utc_offset);
     }
     state->clock_params[ptp_idx].leap61 = leap61;
@@ -462,7 +462,7 @@ void process_time_status_np(AppState *state, const uint8_t *data, size_t data_le
     state->clock_params[ptp_idx].time_source = time_source;
     clock_gettime(CLOCK_MONOTONIC, &state->clock_params[ptp_idx].last_update);
     
-    LOG_DEBUG("Phase offset: %" PRId64 " ns, UTC offset: %d, timeSource: 0x%02X, flags: leap61=%d leap59=%d utcValid=%d timescale=%d traceable=%d freqTraceable=%d\n",
+    pr_dbg("Phase offset: %" PRId64 " ns, UTC offset: %d, timeSource: 0x%02X, flags: leap61=%d leap59=%d utcValid=%d timescale=%d traceable=%d freqTraceable=%d\n",
             master_offset, current_utc_offset, time_source, leap61, leap59, current_utc_offset_valid,
             ptp_timescale, time_traceable, frequency_traceable);
 }
@@ -474,15 +474,15 @@ void process_time_status_np(AppState *state, const uint8_t *data, size_t data_le
  */
 void process_parent_data_set(AppState *state, const uint8_t *data, size_t data_len)
 {
-    LOG_INFO("Processing PARENT_DATA_SET response (data_len=%zu)\n", data_len);
+    pr_info("Processing PARENT_DATA_SET response (data_len=%zu)\n", data_len);
     
     if (!state) {
-        LOG_ERROR("Invalid state pointer in process_parent_data_set\n");
+        pr_err("Invalid state pointer in process_parent_data_set\n");
         return;
     }
 
     if (data_len < 32) {
-        LOG_ERROR("PARENT_DATA_SET data too short (%zu bytes, expected >= 32)\n", data_len);
+        pr_err("PARENT_DATA_SET data too short (%zu bytes, expected >= 32)\n", data_len);
         return;
     }
     
@@ -525,7 +525,7 @@ void process_parent_data_set(AppState *state, const uint8_t *data, size_t data_l
     uint16_t gm_offset_scaled_log_variance =
         (uint16_t)(((uint16_t)ptr[2] << 8) | (uint16_t)ptr[3]);
     
-    LOG_DEBUG("PARENT_DATA_SET clockQuality bytes: %02X %02X %02X %02X\n", 
+    pr_dbg("PARENT_DATA_SET clockQuality bytes: %02X %02X %02X %02X\n", 
               ptr[0], ptr[1], ptr[2], ptr[3]);
     ptr += 4;
     
@@ -548,7 +548,7 @@ void process_parent_data_set(AppState *state, const uint8_t *data, size_t data_l
     state->clock_params[ptp_idx].gm_present = true;
     clock_gettime(CLOCK_MONOTONIC, &state->clock_params[ptp_idx].last_update);
     
-    LOG_DEBUG("GM Identity: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+    pr_dbg("GM Identity: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
            state->clock_params[ptp_idx].gm_identity.id[0],
            state->clock_params[ptp_idx].gm_identity.id[1],
            state->clock_params[ptp_idx].gm_identity.id[2],
@@ -557,7 +557,7 @@ void process_parent_data_set(AppState *state, const uint8_t *data, size_t data_l
            state->clock_params[ptp_idx].gm_identity.id[5],
            state->clock_params[ptp_idx].gm_identity.id[6],
            state->clock_params[ptp_idx].gm_identity.id[7]);
-        LOG_DEBUG("GM Clock Class: %u, Accuracy: 0x%02X, Variance: 0x%04X, Priority1: %u, Priority2: %u, TimeSource: 0x%02X\n",
+        pr_dbg("GM Clock Class: %u, Accuracy: 0x%02X, Variance: 0x%04X, Priority1: %u, Priority2: %u, TimeSource: 0x%02X\n",
            state->clock_params[ptp_idx].gm_clock_class,
            state->clock_params[ptp_idx].gm_clock_accuracy,
             state->clock_params[ptp_idx].gm_offset_scaled_log_variance,
@@ -575,7 +575,7 @@ void process_parent_data_set(AppState *state, const uint8_t *data, size_t data_l
             case 255: mode = "slave-only"; break;
             default: mode = "degraded/free running"; break;
         }
-        LOG_INFO("GM is in free running mode: Clock Class %u (%s)\n",
+        pr_info("GM is in free running mode: Clock Class %u (%s)\n",
                state->clock_params[ptp_idx].gm_clock_class, mode);
     }
 }
@@ -598,7 +598,7 @@ void convert_to_grandmaster_settings_np(const ClockParameters *clock_params,
     uint8_t *ptr = gm_settings_data;
     
     /* Debug: Log what we're converting */
-    LOG_DEBUG("Converting to GRANDMASTER_SETTINGS_NP: clockClass=%u, clockAccuracy=%u, variance=%u, utcOffset=%d, utcValid=%u\n",
+    pr_dbg("Converting to GRANDMASTER_SETTINGS_NP: clockClass=%u, clockAccuracy=%u, variance=%u, utcOffset=%d, utcValid=%u\n",
               clock_params->gm_clock_class, clock_params->gm_clock_accuracy, 
               clock_params->gm_offset_scaled_log_variance,
               clock_params->current_utc_offset,
@@ -647,7 +647,7 @@ int build_grandmaster_settings_np_message(uint8_t *buffer, size_t buffer_size,
                                                  const ClockParameters *clock_params)
 {
     if (buffer_size < 128) {
-        LOG_ERROR("Buffer too small for GRANDMASTER_SETTINGS_NP message\n");
+        pr_err("Buffer too small for GRANDMASTER_SETTINGS_NP message\n");
         return -1;
     }
     
@@ -679,10 +679,10 @@ void forward_clock_parameters(AppState *state)
     bool is_holdover = (state->current_master >= HOLDOVER_0 && state->current_master <= HOLDOVER_3);
     
     if (is_holdover) {
-        LOG_DEBUG("Forwarding clock parameters from holdover state (pin source %d) to %d valid remote(s)\n", 
+        pr_dbg("Forwarding clock parameters from holdover state (pin source %d) to %d valid remote(s)\n", 
                  param_idx, state->rx_count);
     } else {
-        LOG_INFO("Forwarding clock parameters from pin source %d to %d valid remote(s)\n", 
+        pr_info("Forwarding clock parameters from pin source %d to %d valid remote(s)\n", 
                  param_idx, state->rx_count);
     }
     
@@ -691,7 +691,7 @@ void forward_clock_parameters(AppState *state)
         uint8_t buffer[BUFFER_SIZE];
         
         /* Build GRANDMASTER_SETTINGS_NP SET message using new function */
-        LOG_DEBUG("Building GRANDMASTER_SETTINGS_NP SET for remote %d (%s)\n", 
+        pr_dbg("Building GRANDMASTER_SETTINGS_NP SET for remote %d (%s)\n", 
                 i, state->remotes[i].uds_path);
         
         int msg_len = build_grandmaster_settings_np_message(buffer, sizeof(buffer),
@@ -699,25 +699,25 @@ void forward_clock_parameters(AppState *state)
                                                            &state->clock_params[param_idx]);
         
         if (msg_len > 0) {
-            LOG_DEBUG("     SET message length: %d bytes (data: 8 bytes)\n", msg_len);
-            LOG_RAW("     SET message hex:\n     ");
+            pr_dbg("     SET message length: %d bytes (data: 8 bytes)\n", msg_len);
+            pr_raw("     SET message hex:\n     ");
             for (int j = 0; j < msg_len; j++) {
-                LOG_RAW("%02X ", buffer[j]);
-                if ((j + 1) % 16 == 0 && j + 1 < msg_len) LOG_RAW("\n     ");
+                pr_raw("%02X ", buffer[j]);
+                if ((j + 1) % 16 == 0 && j + 1 < msg_len) pr_raw("\n     ");
             }
-            LOG_RAW("\n");
+            pr_raw("\n");
             
             /* Extract and display the GRANDMASTER_SETTINGS_NP data (last 8 bytes) */
             if (msg_len >= 8) {
                 const uint8_t *gm_data = buffer + msg_len - 8;
-                LOG_RAW("     GM Settings data: ");
+                pr_raw("     GM Settings data: ");
                 for (int j = 0; j < 8; j++) {
-                    LOG_RAW("%02X ", gm_data[j]);
+                    pr_raw("%02X ", gm_data[j]);
                 }
-                LOG_RAW("\n");
-                LOG_DEBUG("     clockClass=%d, clockAccuracy=0x%02X, variance=0x%04X\n",
+                pr_raw("\n");
+                pr_dbg("     clockClass=%d, clockAccuracy=0x%02X, variance=0x%04X\n",
                        gm_data[0], gm_data[1], ntohs(*(uint16_t*)(gm_data + 2)));
-                LOG_DEBUG("     utcOffset=%d, flags=0x%02X, timeSource=0x%02X\n",
+                pr_dbg("     utcOffset=%d, flags=0x%02X, timeSource=0x%02X\n",
                        (int16_t)ntohs(*(uint16_t*)(gm_data + 4)), gm_data[6], gm_data[7]);
             }
             
@@ -726,12 +726,12 @@ void forward_clock_parameters(AppState *state)
                                   sizeof(state->remotes[i].peer_addr));
             if (sent >= 0) {
                 state->remotes[i].sequence_id++;
-                LOG_DEBUG("     SET sent successfully (%zd bytes)\n", sent);
+                pr_dbg("     SET sent successfully (%zd bytes)\n", sent);
             } else {
-                LOG_ERROR("     SET send failed: %s\n", strerror(errno));
+                pr_err("     SET send failed: %s\n", strerror(errno));
             }
         } else {
-            LOG_ERROR("     Failed to build GRANDMASTER_SETTINGS_NP message\n");
+            pr_err("     Failed to build GRANDMASTER_SETTINGS_NP message\n");
         }
     }
 }
@@ -755,11 +755,11 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
     bool port_state_ok = false;
     bool master_offset_ok = false;
     
-    LOG_INFO("Waiting for ptp4l to enter free running mode, reach UNCALIBRATED state, and get master_offset...\n");
+    pr_info("Waiting for ptp4l to enter free running mode, reach UNCALIBRATED state, and get master_offset...\n");
     
     while (retry_count < MAX_RETRIES) {
         if (retry_count > 0) {
-            LOG_INFO("Retry %d/%d - waiting %d seconds before next attempt...\n", 
+            pr_info("Retry %d/%d - waiting %d seconds before next attempt...\n", 
                      retry_count, MAX_RETRIES, RETRY_DELAY_SEC);
             sleep(RETRY_DELAY_SEC);
         }
@@ -767,7 +767,7 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
         /* Send GRANDMASTER_SETTINGS_NP request to get clock class */
         int req_ret = send_get_request(sock_fd, peer_addr, MGMT_ID_GRANDMASTER_SETTINGS_NP, sequence_id);
         if (req_ret != 0) {
-            LOG_ERROR("Failed to send GRANDMASTER_SETTINGS_NP GET request (attempt %d/%d, ret=%d)\n",
+            pr_err("Failed to send GRANDMASTER_SETTINGS_NP GET request (attempt %d/%d, ret=%d)\n",
                      retry_count + 1, MAX_RETRIES, req_ret);
             retry_count++;
             continue;
@@ -777,7 +777,7 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
         /* Send PORT_DATA_SET request to get port state */
         req_ret = send_get_request(sock_fd, peer_addr, MGMT_ID_PORT_DATA_SET, sequence_id);
         if (req_ret != 0) {
-            LOG_ERROR("Failed to send PORT_DATA_SET GET request (attempt %d/%d, ret=%d)\n",
+            pr_err("Failed to send PORT_DATA_SET GET request (attempt %d/%d, ret=%d)\n",
                      retry_count + 1, MAX_RETRIES, req_ret);
             retry_count++;
             continue;
@@ -787,7 +787,7 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
         /* Send TIME_STATUS_NP request to get master_offset */
         req_ret = send_get_request(sock_fd, peer_addr, MGMT_ID_TIME_STATUS_NP, sequence_id);
         if (req_ret != 0) {
-            LOG_ERROR("Failed to send TIME_STATUS_NP GET request (attempt %d/%d, ret=%d)\n",
+            pr_err("Failed to send TIME_STATUS_NP GET request (attempt %d/%d, ret=%d)\n",
                      retry_count + 1, MAX_RETRIES, req_ret);
             retry_count++;
             continue;
@@ -809,10 +809,10 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
             int ret = select(sock_fd + 1, &readfds, NULL, NULL, &tv);
             if (ret <= 0) {
                 if (ret == 0) {
-                    LOG_DEBUG("Timeout waiting for response %d/3 (attempt %d/%d)\n", 
+                    pr_dbg("Timeout waiting for response %d/3 (attempt %d/%d)\n", 
                              responses_received + 1, retry_count + 1, MAX_RETRIES);
                 } else {
-                    LOG_ERROR("Select error: %s\n", strerror(errno));
+                    pr_err("Select error: %s\n", strerror(errno));
                 }
                 break;  /* Move to next retry */
             }
@@ -822,12 +822,12 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
             ssize_t len = recvfrom(sock_fd, buffer, sizeof(buffer), 0, 
                                    (struct sockaddr *)&from_addr, &from_len);
             if (len < 0) {
-                LOG_ERROR("Failed to receive response: %s (attempt %d/%d)\n", 
+                pr_err("Failed to receive response: %s (attempt %d/%d)\n", 
                          strerror(errno), retry_count + 1, MAX_RETRIES);
                 break;
             }
             
-            LOG_DEBUG("Received %zd bytes from %s\n", len, from_addr.sun_path);
+            pr_dbg("Received %zd bytes from %s\n", len, from_addr.sun_path);
             
             /* Parse response */
             uint16_t mgmt_id;
@@ -835,7 +835,7 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
             size_t data_len;
             
             if (!parse_management_response(buffer, len, &mgmt_id, &data, &data_len)) {
-                LOG_DEBUG("Failed to parse response (attempt %d/%d)\n", 
+                pr_dbg("Failed to parse response (attempt %d/%d)\n", 
                          retry_count + 1, MAX_RETRIES);
                 responses_received++;
                 continue;
@@ -844,7 +844,7 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
             if (mgmt_id == MGMT_ID_GRANDMASTER_SETTINGS_NP) {
                 /* Parse GRANDMASTER_SETTINGS_NP structure (8 bytes minimum) */
                 if (data_len < 8) {
-                    LOG_DEBUG("GRANDMASTER_SETTINGS_NP data too short: %zu bytes\n", data_len);
+                    pr_dbg("GRANDMASTER_SETTINGS_NP data too short: %zu bytes\n", data_len);
                     responses_received++;
                     continue;
                 }
@@ -854,23 +854,23 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
                 uint8_t clock_accuracy = data[1];
                 uint8_t time_source = data[7];
                 
-                LOG_INFO("Attempt %d/%d - GM Clock Class: %u, Accuracy: %u, Time Source: %u\n", 
+                pr_info("Attempt %d/%d - GM Clock Class: %u, Accuracy: %u, Time Source: %u\n", 
                          retry_count + 1, MAX_RETRIES, gm_clock_class, clock_accuracy, time_source);
                 
                 /* Check if clock class indicates free-running mode (255) */
                 if (gm_clock_class == 255) {
                     clock_class_ok = true;
-                    LOG_INFO("  ✓ Clock Class OK: %u (free running)\n", gm_clock_class);
+                    pr_info("  ✓ Clock Class OK: %u (free running)\n", gm_clock_class);
                 } else {
                     clock_class_ok = false;
-                    LOG_INFO("  ✗ Clock Class not ready: %u (need 255)\n", gm_clock_class);
+                    pr_info("  ✗ Clock Class not ready: %u (need 255)\n", gm_clock_class);
                 }
                 responses_received++;
             }
             else if (mgmt_id == MGMT_ID_PORT_DATA_SET) {
                 /* Parse PORT_DATA_SET structure */
                 if (data_len < 11) {
-                    LOG_DEBUG("PORT_DATA_SET data too short: %zu bytes\n", data_len);
+                    pr_dbg("PORT_DATA_SET data too short: %zu bytes\n", data_len);
                     responses_received++;
                     continue;
                 }
@@ -881,17 +881,17 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
                                            "LISTENING", "PRE_MASTER", "MASTER", "PASSIVE",
                                            "UNCALIBRATED", "SLAVE"};
                 
-                LOG_INFO("Attempt %d/%d - Port State: %s (%u)\n", 
+                pr_info("Attempt %d/%d - Port State: %s (%u)\n", 
                          retry_count + 1, MAX_RETRIES, 
                          (port_state < 10) ? state_str[port_state] : "INVALID", port_state);
                 
                 /* Check if port state is UNCALIBRATED (8) or SLAVE (9) */
                 if (port_state >= 8 && port_state <= 9) {
                     port_state_ok = true;
-                    LOG_INFO("  ✓ Port State OK: %s\n", state_str[port_state]);
+                    pr_info("  ✓ Port State OK: %s\n", state_str[port_state]);
                 } else {
                     port_state_ok = false;
-                    LOG_INFO("  ✗ Port State not ready: %s (need UNCALIBRATED or SLAVE)\n", 
+                    pr_info("  ✗ Port State not ready: %s (need UNCALIBRATED or SLAVE)\n", 
                              state_str[port_state]);
                 }
                 responses_received++;
@@ -899,7 +899,7 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
             else if (mgmt_id == MGMT_ID_TIME_STATUS_NP) {
                 /* Parse TIME_STATUS_NP structure (50 bytes minimum) */
                 if (data_len < 50) {
-                    LOG_DEBUG("TIME_STATUS_NP data too short: %zu bytes\n", data_len);
+                    pr_dbg("TIME_STATUS_NP data too short: %zu bytes\n", data_len);
                     responses_received++;
                     continue;
                 }
@@ -907,21 +907,21 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
                 /* master_offset is first 8 bytes */
                 int64_t master_offset = (int64_t)be64toh(*(uint64_t*)data);
                 
-                LOG_INFO("Attempt %d/%d - Master Offset: %+ld ns\n", 
+                pr_info("Attempt %d/%d - Master Offset: %+ld ns\n", 
                          retry_count + 1, MAX_RETRIES, master_offset);
                 
                 /* Check if master_offset != 0 */
                 if (master_offset != 0) {
                     master_offset_ok = true;
-                    LOG_INFO("  ✓ Master Offset OK: %+ld ns\n", master_offset);
+                    pr_info("  ✓ Master Offset OK: %+ld ns\n", master_offset);
                 } else {
                     master_offset_ok = false;
-                    LOG_INFO("  ✗ Master Offset not ready: %+ld ns (need != 0)\n", master_offset);
+                    pr_info("  ✗ Master Offset not ready: %+ld ns (need != 0)\n", master_offset);
                 }
                 responses_received++;
             }
             else {
-                LOG_DEBUG("Unexpected mgmt_id=0x%04X (attempt %d/%d)\n", 
+                pr_dbg("Unexpected mgmt_id=0x%04X (attempt %d/%d)\n", 
                          mgmt_id, retry_count + 1, MAX_RETRIES);
                 responses_received++;
             }
@@ -929,7 +929,7 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
         
         /* Check if all three conditions are met */
         if (clock_class_ok && port_state_ok && master_offset_ok) {
-            LOG_INFO("✓ SUCCESS: ptp4l is ready (FREE-RUNNING, UNCALIBRATED/SLAVE, master_offset > 0)\n");
+            pr_info("✓ SUCCESS: ptp4l is ready (FREE-RUNNING, UNCALIBRATED/SLAVE, master_offset > 0)\n");
             return true;
         }
         
@@ -937,10 +937,10 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
     }
     
     /* Max retries exceeded */
-    LOG_ERROR("✗ FAILED: ptp4l did not reach required state after %d attempts\n", MAX_RETRIES);
-    LOG_ERROR("   Clock Class OK: %s, Port State OK: %s, Master Offset OK: %s\n", 
+    pr_err("✗ FAILED: ptp4l did not reach required state after %d attempts\n", MAX_RETRIES);
+    pr_err("   Clock Class OK: %s, Port State OK: %s, Master Offset OK: %s\n", 
               clock_class_ok ? "YES" : "NO", port_state_ok ? "YES" : "NO", master_offset_ok ? "YES" : "NO");
-    LOG_ERROR("   Please verify ptp4l is running with --free_running flag\n");
+    pr_err("   Please verify ptp4l is running with --free_running flag\n");
     
     return false;
 }
@@ -956,40 +956,40 @@ bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr, uint16_
 static int reprioritize_ptp_pin(AppState *state)
 {
     if (!state->dpll_sock) {
-        LOG_ERROR("YNL socket not initialized\n");
+        pr_err("YNL socket not initialized\n");
         return -1;
     }
 
     int ref4p_prio = dpll_pin_get_priority(state->dpll_sock, state->pps_dpll_device_id, "REF4P");
     int ref0p_prio = dpll_pin_get_priority(state->dpll_sock, state->pps_dpll_device_id, "REF0P");
 
-    LOG_INFO("REF0P priority=%d, REF4P priority=%d (lower value = higher priority)\n",
+    pr_info("REF0P priority=%d, REF4P priority=%d (lower value = higher priority)\n",
              ref0p_prio, ref4p_prio);
 
     /* No action needed if REF0P already has highest possible priority */
     if (ref0p_prio == DPLL_HIGHEST_PRIORITY) {
-        LOG_INFO("REF0P already at highest priority (%d) - no action needed\n",
+        pr_info("REF0P already at highest priority (%d) - no action needed\n",
                  DPLL_HIGHEST_PRIORITY);
         return 0;
     }
 
     /* No action needed if REF0P priority is already higher than REF4P */
     if (ref0p_prio < ref4p_prio) {
-        LOG_INFO("REF0P priority (%d) already higher than REF4P (%d) - no action needed\n",
+        pr_info("REF0P priority (%d) already higher than REF4P (%d) - no action needed\n",
                  ref0p_prio, ref4p_prio);
         return 0;
     }
 
     /* Set REF0P to highest priority so PTP takes precedence */
-    LOG_INFO("Setting REF0P priority to highest (%d)\n", DPLL_HIGHEST_PRIORITY);
+    pr_info("Setting REF0P priority to highest (%d)\n", DPLL_HIGHEST_PRIORITY);
     int old_prio = dpll_pin_set_priority(state->dpll_sock, state->pps_dpll_device_id,
                                          "REF0P", DPLL_HIGHEST_PRIORITY);
     if (old_prio >= 0) {
-        LOG_INFO("Successfully set REF0P priority: %d -> %d\n", old_prio, DPLL_HIGHEST_PRIORITY);
+        pr_info("Successfully set REF0P priority: %d -> %d\n", old_prio, DPLL_HIGHEST_PRIORITY);
         return 0;
     }
 
-    LOG_ERROR("Failed to set REF0P priority\n");
+    pr_err("Failed to set REF0P priority\n");
     return -1;
 }
 #endif
@@ -1007,28 +1007,28 @@ void handle_ptp_port_up(AppState *state)
         reprioritize_ptp_pin(state);
 #endif
 
-        LOG_INFO("Enabling PTP pins REF0P and REF0N due to port up state\n");
+        pr_info("Enabling PTP pins REF0P and REF0N due to port up state\n");
 
         /* Enable REF0P - set to SELECTABLE state */
         int old_state = dpll_pin_set_state(state->dpll_sock, state->pps_dpll_device_id,
                                            "REF0P", DPLL_PIN_STATE_SELECTABLE);
         if (old_state >= 0) {
-            LOG_INFO("Successfully enabled REF0P (old state: %d)\n", old_state);
+            pr_info("Successfully enabled REF0P (old state: %d)\n", old_state);
         } else {
-            LOG_ERROR("Failed to enable REF0P\n");
+            pr_err("Failed to enable REF0P\n");
         }
 
         /* Enable REF0N - set to SELECTABLE state */
         old_state = dpll_pin_set_state(state->dpll_sock, state->pps_dpll_device_id,
                                        "REF0N", DPLL_PIN_STATE_SELECTABLE);
         if (old_state >= 0) {
-            LOG_INFO("Successfully enabled REF0N (old state: %d)\n", old_state);
+            pr_info("Successfully enabled REF0N (old state: %d)\n", old_state);
         } else {
-            LOG_ERROR("Failed to enable REF0N\n");
+            pr_err("Failed to enable REF0N\n");
         }
 
     } else {
-        LOG_ERROR("DPLL not initialized - cannot enable PTP pins\n");
+        pr_err("DPLL not initialized - cannot enable PTP pins\n");
     }
 }
 
@@ -1040,25 +1040,25 @@ void handle_ptp_port_up(AppState *state)
 static void handle_ptp_port_down(AppState *state)
 {
     if (state->pps_dpll_device_id) {
-        LOG_INFO("Disabling PTP pins REF0P and REF0N due to port down state\n");
+        pr_info("Disabling PTP pins REF0P and REF0N due to port down state\n");
         
         /* Disable REF0P - set to DISCONNECTED state (2) */
         int old_state = dpll_pin_set_state(state->dpll_sock, state->pps_dpll_device_id, "REF0P", DPLL_PIN_STATE_DISCONNECTED);
         if (old_state >= 0) {
-            LOG_INFO("Successfully disabled REF0P (old state: %d)\n", old_state);
+            pr_info("Successfully disabled REF0P (old state: %d)\n", old_state);
         } else {
-            LOG_ERROR("Failed to disable REF0P\n");
+            pr_err("Failed to disable REF0P\n");
         }
         
         /* Disable REF0N - set to DISCONNECTED state (2) */
         old_state = dpll_pin_set_state(state->dpll_sock, state->pps_dpll_device_id, "REF0N", DPLL_PIN_STATE_DISCONNECTED);
         if (old_state >= 0) {
-            LOG_INFO("Successfully disabled REF0N (old state: %d)\n", old_state);
+            pr_info("Successfully disabled REF0N (old state: %d)\n", old_state);
         } else {
-            LOG_ERROR("Failed to disable REF0N\n");
+            pr_err("Failed to disable REF0N\n");
         }
     } else {
-        LOG_ERROR("DPLL not initialized - cannot disable PTP pins\n");
+        pr_err("DPLL not initialized - cannot disable PTP pins\n");
     }
 }
 
@@ -1069,18 +1069,18 @@ static void handle_ptp_port_down(AppState *state)
 void process_port_data_set(AppState *state, uint16_t mgmt_id, 
                                    const uint8_t *data, size_t data_len)
 {
-    LOG_DEBUG("Received PORT_DATA_SET (0x%04X) - %zu bytes\n", mgmt_id, data_len);
+    pr_dbg("Received PORT_DATA_SET (0x%04X) - %zu bytes\n", mgmt_id, data_len);
     
 #ifdef HEX_DUMP
-    LOG_RAW("  PORT_DATA_SET Data: ");
+    pr_raw("  PORT_DATA_SET Data: ");
     for (size_t i = 0; i < (data_len < 16 ? data_len : 16); i++) {
-        LOG_RAW("%02X ", data[i]);
+        pr_raw("%02X ", data[i]);
     }
-    LOG_RAW("\n");
+    pr_raw("\n");
 #endif
 
     if (data_len < 11) {
-        LOG_ERROR("PORT_DATA_SET data too short (%zu bytes, expected >= 11)\n", data_len);
+        pr_err("PORT_DATA_SET data too short (%zu bytes, expected >= 11)\n", data_len);
         return;
     }
     
@@ -1108,7 +1108,7 @@ void process_port_data_set(AppState *state, uint16_t mgmt_id,
     
     /* Only log when state actually changes */
     if (old_port_state != new_port_state) {
-        LOG_INFO("PORT STATE CHANGE: %s (0x%02X)\n", 
+        pr_info("PORT STATE CHANGE: %s (0x%02X)\n", 
                (new_port_state < 10) ? state_str[new_port_state] : "INVALID", new_port_state);
     }
     
@@ -1122,7 +1122,7 @@ void process_port_data_set(AppState *state, uint16_t mgmt_id,
      * re-enable PTP pins.
      */
     if (new_port_state == 2 || new_port_state == 3) {
-        LOG_INFO("WARNING: PTP port is DOWN (FAULTY or DISABLED)\n");
+        pr_info("WARNING: PTP port is DOWN (FAULTY or DISABLED)\n");
         if (!state->ptp_port_down) {
             state->ptp_port_down = true;
             handle_ptp_port_down(state);
@@ -1135,7 +1135,7 @@ void process_port_data_set(AppState *state, uint16_t mgmt_id,
          * Use ptp_port_down flag (not old_port_state) because ptp4l transitions
          * FAULTY -> LISTENING -> UNCALIBRATED: by the time UNCALIBRATED arrives
          * old_port_state is LISTENING(4), not FAULTY(2). */
-        LOG_INFO("PTP port recovered to %s: re-enabling PTP pins\n",
+        pr_info("PTP port recovered to %s: re-enabling PTP pins\n",
                  state_str[new_port_state]);
         state->ptp_port_down = false;
         handle_ptp_port_up(state);
@@ -1162,7 +1162,7 @@ void process_ptp_messages(AppState *state)
     int ret = select(state->local_socket_fd + 1, &readfds, NULL, NULL, &tv);
     if (ret < 0) {
         if (errno != EINTR) {
-            LOG_ERROR("Select error: %s\n", strerror(errno));
+            pr_err("Select error: %s\n", strerror(errno));
         }
         return;
     }
@@ -1176,23 +1176,23 @@ void process_ptp_messages(AppState *state)
     ssize_t len = recvfrom(state->local_socket_fd, buffer, sizeof(buffer), 0,
                            (struct sockaddr *)&from_addr, &from_len);
     if (len < 0) {
-        LOG_ERROR("Receive error: %s\n", strerror(errno));
+        pr_err("Receive error: %s\n", strerror(errno));
         return;
     }
     
 #ifdef HEX_DUMP
     /* Debug: print received message hex dump */
-    LOG_DEBUG("\nReceived %zd bytes:\n", len);
-    LOG_RAW("HEX: ");
+    pr_dbg("\nReceived %zd bytes:\n", len);
+    pr_raw("HEX: ");
     for (ssize_t i = 0; i < (len < 128 ? len : 128); i++) {
-        LOG_RAW("%02X ", buffer[i]);
-        if ((i + 1) % 16 == 0) LOG_RAW("\n     ");
+        pr_raw("%02X ", buffer[i]);
+        if ((i + 1) % 16 == 0) pr_raw("\n     ");
     }
-    LOG_RAW("\n");
+    pr_raw("\n");
 #endif
     
     if (parse_management_response(buffer, len, &mgmt_id, &data, &data_len)) {
-        LOG_DEBUG("Parsed management response: mgmt_id=0x%04X, data_len=%zu\n", mgmt_id, data_len);
+        pr_dbg("Parsed management response: mgmt_id=0x%04X, data_len=%zu\n", mgmt_id, data_len);
         
         switch (mgmt_id) {
             case MGMT_ID_TIME_STATUS_NP:
@@ -1204,12 +1204,12 @@ void process_ptp_messages(AppState *state)
                 break;
                 
             case MGMT_ID_SUBSCRIBE_EVENTS_NP:
-                LOG_DEBUG("Subscription acknowledged by ptp4l\n");
+                pr_dbg("Subscription acknowledged by ptp4l\n");
                 state->subscription_active = true;
                 break;
                 
             case MGMT_ID_FAULT_LOG:
-                LOG_INFO("Received FAULT_LOG (0x0006) - %zu bytes\n", data_len);
+                pr_info("Received FAULT_LOG (0x0006) - %zu bytes\n", data_len);
                 if (data_len >= 6) {
                     /* Decode FAULT_LOG data:
                      * IEEE 1588-2019: FAULT_LOG contains number of records and fault records
@@ -1219,15 +1219,15 @@ void process_ptp_messages(AppState *state)
                      */
                     uint16_t related_id = ntohs(*((uint16_t*)data));
                     uint32_t status_code = ntohl(*((uint32_t*)(data + 2)));
-                    LOG_INFO("  Related Management ID: 0x%04X, Status Code: 0x%08X\n", 
+                    pr_info("  Related Management ID: 0x%04X, Status Code: 0x%08X\n", 
                              related_id, status_code);
                     
                     /* Hex dump of fault log data */
-                    LOG_RAW("  Fault Log Data: ");
+                    pr_raw("  Fault Log Data: ");
                     for (size_t i = 0; i < data_len && i < 16; i++) {
-                        LOG_RAW("%02X ", data[i]);
+                        pr_raw("%02X ", data[i]);
                     }
-                    LOG_RAW("\n");
+                    pr_raw("\n");
                 }
                 break;
                 
@@ -1239,15 +1239,15 @@ void process_ptp_messages(AppState *state)
             case MGMT_ID_GEARSHIFT_NP:
                 /* Unsolicited gearshift notification from ptp4l — already handled
                  * synchronously in send_gearshift(); just drain it silently. */
-                LOG_DEBUG("Received GEARSHIFT_NP notification (gear=0x%02X), discarding\n",
+                pr_dbg("Received GEARSHIFT_NP notification (gear=0x%02X), discarding\n",
                           data_len > 0 ? data[0] : 0xFF);
                 break;
 
             default:
-                LOG_INFO("Received unhandled management ID: 0x%04X\n", mgmt_id);
+                pr_info("Received unhandled management ID: 0x%04X\n", mgmt_id);
                 break;
         }
     } else {
-        LOG_ERROR("Failed to parse management response (%zd bytes)\n", len);
+        pr_err("Failed to parse management response (%zd bytes)\n", len);
     }
 }

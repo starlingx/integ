@@ -88,13 +88,13 @@ static int wait_for_dpll_device_lock(AppState *state, int timeout_ms, int poll_m
         state->ptp_pin_state = ptp_pin_state;
 
         if (elapsed_ms > 0 && (elapsed_ms % 10000) < poll_ms) {
-            LOG_INFO("Waiting for DPLL lock: %d ms elapsed (%s), status=%s\n",
+            pr_info("Waiting for DPLL lock: %d ms elapsed (%s), status=%s\n",
                      elapsed_ms, phase ? phase : "lock wait",
                      dpll_lock_status_to_str_local(lock_status));
         }
 
         if (is_dpll_device_locked(lock_status)) {
-            LOG_INFO("DPLL is LOCKED after %d ms (%s)\n",
+            pr_info("DPLL is LOCKED after %d ms (%s)\n",
                      elapsed_ms, phase ? phase : "lock wait");
             return 0;
         }
@@ -107,7 +107,7 @@ static int wait_for_dpll_device_lock(AppState *state, int timeout_ms, int poll_m
         elapsed_ms += poll_ms;
     }
 
-    LOG_ERROR("DPLL did not reach LOCKED state within %d ms (%s), last status=%s\n",
+    pr_err("DPLL did not reach LOCKED state within %d ms (%s), last status=%s\n",
              timeout_ms,
              phase ? phase : "lock wait",
              dpll_lock_status_to_str_local(state->lock_status));
@@ -192,7 +192,7 @@ static int perform_phase_adjustment(AppState *state, struct ynl_sock *dpll_sock,
 
     struct dpll_pin_get_rsp *pin_rsp = dpll_pin_get(dpll_sock, &pin_req);
     if (!pin_rsp || !pin_rsp->package_label) {
-        LOG_ERROR("Failed to get pin info for pin_id %u\n", state->ptp_pin_id);
+        pr_err("Failed to get pin info for pin_id %u\n", state->ptp_pin_id);
         if (pin_rsp) {
             dpll_pin_get_rsp_free(pin_rsp);
         }
@@ -216,7 +216,7 @@ static int perform_phase_adjustment(AppState *state, struct ynl_sock *dpll_sock,
         lock_status_str = lock_states[state->lock_status];
     }
 
-        LOG_INFO("Adjust: timeOff %+4lld ns, diff %+4lld ns, phase_adj %+7lld ns, iterations %4lld, adj_per_iter %+4lld ns, phase_offset %+9lld ps, state %u, DPLL: %s\n",
+        pr_info("Adjust: timeOff %+4lld ns, diff %+4lld ns, phase_adj %+7lld ns, iterations %4lld, adj_per_iter %+4lld ns, phase_offset %+9lld ps, state %u, DPLL: %s\n",
           (long long)master_offset_ns,
           (long long)diff,
           (long long)phase_adjust_ns,
@@ -233,7 +233,7 @@ static int perform_phase_adjustment(AppState *state, struct ynl_sock *dpll_sock,
                                                       "REF0P",
                                                       phase_adjust_ps_per_iter);
         if (old_phase_adjust == (__s64)-1) {
-            LOG_ERROR("Failed to set phase adjust (iteration %d)\n", i + 1);
+            pr_err("Failed to set phase adjust (iteration %d)\n", i + 1);
             dpll_pin_get_rsp_free(pin_rsp);
             return -1;
         }
@@ -242,7 +242,7 @@ static int perform_phase_adjustment(AppState *state, struct ynl_sock *dpll_sock,
                                                       "REF0N",
                                                       phase_adjust_ps_per_iter);
         if (old_phase_adjust == (__s64)-1) {
-            LOG_ERROR("Failed to set phase adjust (iteration %d)\n", i + 1);
+            pr_err("Failed to set phase adjust (iteration %d)\n", i + 1);
             dpll_pin_get_rsp_free(pin_rsp);
             return -1;
         }
@@ -274,7 +274,7 @@ int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns)
     enum dpll_pin_state ptp_pin_state = state ? state->ptp_pin_state : DPLL_PIN_STATE_DISCONNECTED;
 
     if (!state || !state->dpll_sock) {
-        LOG_ERROR("DPLL socket not available for clock phase adjustment\n");
+        pr_err("DPLL socket not available for clock phase adjustment\n");
         return -1;
     }
 
@@ -286,7 +286,7 @@ int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns)
                                                  &connected_pin_src,
                                                  &ptp_pin_id,
                                                  &ptp_pin_state) != 0) {
-        LOG_ERROR("Failed to query DPLL state before clock phase adjustment\n");
+        pr_err("Failed to query DPLL state before clock phase adjustment\n");
         return -1;
     }
 
@@ -296,14 +296,14 @@ int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns)
     state->ptp_pin_state = ptp_pin_state;
 
     if (!is_ptp_pin(connected_pin_src)) {
-        LOG_INFO("Skipping clock phase adjustment: connected source is not PTP (source=%d, pin_id=%u)\n",
+        pr_info("Skipping clock phase adjustment: connected source is not PTP (source=%d, pin_id=%u)\n",
                  connected_pin_src, connected_pin_id);
         return 0;
     }
 
     /* Discover PHC device dynamically */
     if (phc_get_device_from_interface(g_config.manager.phc_interface, phc_device, sizeof(phc_device)) != 0) {
-        LOG_ERROR("Failed to discover PHC device for interface %s\n", g_config.manager.phc_interface);
+        pr_err("Failed to discover PHC device for interface %s\n", g_config.manager.phc_interface);
         return -1;
     }
 
@@ -311,7 +311,7 @@ int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns)
     int req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
                     MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
     if (req_ret != 0) {
-        LOG_ERROR("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
+        pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
         return -1;
     }
     usleep(100000);  /* 100ms delay */
@@ -319,16 +319,16 @@ int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns)
 
     /* Skip if master_offset is zero (either not received or perfectly synced) */
     if (state->master_offset == 0) {
-        LOG_INFO("Skipping phase adjustment: master_offset is zero\n");
+        pr_info("Skipping phase adjustment: master_offset is zero\n");
         return 0;
     }
     master_offset_ns = state->master_offset;
 
-    LOG_INFO("Using PHC device: %s\n", phc_device);
+    pr_info("Using PHC device: %s\n", phc_device);
 
     int fd = open(phc_device, O_RDWR);
     if (fd < 0) {
-        LOG_ERROR("Failed to open %s: %s\n", phc_device, strerror(errno));
+        pr_err("Failed to open %s: %s\n", phc_device, strerror(errno));
         return -1;
     }
 
@@ -359,14 +359,14 @@ int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns)
 
     int rc = clock_adjtime(clkid, &tx);
     if (rc < 0) {
-        LOG_ERROR("clock_adjtime phase adjust failed: %s\n", strerror(errno));
+        pr_err("clock_adjtime phase adjust failed: %s\n", strerror(errno));
         close(fd);
         return -1;
     }
 
     close(fd);
 
-    LOG_INFO("clockAdjust: offset %9lld adjusted %+9lld (tv_sec=%ld tv_usec=%ld) \n",
+    pr_info("clockAdjust: offset %9lld adjusted %+9lld (tv_sec=%ld tv_usec=%ld) \n",
              (long long)master_offset_ns, (long long)-master_offset_ns,
              (long)tx.time.tv_sec, (long)tx.time.tv_usec);
 
@@ -376,7 +376,7 @@ int perform_clock_phase_adjust(AppState *state, int64_t master_offset_ns)
                                   DPLL_LOCK_WAIT_TIMEOUT_MS,
                                   DPLL_LOCK_WAIT_POLL_MS,
                                   "after clock_adjtime") != 0) {
-        LOG_ERROR("WARNING: DPLL failed to relock after step adjust; exiting application\n");
+        pr_err("WARNING: DPLL failed to relock after step adjust; exiting application\n");
         return -1;
     }
 
@@ -400,7 +400,7 @@ void monitor_and_adjust_phase_offset(AppState *state)
 
     /* Check if DPLL socket is available */
     if (!dpll_sock) {
-        LOG_DEBUG("DPLL socket not initialized, skipping phase offset monitoring\n");
+        pr_dbg("DPLL socket not initialized, skipping phase offset monitoring\n");
         return;
     }
 
@@ -408,19 +408,19 @@ void monitor_and_adjust_phase_offset(AppState *state)
     int req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
                     MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
     if (req_ret != 0) {
-        LOG_ERROR("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
+        pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
         return;
     }
     process_ptp_messages(state);
 
     /* Skip if master_offset is zero (either not received or perfectly synced) */
     if (state->master_offset == 0) {
-        LOG_DEBUG("Skipping phase adjustment: master_offset is zero\n");
+        pr_dbg("Skipping phase adjustment: master_offset is zero\n");
         return;
     }
 
     /* Small offset: perform gradual phase adjustment via DPLL */
-    LOG_DEBUG("Small offset (%" PRId64 " ns), using DPLL phase adjustment\n",
+    pr_dbg("Small offset (%" PRId64 " ns), using DPLL phase adjustment\n",
               state->master_offset);
     if (perform_phase_adjustment(state, dpll_sock, state->master_offset, state->apts_offset) == 0) {
         /* Update apts_offset after successful phase adjustment */

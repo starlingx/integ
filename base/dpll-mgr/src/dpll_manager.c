@@ -72,7 +72,7 @@ volatile sig_atomic_t running = 1;
 FILE *g_log_file = NULL;
 
 /* Global log level - defaults to INFO */
-LogLevel g_log_level = LOG_LEVEL_INFO;
+LogLevel g_log_level = DPLL_LOG_LEVEL_INFO;
 
 /* External YNL socket from dpll.c */
 extern struct ynl_sock *ys;
@@ -109,14 +109,14 @@ static int ensure_runtime_directory(void)
             if (stat(runtime_dir, &st) == 0 && S_ISDIR(st.st_mode)) {
                 return 0;
             }
-            LOG_ERROR("%s exists but is not a directory\n", runtime_dir);
+            pr_err("%s exists but is not a directory\n", runtime_dir);
             return -1;
         }
-        LOG_ERROR("Failed to create runtime directory\n");
+        pr_err("Failed to create runtime directory\n");
         return -1;
     }
 
-    LOG_DEBUG("Runtime directory created successfully\n");
+    pr_dbg("Runtime directory created successfully\n");
     return 0;
 }
 
@@ -132,11 +132,11 @@ static int setup_signals(void)
     sa.sa_flags = 0;
     
     if (sigaction(SIGINT, &sa, NULL) < 0) {
-        LOG_ERROR("Failed to setup SIGINT handler\n");
+        pr_err("Failed to setup SIGINT handler\n");
         return -1;
     }
     if (sigaction(SIGTERM, &sa, NULL) < 0) {
-        LOG_ERROR("Failed to setup SIGTERM handler\n");
+        pr_err("Failed to setup SIGTERM handler\n");
         return -1;
     }
     return 0;
@@ -151,7 +151,7 @@ static int create_uds_socket(const char *path, struct sockaddr_un *peer_addr)
     
     int sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (sockfd < 0) {
-        LOG_ERROR("socket() failed: %s\n", strerror(errno));
+        pr_err("socket() failed: %s\n", strerror(errno));
         return -1;
     }
 
@@ -163,7 +163,7 @@ static int create_uds_socket(const char *path, struct sockaddr_un *peer_addr)
     int ret = snprintf(local_addr.sun_path, sizeof(local_addr.sun_path), 
              "/var/run/dpll_mgr/timing_mgr.%d.%d", getpid(), socket_counter++);
     if (ret < 0 || ret >= (int)sizeof(local_addr.sun_path)) {
-        LOG_ERROR("Socket path truncation detected\n");
+        pr_err("Socket path truncation detected\n");
         close(sockfd);
         return -1;
     }
@@ -172,29 +172,29 @@ static int create_uds_socket(const char *path, struct sockaddr_un *peer_addr)
     unlink(local_addr.sun_path);
     
     if (bind(sockfd, (struct sockaddr *)&local_addr, sizeof(local_addr)) < 0) {
-        LOG_ERROR("bind() failed for %s: %s\n", local_addr.sun_path, strerror(errno));
+        pr_err("bind() failed for %s: %s\n", local_addr.sun_path, strerror(errno));
         close(sockfd);
         return -1;
     }
     
     /* Set socket file permissions (0660 - owner+group, matching ptp4l) */
     if (chmod(local_addr.sun_path, 0660) < 0) {
-        LOG_ERROR("chmod() failed for %s: %s\n", local_addr.sun_path, strerror(errno));
+        pr_err("chmod() failed for %s: %s\n", local_addr.sun_path, strerror(errno));
         close(sockfd);
         return -1;
     }
 
-    LOG_DEBUG("Socket bound successfully\n");
+    pr_dbg("Socket bound successfully\n");
 
     // Set socket to non-blocking mode
     int flags = fcntl(sockfd, F_GETFL, 0);
     if (flags == -1) {
-        LOG_ERROR("fcntl(F_GETFL) failed: %s\n", strerror(errno));
+        pr_err("fcntl(F_GETFL) failed: %s\n", strerror(errno));
         close(sockfd);
         return -1;
     }
     if (fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1) {
-        LOG_ERROR("fcntl(F_SETFL) failed: %s\n", strerror(errno));
+        pr_err("fcntl(F_SETFL) failed: %s\n", strerror(errno));
         close(sockfd);
         return -1;
     }
@@ -255,7 +255,7 @@ static void cleanup_state(AppState *state)
 static int get_gnss_parameters(AppState *state, enum pin_source master_index)
 {
     if (!state) {
-        LOG_ERROR("get_gnss_parameters: NULL state pointer\n");
+        pr_err("get_gnss_parameters: NULL state pointer\n");
         return -1;
     }
     
@@ -268,16 +268,16 @@ static int get_gnss_parameters(AppState *state, enum pin_source master_index)
     /* Read current GNSS parameters */
     int ret = gnss_read_clock_params(&gnss_params);
     if (ret != 0) {
-        LOG_ERROR("Failed to read GNSS clock parameters: %d\n", ret);
+        pr_err("Failed to read GNSS clock parameters: %d\n", ret);
         return -1;
     }
     
     if (!gnss_params.connected) {
-        LOG_ERROR("GNSS not connected\n");
+        pr_err("GNSS not connected\n");
         return -1;
     }
     
-    LOG_INFO("Getting parameters from GNSS (connected, fix quality: %d)\n", gnss_params.clock_quality);
+    pr_info("Getting parameters from GNSS (connected, fix quality: %d)\n", gnss_params.clock_quality);
     
     /* Update ONLY dynamically changeable parameters with live GNSS data */
     /* Static parameters (time_source, ptp_timescale) are preserved from config */
@@ -310,7 +310,7 @@ static int get_gnss_parameters(AppState *state, enum pin_source master_index)
     /* Update timestamp */
     clock_gettime(CLOCK_REALTIME, &params->last_update);
     
-    LOG_DEBUG("GNSS parameters updated: clockClass=%u, clockAccuracy=0x%02X, UTC offset=%d, timeSource=0x%02X\n",
+    pr_dbg("GNSS parameters updated: clockClass=%u, clockAccuracy=0x%02X, UTC offset=%d, timeSource=0x%02X\n",
              params->gm_clock_class, params->gm_clock_accuracy, 
              params->current_utc_offset, params->time_source);
     
@@ -325,7 +325,7 @@ __attribute__((unused))
 static int get_synce_parameters(ClockParameters *params)
 {
     (void)params;  /* Unused parameter */
-    LOG_INFO("Getting parameters from SyncE (TODO: implement)\n");
+    pr_info("Getting parameters from SyncE (TODO: implement)\n");
     // TODO: Implement SyncE parameter extraction
     return -1;  // Not implemented yet
 }
@@ -357,7 +357,7 @@ static enum pin_source pin_name_to_enum(const char *pin_name)
     if (strcasecmp(pin_name, "HOLDOVER_3") == 0 || strcasecmp(pin_name, "Holdover_3") == 0) return HOLDOVER_3;
     if (strcmp(pin_name, "PIN_SOURCE_INT_OSC") == 0) return PIN_SOURCE_INT_OSC;
     
-    LOG_ERROR("Unknown pin name: %s\n", pin_name);
+    pr_err("Unknown pin name: %s\n", pin_name);
     return PIN_SOURCE_UNKNOWN;
 }
 
@@ -473,11 +473,11 @@ static uint16_t parse_offset_scaled_log_variance(const char *variance_str)
 static void populate_clock_parameters_from_config(AppState *state)
 {
     if (!state) {
-        LOG_ERROR("populate_clock_parameters_from_config: NULL state pointer\n");
+        pr_err("populate_clock_parameters_from_config: NULL state pointer\n");
         return;
     }
     
-    LOG_DEBUG("=== Populating Clock Parameters from Configuration ===\n");
+    pr_dbg("=== Populating Clock Parameters from Configuration ===\n");
     
     for (int i = 0; i < g_config.ptp_primary_attr_count; i++) {
         const PtpPrimaryAttributes *attrs = &g_config.ptp_primary_attrs[i];
@@ -486,11 +486,11 @@ static void populate_clock_parameters_from_config(AppState *state)
         enum pin_source pin_idx = pin_name_to_enum(attrs->pin_name);
         
         if (pin_idx == PIN_SOURCE_UNKNOWN) {
-            LOG_ERROR("Skipping unknown pin name: %s\n", attrs->pin_name);
+            pr_err("Skipping unknown pin name: %s\n", attrs->pin_name);
             continue;
         }
         
-        LOG_DEBUG("Configuring clock parameters for %s (index=%d):\n", attrs->pin_name, pin_idx);
+        pr_dbg("Configuring clock parameters for %s (index=%d):\n", attrs->pin_name, pin_idx);
         
         /* Populate clock parameters */
         ClockParameters *params = &state->clock_params[pin_idx];
@@ -500,23 +500,23 @@ static void populate_clock_parameters_from_config(AppState *state)
         
         /* Set clock class */
         params->gm_clock_class = (uint8_t)attrs->clockClass;
-        LOG_DEBUG("  clockClass: %u\n", params->gm_clock_class);
+        pr_dbg("  clockClass: %u\n", params->gm_clock_class);
         
         /* Parse and set clock accuracy */
         params->gm_clock_accuracy = parse_clock_accuracy(attrs->clockAccuracy);
-        LOG_DEBUG("  clockAccuracy: 0x%02X\n", params->gm_clock_accuracy);
+        pr_dbg("  clockAccuracy: 0x%02X\n", params->gm_clock_accuracy);
         
         /* Set time traceable */
         params->time_traceable = (uint8_t)attrs->timeTraceable;
-        LOG_DEBUG("  timeTraceable: %u\n", params->time_traceable);
+        pr_dbg("  timeTraceable: %u\n", params->time_traceable);
         
         /* Set frequency traceable */
         params->frequency_traceable = (uint8_t)attrs->frequencyTraceable;
-        LOG_DEBUG("  frequencyTraceable: %u\n", params->frequency_traceable);
+        pr_dbg("  frequencyTraceable: %u\n", params->frequency_traceable);
         
         /* Parse and set time source */
         params->time_source = parse_time_source(attrs->timeSource);
-        LOG_DEBUG("  timeSource: 0x%02X\n", params->time_source);
+        pr_dbg("  timeSource: 0x%02X\n", params->time_source);
         
         /* Set values from secondary defaults / fallback defaults */
         params->gm_offset_scaled_log_variance = parse_offset_scaled_log_variance(
@@ -525,7 +525,7 @@ static void populate_clock_parameters_from_config(AppState *state)
         params->gm_priority2 = 128;  /* Default priority */
         params->steps_removed = 0;
         params->phase_offset = 0;
-        LOG_DEBUG("  offsetScaledLogVariance: 0x%04X\n", params->gm_offset_scaled_log_variance);
+        pr_dbg("  offsetScaledLogVariance: 0x%04X\n", params->gm_offset_scaled_log_variance);
         
         /* For non-PTP sources (GNSS, SMA, holdover), mark GM as present since
          * parameters are pre-configured. For PTP sources, gm_present will be
@@ -548,10 +548,10 @@ static void populate_clock_parameters_from_config(AppState *state)
         /* Set last update timestamp */
         clock_gettime(CLOCK_REALTIME, &params->last_update);
         
-        LOG_DEBUG("  Configuration complete for %s\n", attrs->pin_name);
+        pr_dbg("  Configuration complete for %s\n", attrs->pin_name);
     }
     
-    LOG_DEBUG("=== Clock Parameters Population Complete ===\n\n");
+    pr_dbg("=== Clock Parameters Population Complete ===\n\n");
 }
 
 /**
@@ -565,10 +565,10 @@ static void populate_clock_parameters_from_config(AppState *state)
  */
 static int get_holdover_parameters(AppState *state, enum pin_source master_index)
 {
-    LOG_DEBUG("Getting parameters from holdover state (using stored/default values)\n");
+    pr_dbg("Getting parameters from holdover state (using stored/default values)\n");
     
     if (!state) {
-        LOG_ERROR("get_holdover_parameters: NULL state pointer\n");
+        pr_err("get_holdover_parameters: NULL state pointer\n");
         return -1;
     }
     
@@ -591,7 +591,7 @@ static int get_holdover_parameters(AppState *state, enum pin_source master_index
     /* Mark GM as not present during holdover */
     params->gm_present = 0;
    
-    LOG_DEBUG("Holdover level %d parameters: Clock Class=%u, Time Source=0x%02x, GM Present=%d\n",
+    pr_dbg("Holdover level %d parameters: Clock Class=%u, Time Source=0x%02x, GM Present=%d\n",
            master_index - HOLDOVER_0, params->gm_clock_class, params->time_source, params->gm_present);
     
     return 0;  /* Success */
@@ -616,7 +616,7 @@ static void evaluate_ptp_gm_connection(AppState *state)
     int req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
                     MGMT_ID_PORT_DATA_SET, &state->local_sequence_id);
     if (req_ret != 0) {
-        LOG_ERROR("Failed to send PORT_DATA_SET GET request (ret=%d)\n", req_ret);
+        pr_err("Failed to send PORT_DATA_SET GET request (ret=%d)\n", req_ret);
         return;
     }
     usleep(100000);  /* 100ms delay for response */
@@ -626,7 +626,7 @@ static void evaluate_ptp_gm_connection(AppState *state)
     req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
                     MGMT_ID_PARENT_DATA_SET, &state->local_sequence_id);
     if (req_ret != 0) {
-        LOG_ERROR("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", req_ret);
+        pr_err("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", req_ret);
         return;
     }
     usleep(100000);  /* 100ms delay for response */
@@ -642,21 +642,21 @@ static void evaluate_ptp_gm_connection(AppState *state)
         state->is_ptp_connected_to_gm = true;
     } else {
         state->is_ptp_connected_to_gm = false;
-        LOG_INFO("GM check failed: gm_present=false (port_state=%u)\n",
+        pr_info("GM check failed: gm_present=false (port_state=%u)\n",
                  state->port_state);
     }
     
     /* Log status change */
     if (was_connected != state->is_ptp_connected_to_gm) {
         if (state->is_ptp_connected_to_gm) {
-            LOG_INFO("*** PTP CONNECTED TO GRANDMASTER ***\n");
-            LOG_INFO("  Port State: %u\n", state->port_state);
-            LOG_INFO("  GM Present: YES\n");
-            LOG_INFO("  Phase Offset: %" PRId64 " ns\n", state->clock_params[ptp_idx].phase_offset);
+            pr_info("*** PTP CONNECTED TO GRANDMASTER ***\n");
+            pr_info("  Port State: %u\n", state->port_state);
+            pr_info("  GM Present: YES\n");
+            pr_info("  Phase Offset: %" PRId64 " ns\n", state->clock_params[ptp_idx].phase_offset);
         } else {
-            LOG_INFO("*** PTP DISCONNECTED FROM GRANDMASTER ***\n");
-            LOG_INFO("  Port State: %u\n", state->port_state);
-            LOG_INFO("  GM Present: NO\n");
+            pr_info("*** PTP DISCONNECTED FROM GRANDMASTER ***\n");
+            pr_info("  Port State: %u\n", state->port_state);
+            pr_info("  GM Present: NO\n");
         }
     }
 }
@@ -677,12 +677,12 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
     __u32 connected_pin_id;
     enum pin_source connected_pin_source;
     
-    LOG_DEBUG("Determining current master from DPLL state...\n");
+    pr_dbg("Determining current master from DPLL state...\n");
     
     if (dpll_sock == NULL) {
         state->current_master = PIN_SOURCE_UNKNOWN;
         state->lock_status = DPLL_LOCK_STATUS_UNLOCKED;
-        LOG_INFO("Warning: DPLL not available, current master is UNKNOWN\n");
+        pr_info("Warning: DPLL not available, current master is UNKNOWN\n");
         return;
     }
     
@@ -699,7 +699,7 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
             clock_gettime(CLOCK_MONOTONIC, &state->holdover_start_time);
             state->in_holdover = true;
             state->current_master = HOLDOVER_0;
-            LOG_INFO("Entered HOLDOVER state (HOLDOVER_0)\n");
+            pr_info("Entered HOLDOVER state (HOLDOVER_0)\n");
         } else {
             /* Already in holdover - calculate duration and set appropriate level */
             struct timespec now;
@@ -715,22 +715,22 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
             
             if (duration_min < ho_0_min) {
                 if (state->current_master != HOLDOVER_0) {
-                    LOG_INFO("Transitioned to HOLDOVER_0 (duration: %ld min < %d min)\n", duration_min, ho_0_min);
+                    pr_info("Transitioned to HOLDOVER_0 (duration: %ld min < %d min)\n", duration_min, ho_0_min);
                 }
                 state->current_master = HOLDOVER_0;
             } else if (duration_min < ho_1_min) {
                 if (state->current_master != HOLDOVER_1) {
-                    LOG_INFO("Transitioned to HOLDOVER_1 (duration: %ld min < %d min)\n", duration_min, ho_1_min);
+                    pr_info("Transitioned to HOLDOVER_1 (duration: %ld min < %d min)\n", duration_min, ho_1_min);
                 }
                 state->current_master = HOLDOVER_1;
             } else if (duration_min < ho_2_min) {
                 if (state->current_master != HOLDOVER_2) {
-                    LOG_INFO("Transitioned to HOLDOVER_2 (duration: %ld min < %d min)\n", duration_min, ho_2_min);
+                    pr_info("Transitioned to HOLDOVER_2 (duration: %ld min < %d min)\n", duration_min, ho_2_min);
                 }
                 state->current_master = HOLDOVER_2;
             } else {
                 if (state->current_master != HOLDOVER_3) {
-                    LOG_INFO("Transitioned to HOLDOVER_3 (duration: %ld min >= %d min)\n", duration_min, ho_2_min);
+                    pr_info("Transitioned to HOLDOVER_3 (duration: %ld min >= %d min)\n", duration_min, ho_2_min);
                 }
                 state->current_master = HOLDOVER_3;
             }
@@ -740,7 +740,7 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
     else if (ret == 0) {
         /* Clear holdover state */
         if (state->in_holdover) {
-            LOG_INFO("Exited HOLDOVER state\n");
+            pr_info("Exited HOLDOVER state\n");
             state->in_holdover = false;
         }
         
@@ -750,20 +750,20 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
             /* Assign connected pin source directly to current_master */
             state->current_master = connected_pin_source;
             state->connected_pin_id = connected_pin_id;  /* Store connected pin ID */
-            LOG_DEBUG("determine_current_master: LOCKED to pin_id %u -> source %d (%s)\n",
+            pr_dbg("determine_current_master: LOCKED to pin_id %u -> source %d (%s)\n",
                    connected_pin_id, state->current_master,
                    pin_source_to_string(state->current_master));
         }
         else {
             /* Lock status is UNLOCKED or other - set to UNKNOWN */
             state->current_master = PIN_SOURCE_UNKNOWN;
-            LOG_INFO("Current master: UNKNOWN (lock status: UNLOCKED or other)\n");
+            pr_info("Current master: UNKNOWN (lock status: UNLOCKED or other)\n");
         }
     } 
     else {
         /* Failed to get DPLL state or no pin found (but not holdover) */
         state->current_master = PIN_SOURCE_UNKNOWN;
-        LOG_INFO("Current master: UNKNOWN (no connected pin, lock status: %d)\n", state->lock_status);
+        pr_info("Current master: UNKNOWN (no connected pin, lock status: %d)\n", state->lock_status);
     }
 }
 
@@ -777,35 +777,35 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
 static void dump_clock_parameters(const ClockParameters *params, enum pin_source pin_index)
 {
     if (!params) {
-        LOG_ERROR("dump_clock_parameters: NULL pointer\n");
+        pr_err("dump_clock_parameters: NULL pointer\n");
         return;
     }
     
-    LOG_DEBUG("========== Clock Parameters Dump (Pin Source: %d) ==========\n", pin_index);
-    LOG_DEBUG("GM Identity: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
+    pr_dbg("========== Clock Parameters Dump (Pin Source: %d) ==========\n", pin_index);
+    pr_dbg("GM Identity: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
            params->gm_identity.id[0], params->gm_identity.id[1], 
            params->gm_identity.id[2], params->gm_identity.id[3],
            params->gm_identity.id[4], params->gm_identity.id[5], 
            params->gm_identity.id[6], params->gm_identity.id[7]);
-    LOG_DEBUG("GM Clock Class: %u\n", params->gm_clock_class);
-    LOG_DEBUG("GM Clock Accuracy: 0x%02x\n", params->gm_clock_accuracy);
-    LOG_DEBUG("GM Offset Scaled Log Variance: %u\n", params->gm_offset_scaled_log_variance);
-    LOG_DEBUG("GM Priority1: %u\n", params->gm_priority1);
-    LOG_DEBUG("GM Priority2: %u\n", params->gm_priority2);
-    LOG_DEBUG("Steps Removed: %u\n", params->steps_removed);
-    LOG_DEBUG("Phase Offset: %" PRId64 " ns\n", params->phase_offset);
-    LOG_DEBUG("GM Present: %s\n", params->gm_present ? "YES" : "NO");
-    LOG_DEBUG("Current UTC Offset: %d\n", params->current_utc_offset);
-    LOG_DEBUG("Leap61: %u\n", params->leap61);
-    LOG_DEBUG("Leap59: %u\n", params->leap59);
-    LOG_DEBUG("Current UTC Offset Valid: %u\n", params->current_utc_offset_valid);
-    LOG_DEBUG("PTP Timescale: %u\n", params->ptp_timescale);
-    LOG_DEBUG("Time Traceable: %u\n", params->time_traceable);
-    LOG_DEBUG("Frequency Traceable: %u\n", params->frequency_traceable);
-    LOG_DEBUG("Time Source: 0x%02x\n", params->time_source);
-    LOG_DEBUG("Last Update: %ld.%09ld\n", 
+    pr_dbg("GM Clock Class: %u\n", params->gm_clock_class);
+    pr_dbg("GM Clock Accuracy: 0x%02x\n", params->gm_clock_accuracy);
+    pr_dbg("GM Offset Scaled Log Variance: %u\n", params->gm_offset_scaled_log_variance);
+    pr_dbg("GM Priority1: %u\n", params->gm_priority1);
+    pr_dbg("GM Priority2: %u\n", params->gm_priority2);
+    pr_dbg("Steps Removed: %u\n", params->steps_removed);
+    pr_dbg("Phase Offset: %" PRId64 " ns\n", params->phase_offset);
+    pr_dbg("GM Present: %s\n", params->gm_present ? "YES" : "NO");
+    pr_dbg("Current UTC Offset: %d\n", params->current_utc_offset);
+    pr_dbg("Leap61: %u\n", params->leap61);
+    pr_dbg("Leap59: %u\n", params->leap59);
+    pr_dbg("Current UTC Offset Valid: %u\n", params->current_utc_offset_valid);
+    pr_dbg("PTP Timescale: %u\n", params->ptp_timescale);
+    pr_dbg("Time Traceable: %u\n", params->time_traceable);
+    pr_dbg("Frequency Traceable: %u\n", params->frequency_traceable);
+    pr_dbg("Time Source: 0x%02x\n", params->time_source);
+    pr_dbg("Last Update: %ld.%09ld\n", 
            params->last_update.tv_sec, params->last_update.tv_nsec);
-    LOG_DEBUG("==========================================\n\n");
+    pr_dbg("==========================================\n\n");
 }
 
 /**
@@ -836,36 +836,36 @@ void read_clock_parameters_from_master(AppState *state, struct ynl_sock *dpll_so
     /* Read clock parameters based on current master */
     /* Check if current master is a holdover state */
     if (master_index >= HOLDOVER_0 && master_index <= HOLDOVER_3) {
-        LOG_DEBUG("Reading clock parameters from holdover state (master_index: %d)\n", master_index);
+        pr_dbg("Reading clock parameters from holdover state (master_index: %d)\n", master_index);
         /* Update clock parameters for holdover state (uses existing parameters) */
         if (get_holdover_parameters(state, master_index) == 0) {
-            LOG_DEBUG("Successfully updated holdover clock parameters\n");
+            pr_dbg("Successfully updated holdover clock parameters\n");
             dump_clock_parameters(&state->clock_params[master_index], master_index);
         } else {
-            LOG_ERROR("Failed to update holdover clock parameters\n");
+            pr_err("Failed to update holdover clock parameters\n");
         }
     }
     /* Check if current master is GNSS */
     else if (master_index == GNSS_REF4P || master_index == GNSS_REF4N) {
-        LOG_INFO("Reading clock parameters from GNSS master (index %d)\n", master_index);
+        pr_info("Reading clock parameters from GNSS master (index %d)\n", master_index);
         if (get_gnss_parameters(state, master_index) == 0) {
-            LOG_INFO("Successfully read GNSS clock parameters\n");
+            pr_info("Successfully read GNSS clock parameters\n");
             dump_clock_parameters(&state->clock_params[master_index], master_index);
         } else {
-            LOG_ERROR("Failed to read GNSS clock parameters\n");
+            pr_err("Failed to read GNSS clock parameters\n");
         }
     }
     /* Check if current master is PTP (SDP2_REF0P or SDP0_REF0N) */
     else if (master_index == SDP2_REF0P || master_index == SDP0_REF0N) {
         enum pin_source ptp_idx = master_index;
-        LOG_INFO("Reading clock parameters from PTP master (index: %s)\n",
+        pr_info("Reading clock parameters from PTP master (index: %s)\n",
                  pin_source_to_string(ptp_idx));
 #ifndef STATIC_PARAMS_FROM_CONFIG
         /* Dynamic mode: query ptp4l via PMC GET requests to update clock_params */
         req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
                        MGMT_ID_PARENT_DATA_SET, &state->local_sequence_id);
         if (req_ret != 0) {
-            LOG_ERROR("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", req_ret);
+            pr_err("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", req_ret);
             goto last;
         }
         usleep(100000);  /* 100ms delay */
@@ -874,7 +874,7 @@ void read_clock_parameters_from_master(AppState *state, struct ynl_sock *dpll_so
         req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
                        MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
         if (req_ret != 0) {
-            LOG_ERROR("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
+            pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
             goto last;
         }
         usleep(100000);  /* 100ms delay */
@@ -883,24 +883,24 @@ void read_clock_parameters_from_master(AppState *state, struct ynl_sock *dpll_so
         req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
                        MGMT_ID_PORT_DATA_SET, &state->local_sequence_id);
         if (req_ret != 0) {
-            LOG_ERROR("Failed to send PORT_DATA_SET GET request (ret=%d)\n", req_ret);
+            pr_err("Failed to send PORT_DATA_SET GET request (ret=%d)\n", req_ret);
             goto last;
         }
         usleep(100000);  /* 100ms delay */
         process_ptp_messages(state);
 #else
         /* Static mode: clock_params already populated from config — skip PTP queries */
-        LOG_DEBUG("STATIC_PARAMS_FROM_CONFIG: using config-loaded parameters for PTP source %s\n",
+        pr_dbg("STATIC_PARAMS_FROM_CONFIG: using config-loaded parameters for PTP source %s\n",
                  pin_source_to_string(ptp_idx));
 #endif  /* STATIC_PARAMS_FROM_CONFIG */
         dump_clock_parameters(&state->clock_params[ptp_idx], ptp_idx);
     }
     else if (master_index == PIN_SOURCE_UNKNOWN) {
-        LOG_DEBUG("Current master is UNKNOWN, skipping clock parameter read\n");
+        pr_dbg("Current master is UNKNOWN, skipping clock parameter read\n");
         goto last;
     }
     else {
-        LOG_INFO("Reading clock parameters from pin source %d\n", master_index);
+        pr_info("Reading clock parameters from pin source %d\n", master_index);
         /* For other pin sources, could add specific handling here */
     }
     
@@ -925,7 +925,7 @@ void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock)
 
     /* Detect lock status change (independent of master change) */
     if (state->lock_status != state->prev_lock_status) {
-        LOG_INFO("Lock status changed: %s -> %s\n",
+        pr_info("Lock status changed: %s -> %s\n",
                  lock_status_to_string(state->prev_lock_status),
                  lock_status_to_string(state->lock_status));
         state->prev_lock_status = state->lock_status;
@@ -934,13 +934,13 @@ void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock)
             (state->lock_status == DPLL_LOCK_STATUS_LOCKED ||
              state->lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ)) {
             state->ever_locked = true;
-            LOG_INFO("First lock achieved — alarm suppression lifted\n");
+            pr_info("First lock achieved — alarm suppression lifted\n");
         }
         write_status_json(state);
     }
 
     if (state->prev_master != state->current_master) {
-        LOG_INFO("FAILOVER DETECTED: %s -> %s\n",
+        pr_info("FAILOVER DETECTED: %s -> %s\n",
                  pin_source_to_string(state->prev_master),
                  pin_source_to_string(state->current_master));
         if (g_config.manager.operation_mode == OPERATION_MODE_SW_BASED)
@@ -1003,14 +1003,17 @@ static void initialize_logging_early(const char *log_file_path)
                 close(log_fd);
             } else {
                 /* Log successfully opened file */
-                LOG_INFO("Log file opened successfully\n");
+                pr_info("Log file opened successfully\n");
             }
         }
+    } else {
+        /* No file specified — use syslog (LOG_USER -> /var/log/user.log) */
+        openlog("dpll-mgr", LOG_NDELAY | LOG_PID, LOG_USER);
     }
     
     /* Print application banner */
-    LOG_INFO("DPLL Manager Version: %s\n", DPLL_MGR_VERSION);
-    LOG_INFO("Timing Manager Starting...\n");
+    pr_info("DPLL Manager Version: %s\n", DPLL_MGR_VERSION);
+    pr_info("Timing Manager Starting...\n");
 }
 
 /**
@@ -1029,11 +1032,11 @@ static void apply_pin_priorities(struct ynl_sock *dpll_sock,
                                  size_t table_size)
 {
     if (!dpll_sock || !priority_table) {
-        LOG_ERROR("apply_pin_priorities: Invalid parameters\n");
+        pr_err("apply_pin_priorities: Invalid parameters\n");
         return;
     }
     
-    LOG_INFO("=== Applying Pin Priorities ===\n");
+    pr_info("=== Applying Pin Priorities ===\n");
     
     /* Iterate through priority table */
     for (size_t i = 0; i < table_size; i++) {
@@ -1048,7 +1051,7 @@ static void apply_pin_priorities(struct ynl_sock *dpll_sock,
         const char *package_label = priority_table[i].package_label;
         int priority = priority_table[i].priority;
         
-        LOG_DEBUG("Setting priority for %s (package_label: %s) to %d\n", 
+        pr_dbg("Setting priority for %s (package_label: %s) to %d\n", 
                pin_name, package_label, priority);
         
         /* Set the priority using DPLL API */
@@ -1056,19 +1059,19 @@ static void apply_pin_priorities(struct ynl_sock *dpll_sock,
         if (old_priority >= 0) {
             int readback_priority = dpll_pin_get_priority(dpll_sock, device_id, (char*)package_label);
             if (readback_priority == priority) {
-                LOG_INFO("  Success: old_priority=%d, new_priority=%d\n",
+                pr_info("  Success: old_priority=%d, new_priority=%d\n",
                        old_priority, priority);
             } else {
-                LOG_ERROR("  Priority mismatch for %s (package_label: %s): requested=%d, readback=%d\n",
+                pr_err("  Priority mismatch for %s (package_label: %s): requested=%d, readback=%d\n",
                          pin_name, package_label, priority, readback_priority);
             }
         } else {
-            LOG_ERROR("  Failed to set priority for %s (package_label: %s)\n", 
+            pr_err("  Failed to set priority for %s (package_label: %s)\n", 
                      pin_name, package_label);
         }
     }
     
-    LOG_INFO("=== Pin Priorities Applied ===\n\n");
+    pr_info("=== Pin Priorities Applied ===\n\n");
 }
 
 /**
@@ -1083,31 +1086,31 @@ static struct ynl_sock* initialize_interfaces(AppState *state)
     /* Check if ptp4l is in free running mode (SW_BASED only) */
     if (g_config.manager.operation_mode == OPERATION_MODE_HW_BASED) {
         if (!check_free_running_mode(state->local_socket_fd, &state->local_peer_addr, &state->local_sequence_id)) {
-            LOG_ERROR("ERROR: ptp4l is NOT running in free running mode!\n");
-            LOG_ERROR("Please restart ptp4l with free running mode enabled.\n");
-            LOG_ERROR("Example: ptp4l -i <interface> -m --free_running\n");
+            pr_err("ERROR: ptp4l is NOT running in free running mode!\n");
+            pr_err("Please restart ptp4l with free running mode enabled.\n");
+            pr_err("Example: ptp4l -i <interface> -m --free_running\n");
             exit(EXIT_FAILURE);
         } else {
-            LOG_INFO("GNRD ptp4l running in free running mode - Proceeding \n");
+            pr_info("GNRD ptp4l running in free running mode - Proceeding \n");
         }
     }
 
     /* Evaluate initial PTP GM connection status (reads port status and GM parameters).
      * Retry a few times since ptp4l responses may be delayed at startup.
      */
-    LOG_INFO("Evaluating initial PTP-GM connection status...\n");
+    pr_info("Evaluating initial PTP-GM connection status...\n");
     for (int _try = 0; _try < 5 && !state->is_ptp_connected_to_gm; _try++) {
         if (_try > 0) {
-            LOG_DEBUG("Retrying PTP-GM check (%d/5)...\n", _try + 1);
+            pr_dbg("Retrying PTP-GM check (%d/5)...\n", _try + 1);
             usleep(500000);  /* 500ms between retries */
         }
         evaluate_ptp_gm_connection(state);
     }
-    LOG_INFO("Initial PTP-GM connection status: %s\n",
+    pr_info("Initial PTP-GM connection status: %s\n",
            state->is_ptp_connected_to_gm ? "CONNECTED" : "NOT CONNECTED");
 
     if (!state->is_ptp_connected_to_gm) {
-        LOG_ERROR("Grandmaster not connected. Cannot proceed with initialization.\n");
+        pr_err("Grandmaster not connected. Cannot proceed with initialization.\n");
         return NULL;
     }
 
@@ -1122,7 +1125,7 @@ static struct ynl_sock* initialize_interfaces(AppState *state)
 
     FILE *fp = fopen(tspll_path, "r");
     if (!fp) {
-        LOG_ERROR("Cannot open %s: %s\n", tspll_path, strerror(errno));
+        pr_err("Cannot open %s: %s\n", tspll_path, strerror(errno));
         return NULL;
     }
 
@@ -1139,11 +1142,11 @@ static struct ynl_sock* initialize_interfaces(AppState *state)
     fclose(fp);
 
     if (!sw_conf_ok || !tspll_ok) {
-        LOG_ERROR("TSPLL is NOT in TIME_REF mode (sw_conf_ok=%d, tspll_ok=%d). "
+        pr_err("TSPLL is NOT in TIME_REF mode (sw_conf_ok=%d, tspll_ok=%d). "
                   "Cannot proceed.\n", sw_conf_ok, tspll_ok);
         return NULL;
     }
-    LOG_INFO("TSPLL TIME_REF mode verified for %s\n", g_config.manager.phc_interface);
+    pr_info("TSPLL TIME_REF mode verified for %s\n", g_config.manager.phc_interface);
 #endif
 
     /* Explicitly enable PTP DPLL pins at startup if GM is already connected.
@@ -1156,44 +1159,44 @@ static struct ynl_sock* initialize_interfaces(AppState *state)
 
     /* Initialize GNSS module */
     if (gnss_init(NULL) == 0) {
-        LOG_INFO("GNSS initialized successfully\n");
+        pr_info("GNSS initialized successfully\n");
     } else {
-        LOG_ERROR("Warning: GNSS initialization failed, continuing without GNSS support\n");
+        pr_err("Warning: GNSS initialization failed, continuing without GNSS support\n");
     }
 
     /* Initialize DPLL netlink socket */
     struct ynl_sock *dpll_sock = NULL;
-    LOG_INFO("Initializing DPLL netlink socket...\n");
+    pr_info("Initializing DPLL netlink socket...\n");
     if (init_dpll() == 0) {
         dpll_sock = ys;
         state->dpll_sock = dpll_sock;  /* Store in AppState */
-        LOG_INFO("DPLL netlink initialized successfully (socket=%p)\n", (void*)dpll_sock);
+        pr_info("DPLL netlink initialized successfully (socket=%p)\n", (void*)dpll_sock);
         
         /* Discover PPS device dynamically */
-        LOG_DEBUG("Discovering DPLL PPS device...\n");
+        pr_dbg("Discovering DPLL PPS device...\n");
         int pps_device_id = dpll_find_device_id_by_type(dpll_sock, DPLL_TYPE_PPS);
         if (pps_device_id >= 0) {
             state->pps_dpll_device_id = (__u32)pps_device_id;
-            LOG_DEBUG("Using DPLL PPS device ID: %u\n", state->pps_dpll_device_id);
+            pr_dbg("Using DPLL PPS device ID: %u\n", state->pps_dpll_device_id);
         } else {
-            LOG_ERROR("Failed to find PPS device\n");
+            pr_err("Failed to find PPS device\n");
             return NULL;
         }
 
         /* Discover EEC device dynamically (used for pre-loop priority application) */
-        LOG_DEBUG("Discovering DPLL EEC device...\n");
+        pr_dbg("Discovering DPLL EEC device...\n");
         int eec_device_id = dpll_find_device_id_by_type(dpll_sock, DPLL_TYPE_EEC);
         if (eec_device_id >= 0) {
             state->eec_dpll_device_id = (__u32)eec_device_id;
-            LOG_DEBUG("Using DPLL EEC device ID: %u\n", state->eec_dpll_device_id);
+            pr_dbg("Using DPLL EEC device ID: %u\n", state->eec_dpll_device_id);
         } else {
-            LOG_ERROR("Failed to find EEC device\n");
+            pr_err("Failed to find EEC device\n");
             return NULL;
         }
     } else {
         state->dpll_sock = NULL;
-        LOG_ERROR("Warning: DPLL initialization failed, continuing without DPLL support\n");
-        LOG_ERROR("DPLL features will not be available. Check if DPLL kernel module is loaded.\n");
+        pr_err("Warning: DPLL initialization failed, continuing without DPLL support\n");
+        pr_err("DPLL features will not be available. Check if DPLL kernel module is loaded.\n");
         return NULL;
     }
     
@@ -1276,21 +1279,21 @@ static int parse_and_validate_arguments(int argc, char *argv[],
  * parse_log_level - Convert log level string to LogLevel enum
  * @level_str: Log level string ("ERROR", "INFO", "DEBUG", "RAW")
  *
- * Returns: LogLevel enum value, defaults to LOG_LEVEL_INFO if invalid
+ * Returns: LogLevel enum value, defaults to DPLL_LOG_LEVEL_INFO if invalid
  */
 static LogLevel parse_log_level(const char *level_str)
 {
     if (!level_str || level_str[0] == '\0') {
-        return LOG_LEVEL_INFO;  /* Default */
+        return DPLL_LOG_LEVEL_INFO;  /* Default */
     }
     
-    if (strcasecmp(level_str, "ERROR") == 0) return LOG_LEVEL_ERROR;
-    if (strcasecmp(level_str, "INFO") == 0) return LOG_LEVEL_INFO;
-    if (strcasecmp(level_str, "DEBUG") == 0) return LOG_LEVEL_DEBUG;
-    if (strcasecmp(level_str, "RAW") == 0) return LOG_LEVEL_RAW;
+    if (strcasecmp(level_str, "ERROR") == 0) return DPLL_LOG_LEVEL_ERROR;
+    if (strcasecmp(level_str, "INFO") == 0) return DPLL_LOG_LEVEL_INFO;
+    if (strcasecmp(level_str, "DEBUG") == 0) return DPLL_LOG_LEVEL_DEBUG;
+    if (strcasecmp(level_str, "RAW") == 0) return DPLL_LOG_LEVEL_RAW;
     
     fprintf(stderr, "Warning: Unknown log level '%s', defaulting to INFO\n", level_str);
-    return LOG_LEVEL_INFO;
+    return DPLL_LOG_LEVEL_INFO;
 }
 
 /**
@@ -1312,14 +1315,14 @@ static bool load_uds_paths_from_config(char **fr_uds_path_out,
                                        int *rx_count_out)
 {
     if (!fr_uds_path_out || !fr_uds_buf || !rx_uds_bufs || !rx_uds_paths || !rx_count_out) {
-        LOG_ERROR("load_uds_paths_from_config: Invalid parameter(s)\n");
+        pr_err("load_uds_paths_from_config: Invalid parameter(s)\n");
         return false;
     }
 
     /* Get local UDS path from config (ptp_bh channel) */
     const ChannelConfig *ch = config_get_channel("ptp_bh");
     if (!ch || ch->call_channel[0] == '\0') {
-        LOG_ERROR("Error: ptp_bh not found in config\n");
+        pr_err("Error: ptp_bh not found in config\n");
         return false;
     }
 
@@ -1330,7 +1333,7 @@ static bool load_uds_paths_from_config(char **fr_uds_path_out,
     }
     snprintf(fr_uds_buf, fr_uds_buf_size, "%s", fr_path);
     *fr_uds_path_out = fr_uds_buf;
-    LOG_DEBUG("Using local UDS path from config: %s\n", *fr_uds_path_out);
+    pr_dbg("Using local UDS path from config: %s\n", *fr_uds_path_out);
 
     /* Get remote UDS paths from config (ptp_0, ptp_1, ptp_2, etc.) */
     int rx_count = 0;
@@ -1345,14 +1348,14 @@ static bool load_uds_paths_from_config(char **fr_uds_path_out,
             }
             snprintf(rx_uds_bufs[rx_count], sizeof(rx_uds_bufs[rx_count]), "%s", rx_path);
             rx_uds_paths[rx_count] = rx_uds_bufs[rx_count];
-            LOG_DEBUG("Using receiver UDS path from config [%d]: %s\n", rx_count, rx_uds_paths[rx_count]);
+            pr_dbg("Using receiver UDS path from config [%d]: %s\n", rx_count, rx_uds_paths[rx_count]);
             rx_count++;
         }
     }
 
     *rx_count_out = rx_count;
     if (*rx_count_out == 0) {
-        LOG_INFO("No remote instances configured\n");
+        pr_info("No remote instances configured\n");
     }
 
     return true;
@@ -1369,17 +1372,17 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
     /* Setup local ptp4l connection - direct UDS path */
     int ret = snprintf(state->fr_uds_path, sizeof(state->fr_uds_path), "%s", fr_uds_path);
     if (ret < 0 || ret >= (int)sizeof(state->fr_uds_path)) {
-        LOG_ERROR("Path truncation detected\n");
+        pr_err("Path truncation detected\n");
         return false;
     }
 
     state->local_socket_fd = create_uds_socket(state->fr_uds_path, &state->local_peer_addr);
     if (state->local_socket_fd < 0) {
-        LOG_ERROR("Failed to create socket for local ptp4l\n");
+        pr_err("Failed to create socket for local ptp4l\n");
         return false;
     }
 
-    LOG_DEBUG("Connected to local ptp4l at %s\n", state->fr_uds_path);
+    pr_dbg("Connected to local ptp4l at %s\n", state->fr_uds_path);
 
     /* Setup remote ptp4l connections - only store valid remotes */
     int valid_index = 0;
@@ -1388,7 +1391,7 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
     for (int i = 0; i < rx_count && valid_index < MAX_REMOTE_INSTANCES; i++) {
         int temp_socket_fd = create_uds_socket(rx_uds_paths[i], &state->remotes[valid_index].peer_addr);
         if (temp_socket_fd < 0) {
-            LOG_ERROR("Warning: Failed to connect to remote %d (%s)\n", i, rx_uds_paths[i]);
+            pr_err("Warning: Failed to connect to remote %d (%s)\n", i, rx_uds_paths[i]);
             invalid_remotes++;
             continue;
         }
@@ -1398,14 +1401,14 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
                           sizeof(state->remotes[valid_index].uds_path),
                           "%s", rx_uds_paths[i]);
         if (ret < 0 || ret >= (int)sizeof(state->remotes[valid_index].uds_path)) {
-            LOG_ERROR("Path truncation detected\n");
+            pr_err("Path truncation detected\n");
             close(temp_socket_fd);
             invalid_remotes++;
             continue;
         }
         state->remotes[valid_index].socket_fd = temp_socket_fd;
         state->remotes[valid_index].active = true;
-        LOG_DEBUG("Connected to remote ptp4l %d at %s\n", valid_index, state->remotes[valid_index].uds_path);
+        pr_dbg("Connected to remote ptp4l %d at %s\n", valid_index, state->remotes[valid_index].uds_path);
         valid_index++;
     }
     
@@ -1413,13 +1416,13 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
     state->rx_count = valid_index;
     
     /* Print UDS validation summary */
-    LOG_DEBUG("========== Remote UDS Validation Summary ==========\n");
-    LOG_DEBUG("Total remotes attempted: %d\n", rx_count);
-    LOG_DEBUG("Valid remotes: %d\n", valid_index);
-    LOG_DEBUG("Invalid remotes: %d\n", invalid_remotes);
-    LOG_DEBUG("===================================================\n\n");
+    pr_dbg("========== Remote UDS Validation Summary ==========\n");
+    pr_dbg("Total remotes attempted: %d\n", rx_count);
+    pr_dbg("Valid remotes: %d\n", valid_index);
+    pr_dbg("Invalid remotes: %d\n", invalid_remotes);
+    pr_dbg("===================================================\n\n");
     
-    LOG_DEBUG("Initialization done successfully\n");
+    pr_dbg("Initialization done successfully\n");
 
     /* Setup ts2phc socket for gearshift (SW_BASED mode) */
     state->ts2phc_socket_fd = -1;
@@ -1445,7 +1448,7 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
                     int flags = fcntl(ts2_fd, F_GETFL, 0);
                     if (flags >= 0) {
                         if (fcntl(ts2_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-                            LOG_ERROR("Failed to set O_NONBLOCK on ts2phc socket: %s\n",
+                            pr_err("Failed to set O_NONBLOCK on ts2phc socket: %s\n",
                                       strerror(errno));
                             close(ts2_fd);
                             unlink(ts2_local);
@@ -1454,7 +1457,7 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
                     }
                     size_t ts2_path_len = strlen(ts2_path);
                     if (ts2_path_len >= sizeof(state->ts2phc_peer_addr.sun_path)) {
-                        LOG_ERROR("ts2phc peer path too long: %s\n", ts2_path);
+                        pr_err("ts2phc peer path too long: %s\n", ts2_path);
                         close(ts2_fd);
                         unlink(ts2_local);
                     } else {
@@ -1462,19 +1465,19 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
                         memset(&state->ts2phc_peer_addr, 0, sizeof(state->ts2phc_peer_addr));
                         state->ts2phc_peer_addr.sun_family = AF_UNIX;
                         memcpy(state->ts2phc_peer_addr.sun_path, ts2_path, ts2_path_len + 1);
-                        LOG_DEBUG("ts2phc socket bound: local=%s peer=%s\n", ts2_local, ts2_path);
+                        pr_dbg("ts2phc socket bound: local=%s peer=%s\n", ts2_local, ts2_path);
                     }
                 } else {
-                    LOG_ERROR("Failed to bind ts2phc socket: %s\n", strerror(errno));
+                    pr_err("Failed to bind ts2phc socket: %s\n", strerror(errno));
                     close(ts2_fd);
                     unlink(ts2_local);
                 }
             } else {
-                LOG_ERROR("Failed to create ts2phc socket: %s\n", strerror(errno));
+                pr_err("Failed to create ts2phc socket: %s\n", strerror(errno));
             }
         }
     } else {
-        LOG_INFO("ts2_0 channel not configured, ts2phc gearshift unavailable\n");
+        pr_info("ts2_0 channel not configured, ts2phc gearshift unavailable\n");
     }
 
     /* Initialize status tracking fields */
@@ -1505,7 +1508,7 @@ int main(int argc, char *argv[])
     
     /* Initialize configuration from JSON file */
     if (config_init(config_path) != 0) {
-        LOG_ERROR("Failed to load configuration from %s\n", config_path);
+        pr_err("Failed to load configuration from %s\n", config_path);
         return EXIT_FAILURE;
     }
 
@@ -1533,61 +1536,61 @@ int main(int argc, char *argv[])
     if (g_config.manager.log_level[0] != '\0') {
         /* Use config file setting */
         g_log_level = parse_log_level(g_config.manager.log_level);
-        LOG_INFO("Log level set from config: %s\n", g_config.manager.log_level);
+        pr_info("Log level set from config: %s\n", g_config.manager.log_level);
     } else {
         /* Default to INFO */
-        g_log_level = LOG_LEVEL_INFO;
-        LOG_INFO("Log level defaulting to: INFO\n");
+        g_log_level = DPLL_LOG_LEVEL_INFO;
+        pr_info("Log level defaulting to: INFO\n");
     }
     
     /* Print loaded configuration - only if DEBUG is enabled */
-    if (g_log_level >= LOG_LEVEL_DEBUG) {
+    if (g_log_level >= DPLL_LOG_LEVEL_DEBUG) {
         config_print();
     }
 
     /* Setup signal handlers */
     if (setup_signals() < 0) {
-        LOG_ERROR("Failed to setup signal handlers\n");
+        pr_err("Failed to setup signal handlers\n");
         return EXIT_FAILURE;
     }
 
     /* Ensure runtime directory exists */
     if (ensure_runtime_directory() < 0) {
-        LOG_ERROR("Failed to setup runtime directory\n");
+        pr_err("Failed to setup runtime directory\n");
         return EXIT_FAILURE;
     }
 
     /* Create status file directory for external consumers */
     if (mkdir(STATUS_FILE_DIR, 0755) < 0 && errno != EEXIST) {
-        LOG_ERROR("Failed to create status directory %s: %s\n",
+        pr_err("Failed to create status directory %s: %s\n",
                   STATUS_FILE_DIR, strerror(errno));
     }
 
     /* Initialize application state */
     AppState state;
     if (!initialize_state(&state, fr_uds_path, rx_uds_paths, rx_count)) {
-        LOG_ERROR("Failed to initialize application\n");
+        pr_err("Failed to initialize application\n");
         return EXIT_FAILURE;
     }
 
     /* Parse and populate priority table for EEC (DPLL0_FREQ) */
-    LOG_DEBUG("Parsing EEC pin priority map from dpll0 configuration...\n");
+    pr_dbg("Parsing EEC pin priority map from dpll0 configuration...\n");
     if (config_parse_priority_map(g_config.dpll0.pin_priority_map,
                                    state.eec_priority_table,
                                    sizeof(state.eec_priority_table) / sizeof(state.eec_priority_table[0])) == 0) {
-        LOG_DEBUG("EEC priority table populated successfully\n");
+        pr_dbg("EEC priority table populated successfully\n");
     } else {
-        LOG_ERROR("Failed to parse EEC priority map from dpll0.pin_priority_map\n");
+        pr_err("Failed to parse EEC priority map from dpll0.pin_priority_map\n");
     }
 
     /* Parse and populate priority table for PPS (DPLL1_PHASE) */
-    LOG_DEBUG("Parsing PPS pin priority map from dpll1 configuration...\n");
+    pr_dbg("Parsing PPS pin priority map from dpll1 configuration...\n");
     if (config_parse_priority_map(g_config.dpll1.pin_priority_map,
                                    state.pps_priority_table,
                                    sizeof(state.pps_priority_table) / sizeof(state.pps_priority_table[0])) == 0) {
-        LOG_DEBUG("PPS priority table populated successfully\n");
+        pr_dbg("PPS priority table populated successfully\n");
     } else {
-        LOG_ERROR("Failed to parse PPS priority map from dpll1.pin_priority_map\n");
+        pr_err("Failed to parse PPS priority map from dpll1.pin_priority_map\n");
     }
     
     /* Populate clock parameters from configuration */
@@ -1596,7 +1599,7 @@ int main(int argc, char *argv[])
     /* Initialize all interfaces (PTP, GNSS, DPLL) */
     struct ynl_sock *dpll_sock = initialize_interfaces(&state);
     if (!dpll_sock) {
-        LOG_ERROR("Interface initialization failed (no GM or DPLL unavailable). Exiting.\n");
+        pr_err("Interface initialization failed (no GM or DPLL unavailable). Exiting.\n");
         cleanup_state(&state);
         config_cleanup();
         if (g_log_file) {
@@ -1608,35 +1611,35 @@ int main(int argc, char *argv[])
 
     /* Apply pin priorities to DPLL after interface initialization */
     /* Apply dpll0 map to EEC device */
-    LOG_INFO("Applying pin priorities to EEC device (device %u)...\n", state.eec_dpll_device_id);
+    pr_info("Applying pin priorities to EEC device (device %u)...\n", state.eec_dpll_device_id);
     apply_pin_priorities(dpll_sock, state.eec_dpll_device_id, state.eec_priority_table,
                         sizeof(state.eec_priority_table) / sizeof(state.eec_priority_table[0]));
 
     /* Apply dpll1 map to PPS device */
-    LOG_INFO("Applying pin priorities to PPS device (device %u)...\n", state.pps_dpll_device_id);
+    pr_info("Applying pin priorities to PPS device (device %u)...\n", state.pps_dpll_device_id);
     apply_pin_priorities(dpll_sock, state.pps_dpll_device_id, state.pps_priority_table,
                         sizeof(state.pps_priority_table) / sizeof(state.pps_priority_table[0]));
 
     /* Apply timing-delay phase compensation from timing_delays.json */
 #ifdef DPLL_ZL3073X_TIMING_DELAYS
-    LOG_INFO("Applying timing-delay phase compensation from timing_delays.json\n");
+    pr_info("Applying timing-delay phase compensation from timing_delays.json\n");
     if (apply_timing_delays_phase_adjust(dpll_sock) != 0)
-        LOG_ERROR("Some timing-delay phase adjustments failed; continuing\n");
+        pr_err("Some timing-delay phase adjustments failed; continuing\n");
 #endif
 
     /* Initialize local context by reading clock parameters from current master */
-    LOG_DEBUG("Initializing local context with current clock data\n");
+    pr_dbg("Initializing local context with current clock data\n");
     read_clock_parameters_from_master(&state, dpll_sock);
-    LOG_INFO("Local context initialized.\n");
+    pr_info("Local context initialized.\n");
     
     /* Initialize previous master for transition detection */
     state.prev_master = state.current_master;
     
     /* Print initial master before entering main loop */
-    LOG_INFO("=== Initial Master Status ===\n");
-    LOG_INFO("Current Master: %s (index=%d)\n", 
+    pr_info("=== Initial Master Status ===\n");
+    pr_info("Current Master: %s (index=%d)\n", 
              pin_source_to_string(state.current_master), state.current_master);
-    LOG_INFO("Lock Status: %s\n", 
+    pr_info("Lock Status: %s\n", 
              state.lock_status == DPLL_LOCK_STATUS_LOCKED ?
               "LOCKED" :
              state.lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ ? "LOCKED_HO_ACQ" :
@@ -1645,16 +1648,16 @@ int main(int argc, char *argv[])
     
     /* Align gear to initial master before entering main loop (SW_BASED only) */
     if (g_config.manager.operation_mode == OPERATION_MODE_SW_BASED) {
-        LOG_INFO("Applying initial gearshift for current master: %s\n",
+        pr_info("Applying initial gearshift for current master: %s\n",
                  pin_source_to_string(state.current_master));
         handle_sw_based_failover(&state, state.current_master);
     }
 
     /* Perform initial clock adjustment before entering main loop */
     if (g_config.manager.operation_mode != OPERATION_MODE_SW_BASED) {
-       LOG_DEBUG("Initial Clock Adjustment\n");
+       pr_dbg("Initial Clock Adjustment\n");
        if (perform_clock_phase_adjust(&state, -state.master_offset) != 0) {
-           LOG_ERROR("Initial clock phase adjustment failed. Exiting application.\n");
+           pr_err("Initial clock phase adjustment failed. Exiting application.\n");
            cleanup_state(&state);
            config_cleanup();
            if (g_log_file) {
@@ -1675,20 +1678,22 @@ int main(int argc, char *argv[])
     state.prev_lock_status = state.lock_status;
 
     write_status_json(&state);
-    LOG_INFO("Initial status.json written to %s\n", STATUS_FILE_PATH);
+    pr_info("Initial status.json written to %s\n", STATUS_FILE_PATH);
 
     run_main_loop(&state, dpll_sock);
 
-    LOG_INFO("Shutting down...\n");
+    pr_info("Shutting down...\n");
     cleanup_state(&state);
     
     /* Cleanup configuration */
     config_cleanup();
     
-    /* Close log file */
+    /* Close log file or syslog */
     if (g_log_file) {
         fclose(g_log_file);
         g_log_file = NULL;
+    } else {
+        closelog();
     }
     
     return EXIT_SUCCESS;
