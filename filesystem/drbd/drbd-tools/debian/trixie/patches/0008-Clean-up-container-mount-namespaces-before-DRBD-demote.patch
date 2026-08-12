@@ -1,0 +1,116 @@
+From 4735c85b9eec988b59741f4c17a82573e69f2a0e Mon Sep 17 00:00:00 2001
+From: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+Date: Tue, 4 Aug 2026 03:34:16 -0400
+Subject: Clean up container mount namespaces before DRBD demote
+
+Clean up mount references held in container mount namespaces before
+attempting drbdadm secondary to prevent "Device is held open by someone"
+errors during swact.
+
+Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
+---
+ scripts/drbd.ocf | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+diff --git a/scripts/drbd.ocf b/scripts/drbd.ocf
+index b2908d5..fd8a53f 100755
+--- a/scripts/drbd.ocf
++++ b/scripts/drbd.ocf
+@@ -578,6 +578,61 @@ source_who_is_using_drbd()
+ }
+ source_who_is_using_drbd
+ 
++
++# Clean up mount references held in container mount namespaces.
++# When kubernetes pods have mount namespaces that reference DRBD-backed
++# filesystems, the block device remains "held open" even after the
++# Filesystem OCF stop action has unmounted it from the init namespace.
++# This function unmounts stale DRBD references only in non-init mount
++# namespaces, avoiding disruption to active services in the host namespace.
++cleanup_mount_namespace_holders()
++{
++	local drbd_resource=$1
++
++	if [ ${#DRBD_DEVICES[@]} -eq 0 ]; then
++		ocf_log info "${drbd_resource}: No DRBD devices found, skipping namespace cleanup"
++		return
++	fi
++
++	# Get the init (PID 1) mount namespace to skip host-namespace PIDs
++	local init_mnt_ns
++	init_mnt_ns=$(readlink /proc/1/ns/mnt 2>/dev/null)
++	if [ -z "$init_mnt_ns" ]; then
++		ocf_log warn "${drbd_resource}: Cannot read init mount namespace, skipping namespace cleanup"
++		return
++	fi
++
++	for dev in ${DRBD_DEVICES[@]}; do
++		[ -z "$dev" ] && continue
++
++		for pid_mountinfo in /proc/[0-9]*/mountinfo; do
++			local pid=${pid_mountinfo#/proc/}
++			pid=${pid%/mountinfo}
++
++			# Skip PIDs in the init mount namespace — already handled by normal umount
++			local pid_ns
++			pid_ns=$(readlink /proc/$pid/ns/mnt 2>/dev/null) || continue
++			[ "$pid_ns" = "$init_mnt_ns" ] && continue
++
++			# Only process if this namespace still references our DRBD device
++			# Match on the mount source field (after the - separator) for exact matching
++			local mnt_points
++			mnt_points=$(awk -v dev="${dev}" '{ for(i=1;i<=NF;i++) if($i=="-"){if($(i+2)==dev) print $5; break} }' /proc/$pid/mountinfo 2>/dev/null)
++
++			[ -z "$mnt_points" ] && continue
++
++			for mnt in $mnt_points; do
++				[ -z "$mnt" ] && continue
++				ocf_log info "${drbd_resource}: Unmounting stale ref $mnt for $dev in namespace of PID $pid"
++				nsenter -t $pid -m -- umount -l "$mnt" 2>/dev/null
++				if [ $? -ne 0 ]; then
++					ocf_log warn "${drbd_resource}: Failed to unmount $mnt in namespace of PID $pid"
++				fi
++			done
++		done
++	done
++}
++
+ call_unfence()
+ {
+ 	# It is easier to just call the crm-unfence-peer script, without
+@@ -1065,6 +1120,10 @@ drbd_start()
+ 			;;
+ 		$OCF_RUNNING_MASTER)
+ 			ocf_log warn "$DRBD_RESOURCE already Primary, demoting."
++			# Clean up any container mount namespace holders before demote.
++			# This prevents "Device is held open by someone" errors when
++			# kubernetes pods have mount namespaces referencing DRBD devices.
++			cleanup_mount_namespace_holders "$DRBD_RESOURCE"
+ 			do_drbdadm secondary $DRBD_RESOURCE
+ 			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
+ 				result=$(who_is_using_drbd "$DRBD_RESOURCE")
+@@ -1187,6 +1246,10 @@ drbd_demote() {
+ 			break
+ 			;;
+ 		$OCF_RUNNING_MASTER)
++			# Clean up any container mount namespace holders before demote.
++			# This prevents "Device is held open by someone" errors when
++			# kubernetes pods have mount namespaces referencing DRBD devices.
++			cleanup_mount_namespace_holders "$DRBD_RESOURCE"
+ 			do_drbdadm secondary $DRBD_RESOURCE
+ 			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
+ 				result=$(who_is_using_drbd "$DRBD_RESOURCE")
+@@ -1237,6 +1300,10 @@ drbd_stop() {
+ 			if [ "${found}" = "yes" ]; then
+ 				ocf_log warn "Waiting to drop $DRBD_RESOURCE"
+ 			else
++				# Clean up container mount namespace holders before attempting
++				# to drop to secondary. Even though init namespace shows
++				# unmounted, container namespaces may still hold the device.
++				cleanup_mount_namespace_holders "$DRBD_RESOURCE"
+ 				ocf_log warn "Dropping $DRBD_RESOURCE to Secondary"
+ 				do_drbdadm secondary $DRBD_RESOURCE
+ 				if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
+-- 
+2.34.1
+

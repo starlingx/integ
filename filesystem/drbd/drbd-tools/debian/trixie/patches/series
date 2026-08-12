@@ -5,3 +5,4 @@
 0005-drbd-overview.patch
 0006-Report-who-is-using-DRBD-device.patch
 0007-Increase-DRBD-CPU-mask-size-from-32-to-256.patch
+0008-Clean-up-container-mount-namespaces-before-DRBD-demote.patch
