@@ -1,5 +1,5 @@
 # 00-mtce-storage.preset
-disable goenabled-storage.service
+disable goenabledStorage.service
 
 # 00-software.preset
 disable software-controller.service
@@ -25,7 +25,7 @@ disable haproxy.service
 enable iscsi-shutdown.service
 
 # 00-mtce-compute.preset
-enable goenabled-worker.service
+enable goenabledWorker.service
 
 # 00-mtce-control.preset
 disable hbsAgent.service
@@ -88,7 +88,7 @@ disable openvswitch.service
 enable qemu_clean.service
 
 # mtce-storage.spec (Move to rutime enablement. Disable, not needed for AIO)
-#enable goenabled-storage.service
+#enable goenabledStorage.service
 
 # mtce.spec
 enable mtcClient.service
@@ -124,7 +124,7 @@ enable sssd.service
 enable strongswan-starter.service
 
 # worker-utils.spec
-enable affine-platform.sh.service
+enable affine-platform.service
 enable affine-tasks.service
 
 # worker personality

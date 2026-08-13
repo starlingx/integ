@@ -1,5 +1,5 @@
 # 00-mtce-storage.preset
-disable goenabled-storage.service
+disable goenabledStorage.service
 
 # 00-software.preset
 enable software-controller.service
@@ -34,7 +34,7 @@ enable nfs-common.service
 enable nfs-server.service
 
 # 00-pxe-network-installer.preset
-enable pxeboot-feed.service
+enable pxeboot_feed.service
 
 # 00-sm-api.preset
 enable sm-api.service
@@ -87,7 +87,7 @@ disable openvswitch.service
 # qemu-kvm.spec (Package currently not included)
 
 # mtce-compute.spec
-enable goenabled-worker.service
+enable goenabledWorker.service
 
 # lighthtpd
 enable lighttpd.service
@@ -131,7 +131,7 @@ enable strongswan-starter.service
 enable ipsec-server.service
 
 # worker-utils.spec
-enable affine-platform.sh.service
+enable affine-platform.service
 enable affine-tasks.service
 
 # usm initialize service
