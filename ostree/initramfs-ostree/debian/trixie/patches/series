@@ -22,3 +22,4 @@
 0022-Add-partition-support-for-finding-embedded-partition.patch
 0023-Remove-the-drivers-switch-related-code.patch
 0024-Fix-multipath-support-for-Debian-Trixie.patch
+0025-Disable-binds-verification-for-ostree-pull.patch
