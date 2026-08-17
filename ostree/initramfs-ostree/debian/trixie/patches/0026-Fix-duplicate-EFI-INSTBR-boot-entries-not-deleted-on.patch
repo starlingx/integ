@@ -1,0 +1,83 @@
+From: Eric MacDonald <eric.macdonald@windriver.com>
+Date: Mon, 31 Aug 2026 20:41:56 +0000
+Subject: Fix duplicate EFI $INSTBR boot entries not deleted on reinstall
+
+The installer performs a pre-create cleanup of existing EFI boot
+entries matching ${INSTBR} (e.g. "starlingx") before creating the
+new boot entry.
+
+There are two issues with the existing cleanup.
+
+First, the match assumes the efibootmgr output ends immediately after
+the boot entry label:
+
+grep "^Boot.*\* ${INSTBR}$"
+
+However, the new version of efibootmgr output includes the EFI device
+path after the label ; like this:
+
+Boot000#* starlingx     HD(2,GPT,...)/File(\EFI\BOOT\bootx64.efi)
+
+Where the previous version was:
+
+Boot000#* starlingx
+
+The '$' end-of-line anchor therefore prevents these entries from
+matching, leaving stale ${INSTBR} entries behind across reinstalls.
+
+Second, if multiple matching boot numbers are returned, the previous
+code passes the newline-separated value to a single command:
+
+efibootmgr -b ${oldboonum} -B
+
+The -b option accepts a single boot number, so only one entry can be
+deleted per invocation and the remaining values are not processed as
+separate boot entries.
+
+Replace the grep/sed expression with a sed match that accounts for the
+whitespace and device path following ${INSTBR} and extracts only the
+EFI boot number.
+
+Then loop over all matching boot numbers and issue a separate:
+
+efibootmgr -b <num> -B
+
+for each entry.
+
+This ensures all stale ${INSTBR} EFI boot entries are removed before
+the new entry is created, preventing duplicate boot entries from
+accumulating across reinstalls.
+
+Signed-off-by: Eric MacDonald <eric.macdonald@windriver.com>
+---
+ init-ostree-install.sh | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/init-ostree-install.sh b/init-ostree-install.sh
+index 83a7509..8266eff 100644
+--- a/init-ostree-install.sh
++++ b/init-ostree-install.sh
+@@ -1720,9 +1720,20 @@ fi
+ if [ -d /sys/firmware/efi/efivars ] ;then
+     if which efibootmgr >/dev/null 2>&1; then
+         mount -t efivarfs efivarfs /sys/firmware/efi/efivars
+-        oldboonum=`efibootmgr | grep "^Boot.*\* ${INSTBR}$" |sed "s/Boot\(.*\)\* ${INSTBR}/\1/g"`
+-        if [ -n "${oldboonum}" ]; then
+-            efibootmgr -b ${oldboonum} -B
++        log_info "searching for and removing old boot entries for ${INSTBR}"
++        oldbootnums=$(efibootmgr | sed -n "s/^Boot\([0-9A-Fa-f]*\)\* ${INSTBR}[[:space:]].*/\1/p")
++        if [ -n "${oldbootnums}" ]; then
++            for b in ${oldbootnums}; do
++                efibootmgr -b "${b}" -B >/dev/null 2>&1
++                rc=$?
++                if [ $rc -eq 0 ]; then
++                    log_info "... successfully deleted boot entry ${b}"
++                else
++                    log_error "... failed to delete boot entry ${b}, exit code ${rc}"
++                fi
++            done
++        else
++            log_info "... no existing boot entries found for ${INSTBR}"
+         fi
+         if [ "$EFIBOOT_FIRST" = "1" ]; then
+             efibootmgr -b 0 -B >/dev/null 2>&1 || true
