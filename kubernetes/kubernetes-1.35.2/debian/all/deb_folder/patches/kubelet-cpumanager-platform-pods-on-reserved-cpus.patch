@@ -1,4 +1,4 @@
-From 0d561f6dbe05331648ac82e76fb83ac62dc3ad24 Mon Sep 17 00:00:00 2001
+From 939c13e7aa241920814da97c554676d98d79f38b Mon Sep 17 00:00:00 2001
 From: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
 Date: Mon, 3 Nov 2025 08:31:29 -0500
 Subject: [PATCH] kubelet cpumanager platform pods on reserved cpus
@@ -60,7 +60,7 @@ Signed-off-by: Saba Touheed Mujawar <sabatouheed.mujawar@windriver.com>
  7 files changed, 415 insertions(+), 76 deletions(-)
 
 diff --git a/pkg/kubelet/cm/cpumanager/policy_static.go b/pkg/kubelet/cm/cpumanager/policy_static.go
-index 0327e589d00..f4f385b84d4 100644
+index 0327e589d00..024891d379a 100644
 --- a/pkg/kubelet/cm/cpumanager/policy_static.go
 +++ b/pkg/kubelet/cm/cpumanager/policy_static.go
 @@ -17,15 +17,21 @@ limitations under the License.
@@ -134,12 +134,12 @@ index 0327e589d00..f4f385b84d4 100644
 +		}
 +		s.SetCPUSet(string(pod.UID), container.Name, cpuset)
 +		logger.Info(
-+			"[cpumanager] static policy: reserved: AddContainer (namespace: %s, pod UID: %s, pod: %s, container: %s); cpuset=%v",
-+			pod.Namespace,
-+			string(pod.UID),
-+			pod.Name,
-+			container.Name,
-+			cpuset.String(),
++			"[cpumanager] static policy: reserved: AddContainer",
++			"namespace", pod.Namespace,
++			"podUID", string(pod.UID),
++			"pod", pod.Name,
++			"container", container.Name,
++			"cpuset", cpuset.String(),
 +		)
 +		return nil
 +	}
@@ -895,7 +895,7 @@ index 14a77a741b2..c6e4c481a01 100644
  	// and through each QoS cgroup directory for each subsystem mount
  	// If a pod cgroup exists in even a single subsystem mount
 diff --git a/pkg/kubelet/cm/qos_container_manager_linux.go b/pkg/kubelet/cm/qos_container_manager_linux.go
-index 2d87ea8e2c8..b7416067265 100644
+index 2d87ea8e2c8..2d6725d054b 100644
 --- a/pkg/kubelet/cm/qos_container_manager_linux.go
 +++ b/pkg/kubelet/cm/qos_container_manager_linux.go
 @@ -26,6 +26,7 @@ import (
