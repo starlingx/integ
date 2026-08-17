@@ -1,0 +1,16 @@
+[run]
+omit =
+    */tests/*
+    */test/*
+    *_test.py
+    test_*.py
+    conftest.py
+    */pynetlink/tests/*
+    */pynetlink/base/ynl.py
+    */pynetlink/base/nlspec.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__
+    pass
