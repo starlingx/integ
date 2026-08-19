@@ -1,12 +1,12 @@
 ---
-debver: 15.8-1
+debver: 16.1-2~deb13u1
 debname: shim
 dl_path:
-  name: shim-debian-15.8-1.tar.bz2
+  name: shim-debian-16.1-2_deb13u1.tar.bz2
   url: "https://salsa.debian.org/efi-team/shim/-/archive/debian/\
-        15.8-1/shim-debian-15.8-1.tar.bz2"
-  md5sum: d3f17ba1be66ddb43cfb4a792ef33923
-  sha256sum: 055d89a553cb23f5594c40cba1b82a3ff65d6ba7c498bdfad4b0a6b763401fab
+        16.1-2_deb13u1/shim-debian-16.1-2_deb13u1.tar.bz2"
+  md5sum: 3a584fa99d79fa1c6c3d3bf338b06999
+  sha256sum: 976dff23589c6f10a0099fd33bbe1acd56bdc42b3b6c1d09ad96a63e49c7fe1b
 src_files:
   - ${MY_REPO}/public-keys/tis-shim.der
 revision:
