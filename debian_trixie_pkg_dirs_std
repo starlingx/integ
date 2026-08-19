@@ -55,7 +55,6 @@ filesystem/parted
 golang-github-dev/golang-github-appc-cni
 golang-github-dev/golang-github-vishvananda-netlink
 golang-github-dev/golang-github-networkplumbing-go-nft-dev
-grub/grub-efi
 grub/grub2
 kata-containers
 kubernetes/chartmuseum

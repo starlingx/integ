@@ -1,0 +1,180 @@
+From 5f737f9a328dd7860eb1f9ce5b20967312239f6c Mon Sep 17 00:00:00 2001
+From: Michael Chang via Grub-devel <grub-devel@gnu.org>
+Date: Mon, 24 Nov 2025 16:57:59 +0800
+Subject: [PATCH 09/10] efi/sb: Fix boot failure when shim validation is
+ disabled
+
+When shim is switched to insecure mode via "mokutil
+--disable-validation", GRUB aborts midway when attempting to boot the
+kernel. With debug output enabled, the following error is shown:
+
+  error:
+  ../../grub-core/loader/efi/linux.c:grub_arch_efi_linux_boot_image:227:cannot
+  load image.
+
+The failure occurs because UEFI Secure Boot itself remains enabled, but
+the kernel is delegated to the firmware LoadImage() path since both the
+shim_loader and shim_lock protocols appear to be absent. This delegation
+was introduced when GRUB gained support for shim_loader, allowing
+kernels to take advantage of the LoadFile2 protocol. That logic assumed
+both shim protocols were missing.
+
+In fact, the shim protocols are still present but become missing to GRUB
+because probing in the shim verifier is skipped. This happens because
+grub_efi_get_secureboot() considers MokSBState. When users disable shim
+validation, Secure Boot is detected as "off" and as a result the shim
+protocols are never processed.
+
+This patch fixes the problem by introducing
+grub_efi_get_secureboot_real(), which bypasses MokSBState when deciding
+whether to set up the shim protocols. This allows the shim protocols to
+be correctly discovered and used even when shim is placed into insecure
+mode. Once the shim protocols are found, the boot path proceeds as
+intended, either through the legacy fallback path or through the shim
+loader override, both of which steer away from executing the firmware
+LoadImage() path directly.
+
+At the same time, grub_efi_get_secureboot() retains the behavior that
+matches the Linux kernel implementation, leaving the existing shim_lock
+and lockdown verifier registration unchanged and consistent.
+
+Signed-off-by: Michael Chang <mchang@suse.com>
+Acked-by: Ard Biesheuvel <ardb@kernel.org>
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
+---
+ grub-core/kern/efi/init.c |  6 ++++++
+ grub-core/kern/efi/sb.c   | 42 +++++++++++++++++++++++++++++++--------
+ include/grub/efi/sb.h     | 12 ++++++++++-
+ 3 files changed, 51 insertions(+), 9 deletions(-)
+
+diff --git a/grub-core/kern/efi/init.c b/grub-core/kern/efi/init.c
+index 8b747f71b..7c8475b9f 100644
+--- a/grub-core/kern/efi/init.c
++++ b/grub-core/kern/efi/init.c
+@@ -180,6 +180,12 @@ grub_efi_init (void)
+   /* Initialize the memory management system.  */
+   grub_efi_mm_init ();
+ 
++  /*
++   * Set up the shim protocol, the result is used to determine if fallback
++   * legacy loader or LoadImage() override by shim loader should be used.
++   */
++  grub_shim_lock_protocol_setup ();
++
+   /*
+    * Lockdown the GRUB and register the shim_lock verifier
+    * if the UEFI Secure Boot is enabled.
+diff --git a/grub-core/kern/efi/sb.c b/grub-core/kern/efi/sb.c
+index 4409e03c5..f8458aa8f 100644
+--- a/grub-core/kern/efi/sb.c
++++ b/grub-core/kern/efi/sb.c
+@@ -45,7 +45,7 @@ static grub_efi_handle_t last_verified_image_handle = NULL;
+  * drivers/firmware/efi/libstub/secureboot.c:efi_get_secureboot().
+  */
+ grub_uint8_t
+-grub_efi_get_secureboot (void)
++grub_efi_get_secureboot_real (bool check_moksb)
+ {
+   static grub_guid_t efi_variable_guid = GRUB_EFI_GLOBAL_VARIABLE_GUID;
+   grub_efi_status_t status;
+@@ -81,6 +81,16 @@ grub_efi_get_secureboot (void)
+       goto out;
+     }
+ 
++  grub_dprintf ("efi",
++		"MokSBState check enabled in GRUB: %s\n",
++		(check_moksb == true) ? "yes" : "no");
++
++  if (check_moksb == false)
++    {
++      secureboot = GRUB_EFI_SECUREBOOT_MODE_ENABLED;
++      goto out;
++    }
++
+   /*
+    * See if a user has put the shim into insecure mode. If so, and if the
+    * variable doesn't have the runtime attribute set, we might as well
+@@ -221,6 +231,29 @@ struct grub_file_verifier shim_lock_verifier =
+     .write = shim_lock_verifier_write
+   };
+ 
++void
++grub_shim_lock_protocol_setup (void)
++{
++  /*
++   * Skip only if UEFI Secure Boot is really disabled in firmware, no shim lock
++   * is being detected so this ensures that UEFI LoadImage() is used.
++   */
++  if (grub_efi_get_secureboot_real (false) != GRUB_EFI_SECUREBOOT_MODE_ENABLED)
++    return;
++
++  /*
++   * Set up shim protocol if UEFI Secure Boot is enabled or shim is in insecure
++   * mode. Either the legacy fallback loader or the shim loader, which overrides
++   * UEFI LoadImage(), will be used.
++   */
++  /* Find both shim protocols. */
++  shim_loader = grub_efi_locate_protocol (&shim_loader_guid, 0);
++  shim_lock = grub_efi_locate_protocol (&shim_lock_guid, 0);
++  /* Register shim loader if supported. */
++  if (shim_loader != NULL)
++    grub_efi_register_loader (shim_loader);
++}
++
+ void
+ grub_shim_lock_verifier_setup (void)
+ {
+@@ -230,10 +263,6 @@ grub_shim_lock_verifier_setup (void)
+   if (grub_efi_get_secureboot () != GRUB_EFI_SECUREBOOT_MODE_ENABLED)
+     return;
+ 
+-  /* Find both shim protocols. */
+-  shim_loader = grub_efi_locate_protocol (&shim_loader_guid, 0);
+-  shim_lock = grub_efi_locate_protocol (&shim_lock_guid, 0);
+-
+   /* shim is missing, check if GRUB image is built with --disable-shim-lock. */
+   if (shim_loader == NULL && shim_lock == NULL)
+     {
+@@ -247,9 +276,6 @@ grub_shim_lock_verifier_setup (void)
+   /* Enforce shim_lock_verifier. */
+   grub_verifier_register (&shim_lock_verifier);
+ 
+-  /* Register shim loader if supported. */
+-  grub_efi_register_loader (shim_loader);
+-
+   grub_env_set ("shim_lock", "y");
+   grub_env_export ("shim_lock");
+ }
+diff --git a/include/grub/efi/sb.h b/include/grub/efi/sb.h
+index 149005ced..7a79fd0d5 100644
+--- a/include/grub/efi/sb.h
++++ b/include/grub/efi/sb.h
+@@ -30,7 +30,13 @@
+ 
+ #ifdef GRUB_MACHINE_EFI
+ extern grub_uint8_t
+-EXPORT_FUNC (grub_efi_get_secureboot) (void);
++EXPORT_FUNC (grub_efi_get_secureboot_real) (bool check_moksb);
++
++static inline grub_uint8_t
++grub_efi_get_secureboot (void)
++{
++  return grub_efi_get_secureboot_real (true);
++}
+ 
+ extern bool
+ EXPORT_FUNC (grub_is_using_legacy_shim_lock_protocol) (void);
+@@ -40,6 +46,10 @@ EXPORT_FUNC (grub_efi_get_last_verified_image_handle) (void);
+ 
+ extern void
+ grub_shim_lock_verifier_setup (void);
++
++extern void
++grub_shim_lock_protocol_setup (void);
++
+ #else
+ static inline grub_uint8_t
+ grub_efi_get_secureboot (void)
+-- 
+2.47.3
+

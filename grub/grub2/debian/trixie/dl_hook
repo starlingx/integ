@@ -23,6 +23,8 @@
 # be put at the same path where this script is located.
 # Tools needed: tar
 
+set -x
+
 tar xvf grub2_2.12.orig.tar.xz
 if [ $? -ne 0 ]
 then
@@ -38,3 +40,7 @@ then
     echo "tar failed: debian folder!"
     exit 1
 fi
+
+cp -r ../local_debian/files/* .
+mkdir ./debian/starlingx
+cp ${MY_REPO}/public-keys/boot_pub_key ./debian/starlingx

@@ -180,14 +180,12 @@ flux2-charts
 #gpu-operator
 #gpu-operator
 
-#grub-efi
-#grub-efi-amd64-bin  # not used
+#grub2
+grub-efi-amd64-bin
 #grub-efi-amd64-dbg  # not used
 #grub-efi-amd64-signed-template  # not used
 grub-efi-amd64
 #grub-efi  # not used
-
-#grub2
 grub-common
 #grub-coreboot-bin  # not used
 #grub-coreboot-dbg  # not used
@@ -209,7 +207,7 @@ grub-pc
 #grub-xen-host  # not used
 #grub-xen  # not used
 grub2-common
-grub2
+#grub2
 
 #haproxy-config
 haproxy

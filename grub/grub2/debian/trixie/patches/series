@@ -1,2 +1,10 @@
-0001-grub2-add-tboot.patch
-0002-grub2-checking-if-loop-devices-are-available.patch
+0001-Add-a-module-for-reading-EFI-global-variables.patch
+0002-Make-UEFI-watchdog-behaviour-configurable.patch
+0003-grub-verify-Add-skip_check_cfg-variable.patch
+0004-grub-verify-Add-strict_security-variable.patch
+0005-kern-Make-grub_error-more-verbose.patch
+0006-kern-Include-function-name-on-debug-and-error-print-.patch
+0007-efi-sb-Add-support-for-the-shim-loader-protocol.patch
+0008-efi-sb-Add-API-for-retrieving-shim-loader-image-hand.patch
+0009-efi-sb-Fix-boot-failure-when-shim-validation-is-disa.patch
+0010-build-Fix-parallel-build-failure.patch

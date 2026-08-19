@@ -1,0 +1,30 @@
+From 129700acc6f3112cdddba16d5f60330209f8378f Mon Sep 17 00:00:00 2001
+From: Virgil Bucoci <virgil.bucoci@windriver.com>
+Date: Fri, 7 Aug 2026 16:08:47 +0300
+Subject: [PATCH 1/5] Add StarlingX to maintainers
+
+Make StarlingX owner of the deb, given changes from upstream Debian.
+
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
+---
+ debian/control | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 11e9e7e57..1ab2e08d3 100644
+--- a/debian/control
++++ b/debian/control
+@@ -1,8 +1,8 @@
+ Source: grub2
+ Section: admin
+ Priority: optional
+-Maintainer: GRUB Maintainers <pkg-grub-devel@alioth-lists.debian.net>
+-Uploaders: Felix Zielcke <fzielcke@z-51.de>, Jordi Mallach <jordi@debian.org>, Steve McIntyre <93sam@debian.org>, Julian Andres Klode <jak@debian.org>, Mate Kukri <mate.kukri@canonical.com>
++Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
++Uploaders: Virgil Bucoci <virgil.bucoci@windriver.com>
+ Build-Depends: debhelper-compat (= 13),
+  patchutils,
+  python3,
+-- 
+2.47.3
+

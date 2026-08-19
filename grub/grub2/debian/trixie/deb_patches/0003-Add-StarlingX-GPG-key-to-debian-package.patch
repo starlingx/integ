@@ -1,0 +1,23 @@
+From 65c26a3cc3cdbadceabb76bedc3e47706ce3511c Mon Sep 17 00:00:00 2001
+From: Virgil Bucoci <virgil.bucoci@windriver.com>
+Date: Wed, 5 Aug 2026 12:44:59 +0300
+Subject: [PATCH 3/5] Add StarlingX GPG key to debian package
+
+To add StarlingX GPG key in binary format to grub source package it
+needs to be added to debian/source/include-binaries.
+
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
+---
+ debian/source/include-binaries | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/source/include-binaries b/debian/source/include-binaries
+index 95a390b97..289f240f4 100644
+--- a/debian/source/include-binaries
++++ b/debian/source/include-binaries
+@@ -1 +1,2 @@
+ debian/upstream-signing-key.pgp
++debian/starlingx/boot_pub_key
+-- 
+2.47.3
+
