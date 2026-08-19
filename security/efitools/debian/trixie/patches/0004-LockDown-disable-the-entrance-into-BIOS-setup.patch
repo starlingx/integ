@@ -1,7 +1,7 @@
 From 6266e85e936be307afab7ae785f1eb0a019f1fa4 Mon Sep 17 00:00:00 2001
 From: Lans Zhang <jia.zhang@windriver.com>
 Date: Wed, 15 Feb 2017 14:52:07 +0800
-Subject: [PATCH 4/5] LockDown: disable the entrance into BIOS setup
+Subject: [PATCH 4/6] LockDown: disable the entrance into BIOS setup
 
 Disable the entrance into BIOS setup to re-enable secure boot.
 In most cases, this step is not necessary.

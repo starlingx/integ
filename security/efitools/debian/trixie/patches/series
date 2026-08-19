@@ -3,3 +3,4 @@
 0003-Makefile-do-not-build-signed-efi-image.patch
 0004-LockDown-disable-the-entrance-into-BIOS-setup.patch
 0005-Add-new-sections-to-objcopy.patch
+0006-Add-support-for-multiple-Microsoft-UEFI-certificates.patch

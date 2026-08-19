@@ -1,0 +1,98 @@
+From 9328c95f6f848693bc589b27e8f2f7fa8ca46dcd Mon Sep 17 00:00:00 2001
+From: Virgil Bucoci <virgil.bucoci@windriver.com>
+Date: Mon, 3 Aug 2026 16:12:43 +0300
+Subject: [PATCH 6/6] Add support for multiple Microsoft UEFI certificates
+
+Upstream efitools build adds to LockDown.efi only the PK, KEK and DB
+certificates, requiring manual rebuild to include other certificates.
+
+This commit adds support for including multiple Microsoft UEFI
+certificates that might be required for secure boot on some firmware
+without rebuilding LockDown.efi.  Certificates named ms-KEK-*.crt are
+added to KEK database and ms-DB-*.crt certificates to db database.
+
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
+---
+ LockDown.c |  8 ++++----
+ Makefile   | 19 ++++++++++++++-----
+ 2 files changed, 18 insertions(+), 9 deletions(-)
+
+diff --git a/LockDown.c b/LockDown.c
+index c8b89bd..7874465 100644
+--- a/LockDown.c
++++ b/LockDown.c
+@@ -10,8 +10,8 @@
+ #include <guid.h>
+ 
+ #include "PK.h"
+-#include "KEK.h"
+-#include "DB.h"
++#include "KEK_list.h"
++#include "DB_list.h"
+ 
+ EFI_STATUS
+ efi_main (EFI_HANDLE image, EFI_SYSTEM_TABLE *systab)
+@@ -46,7 +46,7 @@ efi_main (EFI_HANDLE image, EFI_SYSTEM_TABLE *systab)
+ 				     | EFI_VARIABLE_RUNTIME_ACCESS 
+ 				     | EFI_VARIABLE_BOOTSERVICE_ACCESS
+ 				     | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS,
+-				     KEK_auth_len, KEK_auth);
++				     KEK_list_auth_len, KEK_list_auth);
+ 	if (efi_status != EFI_SUCCESS) {
+ 		Print(L"Failed to enroll KEK: %d\n", efi_status);
+ 		goto out;
+@@ -57,7 +57,7 @@ efi_main (EFI_HANDLE image, EFI_SYSTEM_TABLE *systab)
+ 				     | EFI_VARIABLE_RUNTIME_ACCESS 
+ 				     | EFI_VARIABLE_BOOTSERVICE_ACCESS
+ 				     | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS,
+-				     DB_auth_len, DB_auth);
++				     DB_list_auth_len, DB_list_auth);
+ 	if (efi_status != EFI_SUCCESS) {
+ 		Print(L"Failed to enroll db: %d\n", efi_status);
+ 		goto out;
+diff --git a/Makefile b/Makefile
+index 7af3380..3194bf0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -9,9 +9,12 @@ endif
+ 
+ MSGUID = 77FA9ABD-0359-4D32-BD60-28F4E78F784B
+ 
++MS_DB_KEYS = $(basename $(wildcard ms-DB-*.crt))
++MS_KEK_KEYS = $(basename $(wildcard ms-KEK-*.crt))
++
+ KEYS = PK KEK DB
+-EXTRAKEYS = DB1 DB2
+-EXTERNALKEYS = ms-uefi ms-kek
++EXTRAKEYS =
++EXTERNALKEYS = $(MS_DB_KEYS) $(MS_KEK_KEYS)
+ 
+ ALLKEYS = $(KEYS) $(EXTRAKEYS) $(EXTERNALKEYS)
+ 
+@@ -61,14 +64,20 @@ lib/asn1/libasn1.a lib/asn1/libasn1-efi.a: FORCE
+ .KEEP: PK.crt KEK.crt DB.crt PK.key KEK.key DB.key PK.esl DB.esl KEK.esl \
+ 	$(EFIFILES)
+ 
+-LockDown.o: PK.h KEK.h DB.h
++LockDown.o: PK.h KEK_list.h DB_list.h
+ PreLoader.o: hashlist.h
+ 
+ PK.h: PK.auth
+ 
+-KEK.h: KEK.auth
++KEK_list.h: KEK_list.auth
++
++DB_list.h: DB_list.auth
++
++KEK_list.esl: KEK.esl $(addsuffix .esl,$(MS_KEK_KEYS))
++	cat $^ > $@
+ 
+-DB.h: DB.auth
++DB_list.esl: DB.esl $(addsuffix .esl,$(MS_DB_KEYS))
++	cat $^ > $@
+ 
+ noPK.esl:
+ 	> noPK.esl
+-- 
+2.47.3
+

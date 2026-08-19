@@ -1,7 +1,7 @@
 From 7c5ba27a81ef6471afa76c18d779a9f1df44dbd6 Mon Sep 17 00:00:00 2001
 From: Lans Zhang <jia.zhang@windriver.com>
 Date: Tue, 17 Jan 2017 12:48:27 +0800
-Subject: [PATCH 2/5] LockDown: show the error message with 3-sec timeout
+Subject: [PATCH 2/6] LockDown: show the error message with 3-sec timeout
 
 Signed-off-by: Lans Zhang <jia.zhang@windriver.com>
 Signed-off-by: Li Zhou <li.zhou@windriver.com>

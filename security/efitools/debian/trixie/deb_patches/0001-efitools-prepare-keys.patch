@@ -1,19 +1,20 @@
-From 7092736065bf9a0ce96b2ac1d4168bbaa13a16f5 Mon Sep 17 00:00:00 2001
+From 5983afa22e9b571ab83882e38c0588566257e5fe Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Fri, 19 Aug 2022 10:08:12 +0800
-Subject: [PATCH 1/2] efitools: prepare keys
+Subject: [PATCH] efitools: prepare keys
 
 Copy uefi keys (example keys) to the proper path for building.
 Replace the DB.crt (example key) with tis-boot.crt (public key
 in use for verifying signed shim image).
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
 ---
  debian/rules | 5 +++++
  1 file changed, 5 insertions(+)
 
 diff --git a/debian/rules b/debian/rules
-index 89115b3..c20cd9a 100755
+index 89115b3..0c44369 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -4,6 +4,11 @@
@@ -29,4 +30,5 @@ index 89115b3..c20cd9a 100755
  	dh_auto_install -- EFIDIR="debian/efitools/usr/lib/efitools/${DEB_TARGET_MULTIARCH}"
  
 -- 
-2.17.1
+2.47.3
+

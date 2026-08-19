@@ -1,7 +1,7 @@
 From 38e9c6289f28f069fc9077b45712ed1615a4e3f9 Mon Sep 17 00:00:00 2001
 From: Donn P Schneider <donnp.schneider@gmail.com>
 Date: Tue, 21 Jul 2026 13:02:30 +0300
-Subject: [PATCH 5/5] Add new sections to objcopy
+Subject: [PATCH 5/6] Add new sections to objcopy
 
 EFI binaries output garbage characters on screen and exit without
 performing anything.
