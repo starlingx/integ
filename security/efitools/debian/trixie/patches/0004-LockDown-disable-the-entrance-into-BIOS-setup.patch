@@ -1,4 +1,4 @@
-From d3d22b8a9e415d343e58a2502cb4865e65ad21e1 Mon Sep 17 00:00:00 2001
+From 6266e85e936be307afab7ae785f1eb0a019f1fa4 Mon Sep 17 00:00:00 2001
 From: Lans Zhang <jia.zhang@windriver.com>
 Date: Wed, 15 Feb 2017 14:52:07 +0800
 Subject: [PATCH 4/5] LockDown: disable the entrance into BIOS setup
@@ -9,6 +9,7 @@ In most cases, this step is not necessary.
 Signed-off-by: Lans Zhang <jia.zhang@windriver.com>
 [lz: Adapt git log and do some minor wording cleanups.]
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
 ---
  LockDown.c | 9 +++++++--
  1 file changed, 7 insertions(+), 2 deletions(-)
@@ -45,5 +46,5 @@ index 090d48f..c8b89bd 100644
  	else
  	        RT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
 -- 
-2.17.1
+2.47.3
 

@@ -1,9 +1,10 @@
-From e2b3621aac5d803d9cce30269caecccf1b4753fb Mon Sep 17 00:00:00 2001
+From 8bace8624aa7977e1aaa8e0dbf23bba59a8072ad Mon Sep 17 00:00:00 2001
 From: Yunguo Wei <yunguo.wei@windriver.com>
 Date: Tue, 17 Jan 2017 17:24:51 +0800
 Subject: [PATCH 3/5] Makefile: do not build signed efi image
 
 Signed-off-by: Yunguo Wei <yunguo.wei@windriver.com>
+Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
 ---
  Makefile | 5 ++---
  1 file changed, 2 insertions(+), 3 deletions(-)
@@ -29,4 +30,5 @@ index 583eb77..7af3380 100644
  endif
  
 -- 
-2.34.1
+2.47.3
+
