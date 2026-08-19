@@ -1,5 +1,5 @@
 # 00-mtce-storage.preset
-enable goenabled-storage.service
+enable goenabledStorage.service
 
 # 00-software.preset
 disable software-controller.service
@@ -25,7 +25,7 @@ disable haproxy.service
 enable iscsi-shutdown.service
 
 # 00-mtce-compute.preset
-disable goenabled-worker.service
+disable goenabledWorker.service
 
 # 00-mtce-control.preset
 disable hbsAgent.service
@@ -115,7 +115,7 @@ enable opt-platform.mount
 enable opt-platform.service
 
 # worker-utils.spec
-disable affine-platform.sh.service
+disable affine-platform.service
 disable affine-tasks.service
 
 # erlang-base
