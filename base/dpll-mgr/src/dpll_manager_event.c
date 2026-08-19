@@ -67,11 +67,11 @@ static int dpll_subscribe_events(struct ynl_sock *dpll_sock)
 {
     int ret = ynl_subscribe(dpll_sock, DPLL_MCGRP_MONITOR);
     if (ret < 0) {
-        LOG_ERROR("Failed to subscribe to DPLL '%s' monitor group (ret=%d)\n",
+        pr_err("Failed to subscribe to DPLL '%s' monitor group (ret=%d)\n",
                   DPLL_MCGRP_MONITOR, ret);
         return -1;
     }
-    LOG_INFO("Subscribed to DPLL '%s' multicast group\n", DPLL_MCGRP_MONITOR);
+    pr_info("Subscribed to DPLL '%s' multicast group\n", DPLL_MCGRP_MONITOR);
     return 0;
 }
 
@@ -87,7 +87,7 @@ static int dpll_subscribe_events(struct ynl_sock *dpll_sock)
 static void dpll_handle_events(AppState *state, struct ynl_sock *dpll_sock)
 {
     if (ynl_ntf_check(dpll_sock) < 0) {
-        LOG_ERROR("ynl_ntf_check() failed\n");
+        pr_err("ynl_ntf_check() failed\n");
         return;
     }
 
@@ -98,7 +98,7 @@ static void dpll_handle_events(AppState *state, struct ynl_sock *dpll_sock)
             break;
 
         if (ntf->cmd != DPLL_CMD_DEVICE_CHANGE_NTF) {
-            LOG_DEBUG("Ignoring event cmd=%u\n", ntf->cmd);
+            pr_dbg("Ignoring event cmd=%u\n", ntf->cmd);
             ynl_ntf_free(ntf);
             continue;
         }
@@ -106,13 +106,13 @@ static void dpll_handle_events(AppState *state, struct ynl_sock *dpll_sock)
         struct dpll_device_get_ntf *dev_ntf =
             (struct dpll_device_get_ntf *)ntf;
         if (dev_ntf->obj._present.lock_status) {
-            LOG_INFO("DPLL_CMD_DEVICE_CHANGE_NTF: device_id=%s%u lock_status=%u (%s)\n",
+            pr_info("DPLL_CMD_DEVICE_CHANGE_NTF: device_id=%s%u lock_status=%u (%s)\n",
                      dev_ntf->obj._present.id ? "" : "(not present) ",
                      dev_ntf->obj.id,
                      dev_ntf->obj.lock_status,
                      dpll_lock_status_str(dev_ntf->obj.lock_status));
         } else {
-            LOG_INFO("DPLL_CMD_DEVICE_CHANGE_NTF: device_id=%s%u\n",
+            pr_info("DPLL_CMD_DEVICE_CHANGE_NTF: device_id=%s%u\n",
                      dev_ntf->obj._present.id ? "" : "(not present) ",
                      dev_ntf->obj.id);
         }
@@ -139,16 +139,16 @@ static void dpll_handle_events(AppState *state, struct ynl_sock *dpll_sock)
  */
 void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
 {
-    LOG_INFO("=== ENTERING EVENT-BASED MAIN LOOP ===\n");
-    LOG_INFO("Subscribing to DPLL monitor events...\n");
+    pr_info("=== ENTERING EVENT-BASED MAIN LOOP ===\n");
+    pr_info("Subscribing to DPLL monitor events...\n");
 
     if (dpll_subscribe_events(dpll_sock) < 0) {
-        LOG_ERROR("Cannot enter event loop: DPLL subscribe failed\n");
+        pr_err("Cannot enter event loop: DPLL subscribe failed\n");
         return;
     }
 
     int dpll_fd = ynl_socket_get_fd(dpll_sock);
-    LOG_INFO("Listening for DPLL events on fd=%d (Press Ctrl+C to exit)...\n", dpll_fd);
+    pr_info("Listening for DPLL events on fd=%d (Press Ctrl+C to exit)...\n", dpll_fd);
 
     while (running) {
         struct pollfd pfds[2];
@@ -171,7 +171,7 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
         if (rc < 0) {
             if (errno == EINTR)
                 continue;
-            LOG_ERROR("poll() failed: %s\n", strerror(errno));
+            pr_err("poll() failed: %s\n", strerror(errno));
             break;
         }
 
@@ -192,7 +192,7 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
             if (ret) {
                 clock_gettime(CLOCK_MONOTONIC, &state->last_subscription);
             } else {
-                LOG_ERROR("Subscription request failed\n");
+                pr_err("Subscription request failed\n");
             }
         }
 #endif
@@ -212,7 +212,7 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
                 state->ptp_pin_state == DPLL_PIN_STATE_CONNECTED) {
                 monitor_and_adjust_phase_offset(state);
             } else {
-                LOG_DEBUG("Skipping phase adjustment: ptp_pin_state=%d "
+                pr_dbg("Skipping phase adjustment: ptp_pin_state=%d "
                           "(need SELECTABLE=%d or CONNECTED=%d)\n",
                           state->ptp_pin_state,
                           DPLL_PIN_STATE_SELECTABLE,

@@ -6,7 +6,7 @@ DEBIAN_DESTDIR := $(CURDIR)/debian/tmp
 	dh $@
 
 override_dh_auto_build:
-	$(MAKE) BUILD_MODE=event LDFLAGS="-pie -Wl,-z,relro,-z,now,-z,noexecstack -lgps -lcjson"
+	$(MAKE) BUILD_MODE=event LDFLAGS="-pie -Wl,-z,relro,-z,now,-z,noexecstack -lgps -lcjson -lsystemd"
 
 override_dh_auto_install:
 	install -d -m 755 $(DEBIAN_DESTDIR)/usr/bin

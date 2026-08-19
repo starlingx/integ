@@ -60,7 +60,7 @@ struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id)
 
 	/* Check if YNL socket is valid */
 	if (!ys) {
-		LOG_ERROR("dpll_pin_dump: YNL socket is NULL\n");
+		pr_err("dpll_pin_dump: YNL socket is NULL\n");
 		return NULL;
 	}
 
@@ -68,7 +68,7 @@ struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id)
 
 	pin_list = dpll_pin_get_dump(ys, &pin_req);
 	if (pin_list == NULL) {
-		LOG_ERROR("No pin info received\n");
+		pr_err("No pin info received\n");
 		return NULL;
 	}
 	
@@ -77,7 +77,7 @@ struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id)
 #ifdef DEBUG
 	while(pin_list) {
 		if (pin_list->obj.parent_device) {
-			LOG_DEBUG("id: %d boardlabel:%s state:%u\n", pin_list->obj.id,
+			pr_dbg("id: %d boardlabel:%s state:%u\n", pin_list->obj.id,
 					pin_list->obj.board_label,
 					pin_list->obj.parent_device->state);
 		}
@@ -120,7 +120,7 @@ __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label,
 
 	/* Validate phase_adjust is within __s32 range for netlink */
 	if (phase_adjust > INT32_MAX || phase_adjust < INT32_MIN) {
-		LOG_ERROR("Phase adjust value %lld fs out of range [%d, %d]\n",
+		pr_err("Phase adjust value %lld fs out of range [%d, %d]\n",
 				(long long)phase_adjust, INT32_MIN, INT32_MAX);
 		return -1;
 	}
@@ -129,7 +129,7 @@ __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label,
 	if (!ret) {
 		if (pin_rsp._present.phase_adjust) {
 			old_phase_adjust = pin_rsp.phase_adjust;
-			LOG_DEBUG("package label: %s phase_adj:%lld fs, input:%lld fs\n",
+			pr_dbg("package label: %s phase_adj:%lld fs, input:%lld fs\n",
 					package_label,
 					(long long)pin_rsp.phase_adjust,
 					(long long)phase_adjust);
@@ -142,7 +142,7 @@ __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label,
 
 		ret = dpll_pin_set(ys, &set_req);
 		if (ret) {
-			LOG_ERROR("Error while setting phase adjust\n");
+			pr_err("Error while setting phase adjust\n");
 		}
 	}
 	return old_phase_adjust;
@@ -160,7 +160,7 @@ int dpll_pin_set_state(struct ynl_sock *ys, __u32 device_id, char *package_label
 	/* Get pin info by package_label to obtain pin ID */
 	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp);
 	if (ret) {
-		LOG_ERROR("Pin %s not found for device %u\n", package_label, device_id);
+		pr_err("Pin %s not found for device %u\n", package_label, device_id);
 		return -1;
 	}
 
@@ -177,10 +177,10 @@ int dpll_pin_set_state(struct ynl_sock *ys, __u32 device_id, char *package_label
 		if (target_parent) {
 			old_state = target_parent->state;
 			if (old_state == state) {
-				LOG_INFO("Same state observed: %s state:%d\n",
+				pr_info("Same state observed: %s state:%d\n",
 					package_label, old_state);
 			} else {
-				LOG_INFO("Changing state: %s from %d to %d\n",
+				pr_info("Changing state: %s from %d to %d\n",
 					package_label, old_state, state);
 			}
 		}
@@ -193,7 +193,7 @@ int dpll_pin_set_state(struct ynl_sock *ys, __u32 device_id, char *package_label
 	set_req.parent_device = (struct dpll_pin_parent_device*)
 		calloc(1, sizeof(struct dpll_pin_parent_device));
 	if (!set_req.parent_device) {
-		LOG_ERROR("Memory allocation failed\n");
+		pr_err("Memory allocation failed\n");
 		return -1;
 	}
 	set_req.n_parent_device = 1;
@@ -205,7 +205,7 @@ int dpll_pin_set_state(struct ynl_sock *ys, __u32 device_id, char *package_label
 	
 	ret = dpll_pin_set(ys, &set_req);
 	if (ret) {
-		LOG_ERROR("Error while changing state\n");
+		pr_err("Error while changing state\n");
 		free(set_req.parent_device);
 		return -1;
 	}
@@ -227,25 +227,25 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	struct dpll_pin_parent_device *target_parent = NULL;
 
 	if (!ys) {
-		LOG_ERROR("dpll_pin_set_priority: YNL socket is NULL\n");
+		pr_err("dpll_pin_set_priority: YNL socket is NULL\n");
 		return -1;
 	}
 
 	/* Get pin info by package_label to obtain pin ID */
 	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp);
 	if (ret) {
-		LOG_ERROR("Pin %s not found\n", package_label);
+		pr_err("Pin %s not found\n", package_label);
 		return -1;
 	}
 
 	/* Get old priority/state from the correct parent_device matching device_id */
 	if (pin_rsp.parent_device) {
 		parent_count = pin_rsp.n_parent_device;
-		LOG_DEBUG("Pin lookup: package_label:%s pin_id:%u parent_count:%u requested_prio:%d\n",
+		pr_dbg("Pin lookup: package_label:%s pin_id:%u parent_count:%u requested_prio:%d\n",
 			package_label, pin_rsp.id, parent_count, prio);
 
 		for (unsigned int i = 0; i < parent_count; i++) {
-			LOG_DEBUG("  parent[%u]: parent_id=%u state=%u prio=%u present(state=%u prio=%u phase_offset=%u)\n",
+			pr_dbg("  parent[%u]: parent_id=%u state=%u prio=%u present(state=%u prio=%u phase_offset=%u)\n",
 				i,
 				pin_rsp.parent_device[i].parent_id,
 				pin_rsp.parent_device[i].state,
@@ -264,16 +264,16 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 		}
 		if (target_parent) {
 			old_prio = target_parent->prio;
-			LOG_DEBUG("device:%u package label:%s cur prio:%d state:%d\n",
+			pr_dbg("device:%u package label:%s cur prio:%d state:%d\n",
 				device_id, package_label, old_prio, target_parent->state);
 		} else {
-			LOG_ERROR("No parent match for package label:%s on device:%u\n",
+			pr_err("No parent match for package label:%s on device:%u\n",
 				package_label, device_id);
 		}
 	}
 
 	if (!target_parent) {
-		LOG_ERROR("Cannot set priority for %s: missing parent context for device %u\n",
+		pr_err("Cannot set priority for %s: missing parent context for device %u\n",
 			package_label, device_id);
 		return -1;
 	}
@@ -283,14 +283,14 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 		if (target_parent->state != DPLL_PIN_STATE_DISCONNECTED) {
 			int old_state = dpll_pin_set_state(ys, device_id, package_label, DPLL_PIN_STATE_DISCONNECTED);
 			if (old_state < 0) {
-				LOG_ERROR("Failed to move %s to DISCONNECTED for requested priority 15\n",
+				pr_err("Failed to move %s to DISCONNECTED for requested priority 15\n",
 					package_label);
 				return -1;
 			}
-			LOG_INFO("Requested priority=15: moved %s state from %d to DISCONNECTED; skipping priority write\n",
+			pr_info("Requested priority=15: moved %s state from %d to DISCONNECTED; skipping priority write\n",
 				package_label, old_state);
 		} else {
-			LOG_INFO("Requested priority=15: %s already DISCONNECTED; skipping priority write\n",
+			pr_info("Requested priority=15: %s already DISCONNECTED; skipping priority write\n",
 				package_label);
 		}
 		return old_prio;
@@ -301,11 +301,11 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	if (prio < 15 && target_parent->state == DPLL_PIN_STATE_DISCONNECTED) {
 		int old_state = dpll_pin_set_state(ys, device_id, package_label, DPLL_PIN_STATE_SELECTABLE);
 		if (old_state < 0) {
-			LOG_ERROR("Failed to move %s from DISCONNECTED to SELECTABLE before priority update\n",
+			pr_err("Failed to move %s from DISCONNECTED to SELECTABLE before priority update\n",
 				package_label);
 			return -1;
 		}
-		LOG_INFO("Moved %s state from %d to SELECTABLE before applying priority %d\n",
+		pr_info("Moved %s state from %d to SELECTABLE before applying priority %d\n",
 			package_label, old_state, prio);
 	}
 #endif
@@ -318,7 +318,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	set_req.parent_device = (struct dpll_pin_parent_device*)
 		calloc(1, sizeof(struct dpll_pin_parent_device));
 	if (!set_req.parent_device) {
-		LOG_ERROR("Memory allocation failed\n");
+		pr_err("Memory allocation failed\n");
 		return -1;
 	}
 	set_req.n_parent_device = 1;
@@ -328,7 +328,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	set_req.parent_device->_present.parent_id = 1;
 	set_req.parent_device->parent_id = device_id;
 
-	LOG_INFO("Set request: pin_id=%u package_label=%s parent_id=%u prio=%d parent_count=%u\n",
+	pr_info("Set request: pin_id=%u package_label=%s parent_id=%u prio=%d parent_count=%u\n",
 		set_req.id,
 		package_label,
 		set_req.parent_device->parent_id,
@@ -337,7 +337,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	
 	ret = dpll_pin_set(ys, &set_req);
 	if (ret) {
-		LOG_ERROR("Error while changing priority for %s on device %u (ret=%d, ynl_code=%d, attr_offs=%u, msg=%s)\n",
+		pr_err("Error while changing priority for %s on device %u (ret=%d, ynl_code=%d, attr_offs=%u, msg=%s)\n",
 			package_label,
 			device_id,
 			ret,
@@ -348,7 +348,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 		return -1;
 	}
 
-	LOG_DEBUG("Priority set ACK: package_label=%s device_id=%u requested_prio=%d\n",
+	pr_dbg("Priority set ACK: package_label=%s device_id=%u requested_prio=%d\n",
 		package_label, device_id, prio);
 
 	free(set_req.parent_device);
@@ -375,13 +375,13 @@ int dpll_pin_get_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 
 			if (target_parent) {
 				prio = target_parent->prio;
-				LOG_DEBUG("device:%u package label:%s prio:%d state:%d\n",
+				pr_dbg("device:%u package label:%s prio:%d state:%d\n",
 					device_id,
 					package_label,
 					target_parent->prio,
 					target_parent->state);
 			} else {
-				LOG_ERROR("No parent match for package label:%s on device:%u\n",
+				pr_err("No parent match for package label:%s on device:%u\n",
 					package_label, device_id);
 			}
 		}
@@ -411,19 +411,19 @@ __u32 dpll_pin_get_phase_adjust_gran(struct ynl_sock *ys,
 	ret = dpll_one_pin_by_package_label(ys, (char *)package_label,
 					    &pin_rsp);
 	if (ret) {
-		LOG_ERROR("dpll_pin_get_phase_adjust_gran: pin %s not found\n",
+		pr_err("dpll_pin_get_phase_adjust_gran: pin %s not found\n",
 			  package_label);
 		return 0;
 	}
 
 	if (pin_rsp._present.phase_adjust_gran &&
 	    pin_rsp.phase_adjust_gran > 0) {
-		LOG_DEBUG("pin %s phase_adjust_gran=%u ps\n",
+		pr_dbg("pin %s phase_adjust_gran=%u ps\n",
 			  package_label, pin_rsp.phase_adjust_gran);
 		return pin_rsp.phase_adjust_gran;
 	}
 
-	LOG_DEBUG("pin %s phase_adjust_gran not present\n", package_label);
+	pr_dbg("pin %s phase_adjust_gran not present\n", package_label);
 	return 0;
 #else
 	(void)ys;
@@ -438,10 +438,10 @@ int init_dpll()
 
 	ys = ynl_sock_create(&ynl_dpll_family, &yerr);
 	if (!ys) {
-		LOG_ERROR("Not able to create netlink socket: %s\n", yerr.msg);
+		pr_err("Not able to create netlink socket: %s\n", yerr.msg);
 		return 1;
 	}
-	LOG_INFO("Socket creation sucessful\n");
+	pr_info("Socket creation sucessful\n");
 
 	return 0;
 }
@@ -460,14 +460,14 @@ int dpll_find_device_id_by_type(struct ynl_sock *ys, enum dpll_type device_type)
 	int device_id = -1;
 
 	if (!ys) {
-		LOG_ERROR("dpll_find_device_id_by_type: YNL socket is NULL\n");
+		pr_err("dpll_find_device_id_by_type: YNL socket is NULL\n");
 		return -1;
 	}
 
 	/* Get list of all DPLL devices */
 	dev_list = dpll_device_get_dump(ys);
 	if (!dev_list) {
-		LOG_ERROR("Failed to get DPLL device list\n");
+		pr_err("Failed to get DPLL device list\n");
 		return -1;
 	}
 
@@ -479,7 +479,7 @@ int dpll_find_device_id_by_type(struct ynl_sock *ys, enum dpll_type device_type)
 			/* Also verify this belongs to the zl3073x module */
 			if (dev_iter->obj._present.module_name_len &&
 			    strcmp(dev_iter->obj.module_name, "zl3073x") != 0) {
-				LOG_DEBUG("Skipping device type %d id %d: module_name '%s' != 'zl3073x'\n",
+				pr_dbg("Skipping device type %d id %d: module_name '%s' != 'zl3073x'\n",
 					  device_type,
 						  dev_iter->obj._present.id ? (int)dev_iter->obj.id : -1,
 					  dev_iter->obj.module_name);
@@ -488,7 +488,7 @@ int dpll_find_device_id_by_type(struct ynl_sock *ys, enum dpll_type device_type)
 			}
 			if (dev_iter->obj._present.id) {
 				device_id = dev_iter->obj.id;
-				LOG_DEBUG("Found device type %d with ID: %d\n", device_type, device_id);
+				pr_dbg("Found device type %d with ID: %d\n", device_type, device_id);
 				break;
 			}
 		}
@@ -499,7 +499,7 @@ int dpll_find_device_id_by_type(struct ynl_sock *ys, enum dpll_type device_type)
 	dpll_device_get_list_free(dev_list);
 
 	if (device_id == -1) {
-		LOG_ERROR("No device of type %d found\n", device_type);
+		pr_err("No device of type %d found\n", device_type);
 	}
 
 	return device_id;
@@ -535,7 +535,7 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 
 	/* Check if YNL socket is valid */
 	if (!ys) {
-		LOG_ERROR("dpll_get_device_state_and_connected_pin: YNL socket is NULL\n");
+		pr_err("dpll_get_device_state_and_connected_pin: YNL socket is NULL\n");
 		return -1;
 	}
 
@@ -545,7 +545,7 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 
 	dev_rsp = dpll_device_get(ys, &dev_req);
 	if (!dev_rsp) {
-		LOG_ERROR("Failed to get DPLL device %u state\n", device_id);
+		pr_err("Failed to get DPLL device %u state\n", device_id);
 		return -1;
 	}
 
@@ -558,7 +558,7 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 		*mode = dev_rsp->mode;
 	}
 
-	LOG_DEBUG("DPLL Device %u: lock_status=%s, mode=%s\n",
+	pr_dbg("DPLL Device %u: lock_status=%s, mode=%s\n",
 	       device_id,
 	       dev_rsp->_present.lock_status ? 
 	           dpll_lock_status_str(dev_rsp->lock_status) : "unknown",
@@ -569,7 +569,7 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 	/* Get all pins and find the connected one */
 	pin_list_iter = dpll_pin_dump(ys, device_id);
 	if (!pin_list_iter) {
-		LOG_ERROR("Failed to get pin list\n");
+		pr_err("Failed to get pin list\n");
 		dpll_device_get_rsp_free(dev_rsp);
 		return -1;
 	}
@@ -628,12 +628,12 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 			if (pin_list_iter->obj.n_parent_device >= 2) {
 				parent_idx = 1;  /* Use 2nd parent device */
 				target_parent = &pin_list_iter->obj.parent_device[1];
-				LOG_DEBUG("Using 2nd DPLL parent device (index 1) for PTP pin\n");
+				pr_dbg("Using 2nd DPLL parent device (index 1) for PTP pin\n");
 			}
 			if (ptp_pin_state && target_parent) {
 				*ptp_pin_state = target_parent->state;
 			}
-			LOG_DEBUG("Found PTP Pin: id=%u, label=%s, parent_idx=%d, state=%s\n",
+			pr_dbg("Found PTP Pin: id=%u, label=%s, parent_idx=%d, state=%s\n",
 			         pin_list_iter->obj.id,
 			         current_pin_label ? current_pin_label : "unknown",
 			         parent_idx,
@@ -658,13 +658,13 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 
 			/* Log connected pin information */
 			if (matched_parent->_present.phase_offset) {
-				LOG_DEBUG("Connected Pin: id=%u, label=%s, state=%s, phase_offset=%lld ns\n",
+				pr_dbg("Connected Pin: id=%u, label=%s, state=%s, phase_offset=%lld ns\n",
 				       pin_list_iter->obj.id,
 				       pin_label ? pin_label : "unknown",
 				       dpll_pin_state_str(matched_parent->state),
 				       (long long)matched_parent->phase_offset);
 			} else {
-				LOG_DEBUG("Connected Pin: id=%u, label=%s, state=%s\n",
+				pr_dbg("Connected Pin: id=%u, label=%s, state=%s\n",
 				       pin_list_iter->obj.id,
 				       pin_label ? pin_label : "unknown",
 				       dpll_pin_state_str(matched_parent->state));
@@ -680,10 +680,10 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 	dpll_device_get_rsp_free(dev_rsp);
 
 	if (ret != 0) {
-		LOG_DEBUG("No connected pin found for device %u\n", device_id);
+		pr_dbg("No connected pin found for device %u\n", device_id);
 	} else {
 		if (connected_pin_id && connected_pin_source)
-			LOG_DEBUG("Connected PIN ID: %u PIN Source:%d\n", *connected_pin_id, *connected_pin_source);
+			pr_dbg("Connected PIN ID: %u PIN Source:%d\n", *connected_pin_id, *connected_pin_source);
 		else
 			return -1;
 	}

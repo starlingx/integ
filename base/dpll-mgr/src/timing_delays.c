@@ -162,7 +162,7 @@ static char *read_file_to_string(const char *filename)
 	long size;
 
 	if (!fp) {
-		LOG_ERROR("timing_delays: cannot open %s\n", filename);
+		pr_err("timing_delays: cannot open %s\n", filename);
 		return NULL;
 	}
 
@@ -171,20 +171,20 @@ static char *read_file_to_string(const char *filename)
 	fseek(fp, 0, SEEK_SET);
 
 	if (size <= 0) {
-		LOG_ERROR("timing_delays: invalid file size %ld\n", size);
+		pr_err("timing_delays: invalid file size %ld\n", size);
 		fclose(fp);
 		return NULL;
 	}
 
 	buf = malloc((size_t)size + 1);
 	if (!buf) {
-		LOG_ERROR("timing_delays: malloc failed\n");
+		pr_err("timing_delays: malloc failed\n");
 		fclose(fp);
 		return NULL;
 	}
 
 	if (fread(buf, 1, (size_t)size, fp) != (size_t)size) {
-		LOG_ERROR("timing_delays: read error on %s\n", filename);
+		pr_err("timing_delays: read error on %s\n", filename);
 		free(buf);
 		fclose(fp);
 		return NULL;
@@ -267,7 +267,7 @@ int timing_delays_init(const char *path)
 	json_str = read_file_to_string(path);
 	if (!json_str) {
 		/* File absent — not fatal; table stays zeroed */
-		LOG_ERROR("timing_delays: file not found: %s — delays set to 0\n",
+		pr_err("timing_delays: file not found: %s — delays set to 0\n",
 			 path);
 		return 0;
 	}
@@ -276,12 +276,12 @@ int timing_delays_init(const char *path)
 	free(json_str);
 
 	if (!root) {
-		LOG_ERROR("timing_delays: JSON parse error in %s\n", path);
+		pr_err("timing_delays: JSON parse error in %s\n", path);
 		return -1;
 	}
 
 	if (!cJSON_IsArray(root)) {
-		LOG_ERROR("timing_delays: expected JSON array in %s\n", path);
+		pr_err("timing_delays: expected JSON array in %s\n", path);
 		cJSON_Delete(root);
 		return -1;
 	}
@@ -302,7 +302,7 @@ int timing_delays_init(const char *path)
 		/* Map JSON label → hw_label + enum and store in indexed table */
 		m = json_label_lookup(entry.pin_name);
 		if (!m) {
-			LOG_INFO("timing_delays: skip %-12s — not in label_map"
+			pr_info("timing_delays: skip %-12s — not in label_map"
 				 " (no hardware pin match)\n",
 				  entry.pin_name);
 			if (++idx >= MAX_TIMING_DELAY_ENTRIES)
@@ -318,7 +318,7 @@ int timing_delays_init(const char *path)
 #ifndef DPLL_IP_TIMING_DELAY
 			/* Input (REF) compensation disabled — skip */
 			if (strncmp(entry.pin_name, "REF", 3) == 0) {
-				LOG_DEBUG("timing_delays: skip %-12s — IP compensation disabled\n",
+				pr_dbg("timing_delays: skip %-12s — IP compensation disabled\n",
 					  entry.pin_name);
 				continue;
 			}
@@ -326,13 +326,13 @@ int timing_delays_init(const char *path)
 #ifndef DPLL_OP_TIMING_DELAY
 			/* Output (OUT) compensation disabled — skip */
 			if (strncmp(entry.pin_name, "OUT", 3) == 0) {
-				LOG_DEBUG("timing_delays: skip %-12s — OP compensation disabled\n",
+				pr_dbg("timing_delays: skip %-12s — OP compensation disabled\n",
 					  entry.pin_name);
 				continue;
 			}
 #endif
 			g_timing_delays[src] = entry;
-			LOG_DEBUG("timing_delays: [%d] %-12s total=%d ps\n",
+			pr_dbg("timing_delays: [%d] %-12s total=%d ps\n",
 				  src, entry.pin_name, entry.total_ps);
 		}
 
@@ -341,7 +341,7 @@ int timing_delays_init(const char *path)
 	}
 
 	cJSON_Delete(root);
-	LOG_INFO("timing_delays: loaded %d entries from %s\n", idx, path);
+	pr_info("timing_delays: loaded %d entries from %s\n", idx, path);
 	return 0;
 }
 
@@ -349,13 +349,13 @@ void timing_delays_print(void)
 {
 	int i;
 
-	LOG_INFO("--- Timing Delay Table (indexed by pin_source) ---\n");
+	pr_info("--- Timing Delay Table (indexed by pin_source) ---\n");
 	for (i = 0; i <= PIN_SOURCE_INT_OSC; i++) {
 		const struct timing_delay_entry *e = &g_timing_delays[i];
 
 		if (e->pin_name[0] == '\0')
 			continue;
-		LOG_INFO("  [%2d] %-12s  module=%5d  mb=%5d  sys=%5d"
+		pr_info("  [%2d] %-12s  module=%5d  mb=%5d  sys=%5d"
 			 "  aic=%5d  adj=%5d  total=%5d  (ps)\n",
 			 i, e->pin_name,
 			 e->timing_module_ps, e->motherboard_ps,
@@ -406,11 +406,11 @@ int apply_timing_delays_phase_adjust(struct ynl_sock *dpll_sock)
 	int rc = 0;
 
 	if (!dpll_sock) {
-		LOG_ERROR("apply_timing_delays: DPLL socket not available\n");
+		pr_err("apply_timing_delays: DPLL socket not available\n");
 		return -1;
 	}
 
-	LOG_INFO("=== Applying timing-delay phase compensation ===\n");
+	pr_info("=== Applying timing-delay phase compensation ===\n");
 
 	for (i = 0; i <= PIN_SOURCE_INT_OSC; i++) {
 		const struct timing_delay_entry *e = &g_timing_delays[i];
@@ -420,7 +420,7 @@ int apply_timing_delays_phase_adjust(struct ynl_sock *dpll_sock)
 			continue;  /* no entry for this pin_source */
 
 		if (e->total_ps == 0) {
-			LOG_DEBUG("timing_delay: skip %-8s  total=0 ps\n",
+			pr_dbg("timing_delay: skip %-8s  total=0 ps\n",
 				  e->pin_name);
 			continue;
 		}
@@ -434,21 +434,21 @@ int apply_timing_delays_phase_adjust(struct ynl_sock *dpll_sock)
 			if (gran == 0) {
 				/* Pin not found or gran not reported — cannot safely
 				 * apply an unrounded value; skip this pin. */
-				LOG_ERROR("timing_delay: pin %-8s  phase_adjust_gran"
+				pr_err("timing_delay: pin %-8s  phase_adjust_gran"
 					  " unavailable — skipping phase adjust\n",
 					  e->pin_name);
 				rc = -1;
 				continue;
 			}
 			apply_ps = round_to_granularity(e->total_ps, gran);
-			LOG_INFO("timing_delay: pin %-8s  module=%5d  mb=%5d"
+			pr_info("timing_delay: pin %-8s  module=%5d  mb=%5d"
 				 "  adj=%5d  total=%5d  gran=%u  apply=%5d ps\n",
 				 e->pin_name,
 				 e->timing_module_ps, e->motherboard_ps,
 				 e->integrator_adj_ps, e->total_ps,
 				 gran, apply_ps);
 		} else {
-			LOG_INFO("timing_delay: pin %-8s  module=%5d  mb=%5d"
+			pr_info("timing_delay: pin %-8s  module=%5d  mb=%5d"
 				 "  adj=%5d  total=%5d  apply=%5d ps\n",
 				 e->pin_name,
 				 e->timing_module_ps, e->motherboard_ps,
@@ -458,7 +458,7 @@ int apply_timing_delays_phase_adjust(struct ynl_sock *dpll_sock)
 		if (dpll_pin_set_phase_adjust(dpll_sock,
 					      (char *)e->pin_name,
 					      (__s64)apply_ps) == (__s64)-1) {
-			LOG_ERROR("timing_delay: failed to set phase adjust "
+			pr_err("timing_delay: failed to set phase adjust "
 				  "for pin %s (%d ps)\n",
 				  e->pin_name, apply_ps);
 			rc = -1;
@@ -466,6 +466,6 @@ int apply_timing_delays_phase_adjust(struct ynl_sock *dpll_sock)
 		}
 	}
 
-	LOG_INFO("=== Timing-delay phase compensation complete ===\n");
+	pr_info("=== Timing-delay phase compensation complete ===\n");
 	return rc;
 }

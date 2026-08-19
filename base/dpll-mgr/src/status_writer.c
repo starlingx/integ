@@ -90,7 +90,7 @@ void write_status_json(const AppState *state)
 {
     cJSON *root = cJSON_CreateObject();
     if (!root) {
-        LOG_ERROR("Failed to create JSON object for status file\n");
+        pr_err("Failed to create JSON object for status file\n");
         return;
     }
 
@@ -165,11 +165,11 @@ void write_status_json(const AppState *state)
             fputc('\n', f);
             fclose(f);
             if (rename(STATUS_FILE_TMP, STATUS_FILE_PATH) != 0) {
-                LOG_ERROR("Failed to rename status file: %s\n",
+                pr_err("Failed to rename status file: %s\n",
                           strerror(errno));
             }
         } else {
-            LOG_ERROR("Failed to open status tmp file: %s\n",
+            pr_err("Failed to open status tmp file: %s\n",
                       strerror(errno));
         }
         cJSON_free(json_str);
