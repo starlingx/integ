@@ -156,6 +156,26 @@ void write_status_json(const AppState *state)
     /* Boot grace: consumers suppress "unlocked" alarm until ever_locked=true */
     cJSON_AddBoolToObject(root, "ever_locked", state->ever_locked);
 
+    /* Per-pin DPLL state — shows each configured pin's state and priority */
+    cJSON *pins = cJSON_CreateObject();
+    for (int i = 0; i <= PIN_SOURCE_INT_OSC; i++) {
+        if (!state->pin_states[i].valid)
+            continue;
+        cJSON *pin_obj = cJSON_CreateObject();
+        const char *state_str;
+        switch (state->pin_states[i].state) {
+        case DPLL_PIN_STATE_CONNECTED:    state_str = "connected"; break;
+        case DPLL_PIN_STATE_SELECTABLE:   state_str = "selectable"; break;
+        case DPLL_PIN_STATE_DISCONNECTED: state_str = "disconnected"; break;
+        default:                          state_str = "unknown"; break;
+        }
+        cJSON_AddStringToObject(pin_obj, "state", state_str);
+        cJSON_AddNumberToObject(pin_obj, "priority",
+                                (double)state->pin_states[i].priority);
+        cJSON_AddItemToObject(pins, pin_source_to_string((enum pin_source)i), pin_obj);
+    }
+    cJSON_AddItemToObject(root, "pins", pins);
+
     /* Atomic write: .tmp -> rename */
     char *json_str = cJSON_PrintUnformatted(root);
     if (json_str) {

@@ -860,39 +860,40 @@ void read_clock_parameters_from_master(AppState *state, struct ynl_sock *dpll_so
         enum pin_source ptp_idx = master_index;
         pr_info("Reading clock parameters from PTP master (index: %s)\n",
                  pin_source_to_string(ptp_idx));
-#ifndef STATIC_PARAMS_FROM_CONFIG
-        /* Dynamic mode: query ptp4l via PMC GET requests to update clock_params */
-        req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                       MGMT_ID_PARENT_DATA_SET, &state->local_sequence_id);
-        if (req_ret != 0) {
-            pr_err("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", req_ret);
-            goto last;
+        /* Always query ptp4l for PTP sources — clockClass depends on upstream GM.
+         * STATIC_PARAMS_FROM_CONFIG only applies to GNSS/holdover (truly static).
+         * Without this, clock_params[ptp_idx].gm_clock_class stays 0 and
+         * forward_clock_parameters() sends clockClass=0 to fronthaul ptp4l,
+         * causing it to fall back to default 248 (free-running). */
+        {
+            int ptp_req_ret;
+            ptp_req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
+                           MGMT_ID_PARENT_DATA_SET, &state->local_sequence_id);
+            if (ptp_req_ret != 0) {
+                pr_err("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", ptp_req_ret);
+                goto last;
+            }
+            usleep(100000);  /* 100ms delay */
+            process_ptp_messages(state);
+
+            ptp_req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
+                           MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
+            if (ptp_req_ret != 0) {
+                pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", ptp_req_ret);
+                goto last;
+            }
+            usleep(100000);  /* 100ms delay */
+            process_ptp_messages(state);
+
+            ptp_req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
+                           MGMT_ID_PORT_DATA_SET, &state->local_sequence_id);
+            if (ptp_req_ret != 0) {
+                pr_err("Failed to send PORT_DATA_SET GET request (ret=%d)\n", ptp_req_ret);
+                goto last;
+            }
+            usleep(100000);  /* 100ms delay */
+            process_ptp_messages(state);
         }
-        usleep(100000);  /* 100ms delay */
-        process_ptp_messages(state);
-        
-        req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                       MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
-        if (req_ret != 0) {
-            pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
-            goto last;
-        }
-        usleep(100000);  /* 100ms delay */
-        process_ptp_messages(state);
-        
-        req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                       MGMT_ID_PORT_DATA_SET, &state->local_sequence_id);
-        if (req_ret != 0) {
-            pr_err("Failed to send PORT_DATA_SET GET request (ret=%d)\n", req_ret);
-            goto last;
-        }
-        usleep(100000);  /* 100ms delay */
-        process_ptp_messages(state);
-#else
-        /* Static mode: clock_params already populated from config — skip PTP queries */
-        pr_dbg("STATIC_PARAMS_FROM_CONFIG: using config-loaded parameters for PTP source %s\n",
-                 pin_source_to_string(ptp_idx));
-#endif  /* STATIC_PARAMS_FROM_CONFIG */
         dump_clock_parameters(&state->clock_params[ptp_idx], ptp_idx);
     }
     else if (master_index == PIN_SOURCE_UNKNOWN) {
@@ -911,6 +912,57 @@ last:
 }
 
 /**
+ * update_pin_states - Refresh per-pin DPLL state cache for status.json
+ * @state: Application state
+ * @dpll_sock: DPLL netlink socket
+ *
+ * Iterates configured pins in the EEC priority table and queries their
+ * current state from the DPLL subsystem.  Results cached in state->pin_states[].
+ */
+static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
+{
+    if (!dpll_sock)
+        return;
+
+    /* Clear all valid flags */
+    for (int i = 0; i <= PIN_SOURCE_INT_OSC; i++)
+        state->pin_states[i].valid = false;
+
+    /* Iterate EEC priority table — these are the configured input pins */
+    for (int i = 0; i < 16; i++) {
+        if (state->eec_priority_table[i].pin_name[0] == '\0')
+            continue;
+
+        enum pin_source src = pin_name_to_enum(state->eec_priority_table[i].pin_name);
+        if (src == PIN_SOURCE_UNKNOWN || src > PIN_SOURCE_INT_OSC)
+            continue;
+
+        state->pin_states[src].priority = state->eec_priority_table[i].priority;
+        state->pin_states[src].valid = true;
+
+        /* Derive state from what we already know:
+         * - connected_pin matches this source → CONNECTED
+         * - For PTP pins, ptp_pin_state is tracked
+         * - Otherwise mark as SELECTABLE (default for configured pins) */
+        if (state->lock_status == DPLL_LOCK_STATUS_LOCKED ||
+            state->lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ) {
+            if (state->current_master == src) {
+                state->pin_states[src].state = DPLL_PIN_STATE_CONNECTED;
+            } else if (is_ptp_pin(src)) {
+                state->pin_states[src].state = state->ptp_pin_state;
+            } else {
+                state->pin_states[src].state = DPLL_PIN_STATE_SELECTABLE;
+            }
+        } else if (state->lock_status == DPLL_LOCK_STATUS_HOLDOVER) {
+            /* In holdover all pins are effectively disconnected */
+            state->pin_states[src].state = DPLL_PIN_STATE_DISCONNECTED;
+        } else {
+            state->pin_states[src].state = DPLL_PIN_STATE_DISCONNECTED;
+        }
+    }
+}
+
+/**
  * process_dpll_master_state - Determine current master and handle failover
  * @state: Application state
  * @dpll_sock: DPLL netlink socket
@@ -922,6 +974,7 @@ last:
 void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock)
 {
     determine_current_master(state, dpll_sock);
+    update_pin_states(state, dpll_sock);
 
     /* Detect lock status change (independent of master change) */
     if (state->lock_status != state->prev_lock_status) {
@@ -1677,6 +1730,7 @@ int main(int argc, char *argv[])
     }
     state.prev_lock_status = state.lock_status;
 
+    update_pin_states(&state, dpll_sock);
     write_status_json(&state);
     pr_info("Initial status.json written to %s\n", STATUS_FILE_PATH);
 
