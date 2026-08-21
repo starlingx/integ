@@ -267,6 +267,13 @@ typedef struct {
     PinPriorityEntry eec_priority_table[16];  /* DPLL0_FREQ map for EEC device */
     PinPriorityEntry pps_priority_table[16];  /* DPLL1_PHASE map for PPS device */
 
+    /* Per-pin DPLL state cache — updated by dpll_get_device_state_and_connected_pin() */
+    struct {
+        enum dpll_pin_state state;  /* CONNECTED/SELECTABLE/DISCONNECTED */
+        int priority;               /* Pin priority on EEC device (-1=unset) */
+        bool valid;                 /* True if this pin was seen in last dump */
+    } pin_states[PIN_SOURCE_INT_OSC + 1];
+
     int ts2phc_socket_fd;                /* Bound socket for ts2phc gearshift (SW_BASED) */
     struct sockaddr_un ts2phc_peer_addr; /* ts2phc UDS peer address (ts2_0 channel) */
 
