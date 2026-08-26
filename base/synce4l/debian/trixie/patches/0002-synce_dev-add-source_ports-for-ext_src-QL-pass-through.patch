@@ -1,6 +1,6 @@
-From c4d5e6f7a8b9012345678abcdef0123456789abc Mon Sep 17 00:00:00 2001
+From de75f08a0439f160d377f9813bd4af3de75a1cfe Mon Sep 17 00:00:00 2001
 From: Caio Bruchert <caio.bruchert@windriver.com>
-Date: Thu, 7 Aug 2026 15:00:00 -0300
+Date: Tue, 25 Aug 2026 08:24:05 -0300
 Subject: [PATCH] synce_dev: add source_ports for ext_src QL pass-through
 
 On E825/GNR-D platforms in DPLL netlink mode, the recovered clock
@@ -13,7 +13,8 @@ Add a source_ports config parameter to ext_src sections. When set,
 dev_step_dpll() reads the live RX QL from the listed ports on every
 step and updates ext_src->ql and port->ql_forced when it changes,
 triggering a TX TLV rebuild. Multiple ports can be specified
-(comma-separated); the first non-DNU port is used.
+(comma-separated); the port with the best QL (per network option
+priority list) is selected.
 
 When all source_ports are DNU or failed, DNU is transmitted on all
 ports once (matching the behavior when a source is lost). A flag
@@ -45,11 +46,16 @@ Config example (DPLL netlink mode):
 
 Signed-off-by: Caio Bruchert <caio.bruchert@windriver.com>
 ---
+ config.c        |   1 +
+ synce_dev.c     | 172 ++++++++++++++++++++++++++++++++++++++++++++++--
+ synce_ext_src.c |   1 +
+ synce_ext_src.h |   2 +
+ 4 files changed, 170 insertions(+), 6 deletions(-)
 
-diff --git i/config.c w/config.c
+diff --git a/config.c b/config.c
 index 274c2d3..f90c94e 100644
---- i/config.c
-+++ w/config.c
+--- a/config.c
++++ b/config.c
 @@ -210,6 +210,7 @@ struct config_item config_tab_synce[] = {
  	EXT_ITEM_INT("input_ext_QL", 0, 0, 255),
  	EXT_ITEM_STR("external_enable_cmd", NULL),
@@ -58,11 +64,11 @@ index 274c2d3..f90c94e 100644
  	SRC_ITEM_INT("internal_prio", 128, 0, 255),
  };
  
-diff --git i/synce_dev.c w/synce_dev.c
-index 5e2bbb9..e424619 100644
---- i/synce_dev.c
-+++ w/synce_dev.c
-@@ -644,6 +644,47 @@ free_out:
+diff --git a/synce_dev.c b/synce_dev.c
+index 5e2bbb9..9622b4f 100644
+--- a/synce_dev.c
++++ b/synce_dev.c
+@@ -644,6 +644,78 @@ free_out:
  	return ret;
  }
  
@@ -93,8 +99,15 @@ index 5e2bbb9..e424619 100644
 +						const char *source_ports)
 +{
 +	struct synce_clock_source *c;
++	struct synce_port *best_port = NULL;
++	int best_idx = -1;
++	const uint16_t *plist = NULL;
++	int plist_count = 0;
 +
 +	LIST_FOREACH(c, &dev->clock_sources, list) {
++		uint16_t ql_prio;
++		int i;
++
 +		if (c->type != PORT)
 +			continue;
 +		if (!port_name_in_list(c->port->name, source_ports))
@@ -102,15 +115,39 @@ index 5e2bbb9..e424619 100644
 +		if (synce_port_is_rx_dnu(c->port) ||
 +		    synce_port_rx_ql_failed(c->port))
 +			continue;
-+		return c->port;
++
++		ql_prio = get_ql_priority(c->port->pc);
++
++		/* get priority list from first valid port */
++		if (!plist) {
++			plist_count = get_priority_params(c->port->pc, &plist);
++			if (!plist || plist_count == 0)
++				return c->port;
++		}
++
++		/* find index in priority list (lower index = better QL) */
++		for (i = 0; i < plist_count; i++) {
++			if (plist[i] == ql_prio)
++				break;
++		}
++
++		/* QL not in priority list - skip this port */
++		if (i >= plist_count)
++			continue;
++
++		if (best_idx < 0 || i < best_idx) {
++			best_idx = i;
++			best_port = c->port;
++		}
 +	}
-+	return NULL;
++
++	return best_port;
 +}
 +
  static int dev_step_dpll(struct synce_dev *dev)
  {
  	struct synce_clock_source *c, *active = NULL;
-@@ -666,8 +707,59 @@ static int dev_step_dpll(struct synce_dev *dev)
+@@ -666,8 +738,59 @@ static int dev_step_dpll(struct synce_dev *dev)
  		}
  	}
  
@@ -171,7 +208,7 @@ index 5e2bbb9..e424619 100644
  	if (!active && dev->best_source) {
  		pr_info("EEC_HOLDOVER on %s", dev->name);
  		dev->best_source = NULL;
-@@ -715,10 +807,21 @@ void synce_dev_get_ql(struct synce_dev *dev, uint8_t *ql)
+@@ -715,10 +838,21 @@ void synce_dev_get_ql(struct synce_dev *dev, uint8_t *ql)
  		return;
  
  	best = dev->best_source;
@@ -195,7 +232,7 @@ index 5e2bbb9..e424619 100644
  }
  
  void synce_dev_get_ext_ql(struct synce_dev *dev, uint8_t *ext_ql)
-@@ -740,6 +843,19 @@ void synce_dev_get_ext_ql(struct synce_dev *dev, uint8_t *ext_ql)
+@@ -740,6 +874,19 @@ void synce_dev_get_ext_ql(struct synce_dev *dev, uint8_t *ext_ql)
  		if (!err)
  			*ext_ql = ext_ql_msg.enhancedSsmCode;
  	} else {
@@ -215,7 +252,7 @@ index 5e2bbb9..e424619 100644
  		*ext_ql = best->ext_src->ext_ql;
  	}
  }
-@@ -759,7 +875,8 @@ int synce_dev_check_ext_src_name(struct synce_dev *dev, char *ext_src_name)
+@@ -759,7 +906,8 @@ int synce_dev_check_ext_src_name(struct synce_dev *dev, char *ext_src_name)
  void synce_dev_set_ext_src_ql(struct synce_dev *dev, char *ext_src_name,
  			      int extended, int ql)
  {
@@ -225,7 +262,7 @@ index 5e2bbb9..e424619 100644
  
  	LIST_FOREACH(c, &dev->clock_sources, list) {
  		if (c->type == EXT_SRC) {
-@@ -768,14 +885,26 @@ void synce_dev_set_ext_src_ql(struct synce_dev *dev, char *ext_src_name,
+@@ -768,14 +916,26 @@ void synce_dev_set_ext_src_ql(struct synce_dev *dev, char *ext_src_name,
  					c->ext_src->ql = ql;
  				else
  					c->ext_src->ext_ql = ql;
@@ -254,10 +291,10 @@ index 5e2bbb9..e424619 100644
  }
  
  int synce_dev_init(struct synce_dev *dev, struct config *cfg)
-diff --git i/synce_ext_src.c w/synce_ext_src.c
+diff --git a/synce_ext_src.c b/synce_ext_src.c
 index c3f32d4..d013e90 100644
---- i/synce_ext_src.c
-+++ w/synce_ext_src.c
+--- a/synce_ext_src.c
++++ b/synce_ext_src.c
 @@ -81,6 +81,7 @@ int synce_ext_src_init(struct synce_ext_src *ext_src, struct config *cfg,
  	ext_src->board_label = config_get_string(cfg, ext_src->name, "board_label");
  	ext_src->panel_label = config_get_string(cfg, ext_src->name, "panel_label");
@@ -266,10 +303,10 @@ index c3f32d4..d013e90 100644
  
  	if (dpll_mon) {
  		ext_src->pin = dpll_mon_add_pin(dpll_mon, ext_src->board_label,
-diff --git i/synce_ext_src.h w/synce_ext_src.h
+diff --git a/synce_ext_src.h b/synce_ext_src.h
 index 8736248..b4a7a00 100644
---- i/synce_ext_src.h
-+++ w/synce_ext_src.h
+--- a/synce_ext_src.h
++++ b/synce_ext_src.h
 @@ -26,6 +26,8 @@ struct synce_ext_src {
  	char *board_label;
  	char *panel_label;
@@ -279,3 +316,6 @@ index 8736248..b4a7a00 100644
  	uint32_t pin_id;
  	const uint16_t *priority_list;
  	int priority_list_count;
+-- 
+2.53.0
+
