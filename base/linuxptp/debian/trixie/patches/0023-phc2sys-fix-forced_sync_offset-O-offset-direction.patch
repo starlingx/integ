@@ -1,0 +1,51 @@
+From 41af5ef519461e67eddab91372ccde10ae879d24 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Mon, 24 Aug 2026 19:18:02 -0300
+Subject: [PATCH 23/23] phc2sys: fix forced_sync_offset (-O) offset direction
+
+When forced_sync_offset is set via -O, the value itself was used as the
+direction multiplier in get_sync_offset(). Since -O 37 stores 37 and
+-O -37 stores -37, this caused incorrect scaling of the sync offset.
+
+Fix by treating forced_sync_offset as a boolean flag: if set, use
+direction = 1 (forward sync); otherwise, derive direction from the
+is_utc flags of source and destination clocks.
+
+Test Plan:
+PASS: phc2sys -s <interface> -O 37
+      -> CLOCK_REALTIME (UTC) - PHC (TAI) = -37
+      -> CLOCK_TAI = CLOCK_REALTIME
+PASS: phc2sys -s <interface> -O 37 -V
+      -> CLOCK_REALTIME (UTC) - PHC (TAI) = -37
+      -> CLOCK_TAI = CLOCK_REALTIME + 37s
+PASS: phc2sys -s <interface> -w sets CLOCK_TAI when UTC offset is
+     traceable
+      -> CLOCK_REALTIME (UTC) - PHC (TAI) = -37
+      -> CLOCK_TAI = CLOCK_REALTIME + 37s
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 83cebb4..d3649cc 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1329,9 +1329,10 @@ static void reconfigure(struct domain *domains, int n_domains)
+ 
+ static int64_t get_sync_offset(struct domain *domain, struct clock *dst)
+ {
+-	int direction = domain->forced_sync_offset;
+-
+-	if (!direction)
++	int direction;
++	if (domain->forced_sync_offset)
++		direction = 1;
++	else
+ 		direction = dst->is_utc - domain->src_clock->is_utc;
+ 	return (int64_t)dst->sync_offset * NS_PER_SEC * direction;
+ }
+-- 
+2.34.1
+

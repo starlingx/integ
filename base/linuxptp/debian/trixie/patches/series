@@ -20,3 +20,4 @@
 0020-ts2phc-cherry-pick-seed_system_time-from-linuxptp-4.4.patch
 0021-Fix-HA-clock-selection-after-ptp4l-instance-outage.patch
 0022-GM-L3-BC1-L2-BC2-BC1-ClockClass-remains-6-after-GM-loss.patch
+0023-phc2sys-fix-forced_sync_offset-O-offset-direction.patch
