@@ -1,0 +1,3 @@
+BUILDER=docker
+LABEL=multus-cni
+DOCKER_FILE=./docker/Dockerfile
