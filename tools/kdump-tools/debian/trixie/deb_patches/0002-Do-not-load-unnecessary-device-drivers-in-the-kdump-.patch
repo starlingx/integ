@@ -1,12 +1,17 @@
-From 7ba4526c64ef752d94382e44eae6ae1a6002aa95 Mon Sep 17 00:00:00 2001
+From 77d52338b1cb4cf9f215310357f049b6e6bd2231 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Sun, 17 Sep 2023 18:13:46 -0700
-Subject: [PATCH] Do not load unnecessary device drivers in the kdump initramfs
+Subject: [PATCH 2/3] Do not load unnecessary device drivers in the kdump
+ initramfs
 
 Make vmcore collection more reliable
 
 This patch makes kernel crash dump (vmcore) collection more reliable by making
 the following changes to the kdump configuration:
+
+- We don't need pci AER functionality enabled in the kdump kernel,
+  and it causes some boards to hang in certain situations. So just
+  disable it.
 
 - systemd.mask=systemd-sysctl.service kernel command line argument is utilized
   to avoid applying sysctl settings in kdump sessions. One problematic sysctl
@@ -53,33 +58,21 @@ the following changes to the kdump configuration:
 
 Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
 ---
- debian/kdump-tools-dump.service | 2 --
- debian/rules                    | 5 ++++-
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ debian/rules | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/debian/kdump-tools-dump.service b/debian/kdump-tools-dump.service
-index 6f701c2..9c4068d 100644
---- a/debian/kdump-tools-dump.service
-+++ b/debian/kdump-tools-dump.service
-@@ -1,7 +1,5 @@
- [Unit]
- Description=Kernel crash dump capture service
--Wants=network-online.target
--After=network-online.target
- 
- [Service]
- Type=oneshot
 diff --git a/debian/rules b/debian/rules
-index b428331..258419b 100755
+index 537430e..1db33eb 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -14,7 +14,10 @@ ifeq ($(DEB_HOST_ARCH),arm64)
  else ifeq ($(DEB_HOST_ARCH),ppc64el)
- 	KDUMP_CMDLINE_APPEND += maxcpus=1 irqpoll noirqdistrib nousb
+ 	KDUMP_CMDLINE_APPEND += maxcpus=1 irqpoll noirqdistrib usbcore.nousb
  else
--	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll nousb ata_piix.prefer_ms_hyperv=0 pci=noaer
-+	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll usbcore.nousb ata_piix.prefer_ms_hyperv=0 pci=noaer
+-	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll usbcore.nousb
++	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll usbcore.nousb pci=noaer
 +	KDUMP_CMDLINE_APPEND += module_blacklist=ice,i40e,iavf,bnxt_en,bnxt_re,ib_core,mlx5_core,mlx5_ib,mlx_compat,vfio,oct_ep_phc,e1000e,ixgbe,ixgbevf,drbd,tg3,igb
 +	KDUMP_CMDLINE_APPEND += cgroup_disable=memory transparent_hugepage=never systemd.mask=systemd-sysctl.service systemd.mask=networking.service
 +	KDUMP_CMDLINE_APPEND += systemd.mask=iscsid.service udev.children_max=2
@@ -87,5 +80,5 @@ index b428331..258419b 100755
  
  %:
 -- 
-2.40.0
+2.47.3
 

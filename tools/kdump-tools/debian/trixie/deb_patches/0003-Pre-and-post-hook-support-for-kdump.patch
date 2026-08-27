@@ -1,7 +1,7 @@
-From 58a2ed10e5f53a2ce568e351458309b7b5cadae5 Mon Sep 17 00:00:00 2001
+From f3d223e1369a472895f266db2cdd244ab10a4e94 Mon Sep 17 00:00:00 2001
 From: sshathee <shunmugam.shatheesh@windriver.com>
 Date: Thu, 6 Nov 2025 15:41:56 +0000
-Subject: [PATCH] Pre and post hook support for kdump
+Subject: [PATCH 3/3] Pre and post hook support for kdump
 
 This commit creates pre and post hook directories in
 debian package. It adds pre and post hook script support
@@ -79,5 +79,5 @@ index 9381e54..d9c28cc 100755
  			reboot -f ;
  		fi
 -- 
-2.34.1
+2.47.3
 
