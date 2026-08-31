@@ -625,7 +625,8 @@ extern void syncLuksVolume();
 extern int handleResize(std::string &passphrase, std::string &volName);
 extern int initialVolCreate(std::string &passphrase, std::string &volName);
 extern void monitorLUKSVolume(bool isController,
-                              const std::string &volumeName);
+                              const std::string &volumeName,
+                              PassphraseGenerator *generator);
 extern const char *pidFileName;
 extern const char *configFile;
 extern const char *createdConfigFile;
@@ -697,7 +698,7 @@ void test_syncLuksVolume_active_controller0() {
 void test_monitorLUKSVolume_sw_version_fail() {
     reset_mocks();
     set_env("MOCK_POPEN_NULL", "1");
-    monitorLUKSVolume(false, "luks_vol");
+    monitorLUKSVolume(false, "luks_vol", nullptr);
     /* popen NULL -> getSoftwareVersion returns "" -> early return with error log */
     ASSERT_STR_CONTAINS(mock_get_last_syslog_msg(), "software version");
     ASSERT_EQ(mock_get_last_syslog_priority(), LOG_ERR);
@@ -711,7 +712,7 @@ void test_monitorLUKSVolume_not_controller() {
     set_env("MOCK_PCLOSE_RC", "0");
     set_env("MOCK_SYSTEM_RC", "0");
     set_env("MOCK_ACCESS_RC", "-1");
-    monitorLUKSVolume(false, "luks_vol");
+    monitorLUKSVolume(false, "luks_vol", nullptr);
     /* isController=false -> logs "Not a controller node" and breaks */
     ASSERT_STR_CONTAINS(mock_get_last_syslog_msg(), "Not a controller");
     /* cryptsetup status was called (system) */
@@ -724,7 +725,7 @@ void test_monitorLUKSVolume_status_fail() {
     set_env("MOCK_PCLOSE_RC", "0");
     set_env("MOCK_SYSTEM_RC", "1");
     set_env("MOCK_ACCESS_RC", "-1");
-    monitorLUKSVolume(true, "luks_vol");
+    monitorLUKSVolume(true, "luks_vol", nullptr);
     /* system returns 1 -> cryptsetup status fails -> logs error and breaks */
     ASSERT_STR_CONTAINS(mock_get_last_syslog_msg(), "not in use");
     ASSERT_EQ(mock_get_last_syslog_priority(), LOG_ERR);
@@ -1043,7 +1044,7 @@ void test_monitorLUKSVolume_controller_with_access() {
     set_env("MOCK_SYSTEM_RC", "1");
     set_env("MOCK_ACCESS_RC", "0");
     exitFlag.store(false);
-    monitorLUKSVolume(true, "luks_vol");
+    monitorLUKSVolume(true, "luks_vol", nullptr);
     /* cryptsetup status failed -> logged "not in use" -> broke out of loop */
     ASSERT_STR_CONTAINS(mock_get_last_syslog_msg(), "not in use");
     ASSERT_EQ(mock_get_system_count(), 1);
@@ -1345,7 +1346,7 @@ void test_monitorLUKSVolume_controller_status_ok_sync_fail() {
     set_env("MOCK_ACCESS_RC", "-1");
     unsetenv("MOCK_POPEN_NULL");
     exitFlag.store(false);
-    monitorLUKSVolume(true, "luks_vol");
+    monitorLUKSVolume(true, "luks_vol", nullptr);
     /* First iteration: status ok, sync ok. Second: status fails -> break */
     ASSERT_EQ(mock_get_system_count(), 2);
     ASSERT_STR_CONTAINS(mock_get_last_syslog_msg(), "not in use");
@@ -1364,7 +1365,7 @@ void test_monitorLUKSVolume_controller_delete_platform_file() {
     set_env("MOCK_ACCESS_SEQ", "-1,0,-1");
     unsetenv("MOCK_POPEN_NULL");
     exitFlag.store(false);
-    monitorLUKSVolume(true, "luks_vol");
+    monitorLUKSVolume(true, "luks_vol", nullptr);
     /* Should have called system() twice (first ok, second fails) */
     ASSERT_EQ(mock_get_system_count(), 2);
     /* getSoftwareVersion + rm command = at least 2 popen calls */

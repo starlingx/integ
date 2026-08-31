@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Wind River Systems, Inc.
+ * Copyright (c) 2023,2026 Wind River Systems, Inc.
 *
 * SPDX-License-Identifier: Apache-2.0
 *
@@ -18,7 +18,8 @@
 #include <memory>
 
 enum PassphraseMechanism {
-    HWID_Firmware,
+    HWID_Firmware,          // legacy: SHA256(uuid + baseboard + chassis)
+    HWID_SystemUUID,        // new: SHA256(system-uuid)
     SGX_EncryptedFile,
     TPM_EncryptedFile
 };
@@ -26,7 +27,12 @@ enum PassphraseMechanism {
 // PassphraseGenerator abstract class
 class PassphraseGenerator {
  public:
+    virtual ~PassphraseGenerator() = default;
     virtual bool generatePassphrase(std::string &shaPhrase) = 0;
+    virtual bool generateLegacyPassphrase(std::string &shaPhrase) {
+        (void)shaPhrase;
+        return false;
+    }
 };
 
 class PassphraseGeneratorFactory {
