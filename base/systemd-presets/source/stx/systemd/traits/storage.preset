@@ -35,6 +35,9 @@ disable rpc-statd.service
 disable rpc-statd-notify.service
 enable nfs-common.service
 
+# 00-openbao.preset
+disable openbao.service
+
 # 00-sm-api.preset
 disable sm-api.service
 
