@@ -194,10 +194,17 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
             } else {
                 pr_err("Subscription request failed\n");
             }
+            /* Signal 2: 2 consecutive ENOENT -> port down */
+            ptp_note_subscription_result(state, ret != 0);
         }
 #endif
 
         process_ptp_messages(state);
+
+        /* Signal 1: RX-silence backstop for a wedged ptp4l.
+         * Outside the ENABLE_PTP_SUBSCRIPTION guard so liveness works even if
+         * subscription is compiled out. */
+        ptp_check_liveness(state);
 
         /* Re-evaluate holdover tiers on poll timeout. During holdover, no
          * DPLL notifications arrive (hardware state is static), so tier

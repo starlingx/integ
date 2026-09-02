@@ -1063,6 +1063,53 @@ static void handle_ptp_port_down(AppState *state)
 }
 
 /**
+ * ptp_check_liveness - Signal 1: RX-silence backstop.
+ *
+ * Detects a wedged-but-alive ptp4l (UDS socket still present, so no ENOENT,
+ * but no replies) that Signal 2 cannot see. If no PTP message has been received
+ * for more than PTP_LIVENESS_TIMEOUT_SEC, treat the port as down. Idempotent via
+ * the sticky ptp_port_down flag, so it is safe to call every loop iteration and
+ * safe alongside Signal 2. Call AFTER process_ptp_messages().
+ */
+void ptp_check_liveness(AppState *state)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if (!state->ptp_port_down &&
+        (now.tv_sec - state->last_ptp_rx_time.tv_sec) > PTP_LIVENESS_TIMEOUT_SEC) {
+        pr_info("No PTP messages from ptp4l for >%ds - treating port as down\n",
+                PTP_LIVENESS_TIMEOUT_SEC);
+        state->ptp_port_down = true;
+        handle_ptp_port_down(state);
+    }
+}
+
+/**
+ * ptp_note_subscription_result - Signal 2: ENOENT counter.
+ * @send_ok: true if send_subscription_request() succeeded.
+ *
+ * When ptp4l dies its UDS socket file vanishes, so the subscription-renewal
+ * sendto fails (ENOENT). On failure this increments a consecutive-failure count
+ * and, after 2 consecutive failures (deterministic dead ptp4l), treats the port
+ * as down. A successful send resets the count. Idempotent via the sticky
+ * ptp_port_down flag. Call from the subscription-renewal block.
+ */
+void ptp_note_subscription_result(AppState *state, bool send_ok)
+{
+    if (send_ok) {
+        state->subscription_fail_count = 0;
+        return;
+    }
+    state->subscription_fail_count++;
+    if (state->subscription_fail_count >= 2 && !state->ptp_port_down) {
+        pr_info("ptp4l subscription send failed x%d (socket gone) - "
+                "treating port as down\n", state->subscription_fail_count);
+        state->ptp_port_down = true;
+        handle_ptp_port_down(state);
+    }
+}
+
+/**
  * Process PORT_DATA_SET response
  * Handles port state changes and triggers parameter forwarding on MASTER transition
  */
@@ -1138,6 +1185,11 @@ void process_port_data_set(AppState *state, uint16_t mgmt_id,
         pr_info("PTP port recovered to %s: re-enabling PTP pins\n",
                  state_str[new_port_state]);
         state->ptp_port_down = false;
+        /* Clear the subscription-failure counter so a single transient renewal
+         * failure right after recovery cannot immediately re-trip the
+         * 2-strike port-down signal (send can return false on EAGAIN/partial
+         * send, not only on a gone socket). */
+        state->subscription_fail_count = 0;
         handle_ptp_port_up(state);
     }
 
@@ -1179,7 +1231,11 @@ void process_ptp_messages(AppState *state)
         pr_err("Receive error: %s\n", strerror(errno));
         return;
     }
-    
+
+    /* Liveness (Signal 1): record that ptp4l is talking to us.
+     * ptp_check_liveness() uses this to detect a wedged ptp4l. */
+    clock_gettime(CLOCK_MONOTONIC, &state->last_ptp_rx_time);
+
 #ifdef HEX_DUMP
     /* Debug: print received message hex dump */
     pr_dbg("\nReceived %zd bytes:\n", len);

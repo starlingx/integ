@@ -33,10 +33,11 @@
  * @file dpll_manager_poll.c
  * @brief Polling-based main loop for APTS Manager
  *
- * Compiled when BUILD_MODE=poll (default).
- * Polls DPLL state every 8 ms (~125 Hz) and processes ptp4l management
- * messages on every iteration.  On a master transition, triggers gearshift
- * and clock parameter refresh via process_dpll_master_state().
+ * Compiled when BUILD_MODE=poll (legacy/non-stock; the shipped default is
+ * BUILD_MODE=event, see Makefile). Polls DPLL state every 8 ms (~125 Hz) and
+ * processes ptp4l management messages on every iteration.  On a master
+ * transition, triggers gearshift and clock parameter refresh via
+ * process_dpll_master_state().
  */
 
 #define _DEFAULT_SOURCE
@@ -83,9 +84,16 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
             } else {
                 pr_err("Subscription request failed\n");
             }
+            /* Signal 2: 2 consecutive ENOENT -> port down */
+            ptp_note_subscription_result(state, ret != 0);
         }
 #endif
         process_ptp_messages(state);
+
+        /* Signal 1: RX-silence backstop for a wedged ptp4l.
+         * Outside the ENABLE_PTP_SUBSCRIPTION guard so liveness works even if
+         * subscription is compiled out. */
+        ptp_check_liveness(state);
 
         /* HW_BASED mode only: adjust phase offset */
         if (g_config.manager.operation_mode != OPERATION_MODE_SW_BASED) {
