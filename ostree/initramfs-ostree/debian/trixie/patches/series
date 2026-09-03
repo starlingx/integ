@@ -23,3 +23,4 @@
 0023-Remove-the-drivers-switch-related-code.patch
 0024-Fix-multipath-support-for-Debian-Trixie.patch
 0025-Disable-binds-verification-for-ostree-pull.patch
+0026-Fix-duplicate-EFI-INSTBR-boot-entries-not-deleted-on.patch
