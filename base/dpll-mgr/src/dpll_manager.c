@@ -1445,6 +1445,12 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
 
     pr_dbg("Connected to local ptp4l at %s\n", state->fr_uds_path);
 
+    /* Liveness (Signal 1): seed last_ptp_rx_time to "now" so the
+     * RX-silence backstop does not false-trip before the first message arrives
+     * (the first subscription-ack can be up to ~SUBSCRIPTION_DURATION-10s away).
+     * memset(0) above would otherwise make now - 0 exceed the timeout at boot. */
+    clock_gettime(CLOCK_MONOTONIC, &state->last_ptp_rx_time);
+
     /* Setup remote ptp4l connections - only store valid remotes */
     int valid_index = 0;
     int invalid_remotes = 0;

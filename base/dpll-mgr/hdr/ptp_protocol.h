@@ -201,4 +201,30 @@ void process_ptp_messages(AppState *state);
  */
 void handle_ptp_port_up(AppState *state);
 
+/**
+ * ptp_check_liveness - Signal 1: RX-silence backstop
+ * @state: Application state
+ *
+ * Call once per main-loop iteration AFTER process_ptp_messages(). If no PTP
+ * message has been received from ptp4l for more than PTP_LIVENESS_TIMEOUT_SEC,
+ * treat the port as down (fires handle_ptp_port_down()). Detects a wedged but
+ * still-running ptp4l (UDS socket present, no replies) that the ENOENT path
+ * (Signal 2) cannot see. Idempotent via the sticky ptp_port_down flag.
+ * Shared by both the event and poll main loops.
+ */
+void ptp_check_liveness(AppState *state);
+
+/**
+ * ptp_note_subscription_result - Signal 2: subscription-send ENOENT counter
+ * @state:   Application state
+ * @send_ok: true if send_subscription_request() succeeded, false on failure
+ *
+ * Call from the subscription-renewal block with the send result. On success
+ * resets the failure counter; on failure increments it and, after 2 consecutive
+ * failures (the UDS socket is gone — deterministic dead ptp4l), treats the port
+ * as down (fires handle_ptp_port_down()). Idempotent via the sticky
+ * ptp_port_down flag. Shared by both the event and poll main loops.
+ */
+void ptp_note_subscription_result(AppState *state, bool send_ok);
+
 #endif /* _PTP_PROTOCOL_H */

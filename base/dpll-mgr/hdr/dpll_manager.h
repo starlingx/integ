@@ -68,6 +68,14 @@
 #define BUFFER_SIZE 8192
 #define SUBSCRIPTION_DURATION 60  /* Subscribe for 60 seconds */
 
+/* PTP liveness backstop (Signal 1): if no PTP message is received from ptp4l
+ * within this window, treat the port as down. MUST exceed the subscription-ack
+ * cadence (SUBSCRIPTION_DURATION - 10), which is the only steady-state RX in
+ * SW_BASED mode, with margin for one missed ack. Compile-time for now; promote
+ * to JSON config only if per-deployment tuning is ever required.
+ */
+#define PTP_LIVENESS_TIMEOUT_SEC 75
+
 /* Note: LogLevel enum and g_log_level are defined in dpll.h */
 
 /* PTP Management Protocol Constants */
@@ -237,6 +245,12 @@ typedef struct {
     uint8_t port_state;  /* Current PTP port state (MASTER, SLAVE, etc.) */
     bool is_ptp_connected_to_gm;  /* True if PTP is locked to GM */
     bool ptp_port_down; /* True while port is in FAULTY/DISABLED (sticky across intermediate states) */
+
+    /* PTP liveness detection — detect a dead/wedged ptp4l that
+     * sends no PORT_DATA_SET. Updated/consumed by the shared helpers in
+     * ptp_protocol.c (ptp_check_liveness / ptp_note_subscription_result). */
+    struct timespec last_ptp_rx_time;  /* Monotonic time of last message RX from ptp4l */
+    int subscription_fail_count;       /* Consecutive subscription-send failures (any cause: gone socket, EAGAIN, partial send) */
     
     /* Track current master source */
     enum pin_source current_master;  /* Current master source pin */
