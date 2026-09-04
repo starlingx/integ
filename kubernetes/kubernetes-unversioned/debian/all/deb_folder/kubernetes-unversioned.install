@@ -7,5 +7,6 @@ etc/systemd/system/kubelet.service.d/kubeadm.conf
 etc/systemd/system.conf.d/kubernetes-accounting.conf
 usr/lib/tmpfiles.d/kubernetes.conf
 usr/bin/kubelet-cgroup-setup.sh
+usr/bin/kubelet-cpu-manager-cleanup.sh
 usr/local/sbin/sanitize_kubelet_reserved_cpus.sh
 usr/local/sbin/update_kubelet_version.py
