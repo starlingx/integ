@@ -4,3 +4,4 @@
 0004-create-links-to-the-deploy-directory-in-boot-and-ost.patch
 0005-Allow-updating-files-in-the-boot-directory.patch
 0006-deploy-Handle-a-read-only-boot-efi.patch
+0007-Add-tls-ignore-hostname-remote-option.patch
