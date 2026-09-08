@@ -3,33 +3,93 @@ From: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
 Date: Tue, 4 Aug 2026 03:34:16 -0400
 Subject: Clean up container mount namespaces before DRBD demote
 
-Clean up mount references held in container mount namespaces before
-attempting drbdadm secondary to prevent "Device is held open by someone"
-errors during swact.
+Clean up stale DRBD mount references held in container mount namespaces
+before "drbdadm secondary", to prevent "Device is held open by someone"
+errors during swact. Holders are matched by device MAJ:MIN, restricted to
+container namespaces, and limited to host-root bind captures under
+/hostroot or /noderoot.
 
 Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
 ---
- scripts/drbd.ocf | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 67 insertions(+)
+ scripts/drbd.ocf | 166 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 166 insertions(+)
 
 diff --git a/scripts/drbd.ocf b/scripts/drbd.ocf
 index b2908d5..fd8a53f 100755
 --- a/scripts/drbd.ocf
 +++ b/scripts/drbd.ocf
-@@ -578,6 +578,61 @@ source_who_is_using_drbd()
+@@ -578,6 +578,159 @@ source_who_is_using_drbd()
  }
  source_who_is_using_drbd
  
 +
-+# Clean up mount references held in container mount namespaces.
-+# When kubernetes pods have mount namespaces that reference DRBD-backed
-+# filesystems, the block device remains "held open" even after the
-+# Filesystem OCF stop action has unmounted it from the init namespace.
-+# This function unmounts stale DRBD references only in non-init mount
-+# namespaces, avoiding disruption to active services in the host namespace.
++# Number of (cleanup + drbdadm secondary) attempts made within a single OCF
++# invocation before giving up and letting the caller's outer retry loop run.
++: ${DRBD_NS_CLEANUP_RETRIES:=3}
++
++# Resolve the MAJ:MIN of a DRBD device path (e.g. /dev/drbd8 -> "147:8").
++# This is the same key used by who_is_using_drbd()/drbd.inuse.sh, and unlike
++# the mountinfo source field it reliably identifies the device even for bind
++# mounts of a parent subtree.
++drbd_dev_maj_min()
++{
++	local dev=$1
++	lsblk -dn "$dev" --output MAJ:MIN --raw 2>/dev/null | head -n1
++}
++
++# True if $pid belongs to a container (kubepods / CRI runtime cgroup) rather
++# than a host systemd service. Host services (e.g. systemd-udevd, ntpd,
++# memcached) may run with a private mount namespace that snapshotted the DRBD
++# mounts, but they are NOT stale container copies and must never be touched.
++drbd_pid_is_container()
++{
++	local pid=$1
++	grep -qE 'kubepods|cri-containerd-|crio-|docker-' /proc/$pid/cgroup 2>/dev/null
++}
++
++# Print the PIDs of every NON-init CONTAINER mount namespace that still has a
++# mount whose device MAJ:MIN (mountinfo field 3) matches $maj_min. One PID per
++# holding namespace is enough to act on that namespace. Host-namespace PIDs and
++# host systemd-service namespaces are skipped so only stale container copies
++# are ever unmounted.
++drbd_ns_holder_pids()
++{
++	local maj_min=$1
++	local init_mnt_ns=$2
++	local seen_ns=" "
++	local pid_mountinfo pid pid_ns
++
++	for pid_mountinfo in /proc/[0-9]*/mountinfo; do
++		pid=${pid_mountinfo#/proc/}
++		pid=${pid%/mountinfo}
++
++		pid_ns=$(readlink /proc/$pid/ns/mnt 2>/dev/null) || continue
++		[ -z "$pid_ns" ] && continue
++		[ "$pid_ns" = "$init_mnt_ns" ] && continue
++		# only the first PID we see per namespace
++		case "$seen_ns" in *" $pid_ns "*) continue ;; esac
++
++		# Only act on container namespaces, never host systemd services.
++		drbd_pid_is_container "$pid" || continue
++
++		if awk -v mm="$maj_min" '$3==mm{f=1} END{exit !f}' "$pid_mountinfo" 2>/dev/null; then
++			echo "$pid"
++			seen_ns="$seen_ns$pid_ns "
++		fi
++	done
++}
++
++# Clean up mount references held in container mount namespaces before demote.
++# A container that bind-mounts a host subtree (e.g. HostPath "/") receives a
++# private copy of the DRBD mounts present when it started; that copy is not
++# released by the init-namespace umount and keeps the DRBD device held open.
++# This function only unmounts already-stale references in non-init mount
++# namespaces; it never touches host-namespace mounts or container processes.
 +cleanup_mount_namespace_holders()
 +{
 +	local drbd_resource=$1
++
++	ocf_log info "${drbd_resource}: checking container mount namespaces for DRBD holders"
 +
 +	if [ ${#DRBD_DEVICES[@]} -eq 0 ]; then
 +		ocf_log info "${drbd_resource}: No DRBD devices found, skipping namespace cleanup"
@@ -44,73 +104,117 @@ index b2908d5..fd8a53f 100755
 +		return
 +	fi
 +
++	local dev maj_min pid mnt_points mnt found_any=no
 +	for dev in ${DRBD_DEVICES[@]}; do
 +		[ -z "$dev" ] && continue
 +
-+		for pid_mountinfo in /proc/[0-9]*/mountinfo; do
-+			local pid=${pid_mountinfo#/proc/}
-+			pid=${pid%/mountinfo}
++		maj_min=$(drbd_dev_maj_min "$dev")
++		if [ -z "$maj_min" ]; then
++			ocf_log warn "${drbd_resource}: cannot resolve MAJ:MIN for $dev, skipping"
++			continue
++		fi
 +
-+			# Skip PIDs in the init mount namespace — already handled by normal umount
-+			local pid_ns
-+			pid_ns=$(readlink /proc/$pid/ns/mnt 2>/dev/null) || continue
-+			[ "$pid_ns" = "$init_mnt_ns" ] && continue
-+
-+			# Only process if this namespace still references our DRBD device
-+			# Match on the mount source field (after the - separator) for exact matching
-+			local mnt_points
-+			mnt_points=$(awk -v dev="${dev}" '{ for(i=1;i<=NF;i++) if($i=="-"){if($(i+2)==dev) print $5; break} }' /proc/$pid/mountinfo 2>/dev/null)
-+
++		for pid in $(drbd_ns_holder_pids "$maj_min" "$init_mnt_ns"); do
++			# Only unmount HOST-ROOT CAPTURES: mount points under a
++			# .../hostroot/ or .../noderoot/ path, which are the stale private
++			# copies a container received by bind-mounting the host root. A
++			# container that legitimately CONSUMES a DRBD volume as its own data
++			# (e.g. rook-ceph at /var/lib/ceph/...) is NOT a stale copy and must
++			# never be unmounted, so such mount points are deliberately excluded.
++			mnt_points=$(awk -v mm="${maj_min}" '$3==mm && $5 ~ /\/(hostroot|noderoot)\// { print $5 }' /proc/$pid/mountinfo 2>/dev/null)
 +			[ -z "$mnt_points" ] && continue
++			found_any=yes
 +
 +			for mnt in $mnt_points; do
 +				[ -z "$mnt" ] && continue
-+				ocf_log info "${drbd_resource}: Unmounting stale ref $mnt for $dev in namespace of PID $pid"
-+				nsenter -t $pid -m -- umount -l "$mnt" 2>/dev/null
-+				if [ $? -ne 0 ]; then
-+					ocf_log warn "${drbd_resource}: Failed to unmount $mnt in namespace of PID $pid"
++				ocf_log info "${drbd_resource}: unmounting stale ref $mnt ($dev $maj_min) in namespace of PID $pid"
++				# --pid is required so that /proc resolves inside the target
++				# namespace; without it umount cannot canonicalise the path.
++				if nsenter -t "$pid" --mount --pid -- umount "$mnt" >/dev/null 2>&1; then
++					ocf_log info "${drbd_resource}: unmounted $mnt in namespace of PID $pid"
++				elif nsenter -t "$pid" --mount --pid -- umount -l "$mnt" >/dev/null 2>&1; then
++					ocf_log info "${drbd_resource}: lazily unmounted $mnt in namespace of PID $pid"
++				else
++					ocf_log warn "${drbd_resource}: failed to unmount $mnt in namespace of PID $pid"
 +				fi
 +			done
++
++			# Re-verify by MAJ:MIN so the log makes it clear whether the
++			# namespace still references the device after the unmount.
++			if awk -v mm="$maj_min" '$3==mm && $5 ~ /\/(hostroot|noderoot)\// {f=1} END{exit !f}' /proc/$pid/mountinfo 2>/dev/null; then
++				ocf_log warn "${drbd_resource}: $dev ($maj_min) still referenced in namespace of PID $pid after unmount"
++			else
++				ocf_log info "${drbd_resource}: $dev ($maj_min) released from namespace of PID $pid"
++			fi
 +		done
++	done
++
++	if [ "$found_any" = "no" ]; then
++		ocf_log info "${drbd_resource}: no container mount namespace holders found for DRBD devices"
++	fi
++}
++
++# Attempt to demote the resource to Secondary, cleaning up container mount
++# namespace holders first and retrying a bounded number of times within a
++# single OCF invocation. Sets DRBD_LAST_CMD_ERR (via do_drbdadm) for the
++# caller to inspect.
++demote_to_secondary_with_cleanup()
++{
++	local drbd_resource=$1
++	local attempt=1
++
++	while [ $attempt -le ${DRBD_NS_CLEANUP_RETRIES} ]; do
++		cleanup_mount_namespace_holders "$drbd_resource"
++		do_drbdadm secondary $drbd_resource
++		if [[ "$DRBD_LAST_CMD_ERR" != *"Device is held open by someone"* ]]; then
++			return
++		fi
++		ocf_log warn "${drbd_resource}: still held open after namespace cleanup (attempt ${attempt}/${DRBD_NS_CLEANUP_RETRIES})"
++		attempt=$((attempt + 1))
++		[ $attempt -le ${DRBD_NS_CLEANUP_RETRIES} ] && sleep 2
 +	done
 +}
 +
  call_unfence()
  {
  	# It is easier to just call the crm-unfence-peer script, without
-@@ -1065,6 +1120,10 @@ drbd_start()
+@@ -1065,7 +1205,10 @@ drbd_start()
  			;;
  		$OCF_RUNNING_MASTER)
  			ocf_log warn "$DRBD_RESOURCE already Primary, demoting."
-+			# Clean up any container mount namespace holders before demote.
-+			# This prevents "Device is held open by someone" errors when
-+			# kubernetes pods have mount namespaces referencing DRBD devices.
-+			cleanup_mount_namespace_holders "$DRBD_RESOURCE"
- 			do_drbdadm secondary $DRBD_RESOURCE
+-			do_drbdadm secondary $DRBD_RESOURCE
++			# Clean up any container mount namespace holders before demote and
++			# retry within this invocation, to prevent "Device is held open by
++			# someone" errors when a container namespace references the device.
++			demote_to_secondary_with_cleanup "$DRBD_RESOURCE"
  			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
  				result=$(who_is_using_drbd "$DRBD_RESOURCE")
-@@ -1187,6 +1246,10 @@ drbd_demote() {
+ 				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
+@@ -1187,7 +1330,10 @@ drbd_demote() {
  			break
  			;;
  		$OCF_RUNNING_MASTER)
-+			# Clean up any container mount namespace holders before demote.
-+			# This prevents "Device is held open by someone" errors when
-+			# kubernetes pods have mount namespaces referencing DRBD devices.
-+			cleanup_mount_namespace_holders "$DRBD_RESOURCE"
- 			do_drbdadm secondary $DRBD_RESOURCE
+-			do_drbdadm secondary $DRBD_RESOURCE
++			# Clean up any container mount namespace holders before demote and
++			# retry within this invocation, to prevent "Device is held open by
++			# someone" errors when a container namespace references the device.
++			demote_to_secondary_with_cleanup "$DRBD_RESOURCE"
  			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
  				result=$(who_is_using_drbd "$DRBD_RESOURCE")
-@@ -1237,6 +1300,10 @@ drbd_stop() {
+ 				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
+@@ -1237,8 +1383,12 @@ drbd_stop() {
  			if [ "${found}" = "yes" ]; then
  				ocf_log warn "Waiting to drop $DRBD_RESOURCE"
  			else
 +				# Clean up container mount namespace holders before attempting
-+				# to drop to secondary. Even though init namespace shows
-+				# unmounted, container namespaces may still hold the device.
-+				cleanup_mount_namespace_holders "$DRBD_RESOURCE"
++				# to drop to secondary and retry within this invocation. Even
++				# though the init namespace shows unmounted, container
++				# namespaces may still hold the device.
  				ocf_log warn "Dropping $DRBD_RESOURCE to Secondary"
- 				do_drbdadm secondary $DRBD_RESOURCE
+-				do_drbdadm secondary $DRBD_RESOURCE
++				demote_to_secondary_with_cleanup "$DRBD_RESOURCE"
  				if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
+ 					result=$(who_is_using_drbd "$DRBD_RESOURCE")
+ 					ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
 -- 
 2.34.1
-
