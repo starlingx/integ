@@ -1,0 +1,75 @@
+From 9d4e0f8a9a3da76a343e921c7f1e737811fbc364 Mon Sep 17 00:00:00 2001
+From: Edson Dias <edson-dias@windriver.com>
+Date: Fri, 28 Aug 2026 10:25:57 -0300
+Subject: [PATCH] Add template option to toggle leader election
+
+The helm-controller and source-controller deployment templates
+hardcode "--enable-leader-election". On StarlingX these controllers
+run as a single replica, so leader election provides no HA benefit
+and only forces a new pod to wait for the old pod's leader-election
+lease to expire during a rolling upgrade, adding significant time and
+variance to "helm upgrade" on platform upgrades.
+
+Make the flag conditional on a per-controller values option:
+.Values.helmController.leaderElection.enabled and
+.Values.sourceController.leaderElection.enabled. Both default to true
+to preserve the upstream behavior; deployers that run a single replica
+can set them to false to skip the lease wait.
+
+Signed-off-by: Edson Dias <edson-dias@windriver.com>
+---
+ charts/flux2/templates/helm-controller.yaml   | 2 +-
+ charts/flux2/templates/source-controller.yaml | 2 +-
+ charts/flux2/values.yaml                      | 4 ++++
+ 3 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/charts/flux2/templates/helm-controller.yaml b/charts/flux2/templates/helm-controller.yaml
+index 8523e20..89fbf24 100644
+--- a/charts/flux2/templates/helm-controller.yaml
++++ b/charts/flux2/templates/helm-controller.yaml
+@@ -39,7 +39,7 @@ spec:
+     {{- end}}
+       containers:
+       - command: ["/bin/sh"]
+-        args: ["-c", "helm-controller {{- if .Values.multitenancy.enabled }} --no-cross-namespace-refs=true --default-service-account={{ .Values.multitenancy.defaultServiceAccount | default "default"  }} {{- end}} {{- if .Values.notificationController.create }} --events-addr=http://notification-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{- end}} --watch-all-namespaces={{ .Values.watchAllNamespaces }} --log-level={{ .Values.logLevel | default "info" }} --log-encoding={{ .Values.logEncoding | default "json" }} --enable-leader-election {{- if .Values.sourceWatcher.create }} --feature-gates=ExternalArtifact=true {{- end}} {{ .Values.helmController.container.additionalArgs }}"]
++        args: ["-c", "helm-controller {{- if .Values.multitenancy.enabled }} --no-cross-namespace-refs=true --default-service-account={{ .Values.multitenancy.defaultServiceAccount | default "default"  }} {{- end}} {{- if .Values.notificationController.create }} --events-addr=http://notification-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{- end}} --watch-all-namespaces={{ .Values.watchAllNamespaces }} --log-level={{ .Values.logLevel | default "info" }} --log-encoding={{ .Values.logEncoding | default "json" }} {{- if .Values.helmController.leaderElection.enabled }} --enable-leader-election {{- end}} {{- if .Values.sourceWatcher.create }} --feature-gates=ExternalArtifact=true {{- end}} {{ .Values.helmController.container.additionalArgs }}"]
+         env:
+         - name: RUNTIME_NAMESPACE
+           valueFrom:
+diff --git a/charts/flux2/templates/source-controller.yaml b/charts/flux2/templates/source-controller.yaml
+index 663720e..f3514d4 100644
+--- a/charts/flux2/templates/source-controller.yaml
++++ b/charts/flux2/templates/source-controller.yaml
+@@ -41,7 +41,7 @@ spec:
+       {{- end}}
+       containers:
+       - command: ["/bin/sh"]
+-        args: ["-c", "source-controller {{- if .Values.notificationController.create }} --events-addr=http://notification-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{- end}} --watch-all-namespaces={{ .Values.watchAllNamespaces }} --log-level={{ .Values.logLevel | default "info" }} --log-encoding={{ .Values.logEncoding | default "json" }} --enable-leader-election --storage-path=/data --storage-adv-addr=source-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{ .Values.sourceController.container.additionalArgs }}"]
++        args: ["-c", "source-controller {{- if .Values.notificationController.create }} --events-addr=http://notification-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{- end}} --watch-all-namespaces={{ .Values.watchAllNamespaces }} --log-level={{ .Values.logLevel | default "info" }} --log-encoding={{ .Values.logEncoding | default "json" }} {{- if .Values.sourceController.leaderElection.enabled }} --enable-leader-election {{- end}} --storage-path=/data --storage-adv-addr=source-controller.$(RUNTIME_NAMESPACE).svc.{{ .Values.clusterDomain | default "cluster.local" }}. {{ .Values.sourceController.container.additionalArgs }}"]
+         env:
+         - name: RUNTIME_NAMESPACE
+           valueFrom:
+diff --git a/charts/flux2/values.yaml b/charts/flux2/values.yaml
+index 0982220..0b16b06 100644
+--- a/charts/flux2/values.yaml
++++ b/charts/flux2/values.yaml
+@@ -35,6 +35,8 @@ cli:
+ 
+ helmController:
+   create: true
++  leaderElection:
++    enabled: true
+   image: ghcr.io/fluxcd/helm-controller
+   tag: v1.5.3
+   resources:
+@@ -240,6 +242,8 @@ notificationController:
+ 
+ sourceController:
+   create: true
++  leaderElection:
++    enabled: true
+   image: ghcr.io/fluxcd/source-controller
+   tag: v1.8.1
+   resources:
+-- 
+2.34.1
