@@ -1,0 +1,184 @@
+From f47d267e621a9d63ce8383d2fcf438373e773790 Mon Sep 17 00:00:00 2001
+From: Difu Hu <difu.hu@windriver.com>
+Date: Thu, 10 Sep 2026 17:52:00 -0400
+Subject: [PATCH] phc2sys: discipline CLOCK_REALTIME when source is
+ synced to TAI
+
+The UTC-offset traceable guard added for linuxptp 4.2 (skip system
+clock sync until the source is valid and traceable) does not
+discipline CLOCK_REALTIME under "phc2sys -a -r", even when the ptp4l
+source is locked and advertising a valid, traceable UTC offset. The
+system clock free-runs and goes out of tolerance.
+
+"phc2sys -a -r" builds two domains: the ptp4l source domain, which is
+subscribed to ptp4l and receives TIME_PROPERTIES, and a separate
+CLOCK_REALTIME domain whose own PMC agent is never subscribed (it is
+created by auto_init_rt(), which skips init_pmc_node()). Two issues
+kept CLOCK_REALTIME undisciplined:
+
+1. update_domain_clocks() gated the CLOCK_REALTIME servo on
+   pmc_agent_synced_to_tai(domain->agent). For the CLOCK_REALTIME
+   domain that is the unsubscribed agent, whose synced_to_tai flag is
+   never set, so the servo was skipped indefinitely. Consult the
+   source domain's agent (domain->src_domain->agent) instead, matching
+   what clock_handle_leap() already does for the system clock's
+   domain. A domain->src_domain NULL check is included for safety.
+
+2. synced_to_tai was latched only in the explicit GET path
+   (pmc_agent_query_utc_offset), which runs at startup and on a
+   port-state change. TIME_PROPERTIES delivered via the event
+   subscription were saved but did not evaluate traceability, so if
+   the initial GET read the source before it was traceable, the flag
+   could stay unset with no later recovery in a quiet period. Move the
+   UTC-offset / leap / synced_to_tai derivation into
+   pmc_agent_save_tds() so it is applied identically for both the GET
+   and the subscription paths.
+
+Changes in phc2sys.c:
+- update_domain_clocks (do_loop): gate CLOCK_REALTIME on the source
+  domain's agent (domain->src_domain->agent), with a NULL guard
+
+Changes in pmc_agent.c:
+- pmc_agent_save_tds: derive UTC offset / leap / synced_to_tai here so
+  both the GET and subscription paths latch the flag
+- pmc_agent_query_utc_offset: drop the now-duplicated derivation; it
+  already calls pmc_agent_save_tds()
+
+TEST PLAN:
+PASS: "phc2sys -a -r" against a locked ptp4l source advertising
+      currentUtcOffsetValid=1, timeTraceable=1, ptpTimescale=1:
+      phc2sys disciplines CLOCK_REALTIME - no "skipping system clock
+      sync" message, CLOCK_REALTIME rms printed periodically, measured
+      phc offset holds within a few tens of ns, phc2sys stable (no
+      restarts).
+PASS: PTP out-of-tolerance alarm that was raised by the undisciplined
+      CLOCK_REALTIME clears once phc2sys begins disciplining.
+PASS: Sustained across ptp4l port-state flapping (MASTER<->SLAVE): the
+      synced_to_tai latch keeps CLOCK_REALTIME disciplined through
+      flaps, offset stays bounded, no drift accumulation.
+PASS: Soak over several hours across heavy and quiet flap phases:
+      phc2sys keeps disciplining CLOCK_REALTIME, no restart.
+PASS: Loss of the ptp4l source: phc2sys stops disciplining
+      CLOCK_REALTIME while the source is unavailable.
+PASS: Recovery of the ptp4l source: phc2sys resumes disciplining
+      CLOCK_REALTIME after the source recovers.
+PASS: phc2sys does not crash or restart across the loss/recovery
+      cycle.
+PASS: Traceable-gate matrix on a T-GM/T-BC lab. GM
+      currentUtcOffsetValid / timeTraceable toggled at runtime via
+      "pmc SET GRANDMASTER_SETTINGS_NP" on the GM; verified on the
+      downstream T-BC phc2sys:
+PASS: A) do_loop, non-traceable (currentUtcOffsetValid=0,
+      timeTraceable=0):
+      phc2sys -f /etc/linuxptp/ptpinstance/phc2sys-phc1.conf
+      -s enp81s0f2 -z /var/run/ptp4l-ptp1 -w -m -l 7
+      -> "skipping system clock sync: UTC offset is not valid or
+      traceable"; CLOCK_REALTIME not disciplined.
+PASS: B) do_loop, traceable (currentUtcOffsetValid=1,
+      timeTraceable=1): same command, no skip message; phc2sys
+      disciplines CLOCK_REALTIME.
+PASS: "phc2sys -a -r": same result as A) and B) (skips when
+      non-traceable, disciplines when traceable).
+PASS: "phc2sys -O 37" and "phc2sys -w -O 37": no skip message and
+      phc2sys disciplines in both flag states (the forced offset
+      bypasses the traceable check by design).
+
+Closes-Bug: 2167034
+---
+ phc2sys.c   |  5 +++--
+ pmc_agent.c | 56 ++++++++++++++++++++++++++++++++++-------------------
+ 2 files changed, 39 insertions(+), 22 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 83cebb4..f3b869e 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -1642,8 +1642,9 @@ static int update_domain_clocks(struct domain *domain)
+ 		 * clock drift. */
+ 		if (clock->clkid == CLOCK_REALTIME &&
+ 			!domain->forced_sync_offset &&
+-			domain->agent &&
+-			!pmc_agent_synced_to_tai(domain->agent)) {
++			domain->src_domain &&
++			domain->src_domain->agent &&
++			!pmc_agent_synced_to_tai(domain->src_domain->agent)) {
+ 			pr_debug("skipping system clock sync: "
+ 					 "UTC offset is not valid or traceable");
+ 			continue;
+diff --git a/pmc_agent.c b/pmc_agent.c
+index f8d8ca2..950dddd 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -454,6 +454,37 @@ void pmc_agent_save_tds(struct pmc_agent *node, struct timePropertiesDS *tds)
+ {
+ 	memcpy(&node->tds, tds, sizeof(node->tds));
+ 	node->tds_valid = true;
++
++	/*
++	 * Derive the UTC offset / leap / TAI-traceability state here so that it
++	 * is updated identically whether the TIME_PROPERTIES_DATA_SET arrived
++	 * from an explicit GET (pmc_agent_query_utc_offset) or from a
++	 * subscription notification (recv_subscribed). Previously only the GET
++	 * path latched synced_to_tai; a subscription notification advertising
++	 * traceability was saved but never latched the flag, so if the initial
++	 * GET happened before the source was traceable, phc2sys could remain
++	 * "not synced to TAI" forever and never discipline CLOCK_REALTIME.
++	 */
++	if (tds->flags & PTP_TIMESCALE) {
++		node->sync_offset = tds->currentUtcOffset;
++		if (tds->flags & LEAP_61)
++			node->leap = 1;
++		else if (tds->flags & LEAP_59)
++			node->leap = -1;
++		else
++			node->leap = 0;
++		node->utc_offset_traceable = tds->flags & UTC_OFF_VALID &&
++					     tds->flags & TIME_TRACEABLE;
++		/* Once traceable has been seen, the PHC is on TAI and
++		 * will not revert to UTC on a port state flap. Latch
++		 * synced to TAI flag on subsequent traceability flaps. */
++		if (node->utc_offset_traceable)
++			node->synced_to_tai = 1;
++	} else {
++		node->sync_offset = 0;
++		node->leap = 0;
++		node->utc_offset_traceable = 0;
++	}
+ }
+ 
+ struct timePropertiesDS * pmc_agent_get_tds(struct pmc_agent *node)
+@@ -536,26 +567,11 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 	}
+ 
+ 	tds = (struct timePropertiesDS *) management_tlv_data(msg);
+-	if (tds->flags & PTP_TIMESCALE) {
+-		node->sync_offset = tds->currentUtcOffset;
+-		if (tds->flags & LEAP_61)
+-			node->leap = 1;
+-		else if (tds->flags & LEAP_59)
+-			node->leap = -1;
+-		else
+-			node->leap = 0;
+-		node->utc_offset_traceable = tds->flags & UTC_OFF_VALID &&
+-					     tds->flags & TIME_TRACEABLE;
+-		/* Once traceable has been seen, the PHC is on TAI and
+-		 * will not revert to UTC on a port state flap. Latch
+-		 * synced to TAI flag on subsequent traceability flaps. */
+-		if (node->utc_offset_traceable)
+-			node->synced_to_tai = 1;
+-	} else {
+-		node->sync_offset = 0;
+-		node->leap = 0;
+-		node->utc_offset_traceable = 0;
+-	}
++	/*
++	 * UTC offset / leap / synced_to_tai derivation now lives in
++	 * pmc_agent_save_tds(), so it is applied consistently for both this
++	 * explicit GET and subscription notifications.
++	 */
+ 	pmc_agent_save_tds(node, tds);
+ 	msg_put(msg);
+ 	return 0;
+-- 
+2.34.1
+

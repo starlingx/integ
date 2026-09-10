@@ -21,3 +21,4 @@
 0021-Fix-HA-clock-selection-after-ptp4l-instance-outage.patch
 0022-GM-L3-BC1-L2-BC2-BC1-ClockClass-remains-6-after-GM-loss.patch
 0023-phc2sys-fix-forced_sync_offset-O-offset-direction.patch
+0024-phc2sys-discipline-CLOCK_REALTIME-when-source-is-syn.patch
