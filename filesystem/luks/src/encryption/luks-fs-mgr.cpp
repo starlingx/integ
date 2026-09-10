@@ -50,6 +50,7 @@ const char *stagingDirectoryPath = "/var/luks/stx/.clone_staging";
 const char *luksControllerDataPath = "/var/luks/stx/luks_fs/controller/";
 const char *pidFileName = "/var/run/luks-fs-mgr.pid";
 atomic<bool> exitFlag(false);
+atomic<bool> removeLegacyKeyslotFlag(false);
 // Define a struct to hold configuration variables
 struct LuksConfig {
     const char *vaultFile;
@@ -573,23 +574,23 @@ bool writeJSONToFile(const char *filePath, json_object *jsonObj) {
  *
  * Name       : getPassPhraseType
  *
- * Description: This function simply returns "HWID"
- *              indicating the type of passphrase as "Hardware Identifier."
+ * Description: Returns the passphrase type string for the current
+ *              system configuration. Used when writing created_luks.json.
  *
  * ************************************************************************/
 string getPassPhraseType() {
-    return "HWID";
+    return "HWID_V2";
 }
 /* ***********************************************************************
  *
  * Name       : passPhraseType
  *
- * Description: This function simply returns passPhraseType
- *              indicating the type of passphrase as "Hardware Identifier."
+ * Description: Returns the passphrase mechanism enum for the current
+ *              system.
  *
  * ************************************************************************/
 PassphraseMechanism passPhraseType() {
-    return HWID_Firmware;
+    return HWID_SystemUUID;
 }
 /* ***********************************************************************
  *
@@ -1003,6 +1004,11 @@ void luksMgrSignalHandler(int signo) {
         // Cleanup tasks and exit the daemon
         log("luks daemon: Received SIGTERM. Exiting", LOG_INFO);
         exitFlag.store(true);
+    } else if (signo == SIGUSR1) {
+        // Trigger legacy keyslot removal from the monitor loop
+        log("luks daemon: Received SIGUSR1. "
+            "Scheduling legacy keyslot removal.", LOG_INFO);
+        removeLegacyKeyslotFlag.store(true);
     }
 }
 /* ***********************************************************************
@@ -1141,6 +1147,431 @@ int copyKubeProviderFile(bool isController) {
          return rc;
      }
      return rc;
+}
+/* ***********************************************************************
+ *
+ * Name       : addPassphraseKeyslot
+ *
+ * Description: Adds the new passphrase to the LUKS volume as a new
+ *              keyslot, authenticated by the legacy passphrase. This
+ *              allows both old and new passphrases to unlock the vault
+ *              during a transition period (rollback safety).
+ *
+ *              Uses cryptsetup luksAddKey to add the new passphrase
+ *              while retaining the legacy keyslot.
+ *
+ * Returns:     true on success, false on failure.
+ *
+ * ************************************************************************/
+bool addPassphraseKeyslot(const string &vaultFile,
+                       const string &oldPass,
+                       const string &newPass) {
+    // cryptsetup luksAddKey syntax:
+    //   cryptsetup luksAddKey <device> <new-keyfile>
+    //       --key-file=<existing-keyfile>
+    // The authenticating (existing) passphrase is piped via stdin using
+    // "--key-file -", matching the pattern used elsewhere in this file
+    // (setupLUKSEncryption/openLUKSVolume) so the secret never appears on
+    // a command line. The new passphrase must be supplied as a positional
+    // keyfile argument; cryptsetup may stat/seek a keyfile, so it must be
+    // a regular file (a process-substitution pipe reports size 0 and can
+    // be read empty/truncated). Write it to a private temp file.
+    string newKeyPath = string(defaultDirectoryPath) +
+                        "/.new_keyslot.XXXXXX";
+    int fd = mkstemp(&newKeyPath[0]);
+    if (fd < 0) {
+        log("addPassphraseKeyslot: Error creating temp key file.", LOG_ERR);
+        return false;
+    }
+    if (fchmod(fd, S_IRUSR | S_IWUSR) != 0) {
+        log("addPassphraseKeyslot: Error setting temp key file mode.",
+            LOG_ERR);
+        close(fd);
+        unlink(newKeyPath.c_str());
+        return false;
+    }
+    ssize_t toWrite = static_cast<ssize_t>(newPass.size());
+    if (write(fd, newPass.data(), newPass.size()) != toWrite) {
+        log("addPassphraseKeyslot: Error writing temp key file.", LOG_ERR);
+        close(fd);
+        unlink(newKeyPath.c_str());
+        return false;
+    }
+    close(fd);
+
+    // Authenticate with the existing passphrase via stdin ("--key-file -").
+    string cmd = "echo -n \"" + oldPass + "\" | cryptsetup luksAddKey " +
+                 vaultFile + " " + newKeyPath + " --key-file -";
+    int status = system(cmd.c_str());
+
+    unlink(newKeyPath.c_str());
+
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        log("Successfully added new passphrase keyslot.", LOG_INFO);
+        return true;
+    }
+
+    log("Failed to add new passphrase keyslot. cryptsetup exit code: " +
+        to_string(WIFEXITED(status) ? WEXITSTATUS(status) : -1), LOG_ERR);
+    return false;
+}
+/* ***********************************************************************
+ *
+ * Name       : updateCreatedLuksJson
+ *
+ * Description: Updates the PASSPHRASE_TYPE field in created_luks.json
+ *              to reflect a completed passphrase migration. Reads the
+ *              existing object, updates the field in place, and writes it
+ *              back via writeJSONToFile. Mutating in place (rather than
+ *              rebuilding the object) keeps a single write path shared with
+ *              markLegacyKeyslotRemoved() and preserves any other fields
+ *              present (e.g. LEGACY_KEYSLOT_REMOVED).
+ *
+ * ************************************************************************/
+bool updateCreatedLuksJson(const string &newType) {
+    json_object *jsonConfig = json_object_from_file(createdConfigFile);
+    if (!jsonConfig) {
+        log("Failed to parse created_luks.json for migration update.",
+            LOG_ERR);
+        return false;
+    }
+
+    json_object *luksvolumes;
+    if (!json_object_object_get_ex(jsonConfig, "luksvolumes", &luksvolumes) ||
+        !json_object_is_type(luksvolumes, json_type_array) ||
+        json_object_array_length(luksvolumes) == 0) {
+        log("created_luks.json missing 'luksvolumes' array.", LOG_ERR);
+        json_object_put(jsonConfig);
+        return false;
+    }
+
+    json_object *volumeObj = json_object_array_get_idx(luksvolumes, 0);
+    json_object_object_add(volumeObj, "PASSPHRASE_TYPE",
+                           json_object_new_string(newType.c_str()));
+
+    bool success = writeJSONToFile(createdConfigFile, jsonConfig);
+    if (!success) {
+        log("Error writing updated created_luks.json after migration.",
+            LOG_ERR);
+    }
+    json_object_put(jsonConfig);
+    return success;
+}
+/* ***********************************************************************
+ *
+ * Name       : isLegacyKeyslotRemoved
+ *
+ * Description: Checks if created_luks.json has LEGACY_KEYSLOT_REMOVED
+ *              set to true. Used to avoid redundant luksRemoveKey calls
+ *              on every boot.
+ *
+ * Returns:     true if the field exists and is true, false otherwise.
+ *
+ * ************************************************************************/
+bool isLegacyKeyslotRemoved() {
+    json_object *jsonConfig = json_object_from_file(createdConfigFile);
+    if (!jsonConfig) {
+        return false;
+    }
+
+    json_object *luksvolumes;
+    if (!json_object_object_get_ex(jsonConfig, "luksvolumes", &luksvolumes) ||
+        !json_object_is_type(luksvolumes, json_type_array) ||
+        json_object_array_length(luksvolumes) == 0) {
+        json_object_put(jsonConfig);
+        return false;
+    }
+
+    json_object *volumeObj = json_object_array_get_idx(luksvolumes, 0);
+    json_object *removedObj = json_object_object_get(
+        volumeObj, "LEGACY_KEYSLOT_REMOVED");
+
+    bool removed = (removedObj &&
+                    json_object_get_type(removedObj) == json_type_boolean &&
+                    json_object_get_boolean(removedObj));
+    json_object_put(jsonConfig);
+    return removed;
+}
+/* ***********************************************************************
+ *
+ * Name       : markLegacyKeyslotRemoved
+ *
+ * Description: Sets LEGACY_KEYSLOT_REMOVED to true in created_luks.json.
+ *              Called after successful keyslot removal so we don't retry
+ *              on subsequent boots.
+ *
+ * Returns:     true on success, false on failure.
+ *
+ * ************************************************************************/
+bool markLegacyKeyslotRemoved() {
+    json_object *jsonConfig = json_object_from_file(createdConfigFile);
+    if (!jsonConfig) {
+        log("markLegacyKeyslotRemoved: Cannot read created_luks.json.",
+            LOG_WARNING);
+        return false;
+    }
+
+    json_object *luksvolumes;
+    if (!json_object_object_get_ex(jsonConfig, "luksvolumes", &luksvolumes) ||
+        !json_object_is_type(luksvolumes, json_type_array) ||
+        json_object_array_length(luksvolumes) == 0) {
+        json_object_put(jsonConfig);
+        return false;
+    }
+
+    json_object *volumeObj = json_object_array_get_idx(luksvolumes, 0);
+    json_object_object_add(volumeObj, "LEGACY_KEYSLOT_REMOVED",
+                           json_object_new_boolean(1));
+
+    bool success = writeJSONToFile(createdConfigFile, jsonConfig);
+    json_object_put(jsonConfig);
+
+    if (success) {
+        log("Marked LEGACY_KEYSLOT_REMOVED in created_luks.json.",
+            LOG_INFO);
+    } else {
+        log("Failed to write LEGACY_KEYSLOT_REMOVED.", LOG_WARNING);
+    }
+    return success;
+}
+/* ***********************************************************************
+ *
+ * Name       : removeLegacyKeyslot
+ *
+ * Description: Removes the legacy LUKS passphrase keyslot from the vault.
+ *              Called after the vault is open and mounted, when no upgrade
+ *              is in progress (rollback no longer possible).
+ *
+ *              The legacy keyslot (SHA256 of uuid + baseboard + chassis)
+ *              is retained during upgrade to allow rollback to the old
+ *              release. Once the upgrade is committed (the flag file
+ *              /etc/platform/.usm_upgrade_in_progress is removed by the
+ *              software agent on deploy delete), this function removes it.
+ *
+ *              Gracefully handles cases where:
+ *              - The legacy passphrase doesn't match any keyslot
+ *                (hardware already swapped — orphaned slot is harmless)
+ *              - The generator fails (logs and returns)
+ *
+ * Returns:     void (best-effort, non-fatal)
+ *
+ * ************************************************************************/
+void removeLegacyKeyslot(const string &vaultFile,
+                         PassphraseGenerator *generator) {
+    string legacyPassphrase;
+    if (!generator->generateLegacyPassphrase(legacyPassphrase)) {
+        log("removeLegacyKeyslot: Could not generate legacy passphrase. "
+            "Skipping keyslot removal.", LOG_WARNING);
+        return;
+    }
+
+    // Use cryptsetup luksRemoveKey which finds and removes the keyslot
+    // matching the provided passphrase. The passphrase is piped via stdin
+    // ("--key-file -") so it never appears on a command line, matching the
+    // pattern used elsewhere in this file.
+    string cmd = "echo -n \"" + legacyPassphrase +
+                 "\" | cryptsetup luksRemoveKey " + vaultFile +
+                 " --key-file -";
+    int status = system(cmd.c_str());
+
+    if (WIFEXITED(status)) {
+        int exitCode = WEXITSTATUS(status);
+        if (exitCode == 0) {
+            log("Legacy LUKS keyslot removed successfully.", LOG_INFO);
+            markLegacyKeyslotRemoved();
+        } else if (exitCode == 2) {
+            // No matching key found — already removed or hardware changed.
+            log("No matching legacy keyslot found (may already be "
+                "removed or hardware changed). Skipping.", LOG_INFO);
+            markLegacyKeyslotRemoved();
+        } else {
+            log("cryptsetup luksRemoveKey failed with exit code " +
+                to_string(exitCode) + ". Legacy keyslot retained.",
+                LOG_WARNING);
+        }
+    } else {
+        log("cryptsetup luksRemoveKey terminated abnormally. "
+            "Legacy keyslot retained.", LOG_WARNING);
+    }
+}
+/* ***********************************************************************
+ *
+ * Name       : tryRemoveLegacyKeyslot
+ *
+ * Description: Checks preconditions and removes the legacy keyslot if
+ *              appropriate. Consolidates the guard logic (already removed,
+ *              type check, vault file) into a single entry point.
+ *
+ *              Called from:
+ *              - main (on boot, if no upgrade in progress)
+ *              - monitorLUKSVolume (on SIGUSR1 signal)
+ *
+ * ************************************************************************/
+void tryRemoveLegacyKeyslot(PassphraseGenerator *generator) {
+    if (access(USM_UPGRADE_IN_PROGRESS, F_OK) == 0) {
+        return;
+    }
+    if (isLegacyKeyslotRemoved()) {
+        return;
+    }
+
+    json_object *jsonConfig;
+    CreatedLuksConfig luksConfig;
+    if (!parseJSONConfig(createdConfigFile, luksConfig, &jsonConfig)) {
+        json_object_put(jsonConfig);
+        return;
+    }
+
+    string type = luksConfig.passphraseType ?
+                  luksConfig.passphraseType : "";
+    string vaultFile = luksConfig.vaultFile ?
+                       luksConfig.vaultFile : "";
+    json_object_put(jsonConfig);
+
+    if (type == "HWID_V2" && !vaultFile.empty()) {
+        log("Attempting legacy keyslot removal.", LOG_INFO);
+        removeLegacyKeyslot(vaultFile, generator);
+    }
+}
+/* ***********************************************************************
+ *
+ * Name       : attemptPassphraseMigration
+ *
+ * Description: Handles the passphrase migration for legacy HWID vaults.
+ *              Called from the main flow when created_luks.json indicates
+ *              PASSPHRASE_TYPE == "HWID".
+ *
+ *              Logic:
+ *              1. Try to open with new passphrase (already migrated?)
+ *              2. If bad passphrase: generate legacy, try to open with it
+ *              3. If legacy works: add new keyslot, update JSON
+ *              4. If both fail: return false (recoverVault will handle)
+ *
+ * Returns:     true if vault is opened (either directly or after
+ *              migration), false on failure.
+ *
+ * ************************************************************************/
+bool attemptPassphraseMigration(const string &vaultFile,
+                                const char *volName,
+                                const char *mountPath,
+                                const string &newPassphrase,
+                                PassphraseGenerator *generator) {
+    const int CRYPTSETUP_BAD_PASSPHRASE = 2;
+
+    // Step 1: Try the new passphrase first (maybe already migrated
+    // from a previous boot that didn't update the JSON)
+    int rc = openLUKSVolumeWithStatus(vaultFile, volName, newPassphrase);
+    if (rc == 0) {
+        log("Vault opened with new passphrase. Migration may already "
+            "be complete. Updating metadata.", LOG_INFO);
+        string newType = getPassPhraseType();
+        updateCreatedLuksJson(newType);
+        if (!mountFilesystem(volName, mountPath, defaultDirectoryPath)) {
+            log("Mount failed after opening with new passphrase.",
+                LOG_ERR);
+            return false;
+        }
+        return true;
+    }
+
+    // Step 2: New passphrase didn't work. If it's not a passphrase
+    // mismatch, this is a different error (I/O, corrupt header).
+    if (rc != CRYPTSETUP_BAD_PASSPHRASE) {
+        log("Vault open failed with exit code " + to_string(rc) +
+            " (not a passphrase mismatch). Cannot migrate.", LOG_ERR);
+        return false;
+    }
+
+    // Step 3: Generate the legacy passphrase and try it
+    log("New passphrase failed (code 2). Attempting legacy passphrase "
+        "for migration.", LOG_INFO);
+
+    string legacyPassphrase;
+    if (!generator->generateLegacyPassphrase(legacyPassphrase)) {
+        log("Failed to generate legacy passphrase.", LOG_ERR);
+        return false;
+    }
+
+    rc = openLUKSVolumeWithStatus(vaultFile, volName, legacyPassphrase);
+    if (rc != 0) {
+        log("Legacy passphrase also failed (exit code " +
+            to_string(rc) + "). Cannot open vault.", LOG_ERR);
+        return false;
+    }
+
+    log("Vault opened with legacy passphrase. Performing migration.",
+        LOG_INFO);
+
+    // Step 4: Vault is open. Add new passphrase keyslot.
+    if (addPassphraseKeyslot(vaultFile, legacyPassphrase, newPassphrase)) {
+        string newType = getPassPhraseType();
+        if (updateCreatedLuksJson(newType)) {
+            log("Passphrase migration completed successfully. "
+                "Type updated to: " + newType, LOG_INFO);
+        } else {
+            log("Warning: Migration keyslot added but JSON update "
+                "failed. Will retry on next boot.", LOG_WARNING);
+        }
+    } else {
+        log("Warning: Failed to add new passphrase keyslot. "
+            "Vault remains accessible with legacy passphrase. "
+            "Migration will be retried on next boot.", LOG_WARNING);
+    }
+
+    // Mount the filesystem (vault is already open)
+    if (!mountFilesystem(volName, mountPath, defaultDirectoryPath)) {
+        log("Mount failed after migration.", LOG_ERR);
+        return false;
+    }
+    return true;
+}
+/* ***********************************************************************
+ *
+ * Name       : handleLegacyPassphraseMigration
+ *
+ * Description: Checks if the existing vault uses the legacy HWID
+ *              passphrase and performs migration if so. Encapsulates
+ *              the JSON parsing, type check, and migration call.
+ *
+ * Returns:     true if migration succeeded (vault is open and mounted),
+ *              false if migration not needed or failed.
+ *
+ * ************************************************************************/
+bool handleLegacyPassphraseMigration(const string &passphrase,
+                                     PassphraseGenerator *generator) {
+    json_object *jsonConfig;
+    CreatedLuksConfig luksConfig;
+    if (!parseJSONConfig(createdConfigFile, luksConfig, &jsonConfig)) {
+        json_object_put(jsonConfig);
+        return false;
+    }
+
+    string existingType = luksConfig.passphraseType ?
+                          luksConfig.passphraseType : "";
+    string vaultFile = luksConfig.vaultFile ?
+                       luksConfig.vaultFile : "";
+    string volName = luksConfig.volName ?
+                     luksConfig.volName : "";
+    string mountPath = luksConfig.mountPath ?
+                       luksConfig.mountPath : "";
+    json_object_put(jsonConfig);
+
+    if (existingType != "HWID") {
+        return false;
+    }
+
+    log("Legacy HWID passphrase detected. Attempting "
+        "migration to new passphrase scheme.", LOG_INFO);
+
+    if (attemptPassphraseMigration(vaultFile, volName.c_str(),
+                                   mountPath.c_str(), passphrase,
+                                   generator)) {
+        return true;
+    }
+
+    log("Passphrase migration failed. Falling through "
+        "to normal flow.", LOG_WARNING);
+    return false;
 }
 /* ***********************************************************************
  *
@@ -1603,7 +2034,8 @@ int initialVolCreate(string &passphrase, string &volName) {
  *              inotify events.
  *
  * ************************************************************************/
-void monitorLUKSVolume(bool isController, const string& volumeName) {
+void monitorLUKSVolume(bool isController, const string& volumeName,
+                      PassphraseGenerator *generator) {
     log("Monitoring LUKS volume: " + volumeName, LOG_INFO);
     string softwareVersion = getSoftwareVersion();
     if (softwareVersion.empty()) {
@@ -1627,6 +2059,11 @@ void monitorLUKSVolume(bool isController, const string& volumeName) {
     }
 
     while (!exitFlag.load()) {
+        // Handle SIGUSR1: remove legacy keyslot when signaled
+        if (removeLegacyKeyslotFlag.exchange(false)) {
+            tryRemoveLegacyKeyslot(generator);
+        }
+
         string statusCommand = "cryptsetup status " + volumeName +
                                                            " 2>/dev/null";
         int status = system(statusCommand.c_str());
@@ -1783,6 +2220,7 @@ int main() {
     }
     // Install signal handler for termination signals
     signal(SIGTERM, luksMgrSignalHandler);
+    signal(SIGUSR1, luksMgrSignalHandler);
 
     string passphrase;
     string volName;
@@ -1798,19 +2236,19 @@ int main() {
         return 1;
     }
     if (access(createdConfigFile, F_OK) == 0) {
-        // Volume exists, check resize required or not and handle
-        rc = handleResize(passphrase, volName);
-        if (rc != 0) {
-            // handleResize can fail if created_luks.json is corrupt/empty.
-            // Fall through to initialVolCreate which reads luks_config.json
-            // and can open an existing vault without the metadata file.
-            log("handleResize failed (rc=" + to_string(rc) +
-                "), falling back to initialVolCreate", LOG_WARNING);
-            rc = initialVolCreate(passphrase, volName);
+        if (!handleLegacyPassphraseMigration(passphrase,
+                                             passphraseGenerator.get())) {
+            // Migration not needed or failed — normal flow
+            rc = handleResize(passphrase, volName);
             if (rc != 0) {
-                log("Initial volume creation also failed. Error code: " +
-                     to_string(rc), LOG_ERR);
-                return rc;
+                log("handleResize failed (rc=" + to_string(rc) +
+                    "), falling back to initialVolCreate", LOG_WARNING);
+                rc = initialVolCreate(passphrase, volName);
+                if (rc != 0) {
+                    log("Initial volume creation also failed. "
+                        "Error code: " + to_string(rc), LOG_ERR);
+                    return rc;
+                }
             }
         }
     } else {
@@ -1821,6 +2259,11 @@ int main() {
             return rc;
         }
     }
+
+    // Remove legacy keyslot if upgrade is complete (no rollback possible).
+    // tryRemoveLegacyKeyslot checks .usm_upgrade_in_progress internally.
+    tryRemoveLegacyKeyslot(passphraseGenerator.get());
+
     // Restore staged clone data if present
     if (!restoreStagingData(defaultMountPath)) {
         log("Staging data restore failed.", LOG_ERR);
@@ -1832,6 +2275,6 @@ int main() {
             +to_string(rc), LOG_ERR);
         return rc;
     }
-    monitorLUKSVolume(isController, volName);
+    monitorLUKSVolume(isController, volName, passphraseGenerator.get());
     return rc;
 }
