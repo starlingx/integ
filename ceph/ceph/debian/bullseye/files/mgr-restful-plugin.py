@@ -945,15 +945,42 @@ class ServiceMonitor(object):
             self.request_update_certificate(
                 self.certificate)
 
+    def _refresh_restful_url(self):
+        """Re-query the active restful URL from the cluster.
+
+        Returns True if the active restful moved to this host,
+        False otherwise. Exceptions are suppressed so this never
+        disrupts the ping cycle.
+        """
+        try:
+            command = [self.ceph_executable, 'mgr', 'services',
+                       '--format', 'json']
+            with open(os.devnull, 'wb') as null:
+                out = self.run_with_timeout(
+                    command, CONFIG.ceph_cli_timeout_sec, stderr=null)
+            current_url = json.loads(out).get('restful', '')
+        except Exception:
+            return False
+        if current_url and CONFIG.ceph_mgr_identity in current_url:
+            LOG.info('Active Restful API moved to local host: url=%s',
+                     current_url)
+            self.restful_plugin_url = current_url
+            self.request_update_plugin_url(self.restful_plugin_url)
+            return True
+        return False
+
     def restful_plugin_ping(self):
         if not self.restful_plugin_url:
             raise RestApiPingFailed(reason='missing service url')
         if not self.certificate:
             raise RestApiPingFailed(reason='missing certificate')
         if CONFIG.ceph_mgr_identity not in self.restful_plugin_url:
-            LOG.info('Active Restful API is in a remote host, skipping ping: url=%s',
-                     self.restful_plugin_url)
-            return
+            if not self._refresh_restful_url():
+                LOG.info('Active Restful API is in a remote host, '
+                         'skipping ping: url=%s',
+                         self.restful_plugin_url)
+                return
+
         LOG.debug('Ping restful plugin: url=%s', self.restful_plugin_url)
         try:
             response = requests.request(
