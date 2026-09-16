@@ -1,0 +1,297 @@
+From 08c0e9936dfe4fb8787399db63fff8982c458819 Mon Sep 17 00:00:00 2001
+From: Caio Bruchert <caio.bruchert@windriver.com>
+Date: Wed, 16 Sep 2026 09:49:34 -0300
+Subject: [PATCH] synce_dev: advertise holdover QL instead of DNU on EEC
+ holdover
+
+On a dpll_mon (DPLL/netlink) device such as the E825/zl3073x, when the
+GNSS reference is lost the EEC enters holdover on the still-valid
+recovered clock. The DPLL reports lock status HOLDOVER and synce4l sets
+d_state = EEC_HOLDOVER, then advertises QL-DNU (0x0f) on the wire. That
+is self-contradictory with a frequency that is still traceable and tells
+downstream nodes to stop using an otherwise usable clock. Per ITU-T
+G.781 / G.8264 a clock in holdover on a valid EEC should advertise a
+holdover QL, not DNU.
+
+Per the kernel DPLL uapi, a device only reports DPLL_LOCK_STATUS_HOLDOVER
+after it has acquired a valid holdover (its prior lock-state was
+LOCKED_HO_ACQ); if it never acquired holdover, loss of lock leaves it
+UNLOCKED. Therefore EEC_HOLDOVER on a dpll_mon device is, by definition,
+a valid frequency-traceable holdover and is the correct place to
+advertise a holdover QL.
+
+Add three device options:
+  holdover_tx        (0/1, default 0)   - enable advertising a holdover QL
+  holdover_tx_ql     (0-15, default 0)  - holdover SSM to advertise
+  holdover_tx_ext_ql (0-255, default 0xff) - holdover enhanced SSM
+
+holdover_tx is the sole enable authority for the feature. When it is
+enabled on a dpll_mon device, the EEC_HOLDOVER branch of
+update_ql_line_input() and the SMC socket GET_QL/GET_EXT_QL handlers
+report the configured holdover_tx_ql / holdover_tx_ext_ql instead of DNU.
+The value is not overloaded as an "unset" sentinel: the configured QL is
+advertised verbatim, including QL 0 (STU). The advertised QL is
+operator-selectable so the holdover tier matches the platform and the
+network option - the SSM code space differs between option 1 and option
+2, so no single built-in default is correct and choosing an appropriate
+holdover QL is the operator's responsibility.
+
+Holdover QL advertisement is line-input-scoped on a dpll_mon device.
+When the EEC enters holdover, dev_step_dpll() clears ext_src_is_best
+before updating the QL, so update_ql() always dispatches through
+update_ql_line_input() (the patched path) in the EEC_HOLDOVER state; the
+external-input path is not reachable for holdover on a dpll_mon device.
+The GET_QL/GET_EXT_QL status handlers carry the same !ext_src_is_best
+guard as the wire path, so the reported status can never diverge from
+what is advertised on the wire.
+
+Genuine loss (UNLOCKED/FREERUN, or no valid EEC) is handled by the other
+branches and still transmits DNU. Legacy command mode (no dpll_mon) has
+no acquired-holdover guarantee and keeps DNU. Default (holdover_tx unset)
+preserves the existing DNU behaviour.
+
+The holdover QL/eSSM are set onto the port TX TLV at advertise time via a
+new synce_port_set_tx_ql_holdover(); port storage is zero-initialised at
+creation and the extended TLV is only referenced when extended_tlv is
+configured. All new entry points null-check the port.
+
+Signed-off-by: Caio Bruchert <caio.bruchert@windriver.com>
+---
+ config.c            |  3 ++
+ synce_dev.c         | 83 +++++++++++++++++++++++++++++++++++++++++++--
+ synce_dev_private.h |  3 ++
+ synce_port.c        | 20 +++++++++++
+ synce_port.h        | 17 ++++++++++
+ 5 files changed, 124 insertions(+), 2 deletions(-)
+
+diff --git a/config.c b/config.c
+index f90c94e..f364ecd 100644
+--- a/config.c
++++ b/config.c
+@@ -197,6 +197,9 @@ struct config_item config_tab_synce[] = {
+ 	DEV_ITEM_U64("clock_id", 0, 0, 0xffffffffffffffff),
+ 	DEV_ITEM_STR("module_name", NULL),
+ 	DEV_ITEM_INT("dnu_prio", 15, 15, 0xffff),
++	DEV_ITEM_INT("holdover_tx", 0, 0, 1),
++	DEV_ITEM_INT("holdover_tx_ql", 0, 0, 15),
++	DEV_ITEM_INT("holdover_tx_ext_ql", 0xff, 0, 255),
+ 	PORT_ITEM_STR("allowed_qls", NULL),
+ 	PORT_ITEM_STR("allowed_ext_qls", NULL),
+ 	PORT_ITEM_STR("recover_clock_enable_cmd", NULL),
+diff --git a/synce_dev.c b/synce_dev.c
+index 9622b4f..eeff67c 100644
+--- a/synce_dev.c
++++ b/synce_dev.c
+@@ -198,6 +198,27 @@ static int port_set_dnu(struct synce_port *p, int extended_tlv)
+ 	return ret;
+ }
+ 
++static int port_set_holdover(struct synce_port *p, int extended_tlv,
++			     uint8_t ql, uint8_t ext_ql)
++{
++	int ret;
++
++	if (!p) {
++		pr_err("%s port is NULL", __func__);
++		ret = -EFAULT;
++		return ret;
++	}
++
++	ret = synce_port_set_tx_ql_holdover(p, extended_tlv, ql, ext_ql);
++	if (ret) {
++		pr_err("set tx holdover QL fail on %s",
++		       synce_port_get_name(p));
++		return ret;
++	}
++
++	return ret;
++}
++
+ static int port_set_ql_external_input(struct synce_port *p, int extended)
+ {
+ 	int ret = synce_port_set_tx_ql_forced(p, extended);
+@@ -274,9 +295,27 @@ static int update_ql_line_input(struct synce_dev *dev)
+ 		if (dev->d_state == EEC_HOLDOVER) {
+ 			pr_info("act on EEC_HOLDOVER for %s",
+ 				synce_port_get_name(p));
+-			ret = port_set_dnu(p, dev->extended_tlv);
++			/*
++			 * On a dpll_mon device the DPLL only reports HOLDOVER
++			 * after it has acquired a valid holdover (its prior
++			 * lock-state was LOCKED_HO_ACQ); otherwise loss of lock
++			 * leaves it UNLOCKED/FREERUN. So EEC_HOLDOVER here means
++			 * the recovered clock is still frequency-traceable and,
++			 * per G.781, may advertise a holdover QL instead of DNU.
++			 * Enabled by the device "holdover_tx" option; the QL/eSSM
++			 * advertised come from "holdover_tx_ql"/"holdover_tx_ext_ql".
++			 * Genuine loss (freerun/unlocked) is handled by other
++			 * branches and still transmits DNU. Legacy command mode
++			 * (no dpll_mon) has no such guarantee and keeps DNU.
++			 */
++			if (dev->holdover_tx && dev->dpll_mon)
++				ret = port_set_holdover(p, dev->extended_tlv,
++							dev->holdover_tx_ql,
++							dev->holdover_tx_ext_ql);
++			else
++				ret = port_set_dnu(p, dev->extended_tlv);
+ 			if (ret) {
+-				pr_err("%s set DNU failed on %s",
++				pr_err("%s set QL failed on %s",
+ 				       __func__, dev->name);
+ 				return ret;
+ 			}
+@@ -832,6 +871,19 @@ void synce_dev_get_ql(struct synce_dev *dev, uint8_t *ql)
+ 	struct synce_clock_source *best;
+ 
+ 	*ql = synce_get_dnu_value(dev->network_option, false);
++	/*
++	 * Report the holdover QL while in a valid EEC holdover on a dpll_mon
++	 * device with the holdover_tx option enabled, to match what is
++	 * advertised on the wire (see update_ql_line_input()). Holdover clears
++	 * ext_src_is_best (see dev_step_dpll()), so the wire QL is always driven
++	 * by the line-input path in this state; the !ext_src_is_best guard makes
++	 * that invariant explicit so status can never diverge from the wire.
++	 */
++	if (dev->holdover_tx && dev->dpll_mon && !dev->ext_src_is_best &&
++	    dev->d_state == EEC_HOLDOVER) {
++		*ql = dev->holdover_tx_ql;
++		return;
++	}
+ 	if (dev->d_state != EEC_LOCKED && dev->d_state != EEC_LOCKED_HO_ACQ)
+ 		return;
+ 	if (!dev->best_source)
+@@ -862,6 +914,19 @@ void synce_dev_get_ext_ql(struct synce_dev *dev, uint8_t *ext_ql)
+ 	struct synce_msg_ext_ql ext_ql_msg;
+ 
+ 	*ext_ql = synce_get_dnu_value(dev->network_option, true);
++	/*
++	 * Report the holdover eSSM while in a valid EEC holdover on a dpll_mon
++	 * device with the holdover_tx option enabled, to match what is
++	 * advertised on the wire (see update_ql_line_input()). Holdover clears
++	 * ext_src_is_best (see dev_step_dpll()), so the wire QL is always driven
++	 * by the line-input path in this state; the !ext_src_is_best guard makes
++	 * that invariant explicit so status can never diverge from the wire.
++	 */
++	if (dev->holdover_tx && dev->dpll_mon && !dev->ext_src_is_best &&
++	    dev->d_state == EEC_HOLDOVER) {
++		*ext_ql = dev->holdover_tx_ext_ql;
++		return;
++	}
+ 	if (dev->d_state != EEC_LOCKED && dev->d_state != EEC_LOCKED_HO_ACQ)
+ 		return;
+ 	if (!dev->best_source || !dev->extended_tlv)
+@@ -965,6 +1030,20 @@ int synce_dev_init(struct synce_dev *dev, struct config *cfg)
+ 	module_name = config_get_string(cfg, dev->name, "module_name");
+ 	clock_id = config_get_u64(cfg, dev->name, "clock_id");
+ 	dev->dnu_prio = config_get_int(cfg, dev->name, "dnu_prio");
++	dev->holdover_tx = config_get_int(cfg, dev->name, "holdover_tx");
++	dev->holdover_tx_ql = config_get_int(cfg, dev->name, "holdover_tx_ql");
++	dev->holdover_tx_ext_ql = config_get_int(cfg, dev->name,
++						 "holdover_tx_ext_ql");
++	/*
++	 * holdover_tx is the enable flag for advertising a holdover QL;
++	 * holdover_tx_ql / holdover_tx_ext_ql carry the SSM / eSSM to send.
++	 * The value is not overloaded as an "unset" sentinel: when
++	 * holdover_tx is enabled the configured holdover_tx_ql is advertised
++	 * verbatim, including QL 0 (STU). Choosing a holdover QL appropriate
++	 * to the network option is the operator's responsibility (the valid
++	 * holdover QL is network-option specific, so there is no safe
++	 * built-in default).
++	 */
+ 	dev->dc = synce_dev_ctrl_create();
+ 	if (!dev->dc) {
+ 		pr_err("device_ctrl create fail on %s", dev->name);
+diff --git a/synce_dev_private.h b/synce_dev_private.h
+index 1170b42..f4c3d5c 100644
+--- a/synce_dev_private.h
++++ b/synce_dev_private.h
+@@ -42,6 +42,9 @@ struct synce_dev {
+ 	struct synce_dev_ctrl *dc;
+ 	struct dpll_mon *dpll_mon;
+ 	uint32_t dnu_prio;
++	int holdover_tx;
++	int holdover_tx_ql;
++	int holdover_tx_ext_ql;
+ 	int rebuild_prio;
+ 	struct config *cfg;
+ };
+diff --git a/synce_port.c b/synce_port.c
+index 3d41b63..dee5079 100644
+--- a/synce_port.c
++++ b/synce_port.c
+@@ -128,6 +128,9 @@ static int init_port_ext_ql(struct synce_port *port, int network_option)
+ 	port->ext_ql_msg_forced.enhancedSsmCode =
+ 		port->ext_ql_msg_dnu.enhancedSsmCode;
+ 
++	memcpy(&port->ext_ql_msg_holdover, &port->ext_ql_msg_dnu,
++	       sizeof(port->ext_ql_msg_holdover));
++
+ 	return ret;
+ }
+ 
+@@ -355,6 +358,23 @@ int synce_port_set_tx_ql_forced(struct synce_port *port, int extended)
+ 				     &port->ext_ql_msg_forced : NULL);
+ }
+ 
++int synce_port_set_tx_ql_holdover(struct synce_port *port, int extended,
++				  uint8_t ql, uint8_t ext_ql)
++{
++	if (!port) {
++		pr_err("%s port is NULL", __func__);
++		return -EFAULT;
++	}
++
++	port->ql_holdover = ql;
++	if (extended)
++		port->ext_ql_msg_holdover.enhancedSsmCode = ext_ql;
++
++	return new_tx_ql_and_rebuild(port, port->ql_holdover,
++				     extended ?
++				     &port->ext_ql_msg_holdover : NULL);
++}
++
+ int synce_port_set_tx_ql_from_best_input(struct synce_port *port,
+ 					 struct synce_port *best_p,
+ 					 int extended)
+diff --git a/synce_port.h b/synce_port.h
+index c5316fb..ccbe748 100644
+--- a/synce_port.h
++++ b/synce_port.h
+@@ -22,10 +22,12 @@ struct synce_port {
+ 	uint8_t ql;
+ 	uint8_t ql_dnu;
+ 	uint8_t ql_forced;
++	uint8_t ql_holdover;
+ 	int ql_failed;
+ 	struct synce_msg_ext_ql ext_ql_msg;
+ 	struct synce_msg_ext_ql ext_ql_msg_dnu;
+ 	struct synce_msg_ext_ql ext_ql_msg_forced;
++	struct synce_msg_ext_ql ext_ql_msg_holdover;
+ 	char name[IF_NAMESIZE];
+ 	char *recover_clock_enable_cmd;
+ 	char *recover_clock_disable_cmd;
+@@ -118,6 +120,21 @@ int synce_port_set_tx_ql_dnu(struct synce_port *port, int extended);
+  */
+ int synce_port_set_tx_ql_forced(struct synce_port *port, int extended);
+ 
++/**
++ * Set the EEC holdover QL on the TX TLV of associated port. Advertised
++ * when the local EEC is in holdover on an otherwise valid recovered
++ * clock, instead of DNU. The QL/eSSM to advertise are provided by the
++ * caller from the device "holdover_tx_ql"/"holdover_tx_ext_ql" options.
++ *
++ * @param port		Managed port
++ * @param extended      If new extended TLV shall be created
++ * @param ql		Holdover SSM QL to advertise
++ * @param ext_ql	Holdover enhanced SSM QL (used when extended)
++ * @return		0 on success, negative otherwise
++ */
++int synce_port_set_tx_ql_holdover(struct synce_port *port, int extended,
++				  uint8_t ql, uint8_t ext_ql);
++
+ /**
+  * Set QL for TX thread - but copy QL from best port.
+  *
+-- 
+2.53.0
+
