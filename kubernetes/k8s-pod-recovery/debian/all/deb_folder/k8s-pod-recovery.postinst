@@ -4,6 +4,11 @@
 set -e
 
 if [ "${1}" = "configure" ] ; then
+    # Pre-create the drop-in file owned by sysadmin; setup scripts run as
+    # sysadmin and cannot create files in /etc/k8s-post-recovery.d itself.
+    touch /etc/k8s-post-recovery.d/k8s-pod-recovery.conf
+    chown sysadmin: /etc/k8s-post-recovery.d/k8s-pod-recovery.conf || :
+
     # Package upgrade: reenable in case [Install] changes and restart to pick up
     # new actions
     if /usr/bin/systemctl --quiet is-enabled k8s-pod-recovery.service ; then
