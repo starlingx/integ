@@ -194,11 +194,50 @@ function _node_affinity_pods {
             kubectl delete pods -n ${pod//// } --wait=false
         done
     elif [ "$1" == 'verify' ]; then
-        PODS=$(kubectl get pods --all-namespaces --field-selector status.phase=Failed,spec.nodeName=${HOST} 2>/dev/null | awk /NodeAffnity/'{print $1"/"$2}')
+        PODS=$(kubectl get pods --all-namespaces --field-selector status.phase=Failed,spec.nodeName=${HOST} 2>/dev/null | awk /NodeAffinity/'{print $1"/"$2}')
         if [ -z "${PODS}" ]; then
             LOG "NodeAffinity pods: None present."
         else
             ERROR "NodeAffinity pods: still present"
+        fi
+    else
+        ERROR "Unknown action: $1"
+    fi
+}
+
+function _node_shutdown_pods {
+    # $1: actions <recover|verify>
+    #
+    # Kubelet Graceful Node Shutdown can leave orphaned pods behind in the
+    # terminal 'Failed' phase after a node reboot. They are never garbage
+    # collected and block app readiness / clutter the pod list, so remove
+    # them here after boot. We match Failed pods on this host by the node-
+    # shutdown reason or message (keying on the stable message text so it is
+    # tolerant of reason/version differences); other Failed pods (e.g.
+    # Evicted, OOMKilled, crashes) are left alone.
+
+    # Print "<ns>/<name> <reason> <message...>" for Failed pods on this host.
+    # reason/message that are absent render as '<none>'.
+    local cols='custom-columns=NSNAME:.metadata.namespace/.metadata.name,REASON:.status.reason,MSG:.status.message'
+    # Match on the reason/message text kubelet emits for graceful node
+    # shutdown, using its exact casing: reason 'NodeShutdown' or message
+    # "...node is shutting down." / "...imminent node shutdown.".
+    local match='shutting down|imminent node shutdown|NodeShutdown'
+
+    if [ "$1" == 'recover' ]; then
+        PODS=$(kubectl get pods --all-namespaces --field-selector status.phase=Failed,spec.nodeName=${HOST} -o "${cols}" --no-headers 2>/dev/null \
+                 | grep -E "${match}" | awk '{print $1}')
+        for pod in $PODS ; do
+            LOG "Node-shutdown terminal pods: Recovering: ${pod//// }"
+            kubectl delete pods -n ${pod//// } --wait=false
+        done
+    elif [ "$1" == 'verify' ]; then
+        PODS=$(kubectl get pods --all-namespaces --field-selector status.phase=Failed,spec.nodeName=${HOST} -o "${cols}" --no-headers 2>/dev/null \
+                 | grep -E "${match}" | awk '{print $1}')
+        if [ -z "${PODS}" ]; then
+            LOG "Node-shutdown terminal pods: None present."
+        else
+            ERROR "Node-shutdown terminal pods: still present"
         fi
     else
         ERROR "Unknown action: $1"
@@ -346,6 +385,7 @@ function _examine_pods {
     # Check for recovery actions
     _unknown_pods $1
     _node_affinity_pods $1
+    _node_shutdown_pods $1
     _force_reset_pods $1
     _outofhugepages_pods $1
 }
