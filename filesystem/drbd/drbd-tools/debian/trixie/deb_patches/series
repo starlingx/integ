@@ -2,3 +2,4 @@
 0002-Add-drbd.service-file.patch
 0003-Ensure-drbd-is-present.patch
 0004-Use-usr-lib-systemd-path-for-trixie.patch
+0005-Remove-var-lock-from-drbd-utils-package.patch

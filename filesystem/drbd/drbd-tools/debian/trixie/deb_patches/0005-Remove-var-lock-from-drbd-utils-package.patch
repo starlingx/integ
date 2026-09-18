@@ -1,0 +1,29 @@
+From 0112b51e00ddd06e9875e9a881cf0eed1cdf96d1 Mon Sep 17 00:00:00 2001
+From: Boovan Rajendran <Boovan.R@windriver.com>
+Date: Fri, 18 Sep 2026 07:52:36 -0400
+Subject: [PATCH] Remove /var/lock from drbd-utils package
+
+/var/lock is owned by base-files. drbd-utils also shipped an empty
+/var/lock, causing a dpkg file-conflict on --unpack. Drop it at
+build time, matching the existing /var/run cleanup.
+
+Signed-off-by: Boovan Rajendran <Boovan.R@windriver.com>
+---
+ debian/rules | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/rules b/debian/rules
+index 9d841ca..d583ca0 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -37,6 +37,7 @@ override_dh_install:
+ 	# Remove /run/drbd, as it shouldn't be shipped in the package
+ 	rmdir $(CURDIR)/debian/drbd-utils/var/run/drbd
+ 	rmdir $(CURDIR)/debian/drbd-utils/var/run
++	rmdir $(CURDIR)/debian/drbd-utils/var/lock
+ 
+ 	# systemd/kmod integration
+ 	install -D -m0644 $(CURDIR)/debian/drbd.modules-load.d $(CURDIR)/debian/drbd-utils/lib/modules-load.d/drbd.conf
+-- 
+2.34.1
+
