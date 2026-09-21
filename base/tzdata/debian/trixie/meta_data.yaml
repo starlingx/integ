@@ -1,10 +1,20 @@
 ---
-debver: 2026a-0+deb13u1
+# MAINTAINER NOTE:
+# This is a custom tzdata package that patches leap-seconds.list. Its version
+# (debver) MUST stay >= the upstream tzdata version pulled by the mirror config
+# in stx-tools/debian-mirror-tools/config/debian/trixie/common/base-trixie.lst.
+# The repo merge selects the highest version, so whenever Debian trixie bumps
+# tzdata in base-trixie.lst (e.g. 2026b -> 2026c), rebase this package to the
+# same upstream version. The PKG_GITREVCOUNT-derived '.stx.N' suffix then makes
+# the custom build outrank the identical upstream version. If left behind, the
+# upstream package eclipses this one and the leap-seconds patch is dropped from
+# the ISO.
+debver: 2026b-0+deb13u1
 dl_path:
-  name: tzdata-debian-2026a-0+deb13u1.tar.gz
-  url: https://salsa.debian.org/glibc-team/tzdata/-/archive/debian/2026a-0+deb13u1/tzdata-debian-2026a-0+deb13u1.tar.gz
-  md5sum: b311c46ca3f9b23d3db7b84f90c057ae
-  sha256sum: c29fec8639ce2bf93852e3a56bc3501c446bdc85697546224c06d4e2885ec71d
+  name: tzdata-debian-2026b-0+deb13u1.tar.gz
+  url: https://salsa.debian.org/glibc-team/tzdata/-/archive/debian/2026b-0+deb13u1/tzdata-debian-2026b-0+deb13u1.tar.gz
+  md5sum: d5eb617a541b29b33de1a34a2f65eb74
+  sha256sum: 3532e0a4e38abe3d3a4424d77358c36cbc871cdf6489997b5eacf23becee72d9
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
