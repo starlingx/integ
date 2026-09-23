@@ -1,0 +1,91 @@
+From c1d2e3f4a5b60718293a4b5c6d7e8f9a0b1c2d3e Mon Sep 17 00:00:00 2001
+From: Cole Walker <cole.walker@windriver.com>
+Date: Wed, 23 Sep 2026 11:00:00 -0400
+Subject: [PATCH] port: inhibit_announce must not transition to MASTER on GM
+ loss
+
+An inhibit_announce port is, by definition, forbidden from sending
+Announce messages. It must therefore never assume the MASTER role: a
+"master" that emits no Announce is a contradiction, and downstream
+consumers (BMCA peers, notifications, monitoring) that key off port
+state see a bogus MASTER during the grandmaster-absent window.
+
+Observed (G.8275.2 PTS T-BC, domain 44, UDPv6 unicast):
+  controller-1 ptp11 port enp81s0f1 (inhibit_announce=1) transitions
+  SLAVE -> MASTER when the upstream T-GM is lost. It recovers to SLAVE
+  when the T-GM returns, but the MASTER holdover state is incorrect.
+  Expected: the port holds in LISTENING until an upstream master
+  reappears.
+
+Root cause: this is a two-patch composition gap.
+
+  * Patch 0014 (bmc: multi-port BMCA correctness) enforces the
+    "inhibit_announce => PS_LISTENING" invariant inside
+    bmc_state_decision(). That guard, however, is only consulted for
+    BMCA-driven recommended states (the EV_RS_* events produced in
+    handle_state_decision_event()).
+
+  * Patch 0017 (port: master loss detection on inhibit_announce ports)
+    fixed a genuinely stuck SLAVE port by returning
+    EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES directly from the announce
+    receipt timeout handler.
+
+On a boundary-clock instance (dataset_comparison=G.8275.x, not
+clientOnly, so the port runs ptp_fsm) the ptp_fsm PS_SLAVE handler maps
+EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES straight to PS_MASTER. That event
+path never re-enters bmc_state_decision(), so the patch 0014 guard is
+bypassed and the inhibit_announce port reaches MASTER.
+
+Note this cannot be worked around by configuration on a T-BC:
+clientOnly is a clock-global option that forces clockClass 255 and
+routes the whole instance through ptp_slave_fsm, which would disable the
+boundary clock's downstream master port. linuxptp has no per-port
+"never-master" option (serverOnly is the opposite). The invariant must
+therefore be enforced in code, at the port level.
+
+Fix: preserve patch 0017's master-loss *detection* (drop the stale
+foreign master record, re-arm the announce timer, prune delay requests)
+but, instead of returning EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES, request a
+fresh state decision (clock_set_sde) and return EV_NONE. BMCA then
+re-runs and bmc_state_decision()'s existing inhibit_announce guard
+returns PS_LISTENING. This keeps the "inhibit => never master" invariant
+in a single place (BMCA) and makes the upstream port behave identically
+whether its instance is an OC or a T-BC, and regardless of clientOnly.
+
+Test Plan:
+PASS: G.8275.2 PTS T-BC, upstream inhibit_announce port -> LISTENING
+  (not MASTER) within announceReceiptTimeout of T-GM loss; downstream
+  master port unaffected.
+PASS: Port recovers to SLAVE when the T-GM returns.
+PASS: Repeated T-GM loss/recovery cycles converge to LISTENING then
+  SLAVE each time (no stuck-SLAVE regression of the original bug).
+PASS: Single-port PTS slave OC (no clientOnly) -> LISTENING on loss,
+  SLAVE on recovery.
+PASS: Non-inhibit_announce ports and boundary-clock master legs
+  unaffected.
+PASS: build-pkgs -c -p linuxptp (trixie)
+
+Story: 2011744
+Task: 55099
+
+Signed-off-by: Cole Walker <cole.walker@windriver.com>
+---
+ port.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/port.c b/port.c
+index c3a8b9f..d7e0a12 100644
+--- a/port.c
++++ b/port.c
+@@ -2925,7 +2925,8 @@ static enum fsm_event bc_event(struct port *p, int fd_index)
+ 				}
+ 				port_set_announce_tmo(p);
+ 				delay_req_prune(p);
+-				return EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES;
++				clock_set_sde(p->clock, 1);
++				return EV_NONE;
+ 			} else {
+ 				port_clr_tmo(p->fda.fd[FD_ANNOUNCE_TIMER]);
+ 				clock_set_sde(p->clock, 1);
+-- 
+2.43.0
