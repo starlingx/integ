@@ -1,0 +1,357 @@
+From 88240fa79b83b9d3b404a0195a4204226a5f8625 Mon Sep 17 00:00:00 2001
+From: Howard Chu <hyc@openldap.org>
+Date: Sat, 30 May 2026 14:43:16 +0100
+Subject: [PATCH 1/2] ITS#8901 ldap_pvt_thread: add _detach() support
+
+Prep for fixups to tpool.
+
+Backport of the first commit of upstream OpenLDAP MR !888 [1], which
+fixes ITS#8901 [2]. The upstream commit modifies
+libraries/libldap/ldap.map.in, which does not exist in the Debian dfsg
+source. The equivalent ldap_pvt_thread_detach export is added to the
+shipped libraries/libldap/ldap.map instead. All other changes are
+verbatim.
+
+[1] https://git.openldap.org/openldap/openldap/-/merge_requests/888
+[2] https://bugs.openldap.org/show_bug.cgi?id=8901
+
+Signed-off-by: Marcelo de Castro Loebens <Marcelo.DeCastroLoebens@windriver.com>
+---
+ include/ldap_pvt_thread.h          |  3 ++
+ libraries/libldap/ldap.map         |  1 +
+ libraries/libldap/ldap_thr_debug.h |  6 ++-
+ libraries/libldap/thr_debug.c      | 40 ++++++++++++++++++--
+ libraries/libldap/thr_nt.c         | 61 ++++++++++++++++++++++++------
+ libraries/libldap/thr_posix.c      |  6 +++
+ libraries/libldap/thr_pth.c        | 12 ++++++
+ libraries/libldap/thr_thr.c        | 12 +++++-
+ 8 files changed, 122 insertions(+), 19 deletions(-)
+
+diff --git a/include/ldap_pvt_thread.h b/include/ldap_pvt_thread.h
+index ec4a661..93a988e 100644
+--- a/include/ldap_pvt_thread.h
++++ b/include/ldap_pvt_thread.h
+@@ -81,6 +81,9 @@ ldap_pvt_thread_create LDAP_P((
+ LDAP_F( void )
+ ldap_pvt_thread_exit LDAP_P(( void *retval ));
+ 
++LDAP_F( int )
++ldap_pvt_thread_detach LDAP_P(( ldap_pvt_thread_t thread ));
++
+ LDAP_F( int )
+ ldap_pvt_thread_join LDAP_P(( ldap_pvt_thread_t thread, void **status ));
+ 
+diff --git a/libraries/libldap/ldap.map b/libraries/libldap/ldap.map
+index b28c9c2..4635ddb 100644
+--- a/libraries/libldap/ldap.map
++++ b/libraries/libldap/ldap.map
+@@ -336,6 +336,7 @@ OPENLDAP_2.200
+     ldap_pvt_thread_cond_wait;
+     ldap_pvt_thread_create;
+     ldap_pvt_thread_destroy;
++    ldap_pvt_thread_detach;
+     ldap_pvt_thread_exit;
+     ldap_pvt_thread_get_concurrency;
+     ldap_pvt_thread_initialize;
+diff --git a/libraries/libldap/ldap_thr_debug.h b/libraries/libldap/ldap_thr_debug.h
+index b346337..e3bd72e 100644
+--- a/libraries/libldap/ldap_thr_debug.h
++++ b/libraries/libldap/ldap_thr_debug.h
+@@ -74,6 +74,7 @@
+ #define	ldap_pvt_thread_set_concurrency	ldap_int_thread_set_concurrency
+ #define	ldap_pvt_thread_create			ldap_int_thread_create
+ #define	ldap_pvt_thread_exit			ldap_int_thread_exit
++#define	ldap_pvt_thread_detach			ldap_int_thread_detach
+ #define	ldap_pvt_thread_join			ldap_int_thread_join
+ #define	ldap_pvt_thread_kill			ldap_int_thread_kill
+ #define	ldap_pvt_thread_yield			ldap_int_thread_yield
+@@ -112,7 +113,7 @@
+ #ifdef LDAP_THREAD_DEBUG_WRAP			/* see ldap_pvt_thread.h */
+ #define	ldap_pvt_thread_pool_t			ldap_int_thread_pool_t
+ #endif
+-#define	ldap_pvt_thread_pool_init		ldap_int_thread_pool_init
++#define	ldap_pvt_thread_pool_init_q		ldap_int_thread_pool_init_q
+ #define	ldap_pvt_thread_pool_submit		ldap_int_thread_pool_submit
+ #define	ldap_pvt_thread_pool_maxthreads	ldap_int_thread_pool_maxthreads
+ #define	ldap_pvt_thread_pool_backload	ldap_int_thread_pool_backload
+@@ -148,6 +149,7 @@
+ #undef	ldap_pvt_thread_set_concurrency
+ #undef	ldap_pvt_thread_create
+ #undef	ldap_pvt_thread_exit
++#undef	ldap_pvt_thread_detach
+ #undef	ldap_pvt_thread_join
+ #undef	ldap_pvt_thread_kill
+ #undef	ldap_pvt_thread_yield
+@@ -178,7 +180,7 @@
+ #undef	ldap_pvt_thread_rdwr_active
+ /* LDAP_THREAD_POOL_IMPLEMENTATION: */
+ #undef	ldap_pvt_thread_pool_t
+-#undef	ldap_pvt_thread_pool_init
++#undef	ldap_pvt_thread_pool_init_q
+ #undef	ldap_pvt_thread_pool_submit
+ #undef	ldap_pvt_thread_pool_maxthreads
+ #undef	ldap_pvt_thread_pool_backload
+diff --git a/libraries/libldap/thr_debug.c b/libraries/libldap/thr_debug.c
+index df233f3..24ecc35 100644
+--- a/libraries/libldap/thr_debug.c
++++ b/libraries/libldap/thr_debug.c
+@@ -506,6 +506,7 @@ typedef void ldap_debug_thread_t;
+ #define init_thread_info()	{}
+ #define with_thread_info_lock(statements) { statements; }
+ #define thread_info_detached(t)	0
++#define thread_info_set_detach(t)	0
+ #define add_thread_info(msg, thr, det)	((void) 0)
+ #define remove_thread_info(tinfo, msg)	((void) 0)
+ #define get_thread_info(thread, msg)	NULL
+@@ -548,6 +549,7 @@ static ldap_int_thread_mutex_t  thread_info_mutex;
+ }
+ 
+ #define thread_info_detached(t) ((t)->detached)
++#define thread_info_set_detach(t)	(t)->detached = 1
+ 
+ static void
+ add_thread_info(
+@@ -822,6 +824,35 @@ ldap_pvt_thread_create(
+ 	return rc;
+ }
+ 
++int
++ldap_pvt_thread_detach( ldap_pvt_thread_t thread )
++{
++	int rc;
++	ldap_debug_thread_t *t = NULL;
++	ERROR_IF( !threading_enabled, "ldap_pvt_thread_detach" );
++	if( tracethreads ) {
++		char buf[40], buf2[40];
++		fprintf( stderr, "== thr_debug: Detaching thread %s in thread %s ==\n",
++			thread_name( buf, sizeof(buf), thread ),
++			thread_name( buf2, sizeof(buf2), ldap_pvt_thread_self() ) );
++	}
++	if( threadID )
++		with_thread_info_lock( {
++			t = get_thread_info( thread, "ldap_pvt_thread_detach" );
++			ERROR_IF( thread_info_detached( t ), "ldap_pvt_thread_detach" );
++		} );
++	rc = ldap_int_thread_detach( thread );
++	if( rc ) {
++		ERROR( rc, "ldap_pvt_thread_detach" );
++	} else {
++		if( threadID )
++			with_thread_info_lock(
++				thread_info_set_detach( t ) );
++		adjust_count( Idx_unjoined_thread, -1 );
++	}
++	return rc;
++}
++
+ int
+ ldap_pvt_thread_join( ldap_pvt_thread_t thread, void **thread_return )
+ {
+@@ -1171,18 +1202,19 @@ ldap_pvt_thread_rdwr_active( ldap_pvt_thread_rdwr_t *rwlock )
+ #ifdef LDAP_THREAD_POOL_IMPLEMENTATION
+ 
+ int
+-ldap_pvt_thread_pool_init(
++ldap_pvt_thread_pool_init_q(
+ 	ldap_pvt_thread_pool_t *tpool,
+ 	int max_threads,
+-	int max_pending )
++	int max_pending,
++	int num_queues )
+ {
+ 	int rc;
+ 	if( !options_done )
+ 		get_options();
+ 	ERROR_IF( !threading_enabled, "ldap_pvt_thread_pool_init" );
+-	rc = ldap_int_thread_pool_init( tpool, max_threads, max_pending );
++	rc = ldap_int_thread_pool_init_q( tpool, max_threads, max_pending, num_queues );
+ 	if( rc ) {
+-		ERROR( rc, "ldap_pvt_thread_pool_init" );
++		ERROR( rc, "ldap_pvt_thread_pool_init_q" );
+ 	} else {
+ 		adjust_count( Idx_tpool, +1 );
+ 	}
+diff --git a/libraries/libldap/thr_nt.c b/libraries/libldap/thr_nt.c
+index 931e7a6..7ae65c0 100644
+--- a/libraries/libldap/thr_nt.c
++++ b/libraries/libldap/thr_nt.c
+@@ -38,6 +38,7 @@ typedef struct ldap_int_thread_s {
+ static ldap_int_thread_s tids[NT_MAX_THREADS];
+ static int ntids;
+ 
++static ldap_pvt_thread_mutex_t tid_mutex;
+ 
+ /* mingw compiler very sensitive about getting prototypes right */
+ typedef unsigned __stdcall thrfunc_t(void *);
+@@ -45,12 +46,14 @@ typedef unsigned __stdcall thrfunc_t(void *);
+ int
+ ldap_int_thread_initialize( void )
+ {
++	ldap_pvt_thread_mutex_init( &tid_mutex );
+ 	return 0;
+ }
+ 
+ int
+ ldap_int_thread_destroy( void )
+ {
++	ldap_pvt_thread_mutex_destroy( &tid_mutex );
+ 	return 0;
+ }
+ 
+@@ -80,9 +83,11 @@ ldap_pvt_thread_create( ldap_pvt_thread_t * thread,
+ 
+ 	if ( thd ) {
+ 		*thread = (ldap_pvt_thread_t) tid;
++		ldap_pvt_thread_mutex_lock( &tid_mutex );
+ 		tids[ntids].tid = tid;
+ 		tids[ntids].thd = thd;
+ 		ntids++;
++		ldap_pvt_thread_mutex_unlock( &tid_mutex );
+ 		rc = 0;
+ 	}
+ 	return rc;
+@@ -91,27 +96,59 @@ ldap_pvt_thread_create( ldap_pvt_thread_t * thread,
+ void 
+ ldap_pvt_thread_exit( void *retval )
+ {
+-	_endthread( );
++	_endthreadex( (unsigned int)retval );
+ }
+ 
+-int 
+-ldap_pvt_thread_join( ldap_pvt_thread_t thread, void **thread_return )
++static int
++ldap_pvt_thread_pop( ldap_pvt_thread_t thread, HANDLE *thd )
+ {
+-	DWORD status;
+-	int i;
++	int i, rc = -1;
+ 
+-	for (i=0; i<ntids; i++) {
++	ldap_pvt_thread_mutex_lock( &tid_mutex );
++	for ( i=0; i<ntids; i++ ) {
+ 		if ( tids[i].tid == thread )
+ 			break;
+ 	}
+-	if ( i > ntids ) return -1;
++	if ( i<ntids ) {
++		*thd = tids[i].thd;
++		for (; i<ntids; i++) {
++			tids[i] = tids[i+1];
++		}
++		ntids--;
++		rc = 0;
++	}
++	ldap_pvt_thread_mutex_unlock( &tid_mutex );
++	return rc;
++}
++
++int
++ldap_pvt_thread_detach( ldap_pvt_thread_t thread )
++{
++	HANDLE thd;
++	int rc = ldap_pvt_thread_pop( thread, &thd );
+ 
+-	status = WaitForSingleObject( tids[i].thd, INFINITE );
+-	for (; i<ntids; i++) {
+-		tids[i] = tids[i+1];
++	if ( !rc )
++		CloseHandle( thd );
++	return rc;
++}
++
++int
++ldap_pvt_thread_join( ldap_pvt_thread_t thread, void **thread_return )
++{
++	HANDLE thd;
++	int rc = ldap_pvt_thread_pop( thread, &thd );
++
++	if ( !rc ) {
++		DWORD status = WaitForSingleObject( thd, INFINITE );
++		if ( thread_return ) {
++			DWORD exitcode;
++			GetExitCodeThread( thd, &exitcode );
++			*thread_return = (void *)exitcode;
++		}
++		CloseHandle( thd );
++		rc = status == WAIT_FAILED ? -1 : 0;
+ 	}
+-	ntids--;
+-	return status == WAIT_FAILED ? -1 : 0;
++	return rc;
+ }
+ 
+ int 
+diff --git a/libraries/libldap/thr_posix.c b/libraries/libldap/thr_posix.c
+index 3cd3bc2..5f5b452 100644
+--- a/libraries/libldap/thr_posix.c
++++ b/libraries/libldap/thr_posix.c
+@@ -203,6 +203,12 @@ ldap_pvt_thread_exit( void *retval )
+ 	pthread_exit( retval );
+ }
+ 
++int
++ldap_pvt_thread_detach( ldap_pvt_thread_t thread )
++{
++	return ERRVAL( pthread_detach( thread ));
++}
++
+ int 
+ ldap_pvt_thread_join( ldap_pvt_thread_t thread, void **thread_return )
+ {
+diff --git a/libraries/libldap/thr_pth.c b/libraries/libldap/thr_pth.c
+index 0033f91..addd991 100644
+--- a/libraries/libldap/thr_pth.c
++++ b/libraries/libldap/thr_pth.c
+@@ -52,6 +52,7 @@ ldap_int_thread_initialize( void )
+ int
+ ldap_int_thread_destroy( void )
+ {
++	pth_attr_destroy(joined_attr);
+ 	pth_attr_destroy(detach_attr);
+ 	pth_kill();
+ 	return 0;
+@@ -75,6 +76,17 @@ ldap_pvt_thread_exit( void *retval )
+ 	pth_exit( retval );
+ }
+ 
++int
++ldap_pvt_thread_detach( ldap_pvt_thread_t thread )
++{
++	pth_attr_t attr = pth_attr_of( thread );
++	if ( attr ) {
++		pth_attr_set( attr, PTH_ATTR_JOINABLE, FALSE );
++		pth_attr_destroy( attr );
++	}
++	return attr == NULL ? errno : 0;
++}
++
+ int ldap_pvt_thread_join( ldap_pvt_thread_t thread, void **thread_return )
+ {
+ 	return pth_join( thread, thread_return ) ? 0 : errno;
+diff --git a/libraries/libldap/thr_thr.c b/libraries/libldap/thr_thr.c
+index 65a731f..8b0010b 100644
+--- a/libraries/libldap/thr_thr.c
++++ b/libraries/libldap/thr_thr.c
+@@ -69,7 +69,17 @@ ldap_pvt_thread_create( ldap_pvt_thread_t * thread,
+ void 
+ ldap_pvt_thread_exit( void *retval )
+ {
+-	thr_exit( NULL );
++	thr_exit( retval );
++}
++
++int
++ldap_pvt_thread_detach( ldap_pvt_thread_t thread )
++{
++	/* there is no way to change the detach state of an existing thread
++	 * so if it was created joinable, someone must clean it up with
++	 * thr_join otherwise its thread ID is leaked.
++	 */
++	return 0;
+ }
+ 
+ int ldap_pvt_thread_join( ldap_pvt_thread_t thread, void **thread_return )
+-- 
+2.43.0
+

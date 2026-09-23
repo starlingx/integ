@@ -1,1 +1,3 @@
 rootdn-should-not-bypass-ppolicy.patch
+ldap_pvt_thread-add-detach-support-ITS8901.patch
+tpool-use-joinable-threads-ITS8901.patch
