@@ -85,6 +85,10 @@ LOG_PATH=/var/log/ceph
 LOG_FILE=$LOG_PATH/ceph-process-states.log
 mkdir -p $DATA_PATH                         # make sure folder exists
 
+# CephFS MDS damage auto-recovery
+RECOVER_CEPHFS_SCRIPT=/usr/share/ansible/stx-ansible/playbooks/roles/recover-ceph-data/files/recover_cephfs.sh
+MDS_RECOVERY_FLAG=$DATA_PATH/.mds_recovery_running
+
 # Timeouts
 WAIT_FOR_CMD=10                 # max wait for a response from Ceph
 WAIT_FOR_OSD_OPERATIONAL=300    # max wait for OSD to go 'up' when in startup state
@@ -627,6 +631,42 @@ osd_has_stuck_peering() {
     else
         rm -f ${file} 2>/dev/null
     fi
+}
+
+recover_mds_if_damaged() {
+    # A damaged MDS rank stays alive in standby (not caught as dead/hung),
+    # leaving the CephFS offline. Detect it via ceph health and recover.
+    local name=$1
+
+    # Only applicable to AIO-SX.
+    [ "$system_type" == "All-in-one" ] && [ "$system_mode" == "simplex" ] || return 0
+
+    # Nothing to do if the recovery script is not available.
+    [ -x "$RECOVER_CEPHFS_SCRIPT" ] || return 0
+    [ -f "$MDS_RECOVERY_FLAG" ] && return 0
+    get_ceph_health_detail
+    [ $? -ne 0 ] && return 0
+    echo "$CEPH_HEALTH_DETAIL" | grep -qE "MDS_DAMAGE|mds daemon damaged" || return 0
+    local recover_log="${LOG_PATH}/recover_cephfs.log"
+    log $name "WARN" "MDS rank damaged; launching CephFS recovery (details in ${recover_log})"
+
+    # Run detached so the status poll returns fast. The flag holds the
+    # recovery PID so ceph-init-wrapper can detect a stale flag.
+    (
+        # Write the flag atomically so ceph-init-wrapper never reads a
+        # partial/empty PID while it is being created.
+        echo $BASHPID > "${MDS_RECOVERY_FLAG}.tmp"
+        mv "${MDS_RECOVERY_FLAG}.tmp" "$MDS_RECOVERY_FLAG"
+        "$RECOVER_CEPHFS_SCRIPT" >>"${recover_log}" 2>&1
+        rc=$?
+        if [ $rc -eq 0 ]; then
+            log $name "INFO" "CephFS recovery completed successfully"
+        else
+            log $name "ERROR" "CephFS recovery failed (rc=${rc}), see ${recover_log}"
+        fi
+        rm -f "$MDS_RECOVERY_FLAG"
+    ) </dev/null >/dev/null 2>&1 &
+    return 0
 }
 
 mds_has_blocked_clients() {
@@ -1381,6 +1421,8 @@ EOF
 
                 # Check mds daemon
                 if [ "$type" = "mds" ]; then
+                    log $name "DEBUG" "checking $name for damage"
+                    recover_mds_if_damaged $name
                     log $name "DEBUG" "checking $name for blocked clients"
                     mds_has_blocked_clients $name
                     if [ $? -eq 0 ]; then

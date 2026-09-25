@@ -64,6 +64,10 @@ verbose=0
 DATA_PATH=$VOLATILE_PATH/ceph_hang    # folder where we keep state information
 mkdir -p $DATA_PATH                   # make sure folder exists
 
+# Set by /etc/init.d/ceph during MDS recovery; while it exists we skip
+# mds status/start so pmon does not race the recovery.
+MDS_RECOVERY_FLAG=$DATA_PATH/.mds_recovery_running
+
 MONITORING_INTERVAL=15
 TRACE_LOOP_INTERVAL=5
 CEPH_STATUS_TIMEOUT=20
@@ -121,6 +125,21 @@ log () {
     # yyyy-MM-dd HH:mm:ss.SSSSSS /etc/init.d/ceph-init-wrapper <prefix> <log_level>: <message>
     wlog "${prefix}" "${log_level}" "${message}"
     return 0
+}
+
+# Returns 0 if an MDS recovery is running. The flag holds its PID; if the
+# process is gone the flag is stale, so remove it and return not-running.
+mds_recovery_running ()
+{
+    [ -f ${MDS_RECOVERY_FLAG} ] || return 1
+    local pid
+    pid=$(cat ${MDS_RECOVERY_FLAG} 2>/dev/null)
+    if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+        return 0
+    fi
+    log INFO "Stale MDS recovery flag (pid ${pid:-none} gone), removing."
+    rm -f ${MDS_RECOVERY_FLAG}
+    return 1
 }
 
 is_ppid_sm()
@@ -356,6 +375,10 @@ start ()
     local service="$1"
 
     log INFO "Ceph START${service:+ ${service}} command received"
+    if [[ "${service}" == *"mds"* ]] && mds_recovery_running; then
+        log INFO "MDS recovery in progress, skipping mds start."
+        exit 0
+    fi
 
     # For AIO-DX, ceph services have special treatment
     if [ "${system_type}" == "All-in-one" ] && [ "${system_mode}" != "simplex" ]; then
@@ -505,6 +528,10 @@ status ()
     [ -z "${target}" ] && target="mon osd"
 
     log INFO "status ${target}"
+    if [[ "${target}" == *"mds"* ]] && mds_recovery_running; then
+        log INFO "MDS recovery in progress, skipping mds status."
+        exit 0
+    fi
 
     if [ ! -f ${CEPH_FILE} ]; then
         log INFO "Ceph is not running on this node, returning success."
