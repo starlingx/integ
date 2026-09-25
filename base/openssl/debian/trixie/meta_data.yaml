@@ -1,10 +1,10 @@
 ---
-debver: 3.5.6-1~deb13u1
+debver: 3.5.6-1~deb13u2
 debname: openssl
 dl_path:
-  name: openssl-debian-openssl-3.5.6-1_deb13u1.tar.gz
-  url: https://salsa.debian.org/debian/openssl/-/archive/debian/openssl-3.5.6-1_deb13u1/openssl-debian-openssl-3.5.6-1_deb13u1.tar.gz
-  sha256sum: 6af84fc62e163bc88081c5b65fcc2eda4b220acaab8412df4918e3b8bedf09be
+  name: openssl-debian-openssl-3.5.6-1_deb13u2.tar.gz
+  url: https://salsa.debian.org/debian/openssl/-/archive/debian/openssl-3.5.6-1_deb13u2/openssl-debian-openssl-3.5.6-1_deb13u2.tar.gz
+  sha256sum: c4845e8fc59343b777458f81a644372609b3cff48f7462a00a706b1a42dc5b50
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
