@@ -9,12 +9,12 @@
 # the custom build outrank the identical upstream version. If left behind, the
 # upstream package eclipses this one and the leap-seconds patch is dropped from
 # the ISO.
-debver: 2026b-0+deb13u1
+debver: 2026c-0+deb13u1
 dl_path:
-  name: tzdata-debian-2026b-0+deb13u1.tar.gz
-  url: https://salsa.debian.org/glibc-team/tzdata/-/archive/debian/2026b-0+deb13u1/tzdata-debian-2026b-0+deb13u1.tar.gz
-  md5sum: d5eb617a541b29b33de1a34a2f65eb74
-  sha256sum: 3532e0a4e38abe3d3a4424d77358c36cbc871cdf6489997b5eacf23becee72d9
+  name: tzdata-debian-2026c-0+deb13u1.tar.gz
+  url: https://salsa.debian.org/glibc-team/tzdata/-/archive/debian/2026c-0+deb13u1/tzdata-debian-2026c-0+deb13u1.tar.gz
+  md5sum: f163292fd8907f1ea979ffb2479e2fed
+  sha256sum: c06e55ab3e7de61d0b399b0a77df6946926b3c3163a2c7960c2e88bc200697e9
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
