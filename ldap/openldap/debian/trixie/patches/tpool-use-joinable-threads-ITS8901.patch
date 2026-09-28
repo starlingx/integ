@@ -1,0 +1,79 @@
+From b2dbe66b6e22cd7a072e9bf5aa540dbe5748071a Mon Sep 17 00:00:00 2001
+From: Howard Chu <hyc@openldap.org>
+Date: Sat, 30 May 2026 15:36:01 +0100
+Subject: [PATCH 2/2] ITS#8901 tpool: use joinable threads instead of detached
+
+When tearing down the threadpool we need to wait for the last
+thread to actually exit, before returning. We can only wait
+for a thread if it's joinable. For all the threads besides
+the last one, we detach before exiting because we don't care
+about waiting for them.
+
+Backport of the second commit of upstream OpenLDAP MR !888 [1], which
+fixes ITS#8901 [2]. Code changes are verbatim.
+
+[1] https://git.openldap.org/openldap/openldap/-/merge_requests/888
+[2] https://bugs.openldap.org/show_bug.cgi?id=8901
+
+Signed-off-by: Marcelo de Castro Loebens <Marcelo.DeCastroLoebens@windriver.com>
+---
+ libraries/libldap/tpool.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/libraries/libldap/tpool.c b/libraries/libldap/tpool.c
+index 521dcad..e37f1b7 100644
+--- a/libraries/libldap/tpool.c
++++ b/libraries/libldap/tpool.c
+@@ -132,6 +132,9 @@ struct ldap_int_thread_poolq_s {
+ 	int ltp_active_count;		/* Active, not paused/idle tasks */
+ 	int ltp_open_count;			/* Number of threads */
+ 	int ltp_starting;			/* Currently starting threads */
++
++	int ltp_last_valid;			/* ltp_last was set */
++	ldap_pvt_thread_t ltp_last;	/* Last thread to exit */
+ };
+ 
+ struct ldap_int_thread_pool_s {
+@@ -433,7 +436,7 @@ ldap_pvt_thread_pool_submit2 (
+ 		pq->ltp_open_count++;
+ 
+ 		if (0 != ldap_pvt_thread_create(
+-			&thr, 1, ldap_int_thread_pool_wrapper, pq))
++			&thr, 0, ldap_int_thread_pool_wrapper, pq))
+ 		{
+ 			/* couldn't create thread.  back out of
+ 			 * ltp_open_count and check for even worse things.
+@@ -894,6 +897,10 @@ ldap_pvt_thread_pool_close ( ldap_pvt_thread_pool_t *tpool, int run_pending )
+ 			LDAP_SLIST_REMOVE_HEAD(&pq->ltp_free_list, ltt_next.l);
+ 			LDAP_FREE(task);
+ 		}
++		if (pq->ltp_last_valid) {
++			pq->ltp_last_valid = 0;
++			ldap_pvt_thread_join(pq->ltp_last, NULL);
++		}
+ 		ldap_pvt_thread_mutex_unlock(&pq->ltp_mutex);
+ 	}
+ 
+@@ -1074,11 +1081,17 @@ ldap_int_thread_pool_wrapper (
+ 
+ 	pq->ltp_open_count--;
+ 	if (pq->ltp_open_count == 0) {
+-		if (pool->ltp_finishing)
++		if (pool->ltp_finishing) {
+ 			/* let pool_destroy know we're all done */
++			pq->ltp_last = ctx.ltu_id;
++			pq->ltp_last_valid = 1;
+ 			ldap_pvt_thread_cond_signal(&pq->ltp_cond);
+-		else
++		} else {
++			ldap_pvt_thread_detach(ctx.ltu_id);
+ 			freeme = 1;
++		}
++	} else {
++		ldap_pvt_thread_detach(ctx.ltu_id);
+ 	}
+ 
+ 	if (pool_lock)
+-- 
+2.43.0
+
