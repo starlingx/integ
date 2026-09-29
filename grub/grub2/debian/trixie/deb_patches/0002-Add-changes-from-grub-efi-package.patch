@@ -1,4 +1,4 @@
-From 2c008ae3b21dd8d61e2de689df2a7a254c63e2d9 Mon Sep 17 00:00:00 2001
+From 6eaa40387abe80b67d0c2d1739d03edbc4aa9cfa Mon Sep 17 00:00:00 2001
 From: Virgil Bucoci <virgil.bucoci@windriver.com>
 Date: Fri, 15 May 2026 13:48:44 +0300
 Subject: [PATCH 2/5] Add changes from grub-efi package
@@ -19,13 +19,15 @@ Notable changes:
  - Add SBAT section, newer shim versions refuse to boot if SBAT is
    missing
 
+ - Add 'echo' module to StarlingX grub images
+
 Signed-off-by: Virgil Bucoci <virgil.bucoci@windriver.com>
 ---
  debian/rules | 43 +++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 43 insertions(+)
 
 diff --git a/debian/rules b/debian/rules
-index 7a9414f05..65e782411 100755
+index 7a9414f05..5fa9fd35e 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -1,6 +1,8 @@
@@ -47,7 +49,7 @@ index 7a9414f05..65e782411 100755
 +install/grub-efi-amd64: export OSTREE_GRUB_PW := $(shell cat debian/starlingx/boot_cfg_pw)
 +install/grub-efi-amd64: export OSTREE_GRUB_USER := root
 +install/grub-efi-amd64: export OSTREE_CONSOLE := console=ttyS0,115200
-+install/grub-efi-amd64: export GRUB_BUILDIN := boot chain configfile efi_gop efinet efivar ext2 fat iso9660 linux loadenv normal part_gpt part_msdos reboot regexp search serial test tftp
++install/grub-efi-amd64: export GRUB_BUILDIN := boot chain configfile echo efi_gop efinet efivar ext2 fat iso9660 linux loadenv normal part_gpt part_msdos reboot regexp search serial test tftp
 +install/grub-efi-amd64: export GRUB_SECURE_BUILDIN := gcry_rsa gcry_sha256 gcry_sha512 password_pbkdf2 pgp --pubkey debian/starlingx/boot_pub_key
 +install/grub-efi-amd64: export GRUB_PREFIX_DIR := /EFI/BOOT
  install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-efi-riscv64 install/grub-efi-loong64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:

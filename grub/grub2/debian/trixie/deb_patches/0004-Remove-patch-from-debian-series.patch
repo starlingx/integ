@@ -1,4 +1,4 @@
-From f3bcb86b58efa7853d69944ffb915945f98cc4d3 Mon Sep 17 00:00:00 2001
+From 7f774f2b423233d789e527c08920668e42df4d3e Mon Sep 17 00:00:00 2001
 From: Virgil Bucoci <virgil.bucoci@windriver.com>
 Date: Tue, 28 Jul 2026 10:08:00 +0300
 Subject: [PATCH 4/5] Remove patch from debian/series
