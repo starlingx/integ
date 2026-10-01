@@ -2085,6 +2085,120 @@ void test_initialVolCreate_existing_vault_mount_fail() {
 }
 
 /* ================================================================
+ * Passphrase migration / metadata/keyslot mismatch tests
+ * ================================================================
+ * openLUKSVolumeWithStatus() returns WEXITSTATUS(system()), so a mock
+ * system() value of 0 -> rc 0 (open ok), 512 -> rc 2 (bad passphrase),
+ * 256 -> rc 1 (other error). parseJSONConfig reads the file via fopen
+ * (not system()), so it does not consume MOCK_SYSTEM_SEQ.
+ */
+extern bool handleLegacyPassphraseMigration(const std::string &passphrase,
+                                            PassphraseGenerator *generator);
+
+/* Test generator: new passphrase = "newpass", legacy = "legacypass". */
+class FakePassphraseGenerator : public PassphraseGenerator {
+public:
+    bool generatePassphrase(std::string &out) override {
+        out = "newpass"; return true;
+    }
+    bool generateLegacyPassphrase(std::string &out) override {
+        out = "legacypass"; return true;
+    }
+};
+
+static void write_typed_created_config(const char *path, const char *type) {
+    std::ofstream f(path);
+    f << "{ \"luksvolumes\": [{"
+      << "\"VAULT_FILE\": \"/var/luks/stx/vault.img\","
+      << "\"VAULT_SIZE\": \"256M\","
+      << "\"VOL_NAME\": \"luks_vol\","
+      << "\"MOUNT_PATH\": \"/var/luks/stx/luks_fs\","
+      << "\"PASSPHRASE_TYPE\": \"" << type << "\""
+      << "}]}";
+}
+
+/* type "HWID": forward migration. new-pass open rc=2 (512), legacy open
+   rc=0 (0), luksAddKey ok (0), mount ok (0) -> migrates, returns true. */
+void test_handleLegacyMigration_type_HWID() {
+    reset_mocks();
+    const char *created = "/tmp/test_mig_hwid.json";
+    write_typed_created_config(created, "HWID");
+    const char *saved = createdConfigFile;
+    createdConfigFile = created;
+    set_env("MOCK_SYSTEM_SEQ", "512,0,0,0");
+    FakePassphraseGenerator gen;
+    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen));
+    createdConfigFile = saved;
+    remove(created);
+}
+
+/* type "HWID_V2" + metadata/keyslot mismatch (vault has only legacy keyslot):
+   new-pass open rc=2 (512), legacy open rc=0 (0), luksAddKey ok (0),
+   mount ok (0) -> self-heals, returns true. Before the fix this returned
+   false immediately (gate skipped HWID_V2) and the node wedged. */
+void test_handleLegacyMigration_type_HWID_V2_mismatch() {
+    reset_mocks();
+    const char *created = "/tmp/test_mig_v2_mismatch.json";
+    write_typed_created_config(created, "HWID_V2");
+    const char *saved = createdConfigFile;
+    createdConfigFile = created;
+    set_env("MOCK_SYSTEM_SEQ", "512,0,0,0");
+    FakePassphraseGenerator gen;
+    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen));
+    createdConfigFile = saved;
+    remove(created);
+}
+
+/* type "HWID_V2" healthy: new-pass open rc=0 (0), mount ok (0) -> opens
+   directly, returns true, no legacy fallback / no luksAddKey. */
+void test_handleLegacyMigration_type_HWID_V2_healthy() {
+    reset_mocks();
+    const char *created = "/tmp/test_mig_v2_ok.json";
+    write_typed_created_config(created, "HWID_V2");
+    const char *saved = createdConfigFile;
+    createdConfigFile = created;
+    set_env("MOCK_SYSTEM_SEQ", "0,0,0");
+    FakePassphraseGenerator gen;
+    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen));
+    /* Exactly open + mkdir + mount (3 system() calls); no legacy open /
+       luksAddKey, which would add further calls. */
+    ASSERT_EQ(mock_get_system_count(), 3);
+    createdConfigFile = saved;
+    remove(created);
+}
+
+/* Unrecognized type: falls through with no cryptsetup calls. */
+void test_handleLegacyMigration_unknown_type() {
+    reset_mocks();
+    const char *created = "/tmp/test_mig_unknown.json";
+    write_typed_created_config(created, "SGX");
+    const char *saved = createdConfigFile;
+    createdConfigFile = created;
+    set_env("MOCK_SYSTEM_SEQ", "0,0");
+    FakePassphraseGenerator gen;
+    ASSERT_FALSE(handleLegacyPassphraseMigration("newpass", &gen));
+    ASSERT_EQ(mock_get_system_count(), 0);
+    createdConfigFile = saved;
+    remove(created);
+}
+
+/* Non-rc=2 open error (rc=1 via 256): NOT a passphrase mismatch -> legacy
+   is NOT tried, returns false (don't-brick guard). Exactly one open call. */
+void test_handleLegacyMigration_nonrc2_error() {
+    reset_mocks();
+    const char *created = "/tmp/test_mig_ioerr.json";
+    write_typed_created_config(created, "HWID_V2");
+    const char *saved = createdConfigFile;
+    createdConfigFile = created;
+    set_env("MOCK_SYSTEM_SEQ", "256");
+    FakePassphraseGenerator gen;
+    ASSERT_FALSE(handleLegacyPassphraseMigration("newpass", &gen));
+    ASSERT_EQ(mock_get_system_count(), 1);
+    createdConfigFile = saved;
+    remove(created);
+}
+
+/* ================================================================
  * Main test runner
  * ================================================================ */
 int main() {
@@ -2295,6 +2409,13 @@ int main() {
     RUN_TEST(test_createVaultFile_dir_fail);
     RUN_TEST(test_initialVolCreate_existing_vault_open_fail);
     RUN_TEST(test_initialVolCreate_existing_vault_mount_fail);
+
+    std::cout << "\n[handleLegacyPassphraseMigration]" << std::endl;
+    RUN_TEST(test_handleLegacyMigration_type_HWID);
+    RUN_TEST(test_handleLegacyMigration_type_HWID_V2_mismatch);
+    RUN_TEST(test_handleLegacyMigration_type_HWID_V2_healthy);
+    RUN_TEST(test_handleLegacyMigration_unknown_type);
+    RUN_TEST(test_handleLegacyMigration_nonrc2_error);
 
     std::cout << "\n=== luks-fs-mgr Test Results ===" << std::endl;
     std::cout << "Tests run:    " << tests_run << std::endl;

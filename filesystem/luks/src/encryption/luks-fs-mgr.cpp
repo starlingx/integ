@@ -1437,15 +1437,18 @@ void tryRemoveLegacyKeyslot(PassphraseGenerator *generator) {
  *
  * Name       : attemptPassphraseMigration
  *
- * Description: Handles the passphrase migration for legacy HWID vaults.
- *              Called from the main flow when created_luks.json indicates
- *              PASSPHRASE_TYPE == "HWID".
+ * Description: Opens the vault, tolerating a mismatch between the recorded
+ *              PASSPHRASE_TYPE and the actual keyslots. Serves both the
+ *              "HWID" forward migration and the "HWID_V2" metadata/keyslot
+ *              mismatch.
  *
- *              Logic:
- *              1. Try to open with new passphrase (already migrated?)
- *              2. If bad passphrase: generate legacy, try to open with it
- *              3. If legacy works: add new keyslot, update JSON
- *              4. If both fail: return false (recoverVault will handle)
+ *              1. Try the new passphrase (a healthy vault opens here).
+ *              2. On rc=2 (bad passphrase), try the legacy passphrase.
+ *                 A non-rc=2 error is not a mismatch -> return false.
+ *              3. If legacy opens it, add the new keyslot and update JSON.
+ *                 The legacy keyslot is retained (removal stays gated on
+ *                 .usm_upgrade_in_progress elsewhere).
+ *              4. If both fail: return false (recoverVault handles it).
  *
  * Returns:     true if vault is opened (either directly or after
  *              migration), false on failure.
@@ -1529,12 +1532,24 @@ bool attemptPassphraseMigration(const string &vaultFile,
  *
  * Name       : handleLegacyPassphraseMigration
  *
- * Description: Checks if the existing vault uses the legacy HWID
- *              passphrase and performs migration if so. Encapsulates
- *              the JSON parsing, type check, and migration call.
+ * Description: Opens the vault when created_luks.json and the LUKS header
+ *              disagree on the valid passphrase, then delegates to
+ *              attemptPassphraseMigration.
  *
- * Returns:     true if migration succeeded (vault is open and mounted),
- *              false if migration not needed or failed.
+ *              1. "HWID": forward migration to the HWID_V2 scheme.
+ *              2. "HWID_V2" but the vault has only the legacy keyslot: a
+ *                 metadata/keyslot mismatch. A USM snapshot rollback reverts
+ *                 var-lv
+ *                 (luks_volume.img -> legacy-only keyslot) but not
+ *                 created_luks.json (ostree /etc), so the normal flow tries
+ *                 only HWID_V2, gets rc=2, and wedges the node.
+ *
+ *              Rollback-safe: keyslots change only if the legacy passphrase
+ *              actually opens the vault, and the legacy slot is never
+ *              removed here.
+ *
+ * Returns:     true if the vault is open and mounted, false to fall through
+ *              to the normal flow.
  *
  * ************************************************************************/
 bool handleLegacyPassphraseMigration(const string &passphrase,
@@ -1556,12 +1571,19 @@ bool handleLegacyPassphraseMigration(const string &passphrase,
                        luksConfig.mountPath : "";
     json_object_put(jsonConfig);
 
-    if (existingType != "HWID") {
+    // Recognized HWID schemes only; any other type falls through unchanged.
+    if (existingType != "HWID" && existingType != "HWID_V2") {
         return false;
     }
 
-    log("Legacy HWID passphrase detected. Attempting "
-        "migration to new passphrase scheme.", LOG_INFO);
+    if (existingType == "HWID") {
+        log("Legacy HWID passphrase detected. Attempting "
+            "migration to new passphrase scheme.", LOG_INFO);
+    } else {
+        log("HWID_V2 recorded; verifying the vault opens with the new "
+            "passphrase, with legacy fallback for a possible snapshot "
+            "rollback metadata/keyslot mismatch.", LOG_INFO);
+    }
 
     if (attemptPassphraseMigration(vaultFile, volName.c_str(),
                                    mountPath.c_str(), passphrase,
@@ -1569,7 +1591,7 @@ bool handleLegacyPassphraseMigration(const string &passphrase,
         return true;
     }
 
-    log("Passphrase migration failed. Falling through "
+    log("Passphrase open/migration did not complete. Falling through "
         "to normal flow.", LOG_WARNING);
     return false;
 }
