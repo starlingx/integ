@@ -1,0 +1,570 @@
+From 41ee974d0128d7ec23441722628054ad417f3258 Mon Sep 17 00:00:00 2001
+From: Caio Bruchert <caio.bruchert@windriver.com>
+Date: Mon, 21 Sep 2026 12:59:11 -0300
+Subject: [PATCH] synce4l.8: refresh man page for DPLL netlink mode and new
+ options
+
+The installed synce4l.8 man page had drifted from the code: it documented
+only the legacy line/external input-mode model and was missing the DPLL
+netlink mode, the external source section, and several configuration
+options present in this build.
+
+Refresh the page to describe the current configuration surface:
+
+- Add an operating-modes section (DPLL netlink mode, selected when both
+  clock_id and module_name are set, versus command/legacy mode).
+- Document the device options clock_id, module_name, dnu_prio and the
+  holdover options holdover_tx, holdover_tx_ql and holdover_tx_ext_ql.
+- Document the external source section, its input_QL, input_ext_QL,
+  external_enable_cmd, external_disable_cmd, source_ports, internal_prio
+  and the board_label / panel_label / package_label DPLL pin labels.
+- Add the global poll_interval_msec and smc_socket_path options and
+  quality-level reference tables for both network options.
+- Correct stale option names and defaults (eec_get_state_cmd,
+  recover_time default 300, poll_interval_msec range) and note that the
+  obsolete input_mode option is accepted but ignored.
+- Remove the deprecated external_input_QL / external_input_ext_QL options
+  and the line/external input-mode narrative that no longer applies.
+
+Intel's upstream synce4l.8 is frozen at 1.0, so this page also documents
+options that are only present with the applied patches on top of upstream
+1.1.2; the title and description note the patched build.
+
+Signed-off-by: Caio Bruchert <caio.bruchert@windriver.com>
+---
+ synce4l.8 | 438 ++++++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 323 insertions(+), 115 deletions(-)
+
+diff --git a/synce4l.8 b/synce4l.8
+index f9af549..b290f80 100644
+--- a/synce4l.8
++++ b/synce4l.8
+@@ -1,7 +1,7 @@
+ .\" Manpage for synce4l.
+ .\" Contact arkadiusz.kubalewski@intel.com or michal.michalik@intel.com to
+ .\" correct errors or typos.
+-.TH man 8 "27 Oct 2022" "1.0" "synce4l man page"
++.TH man 8 "29 Jul 2025" "1.1.2+stx" "synce4l man page"
+ 
+ .SH NAME
+ synce4l \- Synchronous Ethernet (SyncE) controller application
+@@ -13,25 +13,81 @@ synce4l -f [file] [-l <num>] [-m] [-q] [-v] [-h]
+ synce4l is an implementation of the Synchronous Ethernet (SyncE) protocol
+ according to ITU-T Rec. G.8264. The design goal is to provide logic to supported
+ hardware by processing Ethernet Synchronization Messaging Channel (ESMC) and
+-control Ethernet Equipment Clock (EEC) on Network Card Interface (NIC).
++control Ethernet Equipment Clock (EEC) on a Network Interface Card (NIC).
+ .P
+-Application can operate in two mutually exclusive modes: line or external.
++Incoming SyncE frames are processed and the best clock source is extracted from
++the link having the best quality level. synce4l configures such "best quality"
++port as the source used to recover the clock for the EEC. The recovered QL is
++then broadcast to all other interfaces. An external frequency source (for
++example a 1PPS input from GPS or another generator) may also be configured; such
++a source participates in the best source selection algorithm for the EEC.
++.P
++The best source selection follows ITU-T Recommendations G.781 and G.8264. Two
++network options are supported: option 1 and option 2.
++.P
++This page documents the StarlingX-patched synce4l build (upstream 1.1.2 plus the
++StarlingX integration patches), so it includes options that are not present in a
++stock upstream 1.1.2 release.
++
++.SH OPERATING MODES
++synce4l controls the EEC on each device using one of two mutually exclusive
++hardware interfaces. The mode is selected per device (per device section) by the
++presence of the \fBclock_id\fR and \fBmodule_name\fR options:
+ 
+ .TP
+-External input mode
+-If `synce4l` is configured to run in external input mode then EEC needs to
+-have external 1PPS source attached (GPS or other generator).
+-In this scenario `synce4l` always broadcasts clock quality level (QL) defined
+-in configuration file. Additionally, for external input mode incoming SyncE
+-frames do not participate in best source selection algorithm for EEC.
++DPLL netlink mode
++Selected when \fBboth\fR \fBclock_id\fR and \fBmodule_name\fR are set in the
++device section. synce4l controls and monitors the EEC through the Linux DPLL
++subsystem (netlink). In this mode the DPLL reports clock state and synce4l drives
++input pin priorities directly; external sources are identified by their DPLL pin
++labels (\fBboard_label\fR, \fBpanel_label\fR or \fBpackage_label\fR). The
++\fBeec_get_state_cmd\fR / \fBeec_*_value\fR and \fBrecover_clock_*_cmd\fR /
++\fBexternal_*_cmd\fR shell-command options are not used in this mode.
+ 
+ .TP
+-Line input mode
+-In line input mode incoming SyncE frames are processed and best clock source is
+-extracted from the link having the best quality level.
+-`synce4l` configures such "best quality" port as a source to recover clock for
+-EEC. The recovered QL is broadcasted to all other interfaces then.
+-An external clock source cannot be used in this mode.
++Command (legacy) mode
++Selected when \fBclock_id\fR or \fBmodule_name\fR is absent. synce4l reads the
++EEC state and controls clock recovery by executing user-supplied shell commands
++(\fBeec_get_state_cmd\fR with the \fBeec_*_value\fR strings, and the
++\fBrecover_clock_enable_cmd\fR / \fBrecover_clock_disable_cmd\fR /
++\fBexternal_enable_cmd\fR / \fBexternal_disable_cmd\fR options).
++
++.SH QUALITY LEVELS
++The following tables list the SyncE quality levels (QL), their selection
++priority and the corresponding SSM / extended SSM codes. A lower priority number
++means higher priority. If extended SSM is not enabled it is implicitly assumed
++to be 0xFF.
++.P
++Network option 1:
++.TS
++box, tab(:);
++l l l l
++l l l l.
++Quality Level:Priority:SSM:Ext SSM
++ePRTC:0:0x2:0x21
++PRTC:1:0x2:0x20
++PRC:2:0x2:0xFF
++SSU-A:3:0x4:0xFF
++SSU-B:4:0x8:0xFF
++EEC1:5:0xB:0xFF
++.TE
++.P
++Network option 2:
++.TS
++box, tab(:);
++l l l l
++l l l l.
++Quality Level:Priority:SSM:Ext SSM
++ePRTC:0:0x1:0x21
++PRTC:1:0x1:0x20
++PRS:2:0x1:0xFF
++STU:3:0x0:0xFF
++ST2:4:0x7:0xFF
++TNC:5:0x4:0xFF
++ST3E:6:0xD:0xFF
++EEC2:7:0xA:0xFF
++PROV:8:0xE:0xFF
++.TE
+ 
+ .SH OPTIONS
+ .TP
+@@ -53,168 +109,320 @@ print synce4l version and exit
+ .TP
+ .B \-h
+ print this message and exit
++.P
++synce4l requires root privileges since it opens raw sockets.
+ 
+ .SH CONFIGURATION FILE
+-Configuration file contains three sections:
++The configuration file contains four kinds of sections, identified by the
++bracket style around the section name:
+ .IP -
+-global,
++global \- introduced by [global].
+ .IP -
+-device,
++device \- introduced by [<name>] (angle brackets), e.g. [<synce1>].
+ .IP -
+-port.
++port \- introduced by [name] (plain brackets), e.g. [eth0].
++.IP -
++external source \- introduced by [{name}] (curly brackets), e.g. [{SMA1}].
++.P
++A device section begins a logical SyncE device. All port and external source
++sections that follow (until the next device section) belong to that device.
++Multiple devices, ports and external sources are supported.
++.P
++Numeric option values may be given in decimal or in C-style hexadecimal
++notation with a 0x prefix (for example, clock_id and the QL options accept
++either form).
+ 
+ .SS Global section
+-This section starts with `[global]` keyword. It sets the logging options.
++This section starts with the `[global]` keyword and configures the running
++synce4l instance.
+ .RS
+-Available options:
+ .IP logging_level
+ Minimum log level required to appear in a log.
+-.P
+ .RS
+-Defaults to 6, valid values are 0 - 7
++Defaults to 6, valid values are 0 - 7.
+ .RE
+ .IP message_tag
+ Tag reported in a log.
+-.IP use_syslog
+-Set to 1 if `syslog` should be used.
+-.P
++.IP poll_interval_msec
++Sleep time, in milliseconds, between subsequent SyncE clock polls.
+ .RS
+-Defaults to 1, valid values are 0 or 1
++Defaults to 20, valid values are 1 - 500.
++.RE
++.IP smc_socket_path
++Full path to the AF_UNIX socket file used for external application
++communication (see EXTERNAL API).
++.RS
++Defaults to /run/synce4l_socket.
++.RE
++.IP use_syslog
++Set to 1 if syslog should be used.
++.RS
++Defaults to 1, valid values are 0 or 1.
+ .RE
+ .IP verbose
+ Set to 1 to log extra information.
+-.P
+ .RS
+-Defaults to 0, valid values are 0 or 1
++Defaults to 0, valid values are 0 or 1.
+ .RE
+ .RE
+ 
+ .SS Device section
+-This section specifies the configuration of a one logical device e.g. 'synce1'.
+-The name is defined by the user. The name has no impact for any functionality
+-except traces.
+-The name must be enclosed in extra angle bracket when defining new device
+-section e.g. [<synce1>].
+-All ports defined by port sections after the device section will create one
+-SyncE device (until next device section).
+-.RS
+-Available options:
+-.IP input_mode
+-Set to "line" to enable line input mode, set "external" for external input mode.
++This section specifies the configuration of one logical device, e.g. 'synce1'.
++The name is defined by the user and has no impact on functionality except
++traces. The name must be enclosed in angle brackets, e.g. [<synce1>].
+ .P
++The obsolete input_mode option is still accepted for backward compatibility but
++is ignored; the operating mode is selected as described in OPERATING MODES.
+ .RS
+-Defaults to "line", valid values are "line" or "external"
+-.RE
+-.IP external_input_QL
+-Quality Level (QL) for "external input" mode.
+-.P
+-.RS
+-Valid values specified in ITU-T Recommendations
+-.RE
+-.IP external_input_ext_QL
+-Extended Quality Level for "external input" mode.
+-.P
+-.RS
+-Valid values specified in ITU-T Recommendations
+-.RE
+ .IP extended_tlv
+ Set to 1 to enable extended QL.
+-.P
+ .RS
+-Defaults to 0, valid values are 0 or 1
++Defaults to 0, valid values are 0 or 1.
+ .RE
+ .IP network_option
+-Network option according to T-REC-G.8264. All devices in SyncE domain
+-should have the same option configured.
+-.P
++Network option according to ITU-T G.8264. All devices in a SyncE domain should
++have the same option configured.
+ .RS
+-Defaults to 1, valid values are 1 or 2
++Defaults to 1, valid values are 1 or 2.
+ .RE
+ .IP recover_time
+-Seconds indicating the minimum time to recover from the QL-failed state on the port.
+-.P
++Seconds indicating the minimum time to recover from the QL-failed state on a
++port.
+ .RS
+-Defaults to 60, valid values are 10 - 720
++Defaults to 300, valid values are 10 - 720.
+ .RE
+-.IP get_eec_state_cmd
+-Defines a shell command which will be executed by synce4l to acquire current
+-state of a SyncE EEC on the device. Separated command must be provided by the
+-user for each device confgured for frequency synchronization. The command shall
+-output current state of EEC to stdout, expected values are defined (also by the
+-user) with following configuration items:
+-eec_holdover_value, eec_locked_ho_value, eec_locked_value,
+-eec_freerun_value, eec_invalid_value.
++.IP clock_id
++Clock ID of the EEC-type DPLL in the system. Required, together with
++module_name, to control the EEC through the Linux DPLL subsystem (DPLL netlink
++mode); the presence of both clock_id and module_name is what selects DPLL
++netlink mode.
+ .RS
++Defaults to 0, valid values are 0 - 0xffffffffffffffff.
+ .RE
++.IP module_name
++Name of the kernel module that registered the DPLL device in the system.
++Required, together with clock_id, to control the EEC through the Linux DPLL
++subsystem (DPLL netlink mode).
++.RS
++Defaults to unset.
++.RE
++.IP dnu_prio
++DPLL netlink mode only. Input pin priority value assigned when a source is
++marked Do-Not-Use (DNU).
++.RS
++Defaults to 15, valid values are 15 - 0xffff.
++.RE
++.IP holdover_tx
++DPLL netlink mode only. Set to 1 to advertise a holdover quality level (instead
++of DNU) on all ports while the DPLL is in a valid EEC HOLDOVER state. The QL and
++extended QL advertised are taken verbatim from holdover_tx_ql and
++holdover_tx_ext_ql.
++.RS
++Defaults to 0, valid values are 0 or 1.
++.RE
++.IP holdover_tx_ql
++SSM quality level advertised during EEC holdover when holdover_tx is enabled.
++The value is sent verbatim, including 0 (STU); it is not treated as an unset
++sentinel. Choosing a holdover QL appropriate to the network option is the
++operator's responsibility, as there is no safe built-in default.
++.RS
++Defaults to 0, valid values are 0 - 15.
++.RE
++.IP holdover_tx_ext_ql
++Extended SSM quality level advertised during EEC holdover when holdover_tx is
++enabled. Applied only when extended_tlv is set.
++.RS
++Defaults to 0xff, valid values are 0 - 255.
++.RE
++.IP eec_get_state_cmd
++Command (legacy) mode only. Shell command executed by synce4l to acquire the
++current state of the SyncE EEC on the device. The command shall output the
++current EEC state to stdout; the expected strings are defined by the
++eec_holdover_value, eec_locked_ho_value, eec_locked_value, eec_freerun_value and
++eec_invalid_value options.
+ .IP eec_holdover_value
+-Defines a string value expected on stdout stream when EEC is in HOLDOVER state.
+-.P
+-.RS
+-.RE
++String expected on stdout when the EEC is in the HOLDOVER state.
+ .IP eec_locked_ho_value
+-Defines a string value expected on stdout stream when EEC is in LOCKED HOLDOVER
+-state.
+-.P
+-.RS
+-.RE
++String expected on stdout when the EEC is in the LOCKED HOLDOVER state.
+ .IP eec_locked_value
+-Defines a string value expected on stdout stream when EEC is in LOCKED state.
+-.P
+-.RS
+-.RE
++String expected on stdout when the EEC is in the LOCKED state.
+ .IP eec_freerun_value
+-Defines a string value expected on stdout stream when EEC is in FREERUN state.
+-.P
+-.RS
+-.RE
++String expected on stdout when the EEC is in the FREERUN state.
+ .IP eec_invalid_value
+-Defines a string value expected on stdout stream when EEC is in INVALID state.
+-.P
++String expected on stdout when the EEC is in the INVALID state.
+ .RE
+ 
+ .SS Port section
+-Any other section not starting with `<` (e.g. [eth0]) is the port section.
+-Multiple port sections are allowed. Each port participates in SyncE
+-communication.
++Any section in plain brackets, e.g. [eth0], is a port section. Multiple port
++sections are allowed. Each port participates in SyncE communication.
+ .RS
+-Available options:
+ .IP tx_heartbeat_msec
+-Interval between consecutive SyncE frame transmissions (1000ms recommended).
+-.P
++Interval between consecutive SyncE frame transmissions (1000 ms recommended).
+ .RS
+-Defaults to 1000, valid values are 100 - 3000
++Defaults to 1000, valid values are 100 - 3000.
+ .RE
+ .IP rx_heartbeat_msec
+ Interval between consecutive SyncE socket polls (frame receive).
+-.P
+ .RS
+-Defaults to 50, valid values are 10 - 500
++Defaults to 50, valid values are 10 - 500.
+ .RE
+ .IP recover_clock_enable_cmd
+-A shell command which enables PHY port pointed by this Port section as a source
+-of frequency for the SyncE EEC on this device (required only in
+-"internal input" mode).
+-.RS
+-.RE
++Command (legacy) mode only. Shell command that enables the PHY port pointed to
++by this port section as a frequency source for the SyncE EEC on this device.
+ .IP recover_clock_disable_cmd
+-A shell command which disables PHY port pointed by this Port section as a source
+-of frequency for the SyncE EEC on this device (required only in
+-"internal input" mode).
++Command (legacy) mode only. Shell command that disables the PHY port pointed to
++by this port section as a frequency source for the SyncE EEC on this device.
+ .IP allowed_qls
+-List of integers containing allowed SSM QLs separated by comma (`,`), other
+-received ones would be discarded. If parameter is not provided, all QLs will be
+-accepted.
+-.P
++List of hexadecimal values of allowed SSM QLs, separated by commas. Received QLs
++not in the list are discarded. If not provided, all QLs are accepted.
+ .IP allowed_ext_qls
+-List of integers containing allowed extended SSM QLs separated by comma (`,`),
+-other received ones would be discarded. If parameter is not provided, all QLs will
+-be accepted.
+-.P
++List of hexadecimal values of allowed extended SSM QLs, separated by commas.
++Received extended QLs not in the list are discarded. If not provided, all
++extended QLs are accepted.
+ .RE
+ 
++.SS External source section
++Any section in curly brackets, e.g. [{SMA1}], is an external source section.
++Multiple external source sections are allowed. Each external source participates
++in the best source selection algorithm for the EEC.
++.RS
++.IP input_QL
++Quality Level (QL) advertised for this external source.
++.RS
++Defaults to 0, valid values are 0 - 15 (0x0 - 0xF).
++.RE
++.IP input_ext_QL
++Extended Quality Level advertised for this external source.
++.RS
++Defaults to 0, valid values are 0 - 255 (0x0 - 0xFF).
++.RE
++.IP internal_prio
++Internal source priority used as a tiebreaker; a higher priority (lower value)
++selects a source as better quality when two sources are otherwise of equal
++quality.
++.RS
++Defaults to 128, valid values are 0 - 255.
++.RE
++.IP external_enable_cmd
++Command (legacy) mode only. Shell command that enables the external clock source
++pointed to by this section as a frequency source for the SyncE EEC on this
++device.
++.IP external_disable_cmd
++Command (legacy) mode only. Shell command that disables the external clock
++source pointed to by this section as a frequency source for the SyncE EEC on
++this device.
++.IP source_ports
++Comma-separated list of port names whose transmitted QL should track the QL of
++this external source, allowing the external source QL to be passed through to
++the listed ports.
++.IP board_label
++DPLL netlink mode only. Label of the DPLL pin associated with this external EEC
++input, as registered in the Linux DPLL subsystem.
++.IP panel_label
++DPLL netlink mode only. Label of the DPLL pin associated with this external EEC
++input, as registered in the Linux DPLL subsystem.
++.IP package_label
++DPLL netlink mode only. Label of the DPLL pin associated with this external EEC
++input, as registered in the Linux DPLL subsystem.
++.RS
++When the DPLL subsystem is used, one of board_label, panel_label or
++package_label must be provided, depending on the type of label under which the
++given input is registered in the Linux DPLL subsystem.
++.RE
++.RE
++
++.SH EXAMPLES
++Command (legacy) mode configuration:
++.PP
++.RS
++.nf
++[global]
++logging_level              7
++use_syslog                 0
++verbose                    1
++message_tag                [synce4l]
++smc_socket_path            /run/synce4l_socket
++
++[<synce1>]
++network_option             1
++extended_tlv               1
++recover_time               20
++eec_get_state_cmd          cat /sys/class/net/eth0/device/dpll_0_state
++eec_holdover_value         4
++eec_locked_ho_value        3
++eec_locked_value           2
++eec_freerun_value          1
++eec_invalid_value          0
++
++[eth0]
++tx_heartbeat_msec          1000
++rx_heartbeat_msec          500
++recover_clock_enable_cmd   echo 1 0 > /sys/class/net/eth0/device/phy/synce
++recover_clock_disable_cmd  echo 0 0 > /sys/class/net/eth0/device/phy/synce
++allowed_qls                0x2,0x4,0x8
++allowed_ext_qls            0x20,0x21
++
++[{SMA1}]
++external_enable_cmd        echo 2 1 > /sys/class/net/enp1s0f0/device/ptp/ptp*/pins/SMA1
++external_disable_cmd       echo 0 1 > /sys/class/net/enp1s0f0/device/ptp/ptp*/pins/SMA1
++input_QL                   0x2
++input_ext_QL               0x20
++internal_prio              0
++.fi
++.RE
++.PP
++Linux DPLL (netlink) mode configuration:
++.PP
++.RS
++.nf
++[global]
++logging_level              7
++use_syslog                 0
++verbose                    1
++message_tag                [synce4l]
++smc_socket_path            /run/synce4l_socket
++
++[<synce1>]
++network_option             1
++extended_tlv               1
++recover_time               20
++clock_id                   0xaabbccffffccbbaa
++module_name                ice
++holdover_tx                1
++holdover_tx_ql             0xb
++holdover_tx_ext_ql         0xff
++
++[eth0]
++tx_heartbeat_msec          1000
++rx_heartbeat_msec          500
++allowed_qls                0x2,0x4,0x8
++allowed_ext_qls            0x20,0x21
++
++[{SMA1}]
++board_label                SMA1
++input_QL                   0x2
++input_ext_QL               0x20
++internal_prio              0
++.fi
++.RE
++
++.SH EXTERNAL API
++synce4l can be queried and controlled by an external application over the
++AF_UNIX socket configured by the global smc_socket_path option. Messages are
++exchanged as a stream of TLV (Type-Length-Value) records; every stream is
++terminated by a record of type MSG_END_MARKER. The response uses the same TLV
++format. The message types and structures are defined in synce_external_api.h.
++
+ .SH BUGS
+ No known bugs.
+ 
++.SH HISTORY
++This page was updated to match the StarlingX-patched synce4l 1.1.2 build,
++documenting the DPLL netlink and command operating modes, the external source
++section, and the current set of configuration options, including options added
++by the StarlingX integration patches that are not part of a stock upstream
++1.1.2 release.
++
+ .SH AUTHOR
+ Arkadiusz Kubalewski <arkadiusz.kubalewski@intel.com>
+ .P
+-- 
+2.53.0
+
