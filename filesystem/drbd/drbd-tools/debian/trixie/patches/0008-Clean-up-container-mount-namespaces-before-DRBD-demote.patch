@@ -1,7 +1,7 @@
-From 4735c85b9eec988b59741f4c17a82573e69f2a0e Mon Sep 17 00:00:00 2001
+From b83112d3af548fde5f2fb9cbf737aca6c07eb82f Mon Sep 17 00:00:00 2001
 From: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
-Date: Tue, 4 Aug 2026 03:34:16 -0400
-Subject: Clean up container mount namespaces before DRBD demote
+Date: Wed, 21 Oct 2026 10:44:51 -0300
+Subject: [PATCH] Clean up container mount namespaces before DRBD demote
 
 Clean up stale DRBD mount references held in container mount namespaces
 before "drbdadm secondary", to prevent "Device is held open by someone"
@@ -11,11 +11,11 @@ container namespaces, and limited to host-root bind captures under
 
 Signed-off-by: Ramesh Kumar Sivanandam <rameshkumar.sivanandam@windriver.com>
 ---
- scripts/drbd.ocf | 166 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 166 insertions(+)
+ scripts/drbd.ocf | 169 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 166 insertions(+), 3 deletions(-)
 
 diff --git a/scripts/drbd.ocf b/scripts/drbd.ocf
-index b2908d5..fd8a53f 100755
+index 9babda9..ce80b68 100755
 --- a/scripts/drbd.ocf
 +++ b/scripts/drbd.ocf
 @@ -578,6 +578,159 @@ source_who_is_using_drbd()
@@ -178,7 +178,7 @@ index b2908d5..fd8a53f 100755
  call_unfence()
  {
  	# It is easier to just call the crm-unfence-peer script, without
-@@ -1065,7 +1205,10 @@ drbd_start()
+@@ -1065,7 +1218,10 @@ drbd_start()
  			;;
  		$OCF_RUNNING_MASTER)
  			ocf_log warn "$DRBD_RESOURCE already Primary, demoting."
@@ -188,9 +188,9 @@ index b2908d5..fd8a53f 100755
 +			# someone" errors when a container namespace references the device.
 +			demote_to_secondary_with_cleanup "$DRBD_RESOURCE"
  			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
- 				result=$(who_is_using_drbd "$DRBD_RESOURCE")
+ 				result=$(who_is_using_drbd "$DRBD_RESOURCE" | grep -v '^[[:space:]]*$')
  				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
-@@ -1187,7 +1330,10 @@ drbd_demote() {
+@@ -1188,7 +1344,10 @@ drbd_demote() {
  			break
  			;;
  		$OCF_RUNNING_MASTER)
@@ -200,9 +200,9 @@ index b2908d5..fd8a53f 100755
 +			# someone" errors when a container namespace references the device.
 +			demote_to_secondary_with_cleanup "$DRBD_RESOURCE"
  			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
- 				result=$(who_is_using_drbd "$DRBD_RESOURCE")
+ 				result=$(who_is_using_drbd "$DRBD_RESOURCE" | grep -v '^[[:space:]]*$')
  				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
-@@ -1237,8 +1383,12 @@ drbd_stop() {
+@@ -1239,8 +1398,12 @@ drbd_stop() {
  			if [ "${found}" = "yes" ]; then
  				ocf_log warn "Waiting to drop $DRBD_RESOURCE"
  			else
@@ -214,7 +214,8 @@ index b2908d5..fd8a53f 100755
 -				do_drbdadm secondary $DRBD_RESOURCE
 +				demote_to_secondary_with_cleanup "$DRBD_RESOURCE"
  				if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
- 					result=$(who_is_using_drbd "$DRBD_RESOURCE")
+ 					result=$(who_is_using_drbd "$DRBD_RESOURCE" | grep -v '^[[:space:]]*$')
  					ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
 -- 
-2.34.1
+2.43.0
+

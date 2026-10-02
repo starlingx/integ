@@ -1,0 +1,224 @@
+From 72c3efbd9488d0ecf78b6e4918d9add56eafc099 Mon Sep 17 00:00:00 2001
+From: Gustavo Ornaghi Antunes <gustavo.ornaghiantunes@windriver.com>
+Date: Wed, 21 Oct 2026 10:44:12 -0300
+Subject: [PATCH] Report and kill who is using DRBD device
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch includes code to report who is using the DRBD device when the
+"drbdadm secondary..." command is executed.
+
+The goal of this fix is to make debugging DRBD issues easier.
+
+It also kills, as a last resort, the pod sandbox that holds the DRBD device
+when "drbdadm secondary" still fails with "Device is held open by someone".
+The holder is resolved from the container id in the cgroup path via
+"crictl inspect" and the sandbox is removed with crictl (stopp/rmp) with up
+to 3 retries, as no Kubernetes API is available during swact. After the kill
+attempt the device is re-checked and a status is returned so the OCF flow can
+decide instead of blindly retrying.
+
+Signed-off-by: Gustavo Ornaghi Antunes <gustavo.ornaghiantunes@windriver.com>
+Signed-off-by: Ítalo Vieira <italo.gomesvieira@windriver.com>
+Signed-off-by: Pedro Trevisan <pedro.trevisan@windriver.com>
+Signed-off-by: Arthur Santana Pedra <Arthur.SantanaPedra@windriver.com>
+Signed-off-by: Edson CS <edson.coelhodossantos@windriver.com>
+---
+ scripts/Makefile.in   |   1 +
+ scripts/drbd.inuse.sh | 103 ++++++++++++++++++++++++++++++++++++++++++
+ scripts/drbd.ocf      |  28 +++++++++++-
+ 3 files changed, 131 insertions(+), 1 deletion(-)
+ create mode 100644 scripts/drbd.inuse.sh
+
+diff --git a/scripts/Makefile.in b/scripts/Makefile.in
+index 5fdebce..92d538b 100644
+--- a/scripts/Makefile.in
++++ b/scripts/Makefile.in
+@@ -149,6 +149,7 @@ ifeq ($(WITH_PACEMAKER),yes)
+ 	install -m 755 drbd.ocf $(DESTDIR)/usr/lib/ocf/resource.d/linbit/drbd
+ 	install -m 755 drbd-attr $(DESTDIR)/usr/lib/ocf/resource.d/linbit/drbd-attr
+ 	install -m 644 drbd.shellfuncs.sh $(DESTDIR)/usr/lib/ocf/resource.d/linbit/
++	install -m 644 drbd.inuse.sh $(DESTDIR)/usr/lib/ocf/resource.d/linbit/
+ endif
+ 
+ install-rgmanager:
+diff --git a/scripts/drbd.inuse.sh b/scripts/drbd.inuse.sh
+new file mode 100644
+index 0000000..142699d
+--- /dev/null
++++ b/scripts/drbd.inuse.sh
+@@ -0,0 +1,103 @@
++#!/bin/bash
++
++who_is_using_drbd() {
++	local drbd_name=$1
++
++	if [ -z "$drbd_name" ]; then
++		echo "Usage: who_is_using_drbd <device_name> (e.g., drbd1)"
++		return 1
++	fi
++
++	local target_device=$(drbdadm sh-dev "$drbd_name")
++
++	# Validate if the device exists
++	if ! lsblk "$target_device" >/dev/null 2>&1; then
++		echo "Error: Device $target_device not found."
++		return 1
++	fi
++
++	# Get the MAJOR:MINOR of the specific device
++	local dev_maj_min=$(lsblk -dn "$target_device" --output MAJ:MIN --raw)
++
++	# Table Header
++	printf "%-12s | %-12s | %-40s | %-20s | %-40s\n" "PID" "MAJ:MIN" "MOUNTPOINT" "POD_NAMESPACE" "POD_NAME"
++
++	# List only the pods (container namespaces) holding this exact device.
++	local seen=" "
++	for mi in /proc/[0-9]*/mountinfo; do
++		awk -v mm="$dev_maj_min" '$3==mm{f=1} END{exit !f}' "$mi" 2>/dev/null || continue
++		local pid=${mi#/proc/}; pid=${pid%/mountinfo}
++		[ -d "/proc/$pid" ] || continue
++		local cgroup_path=$(grep -m1 kubepods "/proc/$pid/cgroup" 2>/dev/null) || continue
++		local ctr_id=$(echo "$cgroup_path" | grep -oE '[a-f0-9]{64}' | head -1)
++		[ -z "$ctr_id" ] && continue
++		case "$seen" in *" $ctr_id "*) continue ;; esac
++		seen="$seen$ctr_id "
++		local mount_point=$(awk -v mm="$dev_maj_min" '$3==mm{print $5; exit}' "$mi" 2>/dev/null)
++		local pod_info=$(crictl inspect "$ctr_id" 2>/dev/null)
++		local pod_ns=$(echo "$pod_info" | grep -oP '"io.kubernetes.pod.namespace": "\K[^"]+' | head -1)
++		local pod_name=$(echo "$pod_info" | grep -oP '"io.kubernetes.pod.name": "\K[^"]+' | head -1)
++		printf "%-12s | %-12s | %-40s | %-20s | %-40s\n" "$pid" "$dev_maj_min" "$mount_point" "${pod_ns:-Not Found}" "${pod_name:-Not Found}"
++	done
++}
++
++kill_pod_using_drbd() {
++	local drbd_name=$1
++
++	local target_device=$(drbdadm sh-dev "$drbd_name")
++
++	if ! lsblk "$target_device" >/dev/null 2>&1; then
++		echo "Error: Device $target_device not found."
++		return 1
++	fi
++
++	local dev_maj_min=$(lsblk -dn "$target_device" --output MAJ:MIN --raw)
++
++	local seen=" "
++	local any_killed=false
++	for mi in /proc/[0-9]*/mountinfo; do
++		awk -v mm="$dev_maj_min" '$3==mm{f=1} END{exit !f}' "$mi" 2>/dev/null || continue
++		local pid=${mi#/proc/}; pid=${pid%/mountinfo}
++		[ -d "/proc/$pid" ] || continue
++		local cgroup_path=$(grep -m1 kubepods "/proc/$pid/cgroup" 2>/dev/null) || continue
++		local ctr_id=$(echo "$cgroup_path" | grep -oE '[a-f0-9]{64}' | head -1)
++		[ -z "$ctr_id" ] && continue
++		local pod_info=$(crictl inspect "$ctr_id" 2>/dev/null)
++		local pod_id=$(echo "$pod_info" | grep -oiP '"sandboxID": "\K[a-f0-9]{64}' | head -1)
++		[ -z "$pod_id" ] && continue
++		case "$seen" in *" $pod_id "*) continue ;; esac
++		seen="$seen$pod_id "
++		local pod_ns=$(echo "$pod_info" | grep -oP '"io.kubernetes.pod.namespace": "\K[^"]+' | head -1)
++		local pod_name=$(echo "$pod_info" | grep -oP '"io.kubernetes.pod.name": "\K[^"]+' | head -1)
++
++		# Try up to 3 times to stop and remove the pod sandbox. crictl can fail
++		# transiently (runtime busy, device still in use); retry before giving up.
++		local attempt stop_err rm_err killed=false
++		for attempt in 1 2 3; do
++			ocf_log info "Killing pod holding DRBD $drbd_name: ${pod_ns:-?}/${pod_name:-?} (attempt $attempt/3)"
++			stop_err=$(crictl stopp "$pod_id" 2>&1)
++			rm_err=$(crictl rmp -f "$pod_id" 2>&1)
++			if ! crictl inspectp "$pod_id" >/dev/null 2>&1; then
++				killed=true
++				any_killed=true
++				break
++			fi
++			sleep 2
++		done
++
++		if [ "$killed" = true ]; then
++			ocf_log info "Killed pod holding DRBD $drbd_name: ${pod_ns:-?}/${pod_name:-?}"
++		else
++			ocf_log error "Failed to kill pod ${pod_ns:-?}/${pod_name:-?} holding DRBD $drbd_name after 3 attempts (stopp: ${stop_err:-none}; rmp: ${rm_err:-none})"
++		fi
++	done
++
++	# Re-check the device is actually free before reporting success, so the OCF
++	# flow can decide instead of blindly retrying. who_is_using_drbd always
++	# prints a header line, so match only pod data rows (they start with a PID).
++	if who_is_using_drbd "$drbd_name" | grep -qE '^[0-9]'; then
++		ocf_log error "DRBD $drbd_name still held after pod kill attempt"
++		return 1
++	fi
++	$any_killed && return 0 || return 1
++}
+diff --git a/scripts/drbd.ocf b/scripts/drbd.ocf
+index 987733f..9babda9 100755
+--- a/scripts/drbd.ocf
++++ b/scripts/drbd.ocf
+@@ -525,6 +525,9 @@ do_cmd() {
+ 				printf "cmd_out=%q\nret=%q\n" "$out" "$ex" )"
+ 		)"
+ 
++	DRBD_LAST_CMD_OUT="$cmd_out"
++	DRBD_LAST_CMD_ERR="$cmd_err"
++
+ 	if [ $ret != 0 ]; then
+ 		ocf_log $failure_log_level "$DRBD_RESOURCE: Called $cmd"
+ 		ocf_log $failure_log_level "$DRBD_RESOURCE: Exit code $ret"
+@@ -567,6 +570,14 @@ source_drbd_shellfuncs()
+ }
+ source_drbd_shellfuncs
+ 
++source_who_is_using_drbd()
++{
++	local dir=.
++	[[ $0 = */* ]] && dir=${0%/*}
++	source "$dir/drbd.inuse.sh"
++}
++source_who_is_using_drbd
++
+ call_unfence()
+ {
+ 	# It is easier to just call the crm-unfence-peer script, without
+@@ -1055,6 +1066,11 @@ drbd_start()
+ 		$OCF_RUNNING_MASTER)
+ 			ocf_log warn "$DRBD_RESOURCE already Primary, demoting."
+ 			do_drbdadm secondary $DRBD_RESOURCE
++			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
++				result=$(who_is_using_drbd "$DRBD_RESOURCE" | grep -v '^[[:space:]]*$')
++				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
++				kill_pod_using_drbd "$DRBD_RESOURCE"
++			fi
+ 		esac
+ 		$first_try || sleep 1
+ 		first_try=false
+@@ -1173,6 +1189,11 @@ drbd_demote() {
+ 			;;
+ 		$OCF_RUNNING_MASTER)
+ 			do_drbdadm secondary $DRBD_RESOURCE
++			if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
++				result=$(who_is_using_drbd "$DRBD_RESOURCE" | grep -v '^[[:space:]]*$')
++				ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
++				kill_pod_using_drbd "$DRBD_RESOURCE"
++			fi
+ 		esac
+ 		$first_try || sleep 1
+ 		first_try=false
+@@ -1219,7 +1240,12 @@ drbd_stop() {
+ 				ocf_log warn "Waiting to drop $DRBD_RESOURCE"
+ 			else
+ 				ocf_log warn "Dropping $DRBD_RESOURCE to Secondary"
+-				do_drbdadm secondary  $DRBD_RESOURCE
++				do_drbdadm secondary $DRBD_RESOURCE
++				if [[ "$DRBD_LAST_CMD_ERR" == *"Device is held open by someone"* ]]; then
++					result=$(who_is_using_drbd "$DRBD_RESOURCE" | grep -v '^[[:space:]]*$')
++					ocf_log error "Who is using the DRBD $DRBD_RESOURCE: $result"
++					kill_pod_using_drbd "$DRBD_RESOURCE"
++				fi
+ 			fi
+ 		esac
+ 		$first_try || sleep 1
+-- 
+2.43.0
+
