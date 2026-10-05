@@ -202,6 +202,17 @@ void process_ptp_messages(AppState *state);
 void handle_ptp_port_up(AppState *state);
 
 /**
+ * handle_ptp_port_down - Disable the PTP DPLL pins (REF0P, REF0N -> DISCONNECTED)
+ * @state: Application state
+ *
+ * Called when the backhaul port is no longer usable: FAULTY/DISABLED, a
+ * dead/wedged ptp4l (liveness), or when master selection rejects an SDP master
+ * because the backhaul has lost its grandmaster (port LISTENING). Dropping the
+ * SDP pins releases the electrical lock so the DPLL settles into holdover.
+ */
+void handle_ptp_port_down(AppState *state);
+
+/**
  * ptp_check_liveness - Signal 1: RX-silence backstop
  * @state: Application state
  *

@@ -48,9 +48,6 @@ extern struct ynl_sock *ys;
 /* DPLL device ID - typically 0 for primary device */
 #define DPLL_DEVICE_ID 0
 
-/* Forward declaration for static helper used before its definition */
-static void handle_ptp_port_down(AppState *state);
-
 /**
  * Get the expected data size for a management ID (for GET requests)
  * This matches what pmc sends to reserve space for the response
@@ -1037,7 +1034,7 @@ void handle_ptp_port_up(AppState *state)
  * Called when port enters FAULTY or DISABLED state
  * @dpll_sock: DPLL netlink socket
  */
-static void handle_ptp_port_down(AppState *state)
+void handle_ptp_port_down(AppState *state)
 {
     if (state->pps_dpll_device_id) {
         pr_info("Disabling PTP pins REF0P and REF0N due to port down state\n");
@@ -1191,6 +1188,16 @@ void process_port_data_set(AppState *state, uint16_t mgmt_id,
          * send, not only on a gone socket). */
         state->subscription_fail_count = 0;
         handle_ptp_port_up(state);
+    } else if (new_port_state == 4 && old_port_state != 4) {
+        /* Port went LISTENING: backhaul lost its GM but the link is up, so
+         * unlike FAULTY/DISABLED there is no DPLL event (the SDP0 1PPS keeps the
+         * DPLL locked). Re-run master selection so its SDP-pin gate sees the
+         * LISTENING state and releases the lock. No-op unless mastered by SDP. */
+        if (state->dpll_sock && is_ptp_pin(state->current_master)) {
+            pr_info("Backhaul port LISTENING while mastered by SDP pin; "
+                    "re-evaluating DPLL master selection\n");
+            process_dpll_master_state(state, state->dpll_sock);
+        }
     }
 
 }
