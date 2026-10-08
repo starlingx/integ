@@ -30,7 +30,15 @@ RestartSec=5
 # in the kernel. We recommend using cgroups to do container-local accounting.
 LimitNPROC=infinity
 LimitCORE=infinity
-LimitNOFILE=infinity
+# TODO: remove LimitNOFILE here to align with upstream and rely on systemd
+# defaults.
+# Set an explicit RLIMIT_NOFILE instead of "infinity".
+# On Trixie (systemd v257), "infinity" ends up as ~1B (1073741816), so pods
+# launched by containerd inherit a ~1B nofile limit. A limit this high causes
+# some workloads to consume excessive memory (data structures sized from the
+# fd limit), leading to OOM kills. Set 1048576 to restore the previous
+# (Bullseye) behavior.
+LimitNOFILE=1048576
 # Comment TasksMax if your systemd version does not supports it.
 # Only systemd 226 and above support this version.
 TasksMax=infinity
