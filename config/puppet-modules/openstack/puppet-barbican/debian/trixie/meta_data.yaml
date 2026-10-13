@@ -1,11 +1,7 @@
 ---
 debname: puppet-module-barbican
 debver: 25.0.0-5
-dl_path:
-  name: puppet-module-barbican-25.0.0-5.tar.gz
-  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-barbican/-/archive/debian/25.0.0-5/puppet-module-barbican-debian-25.0.0-5.tar.gz
-  md5sum: a6b9857c4b0e9421aa9cea1d3b6449f7
-  sha256sum: 1f2043d8c11291e802003087ddf773c5ff2bd49730a5aceb7479342a5aaf5f92
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-barbican/
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

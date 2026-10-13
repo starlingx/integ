@@ -1,11 +1,7 @@
 ---
 debname: puppet-module-puppetlabs-stdlib
 debver: 9.4.1-1
-dl_path:
-  name: puppet-module-puppetlabs-stdlib-9.4.1-1.tar.gz
-  url: https://salsa.debian.org/puppet-team/puppet-module-puppetlabs-stdlib/-/archive/debian/9.4.1-1/puppet-module-puppetlabs-stdlib-debian-9.4.1-1.tar.gz
-  md5sum: e129d18899859d68ceccd370d01b18e5
-  sha256sum: 82db5cc14197966bebe458417eafc42e86241aaa263d244f42d11efe63be9d32
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-puppetlabs-stdlib/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

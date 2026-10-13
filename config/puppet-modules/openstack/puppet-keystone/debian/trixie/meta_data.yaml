@@ -1,11 +1,7 @@
 ---
 debname: puppet-module-keystone
 debver: 25.0.0-4
-dl_path:
-  name: puppet-module-keystone-25.0.0-4.tar.gz
-  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-keystone/-/archive/debian/25.0.0-4/puppet-module-keystone-debian-25.0.0-4.tar.gz
-  md5sum: 5e2ef71c0cd09049614139fc8f0d315d
-  sha256sum: bc3d4cd13fada4dabe2f15677152d17197399365c5baf848f8e4b219f690ccdc
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-keystone/
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

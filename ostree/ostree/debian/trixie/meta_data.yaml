@@ -1,9 +1,6 @@
 ---
 debver: 2025.2-1
-dl_path:
-  name: ostree.tar.gz
-  url: https://salsa.debian.org/debian/ostree/-/archive/debian/2025.2-1/ostree-debian-2025.2-1.tar.gz
-  sha256sum: d32c1561ad825ed1996b176efa07d2aea393cf38ade05e1c47b2eebf3d28baec
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/o/ostree/
 revision:
   dist: ${STX_DIST}
   PKG_GITREVCOUNT: true

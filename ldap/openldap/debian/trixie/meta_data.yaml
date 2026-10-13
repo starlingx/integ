@@ -1,10 +1,6 @@
 ---
 debver: 2.6.10+dfsg-1
-dl_path:
-  name: openldap-2.6.10+dfsg-1.tar.gz
-  url: https://salsa.debian.org/openldap-team/openldap/-/archive/2.6.10+dfsg-1/openldap-2.6.10+dfsg-1.debian.tar.gz
-  md5sum: 1cd711ca14c311f719b4d830ff069ad1
-  sha256sum: 0370612c4227acc09f2c353048a658ba96634cb7ed49a2b3e64d77f1802b59b7
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/o/openldap/
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

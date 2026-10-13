@@ -1,10 +1,6 @@
 ---
 debver: 3.6.7
-dl_path:
-  name: base-passwd-debian-3.6.7.tar.gz
-  url: https://salsa.debian.org/debian/base-passwd/-/archive/debian/3.6.7/base-passwd-debian-3.6.7.tar.gz
-  md5sum: d3534a5314f5db5a4ae6c644aefc98b5
-  sha256sum: 24828b8eccab290df0a56c671d01fbee1a50507217ce91a6d94eae825000b0ab
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/b/base-passwd/
 revision:
   dist: $STX_DIST
   stx_patch: 9

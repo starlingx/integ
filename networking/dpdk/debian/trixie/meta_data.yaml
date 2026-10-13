@@ -1,11 +1,7 @@
 ---
 debname: dpdk
 debver: 24.11.4-0+deb13u1
-dl_path:
-  name: dpdk-debian-24.11.4-0+deb13u1.tar.gz
-  url: https://salsa.debian.org/debian/dpdk/-/archive/debian/24.11.4-0+deb13u1/dpdk-debian-24.11.4-0+deb13u1.tar.gz
-  md5sum: e5ff22466c110ee742a591780e0739af
-  sha256sum: 4e5c29a67a0c53140744b7af47b8c15df5d6dccb8b0a3aef159df04037f354b3
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/d/dpdk/
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

@@ -1,11 +1,7 @@
 ---
 debname: puppet-module-puppetlabs-rabbitmq
 debver: 8.5.0-8+deb13u1
-dl_path:
-  name: puppet-module-puppetlabs-rabbitmq-8.5.0-8+deb13u1.tar.gz
-  url: https://salsa.debian.org/openstack-team/puppet/puppet-module-puppetlabs-rabbitmq/-/archive/debian/8.5.0-8+deb13u1/puppet-module-puppetlabs-rabbitmq-debian-8.5.0-8+deb13u1.tar.gz  # yamllint disable-line rule:line-length
-  md5sum: 73238f30f670eeedb717f1db44295195
-  sha256sum: 6c5f9ac29f820c499d3d00990f3e7b36e798c59c01e6d4ea3ff64105de4f4fed
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-puppetlabs-rabbitmq/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

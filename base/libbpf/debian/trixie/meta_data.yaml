@@ -1,11 +1,7 @@
 ---
 debname: libbpf
 debver: 1.5.0-3
-dl_path:
-  name: libbpf-debian-1.5.0-3.tar.gz
-  url: https://salsa.debian.org/sudip/libbpf/-/archive/debian/1.5.0-3/libbpf-debian-1.5.0-3.tar.gz
-  md5sum: d6c14960eb71331b350ec485e246c94e
-  sha256sum: 9c009f27836199037991f0eeade628e624966ae436ddfd88c41005b300c20758
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/libb/libbpf/
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
