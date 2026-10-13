@@ -316,6 +316,12 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock);
 const char *pin_source_to_string(enum pin_source source);
 void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock);
 
+/* Refresh the pin-state cache and rewrite status.json as a unit. Called by the
+ * PTP port up/down handlers after a pin change that leaves the master
+ * unchanged (which does not otherwise trigger a write). No-op if the DPLL
+ * socket is not up. */
+void refresh_pin_states_and_write(AppState *state);
+
 /**
  * run_main_loop - Main application loop
  * @state:     Application state

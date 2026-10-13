@@ -1024,6 +1024,12 @@ void handle_ptp_port_up(AppState *state)
             pr_err("Failed to enable REF0N\n");
         }
 
+        /* Track the PTP pin state so the serialized pin map reflects this
+         * change, and refresh status.json now: a pin enable that leaves the
+         * active master unchanged does not otherwise trigger a write. */
+        state->ptp_pin_state = DPLL_PIN_STATE_SELECTABLE;
+        refresh_pin_states_and_write(state);
+
     } else {
         pr_err("DPLL not initialized - cannot enable PTP pins\n");
     }
@@ -1054,6 +1060,12 @@ void handle_ptp_port_down(AppState *state)
         } else {
             pr_err("Failed to disable REF0N\n");
         }
+
+        /* Track the PTP pin state so the serialized pin map reflects this
+         * change, and refresh status.json now: a pin disable that leaves the
+         * active master unchanged does not otherwise trigger a write. */
+        state->ptp_pin_state = DPLL_PIN_STATE_DISCONNECTED;
+        refresh_pin_states_and_write(state);
     } else {
         pr_err("DPLL not initialized - cannot disable PTP pins\n");
     }
@@ -1090,10 +1102,24 @@ void ptp_check_liveness(AppState *state)
  * and, after 2 consecutive failures (deterministic dead ptp4l), treats the port
  * as down. A successful send resets the count. Idempotent via the sticky
  * ptp_port_down flag. Call from the subscription-renewal block.
+ *
+ * Recovery backstop: when a send succeeds while the port is still marked down,
+ * ptp4l's socket is back. The port may have already settled to UNCALIBRATED/
+ * SLAVE before we re-subscribed to the recreated socket, and ptp4l only pushes
+ * PORT_STATE on a transition (it does not replay the current state to a late
+ * subscriber), so the asynchronous port-up notification can be missed and the
+ * pins would stay disabled. Solicit the current port state with a GET; its
+ * response is handled by process_port_data_set() on the next message pass,
+ * which re-enables the pins if the backhaul is up again.
  */
 void ptp_note_subscription_result(AppState *state, bool send_ok)
 {
     if (send_ok) {
+        if (state->ptp_port_down &&
+            send_get_request(state->local_socket_fd, &state->local_peer_addr,
+                             MGMT_ID_PORT_DATA_SET, &state->local_sequence_id) != 0)
+            pr_dbg("Port-recovery PORT_DATA_SET GET send failed; "
+                   "will retry on the next subscription renewal\n");
         state->subscription_fail_count = 0;
         return;
     }
@@ -1174,11 +1200,21 @@ void process_port_data_set(AppState *state, uint16_t mgmt_id,
         /* Force immediate re-subscription: ptp4l may drop the subscription when
          * port goes FAULTY/DISABLED so we won't miss the port-UP notification */
         state->last_subscription.tv_sec = 0;
-    } else if (state->ptp_port_down && (new_port_state == 8 || new_port_state == 9)) {
-        /* Port recovered to UNCALIBRATED/SLAVE from a down state.
+    } else if ((new_port_state == 8 || new_port_state == 9) &&
+               (state->ptp_port_down ||
+                state->ptp_pin_state == DPLL_PIN_STATE_DISCONNECTED)) {
+        /* Port is UNCALIBRATED/SLAVE and the PTP pins are still disconnected.
+         * Two cases:
+         *   - recovery from a prior port-down (ptp_port_down == true), and
+         *   - the first lock after a startup where the backhaul was not yet
+         *     locked when dpll-mgr came up: the pins were left disconnected and
+         *     ptp_port_down was never set, so this transition must still
+         *     re-enable them.
          * Use ptp_port_down flag (not old_port_state) because ptp4l transitions
          * FAULTY -> LISTENING -> UNCALIBRATED: by the time UNCALIBRATED arrives
-         * old_port_state is LISTENING(4), not FAULTY(2). */
+         * old_port_state is LISTENING(4), not FAULTY(2). The DISCONNECTED guard
+         * fires exactly once (while SDP0 is the active master ptp_pin_state is
+         * CONNECTED, so steady re-announces do not re-assert). */
         pr_info("PTP port recovered to %s: re-enabling PTP pins\n",
                  state_str[new_port_state]);
         state->ptp_port_down = false;
