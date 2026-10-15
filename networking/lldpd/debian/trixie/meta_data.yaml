@@ -1,4 +1,5 @@
 ---
+debname: lldpd
 debver: 1.0.19-1
 archive: https://snapshot.debian.org/archive/debian/20251130T202713Z/pool/main/l/lldpd/
 revision:

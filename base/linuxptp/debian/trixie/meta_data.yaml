@@ -1,4 +1,5 @@
 ---
+debname: linuxptp
 debver: 4.2-1+b1
 dl_path:
   name: linuxptp-debian-4.2-1+b1.tar.gz

@@ -1,4 +1,5 @@
 ---
+debname: kubernetes-1.34.8
 debver: 1.34.8
 dl_path:
   name: kubernetes-1.34.8.tar.gz

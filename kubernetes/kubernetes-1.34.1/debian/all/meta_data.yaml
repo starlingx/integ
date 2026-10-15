@@ -1,4 +1,5 @@
 ---
+debname: kubernetes-1.34.1
 debver: 1.34.1
 dl_path:
   name: kubernetes-1.34.1.tar.gz

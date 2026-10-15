@@ -1,4 +1,5 @@
 ---
+debname: pf-bb-config
 debver: 23.03
 dl_path:
   name: pf-bb-config-23.03.tar.gz

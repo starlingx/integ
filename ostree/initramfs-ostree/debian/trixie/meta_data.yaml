@@ -1,4 +1,5 @@
 ---
+debname: initramfs-ostree
 debver: 1.0
 dl_hook: dl_hook
 dl_files:

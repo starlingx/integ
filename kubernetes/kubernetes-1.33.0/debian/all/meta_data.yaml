@@ -1,4 +1,5 @@
 ---
+debname: kubernetes-1.33.0
 debver: 1.33.0
 dl_path:
   name: kubernetes-1.33.0.tar.gz

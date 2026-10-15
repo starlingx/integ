@@ -1,4 +1,5 @@
 ---
+debname: ostree
 debver: 2025.2-1
 archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/o/ostree/
 revision:

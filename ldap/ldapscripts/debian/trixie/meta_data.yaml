@@ -1,4 +1,5 @@
 ---
+debname: ldapscripts
 debver: 2.0.8-2
 dl_path:
   name: 2.0.8-2.tar.gz

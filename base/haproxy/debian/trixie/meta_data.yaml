@@ -1,4 +1,5 @@
 ---
+debname: haproxy
 debver: 3.0.11-1
 dl_path:
   name: haproxy-debian-3.0.11-1.tar.gz
