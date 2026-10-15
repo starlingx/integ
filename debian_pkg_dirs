@@ -83,6 +83,7 @@ kubernetes/kubernetes-1.35.2
 kubernetes/kubernetes-1.36.0
 kubernetes/kubernetes-unversioned
 kubernetes/plugins/isolcpus-device-plugin
+kubernetes/plugins/scst-ctl-device-plugin
 kubernetes/plugins/kubectl-cert-manager
 kubernetes/plugins/kubelogin
 kubernetes/python3-kubernetes/python3-durationpy

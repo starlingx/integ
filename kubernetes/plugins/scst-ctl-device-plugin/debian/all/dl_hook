@@ -1,0 +1,37 @@
+#!/bin/bash
+set -ex
+
+PKG_BUILD_NAME=$1
+STX_BASE=$(realpath ${MY_REPO}/stx)
+PKG_BASE=${STX_BASE}/integ/kubernetes/plugins/scst-ctl-device-plugin
+
+# Copy committed source (main.go, go.mod, go.sum, vendor/modules.txt)
+cp -rL ${PKG_BASE}/files ${PKG_BUILD_NAME}
+
+# Rebuild the vendor tree from the pinned module tarballs so the build is
+# air-gapped (go build -mod=vendor, no network). modules.txt is committed.
+mkdir -p ${PKG_BUILD_NAME}/vendor
+cp ${PKG_BASE}/files/vendor/modules.txt ${PKG_BUILD_NAME}/vendor/modules.txt
+
+VENDOR="${PKG_BUILD_NAME}/vendor"
+
+# Helper: extract a module tarball into its vendor path (strip the top dir).
+unpack() {
+    local tarball=$1
+    local dest=$2
+    local strip=${3:-1}
+    mkdir -p "${VENDOR}/${dest}"
+    tar xzf "${tarball}" -C "${VENDOR}/${dest}" --strip-components="${strip}"
+}
+
+unpack gogo-protobuf-v1.3.2.tar.gz "github.com/gogo/protobuf"
+unpack golang-net-v0.38.0.tar.gz "golang.org/x/net"
+unpack golang-sys-v0.31.0.tar.gz "golang.org/x/sys"
+unpack golang-text-v0.23.0.tar.gz "golang.org/x/text"
+unpack go-genproto-56aae31c358a.tar.gz "google.golang.org/genproto"
+unpack grpc-go-v1.72.2.tar.gz "google.golang.org/grpc"
+unpack protobuf-go-v1.36.5.tar.gz "google.golang.org/protobuf"
+unpack kubelet-v0.33.4.tar.gz "k8s.io/kubelet"
+
+# Remove test files (they can import packages not present in vendor).
+find "${VENDOR}" -name "*_test.go" -delete
