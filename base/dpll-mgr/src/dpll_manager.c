@@ -1148,6 +1148,13 @@ void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock)
     determine_current_master(state, dpll_sock);
     update_pin_states(state, dpll_sock);
 
+    /* reconcile the PPS SDP input pins to backhaul GM presence
+     * every cycle, using the live pin_states[] just refreshed above. Makes
+     * REF0N selectability autonomous (no longer dependent on a port bounce)
+     * and self-heals decay — the enabler for GNSS->backhaul failover without
+     * an operator action. Write-on-change only; GM-gated (Issue 17). */
+    reconcile_ptp_pins(state);
+
     /* Detect lock status change (independent of master change) */
     if (state->lock_status != state->prev_lock_status) {
         pr_info("Lock status changed: %s -> %s\n",

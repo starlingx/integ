@@ -1,4 +1,5 @@
 obj/
 obj_test/
 run_test
+run_test_reconcile
 dpll_mgr
