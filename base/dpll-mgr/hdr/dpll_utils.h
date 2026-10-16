@@ -193,6 +193,16 @@ static inline enum pin_source pin_name_to_source(const char *pin_name) {
 }
 
 /**
+ * dpll_pin_dump - Dump all DPLL pins
+ * @ys: YNL socket
+ * @device_id: unused (dump is unfiltered; parent_device[] carries per-device data)
+ *
+ * Returns: head of a dpll_pin_get_list (caller frees with
+ * dpll_pin_get_list_free), or NULL on error.
+ */
+struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id);
+
+/**
  * dpll_find_device_id_by_type - Find the DPLL device of specified type
  * @ys: YNL socket
  * @device_type: DPLL device type to search for (e.g., DPLL_TYPE_EEC, DPLL_TYPE_PPS)

@@ -987,6 +987,32 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
     for (int i = 0; i <= PIN_SOURCE_INT_OSC; i++)
         state->pin_states[i].valid = false;
 
+    /* read each configured pin's state LIVE from the DPLL rather
+     * than synthesizing it from the in-memory ptp_pin_state flag.
+     *
+     * The previous implementation derived PTP-pin state from state->ptp_pin_state
+     * (a single per-process scalar mutated only in the port up/down handlers).
+     * That flag is lost across a dpll-mgr restart and is only correct if THIS
+     * process observed a port event, so a restarted/late-subscribed daemon
+     * published a stale pin map (hardware "selectable" reported as
+     * "disconnected") that never reconciled. Reading the hardware here makes the
+     * published map stateless and idempotent: any process reconstructs truth
+     * from the DPLL regardless of restart or missed events.
+     *
+     * One unfiltered pin dump per call (cheap, same socket the main loop already
+     * uses). parent_device[] carries per-device state; the PPS device entry is
+     * the one that drives SDP/REF failover (matches dpll_phase_adjust.c, which
+     * reads parent_device[1]). */
+    struct dpll_pin_get_list *pin_list = dpll_pin_dump(dpll_sock, 0);
+
+    /* Track whether any PTP pin's freshly-read state differs from what was last
+     * published, so we can converge status.json after an event that does not
+     * change the master/lock (e.g. the backhaul settling from a transient
+     * "disconnected" to "selectable" after a ptp-instance-apply). Writing only
+     * on an actual change keeps the live read as the source of truth and does
+     * not perturb the per-tick reconcile. */
+    bool ptp_pin_changed = false;
+
     /* Iterate EEC priority table — these are the configured input pins */
     for (int i = 0; i < 16; i++) {
         if (state->eec_priority_table[i].pin_name[0] == '\0')
@@ -999,26 +1025,93 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
         state->pin_states[src].priority = state->eec_priority_table[i].priority;
         state->pin_states[src].valid = true;
 
-        /* Derive state from what we already know:
-         * - connected_pin matches this source → CONNECTED
-         * - For PTP pins, ptp_pin_state is tracked
-         * - Otherwise mark as SELECTABLE (default for configured pins) */
+        /* Snapshot the previously published state so we can detect a change
+         * once the live read (or fallback) sets the new value below. */
+        enum dpll_pin_state prev_pin_state = state->pin_states[src].state;
+
+        /* Find this configured pin in the live dump by its package label and
+         * take the hardware pin state directly. */
+        const char *plabel = state->eec_priority_table[i].package_label;
+        bool found_live = false;
+        if (pin_list && plabel[0] != '\0') {
+            for (struct dpll_pin_get_list *p = pin_list; p; p = p->next) {
+                if (!p->obj.package_label ||
+                    strncmp(p->obj.package_label, plabel, sizeof(((PinPriorityEntry*)0)->package_label)) != 0)
+                    continue;
+                /* A pin can be parented by both DPLL engines (e.g. SDP0_REF0N
+                 * hangs off both the EEC and the PPS device). The PPS device is
+                 * the operative one for SDP/REF failover; the EEC entry stays
+                 * permanently "disconnected" by design on a 1PPS backhaul.
+                 * Selecting by array index is fragile — on some hosts the EEC
+                 * entry sorts first (index 0), so an index-based choice
+                 * publishes the EEC pin's permanent "disconnected" while the
+                 * PPS pin is "selectable". Select by device identity instead:
+                 * prefer the PPS device (parent_id == pps_dpll_device_id), then
+                 * any non-EEC device, then the first entry carrying a state. */
+                if (p->obj.parent_device && p->obj.n_parent_device >= 1) {
+                    struct dpll_pin_parent_device *pps = NULL;
+                    struct dpll_pin_parent_device *non_eec = NULL;
+                    struct dpll_pin_parent_device *any = NULL;
+                    for (unsigned j = 0; j < p->obj.n_parent_device; j++) {
+                        struct dpll_pin_parent_device *pd = &p->obj.parent_device[j];
+                        if (!pd->_present.state)
+                            continue;
+                        if (pd->parent_id == state->pps_dpll_device_id)
+                            pps = pd;
+                        else if (pd->parent_id != state->eec_dpll_device_id && !non_eec)
+                            non_eec = pd;
+                        if (!any)
+                            any = pd;
+                    }
+                    struct dpll_pin_parent_device *chosen =
+                        pps ? pps : (non_eec ? non_eec : any);
+                    if (chosen) {
+                        state->pin_states[src].state =
+                            (enum dpll_pin_state)chosen->state;
+                        found_live = true;
+                    }
+                }
+                break;
+            }
+        }
+
+        if (found_live)
+            goto detect_change;
+
+        /* Defensive fallback (dump failed or pin not in dump): retain the prior
+         * best-effort derivation so a transient dump failure does not blank the
+         * map. This path is NOT the normal case. */
         if (state->lock_status == DPLL_LOCK_STATUS_LOCKED ||
             state->lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ) {
-            if (state->current_master == src) {
+            if (state->current_master == src)
                 state->pin_states[src].state = DPLL_PIN_STATE_CONNECTED;
-            } else if (is_ptp_pin(src)) {
+            else if (is_ptp_pin(src))
                 state->pin_states[src].state = state->ptp_pin_state;
-            } else {
+            else
                 state->pin_states[src].state = DPLL_PIN_STATE_SELECTABLE;
-            }
-        } else if (state->lock_status == DPLL_LOCK_STATUS_HOLDOVER) {
-            /* In holdover all pins are effectively disconnected */
-            state->pin_states[src].state = DPLL_PIN_STATE_DISCONNECTED;
         } else {
             state->pin_states[src].state = DPLL_PIN_STATE_DISCONNECTED;
         }
+
+detect_change:
+        /* status.json otherwise only gets rewritten on a master/lock change. A
+         * PTP pin can settle (transient DISCONNECTED -> SELECTABLE after a
+         * ptp-instance-apply) with no such transition, which would leave the
+         * file latched at the transient value. Flag the change so we write once
+         * below. Runs on BOTH the live-read and fallback paths — the live-read
+         * path is the one this guards. (Same mechanism as the port up/down
+         * handlers' use of refresh_pin_states_and_write().) */
+        if (is_ptp_pin(src) && state->pin_states[src].state != prev_pin_state)
+            ptp_pin_changed = true;
     }
+
+    if (pin_list)
+        dpll_pin_get_list_free(pin_list);
+
+    /* Converge the published map when a PTP pin changed without a master/lock
+     * transition. Only writes on an actual change. */
+    if (ptp_pin_changed)
+        write_status_json(state);
 }
 
 /**
@@ -1638,6 +1731,7 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
 /**
  * Main function
  */
+#ifndef UNIT_TEST_BUILD
 int main(int argc, char *argv[]) 
 {
     char *config_path = NULL;
@@ -1852,3 +1946,4 @@ int main(int argc, char *argv[])
     
     return EXIT_SUCCESS;
 }
+#endif /* UNIT_TEST_BUILD */
