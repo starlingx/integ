@@ -177,12 +177,19 @@ int dpll_pin_set_state(struct ynl_sock *ys, __u32 device_id, char *package_label
 		if (target_parent) {
 			old_state = target_parent->state;
 			if (old_state == state) {
-				pr_info("Same state observed: %s state:%d\n",
+				/* Short-circuit: the pin is already in the requested
+				 * state. Skip the netlink dpll_pin_set entirely so we
+				 * never issue a redundant set-to-same-state on a live
+				 * pin. This keeps steady-state reconciliation writes at
+				 * zero and avoids any dependence on a
+				 * redundant set being inert at the hardware layer.
+				 * Return old_state to preserve caller semantics. */
+				pr_info("Same state observed: %s state:%d (no-op)\n",
 					package_label, old_state);
-			} else {
-				pr_info("Changing state: %s from %d to %d\n",
-					package_label, old_state, state);
+				return old_state;
 			}
+			pr_info("Changing state: %s from %d to %d\n",
+				package_label, old_state, state);
 		}
 	}
 
