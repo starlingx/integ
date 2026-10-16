@@ -1022,6 +1022,26 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
 }
 
 /**
+ * refresh_pin_states_and_write - Refresh the pin-state cache and rewrite
+ * status.json as a unit.
+ * @state: Application state
+ *
+ * The port up/down handlers (ptp_protocol.c) change a PTP pin without changing
+ * the active master, which does not otherwise trigger a status.json write.
+ * They call this so the published pin map tracks the real pin state. Kept as a
+ * narrow wrapper here so the pin-cache derivation (update_pin_states) stays
+ * private to this file. No-op if the DPLL socket is not up yet (e.g. a startup
+ * call before the socket is opened).
+ */
+void refresh_pin_states_and_write(AppState *state)
+{
+    if (!state || !state->dpll_sock)
+        return;
+    update_pin_states(state, state->dpll_sock);
+    write_status_json(state);
+}
+
+/**
  * process_dpll_master_state - Determine current master and handle failover
  * @state: Application state
  * @dpll_sock: DPLL netlink socket
