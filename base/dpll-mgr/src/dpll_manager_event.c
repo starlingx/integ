@@ -213,6 +213,16 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
         if (state->in_holdover)
             process_dpll_master_state(state, dpll_sock);
 
+        /* reconcile the PPS SDP input pins to backhaul GM presence
+         * every poll timeout, independent of holdover. The event loop otherwise
+         * calls process_dpll_master_state() (and thus reconcile_ptp_pins) only
+         * on a DPLL notification, so in steady GNSS-locked state a REF0N decay
+         * would persist until the next event. This 1s tick keeps REF0N
+         * selectable continuously while the backhaul is GM-present, so the
+         * node can fail over the instant GNSS drops — without any operator
+         * action. Write-on-change only; cheap (one pin dump). */
+        reconcile_tick(state);
+
         /* HW_BASED mode: periodic phase adjustment */
         if (g_config.manager.operation_mode != OPERATION_MODE_SW_BASED) {
             if (state->ptp_pin_state == DPLL_PIN_STATE_SELECTABLE ||

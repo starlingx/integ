@@ -322,6 +322,10 @@ void process_dpll_master_state(AppState *state, struct ynl_sock *dpll_sock);
  * socket is not up. */
 void refresh_pin_states_and_write(AppState *state);
 
+/* steady-state pin reconciliation for the event-loop 1 s timeout
+ * (observe live pin cache + reconcile_ptp_pins). See definition. */
+void reconcile_tick(AppState *state);
+
 /**
  * run_main_loop - Main application loop
  * @state:     Application state
