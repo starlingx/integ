@@ -1,0 +1,85 @@
+From a002563f15422353c3d0c625ecaa5cdac8aacb12 Mon Sep 17 00:00:00 2001
+From: Andre Mauricio Zelak <andre.zelak@windriver.com>
+Date: Wed, 14 Oct 2026 12:20:21 -0300
+Subject: [PATCH] Throttle "Waiting for ptp4l..." and "timeout reading
+ pmc tpds" logs
+
+These messages are printed from pooling loops that runs every second,
+which floods the user.log while ptp4l service is down or unreachable.
+Switch the affected pr_notice() call to the rate-limited pl_notice()
+with 60-second interval. Each message prints at most once per minute.
+
+Test Plan:
+PASS: Verify "Waiting for ptp4l..." notice are printed once per minute
+      while ptp4l service is down while phc2sys service starts.
+PASS: Verify "timeout reading pmc tpds" notice are printed only once
+      per minute when ptp4l service goes down after phc2sys service
+      is running and reached main loop (CLOCK_REALTIME phc offset).
+
+Signed-off-by: Andre Mauricio Zelak <andre.zelak@windriver.com>
+---
+ phc2sys.c   | 7 ++++---
+ pmc_agent.c | 2 +-
+ ts2phc.c    | 7 ++++---
+ 3 files changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/phc2sys.c b/phc2sys.c
+index 7fca94a..5ad048e 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -2138,7 +2138,7 @@ static int auto_init_ports(struct domain *domain)
+ 			break;
+ 		}
+ 		if (err == -ETIMEDOUT) {
+-			pr_notice("Waiting for ptp4l...");
++			pl_notice(60, "Waiting for ptp4l...");
+ 		} else {
+ 			return -1;
+ 		}
+@@ -2815,8 +2815,9 @@ int main(int argc, char *argv[])
+ 					goto end;
+ 				if (r > 0)
+ 					break;
+-				else
+-					pr_notice("Waiting for ptp4l...");
++				else {
++					pl_notice(60, "Waiting for ptp4l...");
++				}
+ 			}
+ 
+ 			if (ha_enabled) {
+diff --git a/pmc_agent.c b/pmc_agent.c
+index 950dddd..b05649b 100644
+--- a/pmc_agent.c
++++ b/pmc_agent.c
+@@ -560,7 +560,7 @@ int pmc_agent_query_utc_offset(struct pmc_agent *node, int timeout)
+ 	res = run_pmc(node, timeout, MID_TIME_PROPERTIES_DATA_SET, &msg);
+ 	if (is_run_pmc_error(res)) {
+ 		if (res == RUN_PMC_TMO) {
+-			pr_notice("timeout reading pmc tpds");
++			pl_notice(60, "timeout reading pmc tpds");
+ 			node->tds_valid = false;
+ 		}
+ 		return run_pmc_err2errno(res);
+diff --git a/ts2phc.c b/ts2phc.c
+index 0062692..e90b968 100644
+--- a/ts2phc.c
++++ b/ts2phc.c
+@@ -350,10 +350,11 @@ static int ts2phc_auto_init_ports(struct ts2phc_private *priv)
+ 		err = pmc_agent_query_dds(priv->agent, 1000);
+ 		if (!err)
+ 			break;
+-		if (err == -ETIMEDOUT)
+-			pr_notice("Waiting for ptp4l...");
+-		else
++		if (err == -ETIMEDOUT) {
++			pl_notice(60, "Waiting for ptp4l...");
++		} else {
+ 			return -1;
++		}
+ 	}
+ 
+ 	number_ports = pmc_agent_get_number_ports(priv->agent);
+-- 
+2.34.1
+

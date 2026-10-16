@@ -23,3 +23,4 @@
 0023-phc2sys-fix-forced_sync_offset-O-offset-direction.patch
 0024-phc2sys-discipline-CLOCK_REALTIME-when-source-is-syn.patch
 0025-port-inhibit_announce-must-not-transition-to-MASTER-.patch
+0026-Throttle-Waiting-for-ptp4l.-and-timeout-reading-pmc-.patch
