@@ -662,6 +662,46 @@ static void evaluate_ptp_gm_connection(AppState *state)
 }
 
 /**
+ * backhaul_gm_present - Is the backhaul PTP instance currently tracking a GM?
+ * @state: Application state
+ *
+ * Judged from the live backhaul port state (pushed by ptp4l via the PORT_STATE
+ * subscription): UNCALIBRATED/SLAVE = GM present; anything else (LISTENING,
+ * FAULTY/DISABLED, or an unpopulated state) = treat as no GM (fail-safe).
+ *
+ * Returns: true if a grandmaster is present, false otherwise.
+ */
+static bool backhaul_gm_present(const AppState *state)
+{
+    /* IEEE 1588 portState: 8 = UNCALIBRATED, 9 = SLAVE (tracking a GM). */
+    return (state->port_state == 8 || state->port_state == 9);
+}
+
+/**
+ * enter_holdover_no_source - Put the DPLL state into holdover with no source
+ * @state: Application state
+ *
+ * Presents the same holdover state as the real DPLL-holdover branch of
+ * determine_current_master(). On first entry it sets HOLDOVER_0 and starts the
+ * holdover timer; the gearshift is driven to the holdover posture via the
+ * normal master-transition handling in process_dpll_master_state(). If called
+ * again while already in holdover it leaves current_master untouched, so a tier
+ * the duration-based branch has already advanced (HOLDOVER_1/2/3) is not reset
+ * back to HOLDOVER_0 -- tier progression does not depend on this gate firing
+ * only once.
+ */
+static void enter_holdover_no_source(AppState *state)
+{
+    if (!state->in_holdover) {
+        clock_gettime(CLOCK_MONOTONIC, &state->holdover_start_time);
+        state->in_holdover = true;
+        state->current_master = HOLDOVER_0;
+    }
+    state->lock_status = DPLL_LOCK_STATUS_HOLDOVER;
+    state->connected_pin_id = 0;
+}
+
+/**
  * Determine current master source based on DPLL connected pin state
  * @state: Application state
  * @dpll_sock: DPLL netlink socket
@@ -747,6 +787,25 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
         /* Only check connected pin source if lock status is LOCKED or LOCKED_HO_ACQ */
         if (state->lock_status == DPLL_LOCK_STATUS_LOCKED || 
             state->lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ) {
+            /* An SDP (PTP backhaul) pin is a 1PPS looped back from the node's
+             * own PHC, so the DPLL reports it locked whenever the PHC is driven,
+             * regardless of whether the backhaul has a grandmaster. Accept an SDP
+             * master only while the backhaul port still tracks a GM
+             * (UNCALIBRATED/SLAVE); if it has gone LISTENING (no GM), the PHC is
+             * free-running -- treat as holdover and release the SDP pins. */
+            if (is_ptp_pin(connected_pin_source) && !backhaul_gm_present(state)) {
+                pr_info("Rejecting SDP master %s: backhaul port has no grandmaster "
+                        "(port_state=%u) -> holdover\n",
+                        pin_source_to_string(connected_pin_source), state->port_state);
+                /* Mark the port down so the recovery branch in
+                 * process_port_data_set() re-enables the SDP pins when the GM
+                 * returns. */
+                state->ptp_port_down = true;
+                enter_holdover_no_source(state);
+                handle_ptp_port_down(state);
+                return;
+            }
+
             /* Assign connected pin source directly to current_master */
             state->current_master = connected_pin_source;
             state->connected_pin_id = connected_pin_id;  /* Store connected pin ID */
