@@ -2093,7 +2093,8 @@ void test_initialVolCreate_existing_vault_mount_fail() {
  * (not system()), so it does not consume MOCK_SYSTEM_SEQ.
  */
 extern bool handleLegacyPassphraseMigration(const std::string &passphrase,
-                                            PassphraseGenerator *generator);
+                                            PassphraseGenerator *generator,
+                                            std::string &outVolName);
 
 /* Test generator: new passphrase = "newpass", legacy = "legacypass". */
 class FakePassphraseGenerator : public PassphraseGenerator {
@@ -2127,7 +2128,11 @@ void test_handleLegacyMigration_type_HWID() {
     createdConfigFile = created;
     set_env("MOCK_SYSTEM_SEQ", "512,0,0,0");
     FakePassphraseGenerator gen;
-    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen));
+    std::string outVol;
+    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen, outVol));
+    /* On migration success the volume name must be handed back so main()
+       can monitor it; an empty name would break the monitor loop. */
+    ASSERT_EQ(outVol, std::string("luks_vol"));
     createdConfigFile = saved;
     remove(created);
 }
@@ -2144,7 +2149,9 @@ void test_handleLegacyMigration_type_HWID_V2_mismatch() {
     createdConfigFile = created;
     set_env("MOCK_SYSTEM_SEQ", "512,0,0,0");
     FakePassphraseGenerator gen;
-    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen));
+    std::string outVol;
+    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen, outVol));
+    ASSERT_EQ(outVol, std::string("luks_vol"));
     createdConfigFile = saved;
     remove(created);
 }
@@ -2159,7 +2166,13 @@ void test_handleLegacyMigration_type_HWID_V2_healthy() {
     createdConfigFile = created;
     set_env("MOCK_SYSTEM_SEQ", "0,0,0");
     FakePassphraseGenerator gen;
-    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen));
+    std::string outVol;
+    ASSERT_TRUE(handleLegacyPassphraseMigration("newpass", &gen, outVol));
+    /* This is the direct-open path ("Vault opened with new passphrase")
+       that reaches monitorLUKSVolume. The volume name must come back
+       non-empty, otherwise the monitor loop exits on its first
+       "cryptsetup status" check and pmon reboot-loops the host. */
+    ASSERT_EQ(outVol, std::string("luks_vol"));
     /* Exactly open + mkdir + mount (3 system() calls); no legacy open /
        luksAddKey, which would add further calls. */
     ASSERT_EQ(mock_get_system_count(), 3);
@@ -2176,7 +2189,11 @@ void test_handleLegacyMigration_unknown_type() {
     createdConfigFile = created;
     set_env("MOCK_SYSTEM_SEQ", "0,0");
     FakePassphraseGenerator gen;
-    ASSERT_FALSE(handleLegacyPassphraseMigration("newpass", &gen));
+    std::string outVol;
+    ASSERT_FALSE(handleLegacyPassphraseMigration("newpass", &gen, outVol));
+    /* On fall-through the volume name is left untouched so main() resolves
+       it via handleResize()/initialVolCreate() instead. */
+    ASSERT_TRUE(outVol.empty());
     ASSERT_EQ(mock_get_system_count(), 0);
     createdConfigFile = saved;
     remove(created);
@@ -2192,10 +2209,31 @@ void test_handleLegacyMigration_nonrc2_error() {
     createdConfigFile = created;
     set_env("MOCK_SYSTEM_SEQ", "256");
     FakePassphraseGenerator gen;
-    ASSERT_FALSE(handleLegacyPassphraseMigration("newpass", &gen));
+    std::string outVol;
+    ASSERT_FALSE(handleLegacyPassphraseMigration("newpass", &gen, outVol));
+    ASSERT_TRUE(outVol.empty());
     ASSERT_EQ(mock_get_system_count(), 1);
     createdConfigFile = saved;
     remove(created);
+}
+
+/* monitorLUKSVolume must refuse an empty volume name rather than falling
+   into the loop, failing "cryptsetup status" and exiting cleanly (which
+   pmon escalates to a host reboot loop). getSoftwareVersion is reached only
+   if the guard is absent, so a passing guard means no system() call and the
+   "empty volume name" error is logged. */
+void test_monitorLUKSVolume_empty_volume_name() {
+    reset_mocks();
+    set_env("MOCK_POPEN_DATA", "24.09\n");
+    set_env("MOCK_PCLOSE_RC", "0");
+    set_env("MOCK_SYSTEM_RC", "0");
+    exitFlag.store(false);
+    monitorLUKSVolume(true, "", nullptr);
+    ASSERT_STR_CONTAINS(mock_get_last_syslog_msg(), "empty volume name");
+    ASSERT_EQ(mock_get_last_syslog_priority(), LOG_ERR);
+    /* Guard returns before the status check, so no cryptsetup status runs. */
+    ASSERT_EQ(mock_get_system_count(), 0);
+    exitFlag.store(false);
 }
 
 /* ================================================================
@@ -2416,6 +2454,7 @@ int main() {
     RUN_TEST(test_handleLegacyMigration_type_HWID_V2_healthy);
     RUN_TEST(test_handleLegacyMigration_unknown_type);
     RUN_TEST(test_handleLegacyMigration_nonrc2_error);
+    RUN_TEST(test_monitorLUKSVolume_empty_volume_name);
 
     std::cout << "\n=== luks-fs-mgr Test Results ===" << std::endl;
     std::cout << "Tests run:    " << tests_run << std::endl;
