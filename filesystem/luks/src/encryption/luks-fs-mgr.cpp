@@ -1549,11 +1549,15 @@ bool attemptPassphraseMigration(const string &vaultFile,
  *              removed here.
  *
  * Returns:     true if the vault is open and mounted, false to fall through
- *              to the normal flow.
+ *              to the normal flow. On success, outVolName is set to the
+ *              volume name parsed from created_luks.json so the caller can
+ *              hand it to monitorLUKSVolume (which needs a non-empty volume
+ *              name for its cryptsetup status check).
  *
  * ************************************************************************/
 bool handleLegacyPassphraseMigration(const string &passphrase,
-                                     PassphraseGenerator *generator) {
+                                     PassphraseGenerator *generator,
+                                     string &outVolName) {
     json_object *jsonConfig;
     CreatedLuksConfig luksConfig;
     if (!parseJSONConfig(createdConfigFile, luksConfig, &jsonConfig)) {
@@ -1588,6 +1592,12 @@ bool handleLegacyPassphraseMigration(const string &passphrase,
     if (attemptPassphraseMigration(vaultFile, volName.c_str(),
                                    mountPath.c_str(), passphrase,
                                    generator)) {
+        // Hand the volume name back so main() can monitor it. Without
+        // this, main() skips handleResize()/initialVolCreate() on the
+        // migration-success path and monitorLUKSVolume() receives an
+        // empty name, fails its "cryptsetup status" check, exits, and
+        // pmon reboot-loops the host.
+        outVolName = volName;
         return true;
     }
 
@@ -2059,6 +2069,17 @@ int initialVolCreate(string &passphrase, string &volName) {
 void monitorLUKSVolume(bool isController, const string& volumeName,
                       PassphraseGenerator *generator) {
     log("Monitoring LUKS volume: " + volumeName, LOG_INFO);
+    // An empty volume name is a programming error: the "cryptsetup status"
+    // check below would fail immediately, break the loop, and let the
+    // daemon exit cleanly, which pmon (passive, critical) counts as a
+    // process failure and escalates to a host reboot loop. Fail loudly
+    // instead of exiting quietly so the real fault is visible.
+    if (volumeName.empty()) {
+        log("monitorLUKSVolume called with an empty volume name; refusing "
+            "to monitor. This indicates the volume name was not resolved "
+            "upstream.", LOG_ERR);
+        return;
+    }
     string softwareVersion = getSoftwareVersion();
     if (softwareVersion.empty()) {
         log("Could not get software version from /etc/build.info", LOG_ERR);
@@ -2259,7 +2280,8 @@ int main() {
     }
     if (access(createdConfigFile, F_OK) == 0) {
         if (!handleLegacyPassphraseMigration(passphrase,
-                                             passphraseGenerator.get())) {
+                                             passphraseGenerator.get(),
+                                             volName)) {
             // Migration not needed or failed — normal flow
             rc = handleResize(passphrase, volName);
             if (rc != 0) {
