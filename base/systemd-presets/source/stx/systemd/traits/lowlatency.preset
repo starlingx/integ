@@ -33,6 +33,9 @@ disable rpc-statd-notify.service
 enable nfs-common.service
 enable nfs-server.service
 
+# 00-openbao.preset
+disable openbao.service
+
 # 00-pxe-network-installer.preset
 enable pxeboot_feed.service
 
