@@ -10,15 +10,19 @@ LDLIBS  := -lgps -lcjson -lsystemd
 YNL_OBJS := obj_test/ynl.o obj_test/dpll-user.o
 
 .PHONY: test clean
-test: run_test run_test_reconcile
+test: run_test run_test_reconcile run_test_getreply
 	./run_test
 	./run_test_reconcile
+	./run_test_getreply
 
 run_test: tests/test_update_pin_states.c $(YNL_OBJS)
 	$(CC) $(CFLAGS) tests/test_update_pin_states.c $(YNL_OBJS) -o run_test $(LDLIBS)
 
 run_test_reconcile: tests/test_reconcile_ptp_pins.c $(YNL_OBJS)
 	$(CC) $(CFLAGS) tests/test_reconcile_ptp_pins.c $(YNL_OBJS) -o run_test_reconcile $(LDLIBS)
+
+run_test_getreply: tests/test_get_and_wait_reply.c $(YNL_OBJS)
+	$(CC) $(CFLAGS) tests/test_get_and_wait_reply.c $(YNL_OBJS) -o run_test_getreply $(LDLIBS)
 
 obj_test/%.o: ynl/%.c
 	@mkdir -p obj_test

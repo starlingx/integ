@@ -98,6 +98,8 @@ int  send_get_request(int sockfd, struct sockaddr_un *peer_addr,
                       uint16_t mgmt_id, uint16_t *seq) {
     (void)sockfd; (void)peer_addr; (void)mgmt_id; (void)seq; return 0; }
 void process_ptp_messages(AppState *s) { (void)s; }
+int  get_and_wait_reply(AppState *s, uint16_t mgmt_id, int deadline_ms) {
+    (void)s; (void)mgmt_id; (void)deadline_ms; return 0; }
 void forward_clock_parameters(AppState *s) { (void)s; }
 void handle_sw_based_failover(AppState *s, enum pin_source m) { (void)s; (void)m; }
 bool check_free_running_mode(int sock_fd, struct sockaddr_un *peer_addr,

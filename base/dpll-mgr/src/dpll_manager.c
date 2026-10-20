@@ -622,37 +622,16 @@ static void evaluate_ptp_gm_connection(AppState *state)
     bool was_connected = state->is_ptp_connected_to_gm;
     
     /* Read current port status */
-    int req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                    MGMT_ID_PORT_DATA_SET, &state->local_sequence_id);
-    if (req_ret != 0) {
-        pr_err("Failed to send PORT_DATA_SET GET request (ret=%d)\n", req_ret);
-        return;
-    }
-    usleep(100000);  /* 100ms delay for response */
-    process_ptp_messages(state);
-    
+    get_and_wait_reply(state, MGMT_ID_PORT_DATA_SET, GM_GET_REPLY_DEADLINE_MS);
+
     /* Read current GM parameters */
-    req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                    MGMT_ID_PARENT_DATA_SET, &state->local_sequence_id);
-    if (req_ret != 0) {
-        pr_err("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", req_ret);
-        return;
-    }
-    usleep(100000);  /* 100ms delay for response */
-    process_ptp_messages(state);
+    get_and_wait_reply(state, MGMT_ID_PARENT_DATA_SET, GM_GET_REPLY_DEADLINE_MS);
 
     /* refresh the authoritative GM-presence signal. gm_present is
      * now owned by the TIME_STATUS_NP handler (byte 38), which goes false on
      * backhaul port fault — PARENT_DATA_SET does not. Without this GET the gate
      * below would read a stale gm_present. */
-    req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                    MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
-    if (req_ret != 0) {
-        pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
-        return;
-    }
-    usleep(100000);  /* 100ms delay for response */
-    process_ptp_messages(state);
+    get_and_wait_reply(state, MGMT_ID_TIME_STATUS_NP, GM_GET_REPLY_DEADLINE_MS);
     
     /* Use canonical PTP index (SDP2_REF0P) for accessing PTP clock parameters */
     enum pin_source ptp_idx = SDP2_REF0P;
@@ -947,33 +926,11 @@ void read_clock_parameters_from_master(AppState *state, struct ynl_sock *dpll_so
          * forward_clock_parameters() sends clockClass=0 to fronthaul ptp4l,
          * causing it to fall back to default 248 (free-running). */
         {
-            int ptp_req_ret;
-            ptp_req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                           MGMT_ID_PARENT_DATA_SET, &state->local_sequence_id);
-            if (ptp_req_ret != 0) {
-                pr_err("Failed to send PARENT_DATA_SET GET request (ret=%d)\n", ptp_req_ret);
-                goto last;
-            }
-            usleep(100000);  /* 100ms delay */
-            process_ptp_messages(state);
-
-            ptp_req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                           MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
-            if (ptp_req_ret != 0) {
-                pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", ptp_req_ret);
-                goto last;
-            }
-            usleep(100000);  /* 100ms delay */
-            process_ptp_messages(state);
-
-            ptp_req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
-                           MGMT_ID_PORT_DATA_SET, &state->local_sequence_id);
-            if (ptp_req_ret != 0) {
-                pr_err("Failed to send PORT_DATA_SET GET request (ret=%d)\n", ptp_req_ret);
-                goto last;
-            }
-            usleep(100000);  /* 100ms delay */
-            process_ptp_messages(state);
+            /* Always query ptp4l for the current PTP master's datasets.
+             * Bounded, seq-matched waits (was send+usleep(100ms)+process x3). */
+            get_and_wait_reply(state, MGMT_ID_PARENT_DATA_SET, GM_GET_REPLY_DEADLINE_MS);
+            get_and_wait_reply(state, MGMT_ID_TIME_STATUS_NP, GM_GET_REPLY_DEADLINE_MS);
+            get_and_wait_reply(state, MGMT_ID_PORT_DATA_SET, GM_GET_REPLY_DEADLINE_MS);
         }
         dump_clock_parameters(&state->clock_params[ptp_idx], ptp_idx);
     }
