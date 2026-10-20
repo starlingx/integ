@@ -1,0 +1,390 @@
+From f9e2ece55712e315212ac728c78c196424f5fc93 Mon Sep 17 00:00:00 2001
+From: Tara Nath Subedi <Tara.Subedi@windriver.com>
+Date: Tue, 20 Oct 2026 15:27:20 -0400
+Subject: [PATCH] synce_manager: add optional read-only management socket
+
+The synce4l management socket (smc_socket_path) accepts both read
+(GET_QL, GET_EXT_QL) and write (SET_QL, SET_EXT_QL) commands. synce4l
+runs as root, so a bare bind() leaves the socket owned root:root with
+mode 0755. Connecting to an AF_UNIX socket requires write permission on
+the socket inode, so a non-root client cannot connect() to it and gets
+EACCES.
+
+This blocks non-root clients that only need to read the operating
+quality level (GET_QL) and never issue SET commands, such as a
+monitoring process running as a non-root uid in a container.
+
+Add an optional read-only management socket, modeled on linuxptp's
+uds_address / uds_ro_address split:
+
+- New global config option smc_ro_socket_path, default "" (disabled).
+  When set, synce4l starts a second AF_UNIX listener at that path.
+- The read-only socket is created world-connectable (chmod 0666 after
+  bind) so non-root clients can connect.
+- SET_QL and SET_EXT_QL are rejected with an error TLV on the read-only
+  socket; only GET_QL / GET_EXT_QL are honored. State-changing commands
+  remain exclusive to the root-only control socket (smc_socket_path),
+  which is unchanged.
+- The read-only socket is unlinked on clock destroy.
+
+The 0666 mode is safe because the read-only socket exposes no mutating
+operation: the only thing a connecting client can do is read QL. The
+feature is opt-in (empty default) so no world-connectable socket is
+created unless an operator explicitly configures one.
+
+Also document smc_ro_socket_path in the synce4l.8 global section.
+
+Test plan:
+
+1. Build
+   - make; confirm synce4l builds clean with -Wall -Wextra -Werror.
+
+2. Default (disabled) behaviour unchanged
+   - Run with a config that has no smc_ro_socket_path.
+   - Confirm only smc_socket_path is created (ls -l shows the single
+     root:root 0755 socket) and GET/SET over it behave as before.
+
+3. Read-only socket created with correct mode
+   - Add to [global]: smc_ro_socket_path /run/synce4l_ro_socket_synce1
+   - Start synce4l and check:
+       ls -l /run/synce4l_ro_socket_synce1
+     Expect: srw-rw-rw- (0666), owner root:root.
+
+4. Non-root client can connect and read (the original problem)
+   - As a non-root uid (e.g. 1000, the uid a container runs as):
+       sudo python3 - <<'EOF'
+       import os, socket, struct
+       os.setgid(1000); os.setuid(1000)
+       s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); s.settimeout(2)
+       s.connect('/run/synce4l_ro_socket_synce1')   # expect: connects (no EACCES)
+       dev=b'synce1'
+       pkt=(struct.pack('<HH',1,len(dev))+dev+struct.pack('<HH',4,0)
+            +struct.pack('<HH',8,0))   # DEV_NAME + GET_QL + END_MARKER
+       s.sendall(pkt); print('resp:', s.recv(256).hex()); s.close()
+       EOF
+   - Expect: connect() succeeds and a GET_QL value is returned.
+   - Confirm the same uid still gets PermissionError connecting to the
+     control socket smc_socket_path (0755).
+
+5. SET rejected on the read-only socket
+   - On the read-only socket, send a SET_QL (or SET_EXT_QL) command with
+     a valid ext_src name.
+   - Expect: an error TLV ("SET not permitted on read-only socket"); the
+     advertised QL is NOT changed.
+   - Send the same SET on the control socket and confirm it still works
+     (QL changes), i.e. control-socket behaviour is unchanged.
+
+6. Cleanup
+   - Stop/restart synce4l; confirm both sockets are unlinked and
+     recreated, and the read-only socket comes back at 0666.
+
+Signed-off-by: Tara Nath Subedi <Tara.Subedi@windriver.com>
+---
+ config.c        |  1 +
+ synce4l.8       | 13 +++++++
+ synce_clock.c   |  9 +++++
+ synce_clock.h   | 11 ++++++
+ synce_manager.c | 96 +++++++++++++++++++++++++++++++++++++++++++------
+ 5 files changed, 120 insertions(+), 10 deletions(-)
+
+diff --git a/config.c b/config.c
+index f364ecd..8b06d1a 100644
+--- a/config.c
++++ b/config.c
+@@ -181,6 +181,7 @@ struct config_item config_tab_synce[] = {
+ 	GLOB_ITEM_INT("poll_interval_msec", 20, CLOCK_POLL_INTERVAL_MIN,
+ 		      CLOCK_POLL_INTERVAL_MAX),
+ 	GLOB_ITEM_STR("smc_socket_path", "/run/synce4l_socket"),
++	GLOB_ITEM_STR("smc_ro_socket_path", ""),
+ 	GLOB_ITEM_INT("use_syslog", 1, 0, 1),
+ 	GLOB_ITEM_STR("userDescription", ""),
+ 	GLOB_ITEM_INT("verbose", 0, 0, 1),
+diff --git a/synce4l.8 b/synce4l.8
+index b290f80..c70b6ab 100644
+--- a/synce4l.8
++++ b/synce4l.8
+@@ -154,6 +154,19 @@ communication (see EXTERNAL API).
+ .RS
+ Defaults to /run/synce4l_socket.
+ .RE
++.IP smc_ro_socket_path
++Full path to an optional, read-only AF_UNIX management socket. When set,
++synce4l creates a second management socket at this path that answers only
++read commands (GET_QL, GET_EXT_QL); any write command (SET_QL, SET_EXT_QL)
++received on it is rejected with an error response. It is intended for
++unprivileged, read-only clients that may run under a different uid (for
++example a monitoring container), and is therefore created world-accessible
++(mode 0666) so such clients can connect; state-changing operations remain
++available only on the socket configured by smc_socket_path. Leave empty to
++disable the read-only socket.
++.RS
++Defaults to "" (disabled).
++.RE
+ .IP use_syslog
+ Set to 1 if syslog should be used.
+ .RS
+diff --git a/synce_clock.c b/synce_clock.c
+index 2a56290..e857301 100644
+--- a/synce_clock.c
++++ b/synce_clock.c
+@@ -40,6 +40,7 @@ enum synce_clock_state {
+ 
+ struct synce_clock {
+ 	char *socket_path;
++	char *ro_socket_path;
+ 	int num_devices;
+ 	int state;
+ 	int poll_interval_usec;
+@@ -107,6 +108,7 @@ static int create_synce_devices(struct synce_clock *clk, struct config *cfg)
+ 		goto err;
+ 	}
+ 	clk->socket_path = config_get_string(cfg, NULL, "smc_socket_path");
++	clk->ro_socket_path = config_get_string(cfg, NULL, "smc_ro_socket_path");
+ 	if (synce_manager_start_thread(clk))
+ 		goto err;
+ 
+@@ -271,6 +273,8 @@ void synce_clock_destroy(struct synce_clock *clk)
+ 	clk->state = SYNCE_CLK_UNKNOWN;
+ 
+ 	synce_manager_close_socket(clk->socket_path);
++	if (clk->ro_socket_path && clk->ro_socket_path[0])
++		synce_manager_close_socket(clk->ro_socket_path);
+ 
+ 	return;
+ }
+@@ -315,3 +319,8 @@ char *synce_clock_get_socket_path(struct synce_clock *clk)
+ {
+ 	return clk->socket_path;
+ }
++
++char *synce_clock_get_ro_socket_path(struct synce_clock *clk)
++{
++	return clk->ro_socket_path;
++}
+diff --git a/synce_clock.h b/synce_clock.h
+index c2fe366..529a292 100644
+--- a/synce_clock.h
++++ b/synce_clock.h
+@@ -56,4 +56,15 @@ int synce_clock_get_dev(struct synce_clock *clk, char *dev_name,
+  * @return		socket_path name
+  */
+ char *synce_clock_get_socket_path(struct synce_clock *clk);
++
++/**
++ * return read-only socket path of clock.
++ *
++ * The read-only socket serves GET-only clients (e.g. a non-root monitoring
++ * container that only reads QL). It is empty/NULL when not configured.
++ *
++ * @param clk		Questioned instance
++ * @return		read-only socket_path name, or NULL/"" if disabled
++ */
++char *synce_clock_get_ro_socket_path(struct synce_clock *clk);
+ #endif
+diff --git a/synce_manager.c b/synce_manager.c
+index 9d3bf77..ff1ba17 100644
+--- a/synce_manager.c
++++ b/synce_manager.c
+@@ -8,9 +8,11 @@
+ #include <unistd.h>
+ #include <pthread.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include <net/if.h>
+ #include <ctype.h>
+ #include <errno.h>
++#include <sys/stat.h>
+ #include "print.h"
+ #include "config.h"
+ #include "synce_dev.h"
+@@ -21,6 +23,13 @@
+ 
+ struct synce_clock;
+ 
++/* Per-listener context handed to each server thread. */
++struct synce_manager_server {
++	struct synce_clock *clk;
++	const char *socket_path;
++	int read_only;
++};
++
+ static void synce_manager_generate_err_tlv(struct synce_manager_tlv **err_tlv,
+ 					   char *err_str)
+ {
+@@ -135,7 +144,7 @@ int synce_manager_parse_input(const uint8_t *input, int bytes_read,
+ 
+ void synce_manager_execute_tlv_array(struct synce_manager_tlv *tlv_array,
+ 				     int tlv_num, struct synce_dev *dev,
+-				     char *ext_src_name,
++				     char *ext_src_name, int read_only,
+ 				     struct synce_manager_tlv **err_tlv)
+ {
+ 	uint8_t val;
+@@ -169,6 +178,10 @@ void synce_manager_execute_tlv_array(struct synce_manager_tlv *tlv_array,
+ 			memcpy(tlv_array[i].value, &val, sizeof(uint8_t));
+ 			break;
+ 		case MSG_SET_QL:
++			if (read_only) {
++				synce_manager_generate_err_tlv(err_tlv, "SET not permitted on read-only socket");
++				return;
++			}
+ 			if (!*ext_src_name) {
+ 				synce_manager_generate_err_tlv(err_tlv, "missing ext_src name");
+ 				return;
+@@ -181,6 +194,10 @@ void synce_manager_execute_tlv_array(struct synce_manager_tlv *tlv_array,
+ 			synce_dev_set_ext_src_ql(dev, ext_src_name, 0, val);
+ 			break;
+ 		case MSG_SET_EXT_QL:
++			if (read_only) {
++				synce_manager_generate_err_tlv(err_tlv, "SET not permitted on read-only socket");
++				return;
++			}
+ 			if (!*ext_src_name) {
+ 				synce_manager_generate_err_tlv(err_tlv, "missing ext_src name");
+ 				return;
+@@ -238,7 +255,9 @@ int synce_manager_generate_response(struct synce_manager_tlv *resp_tlv,
+ 
+ static void *synce_manager_server_thread(void *arg)
+ {
+-	struct synce_clock *clk = (struct synce_clock *)arg;
++	struct synce_manager_server *srv = (struct synce_manager_server *)arg;
++	struct synce_clock *clk = srv->clk;
++	int read_only = srv->read_only;
+ 	int tlv_num = 0, ret, i, resp_len, bytes_read;
+ 	uint8_t response[MAX_RESPONSE_SIZE];
+ 	struct synce_manager_tlv *tlv_array;
+@@ -257,13 +276,13 @@ static void *synce_manager_server_thread(void *arg)
+ 		exit(EXIT_FAILURE);
+ 	}
+ 
+-	if (strlen(synce_clock_get_socket_path(clk)) >= sizeof(server.sun_path)) {
+-		pr_err("%s smc_socket_path is too long", __func__);
++	if (strlen(srv->socket_path) >= sizeof(server.sun_path)) {
++		pr_err("%s socket path is too long", __func__);
+ 		exit(EXIT_FAILURE);
+ 	}
+ 	server.sun_family = AF_UNIX;
+ 	snprintf(server.sun_path, sizeof(server.sun_path), "%s",
+-		 synce_clock_get_socket_path(clk));
++		 srv->socket_path);
+ 
+ 	unlink(server.sun_path);
+ 
+@@ -272,6 +291,19 @@ static void *synce_manager_server_thread(void *arg)
+ 		exit(EXIT_FAILURE);
+ 	}
+ 
++	/*
++	 * The read-only socket serves GET-only clients that may run under a
++	 * different (non-root) uid, e.g. the ptp-notification monitoring
++	 * container. synce4l runs as root, so a bare bind() leaves the socket
++	 * root:root 0755, which a non-root client cannot connect() to (connect
++	 * needs write permission on the socket inode). Widen it to 0666: safe
++	 * here because SET_* is rejected on this socket (see read_only gate in
++	 * synce_manager_execute_tlv_array), so the only exposed operation is
++	 * reading QL. The control socket keeps the default (root-only) mode.
++	 */
++	if (read_only && chmod(server.sun_path, 0666) < 0)
++		pr_err("%s chmod on read-only socket failed", __func__);
++
+ 	if (listen(server_fd, 3) < 0) {
+ 		pr_err("%s Listen failed", __func__);
+ 		exit(EXIT_FAILURE);
+@@ -325,7 +357,8 @@ static void *synce_manager_server_thread(void *arg)
+ 		}
+ 
+ 		synce_manager_execute_tlv_array(tlv_array, tlv_num, dev,
+-						ext_src_name, &err_tlv);
++						ext_src_name, read_only,
++						&err_tlv);
+ 
+ return_response:
+ 		if (err_tlv) {
+@@ -357,13 +390,29 @@ return_response:
+ 	return NULL;
+ }
+ 
+-int synce_manager_start_thread(struct synce_clock *clk)
++static int synce_manager_spawn_server(struct synce_clock *clk,
++				      const char *socket_path, int read_only,
++				      const char *thread_name)
+ {
+-	char thread_name[TASK_COMM_LEN];
++	struct synce_manager_server *srv;
+ 	pthread_t server_tid;
+ 	pthread_attr_t attr;
+ 	int err;
+ 
++	/*
++	 * The server thread runs for the lifetime of the process and reads
++	 * srv on every iteration, so it is allocated on the heap (not the
++	 * caller's stack) and intentionally never freed.
++	 */
++	srv = malloc(sizeof(*srv));
++	if (!srv) {
++		pr_err("alloc server ctx failed for synce_manager");
++		return -ENOMEM;
++	}
++	srv->clk = clk;
++	srv->socket_path = socket_path;
++	srv->read_only = read_only;
++
+ 	err = pthread_attr_init(&attr);
+ 	if (err) {
+ 		pr_err("init thread attr failed for synce_manager");
+@@ -385,13 +434,12 @@ int synce_manager_start_thread(struct synce_clock *clk)
+ 	}
+ 
+ 	err = pthread_create(&server_tid, &attr, synce_manager_server_thread,
+-			     (void *)clk);
++			     (void *)srv);
+ 	if (err) {
+ 		pr_err("create thread failed for synce_manager err=%d", err);
+ 		goto err_attr;
+ 	}
+ 
+-	snprintf(thread_name, TASK_COMM_LEN, "synce-manager");
+ 	err = pthread_setname_np(server_tid, thread_name);
+ 	if (err)
+ 		pr_info("failed to set thread's name for synce_manager");
+@@ -401,9 +449,37 @@ int synce_manager_start_thread(struct synce_clock *clk)
+ 
+ err_attr:
+ 	pthread_attr_destroy(&attr);
++	free(srv);
+ 	return -ECHILD;
+ }
+ 
++int synce_manager_start_thread(struct synce_clock *clk)
++{
++	const char *ro_path;
++	int err;
++
++	/* Control socket: full API (GET + SET), default (root-only) mode. */
++	err = synce_manager_spawn_server(clk, synce_clock_get_socket_path(clk),
++					 0, "synce-manager");
++	if (err)
++		return err;
++
++	/*
++	 * Optional read-only socket: GET-only, world-connectable (0666), for
++	 * non-root clients such as the ptp-notification monitoring container.
++	 * Enabled only when smc_ro_socket_path is configured.
++	 */
++	ro_path = synce_clock_get_ro_socket_path(clk);
++	if (ro_path && ro_path[0]) {
++		err = synce_manager_spawn_server(clk, ro_path, 1,
++						 "synce-manager-ro");
++		if (err)
++			return err;
++	}
++
++	return 0;
++}
++
+ void synce_manager_close_socket(char *socket_path)
+ {
+ 	unlink(socket_path);
+-- 
+2.34.1
+
