@@ -10,9 +10,6 @@ bash-doc
 bash-static
 bash
 
-#centos-debian-compat
-centos-debian-compat
-
 #ceph
 ceph-base
 ceph-common

@@ -19,7 +19,6 @@ base/systemd-presets
 base/tzdata
 base/watchdog
 bmc/redfishtool
-centos-debian-compat
 ceph/ceph
 config/facter
 config/puppet-agent

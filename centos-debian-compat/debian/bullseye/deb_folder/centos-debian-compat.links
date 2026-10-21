@@ -1,2 +1,0 @@
-# enable compatibility between Debian and Centos
-/lib/lsb/init-functions /etc/init.d/functions
