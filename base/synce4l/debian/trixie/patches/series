@@ -2,3 +2,4 @@
 0002-synce_dev-add-source_ports-for-ext_src-QL-pass-through.patch
 0003-synce_dev-advertise-holdover-QL-on-valid-EEC-holdover.patch
 0004-synce4l.8-refresh-man-page.patch
+0005-synce_manager-add-optional-read-only-management-sock.patch
