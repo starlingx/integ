@@ -457,6 +457,12 @@ void process_time_status_np(AppState *state, const uint8_t *data, size_t data_le
     state->clock_params[ptp_idx].time_traceable = time_traceable;
     state->clock_params[ptp_idx].frequency_traceable = frequency_traceable;
     state->clock_params[ptp_idx].time_source = time_source;
+    /* store the authoritative GM-presence from TIME_STATUS_NP
+     * (byte 38). This is the signal that correctly goes false when the backhaul
+     * port faults / loses its GM, unlike PARENT_DATA_SET which keeps reporting a
+     * stale grandmasterIdentity. is_ptp_connected_to_gm (and thus the Issue-17
+     * REF0N-selectability gate) depends on this reflecting reality. */
+    state->clock_params[ptp_idx].gm_present = gm_present;
     clock_gettime(CLOCK_MONOTONIC, &state->clock_params[ptp_idx].last_update);
     
     pr_dbg("Phase offset: %" PRId64 " ns, UTC offset: %d, timeSource: 0x%02X, flags: leap61=%d leap59=%d utcValid=%d timescale=%d traceable=%d freqTraceable=%d\n",
@@ -541,8 +547,12 @@ void process_parent_data_set(AppState *state, const uint8_t *data, size_t data_l
     state->clock_params[ptp_idx].gm_offset_scaled_log_variance = gm_offset_scaled_log_variance;
     state->clock_params[ptp_idx].gm_priority2 = gm_priority2;
     state->clock_params[ptp_idx].gm_identity = gm_identity;
-    
-    state->clock_params[ptp_idx].gm_present = true;
+
+    /* do NOT force gm_present=true here. PARENT_DATA_SET conveys the
+     * GM's identity/quality and keeps reporting the last grandmasterIdentity even
+     * when the backhaul port is FAULTY, so forcing presence true here masked GM
+     * loss. GM presence is owned by process_time_status_np() (byte 38), which
+     * goes false on fault — the signal the Issue-17 REF0N gate relies on. */
     clock_gettime(CLOCK_MONOTONIC, &state->clock_params[ptp_idx].last_update);
     
     pr_dbg("GM Identity: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",

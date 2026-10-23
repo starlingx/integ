@@ -631,6 +631,19 @@ static void evaluate_ptp_gm_connection(AppState *state)
     }
     usleep(100000);  /* 100ms delay for response */
     process_ptp_messages(state);
+
+    /* refresh the authoritative GM-presence signal. gm_present is
+     * now owned by the TIME_STATUS_NP handler (byte 38), which goes false on
+     * backhaul port fault — PARENT_DATA_SET does not. Without this GET the gate
+     * below would read a stale gm_present. */
+    req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
+                    MGMT_ID_TIME_STATUS_NP, &state->local_sequence_id);
+    if (req_ret != 0) {
+        pr_err("Failed to send TIME_STATUS_NP GET request (ret=%d)\n", req_ret);
+        return;
+    }
+    usleep(100000);  /* 100ms delay for response */
+    process_ptp_messages(state);
     
     /* Use canonical PTP index (SDP2_REF0P) for accessing PTP clock parameters */
     enum pin_source ptp_idx = SDP2_REF0P;
