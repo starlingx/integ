@@ -108,6 +108,30 @@ bool send_subscription_request(int sock_fd, struct sockaddr_un *peer_addr,
 int send_get_request(int sockfd, struct sockaddr_un *peer_addr,
                      uint16_t mgmt_id, uint16_t *seq);
 
+/*
+ * Bounded deadline (ms) for get_and_wait_reply() to wait for a GET's reply.
+ * Chosen from measured ptp4l management-reply latency on GNR-D (SX-047):
+ * p50 ~44us, p90 ~119us; the distribution is bimodal with nothing between
+ * ~1ms and ~100ms, so 20ms sits in the dead band — ~150x the p90 for the
+ * fast path, while capping worst-case blocking at 20ms per GET. Replies that
+ * are a full ~1s reconcile cycle late are re-issued next tick regardless.
+ */
+#define GM_GET_REPLY_DEADLINE_MS 20
+
+/**
+ * get_and_wait_reply - Send a GET and wait (bounded) for its matching reply.
+ * @state: Application state (socket, peer addr, sequence id)
+ * @mgmt_id: Management ID to GET
+ * @deadline_ms: Max time to wait for the matching reply
+ *
+ * Replaces the legacy send_get_request()/usleep(100000)/process_ptp_messages()
+ * pattern. Discards replies whose sequence id does not match the request (stale
+ * lagged replies / async notifications) and dispatches only the matching reply.
+ *
+ * Returns: 0 if the matching reply was dispatched, -1 on timeout/error.
+ */
+int get_and_wait_reply(AppState *state, uint16_t mgmt_id, int deadline_ms);
+
 /**
  * parse_management_response - Parse received management message
  * @buffer: Buffer containing received message

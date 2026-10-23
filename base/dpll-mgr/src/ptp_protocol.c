@@ -41,6 +41,7 @@
 #define MODULE "PTP"
 
 #include "../hdr/ptp_protocol.h"
+#include <poll.h>  /* get_and_wait_reply(): poll(), struct pollfd, POLLIN */
 
 /* External YNL socket from dpll.c */
 extern struct ynl_sock *ys;
@@ -1301,14 +1302,185 @@ void process_port_data_set(AppState *state, uint16_t mgmt_id,
 }
 
 /**
+ * dispatch_management_reply - Parse one management message and route it to its
+ * handler. Shared by process_ptp_messages() (drains the socket) and
+ * get_and_wait_reply() (bounded wait for a specific reply), so there is exactly
+ * one dispatch table. Behaviour is identical to the former inline switch.
+ */
+static void dispatch_management_reply(AppState *state, const uint8_t *buffer, size_t len)
+{
+    const uint8_t *data;
+    uint16_t mgmt_id;
+    size_t data_len;
+
+    if (parse_management_response(buffer, len, &mgmt_id, &data, &data_len)) {
+        pr_dbg("Parsed management response: mgmt_id=0x%04X, data_len=%zu\n", mgmt_id, data_len);
+
+        switch (mgmt_id) {
+            case MGMT_ID_TIME_STATUS_NP:
+                process_time_status_np(state, data, data_len);
+                break;
+
+            case MGMT_ID_PARENT_DATA_SET:
+                process_parent_data_set(state, data, data_len);
+                break;
+
+            case MGMT_ID_SUBSCRIBE_EVENTS_NP:
+                pr_dbg("Subscription acknowledged by ptp4l\n");
+                state->subscription_active = true;
+                break;
+
+            case MGMT_ID_FAULT_LOG:
+                pr_info("Received FAULT_LOG (0x0006) - %zu bytes\n", data_len);
+                if (data_len >= 6) {
+                    /* Decode FAULT_LOG data:
+                     * IEEE 1588-2019: FAULT_LOG contains number of records and fault records
+                     * However, linuxptp sends this as an error/status indicator
+                     * Bytes 0-1: uint16 - appears to be related management ID (0xC003 = SUBSCRIBE_EVENTS_NP)
+                     * Bytes 2-5: uint32 - additional status/error code
+                     */
+                    uint16_t related_id = ntohs(*((uint16_t*)data));
+                    uint32_t status_code = ntohl(*((uint32_t*)(data + 2)));
+                    pr_info("  Related Management ID: 0x%04X, Status Code: 0x%08X\n",
+                             related_id, status_code);
+
+                    /* Hex dump of fault log data */
+                    pr_raw("  Fault Log Data: ");
+                    for (size_t i = 0; i < data_len && i < 16; i++) {
+                        pr_raw("%02X ", data[i]);
+                    }
+                    pr_raw("\n");
+                }
+                break;
+
+            case MGMT_ID_PORT_DATA_SET:
+            case MGMT_ID_PORT_DATA_SET_NP:
+                process_port_data_set(state, mgmt_id, data, data_len);
+                break;
+
+            case MGMT_ID_GEARSHIFT_NP:
+                /* Unsolicited gearshift notification from ptp4l — already handled
+                 * synchronously in send_gearshift(); just drain it silently. */
+                pr_dbg("Received GEARSHIFT_NP notification (gear=0x%02X), discarding\n",
+                          data_len > 0 ? data[0] : 0xFF);
+                break;
+
+            default:
+                pr_info("Received unhandled management ID: 0x%04X\n", mgmt_id);
+                break;
+        }
+    } else {
+        pr_err("Failed to parse management response (%zd bytes)\n", len);
+    }
+}
+
+/**
+ * get_and_wait_reply - Send a GET and wait (bounded) for ITS reply.
+ *
+ * Replaces the legacy "send_get_request(); usleep(100000); process_ptp_messages()"
+ * pattern. Two improvements over the fixed sleep:
+ *   1. Latency: returns the instant the matching reply arrives (poll wakes on
+ *      data-ready), instead of blindly blocking 100 ms. Critical because
+ *      dpll-mgr runs SCHED_FIFO:70 — a fixed sleep is 100 ms of RT blindness on
+ *      the failover-detection path.
+ *   2. Correctness: a late reply to a PREVIOUS request can sit in the socket
+ *      when the next GET runs; the old path consumed it as the current dataset
+ *      (observed reply_seq = req_seq-1 mis-dispatch at the State-2 transition).
+ *      Here we DISCARD any reply whose sequence id != the one we just sent and
+ *      keep waiting, so a stale reply can never be mistaken for ours.
+ *
+ * Mirrors the proven read_gearshift_response() loop in gearshift.c (poll +
+ * CLOCK_MONOTONIC deadline + discard-non-matching), keyed on sequence id.
+ *
+ * Returns 0 if the matching reply was dispatched, -1 on timeout/error (same
+ * "no reply this cycle" outcome as the old path; reconcile re-issues next tick).
+ */
+int get_and_wait_reply(AppState *state, uint16_t mgmt_id, int deadline_ms)
+{
+    /* The sequence id send_get_request() will put on the wire is the current
+     * value of local_sequence_id (it post-increments). Capture it first. */
+    uint16_t want_seq = state->local_sequence_id;
+
+    int req_ret = send_get_request(state->local_socket_fd, &state->local_peer_addr,
+                                   mgmt_id, &state->local_sequence_id);
+    if (req_ret != 0) {
+        pr_err("get_and_wait_reply: failed to send GET 0x%04X (ret=%d)\n", mgmt_id, req_ret);
+        return -1;
+    }
+
+    struct timespec deadline;
+    clock_gettime(CLOCK_MONOTONIC, &deadline);
+    deadline.tv_nsec += (long long)deadline_ms * 1000000LL;
+    if (deadline.tv_nsec >= 1000000000LL) {
+        deadline.tv_sec += deadline.tv_nsec / 1000000000LL;
+        deadline.tv_nsec %= 1000000000LL;
+    }
+
+    for (;;) {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        int remaining_ms = (int)((deadline.tv_sec - now.tv_sec) * 1000
+                           + (deadline.tv_nsec - now.tv_nsec) / 1000000);
+        if (remaining_ms <= 0) {
+            pr_dbg("get_and_wait_reply: no matching reply for 0x%04X seq=%u within %dms\n",
+                      mgmt_id, want_seq, deadline_ms);
+            return -1;
+        }
+
+        struct pollfd pfd = { .fd = state->local_socket_fd, .events = POLLIN, .revents = 0 };
+        int ready = poll(&pfd, 1, remaining_ms);
+        if (ready < 0) {
+            if (errno == EINTR)
+                continue;
+            pr_err("get_and_wait_reply: poll failed: %s\n", strerror(errno));
+            return -1;
+        }
+        if (ready == 0) {
+            pr_dbg("get_and_wait_reply: timeout waiting for 0x%04X seq=%u\n", mgmt_id, want_seq);
+            return -1;
+        }
+
+        uint8_t buffer[BUFFER_SIZE];
+        ssize_t len = recvfrom(state->local_socket_fd, buffer, sizeof(buffer), 0, NULL, NULL);
+        if (len < 0) {
+            if (errno == EINTR)
+                continue;
+            pr_err("get_and_wait_reply: recvfrom failed: %s\n", strerror(errno));
+            return -1;
+        }
+
+        /* Liveness (Signal 1): ptp4l is talking to us — same bookkeeping
+         * process_ptp_messages() does, so the wedged-ptp4l backstop still works
+         * when GM evaluation goes through this helper. */
+        clock_gettime(CLOCK_MONOTONIC, &state->last_ptp_rx_time);
+
+        /* Must be long enough to hold a PTP header to read the sequence id. */
+        if ((size_t)len < sizeof(PTPHeader)) {
+            pr_dbg("get_and_wait_reply: short message (%zd bytes), discarding\n", len);
+            continue;
+        }
+
+        uint16_t reply_seq = ntohs(((const PTPHeader *)buffer)->sequenceId);
+        if (reply_seq != want_seq) {
+            /* Stale/lagged reply to an earlier GET (or an async notification).
+             * Discard and keep waiting for OUR reply — this is the correctness
+             * guarantee that closes the reply-lag mis-dispatch. */
+            pr_dbg("get_and_wait_reply: discarding seq=%u (want %u) for 0x%04X\n",
+                      reply_seq, want_seq, mgmt_id);
+            continue;
+        }
+
+        dispatch_management_reply(state, buffer, (size_t)len);
+        return 0;
+    }
+}
+
+/**
  * Process received messages
  */
 void process_ptp_messages(AppState *state)
 {
     uint8_t buffer[BUFFER_SIZE];
-    const uint8_t *data;
-    uint16_t mgmt_id;
-    size_t data_len;
     fd_set readfds;
 
     struct timeval tv = {0, 100000};  /* 100ms timeout */
@@ -1352,63 +1524,5 @@ void process_ptp_messages(AppState *state)
     pr_raw("\n");
 #endif
     
-    if (parse_management_response(buffer, len, &mgmt_id, &data, &data_len)) {
-        pr_dbg("Parsed management response: mgmt_id=0x%04X, data_len=%zu\n", mgmt_id, data_len);
-        
-        switch (mgmt_id) {
-            case MGMT_ID_TIME_STATUS_NP:
-                process_time_status_np(state, data, data_len);
-                break;
-                
-            case MGMT_ID_PARENT_DATA_SET:
-                process_parent_data_set(state, data, data_len);
-                break;
-                
-            case MGMT_ID_SUBSCRIBE_EVENTS_NP:
-                pr_dbg("Subscription acknowledged by ptp4l\n");
-                state->subscription_active = true;
-                break;
-                
-            case MGMT_ID_FAULT_LOG:
-                pr_info("Received FAULT_LOG (0x0006) - %zu bytes\n", data_len);
-                if (data_len >= 6) {
-                    /* Decode FAULT_LOG data:
-                     * IEEE 1588-2019: FAULT_LOG contains number of records and fault records
-                     * However, linuxptp sends this as an error/status indicator
-                     * Bytes 0-1: uint16 - appears to be related management ID (0xC003 = SUBSCRIBE_EVENTS_NP)
-                     * Bytes 2-5: uint32 - additional status/error code
-                     */
-                    uint16_t related_id = ntohs(*((uint16_t*)data));
-                    uint32_t status_code = ntohl(*((uint32_t*)(data + 2)));
-                    pr_info("  Related Management ID: 0x%04X, Status Code: 0x%08X\n", 
-                             related_id, status_code);
-                    
-                    /* Hex dump of fault log data */
-                    pr_raw("  Fault Log Data: ");
-                    for (size_t i = 0; i < data_len && i < 16; i++) {
-                        pr_raw("%02X ", data[i]);
-                    }
-                    pr_raw("\n");
-                }
-                break;
-                
-            case MGMT_ID_PORT_DATA_SET:
-            case MGMT_ID_PORT_DATA_SET_NP:
-                process_port_data_set(state, mgmt_id, data, data_len);
-                break;
-
-            case MGMT_ID_GEARSHIFT_NP:
-                /* Unsolicited gearshift notification from ptp4l — already handled
-                 * synchronously in send_gearshift(); just drain it silently. */
-                pr_dbg("Received GEARSHIFT_NP notification (gear=0x%02X), discarding\n",
-                          data_len > 0 ? data[0] : 0xFF);
-                break;
-
-            default:
-                pr_info("Received unhandled management ID: 0x%04X\n", mgmt_id);
-                break;
-        }
-    } else {
-        pr_err("Failed to parse management response (%zd bytes)\n", len);
-    }
+    dispatch_management_reply(state, buffer, len);
 }
