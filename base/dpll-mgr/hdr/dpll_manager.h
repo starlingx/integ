@@ -291,9 +291,16 @@ typedef struct {
     int ts2phc_socket_fd;                /* Bound socket for ts2phc gearshift (SW_BASED) */
     struct sockaddr_un ts2phc_peer_addr; /* ts2phc UDS peer address (ts2_0 channel) */
 
+    /* Second ts2phc instance (ts2_1) — the E830 fronthaul path on a
+     * two-ts2phc GNR-D config. -1 when ts2_1 is not configured (one-instance
+     * deployments), in which case all ts2_1 handling is skipped. */
+    int ts2phc1_socket_fd;                /* Bound socket for ts2_1 gearshift (SW_BASED) */
+    struct sockaddr_un ts2phc1_peer_addr; /* ts2phc UDS peer address (ts2_1 channel) */
+
     /* Gearshift state tracking (SW_BASED mode) — for status.json */
     uint8_t gear_ptp_bh;   /* Current gear for ptp4l channel */
     uint8_t gear_ts2_0;    /* Current gear for ts2phc channel */
+    uint8_t gear_ts2_1;    /* Current gear for second ts2phc (ts2_1) channel */
 
     /* Previous lock status for transition detection */
     enum dpll_lock_status prev_lock_status;

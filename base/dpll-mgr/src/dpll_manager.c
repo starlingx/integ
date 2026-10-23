@@ -240,6 +240,15 @@ static void cleanup_state(AppState *state)
             unlink(temp_path);
         state->ts2phc_socket_fd = -1;
     }
+
+    if (state->ts2phc1_socket_fd >= 0) {
+        close(state->ts2phc1_socket_fd);
+        char temp_path[256];
+        int ret = snprintf(temp_path, sizeof(temp_path), "/var/run/dpll_mgr/timing_mgr.%d.ts2_1", getpid());
+        if (ret > 0 && ret < (int)sizeof(temp_path))
+            unlink(temp_path);
+        state->ts2phc1_socket_fd = -1;
+    }
 }
 
 /**
@@ -1765,9 +1774,70 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
         pr_info("ts2_0 channel not configured, ts2phc gearshift unavailable\n");
     }
 
+    /* Setup second ts2phc socket (ts2_1) for gearshift — the E830 fronthaul
+     * path on a two-ts2phc GNR-D config. Mirror of the ts2_0 block above with
+     * a distinct local socket name. Graceful when ts2_1 is absent: leave
+     * ts2phc1_socket_fd = -1 and continue (one-instance deployments). */
+    state->ts2phc1_socket_fd = -1;
+    const ChannelConfig *ts2_1_ch = config_get_channel("ts2_1");
+    if (ts2_1_ch && ts2_1_ch->call_channel[0] != '\0') {
+        const char *ts2_1_path = ts2_1_ch->call_channel;
+        if (strncmp(ts2_1_path, "uds:", 4) == 0)
+            ts2_1_path += 4;
+
+        char ts2_1_local[108];
+        int lret = snprintf(ts2_1_local, sizeof(ts2_1_local),
+                            "/var/run/dpll_mgr/timing_mgr.%d.ts2_1", getpid());
+        if (lret > 0 && lret < (int)sizeof(ts2_1_local)) {
+            unlink(ts2_1_local);
+            int ts2_1_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
+            if (ts2_1_fd >= 0) {
+                struct sockaddr_un la;
+                memset(&la, 0, sizeof(la));
+                la.sun_family = AF_UNIX;
+                snprintf(la.sun_path, sizeof(la.sun_path), "%s", ts2_1_local);
+                if (bind(ts2_1_fd, (struct sockaddr *)&la, sizeof(la)) == 0 &&
+                    chmod(ts2_1_local, 0660) == 0) {
+                    int flags = fcntl(ts2_1_fd, F_GETFL, 0);
+                    if (flags >= 0) {
+                        if (fcntl(ts2_1_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+                            pr_err("Failed to set O_NONBLOCK on ts2_1 socket: %s\n",
+                                      strerror(errno));
+                            close(ts2_1_fd);
+                            unlink(ts2_1_local);
+                            return -1;
+                        }
+                    }
+                    size_t ts2_1_path_len = strlen(ts2_1_path);
+                    if (ts2_1_path_len >= sizeof(state->ts2phc1_peer_addr.sun_path)) {
+                        pr_err("ts2_1 peer path too long: %s\n", ts2_1_path);
+                        close(ts2_1_fd);
+                        unlink(ts2_1_local);
+                    } else {
+                        state->ts2phc1_socket_fd = ts2_1_fd;
+                        memset(&state->ts2phc1_peer_addr, 0, sizeof(state->ts2phc1_peer_addr));
+                        state->ts2phc1_peer_addr.sun_family = AF_UNIX;
+                        memcpy(state->ts2phc1_peer_addr.sun_path, ts2_1_path, ts2_1_path_len + 1);
+                        pr_dbg("ts2_1 socket bound: local=%s peer=%s\n", ts2_1_local, ts2_1_path);
+                    }
+                } else {
+                    pr_err("Failed to bind ts2_1 socket: %s\n", strerror(errno));
+                    close(ts2_1_fd);
+                    unlink(ts2_1_local);
+                }
+            } else {
+                pr_err("Failed to create ts2_1 socket: %s\n", strerror(errno));
+            }
+        }
+    } else {
+        pr_info("ts2_1 channel not configured, second ts2phc gearshift unavailable\n");
+    }
+
     /* Initialize status tracking fields */
     state->gear_ptp_bh = GEAR_IDLE;
     state->gear_ts2_0 = GEAR_DRIVE;
+    /* ts2_1 (E830) holds DRIVE custody at all times (never parked) — D5. */
+    state->gear_ts2_1 = GEAR_DRIVE;
     state->prev_lock_status = DPLL_LOCK_STATUS_UNLOCKED;
     state->ever_locked = false;
 

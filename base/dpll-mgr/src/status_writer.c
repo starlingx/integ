@@ -131,6 +131,12 @@ void write_status_json(const AppState *state)
                                 gear_to_string(state->gear_ptp_bh));
         cJSON_AddStringToObject(gear, "ts2_0",
                                 gear_to_string(state->gear_ts2_0));
+        /* Emit ts2_1 only when the second ts2phc (E830) is configured, so
+         * one-instance deployments show no ts2_1 key (unchanged behaviour). */
+        if (state->ts2phc1_socket_fd >= 0) {
+            cJSON_AddStringToObject(gear, "ts2_1",
+                                    gear_to_string(state->gear_ts2_1));
+        }
     }
     cJSON_AddItemToObject(root, "gearshift", gear);
 

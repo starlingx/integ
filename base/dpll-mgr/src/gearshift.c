@@ -321,18 +321,34 @@ void handle_sw_based_failover(AppState *state, enum pin_source new_master)
         state->gear_ptp_bh = GEAR_IDLE;
         send_gearshift(state->ts2phc_socket_fd, &state->ts2phc_peer_addr, GEAR_DRIVE);
         state->gear_ts2_0 = GEAR_DRIVE;
+        /* ts2_1 (E830) is never parked — re-assert DRIVE custody (D5). */
+        if (state->ts2phc1_socket_fd >= 0) {
+            send_gearshift(state->ts2phc1_socket_fd, &state->ts2phc1_peer_addr, GEAR_DRIVE);
+            state->gear_ts2_1 = GEAR_DRIVE;
+        }
     } else if (new_master == SDP2_REF0P || new_master == SDP0_REF0N) {
         pr_info("SW_BASED failover to PTP: ts2phc -> %s, ptp4l -> DRIVE\n", GEAR_IDLE_STR);
         send_gearshift(state->ts2phc_socket_fd, &state->ts2phc_peer_addr, GEAR_IDLE);
         state->gear_ts2_0 = GEAR_IDLE;
         send_gearshift(state->local_socket_fd,  &state->local_peer_addr,  GEAR_DRIVE);
         state->gear_ptp_bh = GEAR_DRIVE;
+        /* ts2_1 (E830) is never parked — re-assert DRIVE custody even while
+         * ts2_0 is demoted to IDLE on the PTP branch (D5). */
+        if (state->ts2phc1_socket_fd >= 0) {
+            send_gearshift(state->ts2phc1_socket_fd, &state->ts2phc1_peer_addr, GEAR_DRIVE);
+            state->gear_ts2_1 = GEAR_DRIVE;
+        }
     } else if (new_master >= HOLDOVER_0 && new_master <= HOLDOVER_3) {
         pr_info("SW_BASED failover to HOLDOVER: ts2phc -> DRIVE, ptp4l -> %s\n", GEAR_IDLE_STR);
         send_gearshift(state->local_socket_fd,  &state->local_peer_addr,  GEAR_IDLE);
         state->gear_ptp_bh = GEAR_IDLE;
         send_gearshift(state->ts2phc_socket_fd, &state->ts2phc_peer_addr, GEAR_DRIVE);
         state->gear_ts2_0 = GEAR_DRIVE;
+        /* ts2_1 (E830) is never parked — re-assert DRIVE custody (D5). */
+        if (state->ts2phc1_socket_fd >= 0) {
+            send_gearshift(state->ts2phc1_socket_fd, &state->ts2phc1_peer_addr, GEAR_DRIVE);
+            state->gear_ts2_1 = GEAR_DRIVE;
+        }
     } else {
         pr_info("SW_BASED failover to unknown source (%d): no gearshift action defined\n",
                  new_master);
