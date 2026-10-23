@@ -1,4 +1,5 @@
 ---
+debname: mttyexec
 debver: 0.1
 dl_hook: dl_hook
 dl_files:

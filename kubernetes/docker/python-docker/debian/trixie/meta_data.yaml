@@ -1,4 +1,5 @@
 ---
+debname: python-docker
 debver: 7.1.0-2
 dl_path:
   name: python-docker-debian-7.1.0-2.tar.gz

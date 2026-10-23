@@ -9,6 +9,7 @@
 # the custom build outrank the identical upstream version. If left behind, the
 # upstream package eclipses this one and the leap-seconds patch is dropped from
 # the ISO.
+debname: tzdata
 debver: 2026c-0+deb13u1
 archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/t/tzdata/
 revision:
