@@ -1135,6 +1135,32 @@ void refresh_pin_states_and_write(AppState *state)
 }
 
 /**
+ * reconcile_tick - Steady-state pin reconciliation on the event-loop timeout.
+ *
+ * The event loop only calls process_dpll_master_state() on a DPLL
+ * notification or during holdover, so in steady GNSS-locked state the per-cycle
+ * reconcile_ptp_pins() inside it never runs — a REF0N decay would then persist
+ * until the next event (i.e. until the GNSS loss we need REF0N ready for).
+ * This narrow wrapper refreshes the live pin cache and reconciles once per 1 s
+ * poll timeout, independent of holdover, so REF0N selectability is maintained
+ * continuously while the backhaul is GM-present. Keeps update_pin_states()
+ * private to this file. No-op before the DPLL socket is up.
+ */
+void reconcile_tick(AppState *state)
+{
+    if (!state || !state->dpll_sock)
+        return;
+    /* Refresh the GM-presence gate from live ptp4l state FIRST: the reconcile
+     * decision is only correct if is_ptp_connected_to_gm reflects current
+     * truth. evaluate_ptp_gm_connection() otherwise runs only once at startup,
+     * which would leave the Issue-17 guard (disconnect REF0N when the backhaul
+     * loses its GM) acting on a stale value. */
+    evaluate_ptp_gm_connection(state);
+    update_pin_states(state, state->dpll_sock);
+    reconcile_ptp_pins(state);
+}
+
+/**
  * process_dpll_master_state - Determine current master and handle failover
  * @state: Application state
  * @dpll_sock: DPLL netlink socket
