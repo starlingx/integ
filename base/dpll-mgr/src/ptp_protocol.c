@@ -996,6 +996,10 @@ static int reprioritize_ptp_pin(AppState *state)
  * Checks DPLL pin source and forwards clock parameters if needed
  * @state: Application state
  */
+/* Under the reconcile unit test the actuators are replaced by call-counting
+ * stubs (test_reconcile_ptp_pins.c) so the test can assert write-on-change
+ * behaviour without a DPLL. Production builds compile the real bodies. */
+#ifndef UNIT_TEST_STUB_ACTUATORS
 void handle_ptp_port_up(AppState *state)
 {
     if (state->pps_dpll_device_id) {
@@ -1068,6 +1072,54 @@ void handle_ptp_port_down(AppState *state)
         refresh_pin_states_and_write(state);
     } else {
         pr_err("DPLL not initialized - cannot disable PTP pins\n");
+    }
+}
+#endif /* UNIT_TEST_STUB_ACTUATORS */
+
+/* pure decision — see header. */
+enum dpll_pin_state desired_ptp_pin_state(bool gm_present)
+{
+    return gm_present ? DPLL_PIN_STATE_SELECTABLE
+                      : DPLL_PIN_STATE_DISCONNECTED;
+}
+
+/* level-triggered, GM-gated, write-on-change pin maintenance.
+ * See header for rationale. */
+void reconcile_ptp_pins(AppState *state)
+{
+    if (!state || !state->pps_dpll_device_id)
+        return;
+
+    enum dpll_pin_state want = desired_ptp_pin_state(state->is_ptp_connected_to_gm);
+
+    /* Compare against the LIVE REF0N state refreshed by update_pin_states()
+     * this cycle (SDP0_REF0N == REF0N on the PPS device). pin_states[] holds
+     * the hardware truth, so this self-heals a decayed pin. */
+    enum dpll_pin_state live = state->pin_states[SDP0_REF0N].state;
+
+    /* CONNECTED means the DPLL selection algorithm has already picked the pin
+     * as the active reference — that is a strictly "more enabled" state than
+     * SELECTABLE and must not be forced back down to SELECTABLE. Treat
+     * CONNECTED as already-satisfying a SELECTABLE desire. */
+    if (want == DPLL_PIN_STATE_SELECTABLE &&
+        (live == DPLL_PIN_STATE_SELECTABLE || live == DPLL_PIN_STATE_CONNECTED))
+        return;  /* already a valid failover candidate — no write */
+
+    if (want == DPLL_PIN_STATE_DISCONNECTED &&
+        live == DPLL_PIN_STATE_DISCONNECTED)
+        return;  /* already disconnected — no write */
+
+    /* Desired != live: drive the pins. handle_ptp_port_up/down write both
+     * REF0P and REF0N on the PPS device; dpll_pin_set_state short-circuits any
+     * per-pin no-op, so this issues only the writes that actually change HW. */
+    if (want == DPLL_PIN_STATE_SELECTABLE) {
+        pr_info("reconcile_ptp_pins: backhaul GM present, REF0N live=%d -> "
+                "asserting SELECTABLE\n", live);
+        handle_ptp_port_up(state);
+    } else {
+        pr_info("reconcile_ptp_pins: backhaul GM absent, REF0N live=%d -> "
+                "asserting DISCONNECTED (Issue 17 guard)\n", live);
+        handle_ptp_port_down(state);
     }
 }
 

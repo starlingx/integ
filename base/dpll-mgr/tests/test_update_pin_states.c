@@ -91,6 +91,9 @@ void write_status_json(const AppState *s) { (void)s; g_write_status_json_calls++
 GlobalConfig g_config;
 void handle_ptp_port_up(AppState *s) { (void)s; }
 void handle_ptp_port_down(AppState *s) { (void)s; }
+/* process_dpll_master_state() now calls reconcile_ptp_pins()
+ * (defined in ptp_protocol.c, not included here); stub it for the link. */
+void reconcile_ptp_pins(AppState *s) { (void)s; }
 int  send_get_request(int sockfd, struct sockaddr_un *peer_addr,
                       uint16_t mgmt_id, uint16_t *seq) {
     (void)sockfd; (void)peer_addr; (void)mgmt_id; (void)seq; return 0; }

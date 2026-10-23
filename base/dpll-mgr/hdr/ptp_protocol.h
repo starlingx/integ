@@ -213,6 +213,43 @@ void handle_ptp_port_up(AppState *state);
 void handle_ptp_port_down(AppState *state);
 
 /**
+ * desired_ptp_pin_state - Pure decision: what state should the PPS SDP input
+ * pins (REF0P/REF0N) be in, given the current backhaul GM presence?
+ *
+ * The single invariant that subsumes Issue 12 (failover never
+ * fires because REF0N was only promoted on a port event) and Issue 17 (false
+ * lock to a GM-less backhaul): the SDP input pins are a valid DPLL failover
+ * candidate IFF the backhaul is currently tracking a grandmaster.
+ *
+ *   gm_present == true   -> DPLL_PIN_STATE_SELECTABLE
+ *   gm_present == false  -> DPLL_PIN_STATE_DISCONNECTED
+ *
+ * Pure function (no I/O, no AppState mutation) so it is exhaustively
+ * unit-testable off a boolean. @gm_present is state->is_ptp_connected_to_gm
+ * (derived from clock_params[SDP2_REF0P].gm_present — the reliable signal;
+ * port_state differs SW vs HW mode).
+ */
+enum dpll_pin_state desired_ptp_pin_state(bool gm_present);
+
+/**
+ * reconcile_ptp_pins - Level-triggered maintenance of the PPS SDP input pins.
+ *
+ * Called once per cycle (after update_pin_states() has refreshed
+ * the live pin_states[] cache). Compares the desired state
+ * (desired_ptp_pin_state) against the LIVE REF0N state and drives the pins only
+ * when they actually differ — never a set-to-same-state (which, combined with
+ * the dpll_pin_set_state short-circuit, keeps steady-state writes at zero).
+ *
+ * This makes REF0N selectability autonomous: it no longer depends on a port
+ * down->up bounce (which a hybrid GNSS loss never produces) and it self-heals
+ * the decay that returns the CGU input engine to DISCONNECTED across GNSS
+ * cycles. The fast port-FAULTY disconnect path (process_port_data_set /
+ * liveness guards) remains the immediate reaction; this is the backstop that
+ * guarantees convergence to observed truth every cycle.
+ */
+void reconcile_ptp_pins(AppState *state);
+
+/**
  * ptp_check_liveness - Signal 1: RX-silence backstop
  * @state: Application state
  *
