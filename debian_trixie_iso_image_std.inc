@@ -177,9 +177,6 @@ facter
 flux2
 flux2-charts
 
-#gpu-operator
-#gpu-operator
-
 #grub2
 grub-efi-amd64-bin
 #grub-efi-amd64-dbg  # not used

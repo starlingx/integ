@@ -180,9 +180,6 @@ libfacter3.14.12
 flux2
 flux2-charts
 
-#gpu-operator
-#gpu-operator
-
 #grub-efi
 #grub-efi-amd64-bin  # not used
 #grub-efi-amd64-dbg  # not used
