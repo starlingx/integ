@@ -70,4 +70,16 @@
  */
 void handle_sw_based_failover(AppState *state, enum pin_source new_master);
 
+/**
+ * ts2phc_probe_alive - Probe the ts2_0 (GNSS-disciplining) ts2phc for liveness
+ * @state: Application state
+ *
+ * Sends a GEAR_STATUS_NP GET on the ts2_0 UDS and returns true only when a
+ * well-formed response arrives within the probe window. A dead or wedged
+ * ts2phc times out -> returns false. Quiet (pr_dbg) so it can run on the
+ * housekeeping tick. Returns true (nothing to police) if ts2_0 is not
+ * configured (ts2phc_socket_fd < 0).
+ */
+bool ts2phc_probe_alive(AppState *state);
+
 #endif /* GEARSHIFT_H */

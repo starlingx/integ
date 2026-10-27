@@ -80,6 +80,7 @@ extern struct ynl_sock *ys;
 /* Forward declarations */
 static bool initialize_state(AppState *state, const char *fr_uds_path,
                              char **rx_uds_paths, int rx_count);
+static void handle_gnss_source_down(AppState *state);
 
 
 /**
@@ -807,6 +808,20 @@ void determine_current_master(AppState *state, struct ynl_sock *dpll_sock)
                 return;
             }
 
+            /* GNSS source liveness: ts2phc disciplines the GNSS 1PPS, but the
+             * raw pulse into REF4P continues even when ts2phc is dead. If the
+             * liveness probe has judged ts2phc down, do not accept a GNSS
+             * master on pin-presence alone -> holdover. The REF4P disconnect
+             * driven by ts2phc_liveness_tick() is the primary action; this
+             * closes the re-lock race in the window between probes. */
+            if (is_gnss_pin(connected_pin_source) && state->ts2phc_down) {
+                pr_info("Rejecting GNSS master %s: ts2phc not alive -> holdover\n",
+                        pin_source_to_string(connected_pin_source));
+                enter_holdover_no_source(state);
+                handle_gnss_source_down(state);
+                return;
+            }
+
             /* Assign connected pin source directly to current_master */
             state->current_master = connected_pin_source;
             state->connected_pin_id = connected_pin_id;  /* Store connected pin ID */
@@ -1111,6 +1126,133 @@ void refresh_pin_states_and_write(AppState *state)
         return;
     update_pin_states(state, state->dpll_sock);
     write_status_json(state);
+}
+
+/**
+ * handle_gnss_source_down - ts2phc judged dead: stop trusting the GNSS 1PPS.
+ * @state: Application state
+ *
+ * The raw GNSS 1PPS into REF4P keeps pulsing when ts2phc is dead, so the DPLL
+ * would otherwise hold a stale lock on an undisciplined reference. Disconnect
+ * REF4P on BOTH DPLL devices — the PPS/phase device (which decides the selected
+ * master) AND the EEC/frequency device (which, in the PTP-backhaul-primary
+ * config, rides GNSS for frequency: GNSS_REF4P is priority 0 on the EEC). The
+ * 1PPS is undisciplined on both planes once ts2phc dies, so both must drop it,
+ * else the frequency DPLL keeps a stale GNSS lock. This is the same path as a
+ * physical GNSS disconnect (which clears both engines). Refresh status.json now
+ * (a pin change that leaves the active master unchanged does not otherwise
+ * trigger a write). dpll_pin_set_state short-circuits a set-to-same-state, so
+ * each call is a no-op write if that device's REF4P is already disconnected.
+ */
+static void handle_gnss_source_down(AppState *state)
+{
+    if (!state->dpll_sock)
+        return;
+    pr_info("Disabling GNSS pin REF4P (both DPLL devices): ts2phc not alive "
+            "(undisciplined 1PPS)\n");
+    /* Both device IDs are resolved at startup (init aborts if either is not
+     * found), so they are always valid here — do NOT guard on `if (device_id)`:
+     * the EEC device id is legitimately 0, which that guard would wrongly skip. */
+    dpll_pin_set_state(state->dpll_sock, state->pps_dpll_device_id,
+                       "REF4P", DPLL_PIN_STATE_DISCONNECTED);
+    dpll_pin_set_state(state->dpll_sock, state->eec_dpll_device_id,
+                       "REF4P", DPLL_PIN_STATE_DISCONNECTED);
+    refresh_pin_states_and_write(state);
+}
+
+/**
+ * handle_gnss_source_up - ts2phc recovered: restore REF4P as a selectable input.
+ * @state: Application state
+ *
+ * Re-enable REF4P to SELECTABLE on BOTH DPLL devices (PPS + EEC — the mirror of
+ * the both-device disconnect in handle_gnss_source_down) so the DPLL can rank
+ * it and lock to the (now disciplined) GNSS reference per the configured
+ * priority. SELECTABLE (not CONNECTED): the DPLL's own selection promotes it to
+ * CONNECTED when it picks REF4P, matching handle_ptp_port_up().
+ *
+ * SELECTABLE is only a *candidate* state, not a lock: if GNSS is in fact absent
+ * (no 1PPS on the pin — e.g. ts2phc came back but the antenna/receiver is still
+ * gone), the DPLL simply never selects REF4P and stays on the backhaul / in
+ * holdover. So re-enabling a pin with no signal is harmless — the hardware
+ * (presence of a real 1PPS) is the final gate, not this flag. There is no
+ * independent GNSS-presence signal to consult here: gpsd is compiled out under
+ * STATIC_PARAMS_FROM_CONFIG in the shipped SW_BASED build, and the DPLL pin
+ * state only echoes what we last wrote.
+ *
+ * No-demote guard (PPS): skip the PPS write if REF4P is already SELECTABLE or
+ * CONNECTED — CONNECTED means the DPLL has already selected it (strictly "more
+ * enabled"; must not be demoted). pin_states[GNSS_REF4P] is the PPS-engine state
+ * (update_pin_states reads the PPS device). On the EEC, this handler only runs
+ * on the ts2phc down->up edge, i.e. after handle_gnss_source_down disconnected
+ * the EEC REF4P, so the EEC pin is DISCONNECTED here and SELECTABLE is the
+ * correct restore (dpll_pin_set_state short-circuits if already selectable).
+ */
+static void handle_gnss_source_up(AppState *state)
+{
+    if (!state->dpll_sock)
+        return;
+
+    update_pin_states(state, state->dpll_sock);
+    enum dpll_pin_state pps_live = state->pin_states[GNSS_REF4P].state;
+
+    pr_info("Enabling GNSS pin REF4P (both DPLL devices): ts2phc alive again\n");
+    /* Both device IDs are always valid here (resolved at startup); do NOT guard
+     * on `if (device_id)` — the EEC device id is legitimately 0. */
+    /* PPS device: re-enable unless already a valid candidate / active reference. */
+    if (pps_live != DPLL_PIN_STATE_SELECTABLE && pps_live != DPLL_PIN_STATE_CONNECTED)
+        dpll_pin_set_state(state->dpll_sock, state->pps_dpll_device_id,
+                           "REF4P", DPLL_PIN_STATE_SELECTABLE);
+    /* EEC/frequency device: restore (was disconnected by the down handler).
+     * dpll_pin_set_state short-circuits if it is already selectable/connected. */
+    dpll_pin_set_state(state->dpll_sock, state->eec_dpll_device_id,
+                       "REF4P", DPLL_PIN_STATE_SELECTABLE);
+    refresh_pin_states_and_write(state);
+}
+
+/**
+ * ts2phc_liveness_tick - GNSS/ts2phc liveness on the event-loop timeout.
+ * @state: Application state
+ *
+ * Symmetric to the ptp4l/SDP0 liveness: probe ts2phc on its own cadence and
+ * toggle REF4P selectable<->disconnected on a confirmed liveness edge. Runs
+ * regardless of the current master so the GNSS pin is kept honest whether GNSS
+ * is primary (active) or a standby (PTP-backhaul-primary config). The sticky
+ * ts2phc_down flag makes it idempotent and keeps REF4P disconnected while
+ * ts2phc stays dead — so GNSS cannot be re-selected on pin presence alone until
+ * ts2phc recovers. SW_BASED only; no-op if ts2_0 is not configured.
+ */
+void ts2phc_liveness_tick(AppState *state)
+{
+    if (g_config.manager.operation_mode != OPERATION_MODE_SW_BASED)
+        return;
+    if (!state || state->ts2phc_socket_fd < 0 || !state->dpll_sock)
+        return;
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    if ((now.tv_sec - state->last_ts2phc_probe.tv_sec) < TS2PHC_PROBE_INTERVAL_SEC)
+        return;
+    state->last_ts2phc_probe = now;
+
+    if (ts2phc_probe_alive(state)) {
+        state->ts2phc_probe_fail_count = 0;
+        if (state->ts2phc_down) {
+            pr_info("ts2phc probe recovered - restoring GNSS source\n");
+            state->ts2phc_down = false;
+            handle_gnss_source_up(state);
+        }
+        return;
+    }
+
+    if (state->ts2phc_probe_fail_count < TS2PHC_PROBE_FAIL_STRIKES)
+        state->ts2phc_probe_fail_count++;
+    if (state->ts2phc_probe_fail_count >= TS2PHC_PROBE_FAIL_STRIKES &&
+        !state->ts2phc_down) {
+        pr_info("ts2phc probe failed x%d - treating GNSS source as down\n",
+                state->ts2phc_probe_fail_count);
+        state->ts2phc_down = true;
+        handle_gnss_source_down(state);
+    }
 }
 
 /**
@@ -1634,6 +1776,11 @@ static bool initialize_state(AppState *state, const char *fr_uds_path,
      * (the first subscription-ack can be up to ~SUBSCRIPTION_DURATION-10s away).
      * memset(0) above would otherwise make now - 0 exceed the timeout at boot. */
     clock_gettime(CLOCK_MONOTONIC, &state->last_ptp_rx_time);
+
+    /* GNSS/ts2phc liveness fields (ts2phc_down, ts2phc_probe_fail_count,
+     * last_ts2phc_probe) are left at the memset(0) default: last_ts2phc_probe=0
+     * lets the first probe run promptly on the first tick, and a single early
+     * fail is below the 2-strike threshold, so there is no boot false-trip. */
 
     /* Setup remote ptp4l connections - only store valid remotes */
     int valid_index = 0;

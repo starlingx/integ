@@ -151,7 +151,7 @@ static bool read_gearshift_response(int sockfd, const struct sockaddr_un *peer_a
  * Returns: true on success (current_gear is valid), false on failure.
  */
 static bool get_gearshift(int sockfd, const struct sockaddr_un *peer_addr,
-                          uint8_t *current_gear)
+                          uint8_t *current_gear, bool quiet)
 {
     if (sockfd < 0 || !peer_addr || !current_gear)
         return false;
@@ -168,7 +168,10 @@ static bool get_gearshift(int sockfd, const struct sockaddr_un *peer_addr,
     ssize_t sent = sendto(sockfd, msg, len, 0,
                           (const struct sockaddr *)peer_addr, sizeof(*peer_addr));
     if (sent < 0) {
-        pr_err("get_gearshift: sendto() failed: %s\n", strerror(errno));
+        if (quiet)
+            pr_dbg("get_gearshift: sendto() failed: %s\n", strerror(errno));
+        else
+            pr_err("get_gearshift: sendto() failed: %s\n", strerror(errno));
         return false;
     }
 
@@ -186,8 +189,12 @@ static bool get_gearshift(int sockfd, const struct sockaddr_un *peer_addr,
         int remaining_ms = (int)((deadline.tv_sec - now.tv_sec) * 1000
                            + (deadline.tv_nsec - now.tv_nsec) / 1000000);
         if (remaining_ms <= 0) {
-            pr_err("get_gearshift: no response from %s (timeout)\n",
-                      peer_addr->sun_path);
+            if (quiet)
+                pr_dbg("get_gearshift: no response from %s (timeout)\n",
+                          peer_addr->sun_path);
+            else
+                pr_err("get_gearshift: no response from %s (timeout)\n",
+                          peer_addr->sun_path);
             return false;
         }
 
@@ -199,8 +206,12 @@ static bool get_gearshift(int sockfd, const struct sockaddr_un *peer_addr,
             return false;
         }
         if (ready == 0) {
-            pr_err("get_gearshift: no response from %s (timeout)\n",
-                      peer_addr->sun_path);
+            if (quiet)
+                pr_dbg("get_gearshift: no response from %s (timeout)\n",
+                          peer_addr->sun_path);
+            else
+                pr_err("get_gearshift: no response from %s (timeout)\n",
+                          peer_addr->sun_path);
             return false;
         }
 
@@ -261,7 +272,7 @@ static void send_gearshift(int sockfd, const struct sockaddr_un *peer_addr,
 
     /* Query current gear; skip SET if already in the desired state */
     uint8_t current_gear;
-    if (get_gearshift(sockfd, peer_addr, &current_gear)) {
+    if (get_gearshift(sockfd, peer_addr, &current_gear, false)) {
         const char *cur_str = (current_gear == GEAR_NEUTRAL) ? "NEUTRAL" :
                               (current_gear == GEAR_DRIVE)   ? "DRIVE"   : "PARK";
         if (current_gear == gear) {
@@ -360,4 +371,14 @@ void handle_sw_based_failover(AppState *state, enum pin_source new_master)
                        +  (int64_t)(t_end.tv_nsec - t_start.tv_nsec);
     pr_info("SW_BASED failover completed in %" PRId64 " ns (%.3f ms)\n",
              elapsed_ns, (double)elapsed_ns / 1e6);
+}
+
+bool ts2phc_probe_alive(AppState *state)
+{
+    if (!state || state->ts2phc_socket_fd < 0)
+        return true;  /* ts2_0 not configured: nothing to police */
+
+    uint8_t gear;
+    return get_gearshift(state->ts2phc_socket_fd, &state->ts2phc_peer_addr,
+                         &gear, true /* quiet */);
 }
