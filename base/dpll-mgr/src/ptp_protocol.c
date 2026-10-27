@@ -1101,7 +1101,18 @@ void reconcile_ptp_pins(AppState *state)
     if (!state || !state->pps_dpll_device_id)
         return;
 
-    enum dpll_pin_state want = desired_ptp_pin_state(state->is_ptp_connected_to_gm);
+    /* Compose the liveness flag with GM presence. ptp_port_down is the fresh
+     * truth when ptp4l has died: once its UDS socket is gone,
+     * evaluate_ptp_gm_connection() gets no reply, so gm_present (and thus
+     * is_ptp_connected_to_gm) stays latched at its last live value (true) and
+     * cannot report the loss. Gating only on is_ptp_connected_to_gm therefore
+     * re-asserts SELECTABLE one poll after the liveness guard disconnected the
+     * pins, re-locking the DPLL to the dead, drifting SDP0 backhaul. Treat a
+     * down port as "no usable GM" so the liveness disconnect is not undone;
+     * the pins stay disconnected until process_port_data_set() clears
+     * ptp_port_down on a genuine PORT_DATA_SET SLAVE/UNCALIBRATED recovery. */
+    bool gm_usable = state->is_ptp_connected_to_gm && !state->ptp_port_down;
+    enum dpll_pin_state want = desired_ptp_pin_state(gm_usable);
 
     /* Compare against the LIVE REF0N state refreshed by update_pin_states()
      * this cycle (SDP0_REF0N == REF0N on the PPS device). pin_states[] holds

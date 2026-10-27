@@ -53,20 +53,29 @@ LogLevel g_log_level = DPLL_LOG_LEVEL_INFO;
 void process_dpll_master_state(AppState *s, struct ynl_sock *d) { (void)s; (void)d; }
 
 /* helper: run one reconcile with a given gm_present + live REF0N state,
- * return via out-params how many up/down writes happened. */
-static void run(bool gm_present, enum dpll_pin_state live,
-                int *ups, int *downs)
+ * return via out-params how many up/down writes happened. port_down models the
+ * ptp4l-liveness flag (true = ptp4l dead/wedged). */
+static void run_live(bool gm_present, bool port_down, enum dpll_pin_state live,
+                     int *ups, int *downs)
 {
     AppState st;
     memset(&st, 0, sizeof(st));
     st.pps_dpll_device_id = 1;              /* non-zero so reconcile proceeds */
     st.is_ptp_connected_to_gm = gm_present;
+    st.ptp_port_down = port_down;
     st.pin_states[SDP0_REF0N].pps_state = live;
     g_up_calls = 0;
     g_down_calls = 0;
     reconcile_ptp_pins(&st);
     *ups = g_up_calls;
     *downs = g_down_calls;
+}
+
+/* legacy helper: ptp4l alive (port_down=false). */
+static void run(bool gm_present, enum dpll_pin_state live,
+                int *ups, int *downs)
+{
+    run_live(gm_present, false, live, ups, downs);
 }
 
 #define CHECK(cond, msg) do { \
@@ -119,6 +128,37 @@ int main(void)
     run(false, DPLL_PIN_STATE_DISCONNECTED, &ups, &downs);
     CHECK(ups == 0 && downs == 0,
           "steady: no-gm+disconnected -> no write");
+
+    /* --- liveness override (dead ptp4l) ---------------------------------- *
+     * When ptp4l dies, gm_present latches stale-true (no reply to refresh it),
+     * so is_ptp_connected_to_gm stays true. The liveness flag ptp_port_down is
+     * the fresh truth and MUST override: reconcile must NOT re-assert SELECTABLE
+     * (that re-locks the dead, drifting SDP0 backhaul), and must disconnect a
+     * still-live pin. */
+
+    /* dead ptp4l + stale gm=true + pin just disconnected by the liveness guard
+     * -> stay disconnected, do NOT re-enable (the regression this fix closes) */
+    run_live(true, true, DPLL_PIN_STATE_DISCONNECTED, &ups, &downs);
+    CHECK(ups == 0 && downs == 0,
+          "liveness: stale-gm + port_down + disconnected -> no re-enable");
+
+    /* dead ptp4l + stale gm=true + pin still selectable -> force DISCONNECTED */
+    run_live(true, true, DPLL_PIN_STATE_SELECTABLE, &ups, &downs);
+    CHECK(ups == 0 && downs == 1,
+          "liveness: stale-gm + port_down + selectable -> one DOWN write");
+
+    /* dead ptp4l + stale gm=true + DPLL already locked (CONNECTED) to the dead
+     * backhaul -> force DISCONNECTED (break the false lock) */
+    run_live(true, true, DPLL_PIN_STATE_CONNECTED, &ups, &downs);
+    CHECK(ups == 0 && downs == 1,
+          "liveness: stale-gm + port_down + connected -> one DOWN write");
+
+    /* genuine recovery: ptp4l alive again (port_down cleared by a real
+     * PORT_DATA_SET SLAVE/UNCALIBRATED) + gm present + pin disconnected
+     * -> re-assert SELECTABLE as normal (failover path still works) */
+    run_live(true, false, DPLL_PIN_STATE_DISCONNECTED, &ups, &downs);
+    CHECK(ups == 1 && downs == 0,
+          "recovery: gm + !port_down + disconnected -> re-assert SELECTABLE");
 
     if (failures) {
         printf("\n%d reconcile_ptp_pins assertion(s) FAILED\n", failures);
