@@ -1,4 +1,4 @@
-From 7f8023fd4fc9c52079cfdeb0bebd6f1ad3340e57 Mon Sep 17 00:00:00 2001
+From 043a7878afe660120a3ed98c4b48a481d4c1551f Mon Sep 17 00:00:00 2001
 From: Virgil Bucoci <virgil.bucoci@windriver.com>
 Date: Fri, 14 Aug 2026 16:24:12 +0300
 Subject: [PATCH 5/5] Remove conflicts between grub-pc and grub-efi-amd64
