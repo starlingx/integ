@@ -185,7 +185,7 @@ int main(void)
      *     handler) -> re-enable REF4P->SELECTABLE on BOTH devices. SELECTABLE is
      *     only a candidate, not a lock: if GNSS is really absent the DPLL just
      *     never selects it, so re-enabling is harmless. */
-    st.pin_states[GNSS_REF4P].state = DPLL_PIN_STATE_DISCONNECTED; /* PPS, as left by down */
+    st.pin_states[GNSS_REF4P].pps_state = DPLL_PIN_STATE_DISCONNECTED; /* PPS, as left by down */
     g_probe_alive = 1;
     allow_probe(&st); ts2phc_liveness_tick(&st);
     CHECK(!st.ts2phc_down && st.ts2phc_probe_fail_count == 0 &&
@@ -203,7 +203,7 @@ int main(void)
     g_probe_alive = 0;
     allow_probe(&st); ts2phc_liveness_tick(&st);   /* strike 1 */
     allow_probe(&st); ts2phc_liveness_tick(&st);   /* strike 2 -> down (2 writes) */
-    st.pin_states[GNSS_REF4P].state = DPLL_PIN_STATE_CONNECTED; /* PPS already active */
+    st.pin_states[GNSS_REF4P].pps_state = DPLL_PIN_STATE_CONNECTED; /* PPS already active */
     g_eec_state = -1;                              /* clear to observe the up-phase EEC write */
     g_probe_alive = 1;
     allow_probe(&st); ts2phc_liveness_tick(&st);

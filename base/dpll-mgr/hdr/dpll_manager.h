@@ -298,11 +298,19 @@ typedef struct {
     PinPriorityEntry eec_priority_table[16];  /* DPLL0_FREQ map for EEC device */
     PinPriorityEntry pps_priority_table[16];  /* DPLL1_PHASE map for PPS device */
 
-    /* Per-pin DPLL state cache — updated by dpll_get_device_state_and_connected_pin() */
+    /* Per-pin DPLL state cache — updated by update_pin_states().
+     * A pin can be parented by BOTH DPLL engines of the same chip:
+     *   EEC = DPLL0 (frequency/syntonization)
+     *   PPS = DPLL1 (phase/time; drives current_master)
+     * The two engines carry independent state and priority (e.g. an SDP
+     * backhaul pin is DNU/disconnected on EEC but selectable/connected on
+     * PPS), so both are cached and published rather than collapsed into one. */
     struct {
-        enum dpll_pin_state state;  /* CONNECTED/SELECTABLE/DISCONNECTED */
-        int priority;               /* Pin priority on EEC device (-1=unset) */
-        bool valid;                 /* True if this pin was seen in last dump */
+        enum dpll_pin_state eec_state;  /* state on EEC (DPLL0) device */
+        enum dpll_pin_state pps_state;  /* state on PPS (DPLL1) device */
+        int eec_priority;               /* priority on EEC device (-1=unset) */
+        int pps_priority;               /* priority on PPS device (-1=unset) */
+        bool valid;                     /* True if this pin was seen in last dump */
     } pin_states[PIN_SOURCE_INT_OSC + 1];
 
     int ts2phc_socket_fd;                /* Bound socket for ts2phc gearshift (SW_BASED) */

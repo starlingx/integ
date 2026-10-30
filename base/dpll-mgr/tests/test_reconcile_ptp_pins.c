@@ -61,7 +61,7 @@ static void run(bool gm_present, enum dpll_pin_state live,
     memset(&st, 0, sizeof(st));
     st.pps_dpll_device_id = 1;              /* non-zero so reconcile proceeds */
     st.is_ptp_connected_to_gm = gm_present;
-    st.pin_states[SDP0_REF0N].state = live;
+    st.pin_states[SDP0_REF0N].pps_state = live;
     g_up_calls = 0;
     g_down_calls = 0;
     reconcile_ptp_pins(&st);

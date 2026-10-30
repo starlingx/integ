@@ -6,9 +6,12 @@
  * changing without a master/lock transition converges status.json. Cases 8-10
  * cover a GNSS STANDBY pin (not a PTP pin): its state change must flush
  * status.json too — this FAILS against a write-trigger scoped to PTP pins only
- * and PASSES once the trigger fires on any configured input pin. These
- * assertions FAIL against the pre-fix synthesis implementation and PASS against
- * the live-read fix.
+ * and PASSES once the trigger fires on any configured input pin. Cases 11-13
+ * cover the per-engine split (independent eec/pps state + priority, unset
+ * pps_priority = -1). Cases 14-15 cover single-parent pins: an engine with no
+ * matching parent device must keep its previous value, not borrow the other
+ * engine's state (no cross-engine fallback). These assertions FAIL against the
+ * pre-fix synthesis implementation and PASS against the live-read fix.
  *
  * update_pin_states() is static, so we #include the translation unit and stub the
  * DPLL / IO dependencies it calls. No external test framework (first harness for
@@ -42,6 +45,12 @@ static int                 g_test_dual      = 0;
 static int                 g_test_eec_idx   = 0;     /* which index holds EEC */
 static unsigned int        g_test_pps_id    = 0;     /* __u32 value, declared early */
 static unsigned int        g_test_eec_id    = 0;
+/* Single-parent modelling: no cross-engine fallback. When g_test_single is set
+ * the double returns exactly ONE parent_device carrying g_test_single_id /
+ * g_test_live_state, so a PPS-only or EEC-only pin can be exercised and the
+ * OTHER engine proven to stay untouched. */
+static int                 g_test_single    = 0;
+static unsigned int        g_test_single_id = 0;
 
 /* Minimal stand-ins pulled in via the real headers below; the included .c uses
  * dpll_pin_dump() / dpll_pin_get_list_free() / write_status_json() etc. We
@@ -65,7 +74,15 @@ struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id) {
     node->obj.package_label = strdup(g_test_label);
     node->obj.n_parent_device = 2;
     node->obj.parent_device = pdev;
-    if (g_test_dual) {
+    if (g_test_single) {
+        /* Exactly one parent device (g_test_single_id), state g_test_live_state.
+         * n_parent_device = 1 so the other engine has no entry at all. */
+        node->obj.n_parent_device = 1;
+        pdev[0]._present.state = 1;
+        pdev[0]._present.parent_id = 1;
+        pdev[0].parent_id = g_test_single_id;
+        pdev[0].state = (enum dpll_pin_state)g_test_live_state;
+    } else if (g_test_dual) {
         /* EEC device at g_test_eec_idx (permanently DISCONNECTED), PPS at the
          * other index (carries the hardware truth). Both _present.state set. */
         int eec = g_test_eec_idx ? 1 : 0;
@@ -143,6 +160,12 @@ static void seed_one_pin(AppState *st, const char *pin_name, const char *pkg, in
     strncpy(st->eec_priority_table[0].pin_name, pin_name, sizeof(st->eec_priority_table[0].pin_name)-1);
     strncpy(st->eec_priority_table[0].package_label, pkg, sizeof(st->eec_priority_table[0].package_label)-1);
     st->eec_priority_table[0].priority = prio;
+    /* Mirror the pin into the PPS (dpll1) table so pps_priority_for_pin() can
+     * resolve a PPS priority. Default PPS priority = prio unless a test sets
+     * st->pps_priority_table[0].priority afterwards (see the divergence case). */
+    strncpy(st->pps_priority_table[0].pin_name, pin_name, sizeof(st->pps_priority_table[0].pin_name)-1);
+    strncpy(st->pps_priority_table[0].package_label, pkg, sizeof(st->pps_priority_table[0].package_label)-1);
+    st->pps_priority_table[0].priority = prio;
     st->lock_status = DPLL_LOCK_STATUS_LOCKED_HO_ACQ;
     st->current_master = PIN_SOURCE_UNKNOWN;   /* not master */
     /* Device identities used by the PPS-by-parent_id selection (Finding 1). */
@@ -155,6 +178,8 @@ static void seed_one_pin(AppState *st, const char *pin_name, const char *pkg, in
     g_test_eec_idx = 0;
     g_test_pps_id  = st->pps_dpll_device_id;
     g_test_eec_id  = st->eec_dpll_device_id;
+    g_test_single    = 0;
+    g_test_single_id = 0;
 }
 
 int main(void) {
@@ -163,15 +188,16 @@ int main(void) {
     int fails = 0;
 
     /* CASE 1 — CROSS-PROCESS AMNESIA: hardware SELECTABLE but flag says DISCONNECTED.
-     * Pre-fix serialized DISCONNECTED (the bug). Fix must serialize SELECTABLE. */
+     * Pre-fix serialized DISCONNECTED (the bug). Fix must serialize SELECTABLE.
+     * (.pps_state is the operative engine the live dump populates.) */
     seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
     st.ptp_pin_state = DPLL_PIN_STATE_DISCONNECTED;       /* stale flag */
     g_test_live_state = DPLL_PIN_STATE_SELECTABLE;        /* hardware truth */
     update_pin_states(&st, sock);
     enum pin_source src = pin_name_to_enum("SDP0_REF0N");
-    if (st.pin_states[src].state != DPLL_PIN_STATE_SELECTABLE) {
+    if (st.pin_states[src].pps_state != DPLL_PIN_STATE_SELECTABLE) {
         printf("FAIL case1: expected SELECTABLE from hardware, got %d (flag leaked)\n",
-               st.pin_states[src].state); fails++;
+               st.pin_states[src].pps_state); fails++;
     } else printf("PASS case1: amnesia — serialized hardware SELECTABLE despite stale flag\n");
 
     /* CASE 2 — hardware DISCONNECTED, flag SELECTABLE: must follow hardware. */
@@ -179,9 +205,9 @@ int main(void) {
     st.ptp_pin_state = DPLL_PIN_STATE_SELECTABLE;
     g_test_live_state = DPLL_PIN_STATE_DISCONNECTED;
     update_pin_states(&st, sock);
-    if (st.pin_states[src].state != DPLL_PIN_STATE_DISCONNECTED) {
+    if (st.pin_states[src].pps_state != DPLL_PIN_STATE_DISCONNECTED) {
         printf("FAIL case2: expected DISCONNECTED from hardware, got %d\n",
-               st.pin_states[src].state); fails++;
+               st.pin_states[src].pps_state); fails++;
     } else printf("PASS case2: serialized hardware DISCONNECTED despite SELECTABLE flag\n");
 
     /* CASE 3 — hardware CONNECTED is reflected regardless of master bookkeeping. */
@@ -189,22 +215,22 @@ int main(void) {
     st.ptp_pin_state = DPLL_PIN_STATE_DISCONNECTED;
     g_test_live_state = DPLL_PIN_STATE_CONNECTED;
     update_pin_states(&st, sock);
-    if (st.pin_states[src].state != DPLL_PIN_STATE_CONNECTED) {
+    if (st.pin_states[src].pps_state != DPLL_PIN_STATE_CONNECTED) {
         printf("FAIL case3: expected CONNECTED from hardware, got %d\n",
-               st.pin_states[src].state); fails++;
+               st.pin_states[src].pps_state); fails++;
     } else printf("PASS case3: serialized hardware CONNECTED\n");
 
     /* CASE 4 — Finding 1: pin parented by BOTH engines, EEC entry sorts FIRST
      * (index 0, permanently DISCONNECTED), PPS entry second (SELECTABLE).
      * Index-based selection would publish the EEC's DISCONNECTED; selection by
-     * parent_id must pick the PPS device -> SELECTABLE. */
+     * parent_id must pick the PPS device -> pps_state SELECTABLE. */
     seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
     g_test_dual = 1; g_test_eec_idx = 0;        /* EEC at index 0 */
     g_test_live_state = DPLL_PIN_STATE_SELECTABLE;  /* PPS hardware truth */
     update_pin_states(&st, sock);
-    if (st.pin_states[src].state != DPLL_PIN_STATE_SELECTABLE) {
+    if (st.pin_states[src].pps_state != DPLL_PIN_STATE_SELECTABLE) {
         printf("FAIL case4: EEC-first ordering — expected PPS SELECTABLE, got %d\n",
-               st.pin_states[src].state); fails++;
+               st.pin_states[src].pps_state); fails++;
     } else printf("PASS case4: dual-parent EEC-first — chose PPS by parent_id (SELECTABLE)\n");
 
     /* CASE 5 — same, but PPS entry sorts first (index 0) and EEC second.
@@ -213,9 +239,9 @@ int main(void) {
     g_test_dual = 1; g_test_eec_idx = 1;        /* EEC at index 1, PPS at 0 */
     g_test_live_state = DPLL_PIN_STATE_SELECTABLE;
     update_pin_states(&st, sock);
-    if (st.pin_states[src].state != DPLL_PIN_STATE_SELECTABLE) {
+    if (st.pin_states[src].pps_state != DPLL_PIN_STATE_SELECTABLE) {
         printf("FAIL case5: PPS-first ordering — expected PPS SELECTABLE, got %d\n",
-               st.pin_states[src].state); fails++;
+               st.pin_states[src].pps_state); fails++;
     } else printf("PASS case5: dual-parent PPS-first — chose PPS by parent_id (SELECTABLE)\n");
 
     /* CASE 6 — Finding 2: a PTP pin that settles DISCONNECTED -> SELECTABLE with
@@ -227,9 +253,9 @@ int main(void) {
     g_write_status_json_calls = 0;
     g_test_live_state = DPLL_PIN_STATE_SELECTABLE;        /* backhaul settled */
     update_pin_states(&st, sock);
-    if (st.pin_states[src].state != DPLL_PIN_STATE_SELECTABLE || g_write_status_json_calls != 1) {
+    if (st.pin_states[src].pps_state != DPLL_PIN_STATE_SELECTABLE || g_write_status_json_calls != 1) {
         printf("FAIL case6: expected SELECTABLE + 1 write on change, got state=%d writes=%d\n",
-               st.pin_states[src].state, g_write_status_json_calls); fails++;
+               st.pin_states[src].pps_state, g_write_status_json_calls); fails++;
     } else printf("PASS case6: PTP pin change -> wrote status.json once (converges after apply)\n");
 
     /* CASE 7 — no change on a steady tick: no extra write. */
@@ -253,9 +279,9 @@ int main(void) {
     g_write_status_json_calls = 0;
     g_test_live_state = DPLL_PIN_STATE_SELECTABLE;        /* GNSS re-armed as standby */
     update_pin_states(&st, sock);
-    if (st.pin_states[gsrc].state != DPLL_PIN_STATE_SELECTABLE || g_write_status_json_calls != 1) {
+    if (st.pin_states[gsrc].pps_state != DPLL_PIN_STATE_SELECTABLE || g_write_status_json_calls != 1) {
         printf("FAIL case8: expected SELECTABLE + 1 write on GNSS standby change, "
-               "got state=%d writes=%d\n", st.pin_states[gsrc].state, g_write_status_json_calls);
+               "got state=%d writes=%d\n", st.pin_states[gsrc].pps_state, g_write_status_json_calls);
         fails++;
     } else printf("PASS case8: GNSS standby recover (disc->sel) -> wrote status.json once\n");
 
@@ -265,9 +291,9 @@ int main(void) {
     g_write_status_json_calls = 0;
     g_test_live_state = DPLL_PIN_STATE_DISCONNECTED;      /* GNSS standby degrades */
     update_pin_states(&st, sock);
-    if (st.pin_states[gsrc].state != DPLL_PIN_STATE_DISCONNECTED || g_write_status_json_calls != 1) {
+    if (st.pin_states[gsrc].pps_state != DPLL_PIN_STATE_DISCONNECTED || g_write_status_json_calls != 1) {
         printf("FAIL case9: expected DISCONNECTED + 1 write on GNSS standby degrade, "
-               "got state=%d writes=%d\n", st.pin_states[gsrc].state, g_write_status_json_calls);
+               "got state=%d writes=%d\n", st.pin_states[gsrc].pps_state, g_write_status_json_calls);
         fails++;
     } else printf("PASS case9: GNSS standby degrade (sel->disc) -> wrote status.json once\n");
 
@@ -278,6 +304,76 @@ int main(void) {
         printf("FAIL case10: expected no write when GNSS unchanged, got writes=%d\n",
                g_write_status_json_calls); fails++;
     } else printf("PASS case10: steady GNSS standby pin -> no redundant status.json write\n");
+
+    /* CASE 11 — PER-ENGINE SPLIT (the headline): a dual-parented pin whose two
+     * engines genuinely differ must record BOTH engine states independently,
+     * not collapse to one. Model SDP0 as it is on a PTP-primary DUT: EEC
+     * (DPLL0) permanently DISCONNECTED, PPS (DPLL1) CONNECTED. Assert eec_state
+     * and pps_state land separately. */
+    seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
+    g_test_dual = 1; g_test_eec_idx = 0;            /* EEC index 0 = DISCONNECTED */
+    g_test_live_state = DPLL_PIN_STATE_CONNECTED;   /* PPS = CONNECTED (current master) */
+    update_pin_states(&st, sock);
+    if (st.pin_states[src].eec_state != DPLL_PIN_STATE_DISCONNECTED ||
+        st.pin_states[src].pps_state != DPLL_PIN_STATE_CONNECTED) {
+        printf("FAIL case11: expected eec=DISCONNECTED pps=CONNECTED, got eec=%d pps=%d\n",
+               st.pin_states[src].eec_state, st.pin_states[src].pps_state); fails++;
+    } else printf("PASS case11: per-engine split — eec DISCONNECTED, pps CONNECTED (not collapsed)\n");
+
+    /* CASE 12 — PER-ENGINE PRIORITY: eec_priority comes from the EEC (dpll0)
+     * table, pps_priority from the PPS (dpll1) table. Diverge them (SDP0 is
+     * DNU/15 on EEC, 0 on PPS — the exact misleading-priority case) and assert
+     * each engine reports its own. */
+    seed_one_pin(&st, "SDP0_REF0N", "REF0N", 15);   /* EEC priority = 15 (DNU) */
+    st.pps_priority_table[0].priority = 0;          /* PPS priority = 0 */
+    g_test_dual = 1; g_test_eec_idx = 0;
+    g_test_live_state = DPLL_PIN_STATE_CONNECTED;
+    update_pin_states(&st, sock);
+    if (st.pin_states[src].eec_priority != 15 || st.pin_states[src].pps_priority != 0) {
+        printf("FAIL case12: expected eec_priority=15 pps_priority=0, got eec=%d pps=%d\n",
+               st.pin_states[src].eec_priority, st.pin_states[src].pps_priority); fails++;
+    } else printf("PASS case12: per-engine priority — eec=15 (DNU), pps=0 (correct selected prio)\n");
+
+    /* CASE 13 — PPS priority UNSET: a pin present only in the EEC table (not in
+     * the PPS table) must report pps_priority = -1, not a stale/leaked value. */
+    seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
+    st.pps_priority_table[0].pin_name[0] = '\0';    /* remove from PPS table */
+    g_test_live_state = DPLL_PIN_STATE_SELECTABLE;
+    update_pin_states(&st, sock);
+    if (st.pin_states[src].pps_priority != -1) {
+        printf("FAIL case13: expected pps_priority=-1 when pin absent from PPS table, got %d\n",
+               st.pin_states[src].pps_priority); fails++;
+    } else printf("PASS case13: pin absent from PPS table -> pps_priority=-1 (unset)\n");
+
+    /* CASE 14 — PPS-ONLY pin: a pin whose only parent is the PPS device must
+     * publish pps_state from that device and must NOT borrow it into eec_state.
+     * Pre-seed eec_state to a distinct value and assert it is left untouched
+     * (no cross-engine fallback). */
+    seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
+    st.pin_states[src].eec_state = DPLL_PIN_STATE_CONNECTED;  /* pre-existing EEC value */
+    g_test_single = 1; g_test_single_id = st.pps_dpll_device_id;  /* PPS parent only */
+    g_test_live_state = DPLL_PIN_STATE_SELECTABLE;
+    update_pin_states(&st, sock);
+    if (st.pin_states[src].pps_state != DPLL_PIN_STATE_SELECTABLE ||
+        st.pin_states[src].eec_state != DPLL_PIN_STATE_CONNECTED) {
+        printf("FAIL case14: PPS-only pin — expected pps=SELECTABLE eec untouched(CONNECTED), "
+               "got pps=%d eec=%d\n",
+               st.pin_states[src].pps_state, st.pin_states[src].eec_state); fails++;
+    } else printf("PASS case14: PPS-only pin — pps from device, eec left untouched (no borrow)\n");
+
+    /* CASE 15 — EEC-ONLY pin (mirror): only parent is the EEC device. eec_state
+     * follows it; pps_state must NOT be populated from the EEC entry. */
+    seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
+    st.pin_states[src].pps_state = DPLL_PIN_STATE_CONNECTED;  /* pre-existing PPS value */
+    g_test_single = 1; g_test_single_id = st.eec_dpll_device_id;  /* EEC parent only */
+    g_test_live_state = DPLL_PIN_STATE_DISCONNECTED;
+    update_pin_states(&st, sock);
+    if (st.pin_states[src].eec_state != DPLL_PIN_STATE_DISCONNECTED ||
+        st.pin_states[src].pps_state != DPLL_PIN_STATE_CONNECTED) {
+        printf("FAIL case15: EEC-only pin — expected eec=DISCONNECTED pps untouched(CONNECTED), "
+               "got eec=%d pps=%d\n",
+               st.pin_states[src].eec_state, st.pin_states[src].pps_state); fails++;
+    } else printf("PASS case15: EEC-only pin — eec from device, pps left untouched (no borrow)\n");
 
     if (fails) { printf("\n%d assertion(s) FAILED\n", fails); return 1; }
     printf("\nAll update_pin_states live-read assertions PASSED\n");
