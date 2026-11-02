@@ -287,7 +287,7 @@ static int get_gnss_parameters(AppState *state, enum pin_source master_index)
         return -1;
     }
     
-    pr_info("Getting parameters from GNSS (connected, fix quality: %d)\n", gnss_params.clock_quality);
+    pr_dbg("Getting parameters from GNSS (connected, fix quality: %d)\n", gnss_params.clock_quality);
     
     /* Update ONLY dynamically changeable parameters with live GNSS data */
     /* Static parameters (time_source, ptp_timescale) are preserved from config */
@@ -972,6 +972,31 @@ last:
  * Iterates configured pins in the EEC priority table and queries their
  * current state from the DPLL subsystem.  Results cached in state->pin_states[].
  */
+/**
+ * pps_priority_for_pin - Look up a pin's priority in the PPS (dpll1) table.
+ * @state: Application state (holds pps_priority_table[])
+ * @pin_name: Pin name to match (e.g. "SDP0_REF0N")
+ *
+ * The EEC (dpll0) and PPS (dpll1) priority tables are parsed independently from
+ * the two config maps and a pin may carry a different priority on each engine
+ * (e.g. SDP0 is DNU/15 on EEC but 0/12 on PPS). The EEC loop in
+ * update_pin_states() drives the pin set; this resolves the matching PPS-table
+ * entry by name so both engine priorities can be published.
+ *
+ * Returns: the PPS priority, or -1 if the pin is not present in the PPS table.
+ */
+static int pps_priority_for_pin(const AppState *state, const char *pin_name)
+{
+    for (int i = 0; i < 16; i++) {
+        if (state->pps_priority_table[i].pin_name[0] == '\0')
+            continue;
+        if (strncmp(state->pps_priority_table[i].pin_name, pin_name,
+                    sizeof(((PinPriorityEntry*)0)->pin_name)) == 0)
+            return state->pps_priority_table[i].priority;
+    }
+    return -1;
+}
+
 static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
 {
     if (!dpll_sock)
@@ -994,9 +1019,13 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
      * from the DPLL regardless of restart or missed events.
      *
      * One unfiltered pin dump per call (cheap, same socket the main loop already
-     * uses). parent_device[] carries per-device state; the PPS device entry is
-     * the one that drives SDP/REF failover (matches dpll_phase_adjust.c, which
-     * reads parent_device[1]). */
+     * uses). parent_device[] carries per-device state; a pin may be parented by
+     * BOTH the EEC (DPLL0, frequency) and PPS (DPLL1, phase) engines of the same
+     * chip, with independent state on each. We record both so the published map
+     * reflects the two engines separately (an SDP backhaul pin is permanently
+     * disconnected on EEC but selectable/connected on PPS — collapsing them into
+     * one value is misleading). The PPS device drives SDP/REF failover and
+     * current_master (matches dpll_phase_adjust.c). */
     struct dpll_pin_get_list *pin_list = dpll_pin_dump(dpll_sock, 0);
 
     /* Track whether any configured input pin's freshly-read state differs from
@@ -1017,15 +1046,22 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
         if (src == PIN_SOURCE_UNKNOWN || src > PIN_SOURCE_INT_OSC)
             continue;
 
-        state->pin_states[src].priority = state->eec_priority_table[i].priority;
+        /* Per-engine priority: EEC from this (dpll0) table; PPS from the dpll1
+         * table matched by pin name. A pin present only in the EEC map surfaces
+         * pps_priority = -1 (unset). */
+        state->pin_states[src].eec_priority = state->eec_priority_table[i].priority;
+        state->pin_states[src].pps_priority =
+            pps_priority_for_pin(state, state->eec_priority_table[i].pin_name);
         state->pin_states[src].valid = true;
 
-        /* Snapshot the previously published state so we can detect a change
-         * once the live read (or fallback) sets the new value below. */
-        enum dpll_pin_state prev_pin_state = state->pin_states[src].state;
+        /* Snapshot the previously published per-engine states so we can detect a
+         * change (on either engine) once the live read (or fallback) sets the
+         * new values below. */
+        enum dpll_pin_state prev_eec = state->pin_states[src].eec_state;
+        enum dpll_pin_state prev_pps = state->pin_states[src].pps_state;
 
         /* Find this configured pin in the live dump by its package label and
-         * take the hardware pin state directly. */
+         * take the hardware pin state directly, per engine. */
         const char *plabel = state->eec_priority_table[i].package_label;
         bool found_live = false;
         if (pin_list && plabel[0] != '\0') {
@@ -1034,35 +1070,47 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
                     strncmp(p->obj.package_label, plabel, sizeof(((PinPriorityEntry*)0)->package_label)) != 0)
                     continue;
                 /* A pin can be parented by both DPLL engines (e.g. SDP0_REF0N
-                 * hangs off both the EEC and the PPS device). The PPS device is
-                 * the operative one for SDP/REF failover; the EEC entry stays
-                 * permanently "disconnected" by design on a 1PPS backhaul.
-                 * Selecting by array index is fragile — on some hosts the EEC
-                 * entry sorts first (index 0), so an index-based choice
-                 * publishes the EEC pin's permanent "disconnected" while the
-                 * PPS pin is "selectable". Select by device identity instead:
-                 * prefer the PPS device (parent_id == pps_dpll_device_id), then
-                 * any non-EEC device, then the first entry carrying a state. */
+                 * hangs off both the EEC and the PPS device) with different
+                 * state on each. Record each engine's state by device identity:
+                 * parent_id == eec_dpll_device_id -> EEC, == pps_dpll_device_id
+                 * -> PPS. Each engine field is populated ONLY from its own
+                 * device: an engine with no matching parent keeps its previous
+                 * value rather than borrowing the other engine's state, which
+                 * would reintroduce the single-object ambiguity this split
+                 * removes (e.g. a PPS-only pin must not publish its PPS state as
+                 * the EEC state, nor vice-versa). A non-EEC parent whose id is
+                 * neither the EEC nor the PPS device id is treated as the PPS
+                 * engine by elimination (on a 2-engine chip the phase/PPS DPLL
+                 * is the only other parent of an input pin). */
                 if (p->obj.parent_device && p->obj.n_parent_device >= 1) {
+                    struct dpll_pin_parent_device *eec = NULL;
                     struct dpll_pin_parent_device *pps = NULL;
                     struct dpll_pin_parent_device *non_eec = NULL;
-                    struct dpll_pin_parent_device *any = NULL;
                     for (unsigned j = 0; j < p->obj.n_parent_device; j++) {
                         struct dpll_pin_parent_device *pd = &p->obj.parent_device[j];
                         if (!pd->_present.state)
                             continue;
                         if (pd->parent_id == state->pps_dpll_device_id)
                             pps = pd;
-                        else if (pd->parent_id != state->eec_dpll_device_id && !non_eec)
+                        else if (pd->parent_id == state->eec_dpll_device_id)
+                            eec = pd;
+                        else if (!non_eec)
                             non_eec = pd;
-                        if (!any)
-                            any = pd;
                     }
-                    struct dpll_pin_parent_device *chosen =
-                        pps ? pps : (non_eec ? non_eec : any);
-                    if (chosen) {
-                        state->pin_states[src].state =
-                            (enum dpll_pin_state)chosen->state;
+                    /* PPS: the PPS device, else a non-EEC parent (PPS by
+                     * elimination). No EEC fallback. */
+                    struct dpll_pin_parent_device *pps_choice =
+                        pps ? pps : non_eec;
+                    /* EEC: the EEC device only. No cross-engine fallback. */
+                    struct dpll_pin_parent_device *eec_choice = eec;
+                    if (pps_choice) {
+                        state->pin_states[src].pps_state =
+                            (enum dpll_pin_state)pps_choice->state;
+                        found_live = true;
+                    }
+                    if (eec_choice) {
+                        state->pin_states[src].eec_state =
+                            (enum dpll_pin_state)eec_choice->state;
                         found_live = true;
                     }
                 }
@@ -1075,17 +1123,23 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
 
         /* Defensive fallback (dump failed or pin not in dump): retain the prior
          * best-effort derivation so a transient dump failure does not blank the
-         * map. This path is NOT the normal case. */
-        if (state->lock_status == DPLL_LOCK_STATUS_LOCKED ||
-            state->lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ) {
-            if (state->current_master == src)
-                state->pin_states[src].state = DPLL_PIN_STATE_CONNECTED;
-            else if (is_ptp_pin(src))
-                state->pin_states[src].state = state->ptp_pin_state;
-            else
-                state->pin_states[src].state = DPLL_PIN_STATE_SELECTABLE;
-        } else {
-            state->pin_states[src].state = DPLL_PIN_STATE_DISCONNECTED;
+         * map. Apply the same derived value to both engines (this path is NOT
+         * the normal case and has no per-engine information). */
+        {
+            enum dpll_pin_state derived;
+            if (state->lock_status == DPLL_LOCK_STATUS_LOCKED ||
+                state->lock_status == DPLL_LOCK_STATUS_LOCKED_HO_ACQ) {
+                if (state->current_master == src)
+                    derived = DPLL_PIN_STATE_CONNECTED;
+                else if (is_ptp_pin(src))
+                    derived = state->ptp_pin_state;
+                else
+                    derived = DPLL_PIN_STATE_SELECTABLE;
+            } else {
+                derived = DPLL_PIN_STATE_DISCONNECTED;
+            }
+            state->pin_states[src].eec_state = derived;
+            state->pin_states[src].pps_state = derived;
         }
 
 detect_change:
@@ -1095,12 +1149,13 @@ detect_change:
          * GNSS/SyncE pin transitioning while another source stays master) with
          * no such transition, which would leave the file latched at the stale
          * value. Flag the change so we write once below. Fires on a change to
-         * ANY configured input pin the map publishes (not just the SDP/PTP
-         * pins) — a standby pin changing without a master transition must still
-         * converge the file. Runs on BOTH the live-read and fallback paths —
-         * the live-read path is the one this guards. (Same mechanism as the
-         * port up/down handlers' use of refresh_pin_states_and_write().) */
-        if (state->pin_states[src].state != prev_pin_state)
+         * EITHER engine of ANY configured input pin the map publishes (not just
+         * the SDP/PTP pins) — a standby pin changing without a master transition
+         * must still converge the file. Runs on BOTH the live-read and fallback
+         * paths — the live-read path is the one this guards. (Same mechanism as
+         * the port up/down handlers' use of refresh_pin_states_and_write().) */
+        if (state->pin_states[src].eec_state != prev_eec ||
+            state->pin_states[src].pps_state != prev_pps)
             pin_changed = true;
     }
 
@@ -1198,7 +1253,7 @@ static void handle_gnss_source_up(AppState *state)
         return;
 
     update_pin_states(state, state->dpll_sock);
-    enum dpll_pin_state pps_live = state->pin_states[GNSS_REF4P].state;
+    enum dpll_pin_state pps_live = state->pin_states[GNSS_REF4P].pps_state;
 
     pr_info("Enabling GNSS pin REF4P (both DPLL devices): ts2phc alive again\n");
     /* Both device IDs are always valid here (resolved at startup); do NOT guard

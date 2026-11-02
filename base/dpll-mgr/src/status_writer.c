@@ -54,6 +54,16 @@ static const char *gear_to_string(uint8_t gear)
     }
 }
 
+static const char *pin_state_to_string(enum dpll_pin_state st)
+{
+    switch (st) {
+    case DPLL_PIN_STATE_CONNECTED:    return "connected";
+    case DPLL_PIN_STATE_SELECTABLE:   return "selectable";
+    case DPLL_PIN_STATE_DISCONNECTED: return "disconnected";
+    default:                          return "unknown";
+    }
+}
+
 static const char *port_state_to_string(uint8_t state)
 {
     /* Values from IEEE 1588 / linuxptp port_state enum */
@@ -160,22 +170,39 @@ void write_status_json(const AppState *state)
     /* Boot grace: consumers suppress "unlocked" alarm until ever_locked=true */
     cJSON_AddBoolToObject(root, "ever_locked", state->ever_locked);
 
-    /* Per-pin DPLL state — shows each configured pin's state and priority */
+    /* Per-pin DPLL state — each configured pin is published per engine:
+     * "eec" (DPLL0, frequency) and "pps" (DPLL1, phase). A pin can differ
+     * between the two engines (e.g. an SDP backhaul pin is disconnected/DNU on
+     * EEC but selectable/connected on PPS), so each carries its own state and
+     * priority rather than collapsing into one potentially contradictory
+     * object. The "priority" key is the pin's configured priority on that
+     * engine. It is omitted on the "pps" object when the pin is absent from the
+     * PPS priority map (the EEC map always drives the pin set, so "eec" always
+     * carries a priority); an absent key means "unset", avoiding a sentinel
+     * number that a consumer could misread as a real (low) priority. */
     cJSON *pins = cJSON_CreateObject();
     for (int i = 0; i <= PIN_SOURCE_INT_OSC; i++) {
         if (!state->pin_states[i].valid)
             continue;
         cJSON *pin_obj = cJSON_CreateObject();
-        const char *state_str;
-        switch (state->pin_states[i].state) {
-        case DPLL_PIN_STATE_CONNECTED:    state_str = "connected"; break;
-        case DPLL_PIN_STATE_SELECTABLE:   state_str = "selectable"; break;
-        case DPLL_PIN_STATE_DISCONNECTED: state_str = "disconnected"; break;
-        default:                          state_str = "unknown"; break;
-        }
-        cJSON_AddStringToObject(pin_obj, "state", state_str);
-        cJSON_AddNumberToObject(pin_obj, "priority",
-                                (double)state->pin_states[i].priority);
+
+        cJSON *eec = cJSON_CreateObject();
+        cJSON_AddStringToObject(eec, "state",
+                                pin_state_to_string(state->pin_states[i].eec_state));
+        cJSON_AddNumberToObject(eec, "priority",
+                                (double)state->pin_states[i].eec_priority);
+        cJSON_AddItemToObject(pin_obj, "eec", eec);
+
+        cJSON *pps = cJSON_CreateObject();
+        cJSON_AddStringToObject(pps, "state",
+                                pin_state_to_string(state->pin_states[i].pps_state));
+        /* Omit priority when unset (pin absent from the PPS map) rather than
+         * publishing the -1 sentinel as a number. */
+        if (state->pin_states[i].pps_priority >= 0)
+            cJSON_AddNumberToObject(pps, "priority",
+                                    (double)state->pin_states[i].pps_priority);
+        cJSON_AddItemToObject(pin_obj, "pps", pps);
+
         cJSON_AddItemToObject(pins, pin_source_to_string((enum pin_source)i), pin_obj);
     }
     cJSON_AddItemToObject(root, "pins", pins);

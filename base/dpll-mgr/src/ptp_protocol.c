@@ -478,7 +478,7 @@ void process_time_status_np(AppState *state, const uint8_t *data, size_t data_le
  */
 void process_parent_data_set(AppState *state, const uint8_t *data, size_t data_len)
 {
-    pr_info("Processing PARENT_DATA_SET response (data_len=%zu)\n", data_len);
+    pr_dbg("Processing PARENT_DATA_SET response (data_len=%zu)\n", data_len);
     
     if (!state) {
         pr_err("Invalid state pointer in process_parent_data_set\n");
@@ -1105,8 +1105,8 @@ void reconcile_ptp_pins(AppState *state)
 
     /* Compare against the LIVE REF0N state refreshed by update_pin_states()
      * this cycle (SDP0_REF0N == REF0N on the PPS device). pin_states[] holds
-     * the hardware truth, so this self-heals a decayed pin. */
-    enum dpll_pin_state live = state->pin_states[SDP0_REF0N].state;
+     * the hardware truth per engine, so this self-heals a decayed pin. */
+    enum dpll_pin_state live = state->pin_states[SDP0_REF0N].pps_state;
 
     /* CONNECTED means the DPLL selection algorithm has already picked the pin
      * as the active reference — that is a strictly "more enabled" state than
