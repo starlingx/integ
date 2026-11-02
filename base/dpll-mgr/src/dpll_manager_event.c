@@ -206,6 +206,12 @@ void run_main_loop(AppState *state, struct ynl_sock *dpll_sock)
          * subscription is compiled out. */
         ptp_check_liveness(state);
 
+        /* GNSS-side liveness: probe ts2phc on its own cadence and toggle REF4P
+         * selectable<->disconnected on a confirmed edge. Symmetric to
+         * ptp_check_liveness for the backhaul. SW_BASED only; no-ops if ts2_0
+         * is unconfigured, and self-rate-limited to TS2PHC_PROBE_INTERVAL_SEC. */
+        ts2phc_liveness_tick(state);
+
         /* Re-evaluate holdover tiers on poll timeout. During holdover, no
          * DPLL notifications arrive (hardware state is static), so tier
          * progression must be checked periodically. The 1s poll timeout

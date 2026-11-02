@@ -76,6 +76,15 @@
  */
 #define PTP_LIVENESS_TIMEOUT_SEC 75
 
+/* GNSS-side liveness (ts2phc). The raw GNSS 1PPS into the DPLL REF4P pin keeps
+ * pulsing even when ts2phc (the service that disciplines the PHC from the GNSS
+ * 1PPS) is dead, so the DPLL would otherwise hold a stale lock on an
+ * undisciplined reference. Probe ts2phc over its UDS on this cadence; after
+ * this many consecutive no-replies, treat the GNSS source as down and
+ * disconnect REF4P. Symmetric to the ptp4l/SDP0 liveness (2 strikes). */
+#define TS2PHC_PROBE_INTERVAL_SEC 5
+#define TS2PHC_PROBE_FAIL_STRIKES 2
+
 /* Note: LogLevel enum and g_log_level are defined in dpll.h */
 
 /* PTP Management Protocol Constants */
@@ -251,6 +260,14 @@ typedef struct {
      * ptp_protocol.c (ptp_check_liveness / ptp_note_subscription_result). */
     struct timespec last_ptp_rx_time;  /* Monotonic time of last message RX from ptp4l */
     int subscription_fail_count;       /* Consecutive subscription-send failures (any cause: gone socket, EAGAIN, partial send) */
+
+    /* GNSS/ts2phc liveness detection (SW_BASED) — symmetric to the ptp4l/SDP0
+     * liveness above. Probe ts2phc over its UDS (ts2_0); on repeated no-reply,
+     * disconnect REF4P so the DPLL stops trusting the undisciplined GNSS 1PPS
+     * and fails over / drops to holdover. */
+    bool ts2phc_down;                   /* Sticky: true while ts2phc is judged dead */
+    int  ts2phc_probe_fail_count;       /* Consecutive ts2phc probe failures */
+    struct timespec last_ts2phc_probe;  /* Monotonic time of last ts2phc probe */
     
     /* Track current master source */
     enum pin_source current_master;  /* Current master source pin */
@@ -332,6 +349,11 @@ void refresh_pin_states_and_write(AppState *state);
 /* steady-state pin reconciliation for the event-loop 1 s timeout
  * (observe live pin cache + reconcile_ptp_pins). See definition. */
 void reconcile_tick(AppState *state);
+
+/* GNSS/ts2phc liveness tick for the event-loop 1 s timeout (SW_BASED): probes
+ * ts2phc on its own cadence and toggles REF4P selectable<->disconnected on a
+ * confirmed liveness edge. See definition. */
+void ts2phc_liveness_tick(AppState *state);
 
 /**
  * run_main_loop - Main application loop

@@ -10,10 +10,11 @@ LDLIBS  := -lgps -lcjson -lsystemd
 YNL_OBJS := obj_test/ynl.o obj_test/dpll-user.o
 
 .PHONY: test clean
-test: run_test run_test_reconcile run_test_getreply
+test: run_test run_test_reconcile run_test_getreply run_test_ts2phc
 	./run_test
 	./run_test_reconcile
 	./run_test_getreply
+	./run_test_ts2phc
 
 run_test: tests/test_update_pin_states.c $(YNL_OBJS)
 	$(CC) $(CFLAGS) tests/test_update_pin_states.c $(YNL_OBJS) -o run_test $(LDLIBS)
@@ -24,9 +25,12 @@ run_test_reconcile: tests/test_reconcile_ptp_pins.c $(YNL_OBJS)
 run_test_getreply: tests/test_get_and_wait_reply.c $(YNL_OBJS)
 	$(CC) $(CFLAGS) tests/test_get_and_wait_reply.c $(YNL_OBJS) -o run_test_getreply $(LDLIBS)
 
+run_test_ts2phc: tests/test_ts2phc_liveness.c $(YNL_OBJS)
+	$(CC) $(CFLAGS) tests/test_ts2phc_liveness.c $(YNL_OBJS) -o run_test_ts2phc $(LDLIBS)
+
 obj_test/%.o: ynl/%.c
 	@mkdir -p obj_test
 	$(CC) -std=gnu11 -O0 -Wall -Wno-unused-parameter -Wno-sign-compare -Iinclude -I. -c $< -o $@
 
 clean:
-	rm -rf obj_test run_test run_test_reconcile
+	rm -rf obj_test run_test run_test_reconcile run_test_getreply run_test_ts2phc

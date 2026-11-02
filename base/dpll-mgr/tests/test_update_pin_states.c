@@ -124,6 +124,13 @@ struct ynl_sock *ys;
 int  gnss_init(const gnss_config_t *config) { (void)config; return 0; }
 const ChannelConfig* config_get_channel(const char *name) { (void)name; return NULL; }
 /* Added by the stacked reconcile/GET-reply commits; not exercised by update_pin_states. */
+/* GNSS/ts2phc liveness probe (gearshift.c) — referenced by ts2phc_liveness_tick
+ * in the TU; not exercised by update_pin_states. */
+bool ts2phc_probe_alive(AppState *s) { (void)s; return true; }
+/* dpll_pin_set_state (dpll_utils.c) — referenced by handle_gnss_source_down/up
+ * in the TU; not exercised by update_pin_states. */
+int dpll_pin_set_state(struct ynl_sock *y, __u32 d, char *l, int st) {
+    (void)y; (void)d; (void)l; (void)st; return 0; }
 
 /* --- helpers --------------------------------------------------------------- */
 static void seed_one_pin(AppState *st, const char *pin_name, const char *pkg, int prio) {
