@@ -2,8 +2,13 @@
  * test_update_pin_states.c regression test
  *
  * Proves update_pin_states() serializes LIVE DPLL pin state (from dpll_pin_dump)
- * rather than the in-memory ptp_pin_state flag. These assertions FAIL against the
- * pre-fix synthesis implementation and PASS against the live-read fix.
+ * rather than the in-memory ptp_pin_state flag, and that a configured input pin
+ * changing without a master/lock transition converges status.json. Cases 8-10
+ * cover a GNSS STANDBY pin (not a PTP pin): its state change must flush
+ * status.json too — this FAILS against a write-trigger scoped to PTP pins only
+ * and PASSES once the trigger fires on any configured input pin. These
+ * assertions FAIL against the pre-fix synthesis implementation and PASS against
+ * the live-read fix.
  *
  * update_pin_states() is static, so we #include the translation unit and stub the
  * DPLL / IO dependencies it calls. No external test framework (first harness for
@@ -234,6 +239,45 @@ int main(void) {
         printf("FAIL case7: expected no write when unchanged, got writes=%d\n",
                g_write_status_json_calls); fails++;
     } else printf("PASS case7: steady PTP pin -> no redundant status.json write\n");
+
+    /* CASE 8 — GNSS STANDBY pin change DISCONNECTED -> SELECTABLE with no
+     * master/lock transition must trigger exactly one status.json write. This
+     * is the regression that FAILS on the is_ptp_pin-scoped trigger (GNSS is
+     * not a PTP pin, so the pre-fix code never flushed a GNSS-standby change)
+     * and PASSES once the write-trigger fires on ANY configured input pin. The
+     * GNSS pin is a non-master standby here (current_master = UNKNOWN). */
+    enum pin_source gsrc = pin_name_to_enum("GNSS_REF4P");
+    seed_one_pin(&st, "GNSS_REF4P", "GNSS_1PPS_IN", 12);
+    g_test_live_state = DPLL_PIN_STATE_DISCONNECTED;     /* standby gone (holdover left it so) */
+    update_pin_states(&st, sock);                        /* publishes DISCONNECTED */
+    g_write_status_json_calls = 0;
+    g_test_live_state = DPLL_PIN_STATE_SELECTABLE;        /* GNSS re-armed as standby */
+    update_pin_states(&st, sock);
+    if (st.pin_states[gsrc].state != DPLL_PIN_STATE_SELECTABLE || g_write_status_json_calls != 1) {
+        printf("FAIL case8: expected SELECTABLE + 1 write on GNSS standby change, "
+               "got state=%d writes=%d\n", st.pin_states[gsrc].state, g_write_status_json_calls);
+        fails++;
+    } else printf("PASS case8: GNSS standby recover (disc->sel) -> wrote status.json once\n");
+
+    /* CASE 9 — mirror edge: GNSS STANDBY pin change SELECTABLE -> DISCONNECTED
+     * with no master transition must also flush exactly once (direction-
+     * agnostic != prev test). */
+    g_write_status_json_calls = 0;
+    g_test_live_state = DPLL_PIN_STATE_DISCONNECTED;      /* GNSS standby degrades */
+    update_pin_states(&st, sock);
+    if (st.pin_states[gsrc].state != DPLL_PIN_STATE_DISCONNECTED || g_write_status_json_calls != 1) {
+        printf("FAIL case9: expected DISCONNECTED + 1 write on GNSS standby degrade, "
+               "got state=%d writes=%d\n", st.pin_states[gsrc].state, g_write_status_json_calls);
+        fails++;
+    } else printf("PASS case9: GNSS standby degrade (sel->disc) -> wrote status.json once\n");
+
+    /* CASE 10 — GNSS steady tick: no extra write (change-gated, no write-storm). */
+    g_write_status_json_calls = 0;
+    update_pin_states(&st, sock);                        /* still DISCONNECTED */
+    if (g_write_status_json_calls != 0) {
+        printf("FAIL case10: expected no write when GNSS unchanged, got writes=%d\n",
+               g_write_status_json_calls); fails++;
+    } else printf("PASS case10: steady GNSS standby pin -> no redundant status.json write\n");
 
     if (fails) { printf("\n%d assertion(s) FAILED\n", fails); return 1; }
     printf("\nAll update_pin_states live-read assertions PASSED\n");

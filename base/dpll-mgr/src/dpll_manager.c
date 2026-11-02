@@ -999,13 +999,14 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
      * reads parent_device[1]). */
     struct dpll_pin_get_list *pin_list = dpll_pin_dump(dpll_sock, 0);
 
-    /* Track whether any PTP pin's freshly-read state differs from what was last
-     * published, so we can converge status.json after an event that does not
-     * change the master/lock (e.g. the backhaul settling from a transient
-     * "disconnected" to "selectable" after a ptp-instance-apply). Writing only
-     * on an actual change keeps the live read as the source of truth and does
-     * not perturb the per-tick reconcile. */
-    bool ptp_pin_changed = false;
+    /* Track whether any configured input pin's freshly-read state differs from
+     * what was last published, so we can converge status.json after an event
+     * that does not change the master/lock (e.g. the backhaul settling from a
+     * transient "disconnected" to "selectable" after a ptp-instance-apply, or a
+     * standby pin like GNSS or SyncE transitioning while another source stays
+     * master). Writing only on an actual change keeps the live read as the
+     * source of truth and does not perturb the per-tick reconcile. */
+    bool pin_changed = false;
 
     /* Iterate EEC priority table — these are the configured input pins */
     for (int i = 0; i < 16; i++) {
@@ -1089,22 +1090,26 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
 
 detect_change:
         /* status.json otherwise only gets rewritten on a master/lock change. A
-         * PTP pin can settle (transient DISCONNECTED -> SELECTABLE after a
-         * ptp-instance-apply) with no such transition, which would leave the
-         * file latched at the transient value. Flag the change so we write once
-         * below. Runs on BOTH the live-read and fallback paths — the live-read
-         * path is the one this guards. (Same mechanism as the port up/down
-         * handlers' use of refresh_pin_states_and_write().) */
-        if (is_ptp_pin(src) && state->pin_states[src].state != prev_pin_state)
-            ptp_pin_changed = true;
+         * configured input pin can settle (e.g. a backhaul pin going transient
+         * DISCONNECTED -> SELECTABLE after a ptp-instance-apply, or a standby
+         * GNSS/SyncE pin transitioning while another source stays master) with
+         * no such transition, which would leave the file latched at the stale
+         * value. Flag the change so we write once below. Fires on a change to
+         * ANY configured input pin the map publishes (not just the SDP/PTP
+         * pins) — a standby pin changing without a master transition must still
+         * converge the file. Runs on BOTH the live-read and fallback paths —
+         * the live-read path is the one this guards. (Same mechanism as the
+         * port up/down handlers' use of refresh_pin_states_and_write().) */
+        if (state->pin_states[src].state != prev_pin_state)
+            pin_changed = true;
     }
 
     if (pin_list)
         dpll_pin_get_list_free(pin_list);
 
-    /* Converge the published map when a PTP pin changed without a master/lock
-     * transition. Only writes on an actual change. */
-    if (ptp_pin_changed)
+    /* Converge the published map when a configured input pin changed without a
+     * master/lock transition. Only writes on an actual change. */
+    if (pin_changed)
         write_status_json(state);
 }
 
