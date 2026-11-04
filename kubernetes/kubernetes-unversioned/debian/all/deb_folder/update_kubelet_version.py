@@ -39,6 +39,7 @@ NODETYPE_CONTROLLER = 'controller'
 NODETYPE_WORKER = 'worker'
 OSTREE1_USM_UPGRADE_IN_PROGRESS = '/ostree/1/etc/platform/.usm_upgrade_in_progress'
 PLATFORM_FILE = '/etc/platform/platform.conf'
+RETRIES = 3
 SIMPLEX = 'simplex'
 
 
@@ -108,7 +109,7 @@ class KubeletVersionUpdateManager(object):
                         "may fail if it is being attempted." % (KUBELET_VERSION_FILE))
             sys.exit(0)
 
-    def _execute(self, command):
+    def _execute(self, command, timeout=60):
         """Helper method to execute a shell command, capture output, and avoid zombie processes.
 
         :param command: The shell command to execute.
@@ -123,16 +124,16 @@ class KubeletVersionUpdateManager(object):
                                   stdout=subprocess.PIPE,
                                   shell=True,
                                   universal_newlines=True) as process:
-                stdout, stderr = process.communicate(timeout=5)
+                stdout, stderr = process.communicate(timeout=timeout)
 
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
             process.kill()
             process.communicate()  # Reap the process to avoid zombie
             LOG.error("Command '%s' timed out", command)
-            return ("", "")
+            raise e
         except Exception as e:
             LOG.error("Could not execute command '%s': %s", command, e)
-            return ("", "")
+            raise e
 
         return (stdout, stderr)
 
@@ -218,8 +219,7 @@ class KubeletVersionUpdateManager(object):
             LOG.info("crictl image pull [%s] started." % (image))
 
             cmd = f"crictl pull --creds {crictl_auth}, {image}"
-            self._execute(
-                cmd, attempts=attempts, delay_on_retry=delay_on_retry, check_exit_code=0)
+            self._execute(cmd)
         except Exception as e:
             raise Exception("crictl pull for image [%s] failed: "
                             "Error: [%s]" % (image, e))
@@ -259,7 +259,9 @@ class KubeletVersionUpdateManager(object):
         try:
             kubeadm_path = KUBEADM_PATH_FORMAT_STR.format(kubeadm_ver=kube_version)
             cmd = f"{kubeadm_path} config images list --kubernetes-version {kube_version}"
-            stdout, _ = self._execute(cmd)
+            stdout, stderr = self._execute(cmd)
+            if stderr:
+                raise Exception("Error executing command %s: %s." % (cmd, stderr))
             images = stdout.split()
             # It may be feasible to do below parsing wherever required but doing it once will
             # make it easier and efficient to access using image name whenever required. So do
@@ -303,10 +305,16 @@ class KubeletVersionUpdateManager(object):
         """
         try:
             current_images = self._get_k8s_images(from_kubelet_version)
-            current_pause_image = current_images['pause']
+            current_pause_image = current_images.get('pause', None)
+            if not current_pause_image:
+                raise Exception("Pause image not found in the current kubelet version images: %s"
+                                % (current_images))
 
             target_images = self._get_k8s_images(to_kubelet_version)
-            target_pause_image = target_images['pause']
+            target_pause_image = target_images.get('pause', None)
+            if not target_pause_image:
+                raise Exception("Pause image not found in the target kubelet version images: %s"
+                                % (target_images))
 
             if current_pause_image == target_pause_image:
                 LOG.info("No need to update 'pause' image inside containerd config. Proceeding...")
@@ -362,7 +370,7 @@ class KubeletVersionUpdateManager(object):
     def update_kubelet_version(self, upgrade=True):
         """Update kubelet version on this host
 
-        Updates kubelet to the version retrived from file /etc/kubernetes/kubelet_version
+        Updates kubelet to the version retrieved from file /etc/kubernetes/kubelet_version
         By default it does an upgrade as of now. But in future it can be extended to support
         rollback with only minimal changes
 
@@ -403,7 +411,17 @@ def main():
     try:
         setup_logger()
         manager = KubeletVersionUpdateManager()
-        manager.update_kubelet_version()
+        attempt = 0
+        while attempt < RETRIES:
+            try:
+                manager.update_kubelet_version()
+                break
+            except Exception as ex:
+                attempt += 1
+                if attempt == RETRIES:
+                    LOG.error("Failed to update kubelet version after %d attempts." % (RETRIES))
+                    raise ex
+                LOG.error("Error updating kubelet version: %s. Retrying... \n" % (ex))
     except Exception as ex:
         LOG.error("Error updating kubelet version %s" % (ex))
 
