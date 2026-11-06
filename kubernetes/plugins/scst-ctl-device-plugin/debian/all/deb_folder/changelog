@@ -1,0 +1,7 @@
+scst-ctl-device-plugin (1.0-1) unstable; urgency=medium
+
+  * Initial packaging. SCST control-device Kubernetes device plugin, built
+    with the distro Go toolchain from vendored dependencies so the gateway
+    plugin no longer compiles from a golang:1.24 image over the network.
+
+ -- Sai sirisha <SaiSirisha.Nagarakanti@windriver.com>  Wed, 15 Oct 2026 00:00:00 +0000
