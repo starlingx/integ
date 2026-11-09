@@ -1,7 +1,8 @@
 ---
-debver: 4.4.3-P1-7
+debver: 4.4.3-P1-8
 debname: isc-dhcp
-archive: https://snapshot.debian.org/archive/debian/20250522T031058Z/pool/main/i/isc-dhcp/
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/i/isc-dhcp/
+dsc_sha256: 8f11305d0d978e60114f596615b2cd605004802bb42587a95bf0806211880723
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
