@@ -1,10 +1,8 @@
 ---
 debname: haproxy
-debver: 3.0.11-1
-dl_path:
-  name: haproxy-debian-3.0.11-1.tar.gz
-  url: https://salsa.debian.org/haproxy-team/haproxy/-/archive/debian/3.0.11-1/haproxy-debian-3.0.11-1.tar.gz
-  sha256sum: 4c796d9e64f962774ac9f488d8af4936464cd914926ebc1ef50f18d819e83477
+debver: 3.0.11-1+deb13u3
+archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/h/haproxy/
+dsc_sha256: 11e6fc6750be89dbe61e9ab2b338254957a2724d1f2b5d0b9ea707556a9ebb1f
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
