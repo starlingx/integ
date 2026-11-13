@@ -1,3 +1,26 @@
+dpll-mgr (1.2.0) stable; urgency=medium
+
+  * Add a status.json writer for external monitoring, with per-pin state
+    published per DPLL engine (EEC/PPS), derived from the live DPLL and
+    flushed on any input pin change
+  * Complete the source-level rename from apts_mgr to dpll-mgr
+  * Convert logging to syslog (pr_* macros)
+  * Add sd_notify lifecycle, systemd watchdog and configuration
+    validation
+  * Disconnect PTP pins when ptp4l is dead or wedged, and keep them
+    disconnected while it is dead
+  * Bound and sequence-match ptp4l management GET replies
+  * Source grandmaster presence from TIME_STATUS_NP instead of
+    PARENT_DATA_SET
+  * Reject an SDP lock and drop to holdover when the backhaul has no
+    grandmaster; reconcile REF0N selectability against live GM presence
+    on every tick
+  * Add ts2_1 gearshift support for the second (E830) fronthaul ts2phc
+  * Add GNSS-side (ts2phc) liveness detection
+  * Skip no-op DPLL pin state changes
+
+ -- Difu Hu <difu.hu@windriver.com>  Thu, 12 Nov 2026 11:45:00 -0500
+
 dpll-mgr (1.1.0) unstable; urgency=medium
 
   * Update to Intel apts_mgr July 3 2026 drop
