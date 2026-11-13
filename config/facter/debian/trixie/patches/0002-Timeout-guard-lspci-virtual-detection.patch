@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000002 Mon Sep 17 00:00:00 2001
+From: Sharang Bhardwaj <Sharang.Bhardwaj@windriver.com>
+Date: Wed, 4 Nov 2026 12:00:00 +0000
+Subject: [PATCH] Timeout guard lspci in virtual detection resolver
+
+Facter's virtualization detector runs a bare "lspci" (via the Lspci
+resolver) during fact gathering to compute the virtual/is_virtual facts.
+This happens on every puppet apply, including every runtime manifest
+apply.
+
+When an accelerator device's PCI config space is locked -- e.g. an Intel
+FEC VF held by a vfio-pci owner (vDU/DPDK) while sriov-fec-daemon issues
+a function level reset (FLR) -- a bare lspci blocks uninterruptibly in
+the kernel (pci_wait_cfg, D-state). Because facter runs synchronously
+before catalog compile, this freezes the entire puppet apply, which in
+turn stalls the sysinv config-apply pipeline and can fail subcloud
+upgrade activate (LP: 2172281).
+
+The virtualization facts cannot simply be blocklisted because the
+platform manifests consume is_virtual (postgresql, sm, params, dns), so
+the resolver is retained but the lspci call is bounded.
+
+A task in D-state ignores SIGTERM and SIGKILL until the kernel wait ends,
+so a wrapper that merely signals lspci cannot unblock facter, which waits
+on its direct child. Run lspci under "timeout -s KILL 5" and also pass
+Facter's own execution limit (6s). If lspci hangs, Facter kills the
+killable "timeout" wrapper and stops waiting; the stuck lspci is left
+orphaned until the kernel releases it. The resolver then returns no
+output and virtual detection falls through to "physical" instead of
+wedging the apply. On a healthy system lspci returns in milliseconds and
+is_virtual is unchanged.
+
+Signed-off-by: Sharang Bhardwaj <Sharang.Bhardwaj@windriver.com>
+---
+ lib/facter/resolvers/lspci.rb | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/lib/facter/resolvers/lspci.rb b/lib/facter/resolvers/lspci.rb
+index 1111111..2222222 100644
+--- a/lib/facter/resolvers/lspci.rb
++++ b/lib/facter/resolvers/lspci.rb
+@@ -18,8 +18,14 @@ module Facter
+         end
+ 
+         def lspci_command(fact_name)
+-          output = Facter::Core::Execution.execute('lspci', logger: log)
+-          return if output.empty?
++          # Bound the probe: a bare lspci can block uninterruptibly in the
++          # kernel (pci_wait_cfg) when a PCI device's config space is locked,
++          # e.g. an FEC VF held by a vfio-pci owner mid-FLR (LP: 2172281).
++          # If lspci is stuck in D-state it cannot be killed, so Facter's own
++          # limit (6s) kills the "timeout" wrapper and stops waiting; the stuck
++          # lspci is left orphaned. A timeout/empty result means "no VM found".
++          output = Facter::Core::Execution.execute('timeout -s KILL 5 lspci', logger: log, timeout: 6)
++          return if output.nil? || output.empty?
+ 
+           @fact_list[:vm] = retrieve_vm(output)
+           @fact_list[fact_name]
+-- 
+2.47.2
