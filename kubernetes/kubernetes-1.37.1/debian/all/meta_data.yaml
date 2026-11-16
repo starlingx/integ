@@ -1,0 +1,12 @@
+---
+debname: kubernetes-1.37.1
+debver: 1.37.1
+dl_path:
+  name: kubernetes-1.37.1.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.37.1.tar.gz
+  sha256sum: 89295ac375eb0fdfe68a0696d81be615771d6b27c7ad9bb675dc6ffd0d2ce5f3
+revision:
+  dist: ${STX_DIST}
+  GITREVCOUNT:
+    BASE_SRCREV: ee75d367809be0266ae814eb6bce096f5206ed1a
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.37.1
