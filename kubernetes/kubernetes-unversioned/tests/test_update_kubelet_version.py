@@ -269,7 +269,7 @@ class TestKubeletVersionUpdateManager(TestCase):
 
         ukv.main()
 
-        mock_get_current_kubelet_version.assert_called_once()
+        self.assertEqual(mock_get_current_kubelet_version.call_count, ukv.RETRIES)
         mock_get_k8s_images.assert_called()
         mock_file_open.assert_not_called()
         mock_os_path_join.assert_not_called()
@@ -308,7 +308,8 @@ class TestKubeletVersionUpdateManager(TestCase):
         p = mock.patch('update_kubelet_version.KubeletVersionUpdateManager._get_k8s_images',
                        mock_get_k8s_images)
         p.start().side_effect = [{'pause': fake_from_pause_image},
-                                 {'pause': fake_to_pause_image}]
+                                 {'pause': fake_to_pause_image}] * ukv.RETRIES
+
         self.addCleanup(p.stop)
 
         # Mock open inside method _update_pause_image_in_containerd
@@ -346,8 +347,8 @@ class TestKubeletVersionUpdateManager(TestCase):
 
         ukv.main()
 
-        mock_get_current_kubelet_version.assert_called_once()
-        self.assertEqual(mock_get_k8s_images.call_count, 2)
+        self.assertEqual(mock_get_current_kubelet_version.call_count, ukv.RETRIES)
+        self.assertEqual(mock_get_k8s_images.call_count, ukv.RETRIES * 2)
         mock_get_k8s_images.assert_has_calls(
             [mock.call(from_kubelet_version), mock.call(to_kubelet_version.strip('v'))],
             any_order=True
@@ -391,7 +392,7 @@ class TestKubeletVersionUpdateManager(TestCase):
         p = mock.patch('update_kubelet_version.KubeletVersionUpdateManager._get_k8s_images',
                        mock_get_k8s_images)
         p.start().side_effect = [{'pause': fake_from_pause_image},
-                                 {'pause': fake_to_pause_image}]
+                                 {'pause': fake_to_pause_image}] * ukv.RETRIES
         self.addCleanup(p.stop)
 
         # Mock open inside method _update_pause_image_in_containerd
@@ -429,8 +430,8 @@ class TestKubeletVersionUpdateManager(TestCase):
 
         ukv.main()
 
-        mock_get_current_kubelet_version.assert_called_once()
-        self.assertEqual(mock_get_k8s_images.call_count, 2)
+        self.assertEqual(mock_get_current_kubelet_version.call_count, ukv.RETRIES)
+        self.assertEqual(mock_get_k8s_images.call_count, ukv.RETRIES * 2)
         mock_get_k8s_images.assert_has_calls(
             [mock.call(from_kubelet_version), mock.call(to_kubelet_version.strip('v'))],
             any_order=True
@@ -474,7 +475,7 @@ class TestKubeletVersionUpdateManager(TestCase):
         p = mock.patch('update_kubelet_version.KubeletVersionUpdateManager._get_k8s_images',
                        mock_get_k8s_images)
         p.start().side_effect = [{'pause': fake_from_pause_image},
-                                 {'pause': fake_to_pause_image}]
+                                 {'pause': fake_to_pause_image}] * ukv.RETRIES
         self.addCleanup(p.stop)
 
         # Mock open inside method _update_pause_image_in_containerd
@@ -512,8 +513,8 @@ class TestKubeletVersionUpdateManager(TestCase):
 
         ukv.main()
 
-        mock_get_current_kubelet_version.assert_called_once()
-        self.assertEqual(mock_get_k8s_images.call_count, 2)
+        self.assertEqual(mock_get_current_kubelet_version.call_count, ukv.RETRIES)
+        self.assertEqual(mock_get_k8s_images.call_count, ukv.RETRIES * 2)
         mock_get_k8s_images.assert_has_calls(
             [mock.call(from_kubelet_version), mock.call(to_kubelet_version.strip('v'))],
             any_order=True
