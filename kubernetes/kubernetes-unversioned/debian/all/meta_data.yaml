@@ -3,9 +3,9 @@ debname: kubernetes-unversioned
 debver: 1.0-1
 dl_path:
   name: kubernetes-contrib-v1.18.1.tar.gz
-  url: https://github.com/kubernetes-retired/contrib/tarball/89f6948e24578fed2a90a87871b2263729f90ac3
-  md5sum: 9aa15af65ed89a7167b9520573bbdcd7
-  sha256sum: 97206b6c1ea8dc7cb6201f909c2d14fc68cf40faa4e2641cdefb8411e9403274
+  url: https://github.com/kubernetes-retired/contrib/archive/89f6948e24578fed2a90a87871b2263729f90ac3.tar.gz
+  md5sum: 9defbb510ef2f6ee633495038b8173b5
+  sha256sum: 16b6a39d1f7b6a9a4dd2e8117540843748c48a4b0c2ec95c9622e5cab2ff5399
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
