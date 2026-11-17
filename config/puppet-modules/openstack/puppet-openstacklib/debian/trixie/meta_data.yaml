@@ -1,7 +1,8 @@
 ---
 debname: puppet-module-openstacklib
 debver: 25.0.0-1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-openstacklib/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/p/puppet-module-openstacklib/
+dsc_sha256: 9d61012acd59b1cba897c972843a3c149e37ddf887701378467577d070ca2fbe
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

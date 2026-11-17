@@ -1,7 +1,8 @@
 ---
 debname: facter
 debver: 4.10.0-1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/f/facter/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/f/facter/
+dsc_sha256: 59ef3365a0087289addf0d9a62f93bdfe9b54306d4d290b5b944b52c458bd5c6
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

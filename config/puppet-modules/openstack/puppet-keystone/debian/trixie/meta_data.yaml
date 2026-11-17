@@ -1,7 +1,8 @@
 ---
 debname: puppet-module-keystone
 debver: 25.0.0-4
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-keystone/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/p/puppet-module-keystone/
+dsc_sha256: 1d371ca02064d15f2d41c263ce8e50b173c7b41e300fe327ef69a0d942ae257e
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

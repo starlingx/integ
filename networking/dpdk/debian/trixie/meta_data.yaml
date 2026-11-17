@@ -1,7 +1,8 @@
 ---
 debname: dpdk
-debver: 24.11.4-0+deb13u1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/d/dpdk/
+debver: 24.11.8-0+deb13u1
+archive: https://snapshot.debian.org/archive/debian-security/20261116T082553Z/pool/updates/main/d/dpdk/
+dsc_sha256: 4851fc9be83a07295a082d75ddd871133295ab739471a98835d61aa9bab831f7
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

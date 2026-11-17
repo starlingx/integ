@@ -1,7 +1,8 @@
 ---
 debname: puppet-module-puppetlabs-rabbitmq
 debver: 8.5.0-8+deb13u1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-puppetlabs-rabbitmq/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/p/puppet-module-puppetlabs-rabbitmq/
+dsc_sha256: 2705fbc0eed468d8f8cee0bfb2cb4972c1d0879d77daa1a952682200f23923cd
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

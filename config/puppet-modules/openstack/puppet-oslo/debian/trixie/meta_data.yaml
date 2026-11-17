@@ -1,7 +1,8 @@
 ---
 debname: puppet-module-oslo
 debver: 25.0.0-2
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-oslo/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/p/puppet-module-oslo/
+dsc_sha256: 63cb765babe8b4ca0c3d5bffe705fa3049be533fbda1547e00a3cb079979d4b5
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

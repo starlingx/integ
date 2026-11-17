@@ -1,7 +1,8 @@
 ---
 debname: puppet-module-puppetlabs-firewall
 debver: 8.1.7-1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-puppetlabs-firewall/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/p/puppet-module-puppetlabs-firewall/
+dsc_sha256: 2bf6a9a69c9aed0ec8e080344755ad8529a6fb6b14bf1938fd82b04f57bbc76e
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

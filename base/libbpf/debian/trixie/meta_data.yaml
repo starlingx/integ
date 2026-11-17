@@ -1,7 +1,8 @@
 ---
 debname: libbpf
 debver: 1.5.0-3
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/libb/libbpf/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/libb/libbpf/
+dsc_sha256: b8fdd3a9c58a13d13e9da0927062f1237303db3a804207e423ec4335119d3245
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
