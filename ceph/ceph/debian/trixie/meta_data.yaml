@@ -67,8 +67,8 @@ dl_files:
     sha256sum: 7ef4d12fae167e85bbcd9233c2ddb51f835be581670dba340bcecd943ca78e53
   zstd-b706286adbba780006a47ef92df0ad7a785666b6.tar.gz:
     topdir: zstd
-    url: https://api.github.com/repos/facebook/zstd/tarball/b706286adbba780006a47ef92df0ad7a785666b6
-    sha256sum: 0203708402a3386bafea86702e85b503d21ea34c377638eeb5489779064a6b93
+    url: https://github.com/meta/zstd/archive/b706286adbba780006a47ef92df0ad7a785666b6.tar.gz
+    sha256sum: c05687566bf68a5182d11a3e3498060f5b4d4243cf3c7e72c02d3cd4dadaeda7
   dpdk-96fae0e24c9088d9690c38098b25646f861a664b.tar.gz:
     topdir: dpdk-96fae0e24c9088d9690c38098b25646f861a664b
     url: https://api.github.com/repos/spdk/dpdk/tarball/96fae0e24c9088d9690c38098b25646f861a664b
