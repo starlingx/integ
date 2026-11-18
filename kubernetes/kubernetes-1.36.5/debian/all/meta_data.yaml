@@ -1,0 +1,12 @@
+---
+debname: kubernetes-1.36.5
+debver: 1.36.5
+dl_path:
+  name: kubernetes-1.36.5.tar.gz
+  url: https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.36.5.tar.gz
+  sha256sum: e768e95c34605f3829116736e189f46af54c6416c3229cadd7308e524202735b
+revision:
+  dist: ${STX_DIST}
+  GITREVCOUNT:
+    BASE_SRCREV: d97a785501c85a03cb4054e149adbe0b005357fa
+    SRC_DIR: ${MY_REPO}/stx/integ/kubernetes/kubernetes-1.36.5

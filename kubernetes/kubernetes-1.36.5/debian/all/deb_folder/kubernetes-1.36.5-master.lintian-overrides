@@ -1,0 +1,7 @@
+## No manual page for hyperkube
+kubernetes-master: binary-without-manpage usr/bin/hyperkube
+
+## Override annoying/useless messages
+kubernetes-master: spelling-error-in-binary
+kubernetes-master: manpage-has-errors-from-man usr/share/man/man1/*
+kubernetes-master: manpage-has-bad-whatis-entry usr/share/man/man1/*
