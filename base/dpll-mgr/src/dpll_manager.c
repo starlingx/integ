@@ -1064,8 +1064,11 @@ static void update_pin_states(AppState *state, struct ynl_sock *dpll_sock)
          * take the hardware pin state directly, per engine. */
         const char *plabel = state->eec_priority_table[i].package_label;
         bool found_live = false;
-        if (pin_list && plabel[0] != '\0') {
-            for (struct dpll_pin_get_list *p = pin_list; p; p = p->next) {
+        /* A YNL dump ends with the YNL_LIST_END sentinel (not NULL), and an empty
+         * dump is the sentinel itself, so stop on ynl_dump_empty() or a pin that
+         * is not in the dump would walk onto the sentinel. */
+        if (pin_list && !ynl_dump_empty(pin_list) && plabel[0] != '\0') {
+            for (struct dpll_pin_get_list *p = pin_list; p && !ynl_dump_empty(p); p = p->next) {
                 if (!p->obj.package_label ||
                     strncmp(p->obj.package_label, plabel, sizeof(((PinPriorityEntry*)0)->package_label)) != 0)
                     continue;

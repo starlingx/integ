@@ -10,7 +10,9 @@
  * cover the per-engine split (independent eec/pps state + priority, unset
  * pps_priority = -1). Cases 14-15 cover single-parent pins: an engine with no
  * matching parent device must keep its previous value, not borrow the other
- * engine's state (no cross-engine fallback). These assertions FAIL against the
+ * engine's state (no cross-engine fallback). Cases 16-17 cover a configured pin missing from
+ * the dump and an empty dump (the YNL_LIST_END sentinel): the search must stop at the list end.
+ * These assertions FAIL against the
  * pre-fix synthesis implementation and PASS against the live-read fix.
  *
  * update_pin_states() is static, so we #include the translation unit and stub the
@@ -50,6 +52,10 @@ static unsigned int        g_test_eec_id    = 0;
  * g_test_live_state, so a PPS-only or EEC-only pin can be exercised and the
  * OTHER engine proven to stay untouched. */
 static int                 g_test_single    = 0;
+/* Dump-shape modes: pin missing from an otherwise non-empty dump, and an empty dump
+ * (the YNL_LIST_END sentinel itself). Both must not walk past the list end. */
+static int                 g_test_missing   = 0;
+static int                 g_test_empty     = 0;
 static unsigned int        g_test_single_id = 0;
 
 /* Minimal stand-ins pulled in via the real headers below; the included .c uses
@@ -67,11 +73,12 @@ extern struct ynl_dump_list_type *YNL_LIST_END;
 struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id) {
     (void)ys; (void)device_id;
     if (!g_test_has_pin) return NULL;
+    if (g_test_empty) return (struct dpll_pin_get_list *)YNL_LIST_END;   /* empty dump */
     /* Heap-allocate so the real dpll_pin_get_list_free() can free it. */
     struct dpll_pin_get_list *node = calloc(1, sizeof(*node));
     struct dpll_pin_parent_device *pdev = calloc(2, sizeof(*pdev));
     node->next = (struct dpll_pin_get_list *)YNL_LIST_END;  /* ynl list terminator */
-    node->obj.package_label = strdup(g_test_label);
+    node->obj.package_label = strdup(g_test_missing ? "OTHERPIN" : g_test_label);  /* missing: not our pin */
     node->obj.n_parent_device = 2;
     node->obj.parent_device = pdev;
     if (g_test_single) {
@@ -180,6 +187,8 @@ static void seed_one_pin(AppState *st, const char *pin_name, const char *pkg, in
     g_test_eec_id  = st->eec_dpll_device_id;
     g_test_single    = 0;
     g_test_single_id = 0;
+    g_test_missing   = 0;
+    g_test_empty     = 0;
 }
 
 int main(void) {
@@ -374,6 +383,34 @@ int main(void) {
                "got eec=%d pps=%d\n",
                st.pin_states[src].eec_state, st.pin_states[src].pps_state); fails++;
     } else printf("PASS case15: EEC-only pin — eec from device, pps left untouched (no borrow)\n");
+
+    /* CASE 16 — configured pin NOT in the dump (non-empty dump, other pin only). The label
+     * search must stop at the YNL_LIST_END sentinel and fall back to the derived state; before
+     * the end-of-list check it walked onto the sentinel and crashed. */
+    seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
+    st.ptp_pin_state = DPLL_PIN_STATE_SELECTABLE;
+    st.pin_states[src].eec_state = DPLL_PIN_STATE_CONNECTED;
+    st.pin_states[src].pps_state = DPLL_PIN_STATE_CONNECTED;
+    g_test_missing = 1;
+    g_test_live_state = DPLL_PIN_STATE_DISCONNECTED;
+    update_pin_states(&st, sock);
+    if (st.pin_states[src].eec_state != DPLL_PIN_STATE_SELECTABLE ||
+        st.pin_states[src].pps_state != DPLL_PIN_STATE_SELECTABLE) {
+        printf("FAIL case16: pin missing from dump — expected fallback SELECTABLE on both engines, "
+               "got eec=%d pps=%d\n", st.pin_states[src].eec_state, st.pin_states[src].pps_state); fails++;
+    } else printf("PASS case16: pin missing from dump — stops at list end, uses fallback (no crash)\n");
+
+    /* CASE 17 — EMPTY dump (the YNL_LIST_END sentinel itself, non-NULL). Must not be dereferenced;
+     * fallback applies. */
+    seed_one_pin(&st, "SDP0_REF0N", "REF0N", 7);
+    st.ptp_pin_state = DPLL_PIN_STATE_SELECTABLE;
+    g_test_empty = 1;
+    update_pin_states(&st, sock);
+    if (st.pin_states[src].eec_state != DPLL_PIN_STATE_SELECTABLE ||
+        st.pin_states[src].pps_state != DPLL_PIN_STATE_SELECTABLE) {
+        printf("FAIL case17: empty dump — expected fallback SELECTABLE on both engines, "
+               "got eec=%d pps=%d\n", st.pin_states[src].eec_state, st.pin_states[src].pps_state); fails++;
+    } else printf("PASS case17: empty dump — sentinel not dereferenced, uses fallback (no crash)\n");
 
     if (fails) { printf("\n%d assertion(s) FAILED\n", fails); return 1; }
     printf("\nAll update_pin_states live-read assertions PASSED\n");
