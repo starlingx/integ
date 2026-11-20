@@ -1,0 +1,38 @@
+From: sshathee <shunmugam.shatheesh@windriver.com>
+Date: Fri, 20 Nov 2026 04:45:03 -0500
+Subject: [PATCH] Disable LVM monitoring in initramfs
+
+Thin pools that are auto-activated by udev in the initramfs register
+with dmeventd, because activation/monitoring defaults to 1. LVM then
+starts dmeventd from the initramfs. That dmeventd survives switch_root
+in init.scope, outside any systemd unit, and holds /run/dmeventd.pid so
+dm-event.service cannot take over. At shutdown it is not stopped in
+order and systemd-shutdown can wait up to 90 seconds on it.
+
+Set activation/monitoring to 0 in the initramfs lvm.conf when LVM is
+enabled. Volume groups are still activated. lvm2-monitor.service
+registers monitoring in the real root once dm-event.socket is up, so
+dmeventd then runs under dm-event.service.
+
+Signed-off-by: sshathee <shunmugam.shatheesh@windriver.com>
+---
+ init-ostree.sh | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/init-ostree.sh b/init-ostree.sh
+index 14a5476..6d7566d 100755
+--- a/init-ostree.sh
++++ b/init-ostree.sh
+@@ -74,6 +74,9 @@ disable_lvm() {
+ 
+ enable_lvm() {
+ 	sed -i "s#^\(\t*\)global_filter = \[.*#\1global_filter = [ \"a|.*|\" ]#" /etc/lvm/lvm.conf
++	# Do not start dmeventd in the initramfs, it would outlive switch_root
++	# outside any unit. Monitoring is enabled later in the real root.
++	sed -i "s#^\(\t*\)\# monitoring = 1#\1monitoring = 0#" /etc/lvm/lvm.conf
+ }
+ 
+ activate_multipath() {
+-- 
+2.34.1
+
