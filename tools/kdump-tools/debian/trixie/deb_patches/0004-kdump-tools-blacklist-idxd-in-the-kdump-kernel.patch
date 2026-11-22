@@ -1,0 +1,50 @@
+From 5e57e985fedfd0ee61a03f13eef33af76a7e86f0 Mon Sep 17 00:00:00 2001
+From: Bogdan Codres <bogdan.codres@windriver.com>
+Date: Sun, 22 Nov 2026 19:45:21 +0200
+Subject: [PATCH] kdump-tools: blacklist idxd in the kdump kernel
+
+On Sapphire Rapids and Granite Rapids D systems where the Intel DSA
+device has been configured (e.g. through the Intel Device Plugins
+application), the idxd driver fails to probe in the kdump kernel
+because the device is HALTED when booted with reset_devices:
+
+  idxd 0000:f6:01.0: Device is HALTED!
+  idxd 0000:f6:01.0: Intel(R) IDXD DMA Engine init failed
+  ida_free called for id=0 which is not allocated.
+
+The error path in idxd_pci_probe() frees the idxd object twice, which
+corrupts the slab. The kdump kernel then oopses (e.g. in ___slab_alloc
+from systemd-udevd or kacpid) and, since it runs with nr_cpus=1, hangs
+in RCU stalls. kdump-tools-dump.service never runs, so no vmcore or
+dmesg is saved and the node needs a hard reset.
+
+The kdump kernel does not need DSA, so add idxd and idxd_bus to the
+module_blacklist= list, as is already done for other drivers that are
+not needed to save a vmcore.
+
+Important: this should be seen as a workaround. The final patch will
+be in kernel. However, the upstream patch is not yet finalized. The
+discussion are on-going here:
+https://lore.kernel.org/all/20261012-wt-idxd-fixes-v1-0-30a35a445077@intel.com/
+
+Signed-off-by: Bogdan Codres <bogdan.codres@windriver.com>
+---
+ debian/rules | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules b/debian/rules
+index 1db33eb..b631885 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -15,7 +15,7 @@ else ifeq ($(DEB_HOST_ARCH),ppc64el)
+ 	KDUMP_CMDLINE_APPEND += maxcpus=1 irqpoll noirqdistrib usbcore.nousb
+ else
+ 	KDUMP_CMDLINE_APPEND += nr_cpus=1 irqpoll usbcore.nousb pci=noaer
+-	KDUMP_CMDLINE_APPEND += module_blacklist=ice,i40e,iavf,bnxt_en,bnxt_re,ib_core,mlx5_core,mlx5_ib,mlx_compat,vfio,oct_ep_phc,e1000e,ixgbe,ixgbevf,drbd,tg3,igb
++	KDUMP_CMDLINE_APPEND += module_blacklist=ice,i40e,iavf,bnxt_en,bnxt_re,ib_core,mlx5_core,mlx5_ib,mlx_compat,vfio,oct_ep_phc,e1000e,ixgbe,ixgbevf,drbd,tg3,igb,idxd,idxd_bus
+ 	KDUMP_CMDLINE_APPEND += cgroup_disable=memory transparent_hugepage=never systemd.mask=systemd-sysctl.service systemd.mask=networking.service
+ 	KDUMP_CMDLINE_APPEND += systemd.mask=iscsid.service udev.children_max=2
+ endif
+-- 
+2.43.0
+
