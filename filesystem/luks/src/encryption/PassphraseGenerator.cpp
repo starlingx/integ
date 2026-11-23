@@ -16,6 +16,7 @@
 #include <exception>
 #include <iostream>
 #include "PassphraseGenerator.h"
+#include "TpmConstants.h"
 using namespace std;
 
 /* ***********************************************************************
@@ -141,19 +142,82 @@ class SGXPassphraseGenerator : public PassphraseGenerator {
     }
 };
 
-// TPM passphrase generator (stub)
-class TPMPassphraseGenerator : public PassphraseGenerator {
- public:
-    bool generatePassphrase(string &shaPhrase) override {
-        // Pretend like shaPhrase is used, to avoid getting the
-        // "unused parameter" message from the compiler, which results in
-        // compliation errors due to -Werror.
-        (void)shaPhrase;
-        // Implement TPM-based passphrase generation
-        // Replace this with actual generated passphrase
-        return "tpm_generated_passphrase";
-    }
-};
+/* ***********************************************************************
+ *
+ * Name       : TPMPassphraseGenerator
+ *
+ * Description: TPM passphrase generator (stub). The class interface is
+ *              declared in PassphraseGenerator.h. The TPM operations are
+ *              not implemented yet and return false. Nothing calls them.
+ *
+ * ************************************************************************/
+bool TPMPassphraseGenerator::generatePassphrase(string &shaPhrase) {
+    // Pretend like shaPhrase is used, to avoid getting the
+    // "unused parameter" message from the compiler, which results in
+    // compliation errors due to -Werror.
+    (void)shaPhrase;
+    // Implement TPM-based passphrase generation
+    // Replace this with actual generated passphrase
+    return "tpm_generated_passphrase";
+}
+
+bool TPMPassphraseGenerator::detectTPM() {
+    return false;
+}
+
+bool TPMPassphraseGenerator::unsealPassphrase(string &passphrase) {
+    (void)passphrase;
+    return false;
+}
+
+bool TPMPassphraseGenerator::sealPassphrase(const string &passphrase) {
+    (void)passphrase;
+    return false;
+}
+
+bool TPMPassphraseGenerator::removeNVIndex() {
+    return false;
+}
+
+bool TPMPassphraseGenerator::nvIndexExists() {
+    return false;
+}
+
+bool TPMPassphraseGenerator::nvIndexOwnedByUs() {
+    return false;
+}
+
+bool TPMPassphraseGenerator::runTpmCmd(const string &cmd, string &result,
+                                       int timeoutSecs) {
+    (void)cmd;
+    (void)timeoutSecs;
+    result = "";
+    return false;
+}
+
+bool TPMPassphraseGenerator::generateRandomBytes(string &bytes, int count) {
+    (void)count;
+    bytes = "";
+    return false;
+}
+
+bool TPMPassphraseGenerator::defineNVIndex() {
+    return false;
+}
+
+bool TPMPassphraseGenerator::writeNVIndex(const string &data) {
+    (void)data;
+    return false;
+}
+
+bool TPMPassphraseGenerator::readNVIndex(string &data) {
+    data = "";
+    return false;
+}
+
+void TPMPassphraseGenerator::clearSensitiveString(string &s) {
+    (void)s;
+}
 
 
 unique_ptr<PassphraseGenerator> PassphraseGeneratorFactory
