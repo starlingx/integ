@@ -47,7 +47,6 @@
 //#define DEBUG
 
 extern const struct ynl_family ynl_dpll_family;
-struct dpll_pin_get_list *pin_list = NULL;
 struct ynl_sock *ys;
 
 /* Adding for Debug purpose */
@@ -75,7 +74,7 @@ struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id)
 	pin_list_head = pin_list;  /* Save the head before iteration */
 	
 #ifdef DEBUG
-	while(pin_list) {
+	while(pin_list && !ynl_dump_empty(pin_list)) {
 		if (pin_list->obj.parent_device) {
 			pr_dbg("id: %d boardlabel:%s state:%u\n", pin_list->obj.id,
 					pin_list->obj.board_label,
@@ -87,27 +86,54 @@ struct dpll_pin_get_list* dpll_pin_dump(struct ynl_sock *ys, __u32 device_id)
 	return pin_list_head;  /* Return the saved head, not NULL */
 }
 
-int dpll_one_pin_by_package_label(struct ynl_sock *ys,
+/**
+ * dpll_one_pin_by_package_label - Look up one pin by package label
+ * @ys:            YNL socket
+ * @package_label: Pin package label
+ * @pin_rsp:       Filled with a SHALLOW copy of the matching pin object
+ * @list_out:      On success (return 0), set to the pin-get dump that owns
+ *                 the memory @pin_rsp points into (parent_device[], labels).
+ *                 The caller MUST release it with dpll_pin_get_list_free()
+ *                 once it is done with @pin_rsp, and must not use any
+ *                 pointer member of @pin_rsp afterwards. Scalar members
+ *                 (e.g. id) remain valid. On failure (return 1) the dump is
+ *                 already freed and *list_out is NULL.
+ *
+ * Every call performs a full kernel pin-get dump. Not freeing the dump leaks
+ * the whole pin list on every pin read/set.
+ */
+static int dpll_one_pin_by_package_label(struct ynl_sock *ys,
 		char* package_label,
-		struct dpll_pin_get_rsp *pin_rsp)
+		struct dpll_pin_get_rsp *pin_rsp,
+		struct dpll_pin_get_list **list_out)
 {
-        int cnt = 0; 
+	struct dpll_pin_get_list *head;
+	struct dpll_pin_get_list *cur;
+	int cnt = 0;
+
+	*list_out = NULL;
 
 	/* pin-get dump returns pin objects with parent_device entries per DPLL device */
-	pin_list = dpll_pin_dump(ys, 0);
+	head = dpll_pin_dump(ys, 0);
 
-	while(pin_list && (cnt < 32)) {
-		if (pin_list->obj.package_label &&
-		    strncmp(pin_list->obj.package_label,
+	/* A dump is terminated by the YNL_LIST_END sentinel (never NULL), and an
+	 * empty dump is the sentinel itself, so stop on ynl_dump_empty() rather
+	 * than dereferencing past the last pin. NULL means the dump failed. */
+	for (cur = head; cur && !ynl_dump_empty(cur) && (cnt < 32);
+	     cur = cur->next, cnt++) {
+		if (cur->obj.package_label &&
+		    strncmp(cur->obj.package_label,
 					package_label,
 					strlen(package_label)) == 0) {
-			memcpy(pin_rsp, &(pin_list->obj), sizeof(struct dpll_pin_get_rsp));
+			memcpy(pin_rsp, &(cur->obj), sizeof(struct dpll_pin_get_rsp));
+			*list_out = head;
 			return 0;
 		}
-		pin_list = pin_list->next;
-		cnt++;
 	}
-        return 1;
+
+	if (head)
+		dpll_pin_get_list_free(head);
+	return 1;
 }
 
 __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label, 
@@ -116,6 +142,7 @@ __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label,
 	int ret = 0;
 	__s64 old_phase_adjust = -1;
 	struct dpll_pin_get_rsp pin_rsp = {0};
+	struct dpll_pin_get_list *pin_list = NULL;
 	struct dpll_pin_set_req set_req = {0};
 
 	/* Validate phase_adjust is within __s32 range for netlink */
@@ -125,7 +152,7 @@ __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label,
 		return -1;
 	}
 
-	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp);
+	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp, &pin_list);
 	if (!ret) {
 		if (pin_rsp._present.phase_adjust) {
 			old_phase_adjust = pin_rsp.phase_adjust;
@@ -144,6 +171,7 @@ __s64 dpll_pin_set_phase_adjust(struct ynl_sock *ys, char *package_label,
 		if (ret) {
 			pr_err("Error while setting phase adjust\n");
 		}
+		dpll_pin_get_list_free(pin_list);
 	}
 	return old_phase_adjust;
 }
@@ -155,10 +183,11 @@ int dpll_pin_set_state(struct ynl_sock *ys, __u32 device_id, char *package_label
 	int ret = 0;
 	int old_state = -1;
 	struct dpll_pin_get_rsp pin_rsp = {0};
+	struct dpll_pin_get_list *pin_list = NULL;
 	struct dpll_pin_set_req set_req = {0};
 
 	/* Get pin info by package_label to obtain pin ID */
-	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp);
+	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp, &pin_list);
 	if (ret) {
 		pr_err("Pin %s not found for device %u\n", package_label, device_id);
 		return -1;
@@ -186,12 +215,20 @@ int dpll_pin_set_state(struct ynl_sock *ys, __u32 device_id, char *package_label
 				 * Return old_state to preserve caller semantics. */
 				pr_info("Same state observed: %s state:%d (no-op)\n",
 					package_label, old_state);
+				dpll_pin_get_list_free(pin_list);
 				return old_state;
 			}
 			pr_info("Changing state: %s from %d to %d\n",
 				package_label, old_state, state);
 		}
 	}
+
+	/* Done reading the lookup result: only the scalar pin id is needed
+	 * from here on. Release the dump and drop the dangling pointers. */
+	dpll_pin_get_list_free(pin_list);
+	pin_list = NULL;
+	pin_rsp.parent_device = NULL;
+	pin_rsp.n_parent_device = 0;
 
 	/* Set the new state */
 	set_req._present.id = 1;
@@ -229,9 +266,13 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	int ret = 0;
 	int old_prio = -1;
 	struct dpll_pin_get_rsp pin_rsp = {0};
+	struct dpll_pin_get_list *pin_list = NULL;
 	struct dpll_pin_set_req set_req = {0};
 	unsigned int parent_count = 0;
 	struct dpll_pin_parent_device *target_parent = NULL;
+	int target_state = -1;
+	int has_parent = 0;
+	__u32 pin_id;
 
 	if (!ys) {
 		pr_err("dpll_pin_set_priority: YNL socket is NULL\n");
@@ -239,7 +280,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	}
 
 	/* Get pin info by package_label to obtain pin ID */
-	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp);
+	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp, &pin_list);
 	if (ret) {
 		pr_err("Pin %s not found\n", package_label);
 		return -1;
@@ -279,7 +320,20 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 		}
 	}
 
-	if (!target_parent) {
+	if (target_parent)
+		target_state = target_parent->state;
+	pin_id = pin_rsp.id;
+
+	/* Everything needed from the lookup is now copied into scalars. Release
+	 * the pin dump and drop the dangling pointers. */
+	dpll_pin_get_list_free(pin_list);
+	pin_list = NULL;
+	pin_rsp.parent_device = NULL;
+	pin_rsp.n_parent_device = 0;
+	has_parent = (target_parent != NULL);
+	target_parent = NULL;
+
+	if (!has_parent) {
 		pr_err("Cannot set priority for %s: missing parent context for device %u\n",
 			package_label, device_id);
 		return -1;
@@ -287,7 +341,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 
 	/* Policy 1 (always enabled): requested priority 15 means disconnect pin and return */
 	if (prio == 15) {
-		if (target_parent->state != DPLL_PIN_STATE_DISCONNECTED) {
+		if (target_state != DPLL_PIN_STATE_DISCONNECTED) {
 			int old_state = dpll_pin_set_state(ys, device_id, package_label, DPLL_PIN_STATE_DISCONNECTED);
 			if (old_state < 0) {
 				pr_err("Failed to move %s to DISCONNECTED for requested priority 15\n",
@@ -305,7 +359,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 
 #ifdef DPLL_SET_SELECTABLE_BEFORE_PRIORITY_SET
 	/* Policy 2: for requested priority <15, disconnected pins must be selectable first */
-	if (prio < 15 && target_parent->state == DPLL_PIN_STATE_DISCONNECTED) {
+	if (prio < 15 && target_state == DPLL_PIN_STATE_DISCONNECTED) {
 		int old_state = dpll_pin_set_state(ys, device_id, package_label, DPLL_PIN_STATE_SELECTABLE);
 		if (old_state < 0) {
 			pr_err("Failed to move %s from DISCONNECTED to SELECTABLE before priority update\n",
@@ -320,7 +374,7 @@ int dpll_pin_set_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 
 	/* Set the new priority */
 	set_req._present.id = 1;
-	set_req.id = pin_rsp.id;
+	set_req.id = pin_id;
 
 	set_req.parent_device = (struct dpll_pin_parent_device*)
 		calloc(1, sizeof(struct dpll_pin_parent_device));
@@ -369,8 +423,9 @@ int dpll_pin_get_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 	int prio = -1;
 	struct dpll_pin_parent_device *target_parent = NULL;
 	struct dpll_pin_get_rsp pin_rsp = {0};
+	struct dpll_pin_get_list *pin_list = NULL;
 
-	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp);
+	ret = dpll_one_pin_by_package_label(ys, package_label, &pin_rsp, &pin_list);
 	if (!ret) {
 		if (pin_rsp.parent_device) {
 			for (unsigned int i = 0; i < pin_rsp.n_parent_device; i++) {
@@ -392,6 +447,7 @@ int dpll_pin_get_priority(struct ynl_sock *ys, __u32 device_id, char *package_la
 					package_label, device_id);
 			}
 		}
+		dpll_pin_get_list_free(pin_list);
 	}
 	return prio;
 }
@@ -413,10 +469,12 @@ __u32 dpll_pin_get_phase_adjust_gran(struct ynl_sock *ys,
 {
 #ifdef HAVE_DPLL_PHASE_ADJUST_GRAN
 	struct dpll_pin_get_rsp pin_rsp = {0};
+	struct dpll_pin_get_list *pin_list = NULL;
+	__u32 gran = 0;
 	int ret;
 
 	ret = dpll_one_pin_by_package_label(ys, (char *)package_label,
-					    &pin_rsp);
+					    &pin_rsp, &pin_list);
 	if (ret) {
 		pr_err("dpll_pin_get_phase_adjust_gran: pin %s not found\n",
 			  package_label);
@@ -425,13 +483,15 @@ __u32 dpll_pin_get_phase_adjust_gran(struct ynl_sock *ys,
 
 	if (pin_rsp._present.phase_adjust_gran &&
 	    pin_rsp.phase_adjust_gran > 0) {
+		gran = pin_rsp.phase_adjust_gran;
 		pr_dbg("pin %s phase_adjust_gran=%u ps\n",
-			  package_label, pin_rsp.phase_adjust_gran);
-		return pin_rsp.phase_adjust_gran;
+			  package_label, gran);
+	} else {
+		pr_dbg("pin %s phase_adjust_gran not present\n", package_label);
 	}
 
-	pr_dbg("pin %s phase_adjust_gran not present\n", package_label);
-	return 0;
+	dpll_pin_get_list_free(pin_list);
+	return gran;
 #else
 	(void)ys;
 	(void)package_label;
@@ -478,9 +538,11 @@ int dpll_find_device_id_by_type(struct ynl_sock *ys, enum dpll_type device_type)
 		return -1;
 	}
 
-	/* Iterate through devices to find specified type */
+	/* Iterate through devices to find specified type. The dump ends with the
+	 * YNL_LIST_END sentinel (not NULL), and an empty dump is the sentinel
+	 * itself, so stop on ynl_dump_empty() when no device matches. */
 	dev_iter = dev_list;
-	while (dev_iter) {
+	while (dev_iter && !ynl_dump_empty(dev_iter)) {
 		if (dev_iter->obj._present.type &&
 		    dev_iter->obj.type == device_type) {
 			/* Also verify this belongs to the zl3073x module */
@@ -536,6 +598,7 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 {
 	struct dpll_device_get_req dev_req = {0};
 	struct dpll_device_get_rsp *dev_rsp = NULL;
+	struct dpll_pin_get_list *pin_list_head = NULL;
 	struct dpll_pin_get_list *pin_list_iter = NULL;
 	const char *pin_label = NULL;
 	int ret = -1;
@@ -574,16 +637,18 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 	fflush(g_log_file ? g_log_file : stdout);
 
 	/* Get all pins and find the connected one */
-	pin_list_iter = dpll_pin_dump(ys, device_id);
-	if (!pin_list_iter) {
+	pin_list_head = dpll_pin_dump(ys, device_id);
+	if (!pin_list_head) {
 		pr_err("Failed to get pin list\n");
 		dpll_device_get_rsp_free(dev_rsp);
 		return -1;
 	}
+	pin_list_iter = pin_list_head;
 
-	/* Iterate through pins to find the connected one */
+	/* Iterate through pins to find the connected one. The dump ends with
+	 * the YNL_LIST_END sentinel, not NULL. */
 	int pin_count = 0;
-	while (pin_list_iter) {
+	while (pin_list_iter && !ynl_dump_empty(pin_list_iter)) {
 		pin_count++;
 		
 		/* Check if this pin has parent devices */
@@ -684,6 +749,10 @@ int dpll_get_device_state_and_connected_pin(struct ynl_sock *ys,
 		pin_list_iter = pin_list_iter->next;
 	}
 
+	/* Only scalars were copied out of the dump (ids, enum states, and a
+	 * pin_source derived from the label). Free the whole dump: it was
+	 * leaked on every call before. */
+	dpll_pin_get_list_free(pin_list_head);
 	dpll_device_get_rsp_free(dev_rsp);
 
 	if (ret != 0) {
