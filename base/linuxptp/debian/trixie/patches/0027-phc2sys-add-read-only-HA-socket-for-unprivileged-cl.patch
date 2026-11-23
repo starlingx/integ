@@ -1,0 +1,281 @@
+From b2f8c75a79739ce74d7eb9c9fb3b83249e699c01 Mon Sep 17 00:00:00 2001
+From: Tara Nath Subedi <Tara.Subedi@windriver.com>
+Date: Thu, 19 Nov 2026 15:43:06 -0500
+Subject: [PATCH] phc2sys: add read-only HA socket for unprivileged clients
+
+The HA control socket (ha_phc2sys_com_socket) is created root:root
+with mode 0660, so non-root clients such as the ptp-notification
+container cannot query HA state and get "Permission denied".
+
+Add a second UNIX socket with mode 0666 that answers only the
+read-only HA queries: status, clock source, forced lock and valid
+sources. Any other command, including enable/disable lock and
+enable/disable source, is rejected with "Error: Read-only socket"
+and changes no state. The control socket keeps mode 0660 and all of
+its commands.
+
+The socket path is set with the new global option
+ha_phc2sys_com_ro_socket. If it is not set, the path is
+<ha_phc2sys_com_socket>ro. The socket is created only when
+ha_enabled is 1, and it is removed on shutdown. Startup fails with a
+usage error if the two paths are identical, because the read-only
+socket would otherwise replace the control socket. The phc2sys man
+page documents both socket options.
+
+Accepted client connections get a 50 ms receive and send timeout, so
+a client that connects and sends nothing cannot stall the phc2sys
+main loop. This matters most on the read-only socket, which any local
+user can reach. Timeouts are logged at debug level only. The new
+startup and open-failure messages use pr_err so they reach syslog.
+
+Test Plan:
+PASS: Built phc2sys and ran it with ha_enabled 1: control socket is
+      0660, read-only socket is 0666, monitoring socket is unchanged
+PASS: Read-only socket answers status, clock source, forced lock and
+      valid sources; enable/disable lock/source and unknown commands
+      return "Error: Read-only socket" and forced lock stays False
+      eg: echo -n "status" | socat -t 1 - UNIX-CONNECT:/var/run/phc-haro
+PASS: Control socket still accepts all commands (enable lock then
+      forced lock returns True, disable lock reverses it)
+PASS: With ha_phc2sys_com_ro_socket unset, the socket is created at
+      <ha_phc2sys_com_socket>ro; an explicit path is honored
+PASS: With ha_enabled 0, no HA sockets are created
+PASS: SIGTERM removes the control, read-only and monitoring sockets
+PASS: ha_phc2sys_com_ro_socket equal to ha_phc2sys_com_socket exits
+      with a usage error
+PASS: With a client connected to the read-only socket that sends
+      nothing, other clients are still answered; same on the control
+      socket
+
+Signed-off-by: Tara Nath Subedi <Tara.Subedi@windriver.com>
+Assisted-by: Kiro (Auto)
+---
+ config.c  |  1 +
+ phc2sys.8 | 19 +++++++++++
+ phc2sys.c | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 3 files changed, 107 insertions(+), 7 deletions(-)
+
+diff --git a/config.c b/config.c
+index 39affea..5afbdc4 100644
+--- a/config.c
++++ b/config.c
+@@ -280,6 +280,7 @@ struct config_item config_tab[] = {
+ 	GLOB_ITEM_INT("ha_max_local_clockClass", 255, 6, 255),
+ 	GLOB_ITEM_INT("ha_max_local_offsetScaledLogVar", 0xffff, 0, 0xffff),
+ 	GLOB_ITEM_STR("ha_phc2sys_com_socket", "/var/run/phc2sys-phc-ha"),
++	GLOB_ITEM_STR("ha_phc2sys_com_ro_socket", ""),
+ 	GLOB_ITEM_STR("mon_socket_path", ""),
+ 	PORT_ITEM_INT("ha_priority", 0, 0, 254),
+ 	PORT_ITEM_INT("ha_stability_timer", 0, 0, INT_MAX),
+diff --git a/phc2sys.8 b/phc2sys.8
+index 3f49ce2..a5c79e5 100644
+--- a/phc2sys.8
++++ b/phc2sys.8
+@@ -301,6 +301,25 @@ Same as option
+ .TP
+ .B free-running
+ Don't adjust the sink clock if enabled. The default is 0 (disabled).
++.TP
++.B ha_phc2sys_com_socket
++Path of the UNIX domain control socket used by the high availability (HA)
++clock source selection. The socket is created with mode 0660 and accepts
++all HA commands. The default is /var/run/phc2sys-phc-ha.
++.TP
++.B ha_phc2sys_com_ro_socket
++Path of the read-only UNIX domain socket used by unprivileged clients to
++query the HA state. The socket is created with mode 0666 and only when HA
++is enabled. It accepts only the status, clock source, forced lock and
++valid sources commands. Any other command is rejected with
++"Error: Read-only socket" and does not change any state.
++If not set, the path is derived by appending "ro" (with no separator) to the
++value of
++.B ha_phc2sys_com_socket
++(for example /var/run/phc2sys-phc-haro).
++The permissions of
++.B ha_phc2sys_com_socket
++are not affected by this option and remain 0660.
+ 
+ .TP
+ .B kernel_leap
+diff --git a/phc2sys.c b/phc2sys.c
+index 9363f4a..305ef05 100644
+--- a/phc2sys.c
++++ b/phc2sys.c
+@@ -78,7 +78,9 @@
+ 
+ #define HA_SCK_N_FD 1
+ #define HA_SCK_BUFFER_SIZE 1024
++#define HA_SCK_IO_TIMEOUT_MS 50 /* max wait on an accepted client fd */
+ #define HA_SCK_FILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP) /*0660*/
++#define HA_RO_SCK_FILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) /*0666*/
+ 
+ struct clock {
+ 	LIST_ENTRY(clock) list;
+@@ -137,6 +139,7 @@ struct ha {
+ 	uint64_t last_update;
+ 	struct ha_limits limits;
+ 	int socket_fd;
++	int ro_socket_fd;
+ };
+ 
+ struct domain {
+@@ -576,9 +579,30 @@ static int ha_com_socket_close(int fd)
+ static int ha_com_socket_recv(int fd, void *buf, size_t buflen)
+ {
+ 	int cnt;
++	struct timeval tv;
++
++	/* Accepted fds are blocking. Bound the wait so a client that
++	 * connects and sends nothing cannot stall the main loop. */
++	tv.tv_sec = HA_SCK_IO_TIMEOUT_MS / 1000;
++	tv.tv_usec = (HA_SCK_IO_TIMEOUT_MS % 1000) * 1000;
++	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) ||
++	    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv))) {
++		pr_err("ha_com_socket: failed to set timeouts: %m");
++		return -errno;
++	}
+ 
+ 	cnt = read(fd, buf, buflen - 1);
+-	if (cnt <= 0) {
++	if (cnt < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
++		/* silent client: not logged at error level, any local user
++		 * can trigger it on the read-only socket */
++		pr_debug("ha_com_socket: client sent no data, dropped");
++		return -EAGAIN;
++	}
++	if (cnt == 0) {
++		pr_debug("ha_com_socket: client closed without data");
++		return -ECONNRESET;
++	}
++	if (cnt < 0) {
+ 		pr_err("ha_com_socket: read failed: %m");
+ 		return -errno;
+ 	}
+@@ -923,14 +947,15 @@ static int ha_handle_valid_sources_msg(struct domain *domains, int n_domains,
+ 	return curlen;
+ }
+ 
+-static int ha_com_socket_handle_msg(struct domain *domains, int n_domains)
++static int ha_com_socket_handle_msg(struct domain *domains, int n_domains,
++				    int sock_fd, bool read_only)
+ {
+ 	int fd, res, cnt;
+ 	void *buffer = NULL;
+ 	void *response = NULL;
+ 
+ 	while(true) {
+-		fd = accept(domains[0].ha.socket_fd, NULL, NULL);
++		fd = accept(sock_fd, NULL, NULL);
+ 		if (fd < 0) {
+ 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+ 				/* no msg available*/
+@@ -966,7 +991,15 @@ static int ha_com_socket_handle_msg(struct domain *domains, int n_domains)
+ 		}
+ 
+ 		/* handle messages and create responses */
+-		if (strcmp((const char*)buffer, "status") == 0) {
++		if (read_only && strcmp((const char*)buffer, "status") &&
++		    strcmp((const char*)buffer, "clock source") &&
++		    strcmp((const char*)buffer, "forced lock") &&
++		    strcmp((const char*)buffer, "valid sources")) {
++			/* enable/disable lock/source and unknown commands:
++			 * rejected, no state change */
++			cnt = snprintf((char*)response, HA_SCK_BUFFER_SIZE,
++						   "Error: Read-only socket");
++		} else if (strcmp((const char*)buffer, "status") == 0) {
+ 			cnt = ha_handle_status_msg(domains, n_domains, response,
+ 									   HA_SCK_BUFFER_SIZE);
+ 		} else if (strcmp((const char*)buffer, "clock source") == 0) {
+@@ -1868,8 +1901,13 @@ static int do_loop(struct domain *domains, int n_domains)
+ 			now = tp.tv_sec * NS_PER_SEC + tp.tv_nsec;
+ 		}
+ 
+-		if (domains[0].ha.ha_enabled)
+-			ha_com_socket_handle_msg(domains, n_domains);
++		if (domains[0].ha.ha_enabled) {
++			ha_com_socket_handle_msg(domains, n_domains,
++						 domains[0].ha.socket_fd, false);
++			if (domains[0].ha.ro_socket_fd >= 0)
++				ha_com_socket_handle_msg(domains, n_domains,
++							 domains[0].ha.ro_socket_fd, true);
++		}
+ 		if (domains[0].mon.fd >= 0)
+ 			mon_socket_handle(domains, n_domains);
+ 
+@@ -2380,13 +2418,15 @@ int main(int argc, char *argv[])
+ 	struct domain settings = {
+ 		.phc_readings = 5,
+ 		.phc_interval = 1.0,
++		.ha.ro_socket_fd = -1,
+ 	};
+ 	int n_domains = 0;
+ 	struct ha_limits ha_limits;
+-	const char *ha_socket_path;
++	const char *ha_socket_path, *ha_ro_socket_path;
+ 
+ 	memset(domains, 0, sizeof (domains));
+ 	domains[0].mon.fd = -1;
++	domains[0].ha.ro_socket_fd = -1;
+ 
+ 	handle_term_signals();
+ 
+@@ -2851,9 +2891,47 @@ int main(int argc, char *argv[])
+ 		}
+ 	}
+ 
++	if (ha_enabled) {
++		const char *ha_ctl_path = config_get_string(cfg, NULL,
++					"ha_phc2sys_com_socket");
++		ha_ro_socket_path = config_get_string(cfg, NULL,
++					"ha_phc2sys_com_ro_socket");
++		if (!ha_ro_socket_path || !ha_ro_socket_path[0]) {
++			/* Derive: <ha_phc2sys_com_socket>ro (no separator) */
++			size_t len = strlen(ha_ctl_path) + 3;
++			char *derived = malloc(len);
++			if (!derived) {
++				pr_err("ha_phc2sys_com_ro_socket: low memory");
++				goto bad_usage;
++			}
++			snprintf(derived, len, "%sro", ha_ctl_path);
++			if (config_set_string(cfg, "ha_phc2sys_com_ro_socket",
++					      derived)) {
++				free(derived);
++				goto bad_usage;
++			}
++			free(derived);
++			ha_ro_socket_path = config_get_string(cfg, NULL,
++					"ha_phc2sys_com_ro_socket");
++		}
++		if (!strcmp(ha_ro_socket_path, ha_ctl_path)) {
++			/* sharing the path would replace the 0660 control
++			 * socket with the 0666 read-only one */
++			pr_err("ha_phc2sys_com_ro_socket must differ from ha_phc2sys_com_socket");
++			goto bad_usage;
++		}
++	}
+ 	if (ha_enabled) {
+ 	 	ha_socket_path = config_get_string(cfg, NULL, "ha_phc2sys_com_socket");
+ 		ha_com_socket_open(&domains[0].ha.socket_fd, ha_socket_path);
++		/* the open helper unlinks any stale file first */
++		if (ha_com_socket_open(&domains[0].ha.ro_socket_fd,
++				       ha_ro_socket_path)) {
++			pr_err("HA read-only socket %s disabled: open failed",
++			       ha_ro_socket_path);
++			domains[0].ha.ro_socket_fd = -1;
++		} else
++			chmod(ha_ro_socket_path, HA_RO_SCK_FILEMODE);
+ 	}
+ 	if (!autocfg) {
+ 		mon_socket_open(config_get_string(cfg, NULL, "mon_socket_path"),
+@@ -2910,6 +2988,8 @@ int main(int argc, char *argv[])
+ 
+ end:
+ 	ha_com_socket_close(domains[0].ha.socket_fd);
++	if (domains[0].ha.ro_socket_fd >= 0)
++		ha_com_socket_close(domains[0].ha.ro_socket_fd);
+ 	mon_socket_close(&domains[0].mon.fd, &domains[0].mon.path);
+ 	for (i = 0; i < n_domains; i++) {
+ 		if (domains[i].agent)
+-- 
+2.34.1
+
