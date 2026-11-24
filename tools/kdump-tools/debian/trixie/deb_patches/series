@@ -1,3 +1,4 @@
 0001-kdump-tools-add-vmlinuz-and-initrd.img-soft-link.patch
 0002-Do-not-load-unnecessary-device-drivers-in-the-kdump-.patch
 0003-Pre-and-post-hook-support-for-kdump.patch
+0004-kdump-tools-blacklist-idxd-in-the-kdump-kernel.patch
