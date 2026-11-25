@@ -1,7 +1,8 @@
 ---
 debname: puppet-module-nanliu-staging
 debver: 1.0.4-3
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-nanliu-staging/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/p/puppet-module-nanliu-staging/
+dsc_sha256: 02bd22dde130d2d83439407494717f14191e935fe1c8ba3ff3d396198d6a9b79
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

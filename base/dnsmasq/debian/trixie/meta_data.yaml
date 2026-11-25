@@ -1,7 +1,8 @@
 ---
 debname: dnsmasq
 debver: 2.91-1+deb13u2
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/d/dnsmasq/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/d/dnsmasq/
+dsc_sha256: c7bc98c5043c69c161d85231c4a2b5b26a7e1fab59cf7ef8946bfcd580d29e9a
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

@@ -1,7 +1,8 @@
 ---
 debname: base-passwd
 debver: 3.6.7
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/b/base-passwd/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/b/base-passwd/
+dsc_sha256: 23dafe71f85d7595d9e20efba17729c1c975a33bd469cf09bfad9e96b1f542f3
 revision:
   dist: $STX_DIST
   stx_patch: 9

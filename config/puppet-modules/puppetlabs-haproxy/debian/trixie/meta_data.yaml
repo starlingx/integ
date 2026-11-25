@@ -1,7 +1,8 @@
 ---
 debname: puppet-module-puppetlabs-haproxy
 debver: 8.2.0-1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/p/puppet-module-puppetlabs-haproxy/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/p/puppet-module-puppetlabs-haproxy/
+dsc_sha256: 094ae0ae11d3233555a3bc1bd5f9fdb667c6cb7737bf7f3d2db029a3d9e1b1c0
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

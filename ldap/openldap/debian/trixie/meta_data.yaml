@@ -1,7 +1,8 @@
 ---
 debname: openldap
 debver: 2.6.10+dfsg-1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/o/openldap/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/o/openldap/
+dsc_sha256: 05cdd431ef995904f094f4464ca78d5d3b2abdbe4eefacd72446ff8443a2ffac
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

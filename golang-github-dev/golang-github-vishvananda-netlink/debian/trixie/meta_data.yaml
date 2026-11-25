@@ -1,7 +1,8 @@
 ---
 debname: golang-github-vishvananda-netlink
 debver: 1.3.0-2
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/g/golang-github-vishvananda-netlink/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/g/golang-github-vishvananda-netlink/
+dsc_sha256: c4f26e0f8eb405059fe970b5013bdb3c227eadb6bd5f604e0e72b6ab6230bdb2
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

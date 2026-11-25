@@ -1,7 +1,7 @@
 ---
 debver: 1:4.16.0-3+deb13u2
 debname: resource-agents
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/r/resource-agents/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/r/resource-agents/
 dsc_sha256: 70c963c5493a60518aca23a7147c56f59b46638b9bfd7664a21835ef79e0bd7f
 revision:
   dist: $STX_DIST

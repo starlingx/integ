@@ -10,8 +10,9 @@
 # upstream package eclipses this one and the leap-seconds patch is dropped from
 # the ISO.
 debname: tzdata
-debver: 2026c-0+deb13u1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/t/tzdata/
+debver: 2026f-0+deb13u1
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/t/tzdata/
+dsc_sha256: 5b054ca653d94f5c26e8485f002915cff2e542bd5be473b224708ae301c2f9df
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

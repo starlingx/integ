@@ -1,7 +1,8 @@
 ---
 debname: ostree
 debver: 2025.2-1
-archive: https://snapshot.debian.org/archive/debian/20260925T082640Z/pool/main/o/ostree/
+archive: https://snapshot.debian.org/archive/debian/20261116T082553Z/pool/main/o/ostree/
+dsc_sha256: bd5255dde2c7e1c3ff0c194b4440c804d9430e0645ca1dedafe5dfb3c93b8ffb
 revision:
   dist: ${STX_DIST}
   PKG_GITREVCOUNT: true
