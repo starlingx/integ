@@ -187,10 +187,13 @@
 
 - job:
     name: integ-tox-linters
-    parent: openstack-tox-linters
+    parent: tox
     description: |
       Run linters
     nodeset: debian-bullseye
+    vars:
+      tox_envlist: linters
+      tox_extra_args: -c tox.ini
 
 - job:
     name: integ-tox-pep8
