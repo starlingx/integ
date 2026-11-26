@@ -280,6 +280,10 @@ kubernetes-1.35.2-node
 kubernetes-1.36.5-client
 kubernetes-1.36.5-kubeadm
 kubernetes-1.36.5-node
+#kubernetes-1.37.1
+kubernetes-1.37.1-client
+kubernetes-1.37.1-kubeadm
+kubernetes-1.37.1-node
 
 #kubernetes-unversioned
 kubernetes-unversioned
