@@ -1051,6 +1051,53 @@ void test_monitorLUKSVolume_controller_with_access() {
     exitFlag.store(false);
 }
 
+/* While /etc/platform/simplex exists, the monitor loop must skip sync
+   entirely. Access sequence: simplex flag present on both passes
+   ("0"), encryption-provider.yaml absent ("-1"). The only popen() call is
+   getSoftwareVersion(); no inotifywait, no rsync. */
+void test_monitorLUKSVolume_simplex_flag_present_skips_sync() {
+    reset_mocks();
+    set_env("MOCK_POPEN_SEQ", "24.09\n");
+    set_env("MOCK_PCLOSE_RC", "0");
+    set_env("MOCK_SYSTEM_SEQ", "0,0,1");
+    set_env("MOCK_ACCESS_SEQ", "0,-1,0,-1");
+    unsetenv("MOCK_POPEN_NULL");
+    exitFlag.store(false);
+    monitorLUKSVolume(true, "luks_vol", nullptr);
+    /* pass 1 and 2 ran as simplex (system status ok, ok), pass 3 broke out */
+    ASSERT_EQ(mock_get_system_count(), 3);
+    ASSERT_EQ(mock_get_popen_count(), 1);
+    exitFlag.store(false);
+}
+
+/* The simplex flag is removed after the daemon has started (the second
+   controller joins). The loop must re-read the flag and resume
+   syncing, with a full rsync, instead of skipping for the daemon's whole
+   life. Pass 1: flag present, sync skipped. Pass 2: flag gone, sync runs. */
+void test_monitorLUKSVolume_simplex_flag_removed_resumes_sync() {
+    reset_mocks();
+    /* trailing "|": consume the version, then fall back to MOCK_POPEN_DATA */
+    set_env("MOCK_POPEN_SEQ", "24.09\n|");
+    /* Output reused for the hostname, standalone and active facter
+       queries so that syncLuksVolume() reaches the rsync step. */
+    set_env("MOCK_POPEN_DATA",
+            "controller-0 is_standalone_controller => false "
+            "is_controller_active => true\n");
+    set_env("MOCK_PCLOSE_RC", "0");
+    set_env("MOCK_SYSTEM_SEQ", "0,0,1");
+    /* pass 1: simplex flag present (0), encryption-provider.yaml absent.
+       pass 2: flag gone; later access() calls fall back to -1 */
+    set_env("MOCK_ACCESS_SEQ", "0,-1");
+    unsetenv("MOCK_POPEN_NULL");
+    exitFlag.store(false);
+    monitorLUKSVolume(true, "luks_vol", nullptr);
+    ASSERT_EQ(mock_get_system_count(), 3);
+    /* More than the single getSoftwareVersion() popen: sync resumed */
+    ASSERT_TRUE(mock_get_popen_count() > 1);
+    ASSERT_TRUE(strstr(mock_get_last_popen_cmd(), "rsync") != NULL);
+    exitFlag.store(false);
+}
+
 void test_unmountFilesystem_umount_fail() {
     reset_mocks();
     /* system returns 0 for grep (mounted), then non-zero for umount.
@@ -2415,6 +2462,8 @@ int main() {
     RUN_TEST(test_copyKubeProviderFile_symlink_path);
     RUN_TEST(test_monitorLUKSVolume_controller_status_ok_sync_fail);
     RUN_TEST(test_monitorLUKSVolume_controller_delete_platform_file);
+    RUN_TEST(test_monitorLUKSVolume_simplex_flag_present_skips_sync);
+    RUN_TEST(test_monitorLUKSVolume_simplex_flag_removed_resumes_sync);
     RUN_TEST(test_initialVolCreate_vault_exists_mount_not_exists);
     RUN_TEST(test_initialVolCreate_create_vault_fail);
     RUN_TEST(test_handleResize_resize_vault_fail);

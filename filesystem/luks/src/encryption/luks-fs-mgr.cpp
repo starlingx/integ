@@ -41,7 +41,6 @@
 
 using namespace std;
 // Global constants
-static bool wasSimplex = false;
 const char *configFile = "/etc/luks-fs-mgr.d/luks_config.json";
 const char *defaultDirectoryPath = "/var/luks/stx";
 const char *defaultMountPath = "/var/luks/stx/luks_fs";
@@ -2088,18 +2087,7 @@ void monitorLUKSVolume(bool isController, const string& volumeName,
     string platformConfigPath = "/opt/platform/config/"
                  +softwareVersion+"/kubernetes/encryption-provider.yaml";
     time_t lastFullSync = 0;
-
-    // Check if this is a simplex/standalone system using the platform
-    // flag file.
-    bool isSimplex = (access(PLATFORM_SIMPLEX_MODE, F_OK) == 0);
-    if (isSimplex && !wasSimplex) {
-        log("Simplex system detected, skipping sync", LOG_INFO);
-        wasSimplex = true;
-    }
-    else if (!isSimplex && wasSimplex) {
-        log("System no longer in simplex mode, resuming sync", LOG_INFO);
-        wasSimplex = false;
-    }
+    bool wasSimplex = false;
 
     while (!exitFlag.load()) {
         // Handle SIGUSR1: remove legacy keyslot when signaled
@@ -2117,6 +2105,24 @@ void monitorLUKSVolume(bool isController, const string& volumeName,
             break;
         }
         if (isController == true) {
+            // Check on every pass whether this is a simplex/standalone
+            // system, using the platform flag file. The flag exists while
+            // a controller is installed alone and is removed when the
+            // second controller joins, which happens after this daemon
+            // has started. Reading it only once at start would leave the
+            // daemon skipping sync for the rest of its life.
+            bool isSimplex = (access(PLATFORM_SIMPLEX_MODE, F_OK) == 0);
+            if (isSimplex && !wasSimplex) {
+                log("Simplex system detected, skipping sync", LOG_INFO);
+                wasSimplex = true;
+            } else if (!isSimplex && wasSimplex) {
+                log("System no longer in simplex mode, resuming sync",
+                    LOG_INFO);
+                wasSimplex = false;
+                // Changes made while skipping were never replicated.
+                // Force the full sync below to run on this pass.
+                lastFullSync = 0;
+            }
             // encyption-provider.yaml should only be present in luks volume,
             // incase if it is present in
             // /opt/platform/config/${sftw_ver}/kubernetes, then delete it
