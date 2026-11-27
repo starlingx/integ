@@ -120,6 +120,30 @@ function _wait_for_kubeapi_server {
     return 1
 }
 
+function _wait_for_multus_config {
+
+    local time_between_polls=${1}
+    local attempt_cycles=${2}
+
+    local MULTUS_CONF=/etc/cni/net.d/00-multus.conf
+
+    attempt_count=0
+    while [[ ${attempt_count} -lt ${attempt_cycles} ]] ; do
+        if [[ -s ${MULTUS_CONF} ]]; then
+            LOG "multus CNI config available: ${MULTUS_CONF}"
+            return 0
+        else
+            LOG "multus CNI config not available: ${MULTUS_CONF}, attempt[count=${attempt_count}, cycles=${attempt_cycles}]"
+            attempt_count=$((attempt_count+1))
+        fi
+        sleep "${time_between_polls}"
+    done
+
+    ERROR "Timed out waiting for multus CNI config: ${MULTUS_CONF}"
+    return 1
+}
+
+
 function _unknown_pods {
     # $1: actions <recover|verify>
 
@@ -368,6 +392,56 @@ function _force_reset_pods {
     fi
 }
 
+function _missing_network_pods {
+    # $1: actions <recover|verify>
+    #
+    # The multus daemon removes its CNI config (00-multus.conf) when it is
+    # stopped, and only rewrites it once it is ready again after boot. A pod
+    # whose sandbox is created in that window is set up by the primary CNI
+    # only: the secondary networks are silently dropped, yet the pod still
+    # reaches RUNNING state.
+    # Multus annotates every pod it handles with k8s.v1.cni.cncf.io/network-status
+    # so a Running pod that requests networks but has no network-status was never
+    # seen by multus.
+    # Once the multus config is present, restart these pods so they are
+    # recreated with their secondary networks.
+    local filter='.items[]
+        | select(.spec.hostNetwork != true)
+        | select(.metadata.annotations["k8s.v1.cni.cncf.io/networks"] != null)
+        | select(.metadata.annotations["k8s.v1.cni.cncf.io/network-status"] == null)
+        | .metadata.namespace + "/" + .metadata.name'
+
+    # Max 2 minute wait
+    MULTUS_CONF_CHECK_SEC=5
+    MULTUS_CONF_CHECK_TRIES=24
+
+    PODS=$(kubectl get pods --all-namespaces --field-selector status.phase=Running,spec.nodeName=${HOST} -o json 2>/dev/null \
+             | jq -r "${filter}")
+    if [ "$1" == 'recover' ]; then
+        if [ -z "${PODS}" ]; then
+            return
+        fi
+        # Restarting before multus is ready would recreate the same problem
+        if ! _wait_for_multus_config ${MULTUS_CONF_CHECK_SEC} ${MULTUS_CONF_CHECK_TRIES}; then
+            ERROR "Missing secondary network pods: multus CNI config not available, not recovering: ${PODS//$'\n'/ }"
+            return
+        fi
+        for pod in $PODS ; do
+            LOG "Missing secondary network pods: Recovering: ${pod//// }"
+            kubectl delete pods -n ${pod//// } --wait=false
+        done
+	_wait_for_pod_stabilization "" $SLEEP_DELAY_SEC 2
+    elif [ "$1" == 'verify' ]; then
+        if [ -z "${PODS}" ]; then
+            LOG "Missing secondary network pods: None present."
+        else
+            ERROR "Missing secondary network pods: still present: ${PODS//$'\n'/ }"
+        fi
+    else
+        ERROR "Unknown action: $1"
+    fi
+}
+
 function _examine_pods {
     # $1: actions <recover|verify>
 
@@ -389,6 +463,7 @@ function _examine_pods {
     _node_shutdown_pods $1
     _force_reset_pods $1
     _outofhugepages_pods $1
+    _missing_network_pods $1
 }
 
 function _uncordon_node {
