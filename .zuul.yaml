@@ -5,24 +5,10 @@
       - stx-release-notes-jobs
     check:
       jobs:
-        - integ-tox-pep8
-        - integ-tox-linters
-        - integ-tox-pylint
+        - integ-tox-pep8-trixie
+        - integ-tox-linters-trixie
+        - integ-tox-pylint-trixie
         - integ-tox-py39
-        - integ-tox-coverage:
-            voting: false
-        - integ-tox-coverage-cpp:
-            voting: false
-        - integ-tox-coverage-go:
-            voting: false
-        - integ-tox-bandit:
-            voting: false
-        - integ-tox-pep8-trixie:
-            voting: false
-        - integ-tox-linters-trixie:
-            voting: false
-        - integ-tox-pylint-trixie:
-            voting: false
         - integ-tox-coverage-trixie:
             voting: false
         - integ-tox-coverage-cpp-trixie:
@@ -33,9 +19,9 @@
             voting: false
     gate:
       jobs:
-        - integ-tox-pep8
-        - integ-tox-linters
-        - integ-tox-pylint
+        - integ-tox-pep8-trixie
+        - integ-tox-linters-trixie
+        - integ-tox-pylint-trixie
         - integ-tox-py39
     post:
       jobs:
